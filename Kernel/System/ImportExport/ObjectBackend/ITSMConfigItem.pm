@@ -1,0 +1,2262 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+package Kernel::System::ImportExport::ObjectBackend::ITSMConfigItem;
+
+use v5.24;
+use strict;
+use warnings;
+use namespace::autoclean;
+use utf8;
+
+# core modules
+use Encode;
+use List::AllUtils qw(first pairwise);
+use MIME::Base64   qw(decode_base64 encode_base64);
+
+# CPAN modules
+
+# OTOBO modules
+use Kernel::Language              qw(Translatable);
+use Kernel::System::VariableCheck qw(IsStringWithData IsHashRefWithData IsArrayRefWithData IsPositiveInteger);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::GeneralCatalog',
+    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::ImportExport',
+    'Kernel::System::JSON',
+    'Kernel::System::Log',
+    'Kernel::System::Web::Request',
+);
+
+=head1 NAME
+
+Kernel::System::ImportExport::ObjectBackend::ITSMConfigItem - import/export backend for ITSMConfigItem
+
+=head1 DESCRIPTION
+
+All functions to import and export ITSM config items.
+
+=head1 PUBLIC INTERFACE
+
+=head2 new()
+
+create an object
+
+    use Kernel::System::ObjectManager;
+
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $BackendObject = $Kernel::OM->Get('Kernel::System::ImportExport::ObjectBackend::ITSMConfigItem');
+
+=cut
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    return bless {}, $Type;
+}
+
+=head2 ObjectAttributesGet()
+
+get the object attributes of an object as a ref to an array of hash references
+
+    my $Attributes = $ObjectBackend->ObjectAttributesGet(
+        UserID => 1,
+    );
+
+=cut
+
+sub ObjectAttributesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed object
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+
+        return;
+    }
+
+    # get class list
+    my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::ConfigItem::Class',
+    );
+
+    return [
+        {
+            Key   => 'ClassID',
+            Name  => Translatable('Class'),
+            Input => {
+                Type         => 'Selection',
+                Data         => $ClassList,
+                Required     => 1,
+                Translation  => 0,
+                PossibleNone => 1,
+            },
+        },
+        {
+            Key   => 'CountMax',
+            Name  => Translatable('Maximum number of one element'),
+            Input => {
+                Type         => 'Text',
+                ValueDefault => '3',
+                Required     => 0,
+                Regex        => qr{ \A \d* \z }xms,
+                Translation  => 0,
+                Size         => 5,
+                MaxLength    => 5,
+            },
+        },
+        {
+            Key   => 'CountMaxSetOuter',
+            Name  => Translatable('Maximum number of one Set dynamic field element'),
+            Input => {
+                Type         => 'Text',
+                ValueDefault => '0',
+                Required     => 0,
+                Regex        => qr{ \A \d* \z }xms,
+                Translation  => 0,
+                Size         => 5,
+                MaxLength    => 5,
+            },
+        },
+        {
+            Key   => 'CountMaxSetInner',
+            Name  => Translatable('Maximum number of one element within a Set dynamic field element'),
+            Input => {
+                Type         => 'Text',
+                ValueDefault => '0',
+                Required     => 0,
+                Regex        => qr{ \A \d* \z }xms,
+                Translation  => 0,
+                Size         => 5,
+                MaxLength    => 5,
+            },
+        },
+        {
+            Key   => 'EmptyFieldsLeaveTheOldValues',
+            Name  => Translatable('Empty fields indicate that the current values are kept'),
+            Input => {
+                Type => 'Checkbox',
+            },
+        },
+        {
+            Key   => 'IncludeAttachments',
+            Name  => Translatable('Import/Export attachments (as the last entries per line)'),
+            Input => {
+                Type => 'Checkbox',
+            },
+        },
+    ];
+}
+
+=head2 MappingObjectAttributesGet()
+
+gets the mapping attributes of an object as reference to an array of hash references.
+
+    my $Attributes = $ObjectBackend->MappingObjectAttributesGet(
+        TemplateID => 123,
+        UserID     => 1,
+    );
+
+Returns:
+
+    my $Attributes = [
+        {
+            Input => {
+                Data => [
+                    { Key => "Number", Value => "Number" },
+                    { Key => "Name", Value => "Name" },
+                    { Key => "DeplState", Value => "Deployment State" },
+                    { Key => "InciState", Value => "Incident State" },
+                    {
+                        Key => "NamespaceBoden-Bodenfarbe::1",
+                        Value => "NamespaceBoden-Bodenfarbe::1",
+                    },
+                    {
+                        Key => "NamespaceBoden-Bodenfarbe::2",
+                        Value => "NamespaceBoden-Bodenfarbe::2",
+                    },
+                    {
+                        Key => "NamespaceBoden-Bodenfarbe::3",
+                        Value => "NamespaceBoden-Bodenfarbe::3",
+                    },
+                ],
+                PossibleNone => 1,
+                Required => 1,
+                Translation => 0,
+                Type => "Selection",
+            },
+            Key   => "Key",
+            Name  => "Key",
+        },
+        {
+            Input => { Type => "Checkbox" },
+            Key   => "Identifier",
+            Name  => "Identifier",
+        },
+    ];
+
+=cut
+
+sub MappingObjectAttributesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(TemplateID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+
+            return;
+        }
+    }
+
+    my $ImportExportObject = $Kernel::OM->Get('Kernel::System::ImportExport');
+
+    # get object data
+    my $ObjectData = $ImportExportObject->ObjectDataGet(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    return [] unless $ObjectData;
+    return [] unless ref $ObjectData eq 'HASH';
+    return [] unless $ObjectData->{ClassID};
+
+    # get definition for the config item class
+    my $Definition = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->DefinitionGet(
+        ClassID => $ObjectData->{ClassID},
+    );
+
+    # no error handling
+    return unless $Definition;
+    return unless ref $Definition eq 'HASH';
+    return unless $Definition->{DynamicFieldRef};
+    return unless ref $Definition->{DynamicFieldRef} eq 'HASH';
+
+    my @Elements = (
+        {
+            Key   => 'Number',
+            Value => Translatable('Number'),
+        },
+        {
+            Key   => 'Name',
+            Value => Translatable('Name'),
+        },
+        {
+            Key   => 'DeplState',
+            Value => Translatable('Deployment State'),
+        },
+        {
+            Key   => 'InciState',
+            Value => Translatable('Incident State'),
+        },
+        {
+            Key   => 'VersionString',
+            Value => Translatable('Version String'),
+        },
+    );
+
+    # add description if defined
+    my $HasDescription = ( grep { $_->{Type} && $_->{Type} eq 'Description' } values $Definition->{DefinitionRef}{Sections}->%* ) ? 1 : 0;
+    if ($HasDescription) {
+        push @Elements, {
+            Key   => 'Description',
+            Value => Translatable('Description'),
+        };
+    }
+
+    # add elements
+    push @Elements, $Self->_MappingObjectAttributesGet(
+        DynamicFieldRef       => $Definition->{DynamicFieldRef},    # page layout is ignored here
+        CountMaxLimit         => $ObjectData->{CountMax}         || 3,
+        CountMaxSetOuterLimit => $ObjectData->{CountMaxSetOuter} || 0,
+        CountMaxSetInnerLimit => $ObjectData->{CountMaxSetInner} || 0,
+    );
+
+    return [
+        {
+            Key   => 'Key',
+            Name  => Translatable('Key'),
+            Input => {
+                Type         => 'Selection',
+                Data         => \@Elements,
+                Required     => 1,
+                Translation  => 0,
+                PossibleNone => 1,
+                Class        => 'Modernize',
+            },
+        },
+        {
+            Key   => 'Identifier',
+            Name  => Translatable('Identifier'),
+            Input => {
+                Type => 'Checkbox',
+            },
+        },
+    ];
+}
+
+=head2 SearchAttributesGet()
+
+get the search object attributes of an object as array/hash reference
+
+    my $AttributeList = $ObjectBackend->SearchAttributesGet(
+        TemplateID => 123,
+        UserID     => 1,
+    );
+
+=cut
+
+sub SearchAttributesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(TemplateID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+
+            return;
+        }
+    }
+
+    my $ImportExportObject = $Kernel::OM->Get('Kernel::System::ImportExport');
+
+    # get object data
+    my $ObjectData = $ImportExportObject->ObjectDataGet(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    return [] unless $ObjectData;
+    return [] unless ref $ObjectData eq 'HASH';
+    return [] unless $ObjectData->{ClassID};
+
+    # get definition
+    my $Definition = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->DefinitionGet(
+        ClassID => $ObjectData->{ClassID},
+    );
+
+    return [] unless $Definition;
+    return [] unless ref $Definition eq 'HASH';
+    return [] unless $Definition->{DynamicFieldRef};
+    return [] unless ref $Definition->{DynamicFieldRef} eq 'HASH';
+
+    # get deployment and incident state lists, ignoring errors
+    my $DeplStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::ConfigItem::DeploymentState',
+    );
+
+    return [] unless defined $DeplStateList;
+
+    my $InciStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::Core::IncidentState',
+    );
+
+    return [] unless defined $InciStateList;
+
+    my @Attributes = (
+        {
+            Key   => 'Number',
+            Name  => Translatable('Number'),
+            Input => {
+                Type      => 'Text',
+                Size      => 80,
+                MaxLength => 191,
+            },
+        },
+        {
+            Key   => 'Name',
+            Name  => Translatable('Name'),
+            Input => {
+                Type      => 'Text',
+                Size      => 80,
+                MaxLength => 191,
+            },
+        },
+        {
+            Key   => 'DeplStateIDs',
+            Name  => Translatable('Deployment State'),
+            Input => {
+                Type        => 'Selection',
+                Data        => $DeplStateList,
+                Translation => 1,
+                Size        => 5,
+                Multiple    => 1,
+            },
+        },
+        {
+            Key   => 'InciStateIDs',
+            Name  => Translatable('Incident State'),
+            Input => {
+                Type        => 'Selection',
+                Data        => $InciStateList,
+                Translation => 1,
+                Size        => 5,
+                Multiple    => 1,
+            },
+        },
+        {
+            Key   => 'Limit',
+            Name  => Translatable('Limit'),
+            Input => {
+                Type      => 'Text',
+                Size      => 80,
+                MaxLength => 191,
+            },
+        },
+    );
+
+    # add dynamic field attributes
+    push @Attributes, $Self->_DFSearchAttributesGet(
+        DynamicFieldRef => $Definition->{DynamicFieldRef},
+    );
+
+    return \@Attributes;
+}
+
+=head2 ExportDataGet()
+
+get export data as a reference to an array for array references, that is a C<2D-table>
+
+    my $Rows = $ObjectBackend->ExportDataGet(
+        TemplateID => 123,
+        UserID     => 1,
+    );
+
+=cut
+
+sub ExportDataGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(TemplateID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+
+            return;
+        }
+    }
+
+    my $ImportExportObject = $Kernel::OM->Get('Kernel::System::ImportExport');
+
+    # get object data
+    my $ObjectData = $ImportExportObject->ObjectDataGet(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    # check object data
+    if ( !$ObjectData || ref $ObjectData ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No object data found for the template id $Param{TemplateID}",
+        );
+
+        return;
+    }
+
+    # check the class id from the template
+    {
+        my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ITSM::ConfigItem::Class',
+        );
+
+        return unless defined $ClassList;
+
+        if ( !$ObjectData->{ClassID} || !$ClassList->{ $ObjectData->{ClassID} } ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "No valid class id found for the template id $Param{TemplateID}",
+            );
+
+            return;
+        }
+    }
+
+    # get the IDs for the mapping in this template
+    my $MappingIDs = $ImportExportObject->MappingList(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    # check the mapping list
+    if ( !$MappingIDs || ref $MappingIDs ne 'ARRAY' || !$MappingIDs->@* ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No valid mapping list found for the template id $Param{TemplateID}",
+        );
+
+        return;
+    }
+
+    # create the mapping object list
+    my @MappingObjectList;
+    for my $MappingID ( $MappingIDs->@* ) {
+
+        # get mapping object data
+        my $MappingObjectData = $ImportExportObject->MappingObjectDataGet(
+            MappingID => $MappingID,
+            UserID    => $Param{UserID},
+        );
+
+        # check mapping object data
+        if ( !$MappingObjectData || ref $MappingObjectData ne 'HASH' ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "No valid mapping list found for the template id $Param{TemplateID}",
+            );
+
+            return;
+        }
+
+        push @MappingObjectList, $MappingObjectData;
+    }
+
+    # get search data
+    my $SearchData = $ImportExportObject->SearchDataGet(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    return unless $SearchData;
+    return unless ref $SearchData eq 'HASH';
+
+    # get deployment state list, for translating the numeric IDs into readable names
+    my $DeplStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::ConfigItem::DeploymentState',
+    );
+    if ( !$DeplStateList || ref $DeplStateList ne 'HASH' ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't get the general catalog list ITSM::ConfigItem::DeploymentState!",
+        );
+
+        return;
+    }
+
+    # get incident state list, for translating the numeric IDs into readable names
+    my $InciStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::Core::IncidentState',
+    );
+    if ( !$InciStateList || ref $InciStateList ne 'HASH' ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't get the general catalog list ITSM::Core::IncidentState!",
+        );
+
+        return;
+    }
+
+    # get current definition of this class
+    my $Definition = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->DefinitionGet(
+        ClassID => $ObjectData->{ClassID},
+        UserID  => $Param{UserID},
+    );
+
+    my %SearchParams;
+
+    # add number to the search params
+    if ( $SearchData->{Number} ) {
+        $SearchParams{Number} = delete $SearchData->{Number};
+    }
+
+    # add name to the search params
+    if ( $SearchData->{Name} ) {
+        $SearchParams{Name} = delete $SearchData->{Name};
+    }
+
+    # add deployment state to the search params
+    if ( $SearchData->{DeplStateIDs} ) {
+        my @DeplStateIDs = split /#####/, $SearchData->{DeplStateIDs};
+        $SearchParams{DeplStateIDs} = \@DeplStateIDs;
+        delete $SearchData->{DeplStateIDs};
+    }
+
+    # add incident state to the search params
+    if ( $SearchData->{InciStateIDs} ) {
+        my @InciStateIDs = split /#####/, $SearchData->{InciStateIDs};
+        $SearchParams{InciStateIDs} = \@InciStateIDs;
+        delete $SearchData->{InciStateIDs};
+    }
+
+    # add limit to the search params
+    if ( IsPositiveInteger( $SearchData->{Limit} ) ) {
+        $SearchParams{Limit} = delete $SearchData->{Limit};
+    }
+
+    # add all dynamic field data to the search params
+    my %DFSearchParams = $Self->_DFSearchDataPrepare(
+        DynamicFieldRef => $Definition->{DynamicFieldRef},
+        SearchData      => $SearchData,
+    );
+    @SearchParams{ keys %DFSearchParams } = values %DFSearchParams;
+
+    # search the config items
+    my @ConfigItemIDs = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
+        %SearchParams,
+        ClassIDs              => [ $ObjectData->{ClassID} ],
+        PreviousVersionSearch => 0,
+        UserID                => $Param{UserID},
+        Result                => 'ARRAY',
+    );
+
+    # JSON support might be needed for Set dynamic fields
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+
+    my $FormatterCanHandleReferences = $ImportExportObject->FormatterCanHandleReferences(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    my @Rows;
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    CONFIGITEMID:
+    for my $ConfigItemID (@ConfigItemIDs) {
+
+        # get the latest version of the config item, including the dynamic fields
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            ConfigItemID  => $ConfigItemID,
+            DynamicFields => 1,
+        );
+
+        next CONFIGITEMID unless $ConfigItem;
+        next CONFIGITEMID unless ref $ConfigItem eq 'HASH';
+
+        # add data to the export data array
+        my @RowItems;
+        MAPPINGOBJECT:
+        for my $MappingObject (@MappingObjectList) {
+
+            # extract key
+            my $Key = $MappingObject->{Key};
+
+            # handle empty key
+            if ( !$Key ) {
+                push @RowItems, '';
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle config item number
+            if ( $Key eq 'Number' ) {
+                push @RowItems, $ConfigItem->{Number};
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle current config item name
+            if ( $Key eq 'Name' ) {
+                push @RowItems, $ConfigItem->{Name};
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle deployment state
+            if ( $Key eq 'DeplState' ) {
+                $ConfigItem->{DeplStateID} ||= 'DUMMY';
+                push @RowItems, $DeplStateList->{ $ConfigItem->{DeplStateID} };
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle incident state
+            if ( $Key eq 'InciState' ) {
+                $ConfigItem->{InciStateID} ||= 'DUMMY';
+                push @RowItems, $InciStateList->{ $ConfigItem->{InciStateID} };
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle description
+            if ( $Key eq 'Description' ) {
+
+                my $Description = $ConfigItem->{Description};
+
+                # prepare description inline images for export
+                {
+                    # fetch config item attachment list for handling inline attachments
+                    my @AttachmentList = $ConfigItemObject->VersionAttachmentList(
+                        VersionID => $ConfigItem->{VersionID},
+                    );
+
+                    # fetch attachment data and replace content id in description with base64-encoded attachment string
+                    for my $Filename (@AttachmentList) {
+                        my $Attachment = $ConfigItemObject->VersionAttachmentGet(
+                            VersionID => $ConfigItem->{VersionID},
+                            Filename  => $Filename,
+                        );
+                        $Attachment->{ContentID} = $Attachment->{Preferences}{ContentID};
+
+                        for my $Key (qw( Filename ContentType Disposition )) {
+                            $Attachment->{$Key} = Encode::encode( 'UTF-8', $Attachment->{$Key} );
+                        }
+
+                        my $AttachmentString;
+                        for my $Key (qw( Filename ContentID ContentType Disposition Content ContentAlternative )) {
+                            $Attachment->{$Key} //= '';
+                            $AttachmentString .= $AttachmentString ? '###' : '';
+                            $AttachmentString .= $Key . '###' . encode_base64( $Attachment->{$Key} );
+                        }
+
+                        $Description =~ s/(?<open>src=")(cid:)(?<cid>$Attachment->{ContentID})(?<close>" )/$+{open}$AttachmentString$+{close}/g;
+                    }
+                }
+
+                push @RowItems, $Description;
+
+                next MAPPINGOBJECT;
+            }
+
+            # handle version string
+            if ( $Key eq 'VersionString' ) {
+                push @RowItems, $ConfigItem->{VersionString};
+
+                next MAPPINGOBJECT;
+            }
+
+            # All other attributes indicate dynamic fields.
+            # This gets whatever ConfigItemGet() puts into the object. E.g. for GeneralCatalog dynamic fields
+            # we get the item ID into the general catalog. This is fine for Import/Export, but not really human readable.
+            # Note that things like the incident state are looked up.
+
+            # The Key encodes some extra information.
+            # Note that the indexes start at 1 in the key names
+            my ( $DFFullName, $Index, $InnerDF, $InnerIndex ) = split /::/, $Key;
+            my $DFName;
+            if ( $DFFullName =~ /^DynamicField_(.*)/ ) {
+                $DFName = $1;
+            }
+            my $FieldConfig = $Definition->{DynamicFieldRef}{$DFName};
+
+            next MAPPINGOBJECT unless IsHashRefWithData($FieldConfig);
+
+            # ignore unexpected indexes, but still cut the '::'
+            if ( defined $Index && $Index !~ m/^[1-9][0-9]*$/ ) {
+                undef $Index;
+            }
+            if ( defined $InnerIndex && $InnerIndex !~ m/^[1-9][0-9]*$/ ) {
+                undef $InnerIndex;
+            }
+
+            my $Value = $ConfigItem->{$DFFullName};
+
+            if ( !defined $Value ) {
+                push @RowItems, '';
+
+                next MAPPINGOBJECT;
+            }
+
+            # The formatting depends on the config of the dynamic field, which is not really nice.
+            my $IsMultiValue = $FieldConfig->{Config}->{MultiValue} ? 2 : 0;
+            my $IsSet        = ( $FieldConfig->{FieldType} // '' ) eq 'Set';
+
+            # handle special cases
+            my $ActualValue = eval {
+
+                # a specific index was requested
+                if ( $IsMultiValue && $Index ) {
+                    return $Value->[ $Index - 1 ] // '';    # as if an empty string were not valid
+                }
+
+                # For Set single and multivalue fields behave the same way.
+                # No need to shave off a level.
+                return $Value if $IsSet;
+
+                # get first element for single value fields
+                return $Value->[0] // '' if ( !$IsMultiValue && ref $Value eq 'ARRAY' );
+
+                # the default
+                return $Value;
+            };
+
+            # check if we are dealing with a set-inner field
+            if ($InnerDF) {
+
+                # fetch and set field config
+                my $InnerFieldItem   = first { $_->{DF} eq $InnerDF } $FieldConfig->{Config}{Include}->@*;
+                my $InnerFieldConfig = $InnerFieldItem->{Definition};
+
+                next MAPPINGOBJECT unless IsHashRefWithData($InnerFieldConfig);
+
+                # set value
+                my $InnerValue = $ActualValue->{$InnerDF};
+
+                if ( !defined $InnerValue ) {
+                    push @RowItems, '';
+
+                    next MAPPINGOBJECT;
+                }
+
+                # The formatting depends on the config of the dynamic field, which is not really nice.
+                my $InnerIsMultiValue = $InnerFieldConfig->{Config}{MultiValue} ? 2 : 0;
+
+                # handle special cases
+                my $ActualInnerValue = eval {
+
+                    # a specific index was requested
+                    if ( $InnerIsMultiValue && $InnerIndex ) {
+                        return $InnerValue->[ $InnerIndex - 1 ] // '';    # as if an empty string were not valid
+                    }
+
+                    # get first element for single value fields
+                    return $InnerValue->[0] // '' if ( !$InnerIsMultiValue && ref $InnerValue eq 'ARRAY' );
+
+                    # the default
+                    return $InnerValue;
+                };
+                $ActualValue = $ActualInnerValue;
+            }
+
+            # This is relevant for e.g. the CSV backend which can't transparently serialize data structures.
+            # References are JSONified. This happens when:
+            # - a multivalue field gives an array reference
+            # - a multivalue Set field gives an array reference with array references inside
+            # - a singlevalue Set field gives an array reference
+            if ( !$FormatterCanHandleReferences && ref $ActualValue ) {
+
+                push @RowItems, $JSONObject->Encode(
+                    Data     => $ActualValue,
+                    SortKeys => 1,
+                );
+
+                next MAPPINGOBJECT;
+            }
+
+            # the regular case
+            push @RowItems, $ActualValue;
+        }
+        if ( $ObjectData->{IncludeAttachments} ) {
+            my @Attachments = $ConfigItemObject->ConfigItemAttachmentList(
+                ConfigItemID => $ConfigItem->{ConfigItemID},
+            );
+            for my $Filename (@Attachments) {
+                my $Attachment = $ConfigItemObject->ConfigItemAttachmentGet(
+                    ConfigItemID => $ConfigItem->{ConfigItemID},
+                    Filename     => $Filename,
+                );
+
+                for my $Key (qw( Filename ContentType Disposition )) {
+                    $Attachment->{$Key} = Encode::encode( 'UTF-8', $Attachment->{$Key} );
+                }
+
+                my $AttachmentString;
+                for my $Key (qw( Filename ContentID ContentType Disposition Content ContentAlternative )) {
+                    $Attachment->{$Key} //= '';
+                    $AttachmentString .= $AttachmentString ? '###' : '';
+                    $AttachmentString .= $Key . '###' . encode_base64( $Attachment->{$Key} );
+                }
+
+                push @RowItems, $AttachmentString;
+            }
+        }
+
+        push @Rows, \@RowItems;
+    }
+
+    return \@Rows;
+}
+
+=head2 ImportDataSave()
+
+imports a single entity of the import data. The C<TemplateID> points to the definition
+of the current import. C<ImportDataRow> holds the data. C<Counter> is only used in
+error messages, for indicating which item was not imported successfully.
+
+The current version of the config item will never be deleted. When there are no
+changes in the data, the import will be skipped. When there is new or changed data,
+then a new config item or a new version is created.
+
+In the case of changed data, the new version of the config item will contain the
+attributes of the C<ImportDataRow> plus the old attributes that are
+not part of the import definition.
+Thus ImportDataSave() guarantees to not overwrite undeclared attributes.
+
+The behavior when imported attributes are empty depends on the setting in the object data.
+When C<EmptyFieldsLeaveTheOldValues> is not set, then empty values will wipe out
+the old data. This is the default behavior. When C<EmptyFieldsLeaveTheOldValues> is set,
+then empty values will leave the old values.
+
+The decision what constitute an empty value is a bit hairy.
+Here are the rules.
+Fields that are not even mentioned in the Import definition are empty. These are the 'not defined' fields.
+Empty strings and undefined values constitute empty fields.
+Fields with with only one or more whitespace characters are not empty.
+Fields with the digit '0' are not empty.
+
+    my ( $ConfigItemID, $RetCode ) = $ObjectBackend->ImportDataSave(
+        TemplateID    => 123,
+        ImportDataRow => $ArrayRef,
+        Counter       => 367,
+        UserID        => 1,
+    );
+
+An empty C<ConfigItemID> indicates failure. Otherwise it indicates the
+location of the imported data.
+C<RetCode> is either 'Created', 'Updated' or 'Skipped'. 'Created' means that a new
+config item has been created. 'Updated' means that a new version has been added to
+an existing config item. 'Skipped' means that no new version has been created,
+as the new data is identical to the latest version of an existing config item.
+
+No codes have yet been defined for the failure case.
+
+=cut
+
+sub ImportDataSave {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(TemplateID ImportDataRow Counter UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+
+            return;
+        }
+    }
+
+    # check import data row
+    if ( ref $Param{ImportDataRow} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't import entity $Param{Counter}: ImportDataRow must be an array reference",
+        );
+
+        return;
+    }
+
+    my $ImportExportObject = $Kernel::OM->Get('Kernel::System::ImportExport');
+
+    # get object data, that is the config of this template
+    my $ObjectData = $ImportExportObject->ObjectDataGet(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+    if ( !$ObjectData || ref $ObjectData ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  =>
+                "Can't import entity $Param{Counter}: "
+                . "No object data found for the template id '$Param{TemplateID}'",
+        );
+
+        return;
+    }
+
+    # just for convenience
+    my $EmptyFieldsLeaveTheOldValues = $ObjectData->{EmptyFieldsLeaveTheOldValues};
+
+    # check the class id of the template config
+    {
+        my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ITSM::ConfigItem::Class',
+        );
+
+        if ( !$ClassList || ref $ClassList ne 'HASH' ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Can't get the general catalog list ITSM::ConfigItem::Class",
+            );
+
+            return;
+        }
+
+        if ( !$ObjectData->{ClassID} || !$ClassList->{ $ObjectData->{ClassID} } ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "No class found for the template id '$Param{TemplateID}'",
+            );
+
+            return;
+        }
+    }
+
+    # get the mapping list
+    my $MappingIDs = $ImportExportObject->MappingList(
+        TemplateID => $Param{TemplateID},
+        UserID     => $Param{UserID},
+    );
+
+    # check the mapping list
+    if ( !$MappingIDs || ref $MappingIDs ne 'ARRAY' || !$MappingIDs->@* ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  =>
+                "Can't import entity $Param{Counter}: "
+                . "No valid mapping list found for the template id '$Param{TemplateID}'",
+        );
+
+        return;
+    }
+
+    # create the mapping object list
+    # TODO: why is this called for every row of the import file ?
+    my @MappingObjectList;
+    for my $MappingID ( $MappingIDs->@* ) {
+
+        # get mapping object data
+        my $MappingObjectData = $ImportExportObject->MappingObjectDataGet(
+            MappingID => $MappingID,
+            UserID    => $Param{UserID},
+        );
+
+        # check mapping object data
+        if ( !$MappingObjectData || ref $MappingObjectData ne 'HASH' ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "No mapping object data found for the mapping id '$MappingID'",
+            );
+
+            return;
+        }
+
+        push @MappingObjectList, $MappingObjectData;
+    }
+
+    # check and remember the Identifiers
+    # the Identifiers identify the config item that should be updated
+    my %Identifier;
+    {
+        my $RowIndex = 0;
+        MAPPINGOBJECTDATA:
+        for my $MappingObjectData (@MappingObjectList) {
+
+            next MAPPINGOBJECTDATA unless $MappingObjectData->{Identifier};
+
+            # check if identifier already exists
+            if ( $Identifier{ $MappingObjectData->{Key} } ) {
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "'$MappingObjectData->{Key}' has been used multiple times as an identifier",
+                );
+
+                return;
+            }
+
+            # set identifier value
+            $Identifier{ $MappingObjectData->{Key} } = $Param{ImportDataRow}->[$RowIndex];
+
+            next MAPPINGOBJECTDATA if $MappingObjectData->{Key} && $Param{ImportDataRow}->[$RowIndex];
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Identifier field is empty",
+            );
+
+            return;
+        }
+        continue {
+            $RowIndex++;
+        }
+    }
+
+    # get lookup table for getting the ID for deployment state names
+    my %DeplStateListReverse;
+    {
+        my $DeplStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ITSM::ConfigItem::DeploymentState',
+        );
+        if ( !$DeplStateList || ref $DeplStateList ne 'HASH' ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Can't get the general catalog list ITSM::ConfigItem::DeploymentState!",
+            );
+
+            return;
+        }
+
+        # get the reverse mapping, that is from name to ID
+        %DeplStateListReverse = reverse $DeplStateList->%*;
+    }
+
+    # get lookup table for getting the ID for incident state names
+    my %InciStateListReverse;
+    {
+        my $InciStateList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ITSM::Core::IncidentState',
+        );
+        if ( !$InciStateList || ref $InciStateList ne 'HASH' ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Can't get the general catalog list ITSM::Core::IncidentState",
+            );
+
+            return;
+        }
+
+        # get the reverse mapping, that is from name to ID
+        %InciStateListReverse = reverse $InciStateList->%*;
+    }
+
+    # get current definition of this class
+    my $Definition = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->DefinitionGet(
+        ClassID => $ObjectData->{ClassID},
+        UserID  => $Param{UserID},
+    );
+
+    # check definition data
+    if ( !$Definition || ref $Definition ne 'HASH' ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  =>
+                "Can't import entity $Param{Counter}: "
+                . "Can't get the definition of class id $ObjectData->{ClassID}",
+        );
+
+        return;
+    }
+
+    # try to get the config item id when there is at least one identifier
+    my $ConfigItemID;
+    if (%Identifier) {
+
+        my %SearchParams;
+
+        # add number to the search params
+        if ( $Identifier{Number} ) {
+            $SearchParams{Number} = delete $Identifier{Number};
+        }
+
+        # add name to the search params
+        if ( $Identifier{Name} ) {
+            $SearchParams{Name} = delete $Identifier{Name};
+        }
+
+        # add deployment state to the search params
+        if ( $Identifier{DeplState} ) {
+
+            # extract deployment state id
+            my $DeplStateID = $DeplStateListReverse{ $Identifier{DeplState} } || '';
+
+            if ( !$DeplStateID ) {
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The deployment state '$Identifier{DeplState}' is invalid",
+                );
+
+                return;
+            }
+
+            $SearchParams{DeplStateIDs} = [$DeplStateID];
+            delete $Identifier{DeplState};
+        }
+
+        # add incident state to the search params
+        if ( $Identifier{InciState} ) {
+
+            # extract incident state id
+            my $InciStateID = $InciStateListReverse{ $Identifier{InciState} } || '';
+
+            if ( !$InciStateID ) {
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The incident state '$Identifier{InciState}' is invalid",
+                );
+
+                return;
+            }
+
+            $SearchParams{InciStateIDs} = [$InciStateID];
+            delete $Identifier{InciState};
+        }
+
+        # the remaining items in %Identifier are all for dynamic fields
+        my %DFImportSearchParams = $Self->_DFImportSearchDataPrepare(
+            DynamicFieldRef => $Definition->{DynamicFieldRef},
+            Identifier      => \%Identifier,
+        );
+        @SearchParams{ keys %DFImportSearchParams } = values %DFImportSearchParams;
+
+        # search existing config item with the same identifiers
+        ( $ConfigItemID, my @OtherConfigItemIDs ) = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
+            %SearchParams,
+            ClassIDs              => [ $ObjectData->{ClassID} ],
+            PreviousVersionSearch => 0,
+            UsingWildcards        => 0,
+            UserID                => $Param{UserID},
+            Result                => 'ARRAY',
+        );
+
+        if (@OtherConfigItemIDs) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Identifier fields NOT unique!",
+            );
+
+            return;
+        }
+    }
+
+    # get version data of the config item
+    my $VersionData = {};
+    if ($ConfigItemID) {
+
+        # get latest version
+        $VersionData = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+            ConfigItemID  => $ConfigItemID,
+            DynamicFields => 1,
+        );
+    }
+
+    my %MappingObjectKeyData = map { $_->{Key} => 1 } @MappingObjectList;
+
+    # build list of dynamic fields to include fields of definition and of included set fields
+    my %DynamicFieldList;
+
+    # Check if current definition of this class has required attribute which does not exist in mapping list.
+    DF_NAME:
+    for my $DFName ( sort keys $Definition->{DynamicFieldRef}->%* ) {
+        my $DynamicFieldConfig = $Definition->{DynamicFieldRef}->{$DFName};
+
+        # set field names to differentiate dynamic fields from standard attributes
+        $DynamicFieldList{$DFName} = $DynamicFieldConfig;
+
+        # TODO: is the special case for Set needed ?
+        if ( $DynamicFieldConfig->{FieldType} eq 'Set' ) {
+            for my $IncludedDF ( $DynamicFieldConfig->{Config}{Include}->@* ) {
+                $DynamicFieldList{ $IncludedDF->{DF} } = $IncludedDF->{Definition};
+
+                # assuming that df sets are not nested deeper than two stages
+                if ( $IncludedDF->{Definition}{FieldType} eq 'Set' ) {
+                    for my $NestedIncludedDF ( $IncludedDF->{Definition}{Config}{Include}->@* ) {
+                        $DynamicFieldList{ $NestedIncludedDF->{DF} } = $NestedIncludedDF->{Definition};
+                    }
+                }
+            }
+        }
+
+        # check only required attributes
+        next DF_NAME unless $DynamicFieldConfig->{Required};
+
+        my $Key = $DynamicFieldConfig->{Name};
+
+        next DF_NAME if $MappingObjectKeyData{"DynamicField_$Key"};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  =>
+                "Can't import entity $Param{Counter}: "
+                . "Attribute '$Key' is required, but does not exist in mapping list!",
+        );
+
+        return;
+    }
+
+    # set up fields in VersionData and in the XML attributes
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+    my %DFHash;    # map field name, including the prefix 'DynamicField_', to the value
+    my $RowIndex = 0;
+    MAPPING_OBJECT_DATA:
+    for my $MappingObjectData (@MappingObjectList) {
+
+        # just for convenience
+        my $Key   = $MappingObjectData->{Key};
+        my $Value = $Param{ImportDataRow}->[$RowIndex];
+
+        if ( $Key eq 'Number' ) {
+
+            # Do nothing. The Import may not override the config item number.
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key eq 'Name' ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues && ( !defined $Value || $Value eq '' ) ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA;
+            }
+
+            if ( !$Value ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The name '$Value' is invalid!",
+                );
+
+                return;
+            }
+
+            $VersionData->{$Key} = $Value;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key eq 'DeplState' ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues && ( !defined $Value || $Value eq '' ) ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # extract deployment state id
+            my $DeplStateID = $DeplStateListReverse{$Value} || '';
+            if ( !$DeplStateID ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The deployment state '$Value' is invalid!",
+                );
+
+                return;
+            }
+
+            $VersionData->{DeplStateID} = $DeplStateID;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key eq 'InciState' ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues && ( !defined $Value || $Value eq '' ) ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # extract the deployment state id
+            my $InciStateID = $InciStateListReverse{$Value} || '';
+            if ( !$InciStateID ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The incident state '$Value' is invalid!",
+                );
+
+                return;
+            }
+
+            $VersionData->{InciStateID} = $InciStateID;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key eq 'Description' ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues && ( !defined $Value || $Value eq '' ) ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA;
+            }
+
+            if ( !$Value ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The description '$Value' is invalid!",
+                );
+
+                return;
+            }
+
+            # retrieve and store description inline images for import
+            {
+                my @DescriptionAttachments;
+
+                # attachments are stored in the src attribute of their img tag as base64 encoded string
+                my @AttachmentStrings = $Value =~ /src=\"(.+?)\" /gs;
+                for my $AttachmentString (@AttachmentStrings) {
+                    my %Attachment = split( /###/, $AttachmentString, -1 );
+
+                    for my $Key ( keys %Attachment ) {
+                        $Attachment{$Key} = $Attachment{$Key} eq '' ? '' : decode_base64( $Attachment{$Key} );
+                    }
+
+                    KEY:
+                    for my $Key (qw( Filename ContentType Disposition )) {
+                        next KEY unless $Attachment{$Key};
+
+                        $Attachment{$Key} = Encode::decode( 'UTF-8', $Attachment{$Key} );
+                    }
+
+                    push @DescriptionAttachments, \%Attachment;
+
+                    # escape base64 special characters '/' and '+'
+                    my $AttachmentStringEscaped = $AttachmentString;
+                    $AttachmentStringEscaped =~ s/\//\\\//g;
+                    $AttachmentStringEscaped =~ s/\+/\\\+/g;
+
+                    # replace base64 encoded string in description with contend id
+                    $Value =~ s/$AttachmentStringEscaped/cid:$Attachment{ContentID}/gs;
+                }
+
+                $VersionData->{DescriptionAttachments} = \@DescriptionAttachments;
+            }
+
+            $VersionData->{$Key} = $Value;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key eq 'VersionString' ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues && ( !defined $Value || $Value eq '' ) ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA;
+            }
+
+            if ( !$Value ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  =>
+                        "Can't import entity $Param{Counter}: "
+                        . "The version string '$Value' is invalid!",
+                );
+
+                return;
+            }
+
+            $VersionData->{$Key} = $Value;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        if ( $Key =~ m/^DynamicField_(?<DFNameWithIndex>.+)/ ) {
+
+            if ( $EmptyFieldsLeaveTheOldValues ) {
+
+                # do nothing, keep the old value
+                next MAPPING_OBJECT_DATA if !defined $Value;
+
+                if ( ref $Value ) {
+                    next MAPPING_OBJECT_DATA unless IsArrayRefWithData( $Value );
+                }
+                else {
+                    next MAPPING_OBJECT_DATA if $Value eq '';
+                }
+            }
+
+            # The key might encompass an index, indicated by '::'.
+            # Note that the  indexes are 1-based.
+            my ( $DFName, $Index, $InnerDFName, $InnerIndex ) = split /::/, $+{DFNameWithIndex};
+
+            # ignore unexpected indexes, but still cut the '::'
+            if ( defined $Index && $Index !~ m/^[1-9][0-9]*$/ ) {
+                undef $Index;
+            }
+            if ( defined $InnerIndex && $InnerIndex !~ m/^[1-9][0-9]*$/ ) {
+                undef $InnerIndex;
+            }
+            my $DFKey = "DynamicField_$DFName";
+
+            my $DynamicFieldConfig = $DynamicFieldList{$DFName};
+
+            # skip import when the dynamic field is not found
+            next MAPPING_OBJECT_DATA unless IsHashRefWithData($DynamicFieldConfig);
+
+            # handle set-inner dynamic fields
+            if ($InnerDFName) {
+                my $InnerDFConfig = $DynamicFieldList{$InnerDFName};
+
+                next MAPPING_OBJECT_DATA unless IsHashRefWithData($InnerDFConfig);
+
+                $DFHash{$DFKey} //= [];
+                $DFHash{$DFKey}[ $Index - 1 ]{$InnerDFName} //= [];
+
+                if ( ref $Value ) {
+                    $DFHash{$DFKey}[ $Index - 1 ]{$InnerDFName}[ $InnerIndex - 1 ] = $Value;
+
+                    next MAPPING_OBJECT_DATA;
+                }
+
+                # Multivalue fields are exported as JSON strings in the case of CSV exports.
+                my $InnerIsMultiValue = $InnerDFConfig->{Config}{MultiValue};
+
+                if ( $InnerIsMultiValue && $InnerIndex ) {
+                    $DFHash{$DFKey}[ $Index - 1 ]{$InnerDFName}[ $InnerIndex - 1 ] = $Value;
+
+                    next MAPPING_OBJECT_DATA;
+                }
+
+                # The value is encoded as JSON for multivalue
+                if ($InnerIsMultiValue) {
+                    $DFHash{$DFKey}[ $Index - 1 ]{$InnerDFName} = $JSONObject->Decode(
+                        Data => $Value,
+                    );
+
+                    next MAPPING_OBJECT_DATA;
+                }
+
+                # keep the value as is, for single value, non-set
+                $DFHash{$DFKey}[ $Index - 1 ]{$InnerDFName} = $Value;
+
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # references are never unpacked
+            if ( ref $Value ) {
+                $DFHash{$DFKey} = $Value;
+
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # Multivalue fields are exported as JSON strings in the case of CSV exports.
+            my $IsMultiValue = $DynamicFieldConfig->{Config}->{MultiValue};
+            my $IsSet        = ( $DynamicFieldConfig->{FieldType} // '' ) eq 'Set';
+
+            # For indexed access only Sets are JSON encoded
+            if ( $IsMultiValue && $Index ) {
+                $DFHash{$DFKey} //= [];
+                if ($IsSet) {
+                    $DFHash{$DFKey}->[ $Index - 1 ] = $JSONObject->Decode(
+                        Data => $Value,
+                    );
+                }
+                else {
+                    $DFHash{$DFKey}->[ $Index - 1 ] = $Value;
+                }
+
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # The value is encoded as JSON for multivalue and sets
+            if ( $IsMultiValue || $IsSet ) {
+                $DFHash{$DFKey} = $JSONObject->Decode(
+                    Data => $Value,
+                );
+
+                next MAPPING_OBJECT_DATA;
+            }
+
+            # keep the value as is, for single value, non-set
+            $DFHash{$DFKey} = $Value;
+
+            next MAPPING_OBJECT_DATA;
+        }
+
+        # skip this mapping when it could not be handled
+        next MAPPING_OBJECT_DATA;
+    }
+    continue {
+        $RowIndex++;
+    }
+
+    # if empty fields imply that old values should be preserved,
+    #   we tidy the imported dynamic field data of empty or undefined values
+    for my $Key ( sort keys %DFHash ) {
+        if ( $EmptyFieldsLeaveTheOldValues && ( !defined $DFHash{$Key} || $DFHash{$Key} eq '' ) ) {
+            delete $DFHash{$Key};
+        }
+    }
+
+    my %NewVersionData = %DFHash;
+
+    # check if the feature to check for a unique name is enabled
+    if (
+        IsStringWithData( $VersionData->{Name} )
+        && $Kernel::OM->Get('Kernel::Config')->Get('UniqueCIName::EnableUniquenessCheck')
+        )
+    {
+        if ( $Kernel::OM->Get('Kernel::Config')->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message  => "Checking for duplicate names (ClassID: $ObjectData->{ClassID}, "
+                    . "Name: $VersionData->{Name}, ConfigItemID: " . $ConfigItemID || 'NEW' . ')',
+            );
+        }
+
+        my $NameDuplicates = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->UniqueNameCheck(
+            ConfigItemID => $ConfigItemID || 'NEW',
+            ClassID      => $ObjectData->{ClassID},
+            Name         => $VersionData->{Name},
+        );
+
+        # stop processing if the name is not unique
+        if ( IsArrayRefWithData($NameDuplicates) ) {
+
+            # build a string of all duplicate IDs
+            my $NameDuplicatesString = join ', ', @{$NameDuplicates};
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "The name $VersionData->{Name} is already in use by the ConfigItemID(s): "
+                    . $NameDuplicatesString,
+            );
+
+            # set the return code to also include the duplicate name
+            # return undef for the config item id so it will be counted as 'Failed'
+            return undef, "DuplicateName '$VersionData->{Name}'";    ## no critic qw(Subroutines::ProhibitExplicitReturnUndef)
+        }
+    }
+
+    # extract the data that concerns dynamic fields
+    my %DFVersionData =
+        map  { $_ => $NewVersionData{$_} }
+        grep {m/^DynamicField/}
+        keys %NewVersionData;
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    # the specified config item already exists
+    if ($ConfigItemID) {
+
+        my $Success = $ConfigItemObject->ConfigItemUpdate(
+            ConfigItemID  => $ConfigItemID,
+            Name          => $VersionData->{Name},
+            DefinitionID  => $Definition->{DefinitionID},
+            DeplStateID   => $VersionData->{DeplStateID},
+            InciStateID   => $VersionData->{InciStateID},
+            Description   => $VersionData->{Description},
+            VersionString => $VersionData->{VersionString},
+            UserID        => $Param{UserID},
+            %DFHash,
+            ExternalSource => 1,
+        );
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Error when adding the new config item version.",
+            );
+
+            return;
+        }
+
+        # fetch updated data to get version id
+        my $UpdatedConfigItemData = $ConfigItemObject->ConfigItemGet(
+            ConfigItemID => $ConfigItemID,
+            UserID       => $Param{UserID},
+        );
+
+        # import description inline images
+        if ( IsArrayRefWithData( $VersionData->{DescriptionAttachments} ) ) {
+            for my $Attachment ( $VersionData->{DescriptionAttachments}->@* ) {
+                my $VersionAttachmentSuccess = $ConfigItemObject->VersionAttachmentAdd(
+                    VersionID => $UpdatedConfigItemData->{LastVersionID},
+                    $Attachment->%*,
+                    UserID => 1,
+                );
+            }
+        }
+
+        # the last and unmapped entries are attachments
+        my @Attachments = @{ $Param{ImportDataRow} }[ $RowIndex .. $#{ $Param{ImportDataRow} } ];
+
+        # if EmptyFieldsLeaveTheOldValues is false, clear all attachments
+        if ( !$EmptyFieldsLeaveTheOldValues ) {
+            my @Attachments = $ConfigItemObject->ConfigItemAttachmentList(
+                ConfigItemID => $ConfigItemID,
+            );
+            for my $Filename (@Attachments) {
+                my $ClearSuccess = $ConfigItemObject->ConfigItemAttachmentDelete(
+                    ConfigItemID => $ConfigItemID,
+                    Filename     => $Filename,
+                    UserID       => 1,
+                );
+            }
+        }
+
+        if ( $ObjectData->{IncludeAttachments} && @Attachments ) {
+            for my $AttachmentString (@Attachments) {
+                my %Attachment = split( /###/, $AttachmentString, -1 );
+
+                for my $Key ( keys %Attachment ) {
+                    $Attachment{$Key} = $Attachment{$Key} eq '' ? '' : decode_base64( $Attachment{$Key} );
+                }
+
+                KEY:
+                for my $Key (qw( Filename ContentType Disposition )) {
+                    next KEY unless $Attachment{$Key};
+
+                    $Attachment{$Key} = Encode::decode( 'UTF-8', $Attachment{$Key} );
+                }
+
+                # check for duplicates
+                my $Exists = $ConfigItemObject->ConfigItemAttachmentExists(
+                    ConfigItemID => $ConfigItemID,
+                    Filename     => $Attachment{Filename},
+                    UserID       => 1,
+                );
+
+                # if duplicate exists, delete it to overwrite with the imported attachment
+                if ($Exists) {
+                    my $DeleteSuccess = $ConfigItemObject->ConfigItemAttachmentDelete(
+                        ConfigItemID => $ConfigItemID,
+                        Filename     => $Attachment{Filename},
+                        UserID       => 1,
+                    );
+
+                    # check the attachment delete success
+                    if ( !$DeleteSuccess ) {
+
+                        $Kernel::OM->Get('Kernel::System::Log')->Log(
+                            Priority => 'error',
+                            Message  => "Error with importing an attachment for config item $ConfigItemID: Couldn't clean up existing file $Attachment{Filename}!",
+                        );
+
+                        return;
+                    }
+                }
+
+                my $Success = $ConfigItemObject->ConfigItemAttachmentAdd(
+                    ConfigItemID => $ConfigItemID,
+                    UserID       => 1,
+                    %Attachment,
+                );
+
+                # check the attachment add success
+                if ( !$Success ) {
+
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'error',
+                        Message  => "Error with importing an attachment for config item $ConfigItemID: Adding file $Attachment{Filename} failed!",
+                    );
+
+                    return;
+                }
+            }
+        }
+
+        # if ConfigItemUpdate succeeded, we consider the data as changed regardless whether data was different
+        my $RetCode = Translatable('Changed');
+
+        return $ConfigItemID, $RetCode;
+    }
+    else {
+
+        # no config item was found, so add new config item
+        my $ConfigItemID = $ConfigItemObject->ConfigItemAdd(
+            ClassID        => $ObjectData->{ClassID},
+            Name           => $VersionData->{Name},
+            DefinitionID   => $Definition->{DefinitionID},
+            DeplStateID    => $VersionData->{DeplStateID},
+            InciStateID    => $VersionData->{InciStateID},
+            Description    => $VersionData->{Description},
+            VersionString  => $VersionData->{VersionString},
+            UserID         => $Param{UserID},
+            ExternalSource => 1,
+            %DFVersionData,
+        );
+
+        # check the new config item id
+        if ( !$ConfigItemID ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                    "Can't import entity $Param{Counter}: "
+                    . "Error when adding the new config item.",
+            );
+
+            return;
+        }
+
+        # import description inline images
+        if ( IsArrayRefWithData( $VersionData->{DescriptionAttachments} ) ) {
+
+            # get latest version id
+            my $VersionList = $ConfigItemObject->VersionList(
+                ConfigItemID => $ConfigItemID,
+            ) || [];
+            my $LatestVersionID = $VersionList->[-1] // 0;
+
+            for my $Attachment ( $VersionData->{DescriptionAttachments}->@* ) {
+                my $VersionAttachmentSuccess = $ConfigItemObject->VersionAttachmentAdd(
+                    VersionID => $LatestVersionID,
+                    $Attachment->%*,
+                    UserID => 1,
+                );
+            }
+        }
+
+        # the last and unmapped entries are attachments
+        my @Attachments = @{ $Param{ImportDataRow} }[ $RowIndex .. $#{ $Param{ImportDataRow} } ];
+        if ( $ObjectData->{IncludeAttachments} && @Attachments ) {
+            for my $AttachmentString (@Attachments) {
+                my %Attachment = split( /###/, $AttachmentString, -1 );
+
+                for my $Key ( keys %Attachment ) {
+                    $Attachment{$Key} = $Attachment{$Key} eq '' ? '' : decode_base64( $Attachment{$Key} );
+                }
+
+                KEY:
+                for my $Key (qw( Filename ContentType Disposition )) {
+                    next KEY unless $Attachment{$Key};
+
+                    $Attachment{$Key} = Encode::decode( 'UTF-8', $Attachment{$Key} );
+                }
+
+                my $Success = $ConfigItemObject->ConfigItemAttachmentAdd(
+                    ConfigItemID => $ConfigItemID,
+                    UserID       => 1,
+                    %Attachment,
+                );
+
+                # check the attachment add success
+                if ( !$Success ) {
+
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'error',
+                        Message  => "Error with importing an attachment for config item $ConfigItemID: Adding file $Attachment{Filename} failed!",
+                    );
+
+                    return;
+                }
+            }
+        }
+
+        return $ConfigItemID, Translatable('Created');
+    }
+}
+
+=head1 INTERNAL INTERFACE
+
+=head2 _MappingObjectAttributesGet()
+
+recursive function for MappingObjectAttributesGet().
+Definitions for object attributes are passed in C<DynamicFieldRef>.
+The new object attributes are returned.
+C<CountMaxLimit> limits the max length of importable arrays.
+C<CountMaxSetOuterLimit> limits the max length of importable arrays of Set dynamic fields.
+C<CountMaxSetInnerLimit> limits the max length of importable arrays of Set dynamic field content fields.
+
+    push @Elements, $ObjectBackend->_MappingObjectAttributesGet(
+        DynamicFieldRef       => $HashRef,
+        CountMaxLimit         => 3,
+        CountMaxSetOuterLimit => 0,
+        CountMaxSetInnerLimit => 0,
+    );
+
+=cut
+
+sub _MappingObjectAttributesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check params
+    for my $CountMaxAttr (qw(CountMaxLimit CountMaxSetOuterLimit CountMaxSetInnerLimit)) {
+        return unless defined $Param{$CountMaxAttr};
+        return unless ref $Param{$CountMaxAttr} eq '';
+    }
+
+    return unless $Param{DynamicFieldRef};
+    return unless ref $Param{DynamicFieldRef} eq 'HASH';
+
+    my @Elements;
+    for my $DFName ( sort keys $Param{DynamicFieldRef}->%* ) {
+        my $DynamicFieldConfig = $Param{DynamicFieldRef}->{$DFName};
+        my $DFDetails          = $DynamicFieldConfig->{Config};
+
+        # the version without prefix is always possible
+        #   despite for Set fields, which is controlled by CountMaxSetOuterLimit
+        if ( $DynamicFieldConfig->{FieldType} ne 'Set' || $Param{CountMaxSetOuterLimit} ) {
+
+            # create key string, including a potential prefix and a potential count
+            my $Key = join '::',
+                ( $Param{KeyPrefix} || () ),
+                $DFName;
+
+            # create key string, including a potential prefix and a potential count
+            my $Value = join '::',
+                ( $Param{ValuePrefix} || () ),
+                $DFName;
+
+            # add row
+            push @Elements,
+                {
+                    Key   => "DynamicField_$Key",
+                    Value => "DynamicField_$Value",
+                };
+        }
+
+        # Limit the length of importable arrays, even if more elements can be set via the GUI.
+        my $IsMulti  = $DFDetails->{Multiselect} || $DFDetails->{MultiValue};
+        my $CountMax = 0;
+        if ($IsMulti) {
+
+            # use SetOuter limit for Set fields themselves
+            if ( $DynamicFieldConfig->{FieldType} eq 'Set' ) {
+                $CountMax = $Param{CountMaxSetOuterLimit} // 0;
+            }
+
+            # use normal limit for everything else
+            else {
+                $CountMax = $Param{CountMaxLimit} // 3;
+            }
+        }
+
+        for my $Count ( 1 .. $CountMax ) {
+
+            # create key string, including a potential prefix and a potential count
+            my $Key = join '::',
+                ( $Param{KeyPrefix} || () ),
+                $DFName,
+                $Count;
+
+            # create key string, including a potential prefix and a potential count
+            my $Value = join '::',
+                ( $Param{ValuePrefix} || () ),
+                $DFName,
+                $Count;
+
+            # add row
+            push @Elements,
+                {
+                    Key   => "DynamicField_$Key",
+                    Value => "DynamicField_$Value",
+                };
+
+            # in case of Set, iterate inner fields as well
+            if ( $DynamicFieldConfig->{FieldType} eq 'Set' ) {
+
+                my $InnerFields = $DFDetails->{Include};
+
+                if ( IsArrayRefWithData($InnerFields) ) {
+                    for my $FieldItem ( $InnerFields->@* ) {
+                        my $FieldConfig    = $FieldItem->{Definition};
+                        my $InnerDFDetails = $FieldConfig->{Config};
+
+                        # the version without prefix is always possible
+                        {
+                            # create key string, including a potential prefix and a potential count
+                            my $InnerKey = join '::',
+                                ( $Param{KeyPrefix} || () ),
+                                $DFName,
+                                $Count,
+                                ( $Param{KeyPrefix} || () ),
+                                $FieldConfig->{Name};
+
+                            # create key string, including a potential prefix and a potential count
+                            my $InnerValue = join '::',
+                                ( $Param{ValuePrefix} || () ),
+                                $DFName,
+                                $Count,
+                                ( $Param{ValuePrefix} || () ),
+                                $FieldConfig->{Name};
+
+                            # add row
+                            push @Elements,
+                                {
+                                    Key   => "DynamicField_$InnerKey",
+                                    Value => "DynamicField_$InnerValue",
+                                };
+                        }
+
+                        my $InnerIsMulti  = $InnerDFDetails->{Multiselect} || $InnerDFDetails->{MultiValue};
+                        my $CountInnerMax = $InnerIsMulti ? ( $Param{CountMaxSetInnerLimit} // 0 ) : 0;
+
+                        for my $CountInner ( 1 .. $CountInnerMax ) {
+
+                            # create key string, including a potential prefix and a potential count
+                            my $InnerKey = join '::',
+                                ( $Param{KeyPrefix} || () ),
+                                $DFName,
+                                $Count,
+                                ( $Param{KeyPrefix} || () ),
+                                $FieldConfig->{Name},
+                                $CountInner;
+
+                            # create key string, including a potential prefix and a potential count
+                            my $InnerValue = join '::',
+                                ( $Param{ValuePrefix} || () ),
+                                $DFName,
+                                $Count,
+                                ( $Param{ValuePrefix} || () ),
+                                $FieldConfig->{Name},
+                                $CountInner;
+
+                            # add row
+                            push @Elements,
+                                {
+                                    Key   => "DynamicField_$InnerKey",
+                                    Value => "DynamicField_$InnerValue",
+                                };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return @Elements;
+}
+
+=head2 _DFSearchAttributesGet()
+
+recursive function for SearchAttributesGet()
+
+    $ObjectBackend->_DFSearchAttributesGet(
+        XMLDefinition => $ArrayRef,
+        AttributeList => $ArrayRef,
+    );
+
+=cut
+
+sub _DFSearchAttributesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return unless $Param{DynamicFieldRef};
+    return unless ref $Param{DynamicFieldRef} eq 'HASH';
+
+    my @Attributes;
+    DF_NAME:
+    for my $DFName ( sort keys $Param{DynamicFieldRef}->%* ) {
+        my $DynamicFieldConfig = $Param{DynamicFieldRef}->{$DFName};
+
+        # create key string, including a potential prefix
+        my $Key = join '::',
+            ( $Param{KeyPrefix} || () ),
+            $DynamicFieldConfig->{Name};
+
+        # create name string, including a potential prefix
+        my $Name = join '::',
+            ( $Param{NamePrefix} || () ),
+            $DynamicFieldConfig->{Label};
+
+        # add attribute, if marked as searchable
+
+        # TODO: determine whether DF is searchable: $DynamicFieldConfig->{Searchable}
+        # TODO: use search field from dynamic field driver
+        if (1) {
+
+            if ( $DynamicFieldConfig->{FieldType} eq 'Text' || $DynamicFieldConfig->{FieldType} eq 'TextArea' ) {
+                push @Attributes,
+                    {
+                        Key   => $Key,
+                        Name  => $Name,
+                        Input => {
+                            Type        => 'Text',
+                            Translation => $DynamicFieldConfig->{Input}->{Input}->{Translation},
+                            Size        => $DynamicFieldConfig->{Input}->{Input}->{Size} || 60,
+                            MaxLength   => $DynamicFieldConfig->{Input}->{Input}->{MaxLength},
+                        },
+                    };
+            }
+            elsif ( $DynamicFieldConfig->{FieldType} eq 'GeneralCatalog' ) {
+
+                # get general catalog list
+                my $GeneralCatalogList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+                    Class => $DynamicFieldConfig->{Config}->{Class},
+                );
+
+                push @Attributes,
+                    {
+                        Key   => $Key,
+                        Name  => $Name,
+                        Input => {
+                            Type        => 'Selection',
+                            Data        => $GeneralCatalogList,
+                            Translation => 0,                     # TODO: determine whether items should be translated $DynamicFieldConfig->{Input}->{Input}->{Translation},
+                            Size        => 5,
+                            Multiple    => 1,
+                        },
+                    };
+            }
+        }
+
+        # TODO: handle Sets
+        next DF_NAME unless $DynamicFieldConfig->{Sub};
+
+        # start recursion, if "Sub" was found
+        push @Attributes, $Self->_DFSearchAttributesGet(
+            DynamicFieldRef => $DynamicFieldConfig->{Sub},
+            KeyPrefix       => $Key,
+            NamePrefix      => $Name,
+        );
+    }
+
+    return @Attributes;
+}
+
+=head2 _DFSearchDataPrepare()
+
+recursion function to prepare the export XML search params
+
+    my %DFSearchParams = $ObjectBackend->_DFSearchDataPrepare(
+        DynamicFieldRef => $DynamicFieldRef,
+        SearchData      => $HashRef,
+    );
+
+=cut
+
+sub _DFSearchDataPrepare {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return unless $Param{DynamicFieldRef};
+    return unless ref $Param{DynamicFieldRef} eq 'HASH';
+    return unless $Param{SearchData};
+    return unless ref $Param{SearchData} eq 'HASH';
+
+    my %DFSearchParams;
+    DF_NAME:
+    for my $DFName ( sort keys $Param{DynamicFieldRef}->%* ) {
+        my $DynamicFieldConfig = $Param{DynamicFieldRef}->{$DFName};
+
+        # create key
+        my $Key = $Param{Prefix} ? $Param{Prefix} . '::' . $DynamicFieldConfig->{Name} : $DynamicFieldConfig->{Name};
+
+        next DF_NAME unless $Param{SearchData}->{$Key};    # '#####' separated
+
+        $DFSearchParams{"DynamicField_$Key"} = { Equals => [ split /#####/, $Param{SearchData}->{$Key} ] };
+
+        # TODO: support Sets
+        next DF_NAME if !$DynamicFieldConfig->{Sub};
+
+        # start recursion, if "Sub" was found
+        my %SetSearchParams = $Self->_DFSearchDataPrepare(
+            XMLDefinition => $DynamicFieldConfig->{Sub},
+            What          => $Param{What},
+            SearchData    => $Param{SearchData},
+            Prefix        => $Key,
+        );
+        @DFSearchParams{ keys %SetSearchParams } = values %SetSearchParams;
+    }
+
+    return %DFSearchParams;
+}
+
+=head2 _DFImportSearchDataPrepare()
+
+recursive function to prepare the import dynamic field search params
+
+    my %DFImportSearchParams = $ObjectBackend->_DFImportSearchDataPrepare(
+        DynamicFieldRef => $Definition->{DynamicFieldRef},
+        Identifier      => \%Identifier,
+        Prefix          => $Key,    # passed only in the recursion case
+    );
+
+=cut
+
+sub _DFImportSearchDataPrepare {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return unless $Param{DynamicFieldRef};
+    return unless ref $Param{DynamicFieldRef} eq 'HASH';
+    return unless $Param{Identifier};
+    return unless ref $Param{Identifier} eq 'HASH';
+
+    my %DFSearchParams;
+    DF_NAME:
+    for my $DFName ( sort keys $Param{DynamicFieldRef}->%* ) {
+
+        my $DynamicFieldConfig = $Param{DynamicFieldRef}->{$DFName};
+
+        # create key
+        my $Key = join '::',
+            ( $Param{Prefix} || () ),
+            $DFName;
+
+        next DF_NAME unless $Param{Identifier}->{"DynamicField_$Key"};
+
+        # TODO: this is broken for multivalue dynamic fields
+        $DFSearchParams{"DynamicField_$Key"} = { Equals => [ split /#####/, $Param{Identifier}->{"DynamicField_$Key"} ] };
+
+        # check if value transformation is necessary
+        my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+        my $IsReferenceField          = $DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Behavior           => 'IsReferenceField',
+        );
+        if ($IsReferenceField) {
+
+            my $Value = $Param{Identifier}->{"DynamicField_$Key"};
+
+            next DF_NAME unless $Value;
+
+            # TODO skipping multivalue fields
+            next DF_NAME if ref $Value;
+
+            # perform search based on value and previously fetched data
+            my @ObjectIDs = $DynamicFieldBackendObject->SearchObjects(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Term               => $Value,
+                ExternalSource     => 1,
+                ParamObject        => $Kernel::OM->Get('Kernel::System::Web::Request'),    ## nofilter(TidyAll::Plugin::OTOBO::Perl::ParamObject)
+                UserID             => $Param{UserID},
+            );
+
+            if ( scalar @ObjectIDs == 1 ) {
+                $DFSearchParams{"DynamicField_$Key"} = { Equals => [ split /#####/, $ObjectIDs[0] ] };
+            }
+        }
+
+        # TODO: handle Sets
+        next DF_NAME unless $DynamicFieldConfig->{Sub};
+
+        # start recursion, if "Sub" was found
+        my %SetSearchParams = $Self->_DFImportSearchDataPrepare(
+            DynamicFieldRef => $DynamicFieldConfig->{Sub},
+            Identifier      => $Param{Identifier},
+            Prefix          => $Key,
+        );
+        @DFSearchParams{ keys %SetSearchParams } = values %SetSearchParams;
+    }
+
+    return %DFSearchParams;
+}
+
+1;

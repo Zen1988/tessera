@@ -1,0 +1,51 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<fieldset class="oooDynamicFields">
+[% RenderBlockStart("ServiceDynamicField") %]
+[% IF Data.TitleField %]
+    <p title="[% Data.Text | html %]" style="[% Data.Style | html %]">[% Data.Text | html %]</p>
+[% ELSE %]
+    <p class="ooo12">
+        <span class="ooo12g">[% Translate(Data.Label) | html %]:</span>
+[% RenderBlockStart("ServiceDynamicFieldLink") %]
+        <span title="[% Data.Title %]"><a href="[% Data.Link | Interpolate %]"[% IF Data.LinkPreview %] data-trigger="floater" data-floater-url="[% Data.LinkPreview | Interpolate %]"[% END %] target="_blank" class="DynamicFieldLink">[% Data.Value %]</a></span>
+[% RenderBlockEnd("ServiceDynamicFieldLink") %]
+[% RenderBlockStart("ServiceDynamicFieldPlain") %]
+        <span title="[% Data.Title %]">[% Data.Value %]</span>
+[% RenderBlockEnd("ServiceDynamicFieldPlain") %]
+    </p>
+    <div class="Clear"></div>
+[% END %]
+[% RenderBlockEnd("ServiceDynamicField") %]
+</fieldset>
+
+<style>
+    fieldset.oooDynamicFields {
+        border: none;
+        margin-top: 50px;
+        margin-left: 0px;
+        padding-left: 0px;
+        /* position: absolute; */
+        bottom: 0;
+    }
+
+    .oooDynamicFields .ooo12g {
+        font-size: 12px;
+        letter-spacing: 0.3px;
+        color: #7f809d;
+    }
+</style>

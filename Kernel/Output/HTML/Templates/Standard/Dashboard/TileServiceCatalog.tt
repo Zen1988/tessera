@@ -1,0 +1,31 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div id="oooTile[% Data.TileID | html %]" class="oooTile oooTile_ServiceCatalog">
+    <h2>[% Translate(Data.HeaderText) | html %]</h2>
+    <div class="oooServiceCatalogWrapper">
+        <ul class="oooParentServiceList">
+[% RenderBlockStart("ParentService") %]
+            <li title="[% Translate('Show details of this service.') | html %]" data-service-id="[% Data.ServiceID | html %]" class="oooServiceIDAvailable">[% Translate(Data.NameShort) | html %]</li>
+[% RenderBlockEnd("ParentService") %]
+[% RenderBlockStart("ParentServiceMore") %]
+            <li class="oooServiceMore oooServiceIDAvailable" data-service-id="All">
+                <div class="oooServiceMoreSearch"><i class="ooofo ooofo-search"></i><span>[% Translate('Search') | html %]</span></div>
+                <div class="oooServiceMoreInfo">+ [% Data.NumberOfServices | html %]</div>
+            </li>
+[% RenderBlockEnd("ParentServiceMore") %]
+        </ul>
+    </div>
+</div>

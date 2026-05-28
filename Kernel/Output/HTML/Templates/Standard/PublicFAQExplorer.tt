@@ -1,0 +1,115 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div id="oooContent">
+    <div id="oooHeader">
+        <div>
+            <h1>[% Translate("FAQ Explorer") | html %]</h1>
+            <div class="BreadCrumb">
+[% RenderBlockStart("FAQPathCategoryElement") %]
+                <a href="[% Env("Baselink") %]Action=PublicFAQExplorer;CategoryID=[% Data.CategoryID | uri %]">
+                    <h3 class='ooog'>[% Translate(Data.Name) | html %]</h3>
+                </a>
+[% RenderBlockEnd("FAQPathCategoryElement") %]
+[% RenderBlockStart("FAQPathCategoryElementNoLink") %]
+                <h3 class='ooog'>[% Translate(Data.Name) | html %]</h3>
+[% RenderBlockEnd("FAQPathCategoryElementNoLink") %]
+            </div>
+        </div>
+        <div id="oooSearchBox">
+            <form action="[% Env("CGIHandle") %]" method="post" name="compose">
+                <input type="hidden" name="Action" value="PublicFAQExplorer"/>
+                <input type="hidden" name="Subaction" value="Search"/>
+
+                <h3 class='ooog'>
+                    <i class="ooofo ooofo-search"></i>
+                    <input type="text" name="What" id="oooSearch" title="[% Translate('FAQ Search') | html %]"/>
+                    <span id='oooSearchLabel'>[% Translate('FAQ Search') | html %]</span>
+                </h3>
+            </form>
+        </div>
+    </div>
+
+    <div id="oooMainBox">
+
+[% RenderBlockStart("Subcategories") %]
+        <div class="WidgetSimple">
+[% RenderBlockStart("OverviewResult") %]
+            <div class="Header">
+                <h2>[% Translate("Subcategories") | html %]</h2>
+                <div class="Clear"></div>
+            </div>
+
+            <div class="oooSubBox">
+# no whitespace/newline results in no whitespace between display: inline-block; elements
+[% RenderBlockStart("OverviewResultRow") %]<a class="oooSub" href="[% Env("Baselink") %]Action=[% Env("Action") %];CategoryID=[% Data.CategoryID | uri %]">
+                    <h3>[% Translate(Data.Name) | html %]</h3>
+                    [% IF Data.SubCategoryCount %]
+                    <p class="oooSubCount">[% Data.SubCategoryCount | html %]</p>
+                    [% END %]
+                    <p class="ooog oooComment">[% Translate(Data.Comment) | html %]</p>
+                </a>[% RenderBlockEnd("OverviewResultRow") %]
+# RenderBlockEnd("OverviewResultRow")
+            </div>
+[% RenderBlockEnd("OverviewResult") %]
+        </div>
+[% RenderBlockEnd("Subcategories") %]
+
+
+[% RenderBlockStart("FAQItemList") %]
+        <div class="WidgetSimple">
+
+            <div class="Header">
+[% IF Data.CategoryID == 0 %]
+                <h2>[% Translate("Latest updated FAQ articles") | html %]</h2>
+[% ELSE %]
+                <h2>[% Translate("FAQ Articles") | html %]</h2>
+[% END %]
+[% RenderBlockStart("Pagination") %]
+                <div class="Pagination ooo10g">
+                    <strong>[% Data.Result | html %]</strong> [% Translate("of") | html %] <strong>[% Data.TotalHits | html %]</strong> - [% Translate("Page") | html %]: [% Data.SiteNavBar %]
+                </div>
+[% RenderBlockEnd("Pagination") %]
+                <div class="Clear"></div>
+            </div>
+
+            <div class="oooFAQBox">
+[% RenderBlockStart("NoFAQDataFoundMsg") %]
+                <a class="oooFAQ" href="#">
+                    <h3>[% Translate("No FAQ articles found.") | html %]</h3>
+                </a>
+[% RenderBlockEnd("NoFAQDataFoundMsg") %]
+[% RenderBlockStart("Record") %]
+                <a class="oooFAQ" href="[% Env("Baselink") %]Action=PublicFAQZoom;ItemID=[% Data.FAQID | uri %]">
+                    <h3 class="Title" title="[% Data.Title | html %]">[% Data.Title | html %]</h3>
+[% RenderBlockStart("RecordLanguage") %]
+                    <p class="Language ooog" title="[% Data.Language | html %]">[% Data.Language | truncate(5) | html %]</p>
+[% RenderBlockEnd("RecordLanguage") %]
+                </a>
+[% RenderBlockEnd("Record") %]
+
+[% RenderBlockStart("BottomSubNavigation") %]
+                <div class="Pagination">
+                    <strong>[% Data.Result | html %]</strong> [% Translate("of") | html %] <strong>[% Data.TotalHits | html %]</strong> - [% Translate("Page") | html %]: [% Data.SiteNavBar %]
+                </div>
+                <div class="Clear"></div>
+[% RenderBlockEnd("BottomSubNavigation") %]
+            </div>
+        </div>
+[% RenderBlockEnd("FAQItemList") %]
+
+    </div>
+</div>

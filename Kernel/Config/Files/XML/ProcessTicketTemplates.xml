@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Changes">
+    <Setting Name="StandardTemplate::Types" Required="0" Valid="1">
+        <Description Translatable="1">Defines the list of types for templates.</Description>
+        <Navigation>Core::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Answer" Translatable="1">Answer</Item>
+                <Item Key="Create" Translatable="1">Create</Item>
+                <Item Key="Forward" Translatable="1">Forward</Item>
+                <Item Key="Email" Translatable="1">Email</Item>
+                <Item Key="PhoneCall" Translatable="1">Phone call</Item>
+                <Item Key="Note" Translatable="1">Note</Item>
+                <Item Key="ProcessDialog" Translatable="1">Process dialog</Item>
+            </Hash>
+        </Value>
+    </Setting>
+</otobo_config>

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AdminGenericAgentImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">GenericAgent Import Export</Item>
+                    <Item Key="Title">GenericAgentImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminGenericAgentImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.GenericAgentImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-GenericAgentImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for GenericAgent import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::GenericAgentImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminGroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Group Import Export</Item>
+                    <Item Key="Title">GroupImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminGroupImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.GroupImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-GroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Group import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::GroupImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminQueueImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Queue Import Export</Item>
+                    <Item Key="Title">QueueImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminQueueImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.QueueImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-QueueImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Queue import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::QueueImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminQueueTemplatesImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Queue-Template relations Import Export</Item>
+                    <Item Key="Title">QueueTemplatesImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminQueueTemplatesImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.QueueTemplatesImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-QueueTemplatesImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Queue-Template relations import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::QueueTemplatesImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminRoleImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Role Import Export</Item>
+                    <Item Key="Title">RoleImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminRoleImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.RoleImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-RoleImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Role import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::RoleImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminRoleGroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Role-Group Relations Import Export</Item>
+                    <Item Key="Title">RoleGroupImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminRoleGroupImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.RoleGroupImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-RoleGroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Role-Group relations import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::RoleGroupImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminTemplateImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Template Import Export</Item>
+                    <Item Key="Title">TemplateImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminTemplateImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.TemplateImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-TemplateImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Template import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::TemplateImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminTypeImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Type Import Export</Item>
+                    <Item Key="Title">TypeImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminTypeImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.TypeImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###003-TypeImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Type import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::TypeImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+</otobo_config>

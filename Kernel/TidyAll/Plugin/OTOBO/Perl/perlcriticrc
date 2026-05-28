@@ -1,0 +1,115 @@
+# STERN, per default only $SEVERITY_HIGHEST = 5 and $SEVERITY_HIGH = 4 are covered.
+# Policies with a lower severity policies can be explicitly added below.
+severity = 4
+
+# This is for the case when the Perl::Bangs and the Perl::Community policies are installed
+# and no theme is specified. In that case the policies should not be checked. But developpers
+# are free to reenble them.
+#
+# Freedode is a special case. Many community policies have an alias name
+# with Freenode in the name. These policies would be checked twice when
+# Community rules are activated.
+exclude = Freenode Bangs Community
+
+# test scripts are scripts
+program-extensions = .pl .t
+
+# Format the violations, indicating the policy name, brief description and explanation.
+# See https://metacpan.org/pod/Per l::Critic::Violation#OVERLOADS for the escape characters.
+# In vim move the cursor to the file name and type <c-w>F for opening the file at the relevant line
+# in a new horizontal split window.
+verbose = %p violated at %f %l column %c (Severity: %s)\n  %m\n%e\n
+
+# useful for batch editing:
+#verbose = sp +%l %f\n no critic qw(%p)
+
+# including the source code %r that causes the violation:
+#verbose = %p violated at line %l column %c (Severity: %s)\n  %m\n%r\n
+
+# The OTOBO specific policies don't have to be added explicity,
+
+# Raise the severity of some policies
+# that would not be included because their default severity is below 4.
+[ClassHierarchies::ProhibitExplicitISA]
+severity = 4
+
+[ControlStructures::ProhibitUnlessBlocks]
+severity = 4
+
+[Miscellanea::ProhibitUselessNoCritic]
+severity = 4
+
+[Miscellanea::ProhibitUnrestrictedNoCritic]
+severity = 4
+
+[Modules::ProhibitConditionalUseStatements]
+severity = 4
+
+[Subroutines::ProhibitAmpersandSigils]
+severity = 4
+
+[ValuesAndExpressions::ProhibitSpecialLiteralHeredocTerminator]
+severity = 4
+[ValuesAndExpressions::RequireQuotedHeredocTerminator]
+severity = 4
+[ValuesAndExpressions::RequireUpperCaseHeredocTerminator]
+severity = 4
+
+[Variables::ProhibitUnusedVariables]
+severity = 4
+
+# allow lines like:
+#  my $ToDo = todo('too hard for now');
+#  in future: my $ToDo = $Test->{ToDo} ? todo('Timeouts occur. See https://github.com/RotherOSS/otobo/issues/748') : '';
+[Variables::ProhibitUnusedVarsStricter]
+#severity                          = 4    # activate only after the code has been cleaned up
+allow_unused_subroutine_arguments = 1
+allow_if_computed_by              = todo
+
+[BuiltinFunctions::ProhibitStringySplit]
+severity = 4
+
+[Variables::RequireInitializationForLocalVars]
+severity = 4
+
+[RegularExpressions::ProhibitCaptureWithoutTest]
+severity = 4
+
+[Documentation::RequirePackageMatchesPodName]
+severity = 4
+
+[BuiltinFunctions::ProhibitStringySplit]
+severity = 4
+
+[Variables::ProhibitPerl4PackageNames]
+severity = 4
+
+# Specific settings for some policies.
+
+# be a bit more relaxed about brief opens and allow more that the default 9 lines
+[InputOutput::RequireBriefOpen]
+lines = 20
+
+[Modules::ProhibitEvilModules]
+modules = CGI {OTOBO switched to Plack} Class::ISA File::Slurp {use Path::Class::File::slurp() instead} Pod::Plainer Shell Switch vars {Use 'our' variables instead of 'use vars'} Data::Dumper {Use Main::Dump() instead of Dumper() and don't forget to remove debug code like print STDERR Dumper(...)} Data::Dx {No debug statements in productive code} /Acme::/ {Acme modules are just for fun} Module::Refresh {Use Kernel::System::ModuleRefresh instead}
+
+[Variables::ProhibitEvilVariables]
+variables = $DB::single {clean up your debug statements}
+variables = @*          {avoid the $ref-@* error}
+
+[Subroutines::RequireFinalReturn]
+terminal_methods = FatalError CustomerFatalError
+
+# turn off some modules
+
+# because this is covered by Modules::ProhibitEvilModules
+[-Community::DiscouragedModules]
+
+# This setup does not work as
+#    return 1 unless $Content =~ m{<otrs_config.*?version="2.0"};
+# will still be triggered.
+# So leave this policy disabled.
+#[ControlStructures::ProhibitPostfixControls]
+#Severity = 4
+#Allow = if for until when while
+#Flowcontrol = warn die carp croak cluck confess goto exit return

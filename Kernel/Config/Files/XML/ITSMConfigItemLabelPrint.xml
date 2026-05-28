@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Config">
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the print ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::ITSMConfigItem::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###PageSetting" Required="1" Valid="1">
+        <Description Translatable="1">Used page size in mm and other page settings. Be carefull if you change the size, it´s possible that the label is unusable.</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="PageWidth">76.6</Item>
+                <Item Key="PageHeight">40.0</Item>
+                <Item Key="PageOrientation">normal</Item>
+                <Item Key="MarginTop">4</Item>
+                <Item Key="MarginRight">4</Item>
+                <Item Key="MarginLeft">4</Item>
+                <Item Key="MarginBottom">4</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###LogoSetting" Required="0" Valid="1">
+        <Description Translatable="1">Used logo settings for the label. The best size is 142 x 187 px. Please use px here.</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="LogoPath">var/httpd/htdocs/skins/Agent/default/img/LogoLabelPrint.png</Item>
+                <Item Key="DisplayType">Reduce</Item>
+                <Item Key="ImageWidth">142</Item>
+                <Item Key="ImageHeight">179</Item>
+                <Item Key="ImagePosition_X">left</Item>
+                <Item Key="ImagePosition_Y">top</Item>
+                <Item Key="MarginBottom">4</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###TableSetting" Required="1" Valid="1">
+        <Description Translatable="1">Used table settings for the label.</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Font">ProportionalBold</Item>
+                <Item Key="TitleWidth">50</Item>
+                <Item Key="ValueWidth">50</Item>
+                <Item Key="Type">Cut</Item>
+                <Item Key="Border">0</Item>
+                <Item Key="FontSize">9</Item>
+                <Item Key="Padding">1</Item>
+                <Item Key="PaddingLeft">3</Item>
+                <Item Key="PaddingTop">1</Item>
+                <Item Key="PaddingBottom">3</Item>
+                <Item Key="PaddingRight">1</Item>
+                <Item Key="TablePosition_X">40</Item>
+                <Item Key="TablePosition_Y">top</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###HLineSetting" Required="0" Valid="1">
+        <Description Translatable="1">Used settings for the horizontal line.</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="HLinePosition_X">left</Item>
+                <Item Key="HLinePosition_Y">20</Item>
+                <Item Key="Color">#101010</Item>
+                <Item Key="LineWidth">.5</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###BarcodeSetting" Required="0" Valid="1">
+        <Description Translatable="1">Used barcode settings for the label. Options have the following meaning:
+- BarcodeField: Attribute of the config item used for the barcode.
+- Caption: Whether to put the data below the barcode as caption. Ignored for QR code.
+- QRCodeLink: When creating a QR code, set the link destination.
+- CustomLink: Define a custom link via Template::Toolkit syntax for QR codes.
+- Code: Which type of code to print.
+- Zone: The base height of the barcode in points.
+- LowerMendingZone: If present and applicable, bars for non-printing characters (e.g. start and stop characters) will be extended downward by this many points, and printing characters will be shown below their respective bars. This is enabled by default for EAN-13 barcodes.
+- Font: Font to use for the barcode caption.
+- FontSize: Font size to use for the barcode caption.
+        </Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="BarcodeField">Number</Item>
+                <Item Key="Caption" ValueType="Checkbox">0</Item>
+                <Item Key="QRCodeLink" ValueType="Select" SelectedID="AgentITSMConfigItemZoom">
+                    <Item ValueType="Option" Value="AgentITSMConfigItemZoom">AgentITSMConfigItemZoom</Item>
+                    <Item ValueType="Option" Value="CustomerITSMConfigItemZoom">CustomerITSMConfigItemZoom</Item>
+                    <Item ValueType="Option" Value="Custom">Custom</Item>
+                </Item>
+                <Item Key="CustomLink"></Item>
+                <Item Key="Code" ValueType="Select" SelectedID="code128">
+                    <Item ValueType="Option" Value="codabar">codabar</Item>
+                    <Item ValueType="Option" Value="code128">code128</Item>
+                    <Item ValueType="Option" Value="code39">code39</Item>
+                    <Item ValueType="Option" Value="ean128">ean128</Item>
+                    <Item ValueType="Option" Value="ean13">ean13</Item>
+                    <Item ValueType="Option" Value="itf">itf</Item>
+                    <Item ValueType="Option" Value="qr">qr</Item>
+                </Item>
+                <Item Key="Zone">20</Item>
+                <Item Key="LowerMendingZone">15</Item>
+                <Item Key="Font">Helvetica</Item>
+                <Item Key="FontSize">10</Item>
+                <Item Key="Scale_X">0.7</Item>
+                <Item Key="Scale_Y">0.7</Item>
+                <Item Key="BarcodePosition_X">4</Item>
+                <Item Key="BarcodePosition_Y">4</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###FooterSetting" Required="0" Valid="1">
+        <Description Translatable="1">Used footer settings for the label. Template::Toolkit is supported, thus config item data can be used like "Number: [% Data.Number %] (For ConfigItem DynamicFields with a namespace, please use the following syntax:
+[% DFName = 'DynamicField_DynFieldName' %][% Data.$DFName %] )".</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="FooterText"></Item>
+                <Item Key="Font">Proportional</Item>
+                <Item Key="FontSize">4</Item>
+                <Item Key="Color">#000000</Item>
+                <Item Key="Align">right</Item>
+                <Item Key="Lead">1</Item>
+                <Item Key="FooterPosition_X">0</Item>
+                <Item Key="FooterPosition_Y">8</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::AgentITSMConfigItemLabelPrint###Text" Required="0" Valid="1">
+        <Description Translatable="1">Define several lines (one entry per line) to be printed as label content. Template::Toolkit is supported, thus config item data can be used like "Number: [% Data.Number %] (For ConfigItem DynamicFields with a namespace, please use the following syntax:
+[% DFName = 'DynamicField_DynFieldName' %][% Data.$DFName %] )".</Description>
+        <Navigation>Frontend::Agent::View::AgentITSMConfigItemLabelPrint</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="String"></DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentITSMConfigItemLabelPrint" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>itsm-configitem</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Config Item Label Print</Item>
+                    <Item Key="Title">Print Label</Item>
+                    <Item Key="NavBarName">Config Item</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentITSMConfigItemLabelPrint###003-AgentITSMConfigItemLabelPrint" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::MenuModule###450-LabelPrint" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to print a label of the configuration item in the zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::ITSMConfigItem::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::MenuGeneric</Item>
+                <Item Key="Name">Label Print</Item>
+                <Item Key="Description">Label Print</Item>
+                <Item Key="Action">AgentITSMConfigItemLabelPrint</Item>
+                <Item Key="Link">Action=AgentITSMConfigItemLabelPrint;ConfigItemID=[% Data.ConfigItemID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="LinkParam">target="print"</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+</otobo_config>

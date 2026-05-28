@@ -1,0 +1,210 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+[% RenderBlockStart("ContentLargeConfigItemGenericFilter") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericFilterNavBar") %]
+<span class="Pagination">
+    [% Data.SiteNavBar %]
+</span>
+[% RenderBlockEnd("ContentLargeConfigItemGenericFilterNavBar") %]
+[% RenderBlockEnd("ContentLargeConfigItemGenericFilter") %]
+
+#<!-- This form will not be submitted, we need it for the AJAX calls. -->
+<form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="CustomerID" value="[% Data.CustomerID | html %]"/>
+    <input type="hidden" name="CustomerUserID" value="[% Data.CustomerUserID | html %]"/>
+    <input type="hidden" name="Filter[% Data.Name | html %]" id="Filter[% Data.Name | html %]" value="[% Data.FilterValue | html %]" />
+    <input type="hidden" name="AdditionalFilter[% Data.Name | html %]" id="AdditionalFilter[% Data.Name | html %]" value="[% Data.AdditionalFilterValue | html %]" />
+    <table class="DataTable">
+        <thead>
+[% RenderBlockStart("ContentLargeConfigItemGenericHeader") %]
+            <tr>
+
+[% RenderBlockStart("GeneralOverviewHeader") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderMeta") %]
+                <th class="DashboardHeader [% Data.CSS | html %]" data-column="[% Data.HeaderColumnName | html %]" title="[% Translate(Data.Title) | html %]">
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderMetaLink") %]
+                    <a id="[% Data.HeaderColumnName | html %]FlagOverviewControl[% Data.Name | html %]" name="[% Data.HeaderColumnName | html %]OverviewControl[% Data.Name | html %]" href="#" title="[% Translate(Data.Title) | html %]"></a>
+
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderMetaLink") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderMetaEmpty") %]
+                    <span title="[% Translate(Data.HeaderColumnName) | html %]"></span>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderMetaEmpty") %]
+                </th>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderMeta") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderConfigItemHeader") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderConfigItemNumberColumn") %]
+                <th class="DashboardHeader ConfigItemNumber [% Data.CSS | html %]" data-column="ConfigItemNumber">
+                    <a id="ConfigItemNumberOverviewControl[% Data.Name | html %]" name="ConfigItemNumberOverviewControl[% Data.Name | html %]" href="#" title="[% Data.Title | html %]" >[% Config("ConfigItem::Hook") %]</a>
+                </th>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderConfigItemNumberColumn") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumn") %]
+                <th class="DashboardHeader [% Data.HeaderColumnName | html %] [% Data.CSS | html %]" data-column="[% Data.HeaderColumnName | html %]">
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnFilterLink") %]
+                    <a href="#" class="ColumnSettingsTrigger" title="[% Data.FilterTitle | html %]">
+                        <i class="fa fa-filter"></i>
+                    </a>
+                    <div class="ColumnSettingsContainer">
+                        <div class="ColumnSettingsBox">
+                            [% Data.ColumnFilterStrg %]
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnFilterLinkCustomerIDSearch") %]
+                            <input type="text" class="CustomerIDAutoComplete" autocomplete="off" />
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnFilterLinkCustomerIDSearch") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnFilterLinkUserSearch") %]
+                            <input type="text" class="UserAutoComplete" autocomplete="off" />
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnFilterLinkUserSearch") %]
+                            <a href="#" class="DeleteFilter Hidden"><i class="fa fa-trash-o"></i></a>
+                        </div>
+                    </div>
+
+                    <a id="[% Data.HeaderColumnName | html %]OverviewControl[% Data.Name | html %]" name="[% Data.HeaderColumnName | html %]OverviewControl[% Data.Name | html %]" href="#" title="[% Data.Title | html %]" >[% Data.HeaderNameTranslated | html %]</a>
+
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnFilterLink") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnLink") %]
+                    <a id="[% Data.HeaderColumnName | html %]OverviewControl[% Data.Name | html %]" name="[% Data.HeaderColumnName | html %]OverviewControl[% Data.Name | html %]" href="#" title="[% Data.Title | html %]" >[% Data.HeaderNameTranslated | html %]</a>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnLink") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnFilter") %]
+                    <a href="#" class="ColumnSettingsTrigger" title="[% Data.FilterTitle | html %]">
+                        <i class="fa fa-filter"></i>
+                    </a>
+                    <div class="ColumnSettingsContainer">
+                        <div class="ColumnSettingsBox">
+                            [% Data.ColumnFilterStrg %]
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnFilterLinkCustomerUserSearch") %]
+                            <input type="text" class="CustomerUserAutoComplete" autocomplete="off" />
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnFilterLinkCustomerUserSearch") %]
+                            <a href="#" class="DeleteFilter Hidden"><i class="fa fa-trash-o"></i></a>
+                        </div>
+                    </div>
+                    <span class="Gray" title="[% Data.Title | html %]" >[% Data.HeaderNameTranslated | html %]</span>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnFilter") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericHeaderColumnEmpty") %]
+                    <span class="Gray" title="[% Data.Title | html %]" >[% Data.HeaderNameTranslated %]</span>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumnEmpty") %]
+                </th>
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderColumn") %]
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeaderConfigItemHeader") %]
+
+[% RenderBlockEnd("GeneralOverviewHeader") %]
+
+            </tr>
+
+[% RenderBlockEnd("ContentLargeConfigItemGenericHeader") %]
+        </thead>
+
+        <tbody>
+[% RenderBlockStart("ContentLargeConfigItemGenericRow") %]
+            <tr class="MasterAction">
+
+[% RenderBlockStart("GeneralOverviewRow") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericRowMeta") %]
+                <td class="[% Data.ClassTable | html %] Flags" title="[% Translate(Data.Title) | html %]">
+[% RenderBlockStart("ContentLargeConfigItemGenericRowMetaImage") %]
+                    <div class="[% Data.Class | html %] Small" title="[% Translate(Data.Title) | html %]">
+                        <span class="[% Data.ClassSpan | html %]">
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <em>[% Translate(Data.Title) | html %]</em>
+                        </span>
+                    </div>
+[% RenderBlockEnd("ContentLargeConfigItemGenericRowMetaImage") %]
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericRowMeta") %]
+
+#            <td class="W10pc">
+#                <a href="[% Env("Baselink") %]Action=AgentITSMConfigItemZoom;ConfigItemID=[% Data.ConfigItemID %]" title="[% Data.Title | html %]" class="AsBlock MasterActionLink">[% Data.ConfigItemNumber | html %]</a>
+#            </td>
+#            <td class="W50pc">
+#                <div title="[% Data.Title | html %]">[% Data.Title | truncate(70) | html %]</div>
+#            </td>
+#            <td>[% Data.Time | html %]</td>
+
+[% RenderBlockStart("ContentLargeConfigItemGenericConfigItemColumn") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericConfigItemNumber") %]
+                <td>
+                    <a href="[% Env("Baselink") %]Action=AgentITSMConfigItemZoom;ConfigItemID=[% Data.ConfigItemID %]" title="[% Data.Title | html %]" class="AsBlock MasterActionLink">[% Data.Number | html %]</a>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericConfigItemNumber") %]
+[% RenderBlockStart("ContentLargeConfigItemSignal") %]
+                    <td>
+                        <div title="[% Data.State | html %]" class="Flag Small">
+                            <span class="[% Data.Signal | html %]">"[% Translate(Data.State) | html %]"</span>
+                        </div>
+                    </td>
+[% RenderBlockEnd("ContentLargeConfigItemSignal") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericColumn") %]
+                <td>
+                    <div title="[% Data.GenericValue | html %]">[% Data.GenericValue | truncate(40) | html %]</div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericColumn") %]
+[% RenderBlockStart("ContentLargeConfigItemTitle") %]
+                <td>
+                    <div title="[% Data.WholeTitle | html %]">[% Data.Title | html %]</div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemTitle") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericColumnTranslatable") %]
+                <td>
+                    <div title="[% Translate(Data.GenericValue) | html %]">[% Translate(Data.GenericValue) | html %]</div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericColumnTranslatable") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericColumnTime") %]
+                <td>
+                    <div title="[% Data.GenericValue | Localize("TimeShort") | html %]">[% Data.GenericValue | Localize("TimeShort") | html %]</div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericColumnTime") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericColumnEscalation") %]
+                <td>
+                    <div title="[% Data.GenericValue | html %]" class="[% Data.Class | html %]">[% Data.GenericValue | html %]</div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericColumnEscalation") %]
+[% RenderBlockEnd("ContentLargeConfigItemGenericConfigItemColumn") %]
+
+[% RenderBlockStart("ContentLargeConfigItemGenericDynamicField") %]
+                <td>
+                    <div title="[% Data.Title | html %]">
+[% RenderBlockStart("ContentLargeConfigItemGenericDynamicFieldLink") %]
+                        <a href="[% Data.Link | Interpolate %]"  target="_blank" class="DynamicFieldLink">[% Data.Value %]</a>
+[% RenderBlockEnd("ContentLargeConfigItemGenericDynamicFieldLink") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericDynamicFieldPlain") %]
+                        [% Data.Value %]
+[% RenderBlockEnd("ContentLargeConfigItemGenericDynamicFieldPlain") %]
+                    </div>
+                </td>
+[% RenderBlockEnd("ContentLargeConfigItemGenericDynamicField") %]
+
+[% RenderBlockEnd("GeneralOverviewRow") %]
+            </tr>
+[% RenderBlockEnd("ContentLargeConfigItemGenericRow") %]
+[% RenderBlockStart("ContentLargeConfigItemGenericNone") %]
+            <tr>
+                <td class="AutoColspan">
+                    [% Translate("none") | html %]
+                </td>
+            </tr>
+[% RenderBlockEnd("ContentLargeConfigItemGenericNone") %]
+        </tbody>
+    </table>
+</form>
