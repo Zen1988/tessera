@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -103,7 +103,7 @@ sub Data {
         'Дефинише Акције где је дугме поставки доступно у повезаном графичком елементу објекта (LinkObject::ViewMode = "complex"). Молимо да имате на уму да ове Акције морају да буду регистроване у следећим JS и CSS датотекама: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js и Core.Agent.LinkObject.js.';
     $Self->{Translation}->{'Define which columns are shown in the linked Services widget (LinkObject::ViewMode = "complex"). Note: Only Service attributes are allowed for DefaultColumns. Possible settings: 0 = Disabled, 1 = Available, 2 = Enabled by default.'} =
         'Дефинише које колоне су приказане у повезаном графичком елементу Сервиса (LinkObject::ViewMode = "complex"). Напомена: Само атрибути сервиса су дозвољени за подразумеване колоне. Могуће поставке: 0 = онемогућено, 1 = доступно, 2 = подразумевано активирано.';
-    $Self->{Translation}->{'Defines the list of online repositories. Another installation can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".'} =
+    $Self->{Translation}->{'Defines the list of online repositories. Another installation can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".'} =
         '';
     $Self->{Translation}->{'Depends on'} = 'Зависи од';
     $Self->{Translation}->{'Enforce'} = '';

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1302,7 +1302,7 @@ sub Data {
         'Endpoint' => 'จุดสิ้นสุด',
         'URI to indicate specific location for accessing a web service.' =>
             '',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
             '',
         'Timeout' => '',
         'Timeout value for requests.' => '',
@@ -1376,7 +1376,7 @@ sub Data {
         'Add header' => '',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => '',
+        'e.g. https://ncs.com.sg' => '',
         'Set SOAPAction' => '',
         'Set to "Yes" in order to send a filled SOAPAction header.' => '',
         'Set to "No" in order to send an empty SOAPAction header.' => '',
@@ -1395,7 +1395,7 @@ sub Data {
         'SOAPAction free text' => '',
         'Text to be used to as SOAPAction.' => '',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI ที่จะให้วิธีการ SOAPตามบริบทจะช่วยลดความคลุมเครือ',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
             '',
         'Request name scheme' => 'ร้องขอรูปแบบชื่อ',
         'Select how SOAP request function wrapper should be constructed.' =>
@@ -7235,7 +7235,7 @@ Thanks for your help!
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => 'กำหนดค่าข้อความบันทึกของคุณสำหรับ PGP',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
             '',
         'Controls how to display the ticket history entries as readable values.' =>
             'ควบคุมวิธีการแสดงรายการประวัติตั๋วเป็นค่าที่สามารถอ่าน',
@@ -7625,7 +7625,7 @@ Thanks for your help!
             'กำหนดเนื้อเรื่องเริ่มต้นของโน้ตในหน้าจอตั๋วข้อความฟรีในอินเตอร์เฟซของเอเย่นต์',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             '',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
             '',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             '',
@@ -7870,8 +7870,8 @@ Thanks for your help!
             'กำหนดประเภทลิงค์ \'ParentChild\' ถ้าชื่อแหล่งที่มาและชื่อเป้าหมายมีค่าเดียวกัน ลิงค์คือไม่มีทิศทาง แต่ถ้าหากมีค่าต่างกัน ลิงค์ที่เกิดคือการเชื่อมโยงทิศทาง',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'กำหนดกลุ่มประเภทการเชื่อมโยง ประเภทของการเชื่อมโยงของกลุ่มเดียวกันจะยกเลิกอีกกลุ่มหนึ่ง ตัวอย่าง: หากตั๋ว A  ถูกเชื่อมโยงต่อหนึ่งการเชื่อมโยงแบบ \'Normal\' ด้วยตั๋ว B  แล้วตั๋วเหล่านี้จะไม่สามารถเป็นการเชื่อมโยงเพิ่มเติม ด้วยการเชื่อมโยงของความสัมพันธ์ \'ParentChild\'',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'กำหนดรายชื่อที่เก็บออนไลน์ การติดตั้งอื่นๆสามารถใช้เป็นพื้นที่เก็บข้อมูล ตัวอย่างเช่น : Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'กำหนดรายชื่อที่เก็บออนไลน์ การติดตั้งอื่นๆสามารถใช้เป็นพื้นที่เก็บข้อมูล ตัวอย่างเช่น : Key="https://ncs.com.sg;File=" and Content="Some Name".',
         'Defines the list of params that can be passed to ticket search function.' =>
             '',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8345,7 +8345,7 @@ Thanks for your help!
             'ช่วยให้ตั๋วคุณลักษณะความรับผิดชอบที่จะติดตามการตั๋วที่เฉพาะเจาะจง',
         'Enables ticket type feature.' => '',
         'Enables ticket watcher feature only for the listed groups.' => 'เปิดใช้งานคุณลักษณะ Watcher ตั๋วเฉพาะสำหรับกลุ่มที่ระบุไว้',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
             '',
         'English (Canada)' => 'ภาษาอังกฤษ (แคนาดา)',
         'English (United Kingdom)' => 'อังกฤษ (สหราชอาณาจักร)',

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -407,7 +407,7 @@ Returns a HTTP link to the agent edit mask, if permission is given.
 
 Return
 
-    $Link = "https://fqdn.otobo.de/otobo/index.pl?Action=AdminUser;Subaction=Change;ID=$UserID
+    $Link = "https://ncs.com.sg;Subaction=Change;ID=$UserID
 
 =cut
 

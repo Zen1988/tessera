@@ -3,7 +3,7 @@
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
 # Copyright (C) 2010 Thomas Kaltenbrunner <tkaltenbrunner at opc.de>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1302,8 +1302,8 @@ sub Data {
         'Endpoint' => 'Endpunkt',
         'URI to indicate specific location for accessing a web service.' =>
             'URI zur Angabe eines bestimmten Standorts für den Zugriff auf einen Webservice.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
-            'z. B. https://www.otobo.de:10745/api/v1.0 (ohne Trailing Slash)',
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
+            'z. B. https://ncs.com.sg (ohne Trailing Slash)',
         'Timeout' => 'Timeout',
         'Timeout value for requests.' => 'Timeout-Wert für Anfragen.',
         'Authentication' => 'Authentifizierung',
@@ -1376,7 +1376,7 @@ sub Data {
         'Add header' => 'Header hinzufügen',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => 'z. B. https://local.otobo.de:8000/Webservice/Beispiel',
+        'e.g. https://ncs.com.sg' => 'z. B. https://ncs.com.sg',
         'Set SOAPAction' => 'Setzen von SOAPAction',
         'Set to "Yes" in order to send a filled SOAPAction header.' => 'Auf "Ja" setzen, um einen befüllten SOAPAction-Header zu senden.',
         'Set to "No" in order to send an empty SOAPAction header.' => 'Auf "Nein" setzen, um einen leeren SOAPAction-Header zu senden.',
@@ -1395,8 +1395,8 @@ sub Data {
         'SOAPAction free text' => 'SOAPAction Freitext',
         'Text to be used to as SOAPAction.' => 'Text welcher als SOAPAction genutzt werden soll.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI, die SOAP-Methoden einen Kontext gibt und damit Mehrdeutigkeiten auflöst.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
-            'z. B. urn:otobo-com:soap:functions oder http://www.otobo.de/GenericInterface/actions',
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
+            'z. B. urn:otobo-com:soap:functions oder https://ncs.com.sg',
         'Request name scheme' => 'Anfragen-Namensschema',
         'Select how SOAP request function wrapper should be constructed.' =>
             'Wählen Sie, wie der SOAP-Funktionsaufruf konstruiert werden soll.',
@@ -7232,8 +7232,8 @@ Ihr Helpdesk-Team
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             'Konfiguriert welcher Bildschirm nach dem Markieren eines Tickets als ungesehen angezeigt wird.',
         'Configure your own log text for PGP.' => 'Konfigurieren Sie Ihren eigenen Log-Text für PGP.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
-            'Konfiguriert eine TicketDynamicField-Standardeinstellung. "Name" definiert, welches dynamische Feld genutzt werden soll, "Value" die zu setzenden Daten, und "Event" das auslösende Ereignis. Mehr dazu im Kapitel "Ticket Event Module" des Developer Manuals (https://doc.otobo.org/).',
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
+            'Konfiguriert eine TicketDynamicField-Standardeinstellung. "Name" definiert, welches dynamische Feld genutzt werden soll, "Value" die zu setzenden Daten, und "Event" das auslösende Ereignis. Mehr dazu im Kapitel "Ticket Event Module" des Developer Manuals (https://ncs.com.sg).',
         'Controls how to display the ticket history entries as readable values.' =>
             'Kontrolliert wie die Ticket-Historie in lesbaren Werten dargestellt wird.',
         'Controls if CustomerID is automatically copied from the sender address for unknown customers.' =>
@@ -7620,8 +7620,8 @@ Ihr Helpdesk-Team
             'Definiert den Standard-Inhalt einer Notiz in der TicketFreeText-Oberfläche im Agenten-Interface.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             'Definiert die Standard-Filterfelder in der Kundenbenutzer-Adressbuch-Suche (Kundenbenutzer oder Kundenunternehmen). Für Kundenunternehmen-Felder muss ein Präfix \'CustomerCompany_\' hinzugefügt werden.',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
-            'Definiert das Standard (HTML) Frontend Theme für Agenten und Kunden. Sie können ein eigenes Theme hinzufügen. Weitere Informationen dazu im Admin Handbuch unter https://doc.otobo.org/.',
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
+            'Definiert das Standard (HTML) Frontend Theme für Agenten und Kunden. Sie können ein eigenes Theme hinzufügen. Weitere Informationen dazu im Admin Handbuch unter https://ncs.com.sg',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             'Legt die Standardsprache für das Frontend fest. Welche Sprachen zur Verfügung stehen, ergibt sich durch die im System verfügbaren Sprachdateien. Diese Werte werden als Schlüssel in der Einstellung \'DefaultUsedLanguages\' angezeigt.',
         'Defines the default history type in the customer interface.' => 'Definiert den Standard-Historientyp im Kunden-Interface.',
@@ -7864,8 +7864,8 @@ Ihr Helpdesk-Team
             'Definiert den Link-Typ \'ParentChild\'. Wenn der Quell- und der Zielname den selben Wert beinhalten, ist der Link nicht-direktional. Ansonsten ist das Ergebnis ein direktionaler Link.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'Definition der verschiedenen Verknüpfungsmöglichkeiten. Verknüpfungstpyen der selben Gruppe schließen sich gegenseitig aus. Beispiel: Wenn Ticket A mit dem Typ \'Normal\' mit Ticket B verlinkt wird, dann können diese beiden Tickets nicht noch zusätzlich mit dem Typ \'ElternKind\' miteinander verlinkt werden.',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'Definiert eine Liste von Online-Quellen. Andere Installationen können als Quelle genutzt werden z.B. Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Irgendein Name".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'Definiert eine Liste von Online-Quellen. Andere Installationen können als Quelle genutzt werden z.B. Key="https://ncs.com.sg;File=" and Content="Irgendein Name".',
         'Defines the list of params that can be passed to ticket search function.' =>
             'Legt die Liste der Parameter fest, welche mit der Ticketsuchfunktion verwendet werden kann.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8339,8 +8339,8 @@ Ihr Helpdesk-Team
             'Aktiviert das "Verantwortlicher"-Feature, das ein Verfolgen relevanter Tickets erlaubt.',
         'Enables ticket type feature.' => 'Aktiviert Ticket-Typen.',
         'Enables ticket watcher feature only for the listed groups.' => 'Aktiviert das Ticket beobachten-Feature nur für die eingetragenen Gruppen.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
-            'Aktivieren des SecureMode deaktiviert den Web-Installer (http://yourhost.example.com/otobo/installer.pl) und die Migration. Dies geschieht, um zu verhindern, dass das System gehijackt werden kann. Ist der SecureMode nicht aktiviert, kann das System jederzeit neu aufgesetzt werden. In diesem Fall wird die aktuelle Grundkonfiguration verwendet, um das Installer-Skript vorzubefüllen. Mit der Aktivierung des SecureMode werden außerdem GenericAgent, PackageManager und SQL Box aktiviert.',
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+            'Aktivieren des SecureMode deaktiviert den Web-Installer (https://ncs.com.sg) und die Migration. Dies geschieht, um zu verhindern, dass das System gehijackt werden kann. Ist der SecureMode nicht aktiviert, kann das System jederzeit neu aufgesetzt werden. In diesem Fall wird die aktuelle Grundkonfiguration verwendet, um das Installer-Skript vorzubefüllen. Mit der Aktivierung des SecureMode werden außerdem GenericAgent, PackageManager und SQL Box aktiviert.',
         'English (Canada)' => 'Englisch (Kanada)',
         'English (United Kingdom)' => 'Englisch (Vereinigtes Königreich)',
         'English (United States)' => 'Englisch (Vereinigte Staaten)',

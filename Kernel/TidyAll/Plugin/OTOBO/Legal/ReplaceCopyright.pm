@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -36,10 +36,10 @@ sub transform_source {
     # Don't replace copyright in thirdparty code.
     return $Code if $Self->IsThirdpartyModule();
 
-    # Replace <URL>http://otobo.org/</URL> with <URL>https://otobo.io/</URL>
-    $Code =~ s{ ^ ( \s* ) \< URL \> .+? \< \/ URL \> }{$1<URL>https://otobo.io/</URL>}xmsg;
+    # Replace <URL>https://ncs.com.sg</URL> with <URL>https://ncs.com.sg</URL>
+    $Code =~ s{ ^ ( \s* ) \< URL \> .+? \< \/ URL \> }{$1<URL>https://ncs.com.sg</URL>}xmsg;
 
-    my $Copy = 'Rother OSS GmbH, https://otobo.io/';
+    my $Copy = 'Rother OSS GmbH, https://ncs.com.sg';
 
     my $Year = ( localtime(time) )[5];
     $Year += 1900;
@@ -79,7 +79,7 @@ sub transform_source {
         }
 
         # Any other generic copyright statements, e.g :
-        #   print "Copyright (c) 2003-2008 Rother OSS GmbH, http://www.otobo.com/\n";
+        #   print "Copyright (c) 2003-2008 Rother OSS GmbH, https://ncs.com.sg";
         # $2 should only occur in: Kernel/Output/HTML/Templates/Standard/Copyright.tt
         elsif ( $Line =~ /^([^\n]*)Copyright.*Rother OSS.+?(\s+-->)?$/i ) {
             my $End = $2 // '';

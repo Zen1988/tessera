@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -297,7 +297,7 @@ sub Data {
 
     # SysConfig
     $Self->{Translation}->{'A filter for HTML output to add links behind a defined string. The element Image allows two input kinds. First the name of an image (e.g. faq.png). In this case the OTOBO image path will be used. The second possibility is to insert the link to the image.'} =
-        'Фильтр для HTML для добавления ссылки позади заданной строки. Элемент Image может быть введен двумя способами. Первый - это имя файла(т.е. faq.png). В этом случае используется путь к файлам изображений OTOBO. Второй вариант в указании ссылки на изображение(например, http://otobo.org/faq.png).';
+        'Фильтр для HTML для добавления ссылки позади заданной строки. Элемент Image может быть введен двумя способами. Первый - это имя файла(т.е. faq.png). В этом случае используется путь к файлам изображений OTOBO. Второй вариант в указании ссылки на изображение(например, https://ncs.com.sg).';
     $Self->{Translation}->{'Add FAQ article'} = 'Добавить статью FAQ';
     $Self->{Translation}->{'CSS color for the voting result.'} = 'CSS-цвет для результата голосования.';
     $Self->{Translation}->{'Cache Time To Leave for FAQ items.'} = 'Время для выхода из редактирования FAQ пункта';

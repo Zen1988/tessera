@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otobo_config version="2.0" init="Framework">
     <Setting Name="SecureMode" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
+        <Description Translatable="1">Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
         <Navigation>Core</Navigation>
         <Value>
             <Item ValueType="Checkbox">0</Item>
@@ -253,7 +253,7 @@
         </Value>
     </Setting>
     <Setting Name="DefaultTheme" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.</Description>
+        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
             <Item ValueType="String" ValueRegex="">Standard</Item>
@@ -392,7 +392,7 @@
                 <Item Key="InternalName">highcontrast</Item>
                 <Item Key="VisibleName" Translatable="1">High Contrast</Item>
                 <Item Key="Description" Translatable="1">High contrast skin for visually impaired users.</Item>
-                <Item Key="HomePage">www.otobo.org</Item>
+                <Item Key="HomePage">https://ncs.com.sg</Item>
             </Hash>
         </Value>
     </Setting>
@@ -973,7 +973,7 @@
         <Description Translatable="1">Defines an alternate URL, where the logout link refers to.</Description>
         <Navigation>Frontend::Agent</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">http://host.example.com/thanks-for-using-otobo.html</Item>
+            <Item ValueType="String" ValueRegex="">https://ncs.com.sg</Item>
         </Value>
     </Setting>
     <Setting Name="PreApplicationModule###AgentInfo" Required="0" Valid="0" ConfigLevel="300">
@@ -7497,7 +7497,7 @@ via the Preferences button after logging in.
                         <Item Key="HeaderText">OTOBO 11.0 | Service Management</Item>
                         <Item Key="MainText">OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you'll get seamless integration between your asset management and service management workflows.</Item>
                         <Item Key="FooterText">Learn more &gt;</Item>
-                        <Item Key="Link">https://otobo.io/en/otobo-11-0-2-major-release/</Item>
+                        <Item Key="Link">https://ncs.com.sg</Item>
                         <Item Key="NewTab">0</Item>
                     </Hash>
                 </Item>
@@ -7555,7 +7555,7 @@ via the Preferences button after logging in.
                         <Item Key="TextColor">#00023c</Item>
                         <Item Key="Links">
                             <Hash>
-                                <Item Key="https://www.otobo.io">1</Item>
+                                <Item Key="https://ncs.com.sg">1</Item>
                                 <Item Key="https://www.openstreetmap.org">2</Item>
                                 <Item Key="https://www.wikipedia.org">3</Item>
                             </Hash>
@@ -8332,8 +8332,8 @@ via the Preferences button after logging in.
                 <Item Key="Module">Kernel::Output::HTML::Dashboard::RSS</Item>
                 <Item Key="Title" Translatable="1">Custom RSS Feed</Item>
                 <Item Key="Description" Translatable="1">OTOBO News</Item>
-                <Item Key="URL">https://otobo.io/en/feed/</Item>
-                <Item Key="URL_de">https://otobo.io/de/feed/</Item>
+                <Item Key="URL">https://ncs.com.sg</Item>
+                <Item Key="URL_de">https://ncs.com.sg</Item>
                 <Item Key="Block">ContentSmall</Item>
                 <Item Key="Limit">6</Item>
                 <Item Key="Group"></Item>
@@ -8369,11 +8369,11 @@ via the Preferences button after logging in.
                 <Item Key="Title" Translatable="1">A picture</Item>
                 <Item Key="Description" Translatable="1">Some picture description!</Item>
                 <Item Key="Block">ContentLarge</Item>
-                <Item Key="URL">https://otobo.io/wp-content/uploads/2024/06/Tile-OTOBO-Self-Service-Portal.jpg</Item>
+                <Item Key="URL">https://ncs.com.sg</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
-                <Item Key="Link">https://otobo.org/</Item>
-                <Item Key="LinkTitle">https://otobo.org/</Item>
+                <Item Key="Link">https://ncs.com.sg</Item>
+                <Item Key="LinkTitle">https://ncs.com.sg</Item>
                 <Item Key="Width">198</Item>
                 <Item Key="Height">140</Item>
                 <Item Key="Mandatory">0</Item>
@@ -8403,10 +8403,10 @@ via the Preferences button after logging in.
                 <Item Key="Title" Translatable="1">A Website</Item>
                 <Item Key="Description" Translatable="1">Some description!</Item>
                 <Item Key="Block">ContentLarge</Item>
-                <Item Key="URL">https://www.otobo.org/</Item>
+                <Item Key="URL">https://ncs.com.sg</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
-                <Item Key="Link">https://otobo.org/</Item>
+                <Item Key="Link">https://ncs.com.sg</Item>
                 <Item Key="LinkTitle">OTOBO.org/</Item>
                 <Item Key="Width">1024</Item>
                 <Item Key="Height">800</Item>
@@ -8861,7 +8861,7 @@ via the Preferences button after logging in.
                 <Item Key="InternalName">default</Item>
                 <Item Key="VisibleName" Translatable="1">Default</Item>
                 <Item Key="Description" Translatable="1">This is the default orange - black skin.</Item>
-                <Item Key="HomePage">www.otobo.org</Item>
+                <Item Key="HomePage">https://ncs.com.sg</Item>
             </Hash>
         </Value>
     </Setting>
@@ -8902,7 +8902,7 @@ via the Preferences button after logging in.
                 <Item Key="InternalName">default</Item>
                 <Item Key="VisibleName" Translatable="1">Default</Item>
                 <Item Key="Description" Translatable="1">This is the default orange - black skin for the customer interface.</Item>
-                <Item Key="HomePage">www.otobo.org</Item>
+                <Item Key="HomePage">https://ncs.com.sg</Item>
             </Hash>
         </Value>
     </Setting>
@@ -10149,7 +10149,7 @@ via the Preferences button after logging in.
                         </Item>
                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
-                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
+                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
                         <Item Key="LinkOption">target="_blank"</Item>
                         <Item Key="NavBar">JumptoExternalURL</Item>
                         <Item Key="Type">Menu</Item>
@@ -10203,7 +10203,7 @@ via the Preferences button after logging in.
                         </Item>
                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
-                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
+                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
                         <Item Key="LinkOption">target="_blank"</Item>
                         <Item Key="NavBar">Ticket</Item>
                         <Item Key="Type">Menu</Item>

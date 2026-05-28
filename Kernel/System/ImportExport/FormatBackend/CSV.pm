@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -314,7 +314,7 @@ sub ImportDataGet {
     # it is important to use this syntax "while ( !eof($FH) )"
     # as the CPAN module Text::CSV_XS might show errors if the
     # getline call is within the while test
-    # have a look at http://bugs.otobo.org/show_bug.cgi?id=9270
+    # have a look at https://ncs.com.sg
     while ( !eof($FH) ) {
         my $Column = $ParseObject->getline($FH);
         push @ImportData, $Column;

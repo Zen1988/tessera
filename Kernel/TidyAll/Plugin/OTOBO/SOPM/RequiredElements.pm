@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -37,9 +37,9 @@ sub transform_source {
         $Vendor = $+{Vendor};
     }
 
-    # Replace <URL>http://otobo.org/</URL> with <URL>https://otobo.org/</URL>
+    # Replace <URL>https://ncs.com.sg</URL> with <URL>https://ncs.com.sg</URL>
     if ( $Vendor eq 'Rother OSS GmbH' ) {
-        $Code =~ s{ ^ ( \s* ) \< URL \> .+? \< \/ URL \> }{$1<URL>https://otobo.io/</URL>}xmsg;
+        $Code =~ s{ ^ ( \s* ) \< URL \> .+? \< \/ URL \> }{$1<URL>https://ncs.com.sg</URL>}xmsg;
     }
 
     # Replace Version

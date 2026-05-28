@@ -8,7 +8,7 @@
 # Copyright (C) 2009 Qingjiu Jia <jiaqj at yahoo.com>
 # Copyright (C) 2011 Martin Liu <liuzh66 at gmail.com> http://martinliu.cn
 # Copyright (C) 2013 Michael Shi <micshi at 163.com>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1308,7 +1308,7 @@ sub Data {
         'Endpoint' => '端点',
         'URI to indicate specific location for accessing a web service.' =>
             '用于指示访问Web服务的特定位置的URI。',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
             '',
         'Timeout' => '超时',
         'Timeout value for requests.' => '请求的超时值。',
@@ -1382,7 +1382,7 @@ sub Data {
         'Add header' => '',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => '例如：https://local.otobo.de:8000/Webservice/Example',
+        'e.g. https://ncs.com.sg' => '例如：https://ncs.com.sg',
         'Set SOAPAction' => '设置SOAP动作',
         'Set to "Yes" in order to send a filled SOAPAction header.' => '设置为“是”，发送填写了的SOAPAction 头。',
         'Set to "No" in order to send an empty SOAPAction header.' => '设置为“否”，发送空白SOAPAction 头。',
@@ -1401,7 +1401,7 @@ sub Data {
         'SOAPAction free text' => 'SOAPAction自由文本',
         'Text to be used to as SOAPAction.' => '要用作SOAPAction的文本。',
         'URI to give SOAP methods a context, reducing ambiguities.' => '为SOAP方法指定URI(通用资源标识符), 以便消除二义性。',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
             '',
         'Request name scheme' => '请求名称方案',
         'Select how SOAP request function wrapper should be constructed.' =>
@@ -7236,7 +7236,7 @@ Thanks for your help!
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => '配置您自己的PGP日志文本。',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
             '',
         'Controls how to display the ticket history entries as readable values.' =>
             '控制如何显示工单历史条目为可读值。',
@@ -7624,7 +7624,7 @@ Thanks for your help!
             '定义服务人员界面工单自定义字段界面的默认备注正文。',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             '定义客户用户通讯录搜索（客户用户或客户单位）中的默认过滤器字段。 对于客户单位字段，必须添加一个前缀“CustomerCompany_”。',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
             '',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             '',
@@ -7868,8 +7868,8 @@ Thanks for your help!
             '定义链接类型“父子”。如果源名称和目标名称相同，则结果链接是无方向链接，否则结果链接是方向性链接。',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             '定义链接类型组。同一组的链接类型废除另外一个，例如：如果工单A以“普通”链接到工单B，则这些工单不能添加另外的“父子”链接。',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            '定义在线软件仓库列表。另一个用于安装的软件仓库，例如：键="http://example.com/otobo/public.pl?Action=PublicRepository;File=" ，值="Some Name"。',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            '定义在线软件仓库列表。另一个用于安装的软件仓库，例如：键="https://ncs.com.sg;File=" ，值="Some Name"。',
         'Defines the list of params that can be passed to ticket search function.' =>
             '定义能传递到工单搜索功能的参数清单。',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8343,8 +8343,8 @@ Thanks for your help!
             '启用工单负责人功能，以跟踪指定的工单。',
         'Enables ticket type feature.' => '启用工单类型功能。',
         'Enables ticket watcher feature only for the listed groups.' => '仅对列表中的组启用工单关注人功能。',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
-            '启用SecureMode会禁用Web安装程序（http://yourhost.example.com/otobo/installer.pl）和迁移。这样做是为了防止系统被劫持。如果未启用SecureMode，则可以重新安装系统。在这种情况下，当前的基本配置将用于在安装程序脚本中预先填充问题。启用SecureMode还可以启用GenericAgent，PackageManager和SQL Box。',
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+            '启用SecureMode会禁用Web安装程序（https://ncs.com.sg��做是为了防止系统被劫持。如果未启用SecureMode，则可以重新安装系统。在这种情况下，当前的基本配置将用于在安装程序脚本中预先填充问题。启用SecureMode还可以启用GenericAgent，PackageManager和SQL Box。',
         'English (Canada)' => '英语（加拿大）',
         'English (United Kingdom)' => '英语（英国）',
         'English (United States)' => '英语（美国）',

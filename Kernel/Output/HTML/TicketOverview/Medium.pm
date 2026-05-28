@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
 # --
 # $origin: otobo - 9bbf86da448bcff2bcc655fde9320646bc2950f2 - Kernel/Output/HTML/TicketOverview/Medium.pm
 # --

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # $origin: otobo - e423ee3f4f0faf7995db27018567746054da97e5 - Kernel/Modules/CustomerTicketMessage.pm
 # --
@@ -100,6 +100,11 @@ sub new {
         }
     }
 
+    $Self->_ServiceExtensionDynamicFieldsLoad(
+        DynamicFieldObject        => $DynamicFieldObject,
+        DynamicFieldBackendObject => $BackendObject,
+    );
+
     # get form id
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
         ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
@@ -181,6 +186,9 @@ sub Run {
         $DynamicFieldACLParameters{ 'DynamicField_' . $DynamicField } = $DynamicFieldValues{$DynamicField};
     }
     $GetParam{DynamicField} = \%DynamicFieldACLParameters;
+    $Self->_ServiceExtensionDynamicFieldValuesSync(
+        GetParam => \%GetParam,
+    );
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $QueueObject  = $Kernel::OM->Get('Kernel::System::Queue');
@@ -566,6 +574,10 @@ sub Run {
                 ? $DynFieldStates{Fields}{$_}{PossibleValues}
                 : undef
         } ( keys $Self->{DynamicField}->%* );
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => $DynFieldStates{Visibility},
+        );
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
@@ -725,6 +737,10 @@ sub Run {
         else {
             %Visibility = map { 'DynamicField_' . $_ => 1 } keys $Self->{DynamicField}->%*;
         }
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => \%Visibility,
+        );
 
         # remember dynamic field validation results if erroneous
         my %DynamicFieldValidationResult;
@@ -1038,7 +1054,26 @@ sub Run {
         my $MimeType = 'text/plain';
         if ( $LayoutObject->{BrowserRichText} ) {
             $MimeType = 'text/html';
+        }
 
+        my $ServiceExtensionSnapshot = $Self->_ServiceExtensionArticleSnapshotBuild(
+            DynamicFieldValues => \%DynamicFieldValues,
+            HTMLOutput         => $LayoutObject->{BrowserRichText} ? 1 : 0,
+            LayoutObject       => $LayoutObject,
+            ServiceID          => $GetParam{ServiceID},
+            Visibility         => \%Visibility,
+        );
+
+        if ($ServiceExtensionSnapshot) {
+            if ( $LayoutObject->{BrowserRichText} ) {
+                $GetParam{Body} .= '<br/><br/>' . $ServiceExtensionSnapshot;
+            }
+            else {
+                $GetParam{Body} .= "\n\n" . $ServiceExtensionSnapshot;
+            }
+        }
+
+        if ( $LayoutObject->{BrowserRichText} ) {
             # verify html document
             $GetParam{Body} = $LayoutObject->RichTextDocumentComplete(
                 String => $GetParam{Body},
@@ -1660,6 +1695,10 @@ sub Run {
             }
         }
 
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => $DynFieldStates{Visibility},
+        );
         if ( IsHashRefWithData( $DynFieldStates{Visibility} ) ) {
             push @DynamicFieldAJAX, {
                 Name => 'Restrictions_Visibility',
@@ -1794,6 +1833,259 @@ sub _GetTypes {
         );
     }
     return \%Type;
+}
+
+sub _ServiceExtensionDynamicFieldsLoad {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject        = $Param{DynamicFieldObject};
+    my $DynamicFieldBackendObject = $Param{DynamicFieldBackendObject};
+
+    return if !$DynamicFieldObject || !$DynamicFieldBackendObject;
+
+    my $ServiceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZService-Field',
+    );
+
+    return if !IsHashRefWithData($ServiceFieldConfig);
+    return if $ServiceFieldConfig->{ObjectType} ne 'Service';
+
+    my %ServiceList = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
+        Valid  => 1,
+        UserID => 1,
+    );
+
+    my %FieldNamesByService;
+    my %FieldNameSeen;
+
+    SERVICEID:
+    for my $ServiceID ( sort keys %ServiceList ) {
+        my $Value = $DynamicFieldBackendObject->ValueGet(
+            DynamicFieldConfig => $ServiceFieldConfig,
+            ObjectID           => $ServiceID,
+            UserID             => 1,
+        );
+
+        my @FieldNames = $Self->_ServiceExtensionFieldNamesParse( Value => $Value );
+        next SERVICEID if !@FieldNames;
+
+        $FieldNamesByService{$ServiceID} = \@FieldNames;
+        @FieldNameSeen{@FieldNames} = (1) x @FieldNames;
+    }
+
+    return if !%FieldNameSeen;
+
+    my %DefinitionField;
+    my $DefinitionFieldCollect;
+    $DefinitionFieldCollect = sub {
+        my ($Element) = @_;
+
+        return if !IsHashRefWithData($Element);
+
+        if ( $Element->{DF} ) {
+            $DefinitionField{ $Element->{DF} } = 1;
+            return;
+        }
+
+        return if !IsHashRefWithData( $Element->{Grid} ) || !IsArrayRefWithData( $Element->{Grid}{Rows} );
+
+        for my $Row ( $Element->{Grid}{Rows}->@* ) {
+            next if ref $Row ne 'ARRAY';
+
+            for my $Field ( $Row->@* ) {
+                $DefinitionFieldCollect->($Field);
+            }
+        }
+
+        return;
+    };
+    $DefinitionFieldCollect->($_) for $Self->{MaskDefinition}->@*;
+
+    FIELDNAME:
+    for my $FieldName ( sort keys %FieldNameSeen ) {
+        my $DynamicField = $DynamicFieldObject->DynamicFieldGet(
+            Name => $FieldName,
+        );
+
+        if (
+            !IsHashRefWithData($DynamicField)
+            || ( $DynamicField->{ObjectType} ne 'Ticket' && $DynamicField->{ObjectType} ne 'Article' )
+            )
+        {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Service dynamic field ZService-Field references unknown or unsupported field '$FieldName'.",
+            );
+            next FIELDNAME;
+        }
+
+        my $IsCustomerInterfaceCapable = $DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicField,
+            Behavior           => 'IsCustomerInterfaceCapable',
+        );
+        next FIELDNAME if !$IsCustomerInterfaceCapable;
+
+        $Self->{DynamicField}{$FieldName} ||= $DynamicField;
+
+        if ( !$DefinitionField{$FieldName} ) {
+            push $Self->{MaskDefinition}->@*, {
+                DF        => $FieldName,
+                Mandatory => 0,
+            };
+            $DefinitionField{$FieldName} = 1;
+        }
+    }
+
+    $Self->{ZTSMServiceExtensionFields}          = \%FieldNameSeen;
+    $Self->{ZTSMServiceExtensionFieldsByService} = \%FieldNamesByService;
+
+    return 1;
+}
+
+sub _ServiceExtensionFieldNamesParse {
+    my ( $Self, %Param ) = @_;
+
+    my $Value  = $Param{Value};
+    my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+
+    my @FieldNames;
+    my %Seen;
+    VALUE:
+    for my $Item (@Values) {
+        next VALUE if !defined $Item;
+
+        PART:
+        for my $FieldName ( split m{\s*[,;\r\n]\s*}, $Item ) {
+            next PART if !$FieldName;
+
+            $FieldName =~ s{\A\s+|\s+\z}{}g;
+            $FieldName =~ s{\ADynamicField_}{};
+
+            next PART if !$FieldName;
+            next PART if $Seen{$FieldName}++;
+
+            push @FieldNames, $FieldName;
+        }
+    }
+
+    return @FieldNames;
+}
+
+sub _ServiceExtensionDynamicFieldValuesSync {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if !IsHashRefWithData( $Param{GetParam} );
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        next FIELDNAME if !exists $Param{GetParam}->{$FieldName};
+
+        $Param{GetParam}->{DynamicField}{"DynamicField_$FieldName"} = $Param{GetParam}->{$FieldName};
+    }
+
+    return 1;
+}
+
+sub _ServiceExtensionVisibilityApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if ref $Param{Visibility} ne 'HASH';
+
+    my %VisibleForService;
+    if ( $Param{ServiceID} && IsArrayRefWithData( $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} } ) ) {
+        %VisibleForService = map { $_ => 1 } $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} }->@*;
+    }
+
+    for my $FieldName ( sort keys $Self->{DynamicField}->%* ) {
+        $Param{Visibility}{"DynamicField_$FieldName"} = 1 if !exists $Param{Visibility}{"DynamicField_$FieldName"};
+    }
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        my $Key = "DynamicField_$FieldName";
+
+        if ( !$VisibleForService{$FieldName} ) {
+            $Param{Visibility}{$Key} = 0;
+            next FIELDNAME;
+        }
+
+        $Param{Visibility}{$Key} = 1 if !exists $Param{Visibility}{$Key};
+    }
+
+    return 1;
+}
+
+sub _ServiceExtensionArticleSnapshotBuild {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+    return if !$Param{ServiceID};
+
+    my $ServiceFieldNames = $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} };
+    return if !IsArrayRefWithData($ServiceFieldNames);
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    my @Rows;
+    FIELDNAME:
+    for my $FieldName ( @{$ServiceFieldNames} ) {
+        my $DynamicFieldConfig = $Self->{DynamicField}{$FieldName};
+        next FIELDNAME if !IsHashRefWithData($DynamicFieldConfig);
+        next FIELDNAME if $Param{Visibility} && !$Param{Visibility}{"DynamicField_$FieldName"};
+
+        my $Value = $Param{DynamicFieldValues}->{ $DynamicFieldConfig->{Name} };
+        next FIELDNAME if !defined $Value;
+        next FIELDNAME if ref $Value eq 'ARRAY' && !@{$Value};
+        next FIELDNAME if !ref $Value && $Value eq '';
+
+        my $Rendered = $BackendObject->DisplayValueRender(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Value              => $Value,
+            LayoutObject       => $LayoutObject,
+            HTMLOutput         => $Param{HTMLOutput} ? 1 : 0,
+        );
+        next FIELDNAME if !IsHashRefWithData($Rendered);
+        next FIELDNAME if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
+
+        push @Rows, {
+            Label => $DynamicFieldConfig->{Label} || $FieldName,
+            Value => $Rendered->{Value},
+        };
+    }
+
+    return if !@Rows;
+
+    my $Title = $LayoutObject->{LanguageObject}->Translate('Submitted Details');
+
+    if ( $Param{HTMLOutput} ) {
+        my $TitleHTML = $LayoutObject->Ascii2Html( Text => $Title );
+        my $Snapshot  = '<div class="ZTSMSubmissionSnapshot"><h3>' . $TitleHTML . '</h3><table>';
+
+        ROW:
+        for my $Row (@Rows) {
+            my $Label = $LayoutObject->Ascii2Html( Text => $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) );
+            $Snapshot .= '<tr><th style="text-align:left;vertical-align:top;padding-right:1em;">'
+                . $Label
+                . '</th><td>'
+                . $Row->{Value}
+                . '</td></tr>';
+        }
+
+        $Snapshot .= '</table></div>';
+        return $Snapshot;
+    }
+
+    my $Snapshot = $Title . "\n" . ( '-' x length $Title ) . "\n";
+    ROW:
+    for my $Row (@Rows) {
+        $Snapshot .= $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) . ': ' . $Row->{Value} . "\n";
+    }
+
+    return $Snapshot;
 }
 
 sub _GetServices {

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -68,9 +68,9 @@ sub _EnglishReplacement {
     return <<'END_REPLACEMENT';
 
     <para>
-        If you have questions regarding this document or if you need further information, please log in to our customer portal at portal.otobo.com with your OTOBO ID and create a ticket.
+        If you have questions regarding this document or if you need further information, please log in to our customer portal at https://ncs.com.sg with your OTOBO ID and create a ticket.
         You do not have an OTOBO ID yet? Register
-        <ulink url="https://portal.otobo.com/otobo/customer.pl#Signup">here for free</ulink>.
+        <ulink url="https://ncs.com.sg">here for free</ulink>.
     </para>
 END_REPLACEMENT
 }
@@ -79,8 +79,8 @@ sub _GermanReplacement {
     return <<'END_REPLACEMENT';
 
     <para>
-        Sollten Sie Fragen zu diesem Dokument haben oder weitere Informationen benötigen, loggen Sie sich bitte mit Ihrer OTOBO-ID in unser Kundenportal unter portal.otobo.com ein und eröffnen Sie ein Ticket. Sie haben noch keine OTOBO-ID? Registrieren Sie sich
-        <ulink url="https://portal.otobo.com/otobo/customer.pl#Signup">hier kostenlos</ulink>.
+        Sollten Sie Fragen zu diesem Dokument haben oder weitere Informationen benötigen, loggen Sie sich bitte mit Ihrer OTOBO-ID in unser Kundenportal unter https://ncs.com.sg ein und eröffnen Sie ein Ticket. Sie haben noch keine OTOBO-ID? Registrieren Sie sich
+        <ulink url="https://ncs.com.sg">hier kostenlos</ulink>.
     </para>
 END_REPLACEMENT
 }

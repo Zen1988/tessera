@@ -8,7 +8,7 @@
 # Copyright (C) 2010-2011 Murilo Moreira de Oliveira <murilo.moreira 60kg gmail.com>
 # Copyright (C) 2013 Alexandre <matrixworkstation@gmail.com>
 # Copyright (C) 2013-2014 Murilo Moreira de Oliveira <murilo.moreira 60kg gmail.com>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1307,8 +1307,8 @@ sub Data {
         'Endpoint' => 'Endpoint',
         'URI to indicate specific location for accessing a web service.' =>
             'URI que indica a localização específica para acessar um webservice.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
-            'e.g. https://www.otobo.de:10745/api/v1.0 (sem barra invertida)',
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
+            'e.g. https://ncs.com.sg (sem barra invertida)',
         'Timeout' => 'Expiração',
         'Timeout value for requests.' => 'Valor de timeout para requisições.',
         'Authentication' => 'Autenticação',
@@ -1381,7 +1381,7 @@ sub Data {
         'Add header' => 'Adicionar cabeçalho',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => 'exemplo: https://local.otobo.de:8000/Webservice/Example',
+        'e.g. https://ncs.com.sg' => 'exemplo: https://ncs.com.sg',
         'Set SOAPAction' => 'Configurar SOAPAction',
         'Set to "Yes" in order to send a filled SOAPAction header.' => 'Defina para "Sim" em ordem para enviar um cabeçalho SOAPAction preenchido.',
         'Set to "No" in order to send an empty SOAPAction header.' => 'Defina para "Não" em ordem para enviar um cabeçalho SOAPAction vazio.',
@@ -1400,8 +1400,8 @@ sub Data {
         'SOAPAction free text' => 'Texto livre SOAPAction',
         'Text to be used to as SOAPAction.' => 'Texto a ser usado no SOAPAction.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI de contexto dos métodos SOAP, reduzindo ambiguidades.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
-            'e.g. urn:otobo-com:soap:functions ou http://www.otobo.de/GenericInterface/actions',
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
+            'e.g. urn:otobo-com:soap:functions ou https://ncs.com.sg',
         'Request name scheme' => 'Solicitar nome do esquema',
         'Select how SOAP request function wrapper should be constructed.' =>
             'Seleciona como o encapsulador da função de solicitação SOAP precisa ser construído.',
@@ -7237,7 +7237,7 @@ Obrigado pela ajuda!
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => 'Configure o seu próprio texto de registro para PGP.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
             '',
         'Controls how to display the ticket history entries as readable values.' =>
             'Controla como disponibilizar as entradas do histórico de ticket como valores legíveis.',
@@ -7625,7 +7625,7 @@ Obrigado pela ajuda!
             'Define o corpo padrão da nota na tela de ticket de campos livres da interface de agente.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             'Define os campos de filtro padrão na pesquisa de caderno de endereço de usuário cliente  (Usuário Cliente ou Empresa Cliente). Para campos de Empresa Cliente um prefixo \'CustomerCompany_\' deve ser adicionado.',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
             '',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             '',
@@ -7869,8 +7869,8 @@ Obrigado pela ajuda!
             'Define o tipo de associação \'Pai e Filho\'. Se o nome de origem e o nome de destino contiverem o mesmo valor, a associação resultante será não-direcional; se não, o resultado será uma associação direcional.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'Define os grupos de tipos de associação. Os tipos de associação do mesmo grupo cancelam um ao outro. Por exemplo: Se ticket A é associado com uma associação \'Normal\' com o ticket B, então esses tickets não pode ser associados adicionalmente com uma relação \'PaiFilho\'.',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'Define a lista de repositórios on-line. Uma outra instalação pode ser utilizada para repositório, exemplo: Chave="http://example.com/otobo/public.pl?Action=PublicRepository;File=" e Conteúdo="Algum Nome".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'Define a lista de repositórios on-line. Uma outra instalação pode ser utilizada para repositório, exemplo: Chave="https://ncs.com.sg;File=" e Conteúdo="Algum Nome".',
         'Defines the list of params that can be passed to ticket search function.' =>
             'Define a lista de parâmetros que podem ser passados para a função de busca do ticket.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8344,7 +8344,7 @@ Obrigado pela ajuda!
             'Ativa a funcionalidade de responsável por um ticket, para acompanhar um ticket específico.',
         'Enables ticket type feature.' => 'Ativa a funcionalidade de tipo de ticket.',
         'Enables ticket watcher feature only for the listed groups.' => 'Ativa a funcionalidade de observação de ticket apenas para os grupos listados.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
             '',
         'English (Canada)' => 'Inglês (Canadá)',
         'English (United Kingdom)' => 'Inglês (Reino Unido)',

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -413,7 +413,7 @@ sub _BuildRelatedFAQArticleList {
 Build the keywords for the given content.
 
     my $Content = $FAQObject->_BuildKeywordCounterFromContent(
-        Content => 'Some Text with a link. More text. [1] https://otobo.de/',
+        Content => 'Some Text with a link. More text. [1] https://ncs.com.sg',
     );
 
 Returns
@@ -467,7 +467,7 @@ sub _BuildKeywordCounterFromContent {
 Remove links from the given content.
 
     my $Content = $FAQObject->_RemoveLinksFromContent(
-        Content => 'Some Text with a link. More text. [1] https://otobo.de/',
+        Content => 'Some Text with a link. More text. [1] https://ncs.com.sg',
     );
 
 Returns
@@ -489,7 +489,7 @@ sub _RemoveLinksFromContent {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTOBO project (L<https://otobo.org/>).
+This software is part of the OTOBO project (L<https://ncs.com.sg>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you

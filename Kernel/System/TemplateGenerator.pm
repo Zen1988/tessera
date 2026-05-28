@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1806,7 +1806,7 @@ sub _Replace {
                 for my $Counter ( 0 .. $Line - 1 ) {
 
                     # 2002-06-14 patch of Pablo Ruiz Garcia
-                    # http://lists.otobo.org/pipermail/dev/2002-June/000012.html
+                    # https://ncs.com.sg
                     if ( $#Body >= $Counter ) {
 
                         # add no quote char, do it later by using DocumentCleanup()

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1095,7 +1095,7 @@ sub _CreateMimeEntity {
         my $Product = $ConfigObject->Get('Product');
         my $Version = $ConfigObject->Get('Version');
         $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
-        $Header{'X-Powered-By'} = 'OTOBO (https://otobo.org/)';
+        $Header{'X-Powered-By'} = 'OTOBO (https://ncs.com.sg)';
     }
     $Header{Type} = $Param{MimeType} || 'text/plain';
 

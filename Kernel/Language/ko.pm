@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1302,7 +1302,7 @@ sub Data {
         'Endpoint' => '종점',
         'URI to indicate specific location for accessing a web service.' =>
             '웹 서비스에 액세스하기위한 특정 위치를 나타내는 URI.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
             '',
         'Timeout' => '제한시간',
         'Timeout value for requests.' => '요청에 대한 시간 초과값 입니다.',
@@ -1376,7 +1376,7 @@ sub Data {
         'Add header' => '',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => '',
+        'e.g. https://ncs.com.sg' => '',
         'Set SOAPAction' => 'SOAPAction 설정',
         'Set to "Yes" in order to send a filled SOAPAction header.' => '채워진 SOAPAction 헤더를 보내려면 "Yes"로 설정하십시오.',
         'Set to "No" in order to send an empty SOAPAction header.' => '빈 SOAPAction 헤더를 보내려면 "아니오"로 설정하십시오.',
@@ -1395,7 +1395,7 @@ sub Data {
         'SOAPAction free text' => 'SOAPAction 자유 텍스트',
         'Text to be used to as SOAPAction.' => 'SOAPAction로서 사용되는 텍스트.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI는 SOAP 메소드에 컨텍스트를 제공하여 모호성을 줄입니다.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
             '',
         'Request name scheme' => '요청 이름 체계',
         'Select how SOAP request function wrapper should be constructed.' =>
@@ -7232,7 +7232,7 @@ Thanks for your help!
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => 'PGP에 대한 자체 로그 텍스트를 구성하십시오.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
             '',
         'Controls how to display the ticket history entries as readable values.' =>
             '티켓 기록 항목을 읽을 수 있는 값으로 표시하는 방법을 제어합니다.',
@@ -7620,7 +7620,7 @@ Thanks for your help!
             '에이전트 인터페이스의 티켓 비어있는 텍스트 화면에서 노트의 기본 본문을 정의합니다.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             '고객 사용자 주소록 검색 (CustomerUser 또는 CustomerCompany)의 기본 필터 필드를 정의합니다. CustomerCompany 필드의 경우 접두사 \'CustomerCompany_\'를 추가해야합니다.',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
             '',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             '',
@@ -7864,8 +7864,8 @@ Thanks for your help!
             '링크 유형 \'ParentChild\'를 정의합니다. 소스 이름과 대상 이름이 동일한 값을 포함하면 결과 링크는 비 방향성 링크입니다. 그렇지 않은 경우 결과는 방향 링크입니다.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             '링크 유형 그룹을 정의합니다. 같은 그룹의 링크 유형은 서로 취소합니다. 예 : 항공권 A가 티켓 B와 \'일반\'링크별로 링크 된 경우이 티켓을 \'ParentChild\'관계의 링크와 추가로 연결할 수 없습니다.',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            '온라인 리포지토리의 목록을 정의합니다. 다른 설치를 저장소로 사용할 수 있습니다 예 : Key= "http://example.com/otobo/public.pl?Action=PublicRepository;File= "and Content="Some Name".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            '온라인 리포지토리의 목록을 정의합니다. 다른 설치를 저장소로 사용할 수 있습니다 예 : Key= "https://ncs.com.sg;File= "and Content="Some Name".',
         'Defines the list of params that can be passed to ticket search function.' =>
             '티켓 검색 기능에 전달할 수있는 매개변수의 목록을 정의합니다.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8339,7 +8339,7 @@ Thanks for your help!
             '티켓 관련 기능을 사용하여 특정 티켓을 추적합니다.',
         'Enables ticket type feature.' => '티켓 유형 기능을 사용합니다.',
         'Enables ticket watcher feature only for the listed groups.' => '나열된 그룹에 대해서만 티켓 감시자 기능을 사용합니다.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
             '',
         'English (Canada)' => '영어 (캐나다)',
         'English (United Kingdom)' => '영어 (영국)',

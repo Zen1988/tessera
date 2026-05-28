@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -569,7 +569,7 @@ sub LoadDefaults {
     # for the latter the Action must be "Login"
 #    $Self->{'AuthModule::OpenIDConnect::Config'}{ClientSettings} = {
 #        ClientID    => 'abc123',
-#        RedirectURI => 'https://my.otobo.server/otobo/index.pl?Action=Login',
+#        RedirectURI => 'https://ncs.com.sg',
 #    };
     # For the authorization code flow the client secret has to be provided
 #    $Self->{'AuthModule::OpenIDConnect::Config'}{ClientSettings}{ClientSecret} = 's3cr3t';
@@ -630,8 +630,8 @@ sub LoadDefaults {
     # Note:
     # If you use this module, you should use as fallback the following
     # config settings if user isn't login through apache ($ENV{REMOTE_USER}).
-#    $Self->{LoginURL} = 'http://host.example.com/not-authorised-for-otobo.html';
-#    $Self->{LogoutURL} = 'http://host.example.com/thanks-for-using-otobo.html';
+#    $Self->{LoginURL} = 'https://ncs.com.sg';
+#    $Self->{LogoutURL} = 'https://ncs.com.sg';
 
     # This is example configuration to auth. agents against a radius server.
 #    $Self->{'AuthModule'} = 'Kernel::System::Auth::Radius';
@@ -1401,7 +1401,7 @@ You can log in via the following URL:
 
     # CustomerGroupSupport (0 = compatible to previous behavior)
     # (if this is 1, the you need to set the group <-> customer user
-    # relations! http://host/otobo/index.pl?Action=AdminCustomerUserGroup
+    # relations! https://ncs.com.sg
     # otherway, each user is ro/rw in each group!)
     $Self->{CustomerGroupSupport} = 0;
 
@@ -1569,7 +1569,7 @@ via the Preferences button after logging in.
     # for the latter the Action must be "Login"
 #    $Self->{'Customer::AuthModule::OpenIDConnect::Config'}{ClientSettings} = {
 #        ClientID    => 'abc123',
-#        RedirectURI => 'https://my.otobo.server/otobo/customer.pl?Action=Login',
+#        RedirectURI => 'https://ncs.com.sg',
 #    };
     # For the authorization code flow the client secret has to be provided
 #    $Self->{'Customer::AuthModule::OpenIDConnect::Config'}{ClientSettings}{ClientSecret} = 's3cr3t';
@@ -1612,8 +1612,8 @@ via the Preferences button after logging in.
 #    $Self->{'Customer::AuthModule::HTTPBasicAuth::ReplaceRegExp'} = '^(.+?)@.+?$';
     # If you use this module, you should use as fallback the following
     # config settings if user isn't login through apache ($ENV{REMOTE_USER})
-#    $Self->{CustomerPanelLoginURL} = 'http://host.example.com/not-authorised-for-otobo.html';
-#    $Self->{CustomerPanelLogoutURL} = 'http://host.example.com/thanks-for-using-otobo.html';
+#    $Self->{CustomerPanelLoginURL} = 'https://ncs.com.sg';
+#    $Self->{CustomerPanelLogoutURL} = 'https://ncs.com.sg';
 
     # This is example configuration to auth. agents against a radius server
 #    $Self->{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';

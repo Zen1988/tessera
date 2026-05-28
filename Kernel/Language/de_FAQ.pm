@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2020 Rother OSS GmbH, https://otobo.de/
+# Copyright (C) 2019-2020 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -297,7 +297,7 @@ sub Data {
 
     # SysConfig
     $Self->{Translation}->{'A filter for HTML output to add links behind a defined string. The element Image allows two input kinds. First the name of an image (e.g. faq.png). In this case the OTOBO image path will be used. The second possibility is to insert the link to the image.'} =
-        'Ein Filter zur automatischen Generierung von FAQ-Links, wenn ein Hinweis auf einen FAQ-Artikel identifiziert wird. Das Element Image erlaubt zwei Eingabeformen: Erstens der Name eines Icons (z. B. faq.png). In diesem Fall wird auf das Grafik-Verzeichnis des OTOBO zugegriffen. Als zweite Möglichkeit kann man aber auch den direkten Link zur Grafik angeben (z. B. http://otobo.org/faq.png).';
+        'Ein Filter zur automatischen Generierung von FAQ-Links, wenn ein Hinweis auf einen FAQ-Artikel identifiziert wird. Das Element Image erlaubt zwei Eingabeformen: Erstens der Name eines Icons (z. B. faq.png). In diesem Fall wird auf das Grafik-Verzeichnis des OTOBO zugegriffen. Als zweite Möglichkeit kann man aber auch den direkten Link zur Grafik angeben (z. B. https://ncs.com.sg).';
     $Self->{Translation}->{'Add FAQ article'} = 'FAQ-Artikel hinzufügen';
     $Self->{Translation}->{'CSS color for the voting result.'} = 'CSS-Farbe für das Bewertungs-Ergebnis.';
     $Self->{Translation}->{'Cache Time To Leave for FAQ items.'} = 'Cachezeit für FAQ-Artikel.';

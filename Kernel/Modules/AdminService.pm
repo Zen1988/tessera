@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/Modules/AdminService.pm
 # --
@@ -54,6 +54,7 @@ sub Run {
     my $ConfigObject  = $Kernel::OM->Get('Kernel::Config');
     my $ParamObject   = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
     $Param{IncludeInvalid} = $ParamObject->GetParam( Param => 'IncludeInvalid' );
 
@@ -71,6 +72,10 @@ sub Run {
 # ITSMCore
 # ---
     my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $ServiceDynamicFields = $DynamicFieldObject->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => ['Service'],
+    ) || [];
 
     # get the dynamic field for ITSMCriticality
     my $DynamicFieldConfigArrayRef = $DynamicFieldObject->DynamicFieldListGet(
@@ -133,9 +138,14 @@ sub Run {
         }
 
         my %Error;
+        my %DynamicFieldValues;
+        my %DynamicFieldErrors;
 
         if ( !$GetParam{Name} ) {
             $Error{'NameInvalid'} = 'ServerError';
+        }
+        if ( !$GetParam{TypeID} ) {
+            $Error{'TypeIDInvalid'} = 'ServerError';
         }
 
         my $ServiceName = '';
@@ -153,6 +163,31 @@ sub Run {
         if ( length $ServiceName > 200 ) {
             $Error{'NameInvalid'} = 'ServerError';
             $Error{LongName}      = 1;
+        }
+
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( @{$ServiceDynamicFields} ) {
+            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+            my $ValidationResult = $DynamicFieldBackendObject->EditFieldValueValidate(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ParamObject        => $ParamObject,
+                Mandatory          => 0,
+            );
+
+            if ( $ValidationResult->{ServerError} ) {
+                $DynamicFieldErrors{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $ValidationResult;
+                next DYNAMICFIELD;
+            }
+
+            $DynamicFieldValues{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $DynamicFieldBackendObject->EditFieldValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ParamObject        => $ParamObject,
+                LayoutObject       => $LayoutObject,
+            );
+        }
+        if (%DynamicFieldErrors) {
+            $Error{DynamicFieldErrors} = \%DynamicFieldErrors;
         }
 
         if ( !%Error ) {
@@ -186,65 +221,87 @@ sub Run {
             }
 
             if ( !%Error ) {
+                DYNAMICFIELD:
+                for my $DynamicFieldConfig ( @{$ServiceDynamicFields} ) {
+                    next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
 
-                # update preferences
-                my %ServiceData = $ServiceObject->ServiceGet(
-                    ServiceID => $GetParam{ServiceID},
-                    UserID    => $Self->{UserID},
-                );
-                my %Preferences = ();
-                if ( $ConfigObject->Get('ServicePreferences') ) {
-                    %Preferences = %{ $ConfigObject->Get('ServicePreferences') };
-                }
-                for my $Item ( sort keys %Preferences ) {
-                    my $Module = $Preferences{$Item}->{Module}
-                        || 'Kernel::Output::HTML::ServicePreferences::Generic';
-
-                    # load module
-                    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($Module) ) {
-                        return $LayoutObject->FatalError();
-                    }
-
-                    my $Object = $Module->new(
-                        %{$Self},
-                        ConfigItem => $Preferences{$Item},
-                        Debug      => $Self->{Debug},
+                    my $ValueSet = $DynamicFieldBackendObject->ValueSet(
+                        DynamicFieldConfig => $DynamicFieldConfig,
+                        ObjectID           => $GetParam{ServiceID},
+                        Value              => $DynamicFieldValues{ 'DynamicField_' . $DynamicFieldConfig->{Name} },
+                        UserID             => $Self->{UserID},
                     );
-                    my $Note;
-                    my @Params = $Object->Param( ServiceData => \%ServiceData );
-                    if (@Params) {
-                        my %GetParam = ();
-                        for my $ParamItem (@Params) {
-                            my @Array = $ParamObject->GetArray( Param => $ParamItem->{Name} );
-                            $GetParam{ $ParamItem->{Name} } = \@Array;
-                        }
-                        if (
-                            !$Object->Run(
-                                GetParam    => \%GetParam,
-                                ServiceData => \%ServiceData
-                            )
-                            )
-                        {
-                            $Note .= $LayoutObject->Notify( Info => $Object->Error() );
-                        }
+
+                    if ( !$ValueSet ) {
+                        $Error{Message} = $LayoutObject->{LanguageObject}->Translate(
+                            'Unable to set value for dynamic field %s!',
+                            $DynamicFieldConfig->{Name},
+                        );
+                        last DYNAMICFIELD;
                     }
                 }
 
-                # if the user would like to continue editing the service, just redirect to the edit screen
-                if (
-                    defined $ParamObject->GetParam( Param => 'ContinueAfterSave' )
-                    && ( $ParamObject->GetParam( Param => 'ContinueAfterSave' ) eq '1' )
-                    )
-                {
-                    my $ID = $ParamObject->GetParam( Param => 'ServiceID' ) || '';
-                    return $LayoutObject->Redirect(
-                        OP => "Action=$Self->{Action};Subaction=ServiceEdit;ServiceID=$ID"
-                    );
-                }
-                else {
+                if ( !$Error{Message} ) {
 
-                    # otherwise return to overview
-                    return $LayoutObject->Redirect( OP => "Action=$Self->{Action}" );
+                    # update preferences
+                    my %ServiceData = $ServiceObject->ServiceGet(
+                        ServiceID => $GetParam{ServiceID},
+                        UserID    => $Self->{UserID},
+                    );
+                    my %Preferences = ();
+                    if ( $ConfigObject->Get('ServicePreferences') ) {
+                        %Preferences = %{ $ConfigObject->Get('ServicePreferences') };
+                    }
+                    for my $Item ( sort keys %Preferences ) {
+                        my $Module = $Preferences{$Item}->{Module}
+                            || 'Kernel::Output::HTML::ServicePreferences::Generic';
+
+                        # load module
+                        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($Module) ) {
+                            return $LayoutObject->FatalError();
+                        }
+
+                        my $Object = $Module->new(
+                            %{$Self},
+                            ConfigItem => $Preferences{$Item},
+                            Debug      => $Self->{Debug},
+                        );
+                        my $Note;
+                        my @Params = $Object->Param( ServiceData => \%ServiceData );
+                        if (@Params) {
+                            my %GetParam = ();
+                            for my $ParamItem (@Params) {
+                                my @Array = $ParamObject->GetArray( Param => $ParamItem->{Name} );
+                                $GetParam{ $ParamItem->{Name} } = \@Array;
+                            }
+                            if (
+                                !$Object->Run(
+                                    GetParam    => \%GetParam,
+                                    ServiceData => \%ServiceData
+                                )
+                            )
+                            {
+                                $Note .= $LayoutObject->Notify( Info => $Object->Error() );
+                            }
+                        }
+                    }
+
+                    # if the user would like to continue editing the service, just redirect to the edit screen
+                    if (
+                        defined $ParamObject->GetParam( Param => 'ContinueAfterSave' )
+                        && ( $ParamObject->GetParam( Param => 'ContinueAfterSave' ) eq '1' )
+                        )
+                    {
+                        my $ID = $ParamObject->GetParam( Param => 'ServiceID' ) || '';
+                        return $LayoutObject->Redirect(
+                            OP => "Action=$Self->{Action};Subaction=ServiceEdit;ServiceID=$ID"
+                        );
+                    }
+                    else {
+
+                        # otherwise return to overview
+                        return $LayoutObject->Redirect( OP => "Action=$Self->{Action}" );
+                    }
                 }
             }
         }
@@ -263,6 +320,8 @@ sub Run {
         $Output .= $Self->_MaskNew(
             %Error,
             %GetParam,
+            %DynamicFieldValues,
+            DynamicFieldErrors => \%DynamicFieldErrors,
             %Param,
         );
         $Output .= $LayoutObject->Footer();
@@ -427,7 +486,7 @@ sub _MaskNew {
         Data       => $TypeList,
         Name       => 'TypeID',
         SelectedID => $Param{TypeID} || $ServiceData{TypeID},
-        Class      => 'Modernize',
+        Class      => 'Modernize Validate_Required ' . ( $Param{TypeIDInvalid} || '' ),
     );
 
     # build the criticality dropdown
@@ -455,6 +514,54 @@ sub _MaskNew {
         Name => 'ServiceEdit',
         Data => { %Param, %ServiceData, },
     );
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $ServiceDynamicFields      = $DynamicFieldObject->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => ['Service'],
+    ) || [];
+    my $DynamicFieldErrors = $Param{DynamicFieldErrors} || {};
+
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{$ServiceDynamicFields} ) {
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+        my $ParamName = 'DynamicField_' . $DynamicFieldConfig->{Name};
+
+        my $Value;
+        if ( exists $Param{$ParamName} ) {
+            $Value = $Param{$ParamName};
+        }
+        elsif ( $ServiceData{ServiceID} && $ServiceData{ServiceID} ne 'NEW' ) {
+            $Value = $DynamicFieldBackendObject->ValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectID           => $ServiceData{ServiceID},
+                UserID             => $Self->{UserID},
+            );
+        }
+
+        my $DynamicFieldHTML = $DynamicFieldBackendObject->EditFieldRender(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Value              => $Value,
+            Mandatory          => 0,
+            LayoutObject       => $LayoutObject,
+            ParamObject        => $ParamObject,
+            %{ $DynamicFieldErrors->{$ParamName} || {} },
+        );
+
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
+
+        $LayoutObject->Block(
+            Name => 'AdminServiceDynamicField',
+            Data => {
+                Name  => $DynamicFieldConfig->{Name},
+                Label => $DynamicFieldHTML->{Label},
+                Field => $DynamicFieldHTML->{Field},
+            },
+        );
+    }
 
     # show each preferences setting
     my %Preferences = ();

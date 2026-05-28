@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2007 Mohammad Saleh <maoaf at yahoo.com>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1304,8 +1304,8 @@ sub Data {
         'Endpoint' => 'نقطة النهاية',
         'URI to indicate specific location for accessing a web service.' =>
             'عنوان URI لتحديد موقع معين للوصول إلى خدمة ويب.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
-            'على سبيل المثال https://www.otobo.de:10745/api/v1.0 (بدون الخط المائل العكسي)',
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
+            'على سبيل المثال https://ncs.com.sg (بدون الخط المائل العكسي)',
         'Timeout' => 'مُهْلَةٌ',
         'Timeout value for requests.' => 'قيمة المهلة للطلبات.',
         'Authentication' => 'مُصَادَقَةٌ',
@@ -1378,7 +1378,7 @@ sub Data {
         'Add header' => 'إضافة رأس',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => 'على سبيل المثال https://local.otobo.de:8000/Webservice/Example',
+        'e.g. https://ncs.com.sg' => 'على سبيل المثال https://ncs.com.sg',
         'Set SOAPAction' => 'إعداد SOAPAction',
         'Set to "Yes" in order to send a filled SOAPAction header.' => 'اضبط على "نعم" لإرسال رأس SOAPAction مملوء.',
         'Set to "No" in order to send an empty SOAPAction header.' => 'اضبط على "لا" لإرسال رأس SOAPAction فارغ.',
@@ -1397,8 +1397,8 @@ sub Data {
         'SOAPAction free text' => 'نص مجاني من SOAPAction',
         'Text to be used to as SOAPAction.' => 'النص المراد استخدامه ك SOAPAction.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI الذي يعطي أساليب SOAP سياقًا، مما يقلل الغموض.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
-            'على سبيل المثال urn:otobo-com:soap:functions أو http://www.otobo.de/GenericInterface/actions',
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
+            'على سبيل المثال urn:otobo-com:soap:functions أو https://ncs.com.sg',
         'Request name scheme' => 'طلب مخطط التسمية',
         'Select how SOAP request function wrapper should be constructed.' =>
             'اختر كيفية إنشاء استدعاء وظيفة SOAP.',
@@ -7234,8 +7234,8 @@ Thanks for your help!
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => 'قم بتكوين نص السجل الخاص بك ل PGP.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
-            'تكوين إعداد TicketDynamicField افتراضي. يعرف "الاسم" الحقل الديناميكي الذي يجب إستخدامه، و"القيمة" هي البيانات التي سيتم تعيينها، و"الحدث" يحدد حدث المشغل. يرجى التحقق من دليل المطور (/‎https://doc.otobo.org)، الفصل "Ticket Event Module".',
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
+            'تكوين إعداد TicketDynamicField افتراضي. يعرف "الاسم" الحقل الديناميكي الذي يجب إستخدامه، و"القيمة" هي البيانات التي سيتم تعيينها، و"الحدث" يحدد حدث المشغل. يرجى التحقق من دليل المطور (/‎https://ncs.com.sg)، الفصل "Ticket Event Module".',
         'Controls how to display the ticket history entries as readable values.' =>
             'يتحكم في كيفية عرض إدخالات محفوظات التذاكر كقيم قابلة للقراءة.',
         'Controls if CustomerID is automatically copied from the sender address for unknown customers.' =>
@@ -7622,7 +7622,7 @@ Thanks for your help!
             'يحدد المحتوى الافتراضي للملاحظة في شاشة النص الحر للتذكرة الخاصة في واجهة الوكيل.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             'يحدد حقول التصفية الافتراضية في البحث في دفتر عناوين مستخدم العميل (مستخدم عميل أو شركة عميل). بالنسبة لحقول CustomerCompany، يجب إضافة بادئة "CustomerCompany_".',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
             '',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             '',
@@ -7866,8 +7866,8 @@ Thanks for your help!
             'يحدد نوع الارتباط "ParentChild". إذا كان اسمي المصدر والهدف يحتويان على نفس القيمة، يكون الارتباط غير اتجاهي. خلاف ذلك، فإن النتيجة هي ارتباط اتجاهي.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'تعريف مختلف خيارات الربط. أنواع الارتباط من نفس المجموعة حصرية بشكل متبادل. على سبيل المثال، إذا كانت التذكرة "أ" مرتبطة بالنوع "عادي" بالتذكرة "ب"، فلا يمكن ربط هاتين التذاكر بنوع "ParentChild".',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'تعريف قائمة المستودعات عبر الإنترنت. يمكن إستخدام عمليات تثبيت أخرى كمستودع، على سبيل المثال: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" و Content="Some Name".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'تعريف قائمة المستودعات عبر الإنترنت. يمكن إستخدام عمليات تثبيت أخرى كمستودع، على سبيل المثال: Key="https://ncs.com.sg;File=" و Content="Some Name".',
         'Defines the list of params that can be passed to ticket search function.' =>
             'يحدد قائمة المعلمات التي يمكن تمريرها إلى وظيفة البحث عن التذاكر.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8341,8 +8341,8 @@ Thanks for your help!
             'لتمكين ميزة "المسؤول" التي تسمح بتتبع التذاكر ذات الصلة.',
         'Enables ticket type feature.' => 'تمكين أنواع التذاكر.',
         'Enables ticket watcher feature only for the listed groups.' => 'تمكين ميزة تذكرة المراقبة فقط للمجموعات المسجلة.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
-            'يؤدي تنشيط SecureMode إلى تعطيل مثبت الويب (http://yourhost.example.com/otobo/installer.pl) والترحيل. وهذا يتم لمنع النظام من الاختطاف. في حالة عدم تمكين SecureMode، يمكن إعادة تثبيت النظام في أي وقت. في هذه الحالة، يتم إستخدام التكوين الأساسي الحالي لإعداد البرنامج النصي المثبت. يؤدي تنشيط SecureMode أيضا إلى تمكين GenericAgent و PackageManager و SQL Box.',
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+            'يؤدي تنشيط SecureMode إلى تعطيل مثبت الويب (https://ncs.com.sg) والترحيل. وهذا يتم لمنع النظام من الاختطاف. في حالة عدم تمكين SecureMode، يمكن إعادة تثبيت النظام في أي وقت. في هذه الحالة، يتم إستخدام التكوين الأساسي الحالي لإعداد البرنامج النصي المثبت. يؤدي تنشيط SecureMode أيضا إلى تمكين GenericAgent و PackageManager و SQL Box.',
         'English (Canada)' => 'الإنجليزية (كندا)',
         'English (United Kingdom)' => 'الإنجليزية (المملكة المتحدة)',
         'English (United States)' => 'الإنجليزية (الولايات المتحدة)',

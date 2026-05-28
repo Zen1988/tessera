@@ -60,7 +60,7 @@ severity = 4
 
 # allow lines like:
 #  my $ToDo = todo('too hard for now');
-#  in future: my $ToDo = $Test->{ToDo} ? todo('Timeouts occur. See https://github.com/RotherOSS/otobo/issues/748') : '';
+#  in future: my $ToDo = $Test->{ToDo} ? todo('Timeouts occur. See https://ncs.com.sg') : '';
 [Variables::ProhibitUnusedVarsStricter]
 #severity                          = 4    # activate only after the code has been cleaned up
 allow_unused_subroutine_arguments = 1

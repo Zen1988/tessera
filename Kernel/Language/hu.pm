@@ -7,7 +7,7 @@
 # Copyright (C) 2007 Aron Ujvari <ujvari@hungary.com>
 # Copyright (C) 2009 Arnold Matyasi <arn@webma.hu>
 # Copyright (C) 2013 Csaba Németh <csaba@sopron.hu>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1307,8 +1307,8 @@ sub Data {
         'Endpoint' => 'Végpont',
         'URI to indicate specific location for accessing a web service.' =>
             'Adott helyet jelző URI egy webszolgáltatáshoz való hozzáféréshez.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
-            'például https://www.otobo.de:10745/api/v1.0 (lezáró perjel nélkül)',
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
+            'például https://ncs.com.sg (lezáró perjel nélkül)',
         'Timeout' => 'Időkorlát',
         'Timeout value for requests.' => 'Időkorlátérték a kérésekhez.',
         'Authentication' => 'Hitelesítés',
@@ -1381,7 +1381,7 @@ sub Data {
         'Add header' => 'Fejléc hozzáadása',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => 'példéul https://local.otobo.de:8000/Webservice/Example',
+        'e.g. https://ncs.com.sg' => 'példéul https://ncs.com.sg',
         'Set SOAPAction' => 'SOAP-művelet beállítása',
         'Set to "Yes" in order to send a filled SOAPAction header.' => 'Állítsa „Igen” értékre egy kitöltött SOAP-művelet fejléc küldéséhez.',
         'Set to "No" in order to send an empty SOAPAction header.' => 'Állítsa „Nem” értékre egy üres SOAP-művelet fejléc küldéséhez.',
@@ -1400,8 +1400,8 @@ sub Data {
         'SOAPAction free text' => 'SOAP-művelet szabad szövege',
         'Text to be used to as SOAPAction.' => 'SOAP-műveletként használandó szöveg.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI egy környezethez való SOAP metódusok adásához csökkentve a kétértelműséget.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
-            'például urn:otobo-com:soap:functions vagy http://www.otobo.de/GenericInterface/actions',
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
+            'például urn:otobo-com:soap:functions vagy https://ncs.com.sg',
         'Request name scheme' => 'Kérés névséma',
         'Select how SOAP request function wrapper should be constructed.' =>
             'Válassza ki, hogy a SOAP-kérés függvénycsomagolót hogyan kell felépíteni.',
@@ -7237,8 +7237,8 @@ Az Ön ügyfélszolgálati csapata
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             'Annak beállítása, hogy mely képernyő legyen megjelenítve, miután egy jegy olvasatlanként lett megjelölve.',
         'Configure your own log text for PGP.' => 'Saját naplószöveg beállítása a PGP-hez.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
-            'Beállítja az alapértelmezett jegy dinamikus mező beállítást. A „Name” a használandó dinamikus mezőt, a „Value” a beállítandó adatokat, illetve az „Event” az aktiváló eseményt határozza meg. Nézze meg a fejlesztői kézikönyv (https://doc.otobo.org/) „Jegyesemény modul” fejezetét.',
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
+            'Beállítja az alapértelmezett jegy dinamikus mező beállítást. A „Name” a használandó dinamikus mezőt, a „Value” a beállítandó adatokat, illetve az „Event” az aktiváló eseményt határozza meg. Nézze meg a fejlesztői kézikönyv (https://ncs.com.sg) „Jegyesemény modul” fejezetét.',
         'Controls how to display the ticket history entries as readable values.' =>
             'Azt szabályozza, hogy hogyan jelenjenek meg a jegy előzmény bejegyzések olvasható értékként.',
         'Controls if CustomerID is automatically copied from the sender address for unknown customers.' =>
@@ -7625,8 +7625,8 @@ Az Ön ügyfélszolgálati csapata
             'Meghatározza egy jegyzet alapértelmezett törzsét az ügyintézői felület jegy szabad szöveg képernyőjén.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             'Meghatározza az alapértelmezett szűrőmezőket az ügyfél-felhasználó címjegyzék keresésében (CustomerUser vagy CustomerCompany). A CustomerCompany mezőnél egy „CustomerCompany_” előtagot kell hozzáadni.',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
-            'Meghatározza az ügyintézők és az ügyfelek által használt alapértelmezett előtétprogram (HTML) témáját. Ha szeretné, hozzáadhatja a saját témáját. Nézze meg a https://doc.otobo.org/ címen elérhető adminisztrátori kézikönyvet.',
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
+            'Meghatározza az ügyintézők és az ügyfelek által használt alapértelmezett előtétprogram (HTML) témáját. Ha szeretné, hozzáadhatja a saját témáját. Nézze meg a https://ncs.com.sg címen elérhető adminisztrátori kézikönyvet.',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             'Meghatározza az előtétprogram alapértelmezett nyelvét. Az összes lehetséges értéket a rendszeren lévő elérhető nyelvi fájlok határozzák meg. Ezek az értékek a „DefaultUsedLanguages” beállítás kulcsaiként vannak felsorolva.',
         'Defines the default history type in the customer interface.' => 'Meghatározza az alapértelmezett előzménytípust az ügyfélfelületen.',
@@ -7869,8 +7869,8 @@ Az Ön ügyfélszolgálati csapata
             'Meghatározza a „Szülő-gyermek” típusú hivatkozást. Ha a forrás neve és a cél neve ugyanazt az értéket tartalmazza, az eredményül kapott hivatkozás nem irányított. Egyébként az eredmény egy irányított hivatkozás.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'Meghatározza a hivatkozástípus csoportokat. Ugyanazon csoport hivatkozás típusai kioltják egymást. Példa: ha az A jegy „Normál” hivatkozásként kapcsolódik a B jegyhez, akkor ezeket a jegyeket nem lehet emellett „Szülő-gyermek” kapcsolat hivatkozásaként összekötni.',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'Meghatározza az interneten lévő tárolók listáját. Egy másik telepítés is használható tárolóként, például: Kulcs=„http://example.com/otobo/public.pl?Action=PublicRepository;File=” és Tartalom=„Valamilyen név”.',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'Meghatározza az interneten lévő tárolók listáját. Egy másik telepítés is használható tárolóként, például: Kulcs=„https://ncs.com.sg;File=” és Tartalom=„Valamilyen név”.',
         'Defines the list of params that can be passed to ticket search function.' =>
             'Meghatározza azoknak a paramétereknek a listáját, amelyek átadhatók a jegykeresés funkciónak.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8344,8 +8344,8 @@ Az Ön ügyfélszolgálati csapata
             'Engedélyezi a jegyfelelős szolgáltatást egy megadott jegy nyomon követéséhez.',
         'Enables ticket type feature.' => 'Engedélyezi a jegytípus szolgáltatást.',
         'Enables ticket watcher feature only for the listed groups.' => 'Csak a felsorolt csoportoknak engedélyezi a jegymegfigyelés szolgáltatást.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
-            'A biztonságos mód engedélyezése letiltja a webes telepítőt (http://yourhost.example.com/otobo/installer.pl) és a költöztetéseket. Ez azért van így, hogy megakadályozza a rendszer eltérítését. Ha a biztonságos mód nincs engedélyezve, akkor a rendszer újratelepíthető. Ebben az esetben a jelenlegi alapbeállítások lesznek felhasználva a telepítő parancsfájlon belüli kérdések előre kitöltéséhez. A biztonságos mód engedélyezése az általános ügyintézőt, a csomagkezelőt és az SQL dobozt is engedélyezi.',
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+            'A biztonságos mód engedélyezése letiltja a webes telepítőt (https://ncs.com.sg) és a költöztetéseket. Ez azért van így, hogy megakadályozza a rendszer eltérítését. Ha a biztonságos mód nincs engedélyezve, akkor a rendszer újratelepíthető. Ebben az esetben a jelenlegi alapbeállítások lesznek felhasználva a telepítő parancsfájlon belüli kérdések előre kitöltéséhez. A biztonságos mód engedélyezése az általános ügyintézőt, a csomagkezelőt és az SQL dobozt is engedélyezi.',
         'English (Canada)' => 'Angol (Kanada)',
         'English (United Kingdom)' => 'Angol (Egyesült Királyság)',
         'English (United States)' => 'Angol (Egyesült Államok)',

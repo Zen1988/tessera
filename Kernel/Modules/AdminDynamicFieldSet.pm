@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -332,11 +332,12 @@ sub _AddAction {
     }
 
     for my $ConfigParam (
-        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue Namespace)
+        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue RenderLayout Namespace)
         )
     {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
+    $GetParam{RenderLayout} = 'Vertical' if ( $GetParam{RenderLayout} || '' ) ne 'Horizontal';
 
     my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
@@ -430,9 +431,10 @@ sub _AddAction {
 
     # set specific config
     my $FieldConfig = {
-        Tooltip    => $GetParam{Tooltip},
-        MultiValue => $GetParam{MultiValue},
-        Include    => \@Include,
+        Tooltip      => $GetParam{Tooltip},
+        MultiValue   => $GetParam{MultiValue},
+        RenderLayout => $GetParam{RenderLayout} || 'Vertical',
+        Include      => \@Include,
     };
 
     # create a new field
@@ -593,11 +595,12 @@ sub _ChangeAction {
     }
 
     for my $ConfigParam (
-        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue Namespace)
+        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue RenderLayout Namespace)
         )
     {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
+    $GetParam{RenderLayout} = 'Vertical' if ( $GetParam{RenderLayout} || '' ) ne 'Horizontal';
 
     my @Include;
     if ( $GetParam{Include} ) {
@@ -733,9 +736,10 @@ sub _ChangeAction {
 
     # set specific config
     my $FieldConfig = {
-        Tooltip    => $GetParam{Tooltip},
-        MultiValue => $GetParam{MultiValue},
-        Include    => \@Include,
+        Tooltip      => $GetParam{Tooltip},
+        MultiValue   => $GetParam{MultiValue},
+        RenderLayout => $GetParam{RenderLayout} || 'Vertical',
+        Include      => \@Include,
     };
 
     # update dynamic field (FieldType and ObjectType cannot be changed; use old values)
@@ -919,6 +923,16 @@ sub _ShowScreen {
         Class      => 'Modernize W50pc',
     );
 
+    my $RenderLayoutStrg = $LayoutObject->BuildSelection(
+        Data => {
+            Vertical   => Translatable('Vertical'),
+            Horizontal => Translatable('Horizontal'),
+        },
+        Name       => 'RenderLayout',
+        SelectedID => $Param{RenderLayout} || 'Vertical',
+        Class      => 'Modernize W50pc',
+    );
+
     my $NamespaceList = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
     if ( IsArrayRefWithData($NamespaceList) ) {
         my $NamespaceStrg = $LayoutObject->BuildSelection(
@@ -1087,6 +1101,7 @@ sub _ShowScreen {
             ValidityStrg          => $ValidityStrg,
             DynamicFieldOrderStrg => $DynamicFieldOrderStrg,
             MultiValueStrg        => $MultiValueStrg,
+            RenderLayoutStrg      => $RenderLayoutStrg,
             ReadonlyInternalField => $ReadonlyInternalField,
         }
     );

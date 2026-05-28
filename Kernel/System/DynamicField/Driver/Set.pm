@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -299,8 +299,12 @@ sub EditFieldRender {
             $DynamicField->{$Name}{ProcessSuffix} = $Param{DynamicFieldConfig}{ProcessSuffix};
         }
 
+        my $RenderContent = $Self->_RenderContentGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+        );
+
         my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
-            Content            => $Include,
+            Content            => $RenderContent,
             DynamicFields      => $DynamicField,
             UpdatableFields    => $Param{UpdatableFields},
             LayoutObject       => $Param{LayoutObject},
@@ -320,9 +324,12 @@ sub EditFieldRender {
         $ResultHTML[$SetIndex] = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
-                Name             => $Param{DynamicFieldConfig}->{Name},
-                Index            => $SetIndex,
-                DynamicFieldHTML => $DynamicFieldHTML,
+                Name              => $Param{DynamicFieldConfig}->{Name},
+                Index             => $SetIndex,
+                DynamicFieldHTML  => $DynamicFieldHTML,
+                RenderLayoutClass => $Self->_RenderLayoutClassGet(
+                    DynamicFieldConfig => $Param{DynamicFieldConfig},
+                ),
             },
         );
 
@@ -340,8 +347,12 @@ sub EditFieldRender {
         my %TemplateValues = map { 'DynamicField_' . $_ => $Self->{TemplateValues}{ $Param{DynamicFieldConfig}->{Name} }{$_} }
             keys %{ $Self->{TemplateValues}{ $Param{DynamicFieldConfig}->{Name} } // {} };
 
+        my $RenderContent = $Self->_RenderContentGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+        );
+
         my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
-            Content            => $Param{DynamicFieldConfig}{Config}{Include},
+            Content            => $RenderContent,
             DynamicFields      => $DynamicField,
             UpdatableFields    => $Param{UpdatableFields},
             LayoutObject       => $Param{LayoutObject},
@@ -357,9 +368,12 @@ sub EditFieldRender {
         my $TemplateHTML = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
-                Name             => $Param{DynamicFieldConfig}->{Name},
-                Index            => 'Template',
-                DynamicFieldHTML => $DynamicFieldHTML,
+                Name              => $Param{DynamicFieldConfig}->{Name},
+                Index             => 'Template',
+                DynamicFieldHTML  => $DynamicFieldHTML,
+                RenderLayoutClass => $Self->_RenderLayoutClassGet(
+                    DynamicFieldConfig => $Param{DynamicFieldConfig},
+                ),
             },
         );
 
@@ -1057,6 +1071,46 @@ sub _GetIncludedFieldOrdered {
     }
 
     return @Return;
+}
+
+sub _RenderContentGet {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Include            = $DynamicFieldConfig->{Config}{Include} || [];
+
+    return $Include if ( $DynamicFieldConfig->{Config}{RenderLayout} || 'Vertical' ) ne 'Horizontal';
+    return $Include if !IsArrayRefWithData($Include);
+
+    my @Fields;
+    ELEMENT:
+    for my $Element ( $Include->@* ) {
+        return $Include if !IsHashRefWithData($Element);
+        return $Include if IsHashRefWithData( $Element->{Grid} );
+        return $Include if !$Element->{DF};
+
+        push @Fields, { $Element->%* };
+    }
+
+    return $Include if !@Fields;
+
+    return [
+        {
+            Grid => {
+                Columns => scalar @Fields,
+                Rows    => [ \@Fields ],
+            },
+        },
+    ];
+}
+
+sub _RenderLayoutClassGet {
+    my ( $Self, %Param ) = @_;
+
+    my $RenderLayout = $Param{DynamicFieldConfig}{Config}{RenderLayout} || 'Vertical';
+
+    return ' DynamicFieldSetLayoutHorizontal' if $RenderLayout eq 'Horizontal';
+    return ' DynamicFieldSetLayoutVertical';
 }
 
 1;

@@ -10,7 +10,7 @@
 # Copyright (C) 2011 Espen Stefansen <libbe at stefansen dot net>
 # Copyright (C) 2012 Lars Magnus Herland <lars.magnus at herland.priv.no>
 # Copyright (C) 2013 Espen Stefansen <libbe at stefansen dot net>
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1310,8 +1310,8 @@ sub Data {
         'Endpoint' => 'Sluttpunkt',
         'URI to indicate specific location for accessing a web service.' =>
             'URI for å angi spesifikk plassering for tilgang til en nettjeneste.',
-        'e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)' =>
-            'f.eks. https://www.otobo.de:10745/api/v1.0 (uten etterfølgende skråstrek)',
+        'e.g. https://ncs.com.sg (without trailing backslash)' =>
+            'f.eks. https://ncs.com.sg (uten etterfølgende skråstrek)',
         'Timeout' => 'Pause',
         'Timeout value for requests.' => 'Tidsavbruddsverdi for forespørsler.',
         'Authentication' => 'Autentisering',
@@ -1384,7 +1384,7 @@ sub Data {
         'Add header' => 'Legg til forespørselshode',
 
         # Template: AdminGenericInterfaceTransportHTTPSOAP
-        'e.g. https://local.otobo.de:8000/Webservice/Example' => 'f.eks. https://local.otobo.de:8000/Webservice/Example',
+        'e.g. https://ncs.com.sg' => 'f.eks. https://ncs.com.sg',
         'Set SOAPAction' => 'Sett SOAPAction',
         'Set to "Yes" in order to send a filled SOAPAction header.' => 'Sett til "Ja" for å sende en fylt SOAPAction-header.',
         'Set to "No" in order to send an empty SOAPAction header.' => 'Sett til "Nei" for å sende en tom SOAPAction-header.',
@@ -1403,8 +1403,8 @@ sub Data {
         'SOAPAction free text' => 'SOAPAction fritekst',
         'Text to be used to as SOAPAction.' => 'Tekst som skal brukes som SOAPAction.',
         'URI to give SOAP methods a context, reducing ambiguities.' => 'URI for å gi SOAP-metoder en kontekst og redusere tvetydigheter.',
-        'e.g. urn:otobo-com:soap:functions or http://www.otobo.de/GenericInterface/actions' =>
-            'f.eks. urn:otobo-com:soap:functions eller http://www.otobo.de/GenericInterface/actions',
+        'e.g. urn:otobo-com:soap:functions or https://ncs.com.sg' =>
+            'f.eks. urn:otobo-com:soap:functions eller https://ncs.com.sg',
         'Request name scheme' => 'Be om navneskjema',
         'Select how SOAP request function wrapper should be constructed.' =>
             'Velg hvordan SOAP request-funksjonsomslag skal konstrueres.',
@@ -7240,8 +7240,8 @@ Ditt Helpdesk-team
         'Configure which screen should be shown after a ticket has been marked as unseen.' =>
             '',
         'Configure your own log text for PGP.' => 'Sett opp din egen loggtekst for PGP.',
-        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://doc.otobo.org/), chapter "Ticket Event Module".' =>
-            'Konfigurerer en standard TicketDynamicField-innstilling. "Navn" definerer det dynamiske feltet som skal brukes, "Verdi" er dataene som skal settes, og "Hendelse" definerer utløserhendelsen. Vennligst sjekk utviklerhåndboken (https://doc.otobo.org/), kapittel "Sakshendelsesmodul".',
+        'Configures a default TicketDynamicField setting. "Name" defines the dynamic field which should be used, "Value" is the data that will be set, and "Event" defines the trigger event. Please check the developer manual (https://ncs.com.sg), chapter "Ticket Event Module".' =>
+            'Konfigurerer en standard TicketDynamicField-innstilling. "Navn" definerer det dynamiske feltet som skal brukes, "Verdi" er dataene som skal settes, og "Hendelse" definerer utløserhendelsen. Vennligst sjekk utviklerhåndboken (https://ncs.com.sg), kapittel "Sakshendelsesmodul".',
         'Controls how to display the ticket history entries as readable values.' =>
             'Styrer hvordan sakshistorikkoppføringene skal vises som lesbare verdier.',
         'Controls if CustomerID is automatically copied from the sender address for unknown customers.' =>
@@ -7628,8 +7628,8 @@ Ditt Helpdesk-team
             'Spesifiserer standardinnholdet for notiser i sakens fritekstdel for saksbehandlere.',
         'Defines the default filter fields in the customer user address book search (CustomerUser or CustomerCompany). For the CustomerCompany fields a prefix \'CustomerCompany_\' must be added.' =>
             'Definerer standard filterfelt i kundebrukeradresseboksøket (CustomerUser eller CustomerCompany). For CustomerCompany-feltene må et prefiks \'CustomerCompany_\' legges til.',
-        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.' =>
-            'Definerer standard frontend (HTML)-temaet som skal brukes av agenter og kunder. Hvis ønskelig, kan du legge til ditt eget tema. Vennligst se administratormanualen som ligger på https://doc.otobo.org/.',
+        'Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg' =>
+            'Definerer standard frontend (HTML)-temaet som skal brukes av agenter og kunder. Hvis ønskelig, kan du legge til ditt eget tema. Vennligst se administratormanualen som ligger på https://ncs.com.sg',
         'Defines the default frontend language. All the possible values are determined by the available language files on the system. These values are listed as the keys in the setting \'DefaultUsedLanguages\'.' =>
             'Definerer standard frontend-språket. Alle mulige verdier bestemmes av de tilgjengelige språkfilene på systemet. Disse verdiene er oppført som nøklene i innstillingen \'DefaultUsedLanguages\'.',
         'Defines the default history type in the customer interface.' => 'Spesifiserer standard historikkvisning i kundeportalen.',
@@ -7872,8 +7872,8 @@ Ditt Helpdesk-team
             'Definerer koblingstypen \'Foreldrebarn\'. Hvis kildenavnet og målnavnet inneholder samme verdi, er den resulterende koblingen en ikke-retningsbestemt en; ellers er resultatet en retningskobling.',
         'Defines the link type groups. The link types of the same group cancel one another. Example: If ticket A is linked per a \'Normal\' link with ticket B, then these tickets could not be additionally linked with link of a \'ParentChild\' relationship.' =>
             'Definerer koblingstypegruppene. Koblingstypene i samme gruppe kansellerer hverandre. Eksempel: Hvis sak A er knyttet til en \'Normal\'-kobling med sak B, kan ikke disse sakene i tillegg knyttes til en kobling til et \'Foreldrebarn\'-forhold.',
-        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".' =>
-            'Definerer listen over online repositories. En annen installasjon kan brukes som arkiv, for eksempel: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" og Content="Some Name".',
+        'Defines the list of online repositories. Another installations can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".' =>
+            'Definerer listen over online repositories. En annen installasjon kan brukes som arkiv, for eksempel: Key="https://ncs.com.sg;File=" og Content="Some Name".',
         'Defines the list of params that can be passed to ticket search function.' =>
             'Definerer listen over parametere som kan sendes til sakssøkefunksjonen.',
         'Defines the list of possible next actions on an error screen, a full path is required, then is possible to add external links if needed.' =>
@@ -8347,8 +8347,8 @@ Ditt Helpdesk-team
             'Aktiverer saksansvarlig funksjon for å holde styr på en spesifikk sak.',
         'Enables ticket type feature.' => 'Aktiverer sakstypefunksjonen.',
         'Enables ticket watcher feature only for the listed groups.' => 'Aktiverer saksovervåkingsfunksjonen bare for de oppførte gruppene.',
-        'Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
-            'Aktivering av SecureMode deaktiverer nettinstallasjonsprogrammet (http://yourhost.example.com/otobo/installer.pl) og migreringene. Dette gjøres for å forhindre at systemet blir kapret. Når SecureMode ikke er aktivert, kan systemet installeres på nytt. I dette tilfellet vil gjeldende grunnleggende konfigurasjon bli brukt til å forhåndsutfylle spørsmålene i installasjonsskriptet. Aktivering av SecureMode aktiverer også GenericAgent, PackageManager og SQL Box.',
+        'Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.' =>
+            'Aktivering av SecureMode deaktiverer nettinstallasjonsprogrammet (https://ncs.com.sg) og migreringene. Dette gjøres for å forhindre at systemet blir kapret. Når SecureMode ikke er aktivert, kan systemet installeres på nytt. I dette tilfellet vil gjeldende grunnleggende konfigurasjon bli brukt til å forhåndsutfylle spørsmålene i installasjonsskriptet. Aktivering av SecureMode aktiverer også GenericAgent, PackageManager og SQL Box.',
         'English (Canada)' => 'Engelsk (Canada)',
         'English (United Kingdom)' => 'Engelsk (Storbritannia)',
         'English (United States)' => 'Engelsk (Amerika)',

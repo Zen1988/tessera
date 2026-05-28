@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -278,7 +278,7 @@ sub RowCount {
 
     # This is a workaround for a very special case.
     # There can be OTRS 6 running on MySQL 8, where groups is a reserverd word.
-    # See https://github.com/RotherOSS/otobo/issues/639
+    # See https://ncs.com.sg
     my $Table = ( $Param{DBObject}->{'DB::Type'} eq 'mysql' && $Param{Table} eq 'groups' )
         ?
         q{`groups`}
@@ -817,7 +817,7 @@ sub DataTransfer {
 
                 # This is a workaround for a very special case.
                 # There can be OTRS 6 running on MySQL 8, where groups is a reserved word.
-                # See https://github.com/RotherOSS/otobo/issues/639
+                # See https://ncs.com.sg
                 my $Table = ( $Param{OTRSDBObject}->{'DB::Type'} eq 'mysql' && $SourceTable eq 'groups' )
                     ?
                     q{`groups`}

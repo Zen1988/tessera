@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1252,7 +1252,7 @@ sub CheckDBRequirements {
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # Version checks are only active for some database systems.
-    # See https://doc.otobo.org/manual/installation/11.0/en/content/requirements.html#software-requirements
+    # See https://ncs.com.sg
     my %RequiredVersion = (
         mysql   => '5.6',
         mariadb => '10.0',

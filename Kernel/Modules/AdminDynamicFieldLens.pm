@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2023 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -43,55 +43,55 @@ sub new {
     # field types which are usable as attribute df
     $Self->{IsAttributeFieldCapable} = {
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         Agent    => 0,
         Checkbox => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3809
+        # see https://ncs.com.sg
         ContactWD => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         CustomerCompany => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         CustomerUser => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3793
+        # see https://ncs.com.sg
         Database => 0,
         Date     => 1,
         DateTime => 1,
         Dropdown => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         FAQ            => 0,
         GeneralCatalog => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         ITSMConfigItem => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         ITSMConfigItemVersion => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3789
+        # see https://ncs.com.sg
         Lens        => 0,
         Multiselect => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3720 and https://github.com/RotherOSS/otobo/issues/3815
+        # see https://ncs.com.sg and https://ncs.com.sg
         RichText => 0,
 
-        # see https://github.com/RotherOSS/otobo/issues/3810
+        # see https://ncs.com.sg
         ScriptTemplateToolkit => 0,
 
-        # works in general, see https://github.com/RotherOSS/otobo/issues/3811
+        # works in general, see https://ncs.com.sg
         Set      => 1,
         Text     => 1,
         TextArea => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3186
+        # see https://ncs.com.sg
         Ticket => 0,
         Title  => 1,
 
-        # see https://github.com/RotherOSS/otobo/issues/3446
+        # see https://ncs.com.sg
         WebService => 0,
     };
 

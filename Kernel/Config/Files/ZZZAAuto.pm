@@ -1069,7 +1069,7 @@ $Self->{'CustomerDashboard::Tiles'}->{'FeaturedLink-01'} =  {
     'BackgroundImage' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/Dashboard/dashboard_bgfl.png',
     'FooterText' => 'Learn more >',
     'HeaderText' => 'OTOBO 11.0 | Service Management',
-    'Link' => 'https://otobo.io/en/otobo-11-0-2-major-release/',
+    'Link' => 'https://ncs.com.sg',
     'MainText' => 'OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you\'ll get seamless integration between your asset management and service management workflows.',
     'NewTab' => '0',
     'TextColor' => '#ffffff'
@@ -1122,7 +1122,7 @@ $Self->{'CustomerDashboard::Tiles'}->{'ToolBox-01'} =  {
     },
     'Links' => {
       'https://www.openstreetmap.org' => '2',
-      'https://www.otobo.io' => '1',
+      'https://ncs.com.sg' => '1',
       'https://www.wikipedia.org' => '3'
     },
     'Text' => 'Your external tools',
@@ -11110,7 +11110,7 @@ $Self->{'Loader::Agent::ResponsiveCSS'}->{'000-Framework'} =  [
 ];
 $Self->{'Loader::Agent::Skin'}->{'000-default'} =  {
   'Description' => 'This is the default orange - black skin.',
-  'HomePage' => 'www.otobo.org',
+  'HomePage' => 'https://ncs.com.sg',
   'InternalName' => 'default',
   'VisibleName' => 'Default'
 };
@@ -11194,13 +11194,13 @@ $Self->{'Loader::Customer::ResponsiveCSS'}->{'000-Framework'} =  [
 $Self->{'Loader::Customer::SelectedSkin'} =  'default';
 $Self->{'Loader::Customer::Skin'}->{'000-default'} =  {
   'Description' => 'This is the default orange - black skin for the customer interface.',
-  'HomePage' => 'www.otobo.org',
+  'HomePage' => 'https://ncs.com.sg',
   'InternalName' => 'default',
   'VisibleName' => 'Default'
 };
 $Self->{'Loader::Customer::Skin'}->{'001-high-contrast'} =  {
   'Description' => 'High contrast skin for visually impaired users.',
-  'HomePage' => 'www.otobo.org',
+  'HomePage' => 'https://ncs.com.sg',
   'InternalName' => 'highcontrast',
   'VisibleName' => 'High Contrast'
 };
@@ -13614,10 +13614,10 @@ $Self->{'Package::EventModulePost'}->{'9000-SupportDataSend'} =  {
 };
 $Self->{'Package::FileUpload'} =  '1';
 $Self->{'Package::RepositoryList'} =  {
-  'https://ftp.otobo.org/pub/otobo/packages-itsm/' => 'OTOBO::ITSM Addons'
+  'https://ncs.com.sg' => 'OTOBO::ITSM Addons'
 };
 $Self->{'Package::RepositoryRoot'} =  [
-  'https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml'
+  'https://ncs.com.sg'
 ];
 $Self->{'Package::ShowFeatureAddons'} =  '1';
 $Self->{'Package::Timeout'} =  '120';

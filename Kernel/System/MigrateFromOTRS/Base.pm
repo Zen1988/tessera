@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1783,7 +1783,7 @@ sub _ChangeFileInfo {
         {
             FileType => 'All',
             Search   => '(?<!(Copyright \(\S\) \d\d\d\d-\d\d\d\d OTRS AG, ))https:\/\/otrs\.com',
-            Change   => 'https://otobo.io'
+            Change   => 'https://ncs.com.sg'
         },
         {
             FileType          => 'All',
@@ -1864,7 +1864,7 @@ sub _ChangeLicenseHeaderRules {
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 ",
-                "# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+                "# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1899,7 +1899,7 @@ sub _ChangeLicenseHeaderRules {
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 ",
-                "# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+                "# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1934,7 +1934,7 @@ sub _ChangeLicenseHeaderRules {
 // OTOBO is a web-based ticketing system for service organisations.
 // --
 ",
-                "// Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+                "// Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 // --
 // This program is free software: you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free Software
@@ -1967,7 +1967,7 @@ sub _ChangeLicenseHeaderRules {
                 "/* OTOBO is a web-based ticketing system for service organisations.
 
 ",
-                "Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+                "Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software

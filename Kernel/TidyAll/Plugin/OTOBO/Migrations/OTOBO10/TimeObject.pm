@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -51,7 +51,7 @@ sub validate_source {
     if ($ErrorMessage) {
         return $Self->DieWithError(<<"EOF");
 Use of deprecated Kernel::System::Time is not allowed anymore except for legacy API interfaces. Please use Kernel::System::DateTime instead.
-    Please see https://doc.otobo.org/manual/developer/stable/en/content/how-it-works/date-time.html.
+    Please see https://ncs.com.sg
 $ErrorMessage
 EOF
     }

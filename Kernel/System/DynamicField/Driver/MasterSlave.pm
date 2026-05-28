@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -360,7 +360,7 @@ sub PossibleValuesGet {
     }
 
     # If config UnsetMasterSlave is enabled and we are requesting values from AdminGenericAgent,
-    #   add UnsetMaster and UnsetSlave possible values. See bug#14778 (https://bugs.otobo.org/show_bug.cgi?id=14778).
+    #   add UnsetMaster and UnsetSlave possible values. See bug#14778 (https://ncs.com.sg).
     if ( $ConfigObject->Get('MasterSlave::UnsetMasterSlave') && $LayoutObject->{Action} eq 'AdminGenericAgent' )
     {
         $PossibleValues{UnsetMaster} = $LayoutObject->{LanguageObject}->Translate('Unset Master Ticket');
@@ -750,7 +750,7 @@ sub SearchFieldRender {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTOBO project (L<https://otobo.org/>).
+This software is part of the OTOBO project (L<https://ncs.com.sg>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you
