@@ -30,6 +30,8 @@ use parent qw(
     Kernel::System::ProcessManagement::TransitionAction::Base
 );
 
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+
 our @ObjectDependencies = (
     'Kernel::System::Ticket',
     'Kernel::System::Log',
@@ -324,27 +326,15 @@ sub Run {
         . "Required Weightage:\n"
         . $RequiredWeightage;
 
-    $TicketObject->ArticleCreate(
-
+    ZTSMArticleCreate(
+        %Param,
         TicketID => $TicketID,
-
-        ArticleType => 'note-internal',
-
-        SenderType => 'system',
-
-        Subject => 'ZTSM ChapterEngage',
-
-        Body => $Body,
-
-        ContentType => 'text/plain; charset=utf-8',
-
-        HistoryType => 'AddNote',
-
+        Subject  => 'ZTSM ChapterEngage',
+        Body     => $Body,
         HistoryComment =>
-              'ZTSM: ChapterEngage '
+            'ZTSM: ChapterEngage '
             . 'Chapter='
             . ( $Chapter || 'N/A' ),
-
         UserID => $UserID,
     );
 
@@ -369,4 +359,3 @@ sub Run {
 }
 
 1;
-

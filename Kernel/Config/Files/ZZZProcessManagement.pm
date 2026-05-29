@@ -9,26 +9,32 @@ sub Load {
     my ($File, $Self) = @_;
 $Self->{'Process'} = {
   'Process-44258576c8e8bc5e7290607746956473' => {
-    'ChangeTime' => '2026-05-19 08:19:25',
+    'ChangeTime' => '2026-05-28 04:50:57',
     'CreateTime' => '2026-05-19 06:44:01',
-    'Name' => 'standard-ztsm-statebook',
+    'Name' => 'ztsm-ticket-lifecycle-ochestration',
     'Path' => {
       'Activity-34165120277c0bacb81ab0d4238c37d8' => {
         'Transition-04744060f9f24ba6ecf9e31e7b3bd54a' => {
           'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d',
           'TransitionAction' => [
-            'TransitionAction-eaaee915ae0a9ba4a4c826110d190e2f'
+            'TransitionAction-86d1455359a643cefdf2176a7194c0fe'
           ]
         }
       },
       'Activity-a08597b234bbccf5791c588eb7eb904d' => {
         'Transition-daf4722965429ec766dc1edacb18ae3f' => {
-          'ActivityEntityID' => 'Activity-b83380fe3605688f475b6a0cc8a94085'
+          'ActivityEntityID' => 'Activity-b83380fe3605688f475b6a0cc8a94085',
+          'TransitionAction' => [
+            'TransitionAction-7564ca7dec5ec71f214a555bd6f1f055'
+          ]
         }
       },
       'Activity-b83380fe3605688f475b6a0cc8a94085' => {
         'Transition-3d843ca4f50c50443595ca689fce2c58' => {
-          'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d'
+          'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d',
+          'TransitionAction' => [
+            'TransitionAction-baa9deeea687c519eb9b4141f89f94dc'
+          ]
         }
       }
     },
@@ -66,13 +72,16 @@ $Self->{'Process'} = {
     'StateEntityID' => 'S1'
   },
   'Process-f591d39e4cefb1b9e16207b0f1f249b8' => {
-    'ChangeTime' => '2026-05-19 08:17:24',
+    'ChangeTime' => '2026-05-29 05:46:27',
     'CreateTime' => '2026-05-19 08:02:57',
-    'Name' => 'standard-ztsm-bluebook',
+    'Name' => 'ztsm-activity-lifecycle-orchestration',
     'Path' => {
       'Activity-34165120277c0bacb81ab0d4238c37d8' => {
         'Transition-73986cfe5c9d1f052a8801de90639d39' => {
-          'ActivityEntityID' => 'Activity-d03ebeeb1fe92dc4ed1ddbb9d6e5a8b1'
+          'ActivityEntityID' => 'Activity-d03ebeeb1fe92dc4ed1ddbb9d6e5a8b1',
+          'TransitionAction' => [
+            'TransitionAction-c2fc5b9b5a445ffc0d00a18a068c4b6f'
+          ]
         }
       },
       'Activity-423fffb8cdf2b78ca99648eea844990a' => {},
@@ -82,11 +91,17 @@ $Self->{'Process'} = {
         }
       },
       'Activity-d03ebeeb1fe92dc4ed1ddbb9d6e5a8b1' => {
-        'Transition-1591e474e042ee46453c3af941cf2f04' => {
-          'ActivityEntityID' => 'Activity-423fffb8cdf2b78ca99648eea844990a'
+        'Transition-3307fab7725f8178910dde7b308e3aca' => {
+          'ActivityEntityID' => 'Activity-423fffb8cdf2b78ca99648eea844990a',
+          'TransitionAction' => [
+            'TransitionAction-0a9c66ff63d6d8d1d0b924d0138d3d31'
+          ]
         },
         'Transition-c85842060cd288f31c26b7055433e59b' => {
-          'ActivityEntityID' => 'Activity-cb38901550faadf19a997fe8f800316c'
+          'ActivityEntityID' => 'Activity-cb38901550faadf19a997fe8f800316c',
+          'TransitionAction' => [
+            'TransitionAction-76049985f97045be0504eeea395c711b'
+          ]
         }
       }
     },
@@ -161,7 +176,7 @@ $Self->{'Process::Activity'} = {
     'ActivityDialog' => {
       '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
     },
-    'ChangeTime' => '2026-05-19 07:13:39',
+    'ChangeTime' => '2026-05-29 07:27:10',
     'CreateTime' => '2026-05-19 07:09:33',
     'ID' => 11,
     'Name' => 'StateBook Reader'
@@ -170,7 +185,7 @@ $Self->{'Process::Activity'} = {
     'ActivityDialog' => {
       '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
     },
-    'ChangeTime' => '2026-05-19 07:13:46',
+    'ChangeTime' => '2026-05-29 06:31:19',
     'CreateTime' => '2026-05-19 07:12:24',
     'ID' => 12,
     'Name' => 'BlueBook Reader'
@@ -235,6 +250,34 @@ $Self->{'Process::ActivityDialog'} = {
     'RequiredLock' => '',
     'SubmitAdviceText' => '',
     'SubmitButtonText' => ''
+  },
+  'ActivityDialog-13b48aaf5c0b896a78619d4775976741' => {
+    'ChangeTime' => '2026-05-29 06:20:03',
+    'CreateTime' => '2026-05-29 06:14:11',
+    'DescriptionLong' => '',
+    'DescriptionShort' => 'Statebook Reader',
+    'DirectSubmit' => '1',
+    'FieldOrder' => [
+      'DynamicField_FirewallPolicyRule'
+    ],
+    'Fields' => {
+      'DynamicField_FirewallPolicyRule' => {
+        'DefaultValue' => '',
+        'DescriptionLong' => '',
+        'DescriptionShort' => '',
+        'Display' => '1'
+      }
+    },
+    'InputFieldDefinition' => '',
+    'Interface' => [
+      'AgentInterface',
+      'CustomerInterface'
+    ],
+    'Name' => 'StateBook Reader',
+    'Permission' => 'owner',
+    'RequiredLock' => '',
+    'SubmitAdviceText' => '',
+    'SubmitButtonText' => 'Submit'
   },
   'ActivityDialog-34db70f1fce711773ca402199d96ef93' => {
     'ChangeTime' => '2026-05-13 04:22:38',
@@ -487,6 +530,32 @@ $Self->{'Process::Transition'} = {
     'CreateTime' => '2026-05-19 08:14:21',
     'Name' => 'step-in-bluebook'
   },
+  'Transition-3307fab7725f8178910dde7b308e3aca' => {
+    'ChangeTime' => '2026-05-28 04:56:41',
+    'Condition' => {
+      '1' => {
+        'Fields' => {
+          'State' => {
+            'Match' => 'Pending',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
+      },
+      '2' => {
+        'Fields' => {
+          'ZTicket-Owner' => {
+            'Match' => '^ [A-Za-z0-9\\-] +$',
+            'Type' => 'Regexp'
+          }
+        },
+        'Type' => 'and'
+      }
+    },
+    'ConditionLinking' => 'and',
+    'CreateTime' => '2026-05-28 04:54:27',
+    'Name' => 'work-inprogress'
+  },
   'Transition-3d843ca4f50c50443595ca689fce2c58' => {
     'ChangeTime' => '2026-05-19 07:26:26',
     'Condition' => {
@@ -556,82 +625,37 @@ $Self->{'Process::Transition'} = {
     'Name' => 'activity_exit'
   },
   'Transition-daf4722965429ec766dc1edacb18ae3f' => {
-    'ChangeTime' => '2026-05-19 07:22:46',
+    'ChangeTime' => '2026-05-29 07:51:32',
     'Condition' => {
       '1' => {
         'Fields' => {
-          'State' => {
-            'Match' => 'cancelled',
+          'StateType' => {
+            'Match' => 'open',
             'Type' => 'String'
           }
         },
-        'Type' => 'and'
+        'Type' => 'or'
       },
       '2' => {
         'Fields' => {
-          'State' => {
-            'Match' => 'closed duplicate',
+          'StateType' => {
+            'Match' => 'new',
             'Type' => 'String'
           }
         },
-        'Type' => 'and'
+        'Type' => 'or'
       },
       '3' => {
         'Fields' => {
-          'State' => {
-            'Match' => 'closed no action',
+          'StateType' => {
+            'Match' => 'pending',
             'Type' => 'String'
           }
         },
-        'Type' => 'and'
-      },
-      '4' => {
-        'Fields' => {
-          'State' => {
-            'Match' => 'closed rejected',
-            'Type' => 'String'
-          }
-        },
-        'Type' => 'and'
-      },
-      '5' => {
-        'Fields' => {
-          'State' => {
-            'Match' => 'closed rollback',
-            'Type' => 'String'
-          }
-        },
-        'Type' => 'and'
-      },
-      '6' => {
-        'Fields' => {
-          'State' => {
-            'Match' => 'closed successful',
-            'Type' => 'String'
-          }
-        },
-        'Type' => 'and'
-      },
-      '7' => {
-        'Fields' => {
-          'State' => {
-            'Match' => 'closed unsuccessful',
-            'Type' => 'String'
-          }
-        },
-        'Type' => 'and'
-      },
-      '8' => {
-        'Fields' => {
-          'State' => {
-            'Match' => 'closed with workaround',
-            'Type' => 'String'
-          }
-        },
-        'Type' => 'and'
+        'Type' => 'or'
       }
     },
-    'ConditionLinking' => 'xor',
+    'ConditionLinking' => 'or',
     'CreateTime' => '2026-05-19 07:22:46',
     'Name' => 'statebook_walk_down'
   },
@@ -664,6 +688,15 @@ $Self->{'Process::Transition'} = {
 };
 
 $Self->{'Process::TransitionAction'} = {
+  'TransitionAction-0a9c66ff63d6d8d1d0b924d0138d3d31' => {
+    'ChangeTime' => '2026-05-28 04:49:47',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:49:47',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMCharacterEngage',
+    'Name' => 'TESSERA-ChapterEngage'
+  },
   'TransitionAction-6c0450f3dae3fe3c33d3e326ad8a7c3d' => {
     'ChangeTime' => '2026-04-15 08:50:20',
     'Config' => {
@@ -673,6 +706,42 @@ $Self->{'Process::TransitionAction'} = {
     'Module' => 'Kernel::System::ProcessManagement::TransitionAction::TicketStateSet',
     'Name' => 'MoveRejected'
   },
+  'TransitionAction-7564ca7dec5ec71f214a555bd6f1f055' => {
+    'ChangeTime' => '2026-05-28 04:21:24',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:21:24',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader',
+    'Name' => 'TESSERA-StateBookReader'
+  },
+  'TransitionAction-76049985f97045be0504eeea395c711b' => {
+    'ChangeTime' => '2026-05-28 04:49:28',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:49:28',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector',
+    'Name' => 'TESSERA-ChapterDirector'
+  },
+  'TransitionAction-808e56248f5bdb904401bbfb263129e3' => {
+    'ChangeTime' => '2026-05-28 04:48:56',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:48:56',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMRoleDirector',
+    'Name' => 'TESSERA-RoleDirector'
+  },
+  'TransitionAction-86d1455359a643cefdf2176a7194c0fe' => {
+    'ChangeTime' => '2026-05-28 04:20:57',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:20:57',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian',
+    'Name' => 'TESSERA-ServiceLibrarian'
+  },
   'TransitionAction-98b64a061a524484d994850e6805b64f' => {
     'ChangeTime' => '2026-04-15 08:51:48',
     'Config' => {
@@ -681,6 +750,15 @@ $Self->{'Process::TransitionAction'} = {
     'CreateTime' => '2026-04-15 08:51:48',
     'Module' => 'Kernel::System::ProcessManagement::TransitionAction::TicketStateSet',
     'Name' => 'MoveVerify'
+  },
+  'TransitionAction-baa9deeea687c519eb9b4141f89f94dc' => {
+    'ChangeTime' => '2026-05-28 04:48:31',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-05-28 04:48:31',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookReader',
+    'Name' => 'TESSERA-BlueBookReader'
   },
   'TransitionAction-c2fc5b9b5a445ffc0d00a18a068c4b6f' => {
     'ChangeTime' => '2026-04-15 08:50:41',

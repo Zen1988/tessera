@@ -41,7 +41,7 @@ sub new {
     my $ZnunyHelperObject  = $Kernel::OM->Get('Kernel::System::ZnunyHelper');
 
     my $DynamicFields = $DynamicFieldObject->GetValidDynamicFields(
-        ObjectType => [ 'Ticket', 'Article' ],
+        ObjectType => 'All',
     );
     $Self->{DynamicFields} = $DynamicFields;
 

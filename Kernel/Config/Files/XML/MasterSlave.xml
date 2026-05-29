@@ -120,10 +120,16 @@
         <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
         <Value>
             <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>QuickDateButtons.css</Item>
+                    </Array>
+                </Item>
                 <Item Key="JavaScript">
                     <Array>
                         <Item>Core.Agent.TicketAction.js</Item>
                         <Item>Core.Agent.TicketMasterSlave.js</Item>
+                        <Item>QuickDateButtons.js</Item>
                     </Array>
                 </Item>
             </Hash>
@@ -342,6 +348,42 @@
         <Value>
             <Item ValueType="Checkbox">0</Item>
         </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketMasterSlave###QuickDateButtons" Required="0" Valid="1">
+        <Description Translatable="1">This option sets additional quick date buttons to pending dates. For ordering purposes one hash entry per array segment has to be set. The key is the button name, value is the value, where a single number n sets the date to n days from now, +n adds n days to the currently set date, and -n subtracts them.</Description>
+        <Navigation>Frontend::Agent::View::TicketMasterSlave</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem>
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="+1 day">+1</Item>
+                    </Hash>
+                </Item>
+                <Item>
+                    <Hash>
+                        <Item Key="+1 week">+7</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Output::FilterElementPost###MasterSlaveShowPendingTimeIfNeeded" Required="0" Valid="1">
+        <Description Translatable="1">This configuration registers an OutputFilter module that injects the javascript functionality to remove PendingTime.</Description>
+        <Navigation>Frontend::Base::OutputFilter</Navigation>
+            <Value>
+                <Hash>
+                    <Item Key="Module">Kernel::Output::HTML::FilterElementPost::Znuny4OTOBOShowPendingTimeIfNeeded</Item>
+                    <Item Key="Templates">
+                        <Hash>
+                            <Item Key="AgentTicketMasterSlave">1</Item>
+                        </Hash>
+                    </Item>
+                </Hash>
+            </Value>
     </Setting>
     <Setting Name="DashboardBackend###0900-TicketMaster" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the dashboard backend of the master tickets overview of the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.</Description>

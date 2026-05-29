@@ -33,6 +33,7 @@ our @ObjectDependencies = (
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Ticket',
     'Kernel::System::Log',
+    'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader',
 );
 
 sub new {
@@ -51,9 +52,21 @@ sub _NormalizeValue {
     return if !defined $Value;
 
     if ( ref $Value eq 'ARRAY' ) {
-        return $Value->[0];
+        $Value = $Value->[0];
     }
 
+	if ( ref $Value eq 'HASH' ) {
+
+		if ( defined $Value->{Key} ) {
+			return $Value->{Key};
+		}
+
+		if ( defined $Value->{Value} ) {
+			return $Value->{Value};
+		}
+
+		return ();
+	}
     return $Value;
 }
 
@@ -67,19 +80,66 @@ sub _NormalizeArray {
     return () if !defined $Value;
 
 	if (ref $Value eq 'HASH') {
-		$Value = [$Value];
+		$Value = [ $Value ];
 	}
-	
+
     if ( ref $Value eq 'ARRAY' ) {
-        return grep { defined $_ && $_ ne '' } @{$Value};
+
+        my @Result;
+
+		ITEM:
+		for my $Item ( @{$Value} ) {
+
+			next ITEM if !defined $Item || $Item eq '';
+
+			if ( ref $Item eq 'HASH' ) {
+
+				push @Result,
+					defined $Item->{Key}
+					? $Item->{Key}
+					: $Item->{Value};
+
+				next ITEM;
+			}
+
+			push @Result, $Item;
+		}
+
+        return grep { defined $_ && $_ ne '' } @Result;
     }
 
     return ($Value)
-        if defined $Value
+        if !ref $Value
+        && defined $Value
         && $Value ne '';
 
     return ();
 }
+
+sub _TransitionContextGet {
+    my (%Param) = @_;
+
+    my $Config = ref $Param{Config} eq 'HASH' ? $Param{Config} : {};
+
+    return (
+        ProcessEntityID => $Param{ProcessEntityID}
+            || $Config->{ProcessEntityID}
+            || $Config->{FallbackProcessEntityID},
+
+        ActivityEntityID => $Param{ActivityEntityID}
+            || $Config->{ActivityEntityID}
+            || $Config->{FallbackActivityEntityID},
+
+        TransitionEntityID => $Param{TransitionEntityID}
+            || $Config->{TransitionEntityID}
+            || $Config->{FallbackTransitionEntityID},
+
+        TransitionActionEntityID => $Param{TransitionActionEntityID}
+            || $Config->{TransitionActionEntityID}
+            || $Config->{FallbackTransitionActionEntityID},
+    );
+}
+
 
 
 sub Run {
@@ -105,6 +165,10 @@ sub Run {
         'Kernel::System::Ticket'
     );
 
+	my $TicketArticleCreateObject = $Kernel::OM->Get(
+		'Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate'
+	);
+
     # ------------------------------------------------------------ #
     # VALIDATE
     # ------------------------------------------------------------ #
@@ -120,6 +184,8 @@ sub Run {
     my $ServiceID = $Ticket->{ServiceID};
 
     return if !$ServiceID;
+
+    my %TransitionContext = _TransitionContextGet(%Param);
 
     # ------------------------------------------------------------ #
     # GOVERNANCE CONTEXT
@@ -172,26 +238,27 @@ sub Run {
             . "Action Required:\n"
             . "IPC governance review required.";
 
-        $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
 
-            TicketID => $TicketID,
+				SenderType           => 'system',
 
-            ArticleType => 'note-internal',
+				IsVisibleForCustomer => 1,
 
-            SenderType => 'system',
+				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
 
-            Subject => 'ZTSM Governance Resolution Failed',
+				Body => $FailureBody,
 
-            Body => $FailureBody,
+				ContentType => 'text/plain; charset=utf-8',
 
-            ContentType => 'text/plain; charset=utf-8',
+				HistoryType => 'AddNote',
 
-            HistoryType => 'AddNote',
-
-            HistoryComment =>
-                'ZTSM: Governance resolution failed',
-
-            UserID => 1,
+				HistoryComment => 'ZTSM: Governance resolution failed',
+			},
         );
 
         return;
@@ -418,26 +485,28 @@ sub Run {
             . "Action Required:\n"
             . "IPC governance review required.";
 
-        $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
 
-            TicketID => $TicketID,
+				SenderType           => 'system',
 
-            ArticleType => 'note-internal',
+				IsVisibleForCustomer => 1,
 
-            SenderType => 'system',
+				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
 
-            Subject => 'ZTSM Governance Resolution Failed',
+				Body => $FailureBody,
 
-            Body => $FailureBody,
+				ContentType => 'text/plain; charset=utf-8',
 
-            ContentType => 'text/plain; charset=utf-8',
+				HistoryType => 'AddNote',
 
-            HistoryType => 'AddNote',
-
-            HistoryComment =>
-                'ZTSM: Governance resolution failed',
-
-            UserID => 1,
+				HistoryComment =>
+					'ZTSM: Governance resolution failed',
+			},
         );
 
         return;
@@ -541,30 +610,32 @@ sub Run {
         . "Location:\n"
         . ( join( ',', @TicketLocations ) || 'N/A' );
 
-    $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
 
-        TicketID => $TicketID,
+				SenderType           => 'system',
 
-        ArticleType => 'note-internal',
+				IsVisibleForCustomer => 1,
 
-        SenderType => 'system',
+				Subject => 'DO-NOT-REPLY: Service Governance Resolved',
 
-        Subject => 'ZTSM Governance Resolution',
+				Body => $SuccessBody,
 
-        Body => $SuccessBody,
+				ContentType => 'text/plain; charset=utf-8',
 
-        ContentType => 'text/plain; charset=utf-8',
+				HistoryType => 'AddNote',
 
-        HistoryType => 'AddNote',
-
-        HistoryComment =>
-              'ZTSM: Governance resolved '
-            . '[Score='
-            . $HighestScore
-            . '] '
-            . $WinnerName,
-
-        UserID => 1,
+				HistoryComment =>
+					  'ZTSM: Governance resolved '
+					. '[Score='
+					. $HighestScore
+					. '] '
+					. $WinnerName,
+			},
     );
 
     # ------------------------------------------------------------ #
@@ -579,6 +650,65 @@ sub Run {
             . "ServiceSupportMap=$WinnerID "
             . "Score=$HighestScore",
     );
+
+    if ($StateBookID) {
+
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  "ZTSM: Invoking StateBookReader "
+                . "TicketID=$TicketID "
+                . "StateBook=$StateBookID",
+        );
+
+        my %FreshTicket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => $Param{UserID} || 1,
+        );
+
+        if ( %FreshTicket && $FreshTicket{TicketID} ) {
+
+            my $StateBookResult = $Kernel::OM->Get(
+                'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader'
+            )->Run(
+                %Param,
+                Ticket      => \%FreshTicket,
+                UserID      => $Param{UserID} || 1,
+                StateBookID => $StateBookID,
+            );
+
+            $LogObject->Log(
+                Priority => 'notice',
+                Message  =>
+                      "ZTSM: StateBookReader finished "
+                    . "TicketID=$TicketID "
+                    . "StateBook=$StateBookID "
+                    . "Result="
+                    . ( $StateBookResult || 0 ),
+            );
+        }
+        else {
+
+            $LogObject->Log(
+                Priority => 'error',
+                Message  =>
+                      "ZTSM: Failed reloading ticket before StateBookReader "
+                    . "TicketID=$TicketID "
+                    . "StateBook=$StateBookID",
+            );
+        }
+    }
+    else {
+
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  "ZTSM: Governance resolved without StateBook "
+                . "TicketID=$TicketID "
+                . "ServiceSupportMap=$WinnerID",
+        );
+    }
 
     return 1;
 }

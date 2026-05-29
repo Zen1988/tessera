@@ -109,7 +109,7 @@
 
 # Rother OSS / ITSMCore
 [% RenderBlockStart("Queue") %]
-                <div class="Row">
+                <div class="Row Hidden">
                     [% Data.ToStrg %]
                     <label for="Dest" class="Mandatory">
                         [% Translate("To") | html %] <span class="Marker">*</span>
@@ -138,8 +138,6 @@
                     <div class="Clear"></div>
                 </div>
 [% RenderBlockEnd("DynamicField_TitleDynamicFields") %]
-
-[% Data.DynamicFieldHTML %]
 
 [% RenderBlockStart("DynamicField_TitleMessage") %]
                 <div class="Row Row_DynamicField_[% Data.Name | html %][% Data.HiddenClass | html %]" [% Data.HiddenStyle | html %]>
@@ -176,6 +174,12 @@
                     <div id="RichTextServerError" class="TooltipErrorMessage NoJavaScriptMessage[% Data.BodyInvalid | html %]" ><p>[% Translate("This field is required.") | html %]</p></div>
                     <div class="Clear"></div>
                 </div>
+
+<span id="ZTSMServiceExtensionDynamicFieldsStart" class="Hidden"></span>
+[% Data.DynamicFieldHTML %]
+<span id="ZTSMServiceExtensionDynamicFieldsEnd" class="Hidden"></span>
+
+[% InsertTemplate("ZTSMCustomerTicketMessageServiceFields.tt") %]
 
                 <div class="Row [% Data.AttachmentsHiddenClass | html %]">
                     <div id="oooAttachments" class="Field">

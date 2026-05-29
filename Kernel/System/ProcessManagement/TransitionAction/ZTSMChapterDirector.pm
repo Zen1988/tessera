@@ -27,6 +27,8 @@ use parent qw(
     Kernel::System::ProcessManagement::TransitionAction::Base
 );
 
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+
 our @ObjectDependencies = (
     'Kernel::System::Ticket',
     'Kernel::System::Log',
@@ -239,25 +241,13 @@ sub Run {
             . "Result:\n"
             . "Parent orchestration failed.";
 
-        $TicketObject->ArticleCreate(
-
+        ZTSMArticleCreate(
+            %Param,
             TicketID => $ParentTicketID,
-
-            ArticleType => 'note-internal',
-
-            SenderType => 'system',
-
-            Subject => 'ZTSM Mandatory Chapter Failed',
-
-            Body => $Body,
-
-            ContentType => 'text/plain; charset=utf-8',
-
-            HistoryType => 'AddNote',
-
+            Subject  => 'ZTSM Mandatory Chapter Failed',
+            Body     => $Body,
             HistoryComment =>
                 'ZTSM: Mandatory Chapter failed',
-
             UserID => 1,
         );
 		
@@ -294,25 +284,13 @@ sub Run {
 				UserID => 1,
 			);
 			
-			$TicketObject->ArticleCreate(
-
+			ZTSMArticleCreate(
+				%Param,
 				TicketID => $PlayTicketID,
-
-				ArticleType => 'note-internal',
-
-				SenderType => 'system',
-
-				Subject => 'Closed Cascading',
-
-				Body => $Body,
-
-				ContentType => 'text/plain; charset=utf-8',
-
-				HistoryType => 'AddNote',
-
+				Subject  => 'Closed Cascading',
+				Body     => $Body,
 				HistoryComment =>
 					'ZTSM: Closed cascading',
-
 				UserID => 1,
 			);
 		}	
@@ -449,25 +427,13 @@ sub Run {
                 . "Required Weightage:\n"
                 . $RequiredWeightage;
 
-            $TicketObject->ArticleCreate(
-
+            ZTSMArticleCreate(
+                %Param,
                 TicketID => $ParentTicketID,
-
-                ArticleType => 'note-internal',
-
-                SenderType => 'system',
-
-                Subject => 'ZTSM Additional ChapterPlay Generated',
-
-                Body => $Body,
-
-                ContentType => 'text/plain; charset=utf-8',
-
-                HistoryType => 'AddNote',
-
+                Subject  => 'ZTSM Additional ChapterPlay Generated',
+                Body     => $Body,
                 HistoryComment =>
                     'ZTSM: Additional ChapterPlay generated',
-
                 UserID => 1,
             );
         }
@@ -496,27 +462,15 @@ sub Run {
         . " / "
         . $RequiredWeightage;
 
-    $TicketObject->ArticleCreate(
-
+    ZTSMArticleCreate(
+        %Param,
         TicketID => $ParentTicketID,
-
-        ArticleType => 'note-internal',
-
-        SenderType => 'system',
-
-        Subject => 'ZTSM Chapter Completed',
-
-        Body => $Body,
-
-        ContentType => 'text/plain; charset=utf-8',
-
-        HistoryType => 'AddNote',
-
+        Subject  => 'ZTSM Chapter Completed',
+        Body     => $Body,
         HistoryComment =>
-              'ZTSM: Chapter completed '
+            'ZTSM: Chapter completed '
             . 'Chapter='
             . ( $Chapter || 'N/A' ),
-
         UserID => 1,
     );
 

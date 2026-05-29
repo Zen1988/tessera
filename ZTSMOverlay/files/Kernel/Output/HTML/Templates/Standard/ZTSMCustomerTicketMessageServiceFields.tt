@@ -1,0 +1,138 @@
+<script>
+(function () {
+    "use strict";
+
+    function ZTSMFirst(Selector) {
+        return document.querySelector(Selector);
+    }
+
+    function ZTSMServiceExtensionValue() {
+        var Service = ZTSMFirst('#ServiceID, input[name="ServiceID"], select[name="ServiceID"]');
+
+        if (!Service) {
+            return '';
+        }
+
+        return Service.value || '';
+    }
+
+    function ZTSMServiceExtensionRefresh() {
+        var Form = ZTSMFirst('#NewCustomerTicket'),
+            Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+            End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
+            Request,
+            Data;
+
+        if (!Form || !Start || !End) {
+            return;
+        }
+
+        Data = new FormData(Form);
+        Data.delete('Action');
+        Data.delete('Subaction');
+        Data.delete('ElementChanged');
+        Data.append('Action', 'CustomerTicketMessage');
+        Data.append('Subaction', 'ZTSMServiceExtensionDynamicFields');
+
+        Request = new XMLHttpRequest();
+        Request.open('POST', Form.getAttribute('action') || '[% Env("CGIHandle") %]', true);
+        Request.onreadystatechange = function () {
+            if (Request.readyState !== 4) {
+                return;
+            }
+            if (Request.status < 200 || Request.status >= 300) {
+                return;
+            }
+
+            ZTSMServiceExtensionReplace(Start, End, Request.responseText || '');
+        };
+        Request.send(Data);
+    }
+
+    function ZTSMServiceExtensionReplace(Start, End, HTML) {
+        var Node = Start.nextSibling,
+            Next;
+
+        while (Node && Node !== End) {
+            Next = Node.nextSibling;
+            Node.parentNode.removeChild(Node);
+            Node = Next;
+        }
+
+        End.insertAdjacentHTML('beforebegin', HTML);
+        ZTSMServiceExtensionInitialize(Start, End);
+    }
+
+    function ZTSMServiceExtensionInitialize(Start, End) {
+        var Node = Start.nextSibling,
+            Event;
+
+        if (window.Core && Core.UI && Core.UI.InputFields && typeof Core.UI.InputFields.Init === 'function') {
+            Core.UI.InputFields.Init();
+        }
+        if (window.Core && Core.Customer && Core.Customer.InputFields && typeof Core.Customer.InputFields.Init === 'function') {
+            Core.Customer.InputFields.Init();
+        }
+        if (window.Core && Core.Agent && Core.Agent.DynamicFieldReferenceSearch && typeof Core.Agent.DynamicFieldReferenceSearch.Init === 'function') {
+            Core.Agent.DynamicFieldReferenceSearch.Init();
+        }
+
+        while (Node && Node !== End) {
+            if (Node.nodeType === 1) {
+                Event = document.createEvent('Event');
+                Event.initEvent('change', true, true);
+
+                Array.prototype.forEach.call(Node.querySelectorAll('select, input, textarea'), function (Field) {
+                    Field.dispatchEvent(Event);
+                });
+            }
+            Node = Node.nextSibling;
+        }
+    }
+
+    function ZTSMServiceExtensionWatch() {
+        var LastServiceID = ZTSMServiceExtensionValue(),
+            Service = ZTSMFirst('#ServiceID, input[name="ServiceID"], select[name="ServiceID"]'),
+            Events = [ 'change', 'input', 'keyup', 'paste', 'blur', 'select2:select', 'select2:unselect' ];
+
+        if (Service) {
+            Events.forEach(function (EventName) {
+                Service.addEventListener(EventName, function () {
+                    var CurrentServiceID = ZTSMServiceExtensionValue();
+
+                    if (CurrentServiceID === LastServiceID) {
+                        return;
+                    }
+
+                    LastServiceID = CurrentServiceID;
+                    window.setTimeout(ZTSMServiceExtensionRefresh, 0);
+                });
+            });
+        }
+
+        window.setInterval(function () {
+            var CurrentServiceID = ZTSMServiceExtensionValue();
+
+            if (CurrentServiceID === LastServiceID) {
+                return;
+            }
+
+            LastServiceID = CurrentServiceID;
+            ZTSMServiceExtensionRefresh();
+        }, 500);
+    }
+
+    function ZTSMReady() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                ZTSMServiceExtensionWatch();
+            });
+        }
+        else {
+            ZTSMServiceExtensionWatch();
+        }
+    }
+
+    ZTSMReady();
+}());
+</script>

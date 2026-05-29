@@ -1,5 +1,5 @@
-diff --git a/Kernel/Modules/AdminService.pm b/Kernel/Modules/AdminService.pm
-index 9cb08a7..db6e80e 100644
+﻿diff --git a/Kernel/Modules/AdminService.pm b/Kernel/Modules/AdminService.pm
+index 9cb08a7..81fc001 100644
 --- a/Kernel/Modules/AdminService.pm
 +++ b/Kernel/Modules/AdminService.pm
 @@ -2,7 +2,7 @@
@@ -232,7 +232,7 @@ index 9cb08a7..db6e80e 100644
      );
  
      # build the criticality dropdown
-@@ -456,6 +515,54 @@ sub _MaskNew {
+@@ -456,6 +515,75 @@ sub _MaskNew {
          Data => { %Param, %ServiceData, },
      );
  
@@ -274,12 +274,33 @@ index 9cb08a7..db6e80e 100644
 +
 +        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
 +
++        my $FieldHTML = $DynamicFieldHTML->{Field};
++        if ( !$FieldHTML && IsArrayRefWithData( $DynamicFieldHTML->{MultiValue} ) ) {
++            $FieldHTML = join "\n", @{ $DynamicFieldHTML->{MultiValue} };
++            $FieldHTML .= "\n" . ( $DynamicFieldHTML->{MultiValueTemplate} || '' );
++        }
++
++        if ( !$FieldHTML && ( $DynamicFieldConfig->{FieldType} || '' ) eq 'Text' ) {
++            my $FieldName = 'DynamicField_' . $DynamicFieldConfig->{Name};
++            my @Values    = ref $Value eq 'ARRAY' ? @{$Value} : ( $Value // '' );
++
++            @Values = ('') if !@Values;
++            push @Values, '' if $DynamicFieldConfig->{Config}->{MultiValue};
++
++            my $Index = 0;
++            $FieldHTML = join "\n", map {
++                my $FieldID = $DynamicFieldConfig->{Config}->{MultiValue} ? $FieldName . '_' . $Index++ : $FieldName;
++                my $Escaped = $LayoutObject->Ascii2Html( Text => $_ // '' );
++                '<input type="text" class="DynamicFieldText W50pc" id="' . $FieldID . '" name="' . $FieldName . '" value="' . $Escaped . '" />'
++            } @Values;
++        }
++
 +        $LayoutObject->Block(
 +            Name => 'AdminServiceDynamicField',
 +            Data => {
 +                Name  => $DynamicFieldConfig->{Name},
 +                Label => $DynamicFieldHTML->{Label},
-+                Field => $DynamicFieldHTML->{Field},
++                Field => $FieldHTML,
 +            },
 +        );
 +    }
@@ -288,7 +309,7 @@ index 9cb08a7..db6e80e 100644
      my %Preferences = ();
      if ( $ConfigObject->Get('ServicePreferences') ) {
 diff --git a/Kernel/Output/HTML/Templates/Standard/AdminService.tt b/Kernel/Output/HTML/Templates/Standard/AdminService.tt
-index ded7e9e..81800af 100644
+index ded7e9e..a64e074 100644
 --- a/Kernel/Output/HTML/Templates/Standard/AdminService.tt
 +++ b/Kernel/Output/HTML/Templates/Standard/AdminService.tt
 @@ -2,7 +2,7 @@
@@ -353,10 +374,10 @@ index ded7e9e..81800af 100644
  
 +[% RenderBlockStart("AdminServiceDynamicField") %]
 +                        <div class="Row Row_DynamicField_[% Data.Name | html %]">
++                            [% Data.Label %]
 +                            <div class="Field">
 +                                [% Data.Field %]
 +                            </div>
-+                            [% Data.Label %]
 +                            <div class="Clear"></div>
 +                        </div>
 +[% RenderBlockEnd("AdminServiceDynamicField") %]

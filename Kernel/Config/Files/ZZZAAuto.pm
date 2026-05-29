@@ -7,7 +7,7 @@ no warnings 'redefine'; ## no critic qw(TestingAndDebugging::ProhibitNoWarnings)
 use utf8;
 sub Load {
     my ($File, $Self) = @_;
-$Self->{'CurrentDeploymentID'} = '81';
+$Self->{'CurrentDeploymentID'} = '86';
 $Self->{'ACL::CacheTTL'} =  '3600';
 $Self->{'ACLKeysLevel1Change'} =  {
   'Possible' => 'Possible',
@@ -1121,8 +1121,8 @@ $Self->{'CustomerDashboard::Tiles'}->{'ToolBox-01'} =  {
       '/otobo-web/skins/Customer/default/img/sample_wikipedia.png' => '3'
     },
     'Links' => {
-      'https://www.openstreetmap.org' => '2',
       'https://ncs.com.sg' => '1',
+      'https://www.openstreetmap.org' => '2',
       'https://www.wikipedia.org' => '3'
     },
     'Text' => 'Your external tools',
@@ -1422,19 +1422,19 @@ $Self->{'CustomerFrontend::Module'}->{'CustomerTicketSearch'} =  {
   'NavBarName' => 'Ticket',
   'Title' => 'Search'
 };
-$Self->{'CustomerFrontend::Module'}->{'CustomerTicketZoom'} =  {
-  'Description' => 'Ticket zoom view.',
-  'Group' => [],
-  'GroupRo' => [],
-  'NavBarName' => 'Ticket',
-  'Title' => 'Zoom'
-};
 $Self->{'CustomerFrontend::Module'}->{'CustomerTicketZTSMAction'} =  {
   'Description' => 'TESSERA runtime action.',
   'Group' => [],
   'GroupRo' => [],
   'NavBarName' => 'Ticket',
   'Title' => 'Runtime Action'
+};
+$Self->{'CustomerFrontend::Module'}->{'CustomerTicketZoom'} =  {
+  'Description' => 'Ticket zoom view.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Ticket',
+  'Title' => 'Zoom'
 };
 $Self->{'CustomerFrontend::Module'}->{'CustomerTileServiceCatalog'} =  {
   'Description' => 'CustomerTileServiceCatalog AJAX Module.',
@@ -2848,7 +2848,8 @@ $Self->{'DynamicField::Namespaces'} =  [
   'ZFirewall',
   'ZTicket',
   'ZState',
-  'ZBlue'
+  'ZBlue',
+  'ZService'
 ];
 $Self->{'DynamicFieldDB::DisplayfieldHeaders'} =  [];
 $Self->{'DynamicFieldDB::ExtendedValueStructure'} =  '1';
@@ -8110,6 +8111,12 @@ $Self->{'Frontend::Output::FilterElementPost'}->{'ITSMIncidentProblemManagement'
     'AgentTicketZoom' => '1'
   }
 };
+$Self->{'Frontend::Output::FilterElementPost'}->{'MasterSlaveShowPendingTimeIfNeeded'} =  {
+  'Module' => 'Kernel::Output::HTML::FilterElementPost::Znuny4OTOBOShowPendingTimeIfNeeded',
+  'Templates' => {
+    'AgentTicketMasterSlave' => '1'
+  }
+};
 $Self->{'Frontend::Output::FilterElementPost'}->{'OutputFilterPostAddDynamicFieldNames'} =  {
   'Module' => 'Kernel::Output::HTML::FilterElementPost::AddDynamicFieldNames',
   'Templates' => {
@@ -12936,9 +12943,13 @@ $Self->{'Loader::Module::AgentTicketLockedView'}->{'002-Ticket'} =  {
   ]
 };
 $Self->{'Loader::Module::AgentTicketMasterSlave'}->{'004-MasterSlave'} =  {
+  'CSS' => [
+    'QuickDateButtons.css'
+  ],
   'JavaScript' => [
     'Core.Agent.TicketAction.js',
-    'Core.Agent.TicketMasterSlave.js'
+    'Core.Agent.TicketMasterSlave.js',
+    'QuickDateButtons.js'
   ]
 };
 $Self->{'Loader::Module::AgentTicketMerge'}->{'002-Ticket'} =  {
@@ -13614,10 +13625,10 @@ $Self->{'Package::EventModulePost'}->{'9000-SupportDataSend'} =  {
 };
 $Self->{'Package::FileUpload'} =  '1';
 $Self->{'Package::RepositoryList'} =  {
-  'https://ncs.com.sg' => 'OTOBO::ITSM Addons'
+  'https://ftp.otobo.org/pub/otobo/packages-itsm/' => 'OTOBO::ITSM Addons'
 };
 $Self->{'Package::RepositoryRoot'} =  [
-  'https://ncs.com.sg'
+  'https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml'
 ];
 $Self->{'Package::ShowFeatureAddons'} =  '1';
 $Self->{'Package::Timeout'} =  '120';
@@ -15239,6 +15250,14 @@ $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'NoteMandatory'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'Owner'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'OwnerMandatory'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'Permission'} =  'MasterSlave';
+$Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'QuickDateButtons'} =  [
+  {
+    '+1 day' => '+1'
+  },
+  {
+    '+1 week' => '+7'
+  }
+];
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketMasterSlave'}->{'ResponsibleMandatory'} =  '0';
@@ -15514,7 +15533,10 @@ $Self->{'Ticket::Frontend::AgentTicketPrint'}->{'DynamicField'} =  {
   'ZTicket-EndorsementGroup' => '1',
   'ZTicket-Env' => '1',
   'ZTicket-Location' => '1',
-  'ZTicket-OwnerGroup' => '1'
+  'ZTicket-Owner' => '1',
+  'ZTicket-OwnerGroup' => '1',
+  'ZTicket-Role' => '1',
+  'ZTicket-StateBook' => '1'
 };
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Body'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'DynamicField'} =  {
@@ -16302,8 +16324,7 @@ $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'DynamicField'} =  {
   'ZTicket-ApprovalGroup' => '1',
   'ZTicket-Env' => '1',
   'ZTicket-Location' => '1',
-  'ZTicket-OwnerGroup' => '1',
-  'ZTicket-Parent' => '1'
+  'ZTicket-OwnerGroup' => '1'
 };
 $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'FollowUpDynamicField'} =  {};
 $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'HideActivatedActivityDialogButton'} =  '0';
@@ -16322,52 +16343,6 @@ $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'StateType'} =  [
 ];
 $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'TicketInfoDisplayType'} =  'Permanent';
 $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'ZoomTimeDisplay'} =  '0';
-$Self->{'Ticket::Frontend::CustomerTicketZTSMAction'} =  {
-  'Actions' => {
-    'Approve' => {
-      'Label' => 'Approve',
-      'State' => 'closed successful',
-      'Types' => [
-        'Approval'
-      ]
-    },
-    'Assess' => {
-      'Label' => 'Assess',
-      'State' => 'closed successful',
-      'Types' => [
-        'Assessment'
-      ]
-    },
-    'Endorse' => {
-      'Label' => 'Endorse',
-      'State' => 'closed successful',
-      'Types' => [
-        'Endorsement'
-      ]
-    },
-    'Reject' => {
-      'Label' => 'Reject',
-      'State' => 'closed rejected',
-      'Types' => [
-        'Approval',
-        'Assessment',
-        'Endorsement'
-      ]
-    }
-  },
-  'AssessmentFields' => [
-    'ZTicket-TechnicalRisk',
-    'ZTicket-BusinessRisk',
-    'ZTicket-GovernanceRisk'
-  ],
-  'Article' => '1',
-  'ContentType' => 'text/plain; charset=utf-8',
-  'HistoryComment' => '%%',
-  'HistoryType' => 'AddNote',
-  'IsVisibleForCustomer' => '1',
-  'Permission' => 'ztsm_action',
-  'SenderType' => 'customer'
-};
 $Self->{'Ticket::Frontend::DefaultQuickDateButtons'} =  [
   {
     '+1 day' => '+1'

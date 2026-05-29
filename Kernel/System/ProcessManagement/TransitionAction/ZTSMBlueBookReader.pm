@@ -1,43 +1,25 @@
 # --
-# Kernel/System/GenericAgent/ZTSMRoleDirector.pm
-# --
-# ZTSM Governance Role Resolution Director
-#
-# Purpose:
-# - Resolve governance traversal Profile
-# - Resolve operational Support Profile
-# - Normalize runtime orchestration ticket
-#
-# Runtime Normalization:
-#
-# BEFORE:
-#   ZTicket-Profile = APP-OWNER
-#   ZTicket-Role    = ESCALATION
-#
-# AFTER:
-#   ZTicket-OwnerGroup = IaaS Approval
-#   ZTicket-Role       = ESCALATION
-#
-# Powered by Zen ☕
+# Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm
 # --
 
-package Kernel::System::GenericAgent::ZTSMRoleDirector;
+package Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookReader;
 
 use strict;
 use warnings;
 
-our @ObjectDependencies = (
-    'Kernel::System::Log',
-    'Kernel::System::Ticket',
-    'Kernel::System::ITSMConfigItem',
-    'Kernel::System::DynamicField',
-    'Kernel::System::DynamicField::Backend',
-    'Kernel::System::CustomerUser',
+use parent qw(
+    Kernel::System::ProcessManagement::TransitionAction::Base
 );
 
-# ------------------------------------------------------------ #
-# NEW
-# ------------------------------------------------------------ #
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+
+our @ObjectDependencies = (
+    'Kernel::System::DynamicField',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::Ticket',
+    'Kernel::System::Log',
+);
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -45,632 +27,297 @@ sub new {
     return bless {}, $Type;
 }
 
-# ------------------------------------------------------------ #
-# NORMALIZE VALUE
-# ------------------------------------------------------------ #
-
 sub _NormalizeValue {
     my ($Value) = @_;
 
     return if !defined $Value;
 
     if ( ref $Value eq 'ARRAY' ) {
-        return $Value->[0];
+        $Value = $Value->[0];
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Key}   if defined $Value->{Key};
+        return $Value->{Value} if defined $Value->{Value};
+        return $Value->{Content} if defined $Value->{Content};
+        return;
     }
 
     return $Value;
 }
 
-# ------------------------------------------------------------ #
-# GET DYNAMIC FIELD VALUE
-# ------------------------------------------------------------ #
+sub _RecordValueGet {
+    my (%Param) = @_;
 
-sub _GetDynamicFieldValue {
-    my ( %Param ) = @_;
+    my $Record = $Param{Record};
 
-    return if !$Param{Object};
-    return if !$Param{Field};
+    return if !$Record || ref $Record ne 'HASH';
 
-    return _NormalizeValue(
-        $Param{Object}->{XMLData}
-            ->{ $Param{Field} }
-            ->{Content}
-    );
-}
+    FIELD:
+    for my $Field ( @{ $Param{Fields} || [] } ) {
 
-# ------------------------------------------------------------ #
-# UPDATE TICKET FIELD
-# ------------------------------------------------------------ #
+        next FIELD if !exists $Record->{$Field};
 
-sub _UpdateTicketField {
-    my ( %Param ) = @_;
+        my $Value = ref $Record->{$Field} eq 'HASH'
+            ? $Record->{$Field}->{Content}
+            : $Record->{$Field};
 
-    return if !$Param{TicketID};
-    return if !$Param{FieldName};
+        $Value = _NormalizeValue($Value);
 
-    my $DynamicFieldObject = $Kernel::OM->Get(
-        'Kernel::System::DynamicField'
-    );
-
-    my $DynamicFieldBackendObject = $Kernel::OM->Get(
-        'Kernel::System::DynamicField::Backend'
-    );
-
-    my $DynamicFieldConfig
-        = $DynamicFieldObject->DynamicFieldGet(
-            Name => $Param{FieldName},
-        );
-
-    return if !$DynamicFieldConfig;
-
-    return $DynamicFieldBackendObject->ValueSet(
-
-        DynamicFieldConfig => $DynamicFieldConfig,
-
-        ObjectID => $Param{TicketID},
-
-        Value => $Param{Value},
-
-        UserID => 1,
-    );
-}
-
-# ------------------------------------------------------------ #
-# GET CONFIG ITEM
-# ------------------------------------------------------------ #
-
-sub _GetConfigItem {
-    my ( %Param ) = @_;
-
-    return if !$Param{ConfigItemID};
-
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
-    );
-
-    return $ConfigItemObject->ConfigItemGet(
-
-        ConfigItemID  => $Param{ConfigItemID},
-
-        DynamicFields => 1,
-    );
-}
-
-# ------------------------------------------------------------ #
-# RESOLVE REQUESTER DEFAULT PROFILE
-# ------------------------------------------------------------ #
-
-sub _ResolveRequesterProfile {
-    my ( %Param ) = @_;
-
-    return if !$Param{CustomerUserID};
-
-    my $CustomerUserObject = $Kernel::OM->Get(
-        'Kernel::System::CustomerUser'
-    );
-
-    my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
-
-        User => $Param{CustomerUserID},
-    );
-
-    return if !%CustomerUser;
-
-    return _NormalizeValue(
-        $CustomerUser{
-            'DynamicField_ZTSMUser-DefaultSupportProfile'
-        }
-    );
-}
-
-# ------------------------------------------------------------ #
-# RESOLVE APP DEFAULT PROFILE
-# ------------------------------------------------------------ #
-
-sub _ResolveAppProfile {
-    my ( %Param ) = @_;
-
-    return if !$Param{ApplicationID};
-
-    my $Application = _GetConfigItem(
-
-        ConfigItemID => $Param{ApplicationID},
-    );
-
-    return if !$Application;
-
-    return _GetDynamicFieldValue(
-
-        Object => $Application,
-
-        Field => 'ZTSMAppSystem-DefaultApprovalProfile',
-    );
-}
-
-# ------------------------------------------------------------ #
-# RESOLVE APP OWNER PROFILE
-# ------------------------------------------------------------ #
-
-sub _ResolveAppOwnerProfile {
-    my ( %Param ) = @_;
-
-    return if !$Param{ApplicationID};
-
-    my $Application = _GetConfigItem(
-
-        ConfigItemID => $Param{ApplicationID},
-    );
-
-    return if !$Application;
-
-    my $OrganizationID = _GetDynamicFieldValue(
-
-        Object => $Application,
-
-        Field => 'ZTSMAppSystem-Owner',
-    );
-
-    return if !$OrganizationID;
-
-    my $Organization = _GetConfigItem(
-
-        ConfigItemID => $OrganizationID,
-    );
-
-    return if !$Organization;
-
-    return _GetDynamicFieldValue(
-
-        Object => $Organization,
-
-        Field => 'ZTSMOrganization-DefaultApprovalProfile',
-    );
-}
-
-# ------------------------------------------------------------ #
-# RESOLVE PLATFORM OWNER PROFILE
-# ------------------------------------------------------------ #
-
-sub _ResolvePlatformOwnerProfile {
-    my ( %Param ) = @_;
-
-    return if !$Param{ApplicationID};
-
-    my $Application = _GetConfigItem(
-
-        ConfigItemID => $Param{ApplicationID},
-    );
-
-    return if !$Application;
-
-    my $PlatformID = _GetDynamicFieldValue(
-
-        Object => $Application,
-
-        Field => 'ZTSMAppSystem-Platform',
-    );
-
-    return if !$PlatformID;
-
-    my $Platform = _GetConfigItem(
-
-        ConfigItemID => $PlatformID,
-    );
-
-    return if !$Platform;
-
-    my $OrganizationID = _GetDynamicFieldValue(
-
-        Object => $Platform,
-
-        Field => 'ZTSMPlatform-Owner',
-    );
-
-    return if !$OrganizationID;
-
-    my $Organization = _GetConfigItem(
-
-        ConfigItemID => $OrganizationID,
-    );
-
-    return if !$Organization;
-
-    return _GetDynamicFieldValue(
-
-        Object => $Organization,
-
-        Field => 'ZTSMOrganization-DefaultApprovalProfile',
-    );
-}
-
-# ------------------------------------------------------------ #
-# RESOLVE TOP OWNER PROFILE
-# ------------------------------------------------------------ #
-
-sub _ResolveTopOwnerProfile {
-    my ( %Param ) = @_;
-
-    return if !$Param{ApplicationID};
-
-    my $Application = _GetConfigItem(
-
-        ConfigItemID => $Param{ApplicationID},
-    );
-
-    return if !$Application;
-
-    my $OrganizationID = _GetDynamicFieldValue(
-
-        Object => $Application,
-
-        Field => 'ZTSMAppSystem-Owner',
-    );
-
-    return if !$OrganizationID;
-
-    LOOP:
-    while ($OrganizationID) {
-
-        my $Organization = _GetConfigItem(
-
-            ConfigItemID => $OrganizationID,
-        );
-
-        last LOOP if !$Organization;
-
-        my $ParentID = _GetDynamicFieldValue(
-
-            Object => $Organization,
-
-            Field => 'ZTSMOrganization-Parent',
-        );
-
-        #
-        # Highest organization reached
-        #
-
-        if ( !$ParentID ) {
-
-            return _GetDynamicFieldValue(
-
-                Object => $Organization,
-
-                Field => 'ZTSMOrganization-DefaultApprovalProfile',
-            );
-        }
-
-        $OrganizationID = $ParentID;
+        return $Value if defined $Value && $Value ne '';
     }
 
     return;
 }
 
-# ------------------------------------------------------------ #
-# RESOLVE BLUEBOOK PROFILE
-# ------------------------------------------------------------ #
+sub _TicketFieldSet {
+    my (%Param) = @_;
 
-sub _ReadProfile {
-    my ( %Param ) = @_;
+    return if !$Param{TicketID};
+    return if !$Param{FieldName};
 
-    return if !$Param{BlueBookID};
-	return if !$Param{Chapter};
-
-    my $BlueBook = _GetConfigItem(
-        ConfigItemID => $Param{BlueBookID},
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => $Param{FieldName},
     );
 
-    return if !$BlueBook;
-	
-	my $Chapters = $BlueBook->{XMLData}->{'ZBlue-Record'};
+    return if !$DynamicFieldConfig;
 
-	return if !$Chapters;
-	
-	if ( ref $Chapters eq 'HASH' ) {
-		$Chapters = [$Chapters];
-	}
-
-	return if ref $Chapters ne 'ARRAY';
-	
-    CHAP:
-	for my $Chapter ( @{$Chapters} ) {
-		
-		next CHAP
-            if ref $Chapter ne 'HASH';
-
-        my $BlueChapter = _NormalizeValue(
-            $Chapter->{'ZBlue-Chapter'}->{Content}
-        );
-		
-		next CHAP 
-			if $BlueChapter ne $Param{Chapter};
-
-        return _NormalizeValue(
-            $Chapter->{'ZBlue-Profile'}->{Content}
-        );
-	}
+    return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+        Value              => $Param{Value},
+        UserID             => $Param{UserID} || 1,
+    );
 }
 
+sub _ExistingChapterPlayCount {
+    my (%Param) = @_;
 
-# ------------------------------------------------------------ #
-# RUN
-# ------------------------------------------------------------ #
+    my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+        Result => 'ARRAY',
+        DynamicField_ZTicket_Parent => {
+            Equals => $Param{ParentTicketID},
+        },
+        DynamicField_ZTicket_BlueBook => {
+            Equals => $Param{BlueBookID},
+        },
+        DynamicField_ZTicket_BlueLevel => {
+            Equals => $Param{BlueLevel},
+        },
+        UserID => $Param{UserID} || 1,
+    );
+
+    return scalar @TicketIDs;
+}
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $LogObject = $Kernel::OM->Get(
-        'Kernel::System::Log'
-    );
+    my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
-    my $TicketObject = $Kernel::OM->Get(
-        'Kernel::System::Ticket'
-    );
+    return if !$Param{Ticket};
 
-    # The Generic Agent automatically injects TicketID here
-    my $TicketID = $Param{TicketID};
+    my $Ticket = $Param{Ticket};
 
-    # Verify you have a valid TicketID
-    if ( !$TicketID ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'No TicketID passed to ZTSMRoleDirector!',
-        );
-        return 0;
-    }
+    my $TicketID = $Ticket->{TicketID};
+    my $UserID   = $Param{UserID} || 1;
 
-    # Now use the TicketID with core OTOBO objects
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID => $TicketID,
-        UserID   => 1, # Admin UserID
-		DynamicFields => 1,
-    );
-	
-	return 0 if !%Ticket;
-	
-    # -------------------------------------------------------- #
-    # RUNTIME CONTEXT
-    # -------------------------------------------------------- #
+    return if !$TicketID;
 
-    my $ExistingOwnerGroup = _NormalizeValue(
-		$Ticket{'DynamicField_ZTicket-OwnerGroup'}
-	);
-
-	return 1 if $ExistingOwnerGroup;
-	
-	my $Chapter = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Chapter'}
-    );
-	
-	return if !$Chapter;
-
-    my $BlueBook = _NormalizeValue(
+    my $BlueBookID = _NormalizeValue(
         $Ticket->{'DynamicField_ZTicket-BlueBook'}
     );
-	
-	return if !$BlueBook;
 
-    my $Role = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Role'}
+    return if !$BlueBookID;
+
+    my $BlueBook = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID  => $BlueBookID,
+        DynamicFields => 1,
     );
 
-    my $ApplicationID = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Application'}
-    );
-
-    my $CustomerUserID = $Ticket->{CustomerUserID};
-
-	my $Profile = _ReadProfile(
-		BlueBookID => $BlueBook,
-		Chapter => $Chapter,
-		);
-	
-    return if !$Profile;
-
-    my $ResolvedSupportProfile;
-
-    # -------------------------------------------------------- #
-    # REQUESTER DEFAULT
-    # -------------------------------------------------------- #
-
-    if (
-        $Profile eq 'REQUESTER-SUPPORT-GROUP'
-    ) {
-
-        $ResolvedSupportProfile
-            = _ResolveRequesterProfile(
-
-                CustomerUserID => $CustomerUserID,
-            );
-    }
-
-    # -------------------------------------------------------- #
-    # APP PROFILE
-    # -------------------------------------------------------- #
-
-    elsif (
-        $Profile eq 'APP-PROFILE'
-    ) {
-
-        $ResolvedSupportProfile
-            = _ResolveAppProfile(
-
-                ApplicationID => $ApplicationID,
-            );
-    }
-
-    # -------------------------------------------------------- #
-    # APP OWNER
-    # -------------------------------------------------------- #
-
-    elsif (
-        $Profile eq 'APP-OWNER'
-    ) {
-
-        $ResolvedSupportProfile
-            = _ResolveAppOwnerProfile(
-
-                ApplicationID => $ApplicationID,
-            );
-    }
-
-    # -------------------------------------------------------- #
-    # PLATFORM OWNER
-    # -------------------------------------------------------- #
-
-    elsif (
-        $Profile eq 'PLATFORM-OWNER'
-    ) {
-
-        $ResolvedSupportProfile
-            = _ResolvePlatformOwnerProfile(
-
-                ApplicationID => $ApplicationID,
-            );
-    }
-
-    # -------------------------------------------------------- #
-    # TOP OWNER
-    # -------------------------------------------------------- #
-
-    elsif (
-        $Profile eq 'TOP-OWNER'
-    ) {
-
-        $ResolvedSupportProfile
-            = _ResolveTopOwnerProfile(
-
-                ApplicationID => $ApplicationID,
-            );
-    }
-
-    # -------------------------------------------------------- #
-    # NO MATCH
-    # -------------------------------------------------------- #
-
-    else {
-
+    if ( !$BlueBook || ref $BlueBook ne 'HASH' ) {
         $LogObject->Log(
-
             Priority => 'error',
-
-            Message =>
-                  'ZTSMRoleDirector: '
-                . 'Unsupported governance profile: '
-                . $Profile,
+            Message  => "ZTSMBlueBookReader: Failed loading BlueBook=$BlueBookID TicketID=$TicketID",
         );
 
-        return 1;
+        return;
     }
 
-    # -------------------------------------------------------- #
-    # RESOLUTION FAILED
-    # -------------------------------------------------------- #
+    my $Records = $BlueBook->{XMLData}->{'ZBlue-Record'};
 
-    if ( !$ResolvedSupportProfile ) {
+    return if !$Records;
 
-        my $Body
-            = "** Note: This is a system-generated orchestration update message.\n\n"
-            . "Governance profile resolution failed.\n\n"
-            . "Profile:\n"
-            . ( $Profile || 'N/A' )
-            . "\n\n"
-            . "Role:\n"
-            . ( $Role || 'N/A' )
-            . "\n\n"
-            . "Application:\n"
-            . ( $ApplicationID || 'N/A' );
+    if ( ref $Records eq 'HASH' ) {
+        $Records = [$Records];
+    }
 
-        $TicketObject->ArticleCreate(
+    return if ref $Records ne 'ARRAY';
 
-            TicketID => $TicketID,
+    my @ParsedRecords;
 
-            ArticleType => 'note-internal',
+    RECORD:
+    for my $Record ( @{$Records} ) {
 
-            SenderType => 'system',
+        next RECORD if ref $Record ne 'HASH';
 
-            Subject => 'ZTSM Governance Resolution Failed',
+        my $BlueLevel = _RecordValueGet(
+            Record => $Record,
+            Fields => [ 'ZBlue-BlueLevel', 'ZBlue-Level', 'ZBlue-Seq' ],
+        ) || 1;
 
-            Body => $Body,
-
-            ContentType => 'text/plain; charset=utf-8',
-
-            HistoryType => 'AddNote',
-
-            HistoryComment =>
-                  'ZTSM: Governance resolution failed '
-                . 'Profile='
-                . ( $Profile || 'N/A' ),
-
-            UserID => 1,
+        my $Chapter = _RecordValueGet(
+            Record => $Record,
+            Fields => [ 'ZBlue-Chapter' ],
         );
 
-        return 1;
+        next RECORD if !$Chapter;
+
+        push @ParsedRecords, {
+            BlueLevel        => $BlueLevel,
+            Chapter          => $Chapter,
+            Type             => _RecordValueGet(
+                Record => $Record,
+                Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
+            ),
+            Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
+            Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
+            Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
+            Strict           => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Strict'] ),
+            Duration         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Duration'] ),
+            RequiredWeightage => _RecordValueGet(
+                Record => $Record,
+                Fields => [ 'ZBlue-RequiredWeightage', 'ZBlue-Weightage' ],
+            ),
+        };
     }
 
-    # -------------------------------------------------------- #
-    # NORMALIZE RUNTIME TICKET
-    # -------------------------------------------------------- #
+    return if !@ParsedRecords;
 
-    _UpdateTicketField(
+    @ParsedRecords = sort {
+        $a->{BlueLevel} <=> $b->{BlueLevel}
+            ||
+        $a->{Chapter} cmp $b->{Chapter}
+    } @ParsedRecords;
 
+    my $CurrentBlueLevel = $ParsedRecords[0]->{BlueLevel};
+
+    return 1
+        if _ExistingChapterPlayCount(
+            ParentTicketID => $TicketID,
+            BlueBookID     => $BlueBookID,
+            BlueLevel      => $CurrentBlueLevel,
+            UserID         => $UserID,
+        );
+
+    my @CreatedTicketIDs;
+
+    RECORD:
+    for my $Record (@ParsedRecords) {
+
+        next RECORD if $Record->{BlueLevel} ne $CurrentBlueLevel;
+
+        my $NewTicketID = $TicketObject->TicketCreate(
+            TN           => undef,
+            Title        => $Ticket->{Title},
+            Queue        => $Ticket->{Queue},
+            Lock         => 'unlock',
+            Priority     => $Ticket->{Priority},
+            State        => 'new',
+            CustomerUser => $Ticket->{CustomerUserID},
+            OwnerID      => 1,
+            UserID       => $UserID,
+            Type         => $Record->{Type} || $Ticket->{Type},
+            ServiceID    => $Ticket->{ServiceID},
+            SLAID        => $Ticket->{SLAID},
+            ResponsibleID => 1,
+        );
+
+        next RECORD if !$NewTicketID;
+
+        push @CreatedTicketIDs, $NewTicketID;
+
+        my %FieldMap = (
+            'ZTicket-Parent'           => $TicketID,
+            'ZTicket-BlueBook'         => $BlueBookID,
+            'ZTicket-BlueLevel'        => $Record->{BlueLevel},
+            'ZTicket-Chapter'          => $Record->{Chapter},
+            'ZTicket-Profile'          => $Record->{Profile},
+            'ZTicket-Role'             => $Record->{Role},
+            'ZTicket-Mandatory'        => $Record->{Mandatory},
+            'ZTicket-Strict'           => $Record->{Strict},
+            'ZTicket-Duration'         => $Record->{Duration},
+            'ZTicket-RequiredWeightage' => $Record->{RequiredWeightage},
+        );
+
+        FIELD:
+        for my $FieldName ( sort keys %FieldMap ) {
+
+            next FIELD if !defined $FieldMap{$FieldName};
+            next FIELD if $FieldMap{$FieldName} eq '';
+
+            _TicketFieldSet(
+                TicketID  => $NewTicketID,
+                FieldName => $FieldName,
+                Value     => $FieldMap{$FieldName},
+                UserID    => $UserID,
+            );
+        }
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $NewTicketID,
+            Subject  => 'DO-NOT-REPLY: ChapterPlay initiated.',
+            Body     =>
+                  "** Note: This is a system-generated orchestration update message.\n\n"
+                . "ChapterPlay:\n"
+                . "Initiated\n\n"
+                . "Parent Ticket:\n"
+                . $TicketID
+                . "\n\n"
+                . "BlueBook:\n"
+                . $BlueBookID
+                . "\n\n"
+                . "BlueLevel:\n"
+                . $Record->{BlueLevel}
+                . "\n\n"
+                . "Chapter:\n"
+                . $Record->{Chapter},
+            HistoryComment => 'ZTSM: ChapterPlay initiated',
+            UserID         => $UserID,
+        );
+    }
+
+    ZTSMArticleCreate(
+        %Param,
         TicketID => $TicketID,
-
-        FieldName => 'ZTicket-OwnerGroup',
-
-        Value => $ResolvedSupportProfile,
-    );
-
-    #
-    # Role remains unchanged intentionally.
-    #
-
-    my $Body
-        = "** Note: This is a system-generated orchestration update message.\n\n"
-        . "Governance profile resolved successfully.\n\n"
-        . "Profile:\n"
-        . ( $Profile || 'N/A' )
-        . "\n\n"
-        . "Resolved Support Profile:\n"
-        . $ResolvedSupportProfile
-        . "\n\n"
-        . "Runtime Role:\n"
-        . ( $Role || 'N/A' );
-
-    $TicketObject->ArticleCreate(
-
-        TicketID => $TicketID,
-
-        ArticleType => 'note-internal',
-
-        SenderType => 'system',
-
-        Subject => 'ZTSM Governance Profile Resolved',
-
-        Body => $Body,
-
-        ContentType => 'text/plain; charset=utf-8',
-
-        HistoryType => 'AddNote',
-
-        HistoryComment =>
-              'ZTSM: Governance resolved '
-            . 'Profile='
-            . ( $Profile || 'N/A' ),
-
-        UserID => 1,
+        Subject  => 'DO-NOT-REPLY: BlueBook orchestration started.',
+        Body     =>
+              "** Note: This is a system-generated orchestration update message.\n\n"
+            . "BlueBook Reader:\n"
+            . "Started\n\n"
+            . "BlueBook:\n"
+            . $BlueBookID
+            . "\n\n"
+            . "BlueLevel:\n"
+            . $CurrentBlueLevel
+            . "\n\n"
+            . "ChapterPlay Tickets Created:\n"
+            . ( join( ', ', @CreatedTicketIDs ) || 'None' ),
+        HistoryComment => 'ZTSM: BlueBook orchestration started',
+        UserID         => $UserID,
     );
 
     $LogObject->Log(
-
         Priority => 'notice',
-
-        Message =>
-              'ZTSMRoleDirector: '
-            . 'Governance profile resolved '
+        Message  =>
+              "ZTSMBlueBookReader: BlueBook orchestration started "
             . "TicketID=$TicketID "
-            . "Profile=$Profile "
-            . "Role=$Role "
-            . "SupportProfile=$ResolvedSupportProfile",
+            . "BlueBook=$BlueBookID "
+            . "BlueLevel=$CurrentBlueLevel "
+            . "Created="
+            . scalar @CreatedTicketIDs,
     );
 
     return 1;

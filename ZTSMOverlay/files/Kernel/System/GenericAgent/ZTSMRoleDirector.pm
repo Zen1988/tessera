@@ -26,6 +26,8 @@ package Kernel::System::GenericAgent::ZTSMRoleDirector;
 use strict;
 use warnings;
 
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+
 our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Ticket',
@@ -580,27 +582,15 @@ sub Run {
             . "Application:\n"
             . ( $ApplicationID || 'N/A' );
 
-        $TicketObject->ArticleCreate(
-
+        ZTSMArticleCreate(
+            %Param,
             TicketID => $TicketID,
-
-            ArticleType => 'note-internal',
-
-            SenderType => 'system',
-
-            Subject => 'ZTSM Governance Resolution Failed',
-
-            Body => $Body,
-
-            ContentType => 'text/plain; charset=utf-8',
-
-            HistoryType => 'AddNote',
-
+            Subject  => 'ZTSM Governance Resolution Failed',
+            Body     => $Body,
             HistoryComment =>
-                  'ZTSM: Governance resolution failed '
+                'ZTSM: Governance resolution failed '
                 . 'Profile='
                 . ( $Profile || 'N/A' ),
-
             UserID => 1,
         );
 
@@ -636,27 +626,15 @@ sub Run {
         . "Runtime Role:\n"
         . ( $Role || 'N/A' );
 
-    $TicketObject->ArticleCreate(
-
+    ZTSMArticleCreate(
+        %Param,
         TicketID => $TicketID,
-
-        ArticleType => 'note-internal',
-
-        SenderType => 'system',
-
-        Subject => 'ZTSM Governance Profile Resolved',
-
-        Body => $Body,
-
-        ContentType => 'text/plain; charset=utf-8',
-
-        HistoryType => 'AddNote',
-
+        Subject  => 'ZTSM Governance Profile Resolved',
+        Body     => $Body,
         HistoryComment =>
-              'ZTSM: Governance resolved '
+            'ZTSM: Governance resolved '
             . 'Profile='
             . ( $Profile || 'N/A' ),
-
         UserID => 1,
     );
 

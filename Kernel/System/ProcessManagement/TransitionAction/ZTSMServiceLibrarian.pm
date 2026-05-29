@@ -51,9 +51,21 @@ sub _NormalizeValue {
     return if !defined $Value;
 
     if ( ref $Value eq 'ARRAY' ) {
-        return $Value->[0];
+        $Value = $Value->[0];
     }
 
+	if ( ref $Value eq 'HASH' ) {
+
+		if ( defined $Value->{Key} ) {
+			return $Value->{Key};
+		}
+
+		if ( defined $Value->{Value} ) {
+			return $Value->{Value};
+		}
+
+		return ();
+	}
     return $Value;
 }
 
@@ -65,21 +77,68 @@ sub _NormalizeArray {
     my ($Value) = @_;
 
     return () if !defined $Value;
-
+	
 	if (ref $Value eq 'HASH') {
-		$Value = [$Value];
+		$Value = [ $Value ];
 	}
 	
     if ( ref $Value eq 'ARRAY' ) {
-        return grep { defined $_ && $_ ne '' } @{$Value};
+
+        my @Result;
+
+		ITEM:
+		for my $Item ( @{$Value} ) {
+
+			next ITEM if !defined $Item || $Item eq '';
+
+			if ( ref $Item eq 'HASH' ) {
+
+				push @Result,
+					defined $Item->{Key}
+					? $Item->{Key}
+					: $Item->{Value};
+
+				next ITEM;
+			}
+
+			push @Result, $Item;
+		}
+
+        return grep { defined $_ && $_ ne '' } @Result;
     }
 
     return ($Value)
-        if defined $Value
+        if !ref $Value
+        && defined $Value
         && $Value ne '';
 
     return ();
 }
+
+sub _TransitionContextGet {
+    my (%Param) = @_;
+
+    my $Config = ref $Param{Config} eq 'HASH' ? $Param{Config} : {};
+
+    return (
+        ProcessEntityID => $Param{ProcessEntityID}
+            || $Config->{ProcessEntityID}
+            || $Config->{FallbackProcessEntityID},
+
+        ActivityEntityID => $Param{ActivityEntityID}
+            || $Config->{ActivityEntityID}
+            || $Config->{FallbackActivityEntityID},
+
+        TransitionEntityID => $Param{TransitionEntityID}
+            || $Config->{TransitionEntityID}
+            || $Config->{FallbackTransitionEntityID},
+
+        TransitionActionEntityID => $Param{TransitionActionEntityID}
+            || $Config->{TransitionActionEntityID}
+            || $Config->{FallbackTransitionActionEntityID},
+    );
+}
+
 
 
 sub Run {
@@ -104,6 +163,10 @@ sub Run {
     my $TicketObject = $Kernel::OM->Get(
         'Kernel::System::Ticket'
     );
+	
+	my $TicketArticleCreateObject = $Kernel::OM->Get(
+		'Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate'
+	);
 
     # ------------------------------------------------------------ #
     # VALIDATE
@@ -120,6 +183,8 @@ sub Run {
     my $ServiceID = $Ticket->{ServiceID};
 
     return if !$ServiceID;
+
+    my %TransitionContext = _TransitionContextGet(%Param);
 
     # ------------------------------------------------------------ #
     # GOVERNANCE CONTEXT
@@ -172,26 +237,27 @@ sub Run {
             . "Action Required:\n"
             . "IPC governance review required.";
 
-        $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
+				
+				SenderType           => 'system',
+				
+				IsVisibleForCustomer => 1,
+                
+				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
+				
+				Body => $FailureBody,
 
-            TicketID => $TicketID,
+				ContentType => 'text/plain; charset=utf-8',
 
-            ArticleType => 'note-internal',
+				HistoryType => 'AddNote',
 
-            SenderType => 'system',
-
-            Subject => 'ZTSM Governance Resolution Failed',
-
-            Body => $FailureBody,
-
-            ContentType => 'text/plain; charset=utf-8',
-
-            HistoryType => 'AddNote',
-
-            HistoryComment =>
-                'ZTSM: Governance resolution failed',
-
-            UserID => 1,
+				HistoryComment => 'ZTSM: Governance resolution failed',
+			},
         );
 
         return;
@@ -418,26 +484,28 @@ sub Run {
             . "Action Required:\n"
             . "IPC governance review required.";
 
-        $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
+				
+				SenderType           => 'system',
+				
+				IsVisibleForCustomer => 1,
+                
+				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
+				
+				Body => $FailureBody,
 
-            TicketID => $TicketID,
+				ContentType => 'text/plain; charset=utf-8',
 
-            ArticleType => 'note-internal',
+				HistoryType => 'AddNote',
 
-            SenderType => 'system',
-
-            Subject => 'ZTSM Governance Resolution Failed',
-
-            Body => $FailureBody,
-
-            ContentType => 'text/plain; charset=utf-8',
-
-            HistoryType => 'AddNote',
-
-            HistoryComment =>
-                'ZTSM: Governance resolution failed',
-
-            UserID => 1,
+				HistoryComment =>
+					'ZTSM: Governance resolution failed',
+			},
         );
 
         return;
@@ -541,30 +609,32 @@ sub Run {
         . "Location:\n"
         . ( join( ',', @TicketLocations ) || 'N/A' );
 
-    $TicketObject->ArticleCreate(
+        $TicketArticleCreateObject->Run(
+			UserID => $Param{UserID},
+			Ticket => $Ticket,
+            %TransitionContext,
+			Config => {
+				CommunicationChannel => 'Internal',
+				
+				SenderType           => 'system',
+				
+				IsVisibleForCustomer => 1,
+                
+				Subject => 'DO-NOT-REPLY: Service Governance Resolved',
+				
+				Body => $SuccessBody,
 
-        TicketID => $TicketID,
+				ContentType => 'text/plain; charset=utf-8',
 
-        ArticleType => 'note-internal',
+				HistoryType => 'AddNote',
 
-        SenderType => 'system',
-
-        Subject => 'ZTSM Governance Resolution',
-
-        Body => $SuccessBody,
-
-        ContentType => 'text/plain; charset=utf-8',
-
-        HistoryType => 'AddNote',
-
-        HistoryComment =>
-              'ZTSM: Governance resolved '
-            . '[Score='
-            . $HighestScore
-            . '] '
-            . $WinnerName,
-
-        UserID => 1,
+				HistoryComment =>
+					  'ZTSM: Governance resolved '
+					. '[Score='
+					. $HighestScore
+					. '] '
+					. $WinnerName,
+			},
     );
 
     # ------------------------------------------------------------ #

@@ -553,12 +553,33 @@ sub _MaskNew {
 
         next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldHTML);
 
+        my $FieldHTML = $DynamicFieldHTML->{Field};
+        if ( !$FieldHTML && IsArrayRefWithData( $DynamicFieldHTML->{MultiValue} ) ) {
+            $FieldHTML = join "\n", @{ $DynamicFieldHTML->{MultiValue} };
+            $FieldHTML .= "\n" . ( $DynamicFieldHTML->{MultiValueTemplate} || '' );
+        }
+
+        if ( !$FieldHTML && ( $DynamicFieldConfig->{FieldType} || '' ) eq 'Text' ) {
+            my $FieldName = 'DynamicField_' . $DynamicFieldConfig->{Name};
+            my @Values    = ref $Value eq 'ARRAY' ? @{$Value} : ( $Value // '' );
+
+            @Values = ('') if !@Values;
+            push @Values, '' if $DynamicFieldConfig->{Config}->{MultiValue};
+
+            my $Index = 0;
+            $FieldHTML = join "\n", map {
+                my $FieldID = $DynamicFieldConfig->{Config}->{MultiValue} ? $FieldName . '_' . $Index++ : $FieldName;
+                my $Escaped = $LayoutObject->Ascii2Html( Text => $_ // '' );
+                '<input type="text" class="DynamicFieldText W50pc" id="' . $FieldID . '" name="' . $FieldName . '" value="' . $Escaped . '" />'
+            } @Values;
+        }
+
         $LayoutObject->Block(
             Name => 'AdminServiceDynamicField',
             Data => {
                 Name  => $DynamicFieldConfig->{Name},
                 Label => $DynamicFieldHTML->{Label},
-                Field => $DynamicFieldHTML->{Field},
+                Field => $FieldHTML,
             },
         );
     }
