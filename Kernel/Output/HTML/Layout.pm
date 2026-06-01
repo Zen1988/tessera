@@ -4283,6 +4283,9 @@ sub CustomerLogin {
             );
         }
 
+        my $BGConfig            = $ConfigObject->Get('CustomerLogin::Settings') || {};
+        my $RequestAccountLink = $BGConfig->{RequestAccountLink} || '';
+
         # get create account output
         if (
             $ConfigObject->Get('CustomerPanelCreateAccount')
@@ -4300,6 +4303,12 @@ sub CustomerLogin {
                 Data => \%Param,
             );
         }
+        elsif ($RequestAccountLink) {
+            $Self->Block(
+                Name => 'CreateAccountLink',
+                Data => \%Param,
+            );
+        }
     }
 
     # send data to JS
@@ -4308,9 +4317,12 @@ sub CustomerLogin {
         Value => $Param{LoginFailed},
     );
 
-    my $BGConfig = $ConfigObject->Get('CustomerLogin::Settings');
-    $Param{LoginText}  = $BGConfig->{LoginText} // 'Your Tickets. Your OTOBO.';
-    $Param{Background} = $BGConfig->{Background} || '';
+    my $BGConfig = $ConfigObject->Get('CustomerLogin::Settings') || {};
+    $Param{LoginText}            = $BGConfig->{LoginText} // 'Your Tickets. Your OTOBO.';
+    $Param{RequestAccountLink}   = $BGConfig->{RequestAccountLink} || '';
+    $Param{RequestAccountText}   = $BGConfig->{RequestAccountText} || Translatable('Request Account');
+    $Param{RequestAccountNewTab} = $BGConfig->{RequestAccountNewTab} || 0;
+    $Param{Background}           = $BGConfig->{Background} || '';
     $Param{Background} =~ s{<OTOBO_CONFIG_(.+?)>}{$ConfigObject->Get($1)}egx;
 
     # define color scheme
