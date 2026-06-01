@@ -1734,7 +1734,12 @@ sub _ZTSMRuntimeActions {
         LogNo    => 1,
     );
 
-    return if !$ActionAccess && !$FailbackAccess;
+    my $RequesterCancelAccess = $Self->_ZTSMRequesterCancelAllowed(
+        Ticket => $Ticket,
+        Config => $Config,
+    );
+
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess;
 
     my $TicketOwner = $Ticket->{'DynamicField_ZTicket-Owner'};
     if ( ref $TicketOwner eq 'ARRAY' ) {
@@ -1786,8 +1791,47 @@ sub _ZTSMRuntimeActions {
         };
     }
 
+    if ($RequesterCancelAccess) {
+        push @RuntimeActions, {
+            Action          => 'CancelRequest',
+            Label           => 'Cancel Ticket',
+            RiskFieldsHTML  => '',
+            RemarksRequired => 1,
+        };
+    }
+
     return \@RuntimeActions if @RuntimeActions;
     return;
+}
+
+sub _ZTSMRequesterCancelAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
+
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    if ( ref $ParentTicketID eq 'ARRAY' ) {
+        $ParentTicketID = $ParentTicketID->[0];
+    }
+
+    return if $ParentTicketID;
+
+    my $ParentTypes = $Config->{RequesterCancelTypes} || [
+        'ServiceRequest',
+        'Change',
+        'Incident',
+        'Incident:Major',
+        'Problem',
+    ];
+
+    my %AllowedType = map { $_ => 1 } @{$ParentTypes};
+
+    return $AllowedType{ $Ticket->{Type} };
 }
 
 sub _ZTSMUnlockAssignmentHTML {
