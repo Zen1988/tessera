@@ -65,7 +65,59 @@ sub Run {
         );
     }
 
-    my $Config = $ConfigObject->Get('Ticket::Frontend::CustomerTicketZTSMAction') || {};
+    my $Config              = $ConfigObject->Get('Ticket::Frontend::CustomerTicketZTSMAction') || {};
+    my $CustomerPanelUserID = $ConfigObject->Get('CustomerPanelUserID') || 1;
+
+    if ( $RuntimeAction eq 'CancelRequest' ) {
+        if (
+            !$Self->_RequesterCancelAllowed(
+                Ticket => \%Ticket,
+                Config => $Config,
+            )
+            )
+        {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( $Remarks !~ m{\S} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please enter a cancellation reason.',
+            );
+        }
+
+        my $StateSet = $TicketObject->TicketStateSet(
+            State    => 'closed cancelled',
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        );
+
+        if ( !$StateSet ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not cancel ticket.',
+            );
+        }
+
+        $TicketObject->TicketLockSet(
+            TicketID => $TicketID,
+            Lock     => 'unlock',
+            UserID   => $CustomerPanelUserID,
+        );
+
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $TicketID,
+            RuntimeAction       => $RuntimeAction,
+            Label               => 'Cancel Ticket',
+            Remarks             => $Remarks,
+            Subject             => 'Ticket cancelled by requester',
+            Body                => "** Note: This ticket was cancelled by the requester '$Self->{UserID}'.",
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
 
     if ( $RuntimeAction ne 'Unlock' ) {
         my $Permission = $Config->{Permission} || 'ztsm_action';
@@ -79,8 +131,6 @@ sub Run {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
         }
     }
-
-    my $CustomerPanelUserID = $ConfigObject->Get('CustomerPanelUserID') || 1;
 
     if ( $RuntimeAction eq 'Unlock' ) {
         $Access = $TicketObject->TicketCustomerPermission(
@@ -285,6 +335,32 @@ sub _NormalizeValue {
     }
 
     return $Value;
+}
+
+sub _RequesterCancelAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
+
+    # Orchestration child tickets carry ZTicket-Parent. Only the story root can be requester-cancelled.
+    return if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+
+    my $ParentTypes = $Config->{RequesterCancelTypes} || [
+        'ServiceRequest',
+        'Change',
+        'Incident',
+        'Incident:Major',
+        'Problem',
+    ];
+
+    my %AllowedType = map { $_ => 1 } @{$ParentTypes};
+
+    return $AllowedType{ $Ticket->{Type} };
 }
 
 sub _TicketDynamicFieldSet {
