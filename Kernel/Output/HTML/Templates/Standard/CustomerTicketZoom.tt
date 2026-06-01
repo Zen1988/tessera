@@ -128,8 +128,8 @@
                             </div>
                             [% Data.RiskFieldsHTML %]
                             <div class="Row">
-                                <textarea title="[% Translate("Remarks") | html %]" id="Remarks_[% Data.Action | html %]" name="Remarks" rows="5" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]"></textarea>
-                                <label for="Remarks_[% Data.Action | html %]">[% Translate("Remarks") | html %]:</label>
+                                <textarea title="[% Translate("Remarks") | html %]" id="Remarks_[% Data.Action | html %]" name="Remarks" rows="5" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]"[% IF Data.RemarksRequired %] class="Validate_Required"[% END %]></textarea>
+                                <label for="Remarks_[% Data.Action | html %]"[% IF Data.RemarksRequired %] class="Mandatory"[% END %]>[% Translate("Remarks") | html %]:[% IF Data.RemarksRequired %] <span class="Marker">*</span>[% END %]</label>
                                 <div class="Clear"></div>
                             </div>
                         </fieldset>
