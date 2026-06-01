@@ -1079,20 +1079,17 @@ sub _RenderContentGet {
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Include            = $DynamicFieldConfig->{Config}{Include} || [];
 
-    return $Include if ( $DynamicFieldConfig->{Config}{RenderLayout} || 'Vertical' ) ne 'Horizontal';
     return $Include if !IsArrayRefWithData($Include);
 
-    my @Fields;
-    ELEMENT:
-    for my $Element ( $Include->@* ) {
-        return $Include if !IsHashRefWithData($Element);
-        return $Include if IsHashRefWithData( $Element->{Grid} );
-        return $Include if !$Element->{DF};
-
-        push @Fields, { $Element->%* };
-    }
+    my @Fields = $Self->_RenderFieldListGet(
+        Include => $Include,
+    );
 
     return $Include if !@Fields;
+
+    if ( ( $DynamicFieldConfig->{Config}{RenderLayout} || 'Vertical' ) ne 'Horizontal' ) {
+        return [ map { { $_->%* } } @Fields ];
+    }
 
     return [
         {
@@ -1102,6 +1099,47 @@ sub _RenderContentGet {
             },
         },
     ];
+}
+
+sub _RenderFieldListGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Include = $Param{Include};
+
+    return if !IsArrayRefWithData($Include);
+
+    my @Fields;
+
+    ELEMENT:
+    for my $Element ( $Include->@* ) {
+
+        next ELEMENT if !IsHashRefWithData($Element);
+
+        if ( $Element->{DF} ) {
+            push @Fields, { $Element->%* };
+            next ELEMENT;
+        }
+
+        next ELEMENT if !IsHashRefWithData( $Element->{Grid} );
+        next ELEMENT if !IsArrayRefWithData( $Element->{Grid}{Rows} );
+
+        ROW:
+        for my $Row ( $Element->{Grid}{Rows}->@* ) {
+
+            next ROW if ref $Row ne 'ARRAY';
+
+            FIELD:
+            for my $Field ( $Row->@* ) {
+
+                next FIELD if !IsHashRefWithData($Field);
+                next FIELD if !$Field->{DF};
+
+                push @Fields, { $Field->%* };
+            }
+        }
+    }
+
+    return @Fields;
 }
 
 sub _RenderLayoutClassGet {
