@@ -1,10 +1,13 @@
 # mode	source	target
 copy	files/Kernel/Modules/AgentTicketDecision.pm	Kernel/Modules/AgentTicketDecision.pm
 copy	files/Kernel/Modules/AgentTicketQuickClose.pm	Kernel/Modules/AgentTicketQuickClose.pm
+copy	files/Kernel/Modules/CustomerTicketZoom.pm	Kernel/Modules/CustomerTicketZoom.pm
 copy	files/Kernel/Modules/CustomerTicketZTSMAction.pm	Kernel/Modules/CustomerTicketZTSMAction.pm
 copy	files/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm	Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm
 copy	files/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt	Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt	Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt	Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt
 copy	files/Kernel/Output/HTML/TicketOverview/CustomerList.pm	Kernel/Output/HTML/TicketOverview/CustomerList.pm
 copy	files/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm	Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm
@@ -25,6 +28,6 @@ copy	files/Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm	Kernel/Sys
 patch	patches/admin-service-dynamic-fields.patch
 patch	patches/admin-dynamic-field-screen-service-fields.patch
 patch	patches/customer-ticket-message-service-fields.patch
-patch	patches/customer-ticket-zoom-ztsm-actions.patch
+patch	patches/customer-login-onboarding.patch
 patch	patches/dynamic-field-set-layout.patch
 patch	patches/ticket-ztsm-config.patch
