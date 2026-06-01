@@ -49,6 +49,25 @@ sub new {
     return $Self;
 }
 
+sub _NormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _NormalizeValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Content} if defined $Value->{Content};
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Key}     if defined $Value->{Key};
+        return;
+    }
+
+    return $Value;
+}
+
 sub Run {
     my ( $Self, %Param ) = @_;
 
@@ -119,7 +138,7 @@ sub Run {
         # get ticket info
         my %Ticket = $TicketObject->TicketGet(
             TicketID      => $TicketID,
-            DynamicFields => 0,
+            DynamicFields => 1,
         );
 
         my $Subject;
@@ -259,10 +278,12 @@ sub Run {
             Data => {
                 %Ticket,
                 %Article,
-                Subject      => $Subject,
-                CustomerName => $CustomerName,
-                Avatar       => $Avatar,
-                UserInitials => $UserInitials,
+                Subject            => $Subject,
+                CustomerName       => $CustomerName,
+                Avatar             => $Avatar,
+                UserInitials       => $UserInitials,
+                ZTSMSupportProfile => _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerGroup'} ) || '',
+                ZTSMOwner          => _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} )      || '',
             },
         );
 
