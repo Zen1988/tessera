@@ -40,7 +40,11 @@
         </div>
         <p class="oooTicketItemOwner ooo10g">[% Data.CustomerName | html %]</p>
         <p class="oooTicketItemAge ooo10g">[% Data.CustomerAge | html %]</p>
-        <h3 class="oooTicketItemInfo"></h3>
+        <h3 class="oooTicketItemInfo">
+            [% IF Data.ZTSMSupportProfile %][% Translate("Support Profile") | html %]: [% Data.ZTSMSupportProfile | html %][% END %]
+            [% IF Data.Created %][% IF Data.ZTSMSupportProfile %] | [% END %][% Translate("Created") | html %]: [% Data.Created | html %][% END %]
+            [% IF Data.ZTSMOwner %][% IF Data.ZTSMSupportProfile || Data.Created %] | [% END %][% Translate("Owner") | html %]: [% Data.ZTSMOwner | html %][% ELSE %][% IF Data.ZTSMSupportProfile || Data.Created %] | [% END %][% Translate("Owner") | html %]: [% Translate("Unassigned") | html %][% END %]
+        </h3>
     </a>
 [% RenderBlockEnd("Ticket") %]
 # no Tickets present:
