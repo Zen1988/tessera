@@ -1643,7 +1643,10 @@ $Self->{'CustomerGroupSupport'} =  '1';
 $Self->{'CustomerHeadline'} =  'Example Company';
 $Self->{'CustomerLogin::Settings'} =  {
   'Background' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/LoginBG.jpg',
-  'LoginText' => 'Your Tickets. Your OTOBO.'
+  'LoginText' => 'Your Tickets. Your OTOBO.',
+  'RequestAccountLink' => '/public.pl?Action=PublicFAQZoom;ItemID=1',
+  'RequestAccountNewTab' => '0',
+  'RequestAccountText' => 'Request Account'
 };
 $Self->{'CustomerLogo'} =  {
   'URLLogo' => 'common/img/tessera-vertical.svg',
@@ -1685,7 +1688,7 @@ via the Preferences button after logging in.
 
 <OTOBO_CONFIG_HttpType>://<OTOBO_CONFIG_FQDN>/<OTOBO_CONFIG_ScriptAlias>customer.pl
             ';
-$Self->{'CustomerPanelCreateAccount'} =  '1';
+$Self->{'CustomerPanelCreateAccount'} =  '0';
 $Self->{'CustomerPanelLostPassword'} =  '1';
 $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerAccept'} =  'Kernel::Modules::CustomerAccept';
 $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerPassword'} =  'Kernel::Modules::CustomerPassword';
