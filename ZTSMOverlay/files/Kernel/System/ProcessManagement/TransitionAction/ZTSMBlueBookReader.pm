@@ -203,6 +203,13 @@ sub Run {
 
     my $CurrentBlueLevel = $ParsedRecords[0]->{BlueLevel};
 
+    _TicketFieldSet(
+        TicketID  => $TicketID,
+        FieldName => 'ZTicket-BlueLevel',
+        Value     => $CurrentBlueLevel,
+        UserID    => $UserID,
+    );
+
     return 1
         if _ExistingChapterPlayCount(
             ParentTicketID => $TicketID,

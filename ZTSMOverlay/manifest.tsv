@@ -2,17 +2,25 @@
 copy	files/Kernel/Modules/AgentTicketDecision.pm	Kernel/Modules/AgentTicketDecision.pm
 copy	files/Kernel/Modules/AgentTicketQuickClose.pm	Kernel/Modules/AgentTicketQuickClose.pm
 copy	files/Kernel/Modules/CustomerTicketZTSMAction.pm	Kernel/Modules/CustomerTicketZTSMAction.pm
+copy	files/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm	Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm
 copy	files/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt	Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt	Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt
+copy	files/Kernel/Output/HTML/TicketOverview/CustomerList.pm	Kernel/Output/HTML/TicketOverview/CustomerList.pm
 copy	files/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm	Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm
 copy	files/Kernel/System/GenericAgent/ZTSMRoleDirector.pm	Kernel/System/GenericAgent/ZTSMRoleDirector.pm
+copy	files/Kernel/System/ZTSMBlueBookRuntime.pm	Kernel/System/ZTSMBlueBookRuntime.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm
+copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm
+copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComplete.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComplete.pm
+copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm
+copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm
 copy	files/Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm	Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm
 patch	patches/admin-service-dynamic-fields.patch
 patch	patches/admin-dynamic-field-screen-service-fields.patch
