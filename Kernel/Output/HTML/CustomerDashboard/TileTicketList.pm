@@ -23,9 +23,11 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::Output::HTML::Layout',
     'Kernel::Output::HTML::TicketOverview::CustomerList',
+    'Kernel::System::ITSMConfigItem',
     'Kernel::System::CustomerGroup',
     'Kernel::System::Log',
     'Kernel::System::Ticket',
+    'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck',
 );
 
 sub new {
@@ -36,6 +38,147 @@ sub new {
     bless( $Self, $Type );
 
     return $Self;
+}
+
+sub _NormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return $Value->[0];
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Content} if defined $Value->{Content};
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Key}     if defined $Value->{Key};
+    }
+
+    return $Value;
+}
+
+sub _SupportProfileList {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
+        ClassIDs => ['ZTSMSupportAssignment'],
+        What     => [
+            {
+                Field => 'ZTSMSupportAssignment-UserAccount',
+                Type  => 'Equals',
+                Value => $Param{CustomerUserID},
+            },
+        ],
+        Limit => 1000,
+    );
+
+    return if !$AssignmentList || ref $AssignmentList ne 'ARRAY';
+
+    my %SupportProfile;
+
+    ASSIGNMENT:
+    for my $AssignmentID ( @{$AssignmentList} ) {
+
+        my $Assignment = $ConfigItemObject->ConfigItemGet(
+            ConfigItemID  => $AssignmentID,
+            DynamicFields => 1,
+        );
+
+        next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $SupportProfile = _NormalizeValue(
+            $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'}->{Content}
+                || $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'}
+        );
+
+        next ASSIGNMENT if !defined $SupportProfile;
+        next ASSIGNMENT if $SupportProfile eq '';
+
+        $SupportProfile{$SupportProfile} = 1;
+    }
+
+    return sort keys %SupportProfile;
+}
+
+sub _PermissionFilter {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $PermissionObject = $Kernel::OM->Get(
+        'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck'
+    );
+
+    my @TicketIDs;
+    my %Seen;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+
+        next TICKETID if !$TicketID;
+        next TICKETID if $Seen{$TicketID}++;
+
+        next TICKETID if !$PermissionObject->Run(
+            TicketID        => $TicketID,
+            CustomerUserID  => $Param{CustomerUserID},
+            Type            => 'ro',
+        );
+
+        push @TicketIDs, $TicketID;
+    }
+
+    return @TicketIDs;
+}
+
+sub _ZTSMWorkableTicketIDs {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %Candidate;
+
+    my @DirectOwnerTicketIDs = $TicketObject->TicketSearch(
+        Result => 'ARRAY',
+        DynamicField_ZTicket_Owner => {
+            Equals => $Param{CustomerUserID},
+        },
+        StateType => $Param{StateType} || '',
+        SortBy    => $Param{SortBy}    || 'Age',
+        OrderBy   => $Param{OrderBy}   || 'Down',
+        UserID    => 1,
+    );
+
+    $Candidate{$_} = 1 for @DirectOwnerTicketIDs;
+
+    PROFILE:
+    for my $SupportProfile ( _SupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
+
+        next PROFILE if !$SupportProfile;
+
+        my @ProfileTicketIDs = $TicketObject->TicketSearch(
+            Result => 'ARRAY',
+            DynamicField_ZTicket_OwnerGroup => {
+                Equals => $SupportProfile,
+            },
+            StateType => $Param{StateType} || '',
+            SortBy    => $Param{SortBy}    || 'Age',
+            OrderBy   => $Param{OrderBy}   || 'Down',
+            UserID    => 1,
+        );
+
+        $Candidate{$_} = 1 for @ProfileTicketIDs;
+    }
+
+    return _PermissionFilter(
+        CustomerUserID => $Param{CustomerUserID},
+        TicketIDs      => [ sort { $a <=> $b } keys %Candidate ],
+    );
 }
 
 sub Run {
@@ -90,6 +233,19 @@ sub Run {
         %Filter,
         Result => 'ARRAY',
     );
+
+    if ( $Param{Config}{ZTSMWorkableTickets} // 1 ) {
+
+        my @WorkableTicketIDs = _ZTSMWorkableTicketIDs(
+            CustomerUserID => $Param{UserID},
+            StateType      => $Param{Config}{StateType} || '',
+            SortBy         => $Param{Config}{SortBy}    || 'Age',
+            OrderBy        => $Param{Config}{OrderBy}   || 'Down',
+        );
+
+        my %Seen;
+        @ViewableTickets = grep { !$Seen{$_}++ } ( @ViewableTickets, @WorkableTicketIDs );
+    }
 
     my $TicketListHTML;
     if ( scalar @ViewableTickets == 0 ) {
