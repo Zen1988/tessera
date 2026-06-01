@@ -7351,6 +7351,9 @@ via the Preferences button after logging in.
             <Hash>
                 <Item Key="LoginText" Translatable="1">Your Tickets. Your OTOBO.</Item>
                 <Item Key="Background">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;common/img/LoginBG.jpg</Item>
+                <Item Key="RequestAccountLink">/public.pl?Action=PublicFAQZoom;ItemID=1</Item>
+                <Item Key="RequestAccountText" Translatable="1">Request Account</Item>
+                <Item Key="RequestAccountNewTab">0</Item>
             </Hash>
         </Value>
     </Setting>
