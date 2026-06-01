@@ -114,7 +114,7 @@
                     <div class="Clear"></div>
                 </form>
 [% RenderBlockStart("CreateAccountLink") %]
-                <a id="oooRegister" class="ooo12g" href="#Signup">[% Translate("Request Account") | html %]</a>
+                <a id="oooRegister" class="ooo12g" href="[% IF Data.RequestAccountLink %][% Data.RequestAccountLink | html %][% ELSE %]#Signup[% END %]"[% IF Data.RequestAccountNewTab %] target="_blank" rel="noopener noreferrer"[% END %]>[% Translate(Data.RequestAccountText) | html %]</a>
 [% RenderBlockEnd("CreateAccountLink") %]
             </div>
 [% END %]
