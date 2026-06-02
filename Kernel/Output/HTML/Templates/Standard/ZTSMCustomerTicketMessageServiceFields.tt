@@ -1,3 +1,57 @@
+<style>
+#NewCustomerTicket #ZTSMServiceExtensionDynamicFieldsStart ~ .Row_DynamicField {
+    width: 100%;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet {
+    width: 100%;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 18px;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell {
+    min-width: 0;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutVertical > .Row_DynamicField {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDate,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDateTime {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    width: 100%;
+    border: 1px solid #7d82ad;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-sizing: border-box;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDate input,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDate select,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDateTime input,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDateTime select {
+    width: auto;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DateSelection {
+    width: 100%;
+}
+</style>
 <script>
 (function () {
     "use strict";
@@ -60,7 +114,19 @@
         }
 
         End.insertAdjacentHTML('beforebegin', HTML);
+        ZTSMServiceExtensionMark(Start, End);
         ZTSMServiceExtensionInitialize(Start, End);
+    }
+
+    function ZTSMServiceExtensionMark(Start, End) {
+        var Node = Start.nextSibling;
+
+        while (Node && Node !== End) {
+            if (Node.nodeType === 1 && Node.classList && Node.classList.contains('Row_DynamicField')) {
+                Node.classList.add('ZTSMServiceExtensionField');
+            }
+            Node = Node.nextSibling;
+        }
     }
 
     function ZTSMServiceExtensionInitialize(Start, End) {
@@ -75,6 +141,9 @@
         }
         if (window.Core && Core.Agent && Core.Agent.DynamicFieldReferenceSearch && typeof Core.Agent.DynamicFieldReferenceSearch.Init === 'function') {
             Core.Agent.DynamicFieldReferenceSearch.Init();
+        }
+        if (window.Core && Core.UI && Core.UI.Datepicker && typeof Core.UI.Datepicker.Init === 'function') {
+            Core.UI.Datepicker.Init();
         }
 
         while (Node && Node !== End) {

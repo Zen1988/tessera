@@ -81,13 +81,6 @@
 [% RenderBlockEnd("ZTSMChildTicketLinks") %]
         </div>
 [% RenderBlockEnd("ZTSMStoryLinks") %]
-[% RenderBlockStart("ZTSMRuntimeActions") %]
-        <div id="ZTSMRuntimeActions">
-[% RenderBlockStart("ZTSMRuntimeAction") %]
-            <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivityStartButton" type="button" onclick="document.getElementById('Process_ZTSM_[% Data.Action | uri %]').classList.toggle('Visible');">[% Translate(Data.Label) | html %]</button>
-[% RenderBlockEnd("ZTSMRuntimeAction") %]
-        </div>
-[% RenderBlockEnd("ZTSMRuntimeActions") %]
         <div id="ProcessActivities">
 [% RenderBlockStart("NextActivities") %]
             <div id="NextActivities">
@@ -104,6 +97,9 @@
 [% RenderBlockStart("ActivityDialog") %]
                 <button id="Button_[% Data.ActivityDialogEntityID | uri %]" title="[% Translate(Data.Name) | html %]" class="oooM ActivityStartButton">[% Translate(Data.Name) | html %]</button>
 [% RenderBlockEnd("ActivityDialog") %]
+[% RenderBlockStart("ZTSMRuntimeAction") %]
+                <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivityStartButton" type="button" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.classList.toggle('Visible'); } return false;">[% Translate(Data.Label) | html %]</button>
+[% RenderBlockEnd("ZTSMRuntimeAction") %]
             </div>
 [% RenderBlockEnd("NextActivities") %]
         </div>
@@ -116,7 +112,62 @@
             </li>
 [% RenderBlockEnd("ProcessActivity") %]
 [% RenderBlockStart("ZTSMRuntimeActionDialog") %]
-            <li id="Process_ZTSM_[% Data.Action | uri %]" class="Activity">
+            <li id="Process_ZTSM_[% Data.Action | uri %]" class="Activity ZTSMRuntimeActionDialog">
+                <style>
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks {
+                        position: relative;
+                        display: block;
+                        min-height: 72px;
+                        margin: 0 0 24px;
+                        padding: 18px 44px 12px 44px;
+                        border: 1px solid #8388b2;
+                        border-radius: 10px;
+                        background: #fff;
+                        box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > label,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label {
+                        position: absolute;
+                        top: -10px;
+                        left: 32px;
+                        display: inline-block;
+                        padding: 0 8px;
+                        background: #fff;
+                        color: #7e7da5;
+                        line-height: 1.2;
+                        white-space: nowrap;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .Field,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea {
+                        width: 100%;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField select,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField input,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Container {
+                        width: 100%;
+                        min-height: 34px;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Selection {
+                        min-height: 34px;
+                        padding: 6px 10px;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks {
+                        min-height: 180px;
+                        padding: 22px 44px 18px 44px;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea {
+                        display: block;
+                        min-height: 140px;
+                        border: 0;
+                        background: transparent;
+                        resize: vertical;
+                        box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea:focus {
+                        outline: 0;
+                    }
+                </style>
                 <form action="[% Env("CGIHandle") | html %]" method="post" name="ZTSMRuntimeAction[% Data.Action | html %]" class="Validate PreventMultipleSubmits">
                     <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
                     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
@@ -127,7 +178,7 @@
                                 <h2>[% Translate(Data.Label) | html %]</h2>
                             </div>
                             [% Data.RiskFieldsHTML %]
-                            <div class="Row">
+                            <div class="Row ZTSMRuntimeRemarks">
                                 <textarea title="[% Translate("Remarks") | html %]" id="Remarks_[% Data.Action | html %]" name="Remarks" rows="5" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]"[% IF Data.RemarksRequired %] class="Validate_Required"[% END %]></textarea>
                                 <label for="Remarks_[% Data.Action | html %]"[% IF Data.RemarksRequired %] class="Mandatory"[% END %]>[% Translate("Remarks") | html %]:[% IF Data.RemarksRequired %] <span class="Marker">*</span>[% END %]</label>
                                 <div class="Clear"></div>

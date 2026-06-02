@@ -35,8 +35,353 @@ sub new {
     return $Self;
 }
 
+sub _ZTSMNormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _ZTSMNormalizeValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Key}     if defined $Value->{Key};
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Content} if defined $Value->{Content};
+    }
+
+    return $Value;
+}
+
+sub _ZTSMNormalizeReferenceValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _ZTSMNormalizeReferenceValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Key}     if defined $Value->{Key};
+        return $Value->{Content} if defined $Value->{Content};
+    }
+
+    return $Value;
+}
+
+sub _ZTSMDebugValue {
+    my ($Value) = @_;
+
+    return '<undef>' if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return '[' . join( ', ', map { _ZTSMDebugValue($_) } @{$Value} ) . ']';
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return '{'
+            . join(
+            ', ',
+            map {
+                $_ . '=' . _ZTSMDebugValue( $Value->{$_} )
+            } sort keys %{$Value}
+            )
+            . '}';
+    }
+
+    return $Value;
+}
+
+sub _ZTSMCustomerUserMatches {
+    my (%Param) = @_;
+
+    my $AssignmentUser = _ZTSMNormalizeReferenceValue( $Param{AssignmentUser} );
+    return if !defined $AssignmentUser || $AssignmentUser eq '';
+
+    my $CustomerUserID = _ZTSMNormalizeValue( $Param{CustomerUserID} ) || '<undef>';
+    my %CustomerUserID = map { lc $_ => 1 } _ZTSMCustomerUserReferenceIDs(%Param);
+
+    my $Match = $CustomerUserID{ lc $AssignmentUser };
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM Overview support assignment user match: CustomerUserID='
+            . $CustomerUserID
+            . ' CandidateIDs='
+            . join( '|', sort keys %CustomerUserID )
+            . ' AssignmentRaw='
+            . _ZTSMDebugValue( $Param{AssignmentUser} )
+            . ' AssignmentValue='
+            . $AssignmentUser
+            . ' Match='
+            . ( $Match ? 1 : 0 ),
+    );
+
+    return $Match;
+}
+
+sub _ZTSMCustomerUserReferenceIDs {
+    my (%Param) = @_;
+
+    my $CustomerUserID = _ZTSMNormalizeValue( $Param{CustomerUserID} );
+
+    return if !defined $CustomerUserID || $CustomerUserID eq '';
+
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my %CustomerUserID = ( $CustomerUserID => 1 );
+
+    for my $CustomerID (
+        $CustomerUserObject->CustomerIDs(
+            User => $CustomerUserID,
+        )
+        )
+    {
+        my $Value = _ZTSMNormalizeValue($CustomerID);
+        $CustomerUserID{$Value} = 1 if defined $Value && $Value ne '';
+    }
+
+    return sort keys %CustomerUserID;
+}
+
+sub _ZTSMSupportProfileVariants {
+    my (%Param) = @_;
+
+    my $Value = _ZTSMNormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my %Value;
+
+    my @SupportProfiles;
+    if ( $Value =~ m{\A\d+\z} ) {
+        for my $GetParam (
+            { ConfigItemID => $Value },
+            { VersionID    => $Value },
+            )
+        {
+            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
+                %{$GetParam},
+                DynamicFields => 1,
+                Silent        => 1,
+            );
+
+            push @SupportProfiles, $SupportProfile
+                if $SupportProfile
+                && ( $SupportProfile->{Class} || '' ) eq 'Support Profile';
+        }
+    }
+    else {
+        my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(
+            Result  => 'ARRAY',
+            Classes => ['Support Profile'],
+            Name    => $Value,
+            Limit   => 10,
+        );
+
+        for my $SupportProfileID (@SupportProfileIDs) {
+            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
+                ConfigItemID  => $SupportProfileID,
+                DynamicFields => 1,
+                Silent        => 1,
+            );
+
+            push @SupportProfiles, $SupportProfile
+                if $SupportProfile;
+        }
+    }
+
+    for my $SupportProfile (@SupportProfiles) {
+        $Value{ $SupportProfile->{ConfigItemID} }  = 1 if $SupportProfile->{ConfigItemID};
+        $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
+        $Value{ $SupportProfile->{Name} }          = 1 if $SupportProfile->{Name};
+    }
+
+    $Value{$Value} = 1;
+
+    return sort keys %Value;
+}
+
+sub _ZTSMSupportProfileList {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM Overview support profile list enter: CustomerUserID='
+            . $Param{CustomerUserID},
+    );
+
+    my @CustomerUserIDs = _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
+    my %AssignmentID;
+
+    for my $CustomerUserID (@CustomerUserIDs) {
+        my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
+            Classes => ['Support Assignment'],
+            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                Equals => $CustomerUserID,
+            },
+            Result => 'ARRAY',
+            Limit  => 1000,
+        );
+
+        $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+    }
+
+    my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM Overview support assignment search: CustomerUserID='
+            . $Param{CustomerUserID}
+            . ' CandidateIDs='
+            . join( '|', @CustomerUserIDs )
+            . ' Count='
+            . scalar @AssignmentIDs,
+    );
+
+    return if !@AssignmentIDs;
+
+    my %SupportProfile;
+
+    ASSIGNMENT:
+    for my $AssignmentID (@AssignmentIDs) {
+        my $Assignment = $ConfigItemObject->ConfigItemGet(
+            ConfigItemID  => $AssignmentID,
+            DynamicFields => 1,
+        );
+
+        next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
+        $AssignmentUser ||= $Assignment->{XMLData}
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'};
+
+        next ASSIGNMENT if !_ZTSMCustomerUserMatches(
+            AssignmentUser => $AssignmentUser,
+            CustomerUserID => $Param{CustomerUserID},
+        );
+
+        my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
+        $AssignmentSupportProfile ||= $Assignment->{XMLData}
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM Overview assignment accepted user: AssignmentID='
+                . $AssignmentID
+                . ' SupportProfileRaw='
+                . _ZTSMDebugValue($AssignmentSupportProfile),
+        );
+
+        for my $SupportProfile (
+            _ZTSMSupportProfileVariants(
+                Value => $AssignmentSupportProfile,
+            )
+            )
+        {
+            next ASSIGNMENT if !defined $SupportProfile;
+            next ASSIGNMENT if $SupportProfile eq '';
+
+            $SupportProfile{$SupportProfile} = 1;
+        }
+    }
+
+    return sort keys %SupportProfile;
+}
+
+sub _ZTSMPermissionFilter {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $PermissionObject = $Kernel::OM->Get(
+        'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck'
+    );
+
+    my @TicketIDs;
+    my %Seen;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+        next TICKETID if !$TicketID;
+        next TICKETID if $Seen{$TicketID}++;
+
+        next TICKETID if !$PermissionObject->Run(
+            TicketID       => $TicketID,
+            CustomerUserID => $Param{CustomerUserID},
+            Type           => 'ro',
+        );
+
+        push @TicketIDs, $TicketID;
+    }
+
+    return @TicketIDs;
+}
+
+sub _ZTSMWorkableTicketIDs {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %Candidate;
+
+    my %SearchBase = (
+        Result  => 'ARRAY',
+        SortBy  => $Param{SortBy}  || 'Age',
+        OrderBy => $Param{OrderBy} || 'Down',
+        UserID  => 1,
+    );
+
+    $SearchBase{StateType} = $Param{StateType}
+        if $Param{StateType};
+
+    my @DirectOwnerTicketIDs = $TicketObject->TicketSearch(
+        %SearchBase,
+        'DynamicField_ZTicket-Owner' => {
+            Equals => $Param{CustomerUserID},
+        },
+    );
+
+    $Candidate{$_} = 1 for @DirectOwnerTicketIDs;
+
+    PROFILE:
+    for my $SupportProfile ( _ZTSMSupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
+        next PROFILE if !$SupportProfile;
+
+        my @ProfileTicketIDs = $TicketObject->TicketSearch(
+            %SearchBase,
+            'DynamicField_ZTicket-OwnerGroup' => {
+                Equals => $SupportProfile,
+            },
+        );
+
+        $Candidate{$_} = 1 for @ProfileTicketIDs;
+    }
+
+    return _ZTSMPermissionFilter(
+        CustomerUserID => $Param{CustomerUserID},
+        TicketIDs      => [ sort { $a <=> $b } keys %Candidate ],
+    );
+}
+
 sub Run {
     my ( $Self, %Param ) = @_;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM CustomerTicketOverview Run enter: UserID='
+            . ( $Self->{UserID} // '<undef>' )
+            . ' Subaction='
+            . ( $Self->{Subaction} // '<undef>' ),
+    );
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -587,6 +932,18 @@ sub Run {
             %SearchInArchive,
             Result => 'ARRAY',
         );
+
+        my @ZTSMWorkableTicketIDs = _ZTSMWorkableTicketIDs(
+            CustomerUserID => $Self->{UserID},
+            StateType      => $Filters{ $Self->{Subaction} }->{$FilterCurrent}->{Search}->{StateType},
+            SortBy         => $SortBy,
+            OrderBy        => $OrderByCurrent,
+        );
+
+        if (@ZTSMWorkableTicketIDs) {
+            my %Seen;
+            @ViewableTickets = grep { !$Seen{$_}++ } ( @ViewableTickets, @ZTSMWorkableTicketIDs );
+        }
 
         # show tickets
         #       $Counter = 0;

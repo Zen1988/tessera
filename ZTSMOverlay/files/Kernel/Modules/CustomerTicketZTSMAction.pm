@@ -9,6 +9,7 @@ package Kernel::Modules::CustomerTicketZTSMAction;
 use strict;
 use warnings;
 
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
 use Kernel::System::VariableCheck qw(:all);
 
 our $ObjectManagerDisabled = 1;
@@ -85,8 +86,18 @@ sub Run {
             );
         }
 
+        my $CancelStateID = $Self->_RequesterCancelStateID(
+            Config => $Config,
+        );
+
+        if ( !$CancelStateID ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'No valid requester cancellation state is configured.',
+            );
+        }
+
         my $StateSet = $TicketObject->TicketStateSet(
-            State    => 'closed cancelled',
+            StateID   => $CancelStateID,
             TicketID => $TicketID,
             UserID   => $CustomerPanelUserID,
         );
@@ -242,6 +253,31 @@ sub Run {
             UserID   => $CustomerPanelUserID,
         );
 
+        if ( ( $Ticket{State} || '' ) ne 'in-progress' ) {
+            my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+            my $InProgressStateID = $StateObject->StateLookup(
+                State => 'in-progress',
+            );
+
+            if ( !$InProgressStateID ) {
+                return $LayoutObject->CustomerErrorScreen(
+                    Message => 'State in-progress is not configured.',
+                );
+            }
+
+            my $StateSet = $TicketObject->TicketStateSet(
+                StateID  => $InProgressStateID,
+                TicketID => $TicketID,
+                UserID   => $CustomerPanelUserID,
+            );
+
+            if ( !$StateSet ) {
+                return $LayoutObject->CustomerErrorScreen(
+                    Message => 'Could not move ticket to in-progress.',
+                );
+            }
+        }
+
         $Self->_RuntimeArticleCreate(
             TicketID             => $TicketID,
             RuntimeAction        => $RuntimeAction,
@@ -320,6 +356,12 @@ sub Run {
         CustomerPanelUserID  => $CustomerPanelUserID,
     );
 
+    $Self->_ChapterDirectorRun(
+        TicketID             => $TicketID,
+        TicketObject         => $TicketObject,
+        CustomerPanelUserID  => $CustomerPanelUserID,
+    );
+
     return $LayoutObject->Redirect(
         OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
     );
@@ -335,6 +377,32 @@ sub _NormalizeValue {
     }
 
     return $Value;
+}
+
+sub _ChapterDirectorRun {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketID};
+    return if !$Param{TicketObject};
+
+    my %Ticket = $Param{TicketObject}->TicketGet(
+        TicketID      => $Param{TicketID},
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID} || 1,
+        Silent        => 1,
+    );
+
+    return if !IsHashRefWithData( \%Ticket );
+    return if !_NormalizeValue( $Ticket{'DynamicField_ZTicket-Parent'} );
+    return if !_NormalizeValue( $Ticket{'DynamicField_ZTicket-BlueBook'} );
+    return if !_NormalizeValue( $Ticket{'DynamicField_ZTicket-BlueLevel'} );
+
+    my $ChapterDirector = Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector->new();
+
+    return $ChapterDirector->Run(
+        Ticket => \%Ticket,
+        UserID => $Param{CustomerPanelUserID} || 1,
+    );
 }
 
 sub _RequesterCancelAllowed {
@@ -361,6 +429,46 @@ sub _RequesterCancelAllowed {
     my %AllowedType = map { $_ => 1 } @{$ParentTypes};
 
     return $AllowedType{ $Ticket->{Type} };
+}
+
+sub _RequesterCancelStateID {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+
+    my @StateCandidates;
+
+    if ( $Config->{RequesterCancelState} ) {
+        push @StateCandidates, $Config->{RequesterCancelState};
+    }
+
+    if ( IsArrayRefWithData( $Config->{RequesterCancelStates} ) ) {
+        push @StateCandidates, @{ $Config->{RequesterCancelStates} };
+    }
+
+    push @StateCandidates, (
+        'closed cancelled',
+        'closed canceled',
+        'closed unsuccessful',
+        'closed rejected',
+    );
+
+    my %Seen;
+    my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+
+    STATE:
+    for my $State (@StateCandidates) {
+        next STATE if !$State;
+        next STATE if $Seen{$State}++;
+
+        my $StateID = $StateObject->StateLookup(
+            State => $State,
+        );
+
+        return $StateID if $StateID;
+    }
+
+    return;
 }
 
 sub _TicketDynamicFieldSet {
@@ -416,15 +524,12 @@ sub _SupportAssignmentUsers {
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
-        ClassIDs => ['ZTSMSupportAssignment'],
-        What     => [
-            {
-                Field => 'ZTSMSupportAssignment-SupportProfile',
-                Type  => 'Equals',
-                Value => $Param{SupportProfile},
-            },
-        ],
-        Limit => 1000,
+        Classes => ['Support Assignment'],
+        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+            Equals => $Param{SupportProfile},
+        },
+        Result => 'ARRAY',
+        Limit  => 1000,
     );
 
     return if !$AssignmentList;

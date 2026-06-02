@@ -108,6 +108,16 @@ sub Run {
         # set the backend file
         my $BackendModule = $UsedTiles->{$Tile}{Module};
 
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM CustomerDashboardCommon tile enter: Tile='
+                . $Tile
+                . ' Module='
+                . ( $BackendModule || '<undef>' )
+                . ' UserID='
+                . ( $Self->{UserID} || '<undef>' ),
+        );
+
         # check if backend field exists
         if ( !$MainObject->Require($BackendModule) ) {
             my $Message = $LayoutObject->{LanguageObject}->Translate(
@@ -121,6 +131,20 @@ sub Run {
 
             return $LayoutObject->ErrorScreen( Message => $Message );
         }
+
+        my $BackendModulePath = $BackendModule;
+        $BackendModulePath =~ s{::}{/}g;
+        $BackendModulePath .= '.pm';
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM CustomerDashboardCommon tile module loaded: Tile='
+                . $Tile
+                . ' Module='
+                . $BackendModule
+                . ' INC='
+                . ( $INC{$BackendModulePath} || '<not-in-inc>' ),
+        );
 
         # create a backend object
         my $BackendObject = $BackendModule->new();
@@ -138,12 +162,26 @@ sub Run {
 
         my $TileID = sprintf '%02d', $UsedTiles->{$Tile}{Order};    # assuming Order being less than 100
 
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM CustomerDashboardCommon tile run before: Tile='
+                . $Tile
+                . ' Object='
+                . ( ref $BackendObject || '<undef>' ),
+        );
+
         # get the HTML
         $TileHTML .= $BackendObject->Run(
             TileID   => $TileID,
             Template => $UsedTiles->{$Tile}{Template} || '',
             Config   => $Config,
             UserID   => $Self->{UserID},
+        );
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM CustomerDashboardCommon tile run after: Tile='
+                . $Tile,
         );
     }
 

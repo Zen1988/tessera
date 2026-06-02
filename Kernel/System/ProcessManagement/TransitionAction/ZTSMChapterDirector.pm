@@ -28,6 +28,9 @@ use parent qw(
 );
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookDirector ();
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookResume ();
+use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
     'Kernel::System::Ticket',
@@ -129,19 +132,19 @@ sub Run {
 
         Result => 'ARRAY',
 
-        DynamicField_ZTicket_Parent => {
+        'DynamicField_ZTicket-Parent' => {
             Equals => $ParentTicketID,
         },
 
-        DynamicField_ZTicket_BlueBook => {
+        'DynamicField_ZTicket-BlueBook' => {
             Equals => $BlueBook,
         },
 
-        DynamicField_ZTicket_Chapter => {
+        'DynamicField_ZTicket-Chapter' => {
             Equals => $Chapter,
         },
 
-        DynamicField_ZTicket_BlueLevel => {
+        'DynamicField_ZTicket-BlueLevel' => {
             Equals => $BlueLevel,
         },
 
@@ -495,6 +498,98 @@ sub Run {
             . "ParentTicketID=$ParentTicketID "
             . "Chapter=$Chapter "
             . "Weightage=$CurrentWeightage/$RequiredWeightage",
+    );
+
+    my %ParentTicket = $TicketObject->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => 1,
+        Silent        => 1,
+    );
+
+    if ( !%ParentTicket ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  'ZTSMChapterDirector: '
+                . "Parent ticket not found ParentTicketID=$ParentTicketID "
+                . "ChildTicketID=$TicketID",
+        );
+
+        return 1;
+    }
+
+    my $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
+        ParentTicketID => $ParentTicketID,
+        BlueBookID     => $BlueBook,
+        BlueLevel      => $BlueLevel,
+        UserID         => 1,
+    );
+
+    if ( !$BlueLevelComplete ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  'ZTSMChapterDirector: '
+                . 'Waiting for BlueLevel completion '
+                . "ParentTicketID=$ParentTicketID "
+                . "BlueBook=$BlueBook "
+                . "BlueLevel=$BlueLevel",
+        );
+
+        return 1;
+    }
+
+    my $BlueBookObject = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
+        BlueBookID => $BlueBook,
+    );
+
+    my @BlueBookRecords = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
+        BlueBook => $BlueBookObject,
+    );
+
+    my $NextBlueLevel = Kernel::System::ZTSMBlueBookRuntime::NextBlueLevelGet(
+        CurrentBlueLevel => $BlueLevel,
+        Records          => \@BlueBookRecords,
+    );
+
+    if ( defined $NextBlueLevel && $NextBlueLevel ne '' ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  'ZTSMChapterDirector: '
+                . 'BlueLevel complete, advancing BlueBook '
+                . "ParentTicketID=$ParentTicketID "
+                . "BlueBook=$BlueBook "
+                . "FromBlueLevel=$BlueLevel "
+                . "ToBlueLevel=$NextBlueLevel",
+        );
+
+        my $BlueBookDirector = Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookDirector->new();
+
+        return $BlueBookDirector->Run(
+            %Param,
+            Ticket => \%ParentTicket,
+            UserID => 1,
+        );
+    }
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  =>
+              'ZTSMChapterDirector: '
+            . 'BlueBook complete, resuming StateBook '
+            . "ParentTicketID=$ParentTicketID "
+            . "BlueBook=$BlueBook "
+            . "BlueLevel=$BlueLevel",
+    );
+
+    my $StateBookResume = Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookResume->new();
+
+    return $StateBookResume->Run(
+        %Param,
+        Ticket => \%ParentTicket,
+        UserID => 1,
     );
 
     return 1;

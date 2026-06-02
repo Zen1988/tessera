@@ -10,14 +10,9 @@
 # - Advance lifecycle ONLY if BlueBook empty
 #
 # IMPORTANT:
-# This module DOES NOT:
-# - spawn child ticket
-# - process BlueLevel
-# - process synchronization
-#
-# Those belong to:
-# - BlueBookStepper
-# - ChildEngine
+# This module only resolves the lifecycle boundary. When a BlueBook
+# boundary is reached, it delegates execution choreography to
+# ZTSMBlueBookReader.
 #
 # Powered by Zen ☕
 # --
@@ -39,6 +34,7 @@ our @ObjectDependencies = (
     'Kernel::System::State',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::Article',
+    'Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookReader',
     'Kernel::System::Log',
 );
 
@@ -559,6 +555,42 @@ sub Run {
 		#
 		# BlueBookReader handles execution choreography
 		#
+
+        my %BlueBookTicket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+            Silent        => 1,
+        );
+
+        if ( !%BlueBookTicket ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  =>
+                      "ZTSMStateBookReader: Failed reloading ticket before BlueBook handoff "
+                    . "TicketID=$TicketID "
+                    . "BlueBook=$BlueBookID",
+            );
+            return 1;
+        }
+
+        my $BlueBookReaderResult = $Kernel::OM->Get(
+            'Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookReader'
+        )->Run(
+            %Param,
+            Ticket => \%BlueBookTicket,
+            UserID => $Param{UserID} || 1,
+        );
+
+        if ( !$BlueBookReaderResult ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  =>
+                      "ZTSMStateBookReader: BlueBook handoff returned false "
+                    . "TicketID=$TicketID "
+                    . "BlueBook=$BlueBookID",
+            );
+        }
 
 		return 1;
 	}

@@ -3,11 +3,14 @@ copy	files/Kernel/Modules/AgentTicketDecision.pm	Kernel/Modules/AgentTicketDecis
 copy	files/Kernel/Modules/AgentTicketQuickClose.pm	Kernel/Modules/AgentTicketQuickClose.pm
 copy	files/Kernel/Modules/CustomerTicketZoom.pm	Kernel/Modules/CustomerTicketZoom.pm
 copy	files/Kernel/Modules/CustomerTicketZTSMAction.pm	Kernel/Modules/CustomerTicketZTSMAction.pm
+copy	files/Kernel/Modules/CustomerTicketMessage.pm	Kernel/Modules/CustomerTicketMessage.pm
+copy	files/Kernel/Modules/CustomerTicketOverview.pm	Kernel/Modules/CustomerTicketOverview.pm
 copy	files/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm	Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm
 copy	files/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt	Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt	Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt	Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt
 copy	files/Kernel/Output/HTML/TicketOverview/CustomerList.pm	Kernel/Output/HTML/TicketOverview/CustomerList.pm
 copy	files/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm	Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm
@@ -21,6 +24,7 @@ copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm
+copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm
 copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComplete.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComplete.pm
 copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm
 copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm

@@ -52,6 +52,70 @@ sub _RecordValueGet {
     return;
 }
 
+sub _TicketTypeResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $TypeObject = $Kernel::OM->Get('Kernel::System::Type');
+
+    if ( $Value !~ m{\A\d+\z} ) {
+        my $TypeID = $TypeObject->TypeLookup(
+            Type => $Value,
+        );
+
+        return $Value if $TypeID;
+    }
+
+    FIELDNAME:
+    for my $FieldName (qw(ZBlue-Type ZBlue-TicketType)) {
+        my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => $FieldName,
+        );
+
+        next FIELDNAME if !$DynamicFieldConfig;
+
+        my $DisplayValue;
+
+        my $GeneralCatalogClass = $DynamicFieldConfig->{Config}->{Class}
+            || ( $FieldName eq 'ZBlue-TicketType' ? 'ZTSM::Type' : undef );
+
+        if (
+            ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GeneralCatalog'
+            && $GeneralCatalogClass
+            )
+        {
+            my $PossibleValues = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+                Class => $GeneralCatalogClass,
+            );
+
+            $DisplayValue = $PossibleValues->{$Value}
+                if $PossibleValues;
+        }
+
+        if ( !$DisplayValue && $DynamicFieldConfig->{ID} ) {
+            $DisplayValue = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueLookup(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Key                => $Value,
+            );
+        }
+
+        next FIELDNAME if !$DisplayValue;
+        next FIELDNAME if $DisplayValue eq $Value;
+
+        my $TypeID = $TypeObject->TypeLookup(
+            Type => $DisplayValue,
+        );
+
+        return $DisplayValue if $TypeID;
+    }
+
+    return;
+}
+
 sub _TruthValue {
     my ($Value) = @_;
 
@@ -77,6 +141,8 @@ sub _TicketFieldSet {
     );
 
     return if !$DynamicFieldConfig;
+    return if !$DynamicFieldConfig->{ID};
+    return if $DynamicFieldConfig->{ObjectType} && $DynamicFieldConfig->{ObjectType} ne 'Ticket';
 
     return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
         DynamicFieldConfig => $DynamicFieldConfig,
@@ -84,6 +150,167 @@ sub _TicketFieldSet {
         Value              => $Param{Value},
         UserID             => $Param{UserID} || 1,
     );
+}
+
+sub ChildProcessContextGet {
+    my (%Param) = @_;
+
+    my $ProcessName  = $Param{ProcessName}  || 'ztsm-activity-lifecycle-orchestration';
+    my $ActivityName = $Param{ActivityName} || 'Start';
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $Processes    = $ConfigObject->Get('Process') || {};
+    my $Activities   = $ConfigObject->Get('Process::Activity') || {};
+
+    my $ProcessEntityID;
+    my $ActivityEntityID;
+
+    PROCESS:
+    for my $CandidateProcessEntityID ( sort keys %{$Processes} ) {
+        my $Process = $Processes->{$CandidateProcessEntityID};
+
+        next PROCESS if ref $Process ne 'HASH';
+        next PROCESS if ( $Process->{Name} || '' ) ne $ProcessName;
+        next PROCESS if ( $Process->{State} || '' ) ne 'Active';
+
+        $ProcessEntityID = $CandidateProcessEntityID;
+        $ActivityEntityID = $Process->{StartActivity};
+
+        if (
+            $ActivityEntityID
+            && ref $Activities->{$ActivityEntityID} eq 'HASH'
+            && ( $Activities->{$ActivityEntityID}->{Name} || '' ) eq $ActivityName
+            )
+        {
+            last PROCESS;
+        }
+
+        ACTIVITY:
+        for my $CandidateActivityEntityID ( sort keys %{ $Process->{Path} || {} } ) {
+            next ACTIVITY if ref $Activities->{$CandidateActivityEntityID} ne 'HASH';
+            next ACTIVITY if ( $Activities->{$CandidateActivityEntityID}->{Name} || '' ) ne $ActivityName;
+
+            $ActivityEntityID = $CandidateActivityEntityID;
+            last PROCESS;
+        }
+    }
+
+    return if !$ProcessEntityID;
+    return if !$ActivityEntityID;
+
+    return (
+        ProcessEntityID  => $ProcessEntityID,
+        ActivityEntityID => $ActivityEntityID,
+    );
+}
+
+sub ChildProcessSet {
+    my (%Param) = @_;
+
+    return if !$Param{TicketID};
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
+    my $ProcessField = $ConfigObject->Get('Process::DynamicFieldProcessManagementProcessID')
+        || 'ProcessManagementProcessID';
+    my $ActivityField = $ConfigObject->Get('Process::DynamicFieldProcessManagementActivityID')
+        || 'ProcessManagementActivityID';
+
+    my %Context = ChildProcessContextGet(%Param);
+
+    if ( !%Context ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  'ZTSMBlueBookRuntime: Child process context not found '
+                . 'Process=ztsm-activity-lifecycle-orchestration '
+                . 'Activity=Start '
+                . "TicketID=$Param{TicketID}",
+        );
+
+        return;
+    }
+
+    my $ProcessSet = _TicketFieldSet(
+        TicketID  => $Param{TicketID},
+        FieldName => $ProcessField,
+        Value     => $Context{ProcessEntityID},
+        UserID    => $Param{UserID} || 1,
+    );
+
+    my $ActivitySet = _TicketFieldSet(
+        TicketID  => $Param{TicketID},
+        FieldName => $ActivityField,
+        Value     => $Context{ActivityEntityID},
+        UserID    => $Param{UserID} || 1,
+    );
+
+    if ( !$ProcessSet ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  'ZTSMBlueBookRuntime: Failed setting child process '
+                . "TicketID=$Param{TicketID} "
+                . "Field=$ProcessField "
+                . "ProcessEntityID=$Context{ProcessEntityID}",
+        );
+
+        return;
+    }
+
+    if ( !$ActivitySet ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  'ZTSMBlueBookRuntime: Failed setting child process activity '
+                . "TicketID=$Param{TicketID} "
+                . "Field=$ActivityField "
+                . "ActivityEntityID=$Context{ActivityEntityID}",
+        );
+
+        return;
+    }
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  =>
+              'ZTSMBlueBookRuntime: Child process assigned '
+            . "TicketID=$Param{TicketID} "
+            . "ProcessEntityID=$Context{ProcessEntityID} "
+            . "ActivityEntityID=$Context{ActivityEntityID}",
+    );
+
+    return %Context;
+}
+
+sub _SupportProfileResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    my %Search = (
+        Result  => 'ARRAY',
+        Classes => ['Support Profile'],
+        Limit   => 1,
+        UserID  => $Param{UserID} || 1,
+    );
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        $Search{ConfigItemID} = [$Value];
+    }
+    else {
+        $Search{Name} = $Value;
+    }
+
+    my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(%Search);
+
+    return if !@SupportProfileIDs;
+
+    return $SupportProfileIDs[0];
 }
 
 sub BlueBookIDGet {
@@ -146,9 +373,11 @@ sub RecordsParse {
         push @ParsedRecords, {
             BlueLevel => $BlueLevel,
             Chapter   => $Chapter,
-            Type      => _RecordValueGet(
-                Record => $Record,
-                Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
+            Type      => _TicketTypeResolve(
+                Value => _RecordValueGet(
+                    Record => $Record,
+                    Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
+                ),
             ),
             Profile => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role    => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
@@ -180,17 +409,17 @@ sub ChildTicketIDsGet {
 
     my %Search = (
         Result => 'ARRAY',
-        DynamicField_ZTicket_Parent => {
+        'DynamicField_ZTicket-Parent' => {
             Equals => $Param{ParentTicketID},
         },
-        DynamicField_ZTicket_BlueBook => {
+        'DynamicField_ZTicket-BlueBook' => {
             Equals => $Param{BlueBookID},
         },
         UserID => $Param{UserID} || 1,
     );
 
     if ( defined $Param{BlueLevel} && $Param{BlueLevel} ne '' ) {
-        $Search{DynamicField_ZTicket_BlueLevel} = {
+        $Search{'DynamicField_ZTicket-BlueLevel'} = {
             Equals => $Param{BlueLevel},
         };
     }
@@ -369,10 +598,17 @@ sub LevelSpawn {
         next RECORD if $Record->{BlueLevel} ne $Param{BlueLevel};
 
         my $ParentTicket = $Param{ParentTicket};
+        my $ChildType = $Record->{Type} || $ParentTicket->{Type} || '';
+        my $ParentRef = $ParentTicket->{TicketNumber} || $Param{ParentTicketID};
+        my $ChildTitle = join ' - ', grep { defined $_ && $_ ne '' } (
+            $ChildType,
+            "ParentTicket#$ParentRef",
+            $ParentTicket->{Title},
+        );
 
         my $NewTicketID = $TicketObject->TicketCreate(
             TN            => undef,
-            Title         => $ParentTicket->{Title},
+            Title         => $ChildTitle,
             Queue         => $ParentTicket->{Queue},
             Lock          => 'unlock',
             Priority      => $ParentTicket->{Priority},
@@ -380,7 +616,7 @@ sub LevelSpawn {
             CustomerUser  => $ParentTicket->{CustomerUserID},
             OwnerID       => 1,
             UserID        => $Param{UserID} || 1,
-            Type          => $Record->{Type} || $ParentTicket->{Type},
+            Type          => $ChildType,
             ServiceID     => $ParentTicket->{ServiceID},
             SLAID         => $ParentTicket->{SLAID},
             ResponsibleID => 1,
@@ -390,12 +626,23 @@ sub LevelSpawn {
 
         push @CreatedTicketIDs, $NewTicketID;
 
+        my %ChildProcessContext = ChildProcessSet(
+            TicketID => $NewTicketID,
+            UserID   => $Param{UserID} || 1,
+        );
+
+        my $OwnerGroup = _SupportProfileResolve(
+            Value  => $Record->{Profile},
+            UserID => $Param{UserID} || 1,
+        );
+
         my %FieldMap = (
             'ZTicket-Parent'            => $Param{ParentTicketID},
             'ZTicket-BlueBook'          => $Param{BlueBookID},
             'ZTicket-BlueLevel'         => $Record->{BlueLevel},
             'ZTicket-Chapter'           => $Record->{Chapter},
             'ZTicket-Profile'           => $Record->{Profile},
+            'ZTicket-OwnerGroup'        => $OwnerGroup,
             'ZTicket-Role'              => $Record->{Role},
             'ZTicket-Mandatory'         => $Record->{Mandatory},
             'ZTicket-Strict'            => $Record->{Strict},

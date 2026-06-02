@@ -12,12 +12,15 @@ use parent qw(
 );
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::GeneralCatalog',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Ticket',
+    'Kernel::System::Type',
     'Kernel::System::Log',
 );
 
@@ -70,6 +73,70 @@ sub _RecordValueGet {
     return;
 }
 
+sub _TicketTypeResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $TypeObject = $Kernel::OM->Get('Kernel::System::Type');
+
+    if ( $Value !~ m{\A\d+\z} ) {
+        my $TypeID = $TypeObject->TypeLookup(
+            Type => $Value,
+        );
+
+        return $Value if $TypeID;
+    }
+
+    FIELDNAME:
+    for my $FieldName (qw(ZBlue-Type ZBlue-TicketType)) {
+        my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => $FieldName,
+        );
+
+        next FIELDNAME if !$DynamicFieldConfig;
+
+        my $DisplayValue;
+
+        my $GeneralCatalogClass = $DynamicFieldConfig->{Config}->{Class}
+            || ( $FieldName eq 'ZBlue-TicketType' ? 'ZTSM::Type' : undef );
+
+        if (
+            ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GeneralCatalog'
+            && $GeneralCatalogClass
+            )
+        {
+            my $PossibleValues = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+                Class => $GeneralCatalogClass,
+            );
+
+            $DisplayValue = $PossibleValues->{$Value}
+                if $PossibleValues;
+        }
+
+        if ( !$DisplayValue && $DynamicFieldConfig->{ID} ) {
+            $DisplayValue = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueLookup(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Key                => $Value,
+            );
+        }
+
+        next FIELDNAME if !$DisplayValue;
+        next FIELDNAME if $DisplayValue eq $Value;
+
+        my $TypeID = $TypeObject->TypeLookup(
+            Type => $DisplayValue,
+        );
+
+        return $DisplayValue if $TypeID;
+    }
+
+    return;
+}
+
 sub _TicketFieldSet {
     my (%Param) = @_;
 
@@ -81,6 +148,8 @@ sub _TicketFieldSet {
     );
 
     return if !$DynamicFieldConfig;
+    return if !$DynamicFieldConfig->{ID};
+    return if $DynamicFieldConfig->{ObjectType} && $DynamicFieldConfig->{ObjectType} ne 'Ticket';
 
     return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
         DynamicFieldConfig => $DynamicFieldConfig,
@@ -90,18 +159,49 @@ sub _TicketFieldSet {
     );
 }
 
+sub _SupportProfileResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    my %Search = (
+        Result  => 'ARRAY',
+        Classes => ['Support Profile'],
+        Limit   => 1,
+        UserID  => $Param{UserID} || 1,
+    );
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        $Search{ConfigItemID} = [$Value];
+    }
+    else {
+        $Search{Name} = $Value;
+    }
+
+    my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(%Search);
+
+    return if !@SupportProfileIDs;
+
+    return $SupportProfileIDs[0];
+}
+
 sub _ExistingChapterPlayCount {
     my (%Param) = @_;
 
     my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
         Result => 'ARRAY',
-        DynamicField_ZTicket_Parent => {
+        'DynamicField_ZTicket-Parent' => {
             Equals => $Param{ParentTicketID},
         },
-        DynamicField_ZTicket_BlueBook => {
+        'DynamicField_ZTicket-BlueBook' => {
             Equals => $Param{BlueBookID},
         },
-        DynamicField_ZTicket_BlueLevel => {
+        'DynamicField_ZTicket-BlueLevel' => {
             Equals => $Param{BlueLevel},
         },
         UserID => $Param{UserID} || 1,
@@ -116,20 +216,64 @@ sub Run {
     my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
-    return if !$Param{Ticket};
+    if ( !$Param{Ticket} ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'ZTSMBlueBookReader: Stop, missing Ticket param',
+        );
+        return;
+    }
 
     my $Ticket = $Param{Ticket};
 
     my $TicketID = $Ticket->{TicketID};
     my $UserID   = $Param{UserID} || 1;
 
-    return if !$TicketID;
+    if ( !$TicketID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'ZTSMBlueBookReader: Stop, missing TicketID',
+        );
+        return;
+    }
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  => "ZTSMBlueBookReader: Enter Run TicketID=$TicketID",
+    );
 
     my $BlueBookID = _NormalizeValue(
         $Ticket->{'DynamicField_ZTicket-BlueBook'}
     );
 
-    return if !$BlueBookID;
+    if ( !$BlueBookID ) {
+        my %FreshTicket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => $UserID,
+            Silent        => 1,
+        );
+
+        $BlueBookID = _NormalizeValue(
+            $FreshTicket{'DynamicField_ZTicket-BlueBook'}
+        );
+
+        if ($BlueBookID) {
+            $Ticket = \%FreshTicket;
+            $LogObject->Log(
+                Priority => 'notice',
+                Message  => "ZTSMBlueBookReader: BlueBook resolved after ticket reload TicketID=$TicketID BlueBook=$BlueBookID",
+            );
+        }
+    }
+
+    if ( !$BlueBookID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMBlueBookReader: Stop, missing ZTicket-BlueBook TicketID=$TicketID",
+        );
+        return;
+    }
 
     my $BlueBook = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
         ConfigItemID  => $BlueBookID,
@@ -145,22 +289,49 @@ sub Run {
         return;
     }
 
-    my $Records = $BlueBook->{XMLData}->{'ZBlue-Record'};
+    my $XMLData = ref $BlueBook->{XMLData} eq 'HASH' ? $BlueBook->{XMLData} : {};
 
-    return if !$Records;
+    my $Records
+        = $XMLData->{'ZBlue-Record'}
+        || $BlueBook->{'DynamicField_ZBlue-Record'};
+
+    if ( !$Records ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMBlueBookReader: Stop, missing ZBlue-Record TicketID=$TicketID BlueBook=$BlueBookID",
+        );
+        return;
+    }
 
     if ( ref $Records eq 'HASH' ) {
         $Records = [$Records];
     }
 
-    return if ref $Records ne 'ARRAY';
+    if ( ref $Records ne 'ARRAY' ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMBlueBookReader: Stop, invalid ZBlue-Record structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Records,
+        );
+        return;
+    }
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  => "ZTSMBlueBookReader: Raw records TicketID=$TicketID BlueBook=$BlueBookID Count=" . scalar @{$Records},
+    );
 
     my @ParsedRecords;
 
     RECORD:
     for my $Record ( @{$Records} ) {
 
-        next RECORD if ref $Record ne 'HASH';
+        if ( ref $Record ne 'HASH' ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "ZTSMBlueBookReader: Skip record, invalid structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Record,
+            );
+            next RECORD;
+        }
 
         my $BlueLevel = _RecordValueGet(
             Record => $Record,
@@ -172,15 +343,28 @@ sub Run {
             Fields => [ 'ZBlue-Chapter' ],
         );
 
-        next RECORD if !$Chapter;
+        if ( !$Chapter ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "ZTSMBlueBookReader: Skip record, missing ZBlue-Chapter TicketID=$TicketID BlueBook=$BlueBookID BlueLevel=$BlueLevel",
+            );
+            next RECORD;
+        }
+
+        my $RawType = _RecordValueGet(
+            Record => $Record,
+            Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
+        );
+
+        my $Type = _TicketTypeResolve(
+            Value => $RawType,
+        );
 
         push @ParsedRecords, {
             BlueLevel        => $BlueLevel,
             Chapter          => $Chapter,
-            Type             => _RecordValueGet(
-                Record => $Record,
-                Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
-            ),
+            Type             => $Type,
+            RawType          => $RawType,
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
@@ -193,7 +377,13 @@ sub Run {
         };
     }
 
-    return if !@ParsedRecords;
+    if ( !@ParsedRecords ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMBlueBookReader: Stop, no parsed BlueBook records TicketID=$TicketID BlueBook=$BlueBookID",
+        );
+        return;
+    }
 
     @ParsedRecords = sort {
         $a->{BlueLevel} <=> $b->{BlueLevel}
@@ -203,6 +393,13 @@ sub Run {
 
     my $CurrentBlueLevel = $ParsedRecords[0]->{BlueLevel};
 
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  => "ZTSMBlueBookReader: Parsed records TicketID=$TicketID BlueBook=$BlueBookID Count="
+            . scalar @ParsedRecords
+            . " FirstBlueLevel=$CurrentBlueLevel",
+    );
+
     _TicketFieldSet(
         TicketID  => $TicketID,
         FieldName => 'ZTicket-BlueLevel',
@@ -210,13 +407,25 @@ sub Run {
         UserID    => $UserID,
     );
 
-    return 1
-        if _ExistingChapterPlayCount(
-            ParentTicketID => $TicketID,
-            BlueBookID     => $BlueBookID,
-            BlueLevel      => $CurrentBlueLevel,
-            UserID         => $UserID,
+    my $ExistingChapterPlayCount = _ExistingChapterPlayCount(
+        ParentTicketID => $TicketID,
+        BlueBookID     => $BlueBookID,
+        BlueLevel      => $CurrentBlueLevel,
+        UserID         => $UserID,
+    );
+
+    if ($ExistingChapterPlayCount) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  "ZTSMBlueBookReader: Existing ChapterPlay tickets found, skip spawn "
+                . "TicketID=$TicketID "
+                . "BlueBook=$BlueBookID "
+                . "BlueLevel=$CurrentBlueLevel "
+                . "Existing=$ExistingChapterPlayCount",
         );
+        return 1;
+    }
 
     my @CreatedTicketIDs;
 
@@ -225,9 +434,17 @@ sub Run {
 
         next RECORD if $Record->{BlueLevel} ne $CurrentBlueLevel;
 
+        my $ChildType = $Record->{Type} || $Ticket->{Type} || '';
+        my $ParentRef = $Ticket->{TicketNumber} || $TicketID;
+        my $ChildTitle = join ' - ', grep { defined $_ && $_ ne '' } (
+            $ChildType,
+            "ParentTicket#$ParentRef",
+            $Ticket->{Title},
+        );
+
         my $NewTicketID = $TicketObject->TicketCreate(
             TN           => undef,
-            Title        => $Ticket->{Title},
+            Title        => $ChildTitle,
             Queue        => $Ticket->{Queue},
             Lock         => 'unlock',
             Priority     => $Ticket->{Priority},
@@ -235,15 +452,53 @@ sub Run {
             CustomerUser => $Ticket->{CustomerUserID},
             OwnerID      => 1,
             UserID       => $UserID,
-            Type         => $Record->{Type} || $Ticket->{Type},
+            Type         => $ChildType,
             ServiceID    => $Ticket->{ServiceID},
             SLAID        => $Ticket->{SLAID},
             ResponsibleID => 1,
         );
 
-        next RECORD if !$NewTicketID;
+        if ( !$NewTicketID ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  =>
+                      "ZTSMBlueBookReader: TicketCreate failed "
+                    . "ParentTicketID=$TicketID "
+                    . "BlueBook=$BlueBookID "
+                    . "BlueLevel=$Record->{BlueLevel} "
+                    . "Chapter=$Record->{Chapter} "
+                    . "Type="
+                    . ( $Record->{Type} || $Ticket->{Type} || '' )
+                    . " RawType="
+                    . ( $Record->{RawType} || '' )
+                    . " Queue="
+                    . ( $Ticket->{Queue} || '' ),
+            );
+            next RECORD;
+        }
 
         push @CreatedTicketIDs, $NewTicketID;
+
+        my %ChildProcessContext = Kernel::System::ZTSMBlueBookRuntime::ChildProcessSet(
+            TicketID => $NewTicketID,
+            UserID   => $UserID,
+        );
+
+        my $OwnerGroup = _SupportProfileResolve(
+            Value  => $Record->{Profile},
+            UserID => $UserID,
+        );
+
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMBlueBookReader: Support profile owner group resolution "
+                . "TicketID=$TicketID "
+                . "ChildTicketID=$NewTicketID "
+                . "Profile="
+                . ( $Record->{Profile} || '' )
+                . " OwnerGroup="
+                . ( $OwnerGroup || '' ),
+        );
 
         my %FieldMap = (
             'ZTicket-Parent'           => $TicketID,
@@ -251,6 +506,7 @@ sub Run {
             'ZTicket-BlueLevel'        => $Record->{BlueLevel},
             'ZTicket-Chapter'          => $Record->{Chapter},
             'ZTicket-Profile'          => $Record->{Profile},
+            'ZTicket-OwnerGroup'       => $OwnerGroup,
             'ZTicket-Role'             => $Record->{Role},
             'ZTicket-Mandatory'        => $Record->{Mandatory},
             'ZTicket-Strict'           => $Record->{Strict},

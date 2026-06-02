@@ -176,7 +176,7 @@ sub Run {
 
     my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
 
-		ClassIDs => ['Support Assignment'],
+		Classes  => ['Support Assignment'],
 
 		SearchByDynamicField => {
 

@@ -1641,7 +1641,7 @@ sub _ZTSMStoryLinks {
         Result => 'ARRAY',
         Limit  => 1000,
 
-        DynamicField_ZTicket_Parent => {
+        'DynamicField_ZTicket-Parent' => {
             Equals => $StoryRootTicketID,
         },
 
@@ -1797,6 +1797,7 @@ sub _ZTSMRuntimeActions {
             Label           => 'Cancel Ticket',
             RiskFieldsHTML  => '',
             RemarksRequired => 1,
+            InActionMenu    => 1,
         };
     }
 
@@ -1880,15 +1881,12 @@ sub _ZTSMSupportAssignmentUsers {
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
-        ClassIDs => ['ZTSMSupportAssignment'],
-        What     => [
-            {
-                Field => 'ZTSMSupportAssignment-SupportProfile',
-                Type  => 'Equals',
-                Value => $Param{SupportProfile},
-            },
-        ],
-        Limit => 1000,
+        Classes => ['Support Assignment'],
+        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+            Equals => $Param{SupportProfile},
+        },
+        Result => 'ARRAY',
+        Limit  => 1000,
     );
 
     return if !$AssignmentList;
@@ -1954,7 +1952,7 @@ sub _ZTSMRuntimeRiskFieldsHTML {
 
         next FIELD if !IsHashRefWithData($DynamicFieldHTML);
 
-        $HTML .= '<div class="Row Row_DynamicField_' . $LayoutObject->Ascii2Html( Text => $FieldName ) . '">'
+        $HTML .= '<div class="Row ZTSMRiskField Row_DynamicField_' . $LayoutObject->Ascii2Html( Text => $FieldName ) . '">'
             . '<div class="Field">' . ( $DynamicFieldHTML->{Field} || '' ) . '</div>'
             . ( $DynamicFieldHTML->{Label} || '' )
             . '<div class="Clear"></div>'
@@ -2020,19 +2018,7 @@ sub _Mask {
     }
 
     if ( IsArrayRefWithData( $Param{ZTSMRuntimeActions} ) ) {
-        $LayoutObject->Block(
-            Name => 'ZTSMRuntimeActions',
-        );
-
         for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
-            $LayoutObject->Block(
-                Name => 'ZTSMRuntimeAction',
-                Data => {
-                    %{$RuntimeAction},
-                    TicketID => $Param{TicketID},
-                },
-            );
-
             $LayoutObject->Block(
                 Name => 'ZTSMRuntimeActionDialog',
                 Data => {
@@ -2069,6 +2055,8 @@ sub _Mask {
             }
         }
     }
+
+    my $NextActivitiesBlockShown;
 
     # build article stuff
     my $SelectedArticleID = $ParamObject->GetParam( Param => 'ArticleID' ) || '';
@@ -2378,6 +2366,7 @@ sub _Mask {
             $LayoutObject->Block(
                 Name => 'NextActivities',
             );
+            $NextActivitiesBlockShown = 1;
 
             $Param{ActivityErrorHTML} //= {};
 
@@ -2437,6 +2426,24 @@ sub _Mask {
                     Data => {},
                 );
             }
+        }
+    }
+
+    if ( IsArrayRefWithData( $Param{ZTSMRuntimeActions} ) ) {
+        if ( !$NextActivitiesBlockShown ) {
+            $LayoutObject->Block(
+                Name => 'NextActivities',
+            );
+        }
+
+        for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
+            $LayoutObject->Block(
+                Name => 'ZTSMRuntimeAction',
+                Data => {
+                    %{$RuntimeAction},
+                    TicketID => $Param{TicketID},
+                },
+            );
         }
     }
 
@@ -2988,7 +2995,8 @@ sub _Mask {
         $Avatar = '//www.gravatar.com/avatar/' . md5_hex( lc $CustomerUser{UserEmail} ) . '?s=100&d=' . $DefaultIcon;
     }
     else {
-        $UserInitials = substr( $CustomerUser{UserFirstName}, 0, 1 ) . substr( $CustomerUser{UserLastName}, 0, 1 );
+        $UserInitials = substr( $CustomerUser{UserFirstName} || '', 0, 1 )
+            . substr( $CustomerUser{UserLastName} || '', 0, 1 );
     }
 
     # explanatory message about asterisk

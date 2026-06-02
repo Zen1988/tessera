@@ -2015,17 +2015,20 @@ sub _ServiceExtensionFieldSpecsParse {
 
             $Part =~ s{\A\s+|\s+\z}{}g;
 
-            my ( $FieldName, $Mandatory ) = split m{\s*:\s*}, $Part, 2;
+            my ( $FieldName, $Mandatory, $RenderLayout ) = split m{\s*:\s*}, $Part, 3;
             $FieldName //= '';
             $FieldName =~ s{\A\s+|\s+\z}{}g;
             $FieldName =~ s{\ADynamicField_}{};
+            $RenderLayout //= '';
+            $RenderLayout =~ s{\A\s+|\s+\z}{}g;
 
             next PART if !$FieldName;
             next PART if $Seen{$FieldName}++;
 
             push @FieldSpecs, {
-                Name      => $FieldName,
-                Mandatory => $Mandatory && $Mandatory =~ m{\A1\z} ? 1 : 0,
+                Name         => $FieldName,
+                Mandatory    => $Mandatory && $Mandatory =~ m{\A1\z} ? 1 : 0,
+                RenderLayout => $RenderLayout =~ m{\A(?:Horizontal|Vertical)\z}i ? ucfirst lc $RenderLayout : undef,
             };
         }
     }
@@ -2155,6 +2158,15 @@ sub _ServiceExtensionMaskDefinitionBuild {
         for my $FieldSpec ( @{$FieldSpecs} ) {
             next FIELD if !IsHashRefWithData($FieldSpec);
             next FIELD if !$FieldSpec->{Name};
+
+            if (
+                $FieldSpec->{RenderLayout}
+                && IsHashRefWithData( $Self->{DynamicField}{ $FieldSpec->{Name} } )
+                && ( $Self->{DynamicField}{ $FieldSpec->{Name} }{FieldType} || '' ) eq 'Set'
+                )
+            {
+                $Self->{DynamicField}{ $FieldSpec->{Name} }{Config}{RenderLayout} = $FieldSpec->{RenderLayout};
+            }
 
             push @MaskDefinition, {
                 DF        => $FieldSpec->{Name},
