@@ -197,10 +197,12 @@ sub _ZTSMSupportProfileVariants {
     for my $SupportProfile (@SupportProfiles) {
         $Value{ $SupportProfile->{ConfigItemID} }  = 1 if $SupportProfile->{ConfigItemID};
         $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
-        $Value{ $SupportProfile->{Name} }          = 1 if $SupportProfile->{Name};
+        $Value{ $SupportProfile->{Name} }          = 1 if !$Param{ReferenceOnly} && $SupportProfile->{Name};
     }
 
-    $Value{$Value} = 1;
+    $Value{$Value} = 1
+        if !$Param{ReferenceOnly}
+        || $Value =~ m{\A\d+\z};
 
     return sort keys %Value;
 }
@@ -283,6 +285,7 @@ sub _ZTSMSupportProfileList {
         for my $SupportProfile (
             _ZTSMSupportProfileVariants(
                 Value => $AssignmentSupportProfile,
+                ReferenceOnly => 1,
             )
             )
         {

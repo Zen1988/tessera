@@ -247,6 +247,24 @@ sub Run {
             );
         }
 
+        my $OwnerWeightage = $Self->_OwnerWeightage(
+            Ticket         => \%Ticket,
+            CustomerUserID => $Self->{UserID},
+        );
+
+        my $OwnerWeightageSet = $Self->_TicketDynamicFieldSet(
+            FieldName => 'ZTicket-OwnerWeightage',
+            TicketID  => $TicketID,
+            Value     => $OwnerWeightage,
+            UserID    => $CustomerPanelUserID,
+        );
+
+        if ( !$OwnerWeightageSet ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update ticket owner weightage.',
+            );
+        }
+
         $TicketObject->TicketLockSet(
             TicketID => $TicketID,
             Lock     => 'lock',
@@ -517,34 +535,152 @@ sub _OwnerTargetAllowed {
     return $AssignmentUsers->{ $Param{OwnerTarget} };
 }
 
-sub _SupportAssignmentUsers {
+sub _OwnerWeightage {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return 1 if !IsHashRefWithData($Ticket);
+
+    my $OwnerGroup = $Ticket->{'DynamicField_ZTicket-OwnerGroup'};
+    if ( ref $OwnerGroup eq 'ARRAY' ) {
+        $OwnerGroup = $OwnerGroup->[0];
+    }
+
+    return 1 if !$OwnerGroup;
+
+    my @Assignments = $Self->_SupportAssignments(
+        SupportProfile => $OwnerGroup,
+        CustomerUserID  => $Param{CustomerUserID},
+    );
+
+    my $TicketRole = _NormalizeValue(
+        $Ticket->{'DynamicField_ZTicket-Role'}
+    );
+
+    my $SelectedAssignment;
+    ASSIGNMENT:
+    for my $Assignment (@Assignments) {
+        next ASSIGNMENT if !IsHashRefWithData($Assignment);
+
+        my $AssignmentRole = _NormalizeValue(
+            $Assignment->{XMLData}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}->{Content}
+        );
+
+        my $Type = _NormalizeValue(
+            $Assignment->{XMLData}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Type'}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Type'}->{Content}
+        );
+
+        if (
+            defined $TicketRole
+            && $TicketRole ne ''
+            && defined $AssignmentRole
+            && lc $AssignmentRole eq lc $TicketRole
+            )
+        {
+            $SelectedAssignment = $Assignment;
+            last ASSIGNMENT;
+        }
+
+        next ASSIGNMENT if defined $TicketRole && $TicketRole ne '';
+
+        $SelectedAssignment ||= $Assignment;
+
+        if ( defined $Type && $Type eq 'Primary' ) {
+            $SelectedAssignment = $Assignment;
+        }
+    }
+
+    return 1 if !IsHashRefWithData($SelectedAssignment);
+
+    my $Weightage = _NormalizeValue(
+        $SelectedAssignment->{XMLData}
+            && $SelectedAssignment->{XMLData}->{'ZTSMSupportAssignment-Weightage'}
+            && $SelectedAssignment->{XMLData}->{'ZTSMSupportAssignment-Weightage'}->{Content}
+    );
+
+    return defined $Weightage && $Weightage ne '' ? $Weightage : 1;
+}
+
+sub _SupportAssignments {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{SupportProfile};
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-    my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
-        Classes => ['Support Assignment'],
-        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
-            Equals => $Param{SupportProfile},
-        },
-        Result => 'ARRAY',
-        Limit  => 1000,
-    );
+    my %AssignmentID;
 
-    return if !$AssignmentList;
-    return if ref $AssignmentList ne 'ARRAY';
+    SUPPORTPROFILE:
+    for my $SupportProfile ( $Self->_SupportProfileReferences( SupportProfile => $Param{SupportProfile} ) ) {
+        next SUPPORTPROFILE if !$SupportProfile;
 
-    my %Users;
+        my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
+            Classes => ['Support Assignment'],
+            'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+                Equals => $SupportProfile,
+            },
+            Result => 'ARRAY',
+            Limit  => 1000,
+        );
+
+        $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+    }
+
+    my @Assignments;
     ASSIGNMENT:
-    for my $AssignmentID ( @{$AssignmentList} ) {
+    for my $AssignmentID ( sort { $a <=> $b } keys %AssignmentID ) {
         my $Assignment = $ConfigItemObject->ConfigItemGet(
             ConfigItemID  => $AssignmentID,
             DynamicFields => 1,
         );
 
-        next ASSIGNMENT if !$Assignment;
+        next ASSIGNMENT if !IsHashRefWithData($Assignment);
 
+        if ( $Param{CustomerUserID} ) {
+            my $UserAccount = _NormalizeValue(
+                $Assignment->{XMLData}
+                    && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}
+                    && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}->{Content}
+            );
+
+            next ASSIGNMENT if !$UserAccount;
+            next ASSIGNMENT if lc $UserAccount ne lc $Param{CustomerUserID};
+        }
+
+        push @Assignments, $Assignment;
+    }
+
+    return @Assignments;
+}
+
+sub _SupportProfileReferences {
+    my ( $Self, %Param ) = @_;
+
+    my $SupportProfile = _NormalizeValue( $Param{SupportProfile} );
+
+    return if !defined $SupportProfile;
+    return if $SupportProfile eq '';
+
+    my %Reference;
+
+    if ( $SupportProfile =~ m{\A\d+\z} ) {
+        $Reference{$SupportProfile} = 1;
+    }
+
+    return sort keys %Reference;
+}
+
+sub _SupportAssignmentUsers {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{SupportProfile};
+
+    my %Users;
+    ASSIGNMENT:
+    for my $Assignment ( $Self->_SupportAssignments( SupportProfile => $Param{SupportProfile} ) ) {
         my $UserAccount = $Assignment->{XMLData}
             ->{'ZTSMSupportAssignment-UserAccount'}
             ->{Content};

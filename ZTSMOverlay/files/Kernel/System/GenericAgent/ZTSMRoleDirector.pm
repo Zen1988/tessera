@@ -57,7 +57,11 @@ sub _NormalizeValue {
     return if !defined $Value;
 
     if ( ref $Value eq 'ARRAY' ) {
-        return $Value->[0];
+        return _NormalizeValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return _NormalizeValue( $Value->{Content} );
     }
 
     return $Value;
@@ -73,11 +77,54 @@ sub _GetDynamicFieldValue {
     return if !$Param{Object};
     return if !$Param{Field};
 
-    return _NormalizeValue(
-        $Param{Object}->{XMLData}
-            ->{ $Param{Field} }
-            ->{Content}
+    my $DynamicFieldValue = _NormalizeValue(
+        $Param{Object}->{ 'DynamicField_' . $Param{Field} }
     );
+
+    return $DynamicFieldValue
+        if defined $DynamicFieldValue && $DynamicFieldValue ne '';
+
+    return if !$Param{Object}->{XMLData};
+    return if !$Param{Object}->{XMLData}->{ $Param{Field} };
+
+    my $XMLValue = $Param{Object}->{XMLData}->{ $Param{Field} };
+
+    if ( ref $XMLValue eq 'ARRAY' ) {
+        $XMLValue = $XMLValue->[0];
+    }
+
+    if ( ref $XMLValue eq 'HASH' ) {
+        return _NormalizeValue( $XMLValue->{Content} );
+    }
+
+    return _NormalizeValue(
+        $XMLValue
+    );
+}
+
+# ------------------------------------------------------------ #
+# PROFILE KEY
+# ------------------------------------------------------------ #
+
+sub _ProfileKey {
+    my ($Value) = @_;
+
+    $Value = _NormalizeValue($Value);
+    return if !defined $Value;
+
+    $Value = uc $Value;
+    $Value =~ s{[^A-Z0-9]+}{-}g;
+    $Value =~ s{\A-+}{};
+    $Value =~ s{-+\z}{};
+
+    return 'APP-PROFILE' if $Value eq 'APPLICATION-DEFAULT';
+    return 'APP-PROFILE' if $Value eq 'APPLICATION-PROFILE';
+    return 'APP-PROFILE' if $Value eq 'APP-DEFAULT';
+    return 'APP-PROFILE' if $Value eq 'GENERAL-DEFAULT';
+    return 'APP-PROFILE' if $Value eq 'GENERIC-DEFAULT';
+    return 'APP-OWNER'   if $Value eq 'APPLICATION-OWNER';
+
+    return $Value;
 }
 
 # ------------------------------------------------------------ #
@@ -136,6 +183,74 @@ sub _GetConfigItem {
 
         DynamicFields => 1,
     );
+}
+
+# ------------------------------------------------------------ #
+# IS SUPPORT PROFILE
+# ------------------------------------------------------------ #
+
+sub _IsSupportProfile {
+    my (%Param) = @_;
+
+    return if !$Param{ConfigItemID};
+
+    my @SupportProfileIDs = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
+        Result       => 'ARRAY',
+        Classes      => ['Support Profile'],
+        ConfigItemID => [ $Param{ConfigItemID} ],
+        Limit        => 1,
+        UserID       => $Param{UserID} || 1,
+    );
+
+    return @SupportProfileIDs ? 1 : 0;
+}
+
+# ------------------------------------------------------------ #
+# RESOLVE PROFILE DIRECTIVE
+# ------------------------------------------------------------ #
+
+sub _ResolveProfileDirective {
+    my (%Param) = @_;
+
+    my $Profile = _NormalizeValue( $Param{Profile} );
+
+    return if !defined $Profile;
+    return if $Profile eq '';
+
+    my %Result = (
+        Display => $Profile,
+    );
+
+    my $ConfigItem;
+    if ( $Profile =~ m{\A\d+\z} ) {
+        $ConfigItem = _GetConfigItem(
+            ConfigItemID => $Profile,
+        );
+    }
+
+    if ($ConfigItem) {
+        $Result{Display} = $ConfigItem->{Name} || $Profile;
+
+        if (
+            ( $ConfigItem->{Class} || '' ) eq 'Support Profile'
+            || _IsSupportProfile( ConfigItemID => $Profile, UserID => $Param{UserID} )
+            )
+        {
+            $Result{SupportProfile} = $Profile;
+            return %Result;
+        }
+
+        my $Code = _GetDynamicFieldValue(
+            Object => $ConfigItem,
+            Field  => 'ZTSM-Code',
+        );
+
+        $Result{ProfileKey} = _ProfileKey( $Code || $ConfigItem->{Name} || $Profile );
+        return %Result;
+    }
+
+    $Result{ProfileKey} = _ProfileKey($Profile);
+    return %Result;
 }
 
 # ------------------------------------------------------------ #
@@ -439,50 +554,92 @@ sub Run {
 
 	return 1 if $ExistingOwnerGroup;
 	
+	my $Profile = _NormalizeValue(
+        $Ticket{'DynamicField_ZTicket-Profile'}
+    );
+
 	my $Chapter = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Chapter'}
+        $Ticket{'DynamicField_ZTicket-Chapter'}
     );
 	
-	return if !$Chapter;
+	return if !$Chapter && !$Profile;
 
     my $BlueBook = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-BlueBook'}
+        $Ticket{'DynamicField_ZTicket-BlueBook'}
     );
 	
-	return if !$BlueBook;
+	return if !$BlueBook && !$Profile;
 
     my $Role = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Role'}
+        $Ticket{'DynamicField_ZTicket-Role'}
     );
 
     my $ApplicationID = _NormalizeValue(
-        $Ticket->{'DynamicField_ZTicket-Application'}
+        $Ticket{'DynamicField_ZTicket-Application'}
     );
 
-    my $CustomerUserID = $Ticket->{CustomerUserID};
+    if ( !$ApplicationID ) {
+        my $ParentTicketID = _NormalizeValue(
+            $Ticket{'DynamicField_ZTicket-Parent'}
+        );
 
-	my $Profile = _ReadProfile(
-		BlueBookID => $BlueBook,
-		Chapter => $Chapter,
-		);
+        if ($ParentTicketID) {
+            my %ParentTicket = $TicketObject->TicketGet(
+                TicketID      => $ParentTicketID,
+                DynamicFields => 1,
+                UserID        => 1,
+                Silent        => 1,
+            );
+
+            $ApplicationID = _NormalizeValue(
+                $ParentTicket{'DynamicField_ZTicket-Application'}
+            );
+        }
+    }
+
+    my $CustomerUserID = $Ticket{CustomerUserID};
+
+    if ( !$Profile ) {
+        $Profile = _ReadProfile(
+            BlueBookID => $BlueBook,
+            Chapter    => $Chapter,
+        );
+    }
 	
     return if !$Profile;
 
     my $ResolvedSupportProfile;
+    my %ProfileDirective = _ResolveProfileDirective(
+        Profile => $Profile,
+    );
+
+    my $ProfileDisplay = $ProfileDirective{Display} || $Profile;
+
+    if ( $ProfileDirective{SupportProfile} ) {
+        $ResolvedSupportProfile = $ProfileDirective{SupportProfile};
+    }
+    else {
+        $Profile = $ProfileDirective{ProfileKey} || $Profile;
+    }
 
     # -------------------------------------------------------- #
     # REQUESTER DEFAULT
     # -------------------------------------------------------- #
 
+    my $ResolutionCandidate;
+
     if (
+        !$ResolvedSupportProfile
+        &&
         $Profile eq 'REQUESTER-SUPPORT-GROUP'
     ) {
 
-        $ResolvedSupportProfile
-            = _ResolveRequesterProfile(
+        $ResolutionCandidate = _ResolveRequesterProfile(
 
-                CustomerUserID => $CustomerUserID,
-            );
+            CustomerUserID => $CustomerUserID,
+        );
+
+        $ResolvedSupportProfile = $ResolutionCandidate;
     }
 
     # -------------------------------------------------------- #
@@ -490,14 +647,17 @@ sub Run {
     # -------------------------------------------------------- #
 
     elsif (
+        !$ResolvedSupportProfile
+        &&
         $Profile eq 'APP-PROFILE'
     ) {
 
-        $ResolvedSupportProfile
-            = _ResolveAppProfile(
+        $ResolutionCandidate = _ResolveAppProfile(
 
-                ApplicationID => $ApplicationID,
-            );
+            ApplicationID => $ApplicationID,
+        );
+
+        $ResolvedSupportProfile = $ResolutionCandidate;
     }
 
     # -------------------------------------------------------- #
@@ -505,14 +665,17 @@ sub Run {
     # -------------------------------------------------------- #
 
     elsif (
+        !$ResolvedSupportProfile
+        &&
         $Profile eq 'APP-OWNER'
     ) {
 
-        $ResolvedSupportProfile
-            = _ResolveAppOwnerProfile(
+        $ResolutionCandidate = _ResolveAppOwnerProfile(
 
-                ApplicationID => $ApplicationID,
-            );
+            ApplicationID => $ApplicationID,
+        );
+
+        $ResolvedSupportProfile = $ResolutionCandidate;
     }
 
     # -------------------------------------------------------- #
@@ -520,14 +683,17 @@ sub Run {
     # -------------------------------------------------------- #
 
     elsif (
+        !$ResolvedSupportProfile
+        &&
         $Profile eq 'PLATFORM-OWNER'
     ) {
 
-        $ResolvedSupportProfile
-            = _ResolvePlatformOwnerProfile(
+        $ResolutionCandidate = _ResolvePlatformOwnerProfile(
 
-                ApplicationID => $ApplicationID,
-            );
+            ApplicationID => $ApplicationID,
+        );
+
+        $ResolvedSupportProfile = $ResolutionCandidate;
     }
 
     # -------------------------------------------------------- #
@@ -535,21 +701,24 @@ sub Run {
     # -------------------------------------------------------- #
 
     elsif (
+        !$ResolvedSupportProfile
+        &&
         $Profile eq 'TOP-OWNER'
     ) {
 
-        $ResolvedSupportProfile
-            = _ResolveTopOwnerProfile(
+        $ResolutionCandidate = _ResolveTopOwnerProfile(
 
-                ApplicationID => $ApplicationID,
-            );
+            ApplicationID => $ApplicationID,
+        );
+
+        $ResolvedSupportProfile = $ResolutionCandidate;
     }
 
     # -------------------------------------------------------- #
     # NO MATCH
     # -------------------------------------------------------- #
 
-    else {
+    elsif (!$ResolvedSupportProfile) {
 
         $LogObject->Log(
 
@@ -558,7 +727,7 @@ sub Run {
             Message =>
                   'ZTSMRoleDirector: '
                 . 'Unsupported governance profile: '
-                . $Profile,
+                . $ProfileDisplay,
         );
 
         return 1;
@@ -574,13 +743,16 @@ sub Run {
             = "** Note: This is a system-generated orchestration update message.\n\n"
             . "Governance profile resolution failed.\n\n"
             . "Profile:\n"
-            . ( $Profile || 'N/A' )
+            . ( $ProfileDisplay || 'N/A' )
             . "\n\n"
             . "Role:\n"
             . ( $Role || 'N/A' )
             . "\n\n"
             . "Application:\n"
-            . ( $ApplicationID || 'N/A' );
+            . ( $ApplicationID || 'N/A' )
+            . "\n\n"
+            . "Resolved Candidate:\n"
+            . ( $ResolutionCandidate || 'N/A' );
 
         ZTSMArticleCreate(
             %Param,
@@ -590,7 +762,7 @@ sub Run {
             HistoryComment =>
                 'ZTSM: Governance resolution failed '
                 . 'Profile='
-                . ( $Profile || 'N/A' ),
+                . ( $ProfileDisplay || 'N/A' ),
             UserID => 1,
         );
 
@@ -618,7 +790,7 @@ sub Run {
         = "** Note: This is a system-generated orchestration update message.\n\n"
         . "Governance profile resolved successfully.\n\n"
         . "Profile:\n"
-        . ( $Profile || 'N/A' )
+        . ( $ProfileDisplay || 'N/A' )
         . "\n\n"
         . "Resolved Support Profile:\n"
         . $ResolvedSupportProfile
@@ -634,7 +806,7 @@ sub Run {
         HistoryComment =>
             'ZTSM: Governance resolved '
             . 'Profile='
-            . ( $Profile || 'N/A' ),
+            . ( $ProfileDisplay || 'N/A' ),
         UserID => 1,
     );
 
@@ -647,6 +819,7 @@ sub Run {
             . 'Governance profile resolved '
             . "TicketID=$TicketID "
             . "Profile=$Profile "
+            . "ProfileDisplay=$ProfileDisplay "
             . "Role=$Role "
             . "SupportProfile=$ResolvedSupportProfile",
     );

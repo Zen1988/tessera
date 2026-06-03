@@ -1,0 +1,119 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+use v5.24;
+use strict;
+use warnings;
+use utf8;
+
+# core modules
+
+# CPAN modules
+use Test2::V0;
+use Test2::Tools::Compare qw(bag array);
+use Test2::Tools::Explain;
+use Capture::Tiny qw(capture);
+
+# OTOBO modules
+use Kernel::System::UnitTest::RegisterOM;    # Set up $Kernel::OM
+
+my $ThawedAuditReport;
+{
+    # run the console command and capture the output
+    my $AuditCommand = $Kernel::OM->Get('Kernel::System::Console::Command::Dev::Code::CPANAudit');
+    my ( $JSONString, undef, $ExitCode ) = capture {
+        return $AuditCommand->Execute;
+    };
+    ok( $ExitCode == 0 || $ExitCode == 1, 'command exited with a sane code' );
+
+    # Get a data structure from the printed JSON
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+    $ThawedAuditReport = $JSONObject->Decode( Data => $JSONString );
+    ref_ok(
+        $ThawedAuditReport,
+        'HASH',
+        'got hash from DumpAll'
+    );
+}
+
+# just a sanity check of the keys on the top level
+for my $Key (qw( dists errors meta )) {
+    ok( exists $ThawedAuditReport->{$Key}, "top level key '$Key' exists" );
+}
+
+# check keys on the meta level
+for my $Key (qw( args command cpan_audit total_advisories )) {
+    ok( exists $ThawedAuditReport->{meta}->{$Key}, "key 'meta->$Key' exists" );
+}
+
+# check the version of the advisories list
+is(
+    $ThawedAuditReport->{meta}->{cpan_audit},
+    {
+        db      => '20260412.001',
+        version => '20260308.002',
+    },
+    'got expected version of the advisory list'
+);
+
+# These are the known advisories that are reported by CPAN::Audit and
+# not exempted by Dev::Code::CPANAudit. The test script verifies
+# that these advisories are indeed reported and that no new
+# unexempted advisories have cropped up.
+my @Excemptions = (
+);
+
+for my $Excemption (@Excemptions) {
+    my ($Dist) = keys $Excemption->%*;
+    my $Found = like(
+        $ThawedAuditReport->{dists},
+        $Excemption,
+        "found dist $Dist with matching advisories"
+    );
+
+    if ($Found) {
+        delete $ThawedAuditReport->{dists}->{$Dist};
+    }
+}
+
+# eliminate the evaluated advisories
+DIST_NAME:
+for my $DistName ( keys $ThawedAuditReport->{dists}->%* ) {
+    my $Dist = $ThawedAuditReport->{dists}->{$DistName};
+    $Dist->{advisories} //= [];
+    $Dist->{advisories} = [
+        grep { ( !$_->{otobo_evaluation} ) || $_->{otobo_evaluation}->{is_relevant_for_otobo} }
+            $Dist->{advisories}->@*
+    ];
+
+    # keep dists that still have advisories
+    next DIST_NAME if $Dist->{advisories}->@*;
+
+    # remove dists without advisories
+    delete $ThawedAuditReport->{dists}->{$DistName};
+}
+
+my $FoundNoUnexpedtedAdvisories = is(
+    $ThawedAuditReport->{dists},
+    {},
+    'no unexpected advisories'
+);
+
+if ( !$FoundNoUnexpedtedAdvisories ) {
+    diag explain $ThawedAuditReport->{dists};
+}
+
+done_testing;

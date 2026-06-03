@@ -175,54 +175,11 @@ sub _SupportProfileVariants {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my %Value;
 
-    my @SupportProfiles;
     if ( $Value =~ m{\A\d+\z} ) {
-        for my $GetParam (
-            { ConfigItemID => $Value },
-            { VersionID    => $Value },
-            )
-        {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
-                %{$GetParam},
-                DynamicFields => 1,
-                Silent        => 1,
-            );
-
-            push @SupportProfiles, $SupportProfile
-                if $SupportProfile
-                && ( $SupportProfile->{Class} || '' ) eq 'Support Profile';
-        }
+        $Value{$Value} = 1;
     }
-    else {
-        my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(
-            Result  => 'ARRAY',
-            Classes => ['Support Profile'],
-            Name    => $Value,
-            Limit   => 10,
-        );
-
-        for my $SupportProfileID (@SupportProfileIDs) {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
-                ConfigItemID  => $SupportProfileID,
-                DynamicFields => 1,
-                Silent        => 1,
-            );
-
-            push @SupportProfiles, $SupportProfile
-                if $SupportProfile;
-        }
-    }
-
-    for my $SupportProfile (@SupportProfiles) {
-        $Value{ $SupportProfile->{ConfigItemID} }  = 1 if $SupportProfile->{ConfigItemID};
-        $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
-        $Value{ $SupportProfile->{Name} }          = 1 if $SupportProfile->{Name};
-    }
-
-    $Value{$Value} = 1;
 
     return sort keys %Value;
 }
@@ -246,7 +203,13 @@ sub _UserParticipateSupportProfile {
     #
 
     SUPPORTPROFILE:
-    for my $SupportProfile ( _SupportProfileVariants( SupportProfile => $Param{SupportProfile} ) ) {
+    for my $SupportProfile (
+        _SupportProfileVariants(
+            SupportProfile => $Param{SupportProfile},
+            ReferenceOnly  => 1,
+        )
+        )
+    {
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'error',
@@ -363,7 +326,13 @@ sub _UserHasSupportAssignmentType {
     );
 
     SUPPORTPROFILE:
-    for my $SupportProfile ( _SupportProfileVariants( SupportProfile => $Param{SupportProfile} ) ) {
+    for my $SupportProfile (
+        _SupportProfileVariants(
+            SupportProfile => $Param{SupportProfile},
+            ReferenceOnly  => 1,
+        )
+        )
+    {
 
     my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;

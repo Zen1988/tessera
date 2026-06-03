@@ -18,7 +18,7 @@
 <div id='oooContent'>
     <div id='oooHeader'>
         <div class='oooWithSub'>
-            <h1 title="[% Translate(Data.WelcomeText, Data.Name) | html %]">[% Translate(Data.WelcomeText, Data.Name) | html %]</h1>
+            <h1 title="[% Translate('Welcome %s, to your TESSERA workspace.', Data.Name) | html %]">[% Translate('Welcome %s, to your TESSERA workspace.', Data.Name) | html %]</h1>
             <h3 class="ooog" title="[% Translate(Data.SubText) | html %]">[% Translate(Data.SubText) | html %]</h3>
         </div>
         <div id="oooSearchBox">

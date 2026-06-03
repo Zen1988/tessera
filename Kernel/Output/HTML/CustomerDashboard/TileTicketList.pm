@@ -27,8 +27,10 @@ our @ObjectDependencies = (
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::CustomerGroup',
     'Kernel::System::Log',
+    'Kernel::System::State',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck',
+    'Kernel::System::Web::Request',
 );
 
 sub new {
@@ -109,23 +111,7 @@ sub _CustomerUserMatches {
     my $CustomerUserID = _NormalizeValue( $Param{CustomerUserID} ) || '<undef>';
     my %CustomerUserID = map { lc $_ => 1 } _CustomerUserReferenceIDs(%Param);
 
-    my $Match = $CustomerUserID{ lc $AssignmentUser };
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
-        Message  => 'ZTSM SupportAssignment user match: CustomerUserID='
-            . $CustomerUserID
-            . ' CandidateIDs='
-            . join( '|', sort keys %CustomerUserID )
-            . ' AssignmentRaw='
-            . _DebugValue( $Param{AssignmentUser} )
-            . ' AssignmentValue='
-            . $AssignmentUser
-            . ' Match='
-            . ( $Match ? 1 : 0 ),
-    );
-
-    return $Match;
+    return $CustomerUserID{ lc $AssignmentUser };
 }
 
 sub _CustomerUserReferenceIDs {
@@ -159,54 +145,11 @@ sub _SupportProfileVariants {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my %Value;
 
-    my @SupportProfiles;
     if ( $Value =~ m{\A\d+\z} ) {
-        for my $GetParam (
-            { ConfigItemID => $Value },
-            { VersionID    => $Value },
-            )
-        {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
-                %{$GetParam},
-                DynamicFields => 1,
-                Silent        => 1,
-            );
-
-            push @SupportProfiles, $SupportProfile
-                if $SupportProfile
-                && ( $SupportProfile->{Class} || '' ) eq 'Support Profile';
-        }
+        $Value{$Value} = 1;
     }
-    else {
-        my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(
-            Result  => 'ARRAY',
-            Classes => ['Support Profile'],
-            Name    => $Value,
-            Limit   => 10,
-        );
-
-        for my $SupportProfileID (@SupportProfileIDs) {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
-                ConfigItemID  => $SupportProfileID,
-                DynamicFields => 1,
-                Silent        => 1,
-            );
-
-            push @SupportProfiles, $SupportProfile
-                if $SupportProfile;
-        }
-    }
-
-    for my $SupportProfile (@SupportProfiles) {
-        $Value{ $SupportProfile->{ConfigItemID} }  = 1 if $SupportProfile->{ConfigItemID};
-        $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
-        $Value{ $SupportProfile->{Name} }          = 1 if $SupportProfile->{Name};
-    }
-
-    $Value{$Value} = 1;
 
     return sort keys %Value;
 }
@@ -217,12 +160,6 @@ sub _SupportProfileList {
     return if !$Param{CustomerUserID};
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
-        Message  => 'ZTSM Dashboard support profile list enter: CustomerUserID='
-            . $Param{CustomerUserID},
-    );
 
     my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;
@@ -241,16 +178,6 @@ sub _SupportProfileList {
     }
 
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
-        Message  => 'ZTSM Dashboard support assignment search: CustomerUserID='
-            . $Param{CustomerUserID}
-            . ' CandidateIDs='
-            . join( '|', @CustomerUserIDs )
-            . ' Count='
-            . scalar @AssignmentIDs,
-    );
 
     return if !@AssignmentIDs;
 
@@ -279,17 +206,10 @@ sub _SupportProfileList {
         $AssignmentSupportProfile ||= $Assignment->{XMLData}
             && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
 
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'ZTSM Dashboard assignment accepted user: AssignmentID='
-                . $AssignmentID
-                . ' SupportProfileRaw='
-                . _DebugValue($AssignmentSupportProfile),
-        );
-
         for my $SupportProfile (
             _SupportProfileVariants(
                 Value => $AssignmentSupportProfile,
+                ReferenceOnly => 1,
             )
             )
         {
@@ -340,19 +260,7 @@ sub _ZTSMWorkableTicketIDs {
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my %Candidate;
-
-    my @DirectOwnerTicketIDs = $TicketObject->TicketSearch(
-        Result => 'ARRAY',
-        'DynamicField_ZTicket-Owner' => {
-            Equals => $Param{CustomerUserID},
-        },
-        StateType => $Param{StateType} || '',
-        SortBy    => $Param{SortBy}    || 'Age',
-        OrderBy   => $Param{OrderBy}   || 'Down',
-        UserID    => 1,
-    );
-
-    $Candidate{$_} = 1 for @DirectOwnerTicketIDs;
+    my @Candidate;
 
     PROFILE:
     for my $SupportProfile ( _SupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
@@ -364,29 +272,164 @@ sub _ZTSMWorkableTicketIDs {
             'DynamicField_ZTicket-OwnerGroup' => {
                 Equals => $SupportProfile,
             },
-            StateType => $Param{StateType} || '',
-            SortBy    => $Param{SortBy}    || 'Age',
-            OrderBy   => $Param{OrderBy}   || 'Down',
+            SortBy    => $Param{SortBy}  || 'Changed',
+            OrderBy   => $Param{OrderBy} || 'Down',
             UserID    => 1,
         );
 
-        $Candidate{$_} = 1 for @ProfileTicketIDs;
+        for my $TicketID (@ProfileTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    for my $CustomerUserID ( _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
+
+        my @OwnerTicketIDs = $TicketObject->TicketSearch(
+            Result => 'ARRAY',
+            'DynamicField_ZTicket-Owner' => {
+                Equals => $CustomerUserID,
+            },
+            SortBy  => $Param{SortBy}  || 'Changed',
+            OrderBy => $Param{OrderBy} || 'Down',
+            UserID  => 1,
+        );
+
+        for my $TicketID (@OwnerTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    return @Candidate;
+}
+
+sub _TypeColor {
+    my ($Type) = @_;
+
+    my %Color = (
+        'ServiceRequest' => '#2563EB',
+        'Assessment'     => '#F59E0B',
+        'Approval'       => '#8B5CF6',
+        'Endorsement'    => '#6366F1',
+        'Change'         => '#06B6D4',
+        'Change::Major'  => '#0284C7',
+        'Task'           => '#22C55E',
+        'Verification'   => '#14B8A6',
+        'Incident'       => '#EF4444',
+        'Incident::Major' => '#B91C1C',
+        'Problem'        => '#EA580C',
+        'Unclassified'   => '#6B7280',
+    );
+
+    return $Color{ $Type || '' } || $Color{Unclassified};
+}
+
+sub _ConfigItemNameGet {
+    my (%Param) = @_;
+
+    my $ConfigItemID = _NormalizeValue( $Param{ConfigItemID} );
+    return '-' if !defined $ConfigItemID || $ConfigItemID eq '';
+
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID => $ConfigItemID,
+    );
+
+    return $ConfigItem->{Name} if $ConfigItem && $ConfigItem->{Name};
+    return $ConfigItemID;
+}
+
+sub _TicketRowsBuild {
+    my (%Param) = @_;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my @Rows;
+    my %Seen;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+
+        next TICKETID if !$TicketID;
+        next TICKETID if $Seen{$TicketID}++;
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+        );
+
+        next TICKETID if !%Ticket;
+
+        my $IsClosed = ( $Ticket{StateType} || '' ) eq 'closed' ? 1 : 0;
+        next TICKETID if !$Param{IncludeClosed} && $IsClosed;
+
+        my $Type       = $Ticket{Type} || 'Unclassified';
+        my $OwnerGroup = _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerGroup'} );
+        my $Changed    = $Ticket{Changed} || $Ticket{Created} || '';
+        my $Created    = $Ticket{Created} || '';
+
+        push @Rows, {
+            TicketID       => $TicketID,
+            TicketNumber   => $Ticket{TicketNumber} || $TicketID,
+            Title          => $Ticket{Title} || '-',
+            Type           => $Type,
+            TypeColor      => _TypeColor($Type),
+            State          => $Ticket{State} || '-',
+            OwnerGroup     => _ConfigItemNameGet( ConfigItemID => $OwnerGroup ),
+            Changed        => $Changed,
+            Created        => $Created,
+            SortTime       => $Changed || $Created,
+            IsClosed       => $IsClosed,
+        };
+    }
+
+    return sort {
+             ( $a->{IsClosed} || 0 ) <=> ( $b->{IsClosed} || 0 )
+          || ( $b->{SortTime} || '' ) cmp ( $a->{SortTime} || '' )
+          || ( $b->{TicketID}  || 0 )  <=> ( $a->{TicketID}  || 0 )
+    } @Rows;
+}
+
+sub _MajorChangeTicketIDs {
+    my (%Param) = @_;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %Candidate;
+    my @Candidate;
+    my %StateList = $Kernel::OM->Get('Kernel::System::State')->StateList(
+        Valid  => 0,
+        UserID => 1,
+    );
+    my %StateLookup = reverse %StateList;
+
+    return if !$StateLookup{approved};
+
+    my @TicketIDs = $TicketObject->TicketSearch(
+        Result    => 'ARRAY',
+        Types     => ['Change::Major'],
+        States    => ['approved'],
+        StateType => [ 'new', 'open', 'pending' ],
+        SortBy    => 'Changed',
+        OrderBy   => 'Down',
+        UserID    => 1,
+    );
+
+    for my $TicketID (@TicketIDs) {
+        next if !$TicketID;
+        next if $Candidate{$TicketID}++;
+        push @Candidate, $TicketID;
     }
 
     return _PermissionFilter(
         CustomerUserID => $Param{CustomerUserID},
-        TicketIDs      => [ sort { $a <=> $b } keys %Candidate ],
+        TicketIDs      => \@Candidate,
     );
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
-        Message  => 'ZTSM TileTicketList Run enter: UserID='
-            . ( $Param{UserID} // '<undef>' ),
-    );
 
     # check needed CustomerUserID
     if ( !$Param{UserID} ) {
@@ -397,110 +440,49 @@ sub Run {
         return '';
     }
 
-    my $ConfigObject     = $Kernel::OM->Get('Kernel::Config');
-    my $TicketObject     = $Kernel::OM->Get('Kernel::System::Ticket');
-    my $TicketListObject = $Kernel::OM->Get('Kernel::Output::HTML::TicketOverview::CustomerList');
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $ShowAllWorkspace = $ParamObject->GetParam( Param => 'ShowAllWorkspace' ) ? 1 : 0;
 
-    my %Filter = (
+    my @WorkableTicketIDs = _ZTSMWorkableTicketIDs(
         CustomerUserID => $Param{UserID},
-        StateType      => $Param{Config}{StateType} || '',
-        SortBy         => $Param{Config}{SortBy}    || 'Age',
-        OrderBy        => $Param{Config}{OrderBy}   || 'Down',
-        Permission     => 'ro',
+        SortBy         => $Param{Config}{SortBy}  || 'Changed',
+        OrderBy        => $Param{Config}{OrderBy} || 'Down',
     );
 
-    if ( $Param{Config}{CompanyTickets} ) {
-
-        # check if output of customer company tickets is disabled
-        if ( $ConfigObject->Get('Ticket::Frontend::CustomerDisableCompanyTicketAccess') ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  =>
-                    'Company Tickets can not be shown with Ticket::Frontend::CustomerDisableCompanyTicketAccess set!',
-            );
-            return '';
-        }
-
-        my %AccessibleCustomers = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupContextCustomers(
-            CustomerUserID => $Param{UserID},
-        );
-
-        $Filter{CustomerIDRaw} = [ sort keys %AccessibleCustomers ];
-
-    }
-    else {
-        $Filter{CustomerUserLoginRaw} = $Param{UserID};
-    }
-
-    # get the viewable tickets
-    my @ViewableTickets = $TicketObject->TicketSearch(
-        %Filter,
-        Result => 'ARRAY',
+    my @WorkspaceRows = _TicketRowsBuild(
+        TicketIDs      => \@WorkableTicketIDs,
+        IncludeClosed  => $ShowAllWorkspace,
     );
 
-    if ( $Param{Config}{ZTSMWorkableTickets} // 1 ) {
-
-        my @WorkableTicketIDs = _ZTSMWorkableTicketIDs(
-            CustomerUserID => $Param{UserID},
-            StateType      => $Param{Config}{StateType} || '',
-            SortBy         => $Param{Config}{SortBy}    || 'Age',
-            OrderBy        => $Param{Config}{OrderBy}   || 'Down',
-        );
-
-        my %Seen;
-        @ViewableTickets = grep { !$Seen{$_}++ } ( @ViewableTickets, @WorkableTicketIDs );
+    if ( $Param{Config}{MaxTickets} && $Param{Config}{MaxTickets} - 1 < $#WorkspaceRows ) {
+        @WorkspaceRows = @WorkspaceRows[ 0 .. $Param{Config}{MaxTickets} - 1 ];
     }
 
-    my $TicketListHTML;
-    if ( scalar @ViewableTickets == 0 ) {
-
-        # check if the CustomerUser has tickets at all
-        my @AllTickets = $TicketObject->TicketSearch(
-            Result               => 'ARRAY',
-            CustomerUserID       => $Param{UserID},
-            CustomerUserLoginRaw => $Param{UserID},
-            Permission           => 'ro',
-            Limit                => 1,
-        );
-
-        # generate appropriate message
-        if ( !@AllTickets ) {
-            my $CustomTexts = $ConfigObject->Get('Ticket::Frontend::CustomerTicketOverviewCustomEmptyText');
-            $TicketListHTML = $TicketListObject->Run(
-                TicketIDs   => [],
-                NoAllTotal  => 1,
-                CustomTexts => ( ref $CustomTexts eq 'HASH' ) ? $CustomTexts : 0,
-            );
-        }
-        else {
-            $TicketListHTML = $TicketListObject->Run(
-                TicketIDs => [],
-            );
-        }
-
-    }
-    else {
-
-        if ( $Param{Config}{MaxTickets} && $Param{Config}{MaxTickets} - 1 < $#ViewableTickets ) {
-            @ViewableTickets = @ViewableTickets[ 0 .. $Param{Config}{MaxTickets} - 1 ];
-        }
-
-        $TicketListHTML = $TicketListObject->Run(
-            TicketIDs => \@ViewableTickets,
-        );
-
-    }
+    my @MajorChangeRows = _TicketRowsBuild(
+        TicketIDs => [
+            _MajorChangeTicketIDs(
+                CustomerUserID => $Param{UserID},
+            )
+        ],
+    );
 
     my $Content = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Output(
         TemplateFile => 'Dashboard/TileTicketList',
         Data         => {
-            TileID         => $Param{TileID},
-            TicketListHTML => $TicketListHTML,
+            TileID           => $Param{TileID},
+            Text             => 'My workspace',
+            WorkspaceRows    => \@WorkspaceRows,
+            WorkspaceCount   => scalar @WorkspaceRows,
+            WorkspaceCountText => '' . scalar @WorkspaceRows,
+            ShowAllWorkspace => $ShowAllWorkspace,
+            MajorChangeRows  => \@MajorChangeRows,
+            MajorChangeCount => scalar @MajorChangeRows,
+            MajorChangeCountText => '' . scalar @MajorChangeRows,
             %{ $Param{Config} },
         },
     );
 
-    return '<!-- ZTSM-TILETICKETLIST-PROBE active -->' . $Content;
+    return $Content;
 }
 
 1;

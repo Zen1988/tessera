@@ -19,6 +19,7 @@ our @ObjectDependencies = (
     'Kernel::System::GeneralCatalog',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Log',
+    'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader',
     'Kernel::System::State',
     'Kernel::System::Ticket',
 );
@@ -336,110 +337,144 @@ sub Run {
     );
 
     my $ResolvedState = $Records[$CurrentIndex]->{State};
+    my $NextIndex     = $CurrentIndex + 1;
 
-    while (1) {
-        my $NextIndex = $CurrentIndex + 1;
-
-        if ( $NextIndex > $#Records ) {
-            _TicketFieldSet(
-                TicketID  => $TicketID,
-                FieldName => 'ZTicket-BlueBook',
-                Value     => '',
-                UserID    => $UserID,
-            );
-
-            $LogObject->Log(
-                Priority => 'notice',
-                Message  => "ZTSMStateBookResume: StateBook complete TicketID=$TicketID State=$ResolvedState",
-            );
-
-            return 1;
-        }
-
-        my $NextRecord = $Records[$NextIndex];
-        my $NextState  = $NextRecord->{State};
-        my $NextStateID = $Kernel::OM->Get('Kernel::System::State')->StateLookup(
-            State => $NextState,
+    if ( $NextIndex > $#Records ) {
+        _TicketFieldSet(
+            TicketID  => $TicketID,
+            FieldName => 'ZTicket-BlueBook',
+            Value     => '',
+            UserID    => $UserID,
         );
-
-        if ( !$NextStateID ) {
-            $LogObject->Log(
-                Priority => 'error',
-                Message  => "ZTSMStateBookResume: State lookup failed TicketID=$TicketID State=$NextState",
-            );
-            return;
-        }
-
-        ZTSMArticleCreate(
-            %Param,
-            TicketID => $TicketID,
-            Subject  => 'DO-NOT-REPLY: Ticket lifecycle resumed.',
-            Body     =>
-                  "** Note: This is a system-generated orchestration update message.\n\n"
-                . "Lifecycle State:\n"
-                . "Resumed\n\n"
-                . "From:\n"
-                . $ResolvedState
-                . "\n\n"
-                . "To:\n"
-                . $NextState,
-            HistoryComment => "ZTSM: StateBook resumed $ResolvedState -> $NextState",
-            UserID         => $UserID,
-        );
-
-        my $Success = $TicketObject->TicketStateSet(
-            TicketID => $TicketID,
-            StateID  => $NextStateID,
-            UserID   => $UserID,
-        );
-
-        if ( !$Success ) {
-            $LogObject->Log(
-                Priority => 'error',
-                Message  => "ZTSMStateBookResume: Failed moving TicketID=$TicketID State=$NextState",
-            );
-            return;
-        }
 
         _TicketFieldSet(
             TicketID  => $TicketID,
             FieldName => 'ZTicket-Stage',
-            Value     => $NextState,
+            Value     => $CurrentState,
             UserID    => $UserID,
         );
 
         $LogObject->Log(
             Priority => 'notice',
-            Message  =>
-                  "ZTSMStateBookResume: Advanced "
-                . "TicketID=$TicketID "
-                . "From=$ResolvedState "
-                . "To=$NextState",
+            Message  => "ZTSMStateBookResume: StateBook complete TicketID=$TicketID State=$ResolvedState",
         );
 
-        $CurrentIndex  = $NextIndex;
-        $ResolvedState = $NextState;
-
-        if ( $NextRecord->{BlueBook} ) {
-            _TicketFieldSet(
-                TicketID  => $TicketID,
-                FieldName => 'ZTicket-BlueBook',
-                Value     => $NextRecord->{BlueBook},
-                UserID    => $UserID,
-            );
-
-            $LogObject->Log(
-                Priority => 'notice',
-                Message  =>
-                      "ZTSMStateBookResume: Next BlueBook boundary "
-                    . "TicketID=$TicketID "
-                    . "State=$NextState "
-                    . "BlueBook=$NextRecord->{BlueBook}",
-            );
-
-            return 1;
-        }
+        return 1;
     }
+
+    my $NextRecord = $Records[$NextIndex];
+    my $NextState  = $NextRecord->{State};
+    my $NextStateID = $Kernel::OM->Get('Kernel::System::State')->StateLookup(
+        State => $NextState,
+    );
+
+    if ( !$NextStateID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMStateBookResume: State lookup failed TicketID=$TicketID State=$NextState",
+        );
+        return;
+    }
+
+    ZTSMArticleCreate(
+        %Param,
+        TicketID => $TicketID,
+        Subject  => 'DO-NOT-REPLY: Ticket lifecycle resumed.',
+        Body     =>
+              "** Note: This is a system-generated orchestration update message.\n\n"
+            . "Lifecycle State:\n"
+            . "Resumed\n\n"
+            . "From:\n"
+            . $ResolvedState
+            . "\n\n"
+            . "To:\n"
+            . $NextState,
+        HistoryComment => "ZTSM: StateBook resumed $ResolvedState -> $NextState",
+        UserID         => $UserID,
+    );
+
+    my $Success = $TicketObject->TicketStateSet(
+        TicketID => $TicketID,
+        StateID  => $NextStateID,
+        UserID   => $UserID,
+    );
+
+    if ( !$Success ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMStateBookResume: Failed moving TicketID=$TicketID State=$NextState",
+        );
+        return;
+    }
+
+    _TicketFieldSet(
+        TicketID  => $TicketID,
+        FieldName => 'ZTicket-Stage',
+        Value     => $NextState,
+        UserID    => $UserID,
+    );
+
+    _TicketFieldSet(
+        TicketID  => $TicketID,
+        FieldName => 'ZTicket-BlueBook',
+        Value     => '',
+        UserID    => $UserID,
+    );
+
+    _TicketFieldSet(
+        TicketID  => $TicketID,
+        FieldName => 'ZTicket-BlueLevel',
+        Value     => '',
+        UserID    => $UserID,
+    );
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  =>
+              "ZTSMStateBookResume: Advanced one state "
+            . "TicketID=$TicketID "
+            . "From=$ResolvedState "
+            . "To=$NextState",
+    );
+
+    my %StateBookTicket = $TicketObject->TicketGet(
+        TicketID      => $TicketID,
+        DynamicFields => 1,
+        UserID        => $UserID,
+        Silent        => 1,
+    );
+
+    if ( !%StateBookTicket ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  "ZTSMStateBookResume: Failed reloading ticket before StateBook handoff "
+                . "TicketID=$TicketID "
+                . "State=$NextState",
+        );
+
+        return 1;
+    }
+
+    my $StateBookReaderResult = $Kernel::OM->Get(
+        'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader'
+    )->Run(
+        %Param,
+        Ticket => \%StateBookTicket,
+        UserID => $UserID,
+    );
+
+    if ( !$StateBookReaderResult ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  =>
+                  "ZTSMStateBookResume: StateBook handoff returned false "
+                . "TicketID=$TicketID "
+                . "State=$NextState",
+        );
+    }
+
+    return 1;
 }
 
 1;

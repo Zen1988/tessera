@@ -138,6 +138,10 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-RequiredWeightage'}
     ) || 1;
 
+    my $TicketRole = _NormalizeValue(
+        $Ticket->{'DynamicField_ZTicket-Role'}
+    );
+
     # -------------------------------------------------------- #
     # PREVENT DUPLICATE ENGAGEMENT
     # -------------------------------------------------------- #
@@ -213,7 +217,29 @@ sub Run {
 			$SelectedAssignment = $Assignment;
 		}
 
-		my $Type = _NormalizeValue(
+        my $AssignmentRole = _NormalizeValue(
+            $Assignment->{XMLData}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}->{Content}
+        );
+
+        if (
+            defined $TicketRole
+            && $TicketRole ne ''
+            && defined $AssignmentRole
+            && lc $AssignmentRole eq lc $TicketRole
+            )
+        {
+            $SelectedAssignment = $Assignment;
+
+            last PICK;
+        }
+
+        next PICK
+            if defined $TicketRole
+            && $TicketRole ne '';
+
+        my $Type = _NormalizeValue(
 			$Assignment->{XMLData}
 			->{'ZTSMSupportAssignment-Type'}
 			->{Content}

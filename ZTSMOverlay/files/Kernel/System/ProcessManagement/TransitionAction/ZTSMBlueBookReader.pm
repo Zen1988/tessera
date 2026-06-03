@@ -505,13 +505,14 @@ sub Run {
             'ZTicket-BlueBook'         => $BlueBookID,
             'ZTicket-BlueLevel'        => $Record->{BlueLevel},
             'ZTicket-Chapter'          => $Record->{Chapter},
+            'ZTicket-Application'      => $Ticket->{'DynamicField_ZTicket-Application'},
             'ZTicket-Profile'          => $Record->{Profile},
             'ZTicket-OwnerGroup'       => $OwnerGroup,
             'ZTicket-Role'             => $Record->{Role},
             'ZTicket-Mandatory'        => $Record->{Mandatory},
             'ZTicket-Strict'           => $Record->{Strict},
             'ZTicket-Duration'         => $Record->{Duration},
-            'ZTicket-RequiredWeightage' => $Record->{RequiredWeightage},
+            'ZTicket-RequiredWeightage' => $Record->{RequiredWeightage} || 1,
         );
 
         FIELD:
@@ -520,12 +521,24 @@ sub Run {
             next FIELD if !defined $FieldMap{$FieldName};
             next FIELD if $FieldMap{$FieldName} eq '';
 
-            _TicketFieldSet(
+            my $FieldSet = _TicketFieldSet(
                 TicketID  => $NewTicketID,
                 FieldName => $FieldName,
                 Value     => $FieldMap{$FieldName},
                 UserID    => $UserID,
             );
+
+            if ( !$FieldSet ) {
+                $LogObject->Log(
+                    Priority => 'error',
+                    Message  =>
+                          'ZTSMBlueBookReader: Child field set failed '
+                        . "TicketID=$NewTicketID "
+                        . "Field=$FieldName "
+                        . 'Value='
+                        . ( defined $FieldMap{$FieldName} ? $FieldMap{$FieldName} : '' ),
+                );
+            }
         }
 
         ZTSMArticleCreate(

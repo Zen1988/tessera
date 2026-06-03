@@ -382,11 +382,13 @@ sub Run {
                 'ZTicket-BlueBook',
                 'ZTicket-BlueLevel',
                 'ZTicket-Chapter',
+                'ZTicket-Profile',
                 'ZTicket-Mandatory',
                 'ZTicket-Strict',
                 'ZTicket-Duration',
                 'ZTicket-OwnerGroup',
                 'ZTicket-RequiredWeightage',
+                'ZTicket-Role',
             );
 
             FIELD:
@@ -418,6 +420,11 @@ sub Run {
                     UserID => 1,
                 );
             }
+
+            Kernel::System::ZTSMBlueBookRuntime::ChildProcessSet(
+                TicketID => $NewTicketID,
+                UserID   => 1,
+            );
 
             my $Body
                 = "** Note: This is a system-generated orchestration update message.\n\n"

@@ -18,9 +18,9 @@
 <div id="oooNavigation">
     <div id="oooNavBarIcons">
         <div id="oooNavBarSignet">
-            <img id="oooSignet" src="[% Data.URLSignet | html %]"/>
+            <img id="oooSignet" src="[% Config("Frontend::WebPath") %]common/img/TESSERA/TESSERA_LOGO_v2.svg"/>
             <i id="oooMobileMenuClose" class="ooofo ooofo-close"></i>
-            <img id="oooLogo" src="[% Data.URLLogo | html %]"/>
+            <img id="oooLogo" src="[% Config("Frontend::WebPath") %]common/img/TESSERA/TESSERA_LOGO_v2.svg"/>
         </div>
         <div id="oooNavBarModuleIcons">
 [% RenderBlockStart("Item") %]
