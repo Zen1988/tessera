@@ -33,12 +33,22 @@
     .ztsmLoginPanel {
         display: flex;
         flex-direction: column;
+        align-items: center;
         justify-content: center;
         gap: 28px;
         padding: clamp(32px, 5vw, 72px);
         background: rgba(255, 255, 255, 0.96);
         box-shadow: 12px 0 34px rgba(5, 21, 72, 0.08);
         z-index: 1;
+    }
+
+    .ztsmLoginBrand,
+    .ztsmLoginTitle,
+    #ztsmLoginPage #Slider,
+    .ztsmDivider,
+    .ztsmTrust {
+        width: 100%;
+        max-width: 420px;
     }
 
     .ztsmLoginBrand {

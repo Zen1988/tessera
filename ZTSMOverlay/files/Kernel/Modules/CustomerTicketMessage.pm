@@ -677,12 +677,15 @@ sub Run {
 
         # use default if ticket type is not available in screen but activated on system
         if ( $ConfigObject->Get('Ticket::Type') && !$Config->{'TicketType'} ) {
-            my %TypeList = reverse $TicketObject->TicketTypeList(
+            my %TypeList = $TicketObject->TicketTypeList(
                 %Param,
                 Action         => $Self->{Action},
                 CustomerUserID => $Self->{UserID},
             );
-            $GetParam{TypeID} = $TypeList{ $Config->{'TicketTypeDefault'} };
+            $Self->_ZTSMRequestTypesFilter( Type => \%TypeList );
+
+            my %ReverseTypeList = reverse %TypeList;
+            $GetParam{TypeID} = $ReverseTypeList{ $Config->{'TicketTypeDefault'} };
             if ( !$GetParam{TypeID} ) {
                 $LayoutObject->CustomerFatalError(
                     Message =>
@@ -971,6 +974,16 @@ sub Run {
         # check type
         if ( $ConfigObject->Get('Ticket::Type') && !$GetParam{TypeID} ) {
             $Error{TypeIDInvalid} = 'ServerError';
+        }
+        elsif ( $ConfigObject->Get('Ticket::Type') && $GetParam{TypeID} ) {
+            my $AllowedType = $Self->_GetTypes(
+                %GetParam,
+                QueueID => $NewQueueID || 1,
+            );
+
+            if ( !$AllowedType->{ $GetParam{TypeID} } ) {
+                $Error{TypeIDInvalid} = 'ServerError';
+            }
         }
 
         if (%Error) {
@@ -1878,7 +1891,43 @@ sub _GetTypes {
             CustomerUserID => $Self->{UserID},
         );
     }
+
+    $Self->_ZTSMRequestTypesFilter( Type => \%Type );
+
     return \%Type;
+}
+
+sub _ZTSMRequestTypeNameAllowList {
+    my ($Self) = @_;
+
+    my $RequestType = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::RequestType',
+        Valid => 1,
+    );
+
+    return if !IsHashRefWithData($RequestType);
+
+    my %AllowedName = map { $_ => 1 } values %{$RequestType};
+
+    return \%AllowedName;
+}
+
+sub _ZTSMRequestTypesFilter {
+    my ( $Self, %Param ) = @_;
+
+    my $Type = $Param{Type};
+    return if !IsHashRefWithData($Type);
+
+    my $AllowedName = $Self->_ZTSMRequestTypeNameAllowList();
+    return if !IsHashRefWithData($AllowedName);
+
+    TYPEID:
+    for my $TypeID ( sort keys %{$Type} ) {
+        next TYPEID if $AllowedName->{ $Type->{$TypeID} };
+        delete $Type->{$TypeID};
+    }
+
+    return;
 }
 
 sub _ServiceExtensionDynamicFieldsLoad {
@@ -2485,6 +2534,8 @@ sub _MaskNew {
             CustomerUserID => $Self->{UserID},
         );
 
+        $Self->_ZTSMRequestTypesFilter( Type => \%Type );
+
         if ( $Config->{'TicketTypeDefault'} && !$Param{TypeID} ) {
             my %ReverseType = reverse %Type;
             $Param{TypeID} = $ReverseType{ $Config->{'TicketTypeDefault'} };
@@ -2694,6 +2745,10 @@ sub _MaskNew {
         $LayoutObject->Block(
             Name => 'AsteriskExplanation',
         );
+    }
+
+    if ( IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} ) ) {
+        $LayoutObject->{HasDatepicker} = 1;
     }
 
     # get output back
