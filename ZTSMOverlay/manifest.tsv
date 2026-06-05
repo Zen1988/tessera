@@ -5,22 +5,30 @@ copy	files/Kernel/Modules/CustomerTicketZoom.pm	Kernel/Modules/CustomerTicketZoo
 copy	files/Kernel/Modules/CustomerTicketZTSMAction.pm	Kernel/Modules/CustomerTicketZTSMAction.pm
 copy	files/Kernel/Modules/CustomerTicketMessage.pm	Kernel/Modules/CustomerTicketMessage.pm
 copy	files/Kernel/Modules/CustomerTicketOverview.pm	Kernel/Modules/CustomerTicketOverview.pm
+copy	files/Kernel/Modules/CustomerDashboardCommon.pm	Kernel/Modules/CustomerDashboardCommon.pm
 copy	files/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm	Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm
 copy	files/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt	Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt	Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt	Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerHeader.tt	Kernel/Output/HTML/Templates/Standard/CustomerHeader.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt	Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt	Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt	Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt	Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt
 copy	files/Kernel/Output/HTML/TicketOverview/CustomerList.pm	Kernel/Output/HTML/TicketOverview/CustomerList.pm
 copy	files/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm	Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm
 copy	files/Kernel/System/GenericAgent/ZTSMRoleDirector.pm	Kernel/System/GenericAgent/ZTSMRoleDirector.pm
 copy	files/Kernel/System/ZTSMBlueBookRuntime.pm	Kernel/System/ZTSMBlueBookRuntime.pm
+copy	files/Kernel/System/TESSERAResolveGovernance.pm	Kernel/System/TESSERAResolveGovernance.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.pm
+copy	files/Kernel/System/ProcessManagement/TransitionAction/TESSERAResolveGovernance.pm	Kernel/System/ProcessManagement/TransitionAction/TESSERAResolveGovernance.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm
 copy	files/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm	Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm
@@ -29,6 +37,9 @@ copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComp
 copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm
 copy	files/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm	Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm
 copy	files/Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm	Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm
+copy	files/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm	Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm
+copy	files/var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg	var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg
+copy	files/var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg	var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg
 patch	patches/admin-service-dynamic-fields.patch
 patch	patches/admin-dynamic-field-screen-service-fields.patch
 patch	patches/customer-ticket-message-service-fields.patch

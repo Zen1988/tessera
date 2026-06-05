@@ -384,10 +384,6 @@ sub Run {
                     FIELD:
                     for my $FieldID ( sort keys %Check ) {
                         if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$FieldID not defined in TicketACL preselection rules!"
-                            );
                             next FIELD;
                         }
                         if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
@@ -402,10 +398,6 @@ sub Run {
                                 next FIELD;
                             }
                             if ( !$ACLPreselection->{Fields}{$Element} ) {
-                                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                    Priority => 'debug',
-                                    Message  => "$Element not defined in TicketACL preselection rules!"
-                                );
                                 next FIELD;
                             }
                         }
@@ -1367,10 +1359,6 @@ sub Run {
                     FIELD:
                     for my $FieldID ( sort keys %Check ) {
                         if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$FieldID not defined in TicketACL preselection rules!"
-                            );
                             next FIELD;
                         }
                         if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
@@ -1385,10 +1373,6 @@ sub Run {
                                 next FIELD;
                             }
                             if ( !$ACLPreselection->{Fields}{$Element} ) {
-                                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                    Priority => 'debug',
-                                    Message  => "$Element not defined in TicketACL preselection rules!"
-                                );
                                 next FIELD;
                             }
                         }
@@ -2271,6 +2255,7 @@ sub _ServiceExtensionArticleSnapshotBuild {
 
     my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     my @Rows;
     FIELDNAME:
@@ -2284,18 +2269,37 @@ sub _ServiceExtensionArticleSnapshotBuild {
         next FIELDNAME if ref $Value eq 'ARRAY' && !@{$Value};
         next FIELDNAME if !ref $Value && $Value eq '';
 
-        my $Rendered = $BackendObject->DisplayValueRender(
+        if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'Set' ) {
+            my $SetSnapshot = $Self->_ServiceExtensionSetSnapshotBuild(
+                DynamicFieldConfig  => $DynamicFieldConfig,
+                DynamicFieldObject  => $DynamicFieldObject,
+                BackendObject       => $BackendObject,
+                LayoutObject        => $LayoutObject,
+                HTMLOutput          => $Param{HTMLOutput} ? 1 : 0,
+                Value               => $Value,
+            );
+            next FIELDNAME if !$SetSnapshot;
+
+            push @Rows, {
+                Label => $DynamicFieldConfig->{Label} || $FieldName,
+                Value => $SetSnapshot,
+                IsSet => 1,
+            };
+            next FIELDNAME;
+        }
+
+        my $RenderedValue = $Self->_ServiceExtensionDisplayValueRender(
             DynamicFieldConfig => $DynamicFieldConfig,
             Value              => $Value,
+            BackendObject      => $BackendObject,
             LayoutObject       => $LayoutObject,
             HTMLOutput         => $Param{HTMLOutput} ? 1 : 0,
         );
-        next FIELDNAME if !IsHashRefWithData($Rendered);
-        next FIELDNAME if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
+        next FIELDNAME if !defined $RenderedValue || $RenderedValue eq '';
 
         push @Rows, {
             Label => $DynamicFieldConfig->{Label} || $FieldName,
-            Value => $Rendered->{Value},
+            Value => $RenderedValue,
         };
     }
 
@@ -2305,19 +2309,25 @@ sub _ServiceExtensionArticleSnapshotBuild {
 
     if ( $Param{HTMLOutput} ) {
         my $TitleHTML = $LayoutObject->Ascii2Html( Text => $Title );
-        my $Snapshot  = '<div class="ZTSMSubmissionSnapshot"><h3>' . $TitleHTML . '</h3><table>';
+        my $Snapshot  = '<div class="ZTSMSubmissionSnapshot"><h3>' . $TitleHTML . '</h3>';
 
         ROW:
         for my $Row (@Rows) {
+            if ( $Row->{IsSet} ) {
+                my $Label = $LayoutObject->Ascii2Html( Text => $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) );
+                $Snapshot .= '<h4>' . $Label . '</h4>' . $Row->{Value};
+                next ROW;
+            }
+
             my $Label = $LayoutObject->Ascii2Html( Text => $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) );
-            $Snapshot .= '<tr><th style="text-align:left;vertical-align:top;padding-right:1em;">'
+            $Snapshot .= '<table><tr><th style="text-align:left;vertical-align:top;padding-right:1em;">'
                 . $Label
                 . '</th><td>'
                 . $Row->{Value}
-                . '</td></tr>';
+                . '</td></tr></table>';
         }
 
-        $Snapshot .= '</table></div>';
+        $Snapshot .= '</div>';
         return $Snapshot;
     }
 
@@ -2328,6 +2338,212 @@ sub _ServiceExtensionArticleSnapshotBuild {
     }
 
     return $Snapshot;
+}
+
+sub _ServiceExtensionDisplayValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+    my $LayoutObject       = $Param{LayoutObject};
+    my $HTMLOutput         = $Param{HTMLOutput} ? 1 : 0;
+
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem' ) {
+        my $ConfigItemValue = $Self->_ServiceExtensionConfigItemValueRender(
+            Value        => $Value,
+            LayoutObject => $LayoutObject,
+            HTMLOutput   => $HTMLOutput,
+        );
+        return $ConfigItemValue if defined $ConfigItemValue && $ConfigItemValue ne '';
+    }
+
+    my $Rendered = $Param{BackendObject}->DisplayValueRender(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+        LayoutObject       => $LayoutObject,
+        HTMLOutput         => $HTMLOutput,
+    );
+    return if !IsHashRefWithData($Rendered);
+    return if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
+
+    return $Rendered->{Value};
+}
+
+sub _ServiceExtensionConfigItemValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my @Values = ref $Param{Value} eq 'ARRAY' ? @{ $Param{Value} } : ( $Param{Value} );
+    my @Display;
+
+    VALUE:
+    for my $Value (@Values) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $Display = $Self->_ServiceExtensionConfigItemDisplayName(
+            Value => $Value,
+        );
+        next VALUE if !$Display;
+
+        if ( $Param{HTMLOutput} ) {
+            $Display = $Param{LayoutObject}->Ascii2Html( Text => $Display );
+        }
+
+        push @Display, $Display;
+    }
+
+    return if !@Display;
+    return join( $Param{HTMLOutput} ? '<br />' : "\n", @Display );
+}
+
+sub _ServiceExtensionConfigItemDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    for my $GetParam (
+        { ConfigItemID => $Value },
+        { VersionID    => $Value },
+        )
+    {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($ConfigItem);
+        next if !$ConfigItem->{Name};
+
+        return $Value . ' - ' . $ConfigItem->{Name};
+    }
+
+    return $Value;
+}
+
+sub _ServiceExtensionSetSnapshotBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+    return if ref $Value ne 'ARRAY' || !@{$Value};
+
+    my @FieldOrder = $Self->_ServiceExtensionSetFieldOrder(
+        Include => $DynamicFieldConfig->{Config}{Include},
+    );
+    return if !@FieldOrder;
+
+    my @FieldConfig;
+    FIELD:
+    for my $FieldName (@FieldOrder) {
+        my $IncludedFieldConfig = $Self->{DynamicField}{$FieldName}
+            || $Param{DynamicFieldObject}->DynamicFieldGet(
+                Name => $FieldName,
+            );
+        next FIELD if !IsHashRefWithData($IncludedFieldConfig);
+
+        push @FieldConfig, {
+            Name   => $FieldName,
+            Config => $IncludedFieldConfig,
+            Label  => $IncludedFieldConfig->{Label} || $FieldName,
+        };
+    }
+    return if !@FieldConfig;
+
+    my @Rows;
+    SETROW:
+    for my $SetRow ( @{$Value} ) {
+        next SETROW if ref $SetRow ne 'HASH';
+
+        my @Cells;
+        my $HasValue;
+        FIELD:
+        for my $Field (@FieldConfig) {
+            my $CellValue = $SetRow->{ $Field->{Name} };
+            my $RenderedValue = '';
+
+            if ( defined $CellValue && !( ref $CellValue eq 'ARRAY' && !@{$CellValue} ) && !( !ref $CellValue && $CellValue eq '' ) ) {
+                $RenderedValue = $Self->_ServiceExtensionDisplayValueRender(
+                    DynamicFieldConfig => $Field->{Config},
+                    Value              => $CellValue,
+                    BackendObject      => $Param{BackendObject},
+                    LayoutObject       => $Param{LayoutObject},
+                    HTMLOutput         => $Param{HTMLOutput} ? 1 : 0,
+                ) || '';
+            }
+
+            $HasValue ||= $RenderedValue ne '';
+            push @Cells, $RenderedValue;
+        }
+
+        next SETROW if !$HasValue;
+        push @Rows, \@Cells;
+    }
+    return if !@Rows;
+
+    if ( $Param{HTMLOutput} ) {
+        my $HTML = '<table style="border-collapse:collapse;width:100%;margin-bottom:1em;"><thead><tr>';
+        for my $Field (@FieldConfig) {
+            $HTML .= '<th style="text-align:left;vertical-align:top;border:1px solid #d9d9d9;padding:6px 8px;">'
+                . $Param{LayoutObject}->Ascii2Html( Text => $Param{LayoutObject}->{LanguageObject}->Translate( $Field->{Label} ) )
+                . '</th>';
+        }
+        $HTML .= '</tr></thead><tbody>';
+
+        for my $Row (@Rows) {
+            $HTML .= '<tr>';
+            for my $Cell (@{$Row}) {
+                $HTML .= '<td style="vertical-align:top;border:1px solid #d9d9d9;padding:6px 8px;">'
+                    . ( $Cell || '&nbsp;' )
+                    . '</td>';
+            }
+            $HTML .= '</tr>';
+        }
+
+        $HTML .= '</tbody></table>';
+        return $HTML;
+    }
+
+    my $Text = join( "\t", map { $Param{LayoutObject}->{LanguageObject}->Translate( $_->{Label} ) } @FieldConfig ) . "\n";
+    for my $Row (@Rows) {
+        $Text .= join( "\t", @{$Row} ) . "\n";
+    }
+
+    return $Text;
+}
+
+sub _ServiceExtensionSetFieldOrder {
+    my ( $Self, %Param ) = @_;
+
+    my $Include = $Param{Include};
+    return if ref $Include ne 'ARRAY';
+
+    my @FieldOrder;
+    ITEM:
+    for my $IncludeItem ( @{$Include} ) {
+        next ITEM if ref $IncludeItem ne 'HASH';
+
+        if ( IsHashRefWithData( $IncludeItem->{Grid} ) && IsArrayRefWithData( $IncludeItem->{Grid}{Rows} ) ) {
+            ROW:
+            for my $Row ( @{ $IncludeItem->{Grid}{Rows} } ) {
+                next ROW if ref $Row ne 'ARRAY';
+
+                FIELD:
+                for my $Field (@{$Row}) {
+                    next FIELD if ref $Field ne 'HASH' || !$Field->{DF};
+                    push @FieldOrder, $Field->{DF};
+                }
+            }
+        }
+        elsif ( $IncludeItem->{DF} ) {
+            push @FieldOrder, $IncludeItem->{DF};
+        }
+    }
+
+    return @FieldOrder;
 }
 
 sub _GetServices {

@@ -1,8 +1,60 @@
-diff --git a/Kernel/Config/Files/XML/Ticket.xml b/Kernel/Config/Files/XML/Ticket.xml
-index 05e1dc2..5393a0f 100644
 --- a/Kernel/Config/Files/XML/Ticket.xml
 +++ b/Kernel/Config/Files/XML/Ticket.xml
-@@ -13360,7 +13360,7 @@ Thanks for your help!
+@@ -6689,6 +6689,17 @@
+         <Value>
+             <Hash>
+                 <Item Key="Module">Kernel::System::Ticket::CustomerPermission::CustomerGroupCheck</Item>
++                <Item Key="Required">0</Item>
++                <Item Key="Granted">1</Item>
++            </Hash>
++        </Value>
++    </Setting>
++    <Setting Name="CustomerTicket::Permission###5-ZTSMUserIDCheck" Required="0" Valid="1">
++        <Description Translatable="1">Module to grant customer access through TESSERA support profile participation and story inheritance.</Description>
++        <Navigation>Core::Ticket::Permission</Navigation>
++        <Value>
++            <Hash>
++                <Item Key="Module">Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck</Item>
+                 <Item Key="Required">0</Item>
+                 <Item Key="Granted">1</Item>
+             </Hash>
+@@ -11849,6 +11860,27 @@
+             </Item>
+         </Value>
+     </Setting>
++    <Setting Name="CustomerFrontend::Module###CustomerTicketZTSMAction" Required="0" Valid="1">
++        <Description Translatable="1">Frontend module registration for TESSERA customer runtime ticket actions.</Description>
++        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
++        <Value>
++            <Item ValueType="FrontendRegistration">
++                <Hash>
++                    <Item Key="Group">
++                        <Array>
++                        </Array>
++                    </Item>
++                    <Item Key="GroupRo">
++                        <Array>
++                        </Array>
++                    </Item>
++                    <Item Key="Description" Translatable="1">TESSERA runtime action.</Item>
++                    <Item Key="NavBarName">Ticket</Item>
++                    <Item Key="Title" Translatable="1">Runtime Action</Item>
++                </Hash>
++            </Item>
++        </Value>
++    </Setting>
+     <Setting Name="Loader::Module::CustomerTicketZoom###002-Ticket" Required="0" Valid="1">
+         <Description Translatable="1">Loader module registration for the customer interface.</Description>
+         <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+@@ -12187,6 +12219,7 @@
+                 <Item>CustomerTicketMessage</Item>
+                 <Item>CustomerTicketPrint</Item>
+                 <Item>CustomerTicketProcess</Item>
++                <Item>CustomerTicketZTSMAction</Item>
+                 <Item>CustomerTicketZoom</Item>
+                 <Item>CustomerTicketZoomReply</Item>
+             </Array>
+@@ -13327,7 +13360,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element1" Required="0" Valid="0">
@@ -11,7 +63,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13371,7 +13371,7 @@ Thanks for your help!
+@@ -13338,7 +13371,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element2" Required="0" Valid="0">
@@ -20,7 +72,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13382,7 +13382,7 @@ Thanks for your help!
+@@ -13349,7 +13382,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element3" Required="0" Valid="0">
@@ -29,7 +81,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13393,7 +13393,7 @@ Thanks for your help!
+@@ -13360,7 +13393,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element4" Required="0" Valid="0">
@@ -38,7 +90,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13404,7 +13404,7 @@ Thanks for your help!
+@@ -13371,7 +13404,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element5" Required="0" Valid="0">
@@ -47,7 +99,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13415,7 +13415,7 @@ Thanks for your help!
+@@ -13382,7 +13415,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element6" Required="0" Valid="0">
@@ -56,7 +108,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13426,7 +13426,7 @@ Thanks for your help!
+@@ -13393,7 +13426,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element7" Required="0" Valid="0">
@@ -65,7 +117,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13437,7 +13437,7 @@ Thanks for your help!
+@@ -13404,7 +13437,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element8" Required="0" Valid="0">
@@ -74,7 +126,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13448,7 +13448,7 @@ Thanks for your help!
+@@ -13415,7 +13448,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element9" Required="0" Valid="0">
@@ -83,7 +135,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13459,7 +13459,7 @@ Thanks for your help!
+@@ -13426,7 +13459,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element10" Required="0" Valid="0">
@@ -92,7 +144,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13470,7 +13470,7 @@ Thanks for your help!
+@@ -13437,7 +13470,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element11" Required="0" Valid="0">
@@ -101,7 +153,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13481,7 +13481,7 @@ Thanks for your help!
+@@ -13448,7 +13481,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element12" Required="0" Valid="0">
@@ -110,7 +162,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13492,7 +13492,7 @@ Thanks for your help!
+@@ -13459,7 +13492,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element13" Required="0" Valid="0">
@@ -119,7 +171,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13503,7 +13503,7 @@ Thanks for your help!
+@@ -13470,7 +13503,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element14" Required="0" Valid="0">
@@ -128,7 +180,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13514,7 +13514,7 @@ Thanks for your help!
+@@ -13481,7 +13514,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element15" Required="0" Valid="0">
@@ -137,7 +189,7 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-@@ -13525,7 +13525,7 @@ Thanks for your help!
+@@ -13492,7 +13525,7 @@
          </Value>
      </Setting>
      <Setting Name="Ticket::TicketDynamicFieldDefault###Element16" Required="0" Valid="0">
@@ -146,63 +198,211 @@ index 05e1dc2..5393a0f 100644
          <Navigation>Core::Ticket::DynamicFieldDefault</Navigation>
          <Value>
              <Hash>
-diff --git a/Kernel/Config/Files/ZZZAAuto.pm b/Kernel/Config/Files/ZZZAAuto.pm
-index 24f539c..e3f347f 100644
---- a/Kernel/Config/Files/ZZZAAuto.pm
-+++ b/Kernel/Config/Files/ZZZAAuto.pm
-@@ -1069,7 +1069,7 @@ $Self->{'CustomerDashboard::Tiles'}->{'FeaturedLink-01'} =  {
-     'BackgroundImage' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/Dashboard/dashboard_bgfl.png',
-     'FooterText' => 'Learn more >',
-     'HeaderText' => 'OTOBO 11.0 | Service Management',
--    'Link' => 'https://otobo.io/en/otobo-11-0-2-major-release/',
-+    'Link' => 'https://ncs.com.sg',
-     'MainText' => 'OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you\'ll get seamless integration between your asset management and service management workflows.',
-     'NewTab' => '0',
-     'TextColor' => '#ffffff'
-@@ -1122,7 +1122,7 @@ $Self->{'CustomerDashboard::Tiles'}->{'ToolBox-01'} =  {
-     },
-     'Links' => {
-       'https://www.openstreetmap.org' => '2',
--      'https://www.otobo.io' => '1',
-+      'https://ncs.com.sg' => '1',
-       'https://www.wikipedia.org' => '3'
-     },
-     'Text' => 'Your external tools',
-@@ -11110,7 +11110,7 @@ $Self->{'Loader::Agent::ResponsiveCSS'}->{'000-Framework'} =  [
- ];
- $Self->{'Loader::Agent::Skin'}->{'000-default'} =  {
-   'Description' => 'This is the default orange - black skin.',
--  'HomePage' => 'www.otobo.org',
-+  'HomePage' => 'https://ncs.com.sg',
-   'InternalName' => 'default',
-   'VisibleName' => 'Default'
- };
-@@ -11194,13 +11194,13 @@ $Self->{'Loader::Customer::ResponsiveCSS'}->{'000-Framework'} =  [
- $Self->{'Loader::Customer::SelectedSkin'} =  'default';
- $Self->{'Loader::Customer::Skin'}->{'000-default'} =  {
-   'Description' => 'This is the default orange - black skin for the customer interface.',
--  'HomePage' => 'www.otobo.org',
-+  'HomePage' => 'https://ncs.com.sg',
-   'InternalName' => 'default',
-   'VisibleName' => 'Default'
- };
- $Self->{'Loader::Customer::Skin'}->{'001-high-contrast'} =  {
-   'Description' => 'High contrast skin for visually impaired users.',
--  'HomePage' => 'www.otobo.org',
-+  'HomePage' => 'https://ncs.com.sg',
-   'InternalName' => 'highcontrast',
-   'VisibleName' => 'High Contrast'
- };
-@@ -13614,10 +13614,10 @@ $Self->{'Package::EventModulePost'}->{'9000-SupportDataSend'} =  {
- };
- $Self->{'Package::FileUpload'} =  '1';
- $Self->{'Package::RepositoryList'} =  {
--  'https://ftp.otobo.org/pub/otobo/packages-itsm/' => 'OTOBO::ITSM Addons'
-+  'https://ncs.com.sg' => 'OTOBO::ITSM Addons'
- };
- $Self->{'Package::RepositoryRoot'} =  [
--  'https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml'
-+  'https://ncs.com.sg'
- ];
- $Self->{'Package::ShowFeatureAddons'} =  '1';
- $Self->{'Package::Timeout'} =  '120';
+--- a/Kernel/Config/Files/XML/CloudServices.xml
++++ b/Kernel/Config/Files/XML/CloudServices.xml
+@@ -4,7 +4,7 @@
+         <Description Translatable="1">Defines if the communication between this system and the servers that provide cloud services is possible. If set to 'Disable cloud services', some functionality will be lost such as support data sending, Package Verify™ and product News dashboard widgets, among others.</Description>
+         <Navigation>CloudService</Navigation>
+         <Value>
+-            <Item ValueType="Select" SelectedID="0">
++            <Item ValueType="Select" SelectedID="1">
+                 <Item ValueType="Option" Value="0" Translatable="1">Enable cloud services</Item>
+                 <Item ValueType="Option" Value="1" Translatable="1">Disable cloud services</Item>
+             </Item>
+--- a/Kernel/Config/Files/XML/Framework.xml
++++ b/Kernel/Config/Files/XML/Framework.xml
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8" ?>
+ <otobo_config version="2.0" init="Framework">
+     <Setting Name="SecureMode" Required="1" Valid="1" ConfigLevel="200">
+-        <Description Translatable="1">Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
++        <Description Translatable="1">Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
+         <Navigation>Core</Navigation>
+         <Value>
+             <Item ValueType="Checkbox">0</Item>
+@@ -25,7 +25,7 @@
+         <Description Translatable="1">Enables or disables the caching for templates. WARNING: Do NOT disable template caching for production environments for it will cause a massive performance drop! This setting should only be disabled for debugging reasons!</Description>
+         <Navigation>Frontend::Base</Navigation>
+         <Value>
+-            <Item ValueType="Checkbox">1</Item>
++            <Item ValueType="Checkbox">0</Item>
+         </Value>
+     </Setting>
+     <Setting Name="ConfigLevel" Required="1" Valid="1">
+@@ -253,7 +253,7 @@
+         </Value>
+     </Setting>
+     <Setting Name="DefaultTheme" Required="1" Valid="1" ConfigLevel="200">
+-        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.</Description>
++        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg</Description>
+         <Navigation>Frontend::Base</Navigation>
+         <Value>
+             <Item ValueType="String" ValueRegex="">Standard</Item>
+@@ -392,7 +392,7 @@
+                 <Item Key="InternalName">highcontrast</Item>
+                 <Item Key="VisibleName" Translatable="1">High Contrast</Item>
+                 <Item Key="Description" Translatable="1">High contrast skin for visually impaired users.</Item>
+-                <Item Key="HomePage">www.otobo.org</Item>
++                <Item Key="HomePage">https://ncs.com.sg</Item>
+             </Hash>
+         </Value>
+     </Setting>
+@@ -973,7 +973,7 @@
+         <Description Translatable="1">Defines an alternate URL, where the logout link refers to.</Description>
+         <Navigation>Frontend::Agent</Navigation>
+         <Value>
+-            <Item ValueType="String" ValueRegex="">http://host.example.com/thanks-for-using-otobo.html</Item>
++            <Item ValueType="String" ValueRegex="">https://ncs.com.sg</Item>
+         </Value>
+     </Setting>
+     <Setting Name="PreApplicationModule###AgentInfo" Required="0" Valid="0" ConfigLevel="300">
+@@ -2834,7 +2834,6 @@
+         <Navigation>Core::Package</Navigation>
+         <Value>
+             <Array>
+-                <Item>https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml</Item>
+             </Array>
+         </Value>
+     </Setting>
+@@ -2843,7 +2842,6 @@
+         <Navigation>Core::Package</Navigation>
+         <Value>
+             <Hash>
+-                <Item Key="ftp://ftp.example.com/pub/otobo/misc/packages/">[Example] ftp://ftp.example.com/</Item>
+             </Hash>
+         </Value>
+     </Setting>
+@@ -2879,7 +2877,7 @@
+         <Description Translatable="1">Toggles display of OTOBO FeatureAddons list in PackageManager.</Description>
+         <Navigation>Core::Package</Navigation>
+         <Value>
+-            <Item ValueType="Checkbox">1</Item>
++            <Item ValueType="Checkbox">0</Item>
+         </Value>
+     </Setting>
+     <Setting Name="Package::AllowNotVerifiedPackages" Required="0" Valid="1" ConfigLevel="100">
+@@ -2907,7 +2905,7 @@
+         <Value>
+             <Hash>
+                 <Item Key="Module">Kernel::System::Package::Event::SupportDataSend</Item>
+-                <Item Key="Event">Package(?:Install|Reinstall|Upgrade|Uninstall)</Item>
++                <Item Key="Event"></Item>
+                 <Item Key="Transaction">1</Item>
+             </Hash>
+         </Value>
+@@ -3811,7 +3809,7 @@
+         <Description Translatable="1">Enables customers to create their own accounts.</Description>
+         <Navigation>Frontend::Customer</Navigation>
+         <Value>
+-            <Item ValueType="Checkbox">1</Item>
++            <Item ValueType="Checkbox">0</Item>
+         </Value>
+     </Setting>
+     <Setting Name="CustomerPanelCreateAccount::MailRestrictions::Whitelist" Required="0" Valid="0">
+@@ -7351,6 +7349,9 @@
+             <Hash>
+                 <Item Key="LoginText" Translatable="1">Your Tickets. Your OTOBO.</Item>
+                 <Item Key="Background">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;common/img/LoginBG.jpg</Item>
++                <Item Key="RequestAccountLink">/public.pl?Action=PublicFAQZoom;ItemID=1</Item>
++                <Item Key="RequestAccountText" Translatable="1">Request Account</Item>
++                <Item Key="RequestAccountNewTab">0</Item>
+             </Hash>
+         </Value>
+     </Setting>
+@@ -7497,7 +7498,7 @@
+                         <Item Key="HeaderText">OTOBO 11.0 | Service Management</Item>
+                         <Item Key="MainText">OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you'll get seamless integration between your asset management and service management workflows.</Item>
+                         <Item Key="FooterText">Learn more &gt;</Item>
+-                        <Item Key="Link">https://otobo.io/en/otobo-11-0-2-major-release/</Item>
++                        <Item Key="Link">#</Item>
+                         <Item Key="NewTab">0</Item>
+                     </Hash>
+                 </Item>
+@@ -7555,9 +7556,9 @@
+                         <Item Key="TextColor">#00023c</Item>
+                         <Item Key="Links">
+                             <Hash>
+-                                <Item Key="https://www.otobo.io">1</Item>
+-                                <Item Key="https://www.openstreetmap.org">2</Item>
+-                                <Item Key="https://www.wikipedia.org">3</Item>
++                                <Item Key="#">1</Item>
++                                <Item Key="#tool-2">2</Item>
++                                <Item Key="#tool-3">3</Item>
+                             </Hash>
+                         </Item>
+                         <Item Key="Images">
+@@ -8332,8 +8333,8 @@
+                 <Item Key="Module">Kernel::Output::HTML::Dashboard::RSS</Item>
+                 <Item Key="Title" Translatable="1">Custom RSS Feed</Item>
+                 <Item Key="Description" Translatable="1">OTOBO News</Item>
+-                <Item Key="URL">https://otobo.io/en/feed/</Item>
+-                <Item Key="URL_de">https://otobo.io/de/feed/</Item>
++                <Item Key="URL">https://ncs.com.sg</Item>
++                <Item Key="URL_de">https://ncs.com.sg</Item>
+                 <Item Key="Block">ContentSmall</Item>
+                 <Item Key="Limit">6</Item>
+                 <Item Key="Group"></Item>
+@@ -8369,11 +8370,11 @@
+                 <Item Key="Title" Translatable="1">A picture</Item>
+                 <Item Key="Description" Translatable="1">Some picture description!</Item>
+                 <Item Key="Block">ContentLarge</Item>
+-                <Item Key="URL">https://otobo.io/wp-content/uploads/2024/06/Tile-OTOBO-Self-Service-Portal.jpg</Item>
++                <Item Key="URL">https://ncs.com.sg</Item>
+                 <Item Key="Group"></Item>
+                 <Item Key="Default">1</Item>
+-                <Item Key="Link">https://otobo.org/</Item>
+-                <Item Key="LinkTitle">https://otobo.org/</Item>
++                <Item Key="Link">https://ncs.com.sg</Item>
++                <Item Key="LinkTitle">https://ncs.com.sg</Item>
+                 <Item Key="Width">198</Item>
+                 <Item Key="Height">140</Item>
+                 <Item Key="Mandatory">0</Item>
+@@ -8403,10 +8404,10 @@
+                 <Item Key="Title" Translatable="1">A Website</Item>
+                 <Item Key="Description" Translatable="1">Some description!</Item>
+                 <Item Key="Block">ContentLarge</Item>
+-                <Item Key="URL">https://www.otobo.org/</Item>
++                <Item Key="URL">https://ncs.com.sg</Item>
+                 <Item Key="Group"></Item>
+                 <Item Key="Default">1</Item>
+-                <Item Key="Link">https://otobo.org/</Item>
++                <Item Key="Link">https://ncs.com.sg</Item>
+                 <Item Key="LinkTitle">OTOBO.org/</Item>
+                 <Item Key="Width">1024</Item>
+                 <Item Key="Height">800</Item>
+@@ -8861,7 +8862,7 @@
+                 <Item Key="InternalName">default</Item>
+                 <Item Key="VisibleName" Translatable="1">Default</Item>
+                 <Item Key="Description" Translatable="1">This is the default orange - black skin.</Item>
+-                <Item Key="HomePage">www.otobo.org</Item>
++                <Item Key="HomePage">https://ncs.com.sg</Item>
+             </Hash>
+         </Value>
+     </Setting>
+@@ -8902,7 +8903,7 @@
+                 <Item Key="InternalName">default</Item>
+                 <Item Key="VisibleName" Translatable="1">Default</Item>
+                 <Item Key="Description" Translatable="1">This is the default orange - black skin for the customer interface.</Item>
+-                <Item Key="HomePage">www.otobo.org</Item>
++                <Item Key="HomePage">https://ncs.com.sg</Item>
+             </Hash>
+         </Value>
+     </Setting>
+@@ -10149,7 +10150,7 @@
+                         </Item>
+                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
+                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
+-                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
++                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
+                         <Item Key="LinkOption">target="_blank"</Item>
+                         <Item Key="NavBar">JumptoExternalURL</Item>
+                         <Item Key="Type">Menu</Item>
+@@ -10203,7 +10204,7 @@
+                         </Item>
+                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
+                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
+-                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
++                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
+                         <Item Key="LinkOption">target="_blank"</Item>
+                         <Item Key="NavBar">Ticket</Item>
+                         <Item Key="Type">Menu</Item>

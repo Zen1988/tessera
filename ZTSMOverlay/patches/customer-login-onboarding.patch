@@ -43,6 +43,14 @@ diff --git a/Kernel/Output/HTML/Layout.pm b/Kernel/Output/HTML/Layout.pm
 diff --git a/Kernel/Config/Files/XML/Framework.xml b/Kernel/Config/Files/XML/Framework.xml
 --- a/Kernel/Config/Files/XML/Framework.xml
 +++ b/Kernel/Config/Files/XML/Framework.xml
+@@ -3809,6 +3809,6 @@
+         <Description Translatable="1">Enables customers to create their own accounts.</Description>
+         <Navigation>Frontend::Customer</Navigation>
+         <Value>
+-            <Item ValueType="Checkbox">1</Item>
++            <Item ValueType="Checkbox">0</Item>
+         </Value>
+     </Setting>
 @@ -7350,6 +7350,9 @@
              <Hash>
                  <Item Key="LoginText" Translatable="1">Your Tickets. Your OTOBO.</Item>
@@ -53,27 +61,3 @@ diff --git a/Kernel/Config/Files/XML/Framework.xml b/Kernel/Config/Files/XML/Fra
              </Hash>
          </Value>
      </Setting>
-diff --git a/Kernel/Config/Files/ZZZAAuto.pm b/Kernel/Config/Files/ZZZAAuto.pm
---- a/Kernel/Config/Files/ZZZAAuto.pm
-+++ b/Kernel/Config/Files/ZZZAAuto.pm
-@@ -1643,7 +1643,10 @@ $Self->{'CustomerGroupSupport'} =  '1';
- $Self->{'CustomerHeadline'} =  'Example Company';
- $Self->{'CustomerLogin::Settings'} =  {
-   'Background' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/LoginBG.jpg',
--  'LoginText' => 'Your Tickets. Your OTOBO.'
-+  'LoginText' => 'Your Tickets. Your OTOBO.',
-+  'RequestAccountLink' => '/public.pl?Action=PublicFAQZoom;ItemID=1',
-+  'RequestAccountNewTab' => '0',
-+  'RequestAccountText' => 'Request Account'
- };
- $Self->{'CustomerLogo'} =  {
-   'URLLogo' => 'common/img/tessera-vertical.svg',
-@@ -1688,7 +1691,7 @@ via the Preferences button after logging in.
- 
- <OTOBO_CONFIG_HttpType>://<OTOBO_CONFIG_FQDN>/<OTOBO_CONFIG_ScriptAlias>customer.pl
-             ';
--$Self->{'CustomerPanelCreateAccount'} =  '1';
-+$Self->{'CustomerPanelCreateAccount'} =  '0';
- $Self->{'CustomerPanelLostPassword'} =  '1';
- $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerAccept'} =  'Kernel::Modules::CustomerAccept';
- $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerPassword'} =  'Kernel::Modules::CustomerPassword';

@@ -9,7 +9,7 @@ use warnings;
 
 use Exporter 'import';
 
-our @EXPORT_OK = qw(ZTSMArticleCreate ZTSMTransitionContextGet);
+our @EXPORT_OK = qw(ZTSMArticleBodyConfigItemReferencesExpand ZTSMArticleCreate ZTSMTransitionContextGet);
 
 sub ZTSMTransitionContextGet {
     my (%Param) = @_;
@@ -62,6 +62,10 @@ sub ZTSMArticleCreate {
         HistoryComment       => $Param{HistoryComment},
     };
 
+    $Config->{Body} = ZTSMArticleBodyConfigItemReferencesExpand(
+        Body => $Config->{Body},
+    );
+
     if (
         !$TransitionContext{ProcessEntityID}
         || !$TransitionContext{ActivityEntityID}
@@ -89,6 +93,59 @@ sub ZTSMArticleCreate {
         TransitionActionEntityID => $TransitionContext{TransitionActionEntityID},
         Config                   => $Config,
     );
+}
+
+sub ZTSMArticleBodyConfigItemReferencesExpand {
+    my (%Param) = @_;
+
+    my $Body = $Param{Body};
+    return $Body if !defined $Body || $Body eq '';
+
+    my %Cache;
+    my $DisplayFor = sub {
+        my ($Value) = @_;
+
+        return $Value if !defined $Value || $Value !~ m{\A\d+\z};
+        return $Cache{$Value} if exists $Cache{$Value};
+
+        my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+        for my $GetParam (
+            { ConfigItemID => $Value },
+            { VersionID    => $Value },
+            )
+        {
+            my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+                %{$GetParam},
+                DynamicFields => 0,
+                Silent        => 1,
+            );
+
+            next if !$ConfigItem || ref $ConfigItem ne 'HASH';
+            next if !$ConfigItem->{Name};
+
+            return $Cache{$Value} = $Value . ' - ' . $ConfigItem->{Name};
+        }
+
+        return $Cache{$Value} = $Value;
+    };
+
+    my $ConfigItemLabel = qr{
+        (?:BlueBook|StateBook|Book|Profile|Support\s+Profile|Owner\s+Group|Application|Chapter|Config(?:uration)?\s*Item|Governance|Platform|Technology|Environment|Location|Organization)
+    }ix;
+
+    $Body =~ s{
+        (^ [^\n:]* $ConfigItemLabel [^\n:]* : \s* \n [ \t]*)
+        (\d+)
+        (?= \s* (?:\n|$) )
+    }{$1 . $DisplayFor->($2)}egmx;
+
+    $Body =~ s{
+        (\b (?:BlueBook|StateBook|SupportProfile|OwnerGroup|Application|Chapter|ConfigItem|Platform|Technology|Environment|Location|Organization) \s* = \s*)
+        (\d+)
+        \b
+    }{$1 . $DisplayFor->($2)}egmx;
+
+    return $Body;
 }
 
 1;

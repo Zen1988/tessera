@@ -33,7 +33,6 @@ our @ObjectDependencies = (
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Ticket',
     'Kernel::System::Log',
-    'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader',
 );
 
 sub new {
@@ -78,11 +77,11 @@ sub _NormalizeArray {
     my ($Value) = @_;
 
     return () if !defined $Value;
-
+	
 	if (ref $Value eq 'HASH') {
 		$Value = [ $Value ];
 	}
-
+	
     if ( ref $Value eq 'ARRAY' ) {
 
         my @Result;
@@ -164,7 +163,7 @@ sub Run {
     my $TicketObject = $Kernel::OM->Get(
         'Kernel::System::Ticket'
     );
-
+	
 	my $TicketArticleCreateObject = $Kernel::OM->Get(
 		'Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate'
 	);
@@ -244,13 +243,13 @@ sub Run {
             %TransitionContext,
 			Config => {
 				CommunicationChannel => 'Internal',
-
+				
 				SenderType           => 'system',
-
+				
 				IsVisibleForCustomer => 1,
-
+                
 				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
-
+				
 				Body => $FailureBody,
 
 				ContentType => 'text/plain; charset=utf-8',
@@ -491,13 +490,13 @@ sub Run {
             %TransitionContext,
 			Config => {
 				CommunicationChannel => 'Internal',
-
+				
 				SenderType           => 'system',
-
+				
 				IsVisibleForCustomer => 1,
-
+                
 				Subject => 'DO-NOT-REPLY: Service Governance Resolution Failed',
-
+				
 				Body => $FailureBody,
 
 				ContentType => 'text/plain; charset=utf-8',
@@ -616,13 +615,13 @@ sub Run {
             %TransitionContext,
 			Config => {
 				CommunicationChannel => 'Internal',
-
+				
 				SenderType           => 'system',
-
+				
 				IsVisibleForCustomer => 1,
-
+                
 				Subject => 'DO-NOT-REPLY: Service Governance Resolved',
-
+				
 				Body => $SuccessBody,
 
 				ContentType => 'text/plain; charset=utf-8',
@@ -650,65 +649,6 @@ sub Run {
             . "ServiceSupportMap=$WinnerID "
             . "Score=$HighestScore",
     );
-
-    if ($StateBookID) {
-
-        $LogObject->Log(
-            Priority => 'notice',
-            Message  =>
-                  "ZTSM: Invoking StateBookReader "
-                . "TicketID=$TicketID "
-                . "StateBook=$StateBookID",
-        );
-
-        my %FreshTicket = $TicketObject->TicketGet(
-            TicketID      => $TicketID,
-            DynamicFields => 1,
-            UserID        => $Param{UserID} || 1,
-        );
-
-        if ( %FreshTicket && $FreshTicket{TicketID} ) {
-
-            my $StateBookResult = $Kernel::OM->Get(
-                'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader'
-            )->Run(
-                %Param,
-                Ticket      => \%FreshTicket,
-                UserID      => $Param{UserID} || 1,
-                StateBookID => $StateBookID,
-            );
-
-            $LogObject->Log(
-                Priority => 'notice',
-                Message  =>
-                      "ZTSM: StateBookReader finished "
-                    . "TicketID=$TicketID "
-                    . "StateBook=$StateBookID "
-                    . "Result="
-                    . ( $StateBookResult || 0 ),
-            );
-        }
-        else {
-
-            $LogObject->Log(
-                Priority => 'error',
-                Message  =>
-                      "ZTSM: Failed reloading ticket before StateBookReader "
-                    . "TicketID=$TicketID "
-                    . "StateBook=$StateBookID",
-            );
-        }
-    }
-    else {
-
-        $LogObject->Log(
-            Priority => 'error',
-            Message  =>
-                  "ZTSM: Governance resolved without StateBook "
-                . "TicketID=$TicketID "
-                . "ServiceSupportMap=$WinnerID",
-        );
-    }
 
     return 1;
 }

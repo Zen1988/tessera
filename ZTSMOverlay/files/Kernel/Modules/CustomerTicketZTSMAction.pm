@@ -9,6 +9,7 @@ package Kernel::Modules::CustomerTicketZTSMAction;
 use strict;
 use warnings;
 
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
 use Kernel::System::VariableCheck qw(:all);
 
@@ -714,6 +715,10 @@ sub _RuntimeArticleCreate {
     if ( $Param{Remarks} ) {
         $Body .= "\n\nRemarks:\n$Param{Remarks}";
     }
+
+    $Body = ZTSMArticleBodyConfigItemReferencesExpand(
+        Body => $Body,
+    );
 
     return $ArticleBackendObject->ArticleCreate(
         TicketID             => $Param{TicketID},

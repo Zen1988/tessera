@@ -242,6 +242,9 @@ sub Run {
     my $ZTSMRequestInfoHTML = $Self->_ZTSMRequestInfoHTML(
         Ticket => \%Ticket,
     );
+    my $ZTSMHeaderOwnership = $Self->_ZTSMHeaderOwnership(
+        Ticket => \%Ticket,
+    );
 
     # get ACL restrictions
     my %PossibleActions;
@@ -469,10 +472,6 @@ sub Run {
                     FIELD:
                     for my $FieldID ( sort keys %Check ) {
                         if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$FieldID not defined in TicketACL preselection rules!"
-                            );
                             next FIELD;
                         }
                         if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
@@ -487,10 +486,6 @@ sub Run {
                                 next FIELD;
                             }
                             if ( !$ACLPreselection->{Fields}{$Element} ) {
-                                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                    Priority => 'debug',
-                                    Message  => "$Element not defined in TicketACL preselection rules!"
-                                );
                                 next FIELD;
                             }
                         }
@@ -1423,15 +1418,11 @@ sub Run {
                 PriorityID  => 'PriorityID',
             );
             if ( $ACLPreselection && !$InitialRun ) {
-                FIELD:
-                for my $FieldID ( sort keys %Check ) {
-                    if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'debug',
-                            Message  => "$FieldID not defined in TicketACL preselection rules!"
-                        );
-                        next FIELD;
-                    }
+                    FIELD:
+                    for my $FieldID ( sort keys %Check ) {
+                        if ( !$ACLPreselection->{Fields}{$FieldID} ) {
+                            next FIELD;
+                        }
                     if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
                         next FIELD;
                     }
@@ -1440,17 +1431,13 @@ sub Run {
                             $ACLPreselection->{Rules}{Ticket}{$Element}{$FieldID}
                             || $Self->{InternalDependancy}{$Element}{$FieldID}
                             )
-                        {
-                            next FIELD;
+                            {
+                                next FIELD;
+                            }
+                            if ( !$ACLPreselection->{Fields}{$Element} ) {
+                                next FIELD;
+                            }
                         }
-                        if ( !$ACLPreselection->{Fields}{$Element} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$Element not defined in TicketACL preselection rules!"
-                            );
-                            next FIELD;
-                        }
-                    }
 
                     # delete unaffected fields
                     delete $Check{$FieldID};
@@ -1620,6 +1607,7 @@ sub Run {
             ZTSMRuntimeActions => $ZTSMRuntimeActions,
             ZTSMStoryLinks     => $ZTSMStoryLinks,
             ZTSMRequestInfoHTML => $ZTSMRequestInfoHTML,
+            %{ $ZTSMHeaderOwnership || {} },
         ),
         $LayoutObject->CustomerNavigationBar,
         $LayoutObject->CustomerFooter;
@@ -1753,7 +1741,7 @@ sub _ZTSMRequestDynamicFieldDisplay {
     my $Display = $BackendObject->DisplayValueRender(
         DynamicFieldConfig => $DynamicFieldConfig,
         Value              => $Value,
-        ValueMaxChars      => 500,
+        ValueMaxChars      => '',
         LayoutObject       => $LayoutObject,
     );
 
@@ -1764,6 +1752,144 @@ sub _ZTSMRequestDynamicFieldDisplay {
         Value => $Display->{Value} || '',
         Title => $Display->{Title} || '',
     };
+}
+
+sub _ZTSMCustomerUserDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $CustomerUser = $Param{CustomerUser} || {};
+    return '' if !IsHashRefWithData($CustomerUser);
+
+    my $Firstname = $CustomerUser->{UserFirstname} || $CustomerUser->{UserFirstName} || '';
+    my $Lastname  = $CustomerUser->{UserLastname}  || $CustomerUser->{UserLastName}  || '';
+    my $Fullname  = join ' ', grep {$_} ( $Firstname, $Lastname );
+
+    return $Fullname || $CustomerUser->{UserLogin} || $CustomerUser->{UserCustomerID} || '';
+}
+
+sub _ZTSMRequesterHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if !$Ticket->{CustomerUserID};
+
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my $LayoutObject       = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
+        User => $Ticket->{CustomerUserID},
+    );
+    return if !%CustomerUser;
+
+    my $CustomerName = '';
+    if ( $CustomerUser{UserCustomerID} ) {
+        my %CustomerCompany = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanyGet(
+            CustomerID => $CustomerUser{UserCustomerID},
+        );
+        $CustomerName = $CustomerCompany{CustomerCompanyName} || $CustomerUser{UserCustomerID};
+    }
+
+    my $RequesterName = $Self->_ZTSMCustomerUserDisplayName(
+        CustomerUser => \%CustomerUser,
+    );
+    return if !$RequesterName;
+
+    my @RequesterFields = (
+        [ 'Name',          $RequesterName ],
+        [ 'Phone',         $CustomerUser{UserPhone} || $CustomerUser{UserMobile} || '' ],
+        [ 'Email',         $CustomerUser{UserEmail} || '' ],
+        [ 'Customer Name', $CustomerName ],
+    );
+
+    my $RequesterID = 'ZTSMRequesterInfo' . ( $Ticket->{TicketID} || '' );
+
+    my $HTML = '<button type="button" class="ZTSMRequesterButton" data-ztsm-toggle="'
+        . $LayoutObject->Ascii2Html( Text => $RequesterID )
+        . '">'
+        . $LayoutObject->Ascii2Html( Text => $RequesterName )
+        . '</button>';
+
+    $HTML .= '<div id="' . $LayoutObject->Ascii2Html( Text => $RequesterID )
+        . '" class="ZTSMRequesterModal ZTSMOverlayBackdrop" role="dialog" aria-modal="true">'
+        . '<div class="ZTSMOverlayCard"><div class="ZTSMOverlayHead"><h3>Requester Information</h3>'
+        . '<button type="button" class="ZTSMOverlayClose" data-ztsm-toggle="'
+        . $LayoutObject->Ascii2Html( Text => $RequesterID )
+        . '">Hide</button></div><dl class="ZTSMRequesterDetails">';
+
+    FIELD:
+    for my $Field (@RequesterFields) {
+        next FIELD if !defined $Field->[1] || $Field->[1] eq '';
+
+        $HTML .= '<div><dt>' . $LayoutObject->Ascii2Html( Text => $Field->[0] ) . '</dt><dd>'
+            . $LayoutObject->Ascii2Html( Text => $Field->[1] ) . '</dd></div>';
+    }
+
+    $HTML .= '</dl></div></div>';
+
+    return {
+        Name => $RequesterName,
+        HTML => $HTML,
+    };
+}
+
+sub _ZTSMHeaderOwnership {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $OwnerGroup = _ZTSMValueNormalize( $Ticket->{'DynamicField_ZTicket-OwnerGroup'} );
+    my $Owner      = _ZTSMValueNormalize( $Ticket->{'DynamicField_ZTicket-Owner'} );
+
+    $OwnerGroup = $Self->_ZTSMSupportProfileDisplayName(
+        SupportProfile => $OwnerGroup,
+    ) || $OwnerGroup;
+
+    if ($Owner) {
+        my %OwnerUser = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+            User => $Owner,
+        );
+        if (%OwnerUser) {
+            $Owner = $Self->_ZTSMCustomerUserDisplayName(
+                CustomerUser => \%OwnerUser,
+            ) || $Owner;
+        }
+    }
+
+    return {
+        ZTSMHeaderOwnerGroup => $OwnerGroup || '',
+        ZTSMHeaderOwner      => $Owner      || '',
+    };
+}
+
+sub _ZTSMSupportProfileDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $SupportProfile = _ZTSMValueNormalize( $Param{SupportProfile} );
+    return if !defined $SupportProfile || $SupportProfile eq '';
+    return $SupportProfile if $SupportProfile !~ m{\A\d+\z};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    for my $GetParam (
+        { ConfigItemID => $SupportProfile },
+        { VersionID    => $SupportProfile },
+        )
+    {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($ConfigItem);
+        next if ( $ConfigItem->{Class} || '' ) ne 'Support Profile';
+
+        return $ConfigItem->{Name} || $SupportProfile;
+    }
+
+    return $SupportProfile;
 }
 
 sub _ZTSMRequestAttachmentsHTML {
@@ -1927,6 +2053,13 @@ sub _ZTSMRequestInfoHTML {
         [ 'Created',   $RootTicket->{Created} || $RootTicket->{CreateTime} || '' ],
     );
 
+    my $Requester = $Self->_ZTSMRequesterHTML(
+        Ticket => $RootTicket,
+    );
+    if ( IsHashRefWithData($Requester) ) {
+        push @SummaryFields, [ 'Requested By', $Requester->{HTML}, 1 ];
+    }
+
     my @ContextFields;
     FIELD:
     for my $FieldName (qw(ZTicket-Application ZTicket-Env ZTicket-Location)) {
@@ -1995,7 +2128,8 @@ sub _ZTSMRequestInfoHTML {
     for my $Field (@SummaryFields) {
         next if !defined $Field->[1] || $Field->[1] eq '';
         $HTML .= '<div><dt>' . $LayoutObject->Ascii2Html( Text => $Field->[0] ) . '</dt><dd>'
-            . $LayoutObject->Ascii2Html( Text => $Field->[1] ) . '</dd></div>';
+            . ( $Field->[2] ? $Field->[1] : $LayoutObject->Ascii2Html( Text => $Field->[1] ) )
+            . '</dd></div>';
     }
 
     $HTML .= '</dl>';
@@ -2020,12 +2154,21 @@ sub _ZTSMRequestInfoHTML {
     }
 
     if (@DetailFields) {
-        $HTML .= '<details class="ZTSMRequestMore"><summary>View more request detail</summary><div class="ZTSMRequestDetailGrid">';
+        my $DetailOverlayID = 'ZTSMRequestDetails' . ( $TicketID || '' );
+        $HTML .= '<div class="ZTSMRequestMore"><span>Submitted Details</span><button type="button" class="ZTSMOverlayButton" data-ztsm-toggle="'
+            . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
+            . '">Open</button></div>';
+        $HTML .= '<div id="' . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
+            . '" class="ZTSMRequestDetailOverlay ZTSMOverlayBackdrop" role="dialog" aria-modal="true">'
+            . '<div class="ZTSMOverlayCard"><div class="ZTSMOverlayHead"><h3>Submitted Details</h3>'
+            . '<button type="button" class="ZTSMOverlayClose" data-ztsm-toggle="'
+            . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
+            . '">Hide</button></div><div class="ZTSMRequestDetailGrid">';
         for my $Field (@DetailFields) {
             $HTML .= '<div class="ZTSMRequestDetailItem"><span>' . $LayoutObject->Ascii2Html( Text => $Field->{Label} ) . '</span><div>'
                 . $Field->{Value} . '</div></div>';
         }
-        $HTML .= '</div></details>';
+        $HTML .= '</div></div></div>';
     }
 
     $HTML .= '</section>';
