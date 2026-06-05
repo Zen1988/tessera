@@ -239,6 +239,9 @@ sub Run {
     my $ZTSMStoryLinks = $Self->_ZTSMStoryLinks(
         Ticket => \%Ticket,
     );
+    my $ZTSMRequestInfoHTML = $Self->_ZTSMRequestInfoHTML(
+        Ticket => \%Ticket,
+    );
 
     # get ACL restrictions
     my %PossibleActions;
@@ -1616,6 +1619,7 @@ sub Run {
             ZTSMReadOnlyView  => $ZTSMReadOnlyView,
             ZTSMRuntimeActions => $ZTSMRuntimeActions,
             ZTSMStoryLinks     => $ZTSMStoryLinks,
+            ZTSMRequestInfoHTML => $ZTSMRequestInfoHTML,
         ),
         $LayoutObject->CustomerNavigationBar,
         $LayoutObject->CustomerFooter;
@@ -1678,6 +1682,355 @@ sub _ZTSMStoryLinks {
         ParentTicketID    => $ParentTicketID,
         ChildTickets      => \@ChildTickets,
     };
+}
+
+sub _ZTSMRequestRootTicketGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $Type = $Ticket->{Type} || '';
+    my %RequestTypeLookup = reverse %{
+        $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ZTSM::RequestType',
+            Valid => 1,
+        ) || {}
+    };
+
+    if ( $Type && $RequestTypeLookup{$Type} ) {
+        return {%{$Ticket}};
+    }
+
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    if ( ref $ParentTicketID eq 'ARRAY' ) {
+        $ParentTicketID = $ParentTicketID->[0];
+    }
+    return {%{$Ticket}} if !$ParentTicketID;
+
+    my %ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => 1,
+    );
+
+    return %ParentTicket ? \%ParentTicket : {%{$Ticket}};
+}
+
+sub _ZTSMValueNormalize {
+    my ($Value) = @_;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return $Value->[0] if @{$Value};
+        return;
+    }
+
+    return $Value;
+}
+
+sub _ZTSMRequestDynamicFieldDisplay {
+    my ( $Self, %Param ) = @_;
+
+    my $FieldName = $Param{FieldName};
+    my $TicketID  = $Param{TicketID};
+    return if !$FieldName || !$TicketID;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LayoutObject       = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => $FieldName,
+    );
+    return if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $Value = $BackendObject->ValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $TicketID,
+    );
+    return if !defined $Value || $Value eq '';
+
+    my $Display = $BackendObject->DisplayValueRender(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+        ValueMaxChars      => 500,
+        LayoutObject       => $LayoutObject,
+    );
+
+    return if !IsHashRefWithData($Display);
+
+    return {
+        Label => $DynamicFieldConfig->{Label} || $FieldName,
+        Value => $Display->{Value} || '',
+        Title => $Display->{Title} || '',
+    };
+}
+
+sub _ZTSMRequestAttachmentsHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $TicketID = $Param{TicketID};
+    return '' if !$TicketID;
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my @ArticleList = $ArticleObject->ArticleList(
+        TicketID             => $TicketID,
+        IsVisibleForCustomer => 1,
+        DynamicFields        => 0,
+    );
+
+    my @AttachmentHTML;
+    ARTICLE:
+    for my $ArticleMeta (@ArticleList) {
+        next ARTICLE if !IsHashRefWithData($ArticleMeta);
+
+        my $BackendObject = $ArticleObject->BackendForArticle( %{$ArticleMeta} );
+        my %AttachmentIndex = $BackendObject->ArticleAttachmentIndex(
+            ArticleID        => $ArticleMeta->{ArticleID},
+            ExcludePlainText => 1,
+            ExcludeHTMLBody  => 1,
+            ExcludeInline    => 1,
+        );
+        next ARTICLE if !%AttachmentIndex;
+
+        FILE:
+        for my $FileID ( sort keys %AttachmentIndex ) {
+            my $File = $AttachmentIndex{$FileID};
+            next FILE if !IsHashRefWithData($File);
+
+            my $Filename = $LayoutObject->Ascii2Html( Text => $File->{Filename} || "Attachment $FileID" );
+            my $Size     = $File->{FilesizeRaw} ? ' <span>(' . $LayoutObject->Ascii2Html( Text => $File->{FilesizeRaw} ) . ')</span>' : '';
+            my $Link     = $LayoutObject->{Baselink}
+                . "Action=CustomerTicketAttachment;TicketID=$TicketID;ArticleID=$ArticleMeta->{ArticleID};FileID=$FileID";
+
+            push @AttachmentHTML, '<a class="ZTSMRequestAttachment" href="' . $LayoutObject->Ascii2Html( Text => $Link ) . '">'
+                . '<i class="fa fa-paperclip"></i><span>' . $Filename . '</span>' . $Size . '</a>';
+        }
+    }
+
+    return '' if !@AttachmentHTML;
+    return '<div class="ZTSMRequestAttachments">' . join( '', @AttachmentHTML ) . '</div>';
+}
+
+sub _ZTSMRequestDescriptionHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $TicketID = $Param{TicketID};
+    return '' if !$TicketID;
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my @ArticleList = $ArticleObject->ArticleList(
+        TicketID             => $TicketID,
+        IsVisibleForCustomer => 1,
+        DynamicFields        => 0,
+    );
+
+    ARTICLE:
+    for my $ArticleMeta (@ArticleList) {
+        next ARTICLE if !IsHashRefWithData($ArticleMeta);
+
+        my $BackendObject = $ArticleObject->BackendForArticle( %{$ArticleMeta} );
+        my %Article = $BackendObject->ArticleGet(
+            TicketID  => $TicketID,
+            ArticleID => $ArticleMeta->{ArticleID},
+        );
+        next ARTICLE if !$Article{Body};
+
+        my $Body = $Article{Body};
+        if ( $Body =~ m{<[^>]+>} ) {
+            $Body = $LayoutObject->RichText2Ascii( String => $Body );
+        }
+
+        $Body =~ s{\r\n}{\n}g;
+        $Body =~ s{\n{3,}}{\n\n}g;
+        $Body =~ s{\A\s+|\s+\z}{}g;
+        next ARTICLE if !$Body;
+
+        if ( length $Body > 900 ) {
+            $Body = substr( $Body, 0, 897 ) . '...';
+        }
+
+        return $LayoutObject->Ascii2Html( Text => $Body ) =~ s{\n}{<br />}gr;
+    }
+
+    return '';
+}
+
+sub _ZTSMRequestServiceFieldNames {
+    my ( $Self, %Param ) = @_;
+
+    my $ServiceID = $Param{ServiceID};
+    return if !$ServiceID;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    my $ServiceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZService-Field',
+    );
+    return if !IsHashRefWithData($ServiceFieldConfig);
+    return if ( $ServiceFieldConfig->{ObjectType} || '' ) ne 'Service';
+
+    my $Value = $BackendObject->ValueGet(
+        DynamicFieldConfig => $ServiceFieldConfig,
+        ObjectID           => $ServiceID,
+        UserID             => 1,
+    );
+    return if !defined $Value;
+
+    my @RawValues = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+    my @FieldNames;
+    my %Seen;
+
+    VALUE:
+    for my $RawValue (@RawValues) {
+        next VALUE if !defined $RawValue || $RawValue eq '';
+
+        PART:
+        for my $Part ( split /\|/, $RawValue ) {
+            $Part =~ s{\A\s+|\s+\z}{}g;
+            next PART if !$Part;
+
+            my ($FieldName) = split /:/, $Part, 2;
+            $FieldName =~ s{\A\s+|\s+\z}{}g;
+            next PART if !$FieldName || $Seen{$FieldName}++;
+
+            push @FieldNames, $FieldName;
+        }
+    }
+
+    return \@FieldNames if @FieldNames;
+    return;
+}
+
+sub _ZTSMRequestInfoHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $RootTicket = $Self->_ZTSMRequestRootTicketGet(%Param);
+    return '' if !IsHashRefWithData($RootTicket);
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $TicketID = $RootTicket->{TicketID};
+    my $TicketHook = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Hook') || 'Ticket';
+    my $TicketHookDivider = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::HookDivider') || '#';
+
+    my @SummaryFields = (
+        [ 'Ticket ID', $TicketHook . $TicketHookDivider . ( $RootTicket->{TicketNumber} || '' ) ],
+        [ 'Type',      $RootTicket->{Type} || '' ],
+        [ 'Service',   $RootTicket->{Service} || '' ],
+        [ 'Title',     $RootTicket->{Title} || '' ],
+        [ 'Created',   $RootTicket->{Created} || $RootTicket->{CreateTime} || '' ],
+    );
+
+    my @ContextFields;
+    FIELD:
+    for my $FieldName (qw(ZTicket-Application ZTicket-Env ZTicket-Location)) {
+        my $Display = $Self->_ZTSMRequestDynamicFieldDisplay(
+            FieldName => $FieldName,
+            TicketID  => $TicketID,
+        );
+        next FIELD if !IsHashRefWithData($Display) || !$Display->{Value};
+
+        push @ContextFields, [ $Display->{Label}, $Display->{Value} ];
+    }
+
+    my @DetailFields;
+    my %SummaryDynamicField = map { $_ => 1 } qw(
+        ZTicket-Application
+        ZTicket-Env
+        ZTicket-Location
+        ZTicket-Parent
+    );
+
+    my $ServiceFieldNames = $Self->_ZTSMRequestServiceFieldNames(
+        ServiceID => $RootTicket->{ServiceID},
+    );
+
+    if ( IsArrayRefWithData($ServiceFieldNames) ) {
+        SERVICEFIELD:
+        for my $FieldName ( @{$ServiceFieldNames} ) {
+            next SERVICEFIELD if $SummaryDynamicField{$FieldName};
+
+            my $Display = $Self->_ZTSMRequestDynamicFieldDisplay(
+                FieldName => $FieldName,
+                TicketID  => $TicketID,
+            );
+            next SERVICEFIELD if !IsHashRefWithData($Display) || !$Display->{Value};
+
+            push @DetailFields, $Display;
+        }
+    }
+    else {
+        my $DynamicFieldList = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+            Valid      => 1,
+            ObjectType => ['Ticket'],
+        ) || [];
+
+        DYNAMICFIELD:
+        for my $DynamicFieldConfig ( @{$DynamicFieldList} ) {
+            next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+            next DYNAMICFIELD if $SummaryDynamicField{ $DynamicFieldConfig->{Name} };
+
+            my $Display = $Self->_ZTSMRequestDynamicFieldDisplay(
+                FieldName => $DynamicFieldConfig->{Name},
+                TicketID  => $TicketID,
+            );
+            next DYNAMICFIELD if !IsHashRefWithData($Display) || !$Display->{Value};
+
+            push @DetailFields, $Display;
+        }
+    }
+
+    my $HTML = '<section class="ZTSMRequestInfoPanel">'
+        . '<div class="ZTSMSectionHead"><span>Request context</span><strong>'
+        . $LayoutObject->Ascii2Html( Text => $RootTicket->{State} || '' )
+        . '</strong></div>'
+        . '<dl class="ZTSMRequestSummary">';
+
+    for my $Field (@SummaryFields) {
+        next if !defined $Field->[1] || $Field->[1] eq '';
+        $HTML .= '<div><dt>' . $LayoutObject->Ascii2Html( Text => $Field->[0] ) . '</dt><dd>'
+            . $LayoutObject->Ascii2Html( Text => $Field->[1] ) . '</dd></div>';
+    }
+
+    $HTML .= '</dl>';
+
+    my $DescriptionHTML = $Self->_ZTSMRequestDescriptionHTML( TicketID => $TicketID );
+    if ($DescriptionHTML) {
+        $HTML .= '<div class="ZTSMRequestDescription"><span>Description</span><p>' . $DescriptionHTML . '</p></div>';
+    }
+
+    if (@ContextFields) {
+        $HTML .= '<div class="ZTSMRequestContext">';
+        for my $Field (@ContextFields) {
+            $HTML .= '<div><span>' . $LayoutObject->Ascii2Html( Text => $Field->[0] ) . '</span><strong>'
+                . $Field->[1] . '</strong></div>';
+        }
+        $HTML .= '</div>';
+    }
+
+    my $AttachmentHTML = $Self->_ZTSMRequestAttachmentsHTML( TicketID => $TicketID );
+    if ($AttachmentHTML) {
+        $HTML .= '<div class="ZTSMRequestAttachmentBlock"><h4>Attachments</h4>' . $AttachmentHTML . '</div>';
+    }
+
+    if (@DetailFields) {
+        $HTML .= '<details class="ZTSMRequestMore"><summary>View more request detail</summary><div class="ZTSMRequestDetailGrid">';
+        for my $Field (@DetailFields) {
+            $HTML .= '<div class="ZTSMRequestDetailItem"><span>' . $LayoutObject->Ascii2Html( Text => $Field->{Label} ) . '</span><div>'
+                . $Field->{Value} . '</div></div>';
+        }
+        $HTML .= '</div></details>';
+    }
+
+    $HTML .= '</section>';
+
+    return $HTML;
 }
 
 sub _ZTSMRuntimeActions {

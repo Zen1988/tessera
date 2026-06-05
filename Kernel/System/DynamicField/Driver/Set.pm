@@ -41,6 +41,29 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
 );
 
+sub _ZTSMSetDebugValue {
+    my ($Value) = @_;
+
+    return '<undef>' if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return '[' . join( ', ', map { _ZTSMSetDebugValue($_) } @{$Value} ) . ']';
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return '{'
+            . join(
+            ', ',
+            map { $_ . '=' . _ZTSMSetDebugValue( $Value->{$_} ) }
+                sort keys %{$Value}
+            )
+            . '}';
+    }
+
+    $Value =~ s{\s+}{ }g;
+    return length $Value > 300 ? substr( $Value, 0, 300 ) . '...' : $Value;
+}
+
 =head1 NAME
 
 Kernel::System::DynamicField::Driver::Set - driver for the Set dynamic field
@@ -417,12 +440,6 @@ sub EditFieldValueGet {
             Param => 'SetIndex_' . $Param{DynamicFieldConfig}->{Name},
         );
 
-        # if we have nothing in the frontend just return
-        return if !@DataAll;
-
-        # get the highest multi value index (second to last; last is the empty template)
-        my $IndexMax = $Param{DynamicFieldConfig}{Config}{MultiValue} ? $DataAll[-2] // 0 : 0;
-
         my $Include      = $Param{DynamicFieldConfig}{Config}{Include};
         my $DynamicField = $Self->_GetIncludedDynamicFields(
             InputFieldDefinition => $Include,
@@ -443,18 +460,49 @@ sub EditFieldValueGet {
             $DynamicField->{$Name} = { $DynamicField->{$Name}->%* };
         }
 
-        for my $Name ( sort keys $DynamicField->%* ) {
-            my $DynamicFieldConfig = $DynamicField->{$Name};
+        my @SetIndex = $Self->_SubmittedSetIndexListGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+            DynamicField       => $DynamicField,
+            ParamObject        => $Param{ParamObject},
+        );
 
-            for my $SetIndex ( 0 .. $IndexMax ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ZTSM-SET-SUBMIT EditFieldValueGet indexes Field='
+                . $Param{DynamicFieldConfig}->{Name}
+                . ' Indexes='
+                . _ZTSMSetDebugValue( \@SetIndex )
+                . ' IncludedFields='
+                . _ZTSMSetDebugValue( [ sort keys %{$DynamicField} ] ),
+        );
+
+        return if !@SetIndex;
+
+        for my $SetIndex (@SetIndex) {
+            my $OutputIndex = @SetData;
+
+            for my $Name ( sort keys $DynamicField->%* ) {
+                my $DynamicFieldConfig = { $DynamicField->{$Name}->%* };
                 $DynamicFieldConfig->{Name}          = $Name . ( $Param{DynamicFieldConfig}{ProcessSuffix} // '' ) . '_' . $SetIndex;
                 $DynamicFieldConfig->{ProcessSuffix} = $Param{DynamicFieldConfig}{ProcessSuffix};
 
-                $SetData[$SetIndex]{$Name} = $BackendObject->EditFieldValueGet(
+                $SetData[$OutputIndex]{$Name} = $BackendObject->EditFieldValueGet(
                     %Param,
                     DynamicFieldConfig => $DynamicFieldConfig,
                 );
             }
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'ZTSM-SET-SUBMIT EditFieldValueGet processed row Field='
+                    . $Param{DynamicFieldConfig}->{Name}
+                    . ' SubmittedIndex='
+                    . $SetIndex
+                    . ' OutputIndex='
+                    . $OutputIndex
+                    . ' Row='
+                    . _ZTSMSetDebugValue( $SetData[$OutputIndex] ),
+            );
         }
 
         return if !@SetData;
@@ -489,19 +537,7 @@ sub EditFieldValueValidate {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
-    my $IndexMax = 0;
-
     my $SetDFConfig = $Param{DynamicFieldConfig};
-
-    if ( $SetDFConfig->{Config}{MultiValue} ) {
-        my @DataAll = $Param{ParamObject}->GetArray(
-            Param => 'SetIndex_' . $SetDFConfig->{Name},
-        );
-
-        # get the highest multi value index (second to last; last is the empty template)
-        $IndexMax = $DataAll[-2] // 0;
-    }
-
     my $Result;
     my $Include      = $SetDFConfig->{Config}{Include};
     my $DynamicField = $Self->_GetIncludedDynamicFields(
@@ -523,35 +559,102 @@ sub EditFieldValueValidate {
         $DynamicField->{$Name} = { $DynamicField->{$Name}->%* };
     }
 
-    for my $SetIndex ( 0 .. $IndexMax ) {
+    my @SetIndex = $Self->_SubmittedSetIndexListGet(
+        DynamicFieldConfig => $SetDFConfig,
+        DynamicField       => $DynamicField,
+        ParamObject        => $Param{ParamObject},
+    );
 
-        # map inner set values to GetParam
-        my %SetDFValues = map {
-            (
-                "DynamicField_$_" => $Param{GetParam}{DynamicField}{"DynamicField_$SetDFConfig->{Name}"}[$SetIndex]{$_}
-            )
-        } keys $Param{GetParam}{DynamicField}{"DynamicField_$SetDFConfig->{Name}"}[$SetIndex]->%*;
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM-SET-SUBMIT EditFieldValueValidate indexes Field='
+            . $SetDFConfig->{Name}
+            . ' Indexes='
+            . _ZTSMSetDebugValue( \@SetIndex )
+            . ' Mandatory='
+            . ( $Param{Mandatory} ? 1 : 0 ),
+    );
+
+    for my $SetIndex (@SetIndex) {
 
         for my $Name ( sort keys $DynamicField->%* ) {
-            my $DynamicFieldConfig = $DynamicField->{$Name};
+            my $DynamicFieldConfig = { $DynamicField->{$Name}->%* };
             $DynamicFieldConfig->{Name}          = $Name . ( $SetDFConfig->{ProcessSuffix} // '' ) . '_' . $SetIndex;
             $DynamicFieldConfig->{ProcessSuffix} = $SetDFConfig->{ProcessSuffix};
 
             $Result->{ $DynamicFieldConfig->{Name} } = $BackendObject->EditFieldValueValidate(
                 %Param,
-                GetParam => {
-                    $Param{GetParam}->%*,
-                    DynamicField => {
-                        $Param{GetParam}{DynamicField}->%*,
-                        %SetDFValues,
-                    },
-                },
                 DynamicFieldConfig => $DynamicFieldConfig,
             );
         }
     }
 
-    return $Result;
+    return $Result || {
+        ServerError  => undef,
+        ErrorMessage => undef,
+    };
+}
+
+sub _SubmittedSetIndexListGet {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $DynamicField       = $Param{DynamicField};
+    my $ParamObject        = $Param{ParamObject};
+
+    return (0) if !$DynamicFieldConfig->{Config}{MultiValue};
+    return (0) if !$ParamObject;
+
+    my %SetIndex;
+
+    my @DataAll = $ParamObject->GetArray(
+        Param => 'SetIndex_' . $DynamicFieldConfig->{Name},
+    );
+
+    DATA:
+    for my $Index (@DataAll) {
+        next DATA if !defined $Index;
+        next DATA if $Index !~ /^\d+\z/;
+
+        $SetIndex{$Index} = 1;
+    }
+
+    my @ParamNames = $ParamObject->GetParamNames();
+    my $ProcessSuffix = $DynamicFieldConfig->{ProcessSuffix} // '';
+
+    my @MatchedParamNames;
+
+    FIELD:
+    for my $Name ( sort keys $DynamicField->%* ) {
+        my $Prefix = 'DynamicField_' . $Name . $ProcessSuffix . '_';
+
+        PARAM:
+        for my $ParamName (@ParamNames) {
+            next PARAM if !defined $ParamName;
+            next PARAM if $ParamName !~ /^\Q$Prefix\E(\d+)(?:\D.*)?\z/;
+
+            $SetIndex{$1} = 1;
+            push @MatchedParamNames, $ParamName;
+        }
+    }
+
+    my @SetIndex = sort { $a <=> $b } keys %SetIndex;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'ZTSM-SET-SUBMIT index discovery Field='
+            . $DynamicFieldConfig->{Name}
+            . ' MultiValue='
+            . ( $DynamicFieldConfig->{Config}{MultiValue} ? 1 : 0 )
+            . ' SetIndexValues='
+            . _ZTSMSetDebugValue( \@DataAll )
+            . ' MatchedParamNames='
+            . _ZTSMSetDebugValue( \@MatchedParamNames )
+            . ' ResultIndexes='
+            . _ZTSMSetDebugValue( \@SetIndex ),
+    );
+
+    return @SetIndex;
 }
 
 sub DisplayValueRender {

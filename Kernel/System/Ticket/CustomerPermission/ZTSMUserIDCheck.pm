@@ -113,7 +113,7 @@ sub _CustomerUserMatches {
     my $Match = $CustomerUserID{ lc $AssignmentUser };
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Permission support assignment user match: CustomerUserID='
             . $CustomerUserID
             . ' CandidateIDs='
@@ -212,7 +212,7 @@ sub _UserParticipateSupportProfile {
     {
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Permission support assignment search enter: CustomerUserID='
             . $Param{CustomerUserID}
             . ' SupportProfile='
@@ -242,7 +242,7 @@ sub _UserParticipateSupportProfile {
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Permission support assignment search result: CustomerUserID='
             . $Param{CustomerUserID}
             . ' CandidateIDs='
@@ -277,7 +277,7 @@ sub _UserParticipateSupportProfile {
         );
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'info',
             Message  => 'ZTSM Permission assignment accepted user: AssignmentID='
                 . $AssignmentID
                 . ' SupportProfile='
@@ -376,7 +376,7 @@ sub _UserHasSupportAssignmentType {
         );
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'info',
             Message  => 'ZTSM Permission failback assignment accepted user: AssignmentID='
                 . $AssignmentID
                 . ' SupportProfile='
@@ -587,7 +587,7 @@ sub Run {
     return if $PermissionType ne 'ro' && $PermissionType ne 'ztsm_action' && $PermissionType ne 'ztsm_failback';
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSMUserIDCheck Run enter: TicketID='
             . $Param{TicketID}
             . ' CustomerUserID='
@@ -682,7 +682,7 @@ sub Run {
 
         $LogObject->Log(
 
-            Priority => 'error',
+            Priority => 'info',
 
             Message =>
                   'ZTSMUserIDCheck: '
@@ -709,7 +709,7 @@ sub Run {
 
         $LogObject->Log(
 
-            Priority => 'error',
+            Priority => 'info',
 
             Message =>
                   'ZTSMUserIDCheck: '
@@ -727,7 +727,7 @@ sub Run {
 
     $LogObject->Log(
 
-        Priority => 'error',
+        Priority => 'debug',
 
         Message =>
               'ZTSMUserIDCheck: '

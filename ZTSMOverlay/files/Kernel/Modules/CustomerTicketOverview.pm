@@ -106,7 +106,7 @@ sub _ZTSMCustomerUserMatches {
     my $Match = $CustomerUserID{ lc $AssignmentUser };
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Overview support assignment user match: CustomerUserID='
             . $CustomerUserID
             . ' CandidateIDs='
@@ -215,7 +215,7 @@ sub _ZTSMSupportProfileList {
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Overview support profile list enter: CustomerUserID='
             . $Param{CustomerUserID},
     );
@@ -239,7 +239,7 @@ sub _ZTSMSupportProfileList {
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM Overview support assignment search: CustomerUserID='
             . $Param{CustomerUserID}
             . ' CandidateIDs='
@@ -275,7 +275,7 @@ sub _ZTSMSupportProfileList {
             && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'info',
             Message  => 'ZTSM Overview assignment accepted user: AssignmentID='
                 . $AssignmentID
                 . ' SupportProfileRaw='
@@ -379,7 +379,7 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'ZTSM CustomerTicketOverview Run enter: UserID='
             . ( $Self->{UserID} // '<undef>' )
             . ' Subaction='

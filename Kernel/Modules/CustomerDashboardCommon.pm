@@ -109,7 +109,7 @@ sub Run {
         my $BackendModule = $UsedTiles->{$Tile}{Module};
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => 'ZTSM CustomerDashboardCommon tile enter: Tile='
                 . $Tile
                 . ' Module='
@@ -137,7 +137,7 @@ sub Run {
         $BackendModulePath .= '.pm';
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => 'ZTSM CustomerDashboardCommon tile module loaded: Tile='
                 . $Tile
                 . ' Module='
@@ -163,7 +163,7 @@ sub Run {
         my $TileID = sprintf '%02d', $UsedTiles->{$Tile}{Order};    # assuming Order being less than 100
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => 'ZTSM CustomerDashboardCommon tile run before: Tile='
                 . $Tile
                 . ' Object='
@@ -179,7 +179,7 @@ sub Run {
         );
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => 'ZTSM CustomerDashboardCommon tile run after: Tile='
                 . $Tile,
         );

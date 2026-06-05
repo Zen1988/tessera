@@ -1,5 +1,5 @@
 <style>
-/* ZTSM service extension layout v20260604-row-scroll-grid-preserve */
+/* ZTSM service extension layout v20260605-add-row-renumber */
 #NewCustomerTicket #ZTSMServiceExtensionDynamicFieldsStart ~ .Row_DynamicField {
     width: 100%;
 }
@@ -263,7 +263,7 @@
                 Viewport = Set.closest('.ZTSMFieldSetScrollViewport'),
                 Cells;
 
-            Set.dataset.ZTSMLayoutVersion = '20260604-row-scroll-grid-preserve';
+            Set.dataset.ZTSMLayoutVersion = '20260605-add-row-renumber';
 
             if (!Viewport && OuterField) {
                 Viewport = document.createElement('div');
@@ -321,7 +321,7 @@
                 return;
             }
 
-            Row.dataset.ZTSMLayoutVersion = '20260604-row-scroll-grid-preserve';
+            Row.dataset.ZTSMLayoutVersion = '20260605-add-row-renumber';
 
             Row.style.removeProperty('width');
             Row.style.removeProperty('max-width');
@@ -381,6 +381,182 @@
         Viewport.style.setProperty('inline-size', Width + 'px', 'important');
         Viewport.style.setProperty('max-width', '1060px', 'important');
         Viewport.style.setProperty('max-inline-size', '1060px', 'important');
+    }
+
+    function ZTSMServiceExtensionIndexedAttributeSet(Node, Attribute, Index) {
+        var Value;
+
+        if (!Node || !Node.getAttribute) {
+            return;
+        }
+
+        Value = Node.getAttribute(Attribute);
+
+        if (!Value) {
+            return;
+        }
+
+        Node.setAttribute(Attribute, Value.replace(/^(.+)_(?:\d+|Template)([A-Za-z]*(?:\[\])?)$/, '$1_' + Index + '$2'));
+    }
+
+    function ZTSMServiceExtensionRowIndexSet(Cell, Index) {
+        if (!Cell) {
+            return;
+        }
+
+        Array.prototype.forEach.call(Cell.classList, function (ClassName) {
+            if (/^MultiValue_(?:\d+|Template)$/.test(ClassName)) {
+                Cell.classList.remove(ClassName);
+            }
+        });
+        Cell.classList.add('MultiValue_' + Index);
+
+        Array.prototype.forEach.call(Cell.querySelectorAll('[id], [name], label[for]'), function (Node) {
+            ZTSMServiceExtensionIndexedAttributeSet(Node, 'id', Index);
+            ZTSMServiceExtensionIndexedAttributeSet(Node, 'name', Index);
+            ZTSMServiceExtensionIndexedAttributeSet(Node, 'for', Index);
+        });
+    }
+
+    function ZTSMServiceExtensionElementHidden(Element) {
+        var Rect;
+
+        if (!Element || !Element.getBoundingClientRect) {
+            return true;
+        }
+
+        Rect = Element.getBoundingClientRect();
+
+        return !Rect.width && !Rect.height;
+    }
+
+    function ZTSMServiceExtensionSetRowGet(Input) {
+        if (!Input || !Input.closest) {
+            return;
+        }
+
+        return Input.closest('.FieldCell[class*="MultiValue_"], .MultiValue_Template') || Input.closest('.DFSetOuterField');
+    }
+
+    function ZTSMServiceExtensionNormalizeLater() {
+        [0, 25, 100, 250].forEach(function (Delay) {
+            window.setTimeout(function () {
+                var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+                    End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
+
+                if (Start && End) {
+                    ZTSMServiceExtensionSetIndexNormalize(Start, End);
+                    ZTSMServiceExtensionLayoutFix(Start, End);
+                    ZTSMServiceExtensionDatepickerInit(Start, End);
+                }
+            }, Delay);
+        });
+    }
+
+    function ZTSMServiceExtensionSetIndexNormalize(Start, End) {
+        var Root = Start && End ? Start.parentNode : document,
+            FieldContainers;
+
+        if (!Root) {
+            return;
+        }
+
+        FieldContainers = Root.querySelectorAll('.ZTSMServiceExtensionField');
+
+        Array.prototype.forEach.call(FieldContainers, function (FieldContainer) {
+            var RealRows = [],
+                TemplateInput,
+                TemplateCell,
+                SeenCells = [],
+                TemplateRows = [];
+
+            Array.prototype.forEach.call(FieldContainer.querySelectorAll('input[type="hidden"][name^="SetIndex_"]'), function (Input) {
+                var Cell = ZTSMServiceExtensionSetRowGet(Input),
+                    IsTemplate = Input.value === 'Template' || (Cell && Cell.classList.contains('MultiValue_Template')),
+                    IsHiddenTemplate = IsTemplate && ZTSMServiceExtensionElementHidden(Cell);
+
+                if (IsHiddenTemplate) {
+                    TemplateRows.push({
+                        Cell: Cell,
+                        Input: Input
+                    });
+                    return;
+                }
+
+                if (Cell && SeenCells.indexOf(Cell) === -1) {
+                    SeenCells.push(Cell);
+                    RealRows.push({
+                        Cell: Cell,
+                        Input: Input
+                    });
+                }
+            });
+
+            if (TemplateRows.length) {
+                TemplateRows.forEach(function (Row, Index) {
+                    if (Index === TemplateRows.length - 1) {
+                        TemplateInput = Row.Input;
+                        TemplateCell = Row.Cell && Row.Cell.classList.contains('MultiValue_Template') ? Row.Cell : Row.Input.closest('.MultiValue_Template');
+                        Row.Input.value = 'Template';
+                        return;
+                    }
+
+                    if (Row.Cell && SeenCells.indexOf(Row.Cell) === -1) {
+                        SeenCells.push(Row.Cell);
+                        RealRows.push(Row);
+                    }
+                });
+            }
+
+            RealRows.forEach(function (Row, Index) {
+                ZTSMServiceExtensionRowIndexSet(Row.Cell, Index);
+                Row.Input.value = String(Index);
+
+                if (Row.Input.id) {
+                    Row.Input.id = Row.Input.id.replace(/_(?:\d+|Template)$/, '_' + Index);
+                }
+            });
+
+            if (TemplateInput) {
+                TemplateInput.value = 'Template';
+
+                if (TemplateInput.id) {
+                    TemplateInput.id = TemplateInput.id.replace(/_(?:\d+|Template)$/, '_Template');
+                }
+                if (TemplateCell && TemplateCell.parentNode) {
+                    TemplateCell.parentNode.appendChild(TemplateCell);
+                }
+            }
+        });
+    }
+
+    function ZTSMServiceExtensionSubmitTrace(Start, End) {
+        var Root = Start && End ? Start.parentNode : document,
+            Rows = [];
+
+        if (!Root || !window.console || typeof window.console.error !== 'function') {
+            return;
+        }
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField input[type="hidden"][name^="SetIndex_"]'), function (IndexInput) {
+            var Cell = ZTSMServiceExtensionSetRowGet(IndexInput),
+                Names = [];
+
+            if (Cell) {
+                Array.prototype.forEach.call(Cell.querySelectorAll('[name]'), function (Field) {
+                    Names.push(Field.getAttribute('name') + '=' + (Field.value || ''));
+                });
+            }
+
+            Rows.push({
+                ClassName: Cell ? Cell.className : '<no-row>',
+                SetIndex: IndexInput ? IndexInput.value : '<none>',
+                Hidden: ZTSMServiceExtensionElementHidden(Cell) ? 1 : 0,
+                Names: Names
+            });
+        });
+
+        console.error('ZTSM-SET-SUBMIT frontend rows', Rows);
     }
 
     function ZTSMServiceExtensionSafeInit(InitFunction) {
@@ -489,6 +665,7 @@
                 Core.Agent.DynamicFieldReferenceSearch.Init();
             });
         }
+        ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionDatepickerInit(Start, End);
 
         while (Node && Node !== End) {
@@ -503,6 +680,7 @@
             Node = Node.nextSibling;
         }
 
+        ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
     }
 
@@ -514,24 +692,70 @@
         if (!document.body.dataset.ZTSMServiceExtensionRowActionWatch) {
             document.body.dataset.ZTSMServiceExtensionRowActionWatch = '1';
             document.body.addEventListener('click', function (Event) {
-                var Control = Event.target && Event.target.closest ? Event.target.closest('.AddValueRow, .RemoveValueRow') : null,
-                    Start,
-                    End;
+                var Control = Event.target && Event.target.closest ? Event.target.closest('.AddValueRow, .RemoveValueRow') : null;
 
                 if (!Control || !Control.closest('.ZTSMServiceExtensionField')) {
                     return;
                 }
 
-                window.setTimeout(function () {
-                    Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart');
+                ZTSMServiceExtensionNormalizeLater();
+            });
+        }
+
+        if (!document.body.dataset.ZTSMServiceExtensionMutationWatch && window.MutationObserver) {
+            document.body.dataset.ZTSMServiceExtensionMutationWatch = '1';
+            new MutationObserver(function (Mutations) {
+                var NeedsNormalize = false;
+
+                Mutations.forEach(function (Mutation) {
+                    if (NeedsNormalize) {
+                        return;
+                    }
+                    Array.prototype.forEach.call(Mutation.addedNodes || [], function (Node) {
+                        if (
+                            Node
+                            && Node.nodeType === 1
+                            && Node.closest
+                            && (
+                                Node.closest('.ZTSMServiceExtensionField')
+                                || (Node.querySelector && Node.querySelector('.ZTSMServiceExtensionField, input[type="hidden"][name^="SetIndex_"]'))
+                            )
+                        ) {
+                            NeedsNormalize = true;
+                        }
+                    });
+                });
+
+                if (NeedsNormalize) {
+                    ZTSMServiceExtensionNormalizeLater();
+                }
+            }).observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        if (!document.body.dataset.ZTSMServiceExtensionSubmitWatch) {
+            document.body.dataset.ZTSMServiceExtensionSubmitWatch = '1';
+            document.body.addEventListener('click', function (Event) {
+                var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+                    End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
+                    Control = Event.target && Event.target.closest ? Event.target.closest('#NewCustomerTicket button[type="submit"], #NewCustomerTicket input[type="submit"]') : null;
+
+                if (Start && End && Control) {
+                    ZTSMServiceExtensionSetIndexNormalize(Start, End);
+                    ZTSMServiceExtensionSubmitTrace(Start, End);
+                }
+            }, true);
+            document.body.addEventListener('submit', function (Event) {
+                var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
                     End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
 
-                    if (Start && End) {
-                        ZTSMServiceExtensionLayoutFix(Start, End);
-                        ZTSMServiceExtensionDatepickerInit(Start, End);
-                    }
-                }, 0);
-            });
+                if (Start && End && Event.target && Event.target.closest && Event.target.closest('#NewCustomerTicket')) {
+                    ZTSMServiceExtensionSetIndexNormalize(Start, End);
+                    ZTSMServiceExtensionSubmitTrace(Start, End);
+                }
+            }, true);
         }
 
         if (Service) {
@@ -565,6 +789,7 @@
                 End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
 
             if (Start && End) {
+                ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
             }
         });
@@ -578,6 +803,7 @@
 
                 if (Start && End) {
                     ZTSMServiceExtensionMark(Start, End);
+                    ZTSMServiceExtensionSetIndexNormalize(Start, End);
                     ZTSMServiceExtensionLayoutFix(Start, End);
                 }
                 ZTSMServiceExtensionWatch();
@@ -589,6 +815,7 @@
 
             if (Start && End) {
                 ZTSMServiceExtensionMark(Start, End);
+                ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
             }
             ZTSMServiceExtensionWatch();
