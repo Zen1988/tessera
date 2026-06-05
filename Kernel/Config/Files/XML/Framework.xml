@@ -25,7 +25,7 @@
         <Description Translatable="1">Enables or disables the caching for templates. WARNING: Do NOT disable template caching for production environments for it will cause a massive performance drop! This setting should only be disabled for debugging reasons!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="Checkbox">1</Item>
+            <Item ValueType="Checkbox">0</Item>
         </Value>
     </Setting>
     <Setting Name="ConfigLevel" Required="1" Valid="1">
@@ -2834,7 +2834,6 @@
         <Navigation>Core::Package</Navigation>
         <Value>
             <Array>
-                <Item>https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml</Item>
             </Array>
         </Value>
     </Setting>
@@ -2843,7 +2842,6 @@
         <Navigation>Core::Package</Navigation>
         <Value>
             <Hash>
-                <Item Key="ftp://ftp.example.com/pub/otobo/misc/packages/">[Example] ftp://ftp.example.com/</Item>
             </Hash>
         </Value>
     </Setting>
@@ -2879,7 +2877,7 @@
         <Description Translatable="1">Toggles display of OTOBO FeatureAddons list in PackageManager.</Description>
         <Navigation>Core::Package</Navigation>
         <Value>
-            <Item ValueType="Checkbox">1</Item>
+            <Item ValueType="Checkbox">0</Item>
         </Value>
     </Setting>
     <Setting Name="Package::AllowNotVerifiedPackages" Required="0" Valid="1" ConfigLevel="100">
@@ -2907,7 +2905,7 @@
         <Value>
             <Hash>
                 <Item Key="Module">Kernel::System::Package::Event::SupportDataSend</Item>
-                <Item Key="Event">Package(?:Install|Reinstall|Upgrade|Uninstall)</Item>
+                <Item Key="Event"></Item>
                 <Item Key="Transaction">1</Item>
             </Hash>
         </Value>
@@ -3811,7 +3809,7 @@ You can log in via the following URL:
         <Description Translatable="1">Enables customers to create their own accounts.</Description>
         <Navigation>Frontend::Customer</Navigation>
         <Value>
-            <Item ValueType="Checkbox">1</Item>
+            <Item ValueType="Checkbox">0</Item>
         </Value>
     </Setting>
     <Setting Name="CustomerPanelCreateAccount::MailRestrictions::Whitelist" Required="0" Valid="0">
@@ -7500,7 +7498,7 @@ via the Preferences button after logging in.
                         <Item Key="HeaderText">OTOBO 11.0 | Service Management</Item>
                         <Item Key="MainText">OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you'll get seamless integration between your asset management and service management workflows.</Item>
                         <Item Key="FooterText">Learn more &gt;</Item>
-                        <Item Key="Link">https://ncs.com.sg</Item>
+                        <Item Key="Link">#</Item>
                         <Item Key="NewTab">0</Item>
                     </Hash>
                 </Item>
@@ -7558,9 +7556,9 @@ via the Preferences button after logging in.
                         <Item Key="TextColor">#00023c</Item>
                         <Item Key="Links">
                             <Hash>
-                                <Item Key="https://ncs.com.sg">1</Item>
-                                <Item Key="https://www.openstreetmap.org">2</Item>
-                                <Item Key="https://www.wikipedia.org">3</Item>
+                                <Item Key="#">1</Item>
+                                <Item Key="#tool-2">2</Item>
+                                <Item Key="#tool-3">3</Item>
                             </Hash>
                         </Item>
                         <Item Key="Images">
