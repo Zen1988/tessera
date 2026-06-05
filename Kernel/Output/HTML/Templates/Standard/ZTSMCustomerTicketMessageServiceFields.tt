@@ -530,35 +530,6 @@
         });
     }
 
-    function ZTSMServiceExtensionSubmitTrace(Start, End) {
-        var Root = Start && End ? Start.parentNode : document,
-            Rows = [];
-
-        if (!Root || !window.console || typeof window.console.error !== 'function') {
-            return;
-        }
-
-        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField input[type="hidden"][name^="SetIndex_"]'), function (IndexInput) {
-            var Cell = ZTSMServiceExtensionSetRowGet(IndexInput),
-                Names = [];
-
-            if (Cell) {
-                Array.prototype.forEach.call(Cell.querySelectorAll('[name]'), function (Field) {
-                    Names.push(Field.getAttribute('name') + '=' + (Field.value || ''));
-                });
-            }
-
-            Rows.push({
-                ClassName: Cell ? Cell.className : '<no-row>',
-                SetIndex: IndexInput ? IndexInput.value : '<none>',
-                Hidden: ZTSMServiceExtensionElementHidden(Cell) ? 1 : 0,
-                Names: Names
-            });
-        });
-
-        console.error('ZTSM-SET-SUBMIT frontend rows', Rows);
-    }
-
     function ZTSMServiceExtensionSafeInit(InitFunction) {
         try {
             InitFunction();
@@ -744,7 +715,6 @@
 
                 if (Start && End && Control) {
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
-                    ZTSMServiceExtensionSubmitTrace(Start, End);
                 }
             }, true);
             document.body.addEventListener('submit', function (Event) {
@@ -753,7 +723,6 @@
 
                 if (Start && End && Event.target && Event.target.closest && Event.target.closest('#NewCustomerTicket')) {
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
-                    ZTSMServiceExtensionSubmitTrace(Start, End);
                 }
             }, true);
         }
