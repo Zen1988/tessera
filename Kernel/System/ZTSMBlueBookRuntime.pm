@@ -379,6 +379,7 @@ sub RecordsParse {
                     Fields => [ 'ZBlue-Type', 'ZBlue-TicketType' ],
                 ),
             ),
+            Activity => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role    => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
             Mandatory => _RecordValueGet(
@@ -599,12 +600,14 @@ sub LevelSpawn {
         next RECORD if $Record->{BlueLevel} ne $Param{BlueLevel};
 
         my $ParentTicket = $Param{ParentTicket};
-        my $ChildType = $Record->{Type} || $ParentTicket->{Type} || '';
-        my $ParentRef = $ParentTicket->{TicketNumber} || $Param{ParentTicketID};
+        my $ChildType  = $Record->{Type} || $ParentTicket->{Type} || '';
+        my $ParentType = $ParentTicket->{Type} || 'ParentTicket';
+        my $ParentRef  = $ParentTicket->{TicketNumber} || $Param{ParentTicketID};
+        my $Activity   = $Record->{Activity} || $ParentTicket->{Title};
         my $ChildTitle = join ' - ', grep { defined $_ && $_ ne '' } (
             $ChildType,
-            "ParentTicket#$ParentRef",
-            $ParentTicket->{Title},
+            "$ParentType#$ParentRef",
+            $Activity,
         );
 
         my $NewTicketID = $TicketObject->TicketCreate(
