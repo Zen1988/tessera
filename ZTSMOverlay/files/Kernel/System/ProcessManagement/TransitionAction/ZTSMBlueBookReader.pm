@@ -365,6 +365,7 @@ sub Run {
             Chapter          => $Chapter,
             Type             => $Type,
             RawType          => $RawType,
+            Activity         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
@@ -434,12 +435,14 @@ sub Run {
 
         next RECORD if $Record->{BlueLevel} ne $CurrentBlueLevel;
 
-        my $ChildType = $Record->{Type} || $Ticket->{Type} || '';
-        my $ParentRef = $Ticket->{TicketNumber} || $TicketID;
+        my $ChildType  = $Record->{Type} || $Ticket->{Type} || '';
+        my $ParentType = $Ticket->{Type} || 'ParentTicket';
+        my $ParentRef  = $Ticket->{TicketNumber} || $TicketID;
+        my $Activity   = $Record->{Activity} || $Ticket->{Title};
         my $ChildTitle = join ' - ', grep { defined $_ && $_ ne '' } (
             $ChildType,
-            "ParentTicket#$ParentRef",
-            $Ticket->{Title},
+            "$ParentType#$ParentRef",
+            $Activity,
         );
 
         my $NewTicketID = $TicketObject->TicketCreate(
