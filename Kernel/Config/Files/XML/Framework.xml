@@ -7490,16 +7490,15 @@ via the Preferences button after logging in.
         <Value>
             <Hash>
                 <Item Key="Order">2</Item>
-                <Item Key="Template">Dashboard/TileFeaturedLink</Item>
+                <Item Key="Module">Kernel::Output::HTML::CustomerDashboard::TileFeaturedFAQ</Item>
+                <Item Key="Template">Dashboard/TileFeaturedFAQ</Item>
                 <Item Key="Config">
                     <Hash>
-                        <Item Key="TextColor">#ffffff</Item>
-                        <Item Key="BackgroundImage">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;common/img/Dashboard/dashboard_bgfl.png</Item>
-                        <Item Key="HeaderText">OTOBO 11.0 | Service Management</Item>
-                        <Item Key="MainText">OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you'll get seamless integration between your asset management and service management workflows.</Item>
-                        <Item Key="FooterText">Learn more &gt;</Item>
-                        <Item Key="Link">#</Item>
-                        <Item Key="NewTab">0</Item>
+                        <Item Key="CategoryName">Announcement</Item>
+                        <Item Key="StartField">ZFAQ-Start</Item>
+                        <Item Key="ExpiryField">ZFAQ-Expiry</Item>
+                        <Item Key="Limit">5</Item>
+                        <Item Key="EmptyText">No current announcements.</Item>
                     </Hash>
                 </Item>
             </Hash>
