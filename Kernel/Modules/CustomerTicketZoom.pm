@@ -1811,7 +1811,7 @@ sub _ZTSMRequesterHTML {
         . '</button>';
 
     $HTML .= '<div id="' . $LayoutObject->Ascii2Html( Text => $RequesterID )
-        . '" class="ZTSMRequesterModal ZTSMOverlayBackdrop" role="dialog" aria-modal="true">'
+        . '" class="ZTSMRequesterModal ZTSMOverlayBackdrop Hidden" role="dialog" aria-modal="true" hidden>'
         . '<div class="ZTSMOverlayCard"><div class="ZTSMOverlayHead"><h3>Requester Information</h3>'
         . '<button type="button" class="ZTSMOverlayClose" data-ztsm-toggle="'
         . $LayoutObject->Ascii2Html( Text => $RequesterID )
@@ -1947,7 +1947,21 @@ sub _ZTSMRequestDescriptionHTML {
     return '' if !$TicketID;
 
     my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my @SnapshotLabels;
+
+    if ( IsArrayRefWithData( $Param{ServiceFieldNames} ) ) {
+        FIELD:
+        for my $FieldName ( @{ $Param{ServiceFieldNames} } ) {
+            my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+                Name => $FieldName,
+            );
+            next FIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+            push @SnapshotLabels, $DynamicFieldConfig->{Label} || $FieldName;
+        }
+    }
 
     my @ArticleList = $ArticleObject->ArticleList(
         TicketID             => $TicketID,
@@ -1972,6 +1986,16 @@ sub _ZTSMRequestDescriptionHTML {
         }
 
         $Body =~ s{\r\n}{\n}g;
+        $Body =~ s{\s*Submitted\s+Details.*\z}{}is;
+        for my $Label ( sort { length $b <=> length $a } @SnapshotLabels ) {
+            next if !defined $Label || $Label eq '';
+
+            my $QuotedLabel = quotemeta $Label;
+            if ( $Body =~ m{(?:\A|\n|\s{2,})\s*$QuotedLabel\s*(?::)?\s*(?:\n|\z)}i ) {
+                $Body =~ s{(?:\A|\n|\s{2,})\s*$QuotedLabel\s*(?::)?\s*(?:\n|.*\z).*}{}is;
+                last;
+            }
+        }
         $Body =~ s{\n{3,}}{\n\n}g;
         $Body =~ s{\A\s+|\s+\z}{}g;
         next ARTICLE if !$Body;
@@ -2017,12 +2041,13 @@ sub _ZTSMRequestServiceFieldNames {
         next VALUE if !defined $RawValue || $RawValue eq '';
 
         PART:
-        for my $Part ( split /\|/, $RawValue ) {
+        for my $Part ( split m{\s*[|,;\r\n]\s*}, $RawValue ) {
             $Part =~ s{\A\s+|\s+\z}{}g;
             next PART if !$Part;
 
-            my ($FieldName) = split /:/, $Part, 2;
+            my ($FieldName) = split m{\s*:\s*}, $Part, 2;
             $FieldName =~ s{\A\s+|\s+\z}{}g;
+            $FieldName =~ s{\ADynamicField_}{};
             next PART if !$FieldName || $Seen{$FieldName}++;
 
             push @FieldNames, $FieldName;
@@ -2031,6 +2056,52 @@ sub _ZTSMRequestServiceFieldNames {
 
     return \@FieldNames if @FieldNames;
     return;
+}
+
+sub _ZTSMServiceFieldVisibleSkipLookup {
+    my ( $Self, %Param ) = @_;
+
+    my $FieldNames = $Param{FieldNames};
+    return {} if !IsArrayRefWithData($FieldNames);
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my %Skip = map { $_ => 1 } @{$FieldNames};
+
+    FIELDNAME:
+    for my $FieldName ( @{$FieldNames} ) {
+        my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $FieldName,
+        );
+        next FIELDNAME if !IsHashRefWithData($DynamicFieldConfig);
+        next FIELDNAME if ( $DynamicFieldConfig->{FieldType} || '' ) ne 'Set';
+        next FIELDNAME if !IsArrayRefWithData( $DynamicFieldConfig->{Config}->{Include} );
+
+        my $CollectIncludedFields;
+        $CollectIncludedFields = sub {
+            my ($Element) = @_;
+
+            return if !IsHashRefWithData($Element);
+
+            if ( $Element->{DF} ) {
+                $Skip{ $Element->{DF} } = 1;
+                return;
+            }
+
+            return if !IsHashRefWithData( $Element->{Grid} ) || !IsArrayRefWithData( $Element->{Grid}->{Rows} );
+
+            for my $Row ( @{ $Element->{Grid}->{Rows} } ) {
+                next if ref $Row ne 'ARRAY';
+
+                $CollectIncludedFields->($_) for @{$Row};
+            }
+
+            return;
+        };
+
+        $CollectIncludedFields->($_) for @{ $DynamicFieldConfig->{Config}->{Include} };
+    }
+
+    return \%Skip;
 }
 
 sub _ZTSMRequestInfoHTML {
@@ -2060,9 +2131,18 @@ sub _ZTSMRequestInfoHTML {
         push @SummaryFields, [ 'Requested By', $Requester->{HTML}, 1 ];
     }
 
+    my $ServiceFieldNames = $Self->_ZTSMRequestServiceFieldNames(
+        ServiceID => $RootTicket->{ServiceID},
+    );
+    my $ServiceDynamicField = $Self->_ZTSMServiceFieldVisibleSkipLookup(
+        FieldNames => $ServiceFieldNames,
+    );
+
     my @ContextFields;
     FIELD:
     for my $FieldName (qw(ZTicket-Application ZTicket-Env ZTicket-Location)) {
+        next FIELD if $ServiceDynamicField->{$FieldName};
+
         my $Display = $Self->_ZTSMRequestDynamicFieldDisplay(
             FieldName => $FieldName,
             TicketID  => $TicketID,
@@ -2074,14 +2154,7 @@ sub _ZTSMRequestInfoHTML {
 
     my @DetailFields;
     my %SummaryDynamicField = map { $_ => 1 } qw(
-        ZTicket-Application
-        ZTicket-Env
-        ZTicket-Location
         ZTicket-Parent
-    );
-
-    my $ServiceFieldNames = $Self->_ZTSMRequestServiceFieldNames(
-        ServiceID => $RootTicket->{ServiceID},
     );
 
     if ( IsArrayRefWithData($ServiceFieldNames) ) {
@@ -2134,7 +2207,10 @@ sub _ZTSMRequestInfoHTML {
 
     $HTML .= '</dl>';
 
-    my $DescriptionHTML = $Self->_ZTSMRequestDescriptionHTML( TicketID => $TicketID );
+    my $DescriptionHTML = $Self->_ZTSMRequestDescriptionHTML(
+        TicketID           => $TicketID,
+        ServiceFieldNames => [ keys %{$ServiceDynamicField} ],
+    );
     if ($DescriptionHTML) {
         $HTML .= '<div class="ZTSMRequestDescription"><span>Description</span><p>' . $DescriptionHTML . '</p></div>';
     }
@@ -2154,21 +2230,13 @@ sub _ZTSMRequestInfoHTML {
     }
 
     if (@DetailFields) {
-        my $DetailOverlayID = 'ZTSMRequestDetails' . ( $TicketID || '' );
-        $HTML .= '<div class="ZTSMRequestMore"><span>Submitted Details</span><button type="button" class="ZTSMOverlayButton" data-ztsm-toggle="'
-            . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
-            . '">Open</button></div>';
-        $HTML .= '<div id="' . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
-            . '" class="ZTSMRequestDetailOverlay ZTSMOverlayBackdrop" role="dialog" aria-modal="true">'
-            . '<div class="ZTSMOverlayCard"><div class="ZTSMOverlayHead"><h3>Submitted Details</h3>'
-            . '<button type="button" class="ZTSMOverlayClose" data-ztsm-toggle="'
-            . $LayoutObject->Ascii2Html( Text => $DetailOverlayID )
-            . '">Hide</button></div><div class="ZTSMRequestDetailGrid">';
+        $HTML .= '<details class="ZTSMRequestMore"><summary><span>Submitted Details</span>'
+            . '<span class="ZTSMOverlayButton">Open</span></summary><div class="ZTSMRequestDetailGrid">';
         for my $Field (@DetailFields) {
             $HTML .= '<div class="ZTSMRequestDetailItem"><span>' . $LayoutObject->Ascii2Html( Text => $Field->{Label} ) . '</span><div>'
                 . $Field->{Value} . '</div></div>';
         }
-        $HTML .= '</div></div></div>';
+        $HTML .= '</div></details>';
     }
 
     $HTML .= '</section>';

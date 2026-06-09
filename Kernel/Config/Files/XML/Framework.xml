@@ -423,11 +423,11 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">skins/Agent/default/img/logo_bg.png</Item>
-                <Item Key="StyleTop">0px</Item>
+                <Item Key="URL">common/img/TESSERA/TESSERA_MARK_v2.svg</Item>
+                <Item Key="StyleTop">10px</Item>
                 <Item Key="StyleRight">24px</Item>
-                <Item Key="StyleHeight">110px</Item>
-                <Item Key="StyleWidth">300px</Item>
+                <Item Key="StyleHeight">42px</Item>
+                <Item Key="StyleWidth">42px</Item>
             </Hash>
         </Value>
     </Setting>
@@ -436,11 +436,11 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">skins/Agent/default/img/logo_bg.png</Item>
-                <Item Key="StyleTop">7px</Item>
+                <Item Key="URL">common/img/TESSERA/TESSERA_MARK_v2.svg</Item>
+                <Item Key="StyleTop">10px</Item>
                 <Item Key="StyleRight">24px</Item>
-                <Item Key="StyleHeight">55px</Item>
-                <Item Key="StyleWidth">300px</Item>
+                <Item Key="StyleHeight">42px</Item>
+                <Item Key="StyleWidth">42px</Item>
             </Hash>
         </Value>
     </Setting>
@@ -449,8 +449,9 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">skins/Agent/default/img/Otobo_Wortmarke_Digital_Blau_RGB.svg</Item>
-                <Item Key="StyleHeight">150px</Item>
+                <Item Key="URL">common/img/TESSERA/TESSERA_LOGIN_v2.svg</Item>
+                <Item Key="StyleHeight">198px</Item>
+                <Item Key="StyleWidth">320px</Item>
             </Hash>
         </Value>
     </Setting>

@@ -14,13 +14,56 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
-<div id="Footer" class="ARIARoleContentinfo">
-[% IF !Config("Secure::DisableBanner") %]
-    <a href="https://ncs.com.sg" title="[% Config("Product") | html %][% IF !Data.IsLoginPage %] [% Config("Version") | html %][% END %]" target="_blank">
-        <span></span>
-        [% Translate("Powered by %s", "Rother OSS") | html %]
-    </a>
-[% END %]
+<style>
+    #Footer.ztsmGovFooter {
+        background: #f7f7f9;
+        border-top: 1px solid #e1deeb;
+        color: #687096;
+        font-size: 12px;
+        padding: 14px 0;
+    }
+
+    #Footer.ztsmGovFooter > div {
+        align-items: center;
+        display: flex;
+        gap: 22px;
+        justify-content: center;
+        min-height: 24px;
+    }
+
+    .ztsmGovFooterNotice {
+        align-items: center;
+        display: inline-flex;
+        gap: 8px;
+    }
+
+    .ztsmGovFooterLock {
+        color: #4a5578;
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .ztsmGovFooterDivider {
+        background: #b8b3c8;
+        display: inline-block;
+        height: 20px;
+        width: 1px;
+    }
+
+    .ztsmGovFooterCopyright {
+        white-space: nowrap;
+    }
+</style>
+
+<div id="Footer" class="ARIARoleContentinfo ztsmGovFooter">
+    <div>
+        <span class="ztsmGovFooterNotice">
+            <span class="ztsmGovFooterLock" aria-hidden="true">&#128274;</span>
+            <span>You are accessing a government ICT service platform</span>
+        </span>
+        <span class="ztsmGovFooterDivider" aria-hidden="true"></span>
+        <span class="ztsmGovFooterCopyright">&copy; 2026 TESSERA</span>
+    </div>
 </div>
 
 [% InsertTemplate("FooterJS.tt") %]

@@ -31,6 +31,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::ITSMConfigItem',
+    'Kernel::System::Service',
     'Kernel::System::Ticket',
     'Kernel::System::Log',
 );
@@ -113,6 +114,74 @@ sub _NormalizeArray {
         && $Value ne '';
 
     return ();
+}
+
+sub _ServiceDisplayValue {
+    my (%Param) = @_;
+
+    my $ServiceID = $Param{ServiceID};
+
+    return 'N/A' if !defined $ServiceID || $ServiceID eq '';
+
+    my %Service = $Kernel::OM->Get('Kernel::System::Service')->ServiceGet(
+        ServiceID => $ServiceID,
+        UserID    => 1,
+    );
+
+    return $ServiceID . ' - ' . $Service{Name}
+        if %Service && $Service{Name};
+
+    return $ServiceID;
+}
+
+sub _ConfigItemDisplayValue {
+    my (%Param) = @_;
+
+    my $Value = $Param{Value};
+
+    return 'N/A' if !defined $Value || $Value eq '';
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $ConfigItemObject = $Param{ConfigItemObject}
+        || $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    for my $GetParam (
+        { ConfigItemID => $Value },
+        { VersionID    => $Value },
+    ) {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !$ConfigItem;
+        next if ref $ConfigItem ne 'HASH';
+        next if !$ConfigItem->{Name};
+
+        return $Value . ' - ' . $ConfigItem->{Name};
+    }
+
+    return $Value;
+}
+
+sub _ConfigItemDisplayList {
+    my (%Param) = @_;
+
+    my @Values = @{ $Param{Values} || [] };
+    my @DisplayValues;
+
+    VALUE:
+    for my $Value (@Values) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        push @DisplayValues, _ConfigItemDisplayValue(
+            Value            => $Value,
+            ConfigItemObject => $Param{ConfigItemObject},
+        );
+    }
+
+    return join( ', ', @DisplayValues ) || 'N/A';
 }
 
 sub _TransitionContextGet {
@@ -581,6 +650,35 @@ sub Run {
     # SUCCESS ARTICLE
     # ------------------------------------------------------------ #
 
+    my $ServiceDisplay = _ServiceDisplayValue(
+        ServiceID => $ServiceID,
+    );
+
+    my $StateBookDisplay = _ConfigItemDisplayValue(
+        Value            => $StateBookID,
+        ConfigItemObject => $ConfigItemObject,
+    );
+
+    my $ApprovalModelDisplay = _ConfigItemDisplayValue(
+        Value            => $ApprovalModel,
+        ConfigItemObject => $ConfigItemObject,
+    );
+
+    my $ApplicationDisplay = _ConfigItemDisplayList(
+        Values           => \@TicketApplications,
+        ConfigItemObject => $ConfigItemObject,
+    );
+
+    my $EnvironmentDisplay = _ConfigItemDisplayList(
+        Values           => \@TicketEnvironments,
+        ConfigItemObject => $ConfigItemObject,
+    );
+
+    my $LocationDisplay = _ConfigItemDisplayList(
+        Values           => \@TicketLocations,
+        ConfigItemObject => $ConfigItemObject,
+    );
+
     my $SuccessBody
         = "** Note: This is a system-generated orchestration update message.\n\n"
         . "Governance Resolution:\n"
@@ -589,25 +687,25 @@ sub Run {
         . $WinnerName
         . "\n\n"
         . "Resolved StateBook:\n"
-        . ( $StateBookID || 'N/A' )
+        . $StateBookDisplay
         . "\n\n"
         . "Resolved ApprovalModel:\n"
-        . ( $ApprovalModel || 'N/A' )
+        . $ApprovalModelDisplay
         . "\n\n"
         . "Specificity Score:\n"
         . $HighestScore
         . "\n\n"
         . "Service:\n"
-        . ( $ServiceID || 'N/A' )
+        . $ServiceDisplay
         . "\n\n"
         . "Application:\n"
-        . ( join( ',', @TicketApplications ) || 'N/A' )
+        . $ApplicationDisplay
         . "\n\n"
         . "Environment:\n"
-        . ( join( ',', @TicketEnvironments ) || 'N/A' )
+        . $EnvironmentDisplay
         . "\n\n"
         . "Location:\n"
-        . ( join( ',', @TicketLocations ) || 'N/A' );
+        . $LocationDisplay;
 
         $TicketArticleCreateObject->Run(
 			UserID => $Param{UserID},

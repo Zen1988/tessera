@@ -20,7 +20,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta http-equiv="Content-type" content="text/html;charset=utf-8" />
-    <link rel="shortcut icon" href="[% Config("Frontend::ImagePath") %]icons/product.ico" type="image/ico" />
+    <link rel="shortcut icon" href="[% Config("Frontend::WebPath") %]common/img/icons/favicon.ico" type="image/ico" />
     <link rel="apple-touch-icon" href="[% Config("Frontend::ImagePath") %]icons/apple-touch-icon.png" />
 
 [% RenderBlockStart("CommonCSS") %]
@@ -37,6 +37,9 @@
             right: [% Data.StyleRight | html %];
             width: [% Data.StyleWidth | html %];
             height: [% Data.StyleHeight | html %];
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
         }
     </style>
 [% RenderBlockEnd("HeaderLogoCSS") %]
@@ -46,6 +49,12 @@
         #LoginLogo {
             background-image: [% Data.URL | html %];
             height: [% Data.StyleHeight | html %];
+[% IF Data.StyleWidth %]
+            width: [% Data.StyleWidth | html %];
+[% END %]
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
         }
     </style>
 [% RenderBlockEnd("LoginLogoCSS") %]

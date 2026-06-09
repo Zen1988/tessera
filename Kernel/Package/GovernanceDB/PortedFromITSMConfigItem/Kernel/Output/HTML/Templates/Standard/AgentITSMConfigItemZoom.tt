@@ -1,0 +1,159 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="MainBox ARIARoleMain">
+    <div class="ClearLeft"></div>
+    <div class="Headline">
+        <div class="Flag" title="[% Translate(Data.CurInciState) | html %]">
+            <span class="[% Data.CurInciSignal | html %]"></span>
+        </div>
+        <h1 title="[% Translate("Configuration Item") | html %]: [% Data.Number | html %] &ndash; [% Data.Name | truncate(40) | html %]">
+            [% Translate("Configuration Item") | html %]: [% Data.Number | html %] <span>&mdash;</span> [% Data.Name | truncate(60) | html %]
+        </h1>
+    </div>
+    <div class="LayoutFixedSidebar SidebarLast">
+
+        [% Data.StyleClasses %]
+
+        <div class="SidebarColumn">
+[% RenderBlockStart("Meta") %]
+            <div class="WidgetSimple">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="[% Translate("Show or hide the content") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
+                    </div>
+                    <h2>[% Translate("Configuration Item Information") | html %]</h2>
+                </div>
+                <div class="Content">
+                    <fieldset class="TableLike FixedLabelSmall Tight">
+
+                        <label>[% Translate("Class") | html %]:</label>
+                        <p class="Value">[% Translate(Data.Class) | html %]</p>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Name") | html %]:</label>
+                        <p class="Value">[% Data.Name | truncate(25) | html %]</p>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Current Deployment State") | html %]:</label>
+                        <div class="Value" title="[% Translate(Data.CurDeplState) | html %]">
+                            <div class="Flag Small">
+                                <span class="[% Data.CurDeplSignal | html %]"></span>
+                            </div>
+                            [% Translate(Data.CurDeplState) | html %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Current Incident State") | html %]:</label>
+                        <div class="Value" title="[% Translate(Data.CurInciState) | html %]">
+                            <div class="Flag Small">
+                                <span class="[% Data.CurInciSignal | html %]"></span>
+                            </div>
+                            [% Translate(Data.CurInciState) | html %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Created") | html %]:</label>
+                        <p class="Value">[% Data.CreateTime | Localize("TimeLong") %]</p>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Created by") | html %]:</label>
+                        <p class="Value">
+                            [% Data.CreateByUserFullName | html %]
+                        </p>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Last changed") | html %]:</label>
+                        <p class="Value">[% Data.ChangeTime | Localize("TimeLong") %]</p>
+                        <div class="Clear"></div>
+
+                        <label>[% Translate("Last changed by") | html %]:</label>
+                        <p class="Value">
+                            [% Data.ChangeByUserFullName | html %]
+                        </p>
+                        <div class="Clear"></div>
+
+[% RenderBlockStart("Attachments") %]
+                        <label>[% Translate("Attachments") | html %]:</label>
+                        <p class="Value">
+[% RenderBlockStart("AttachmentRow") %]
+                                        <a href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=DownloadAttachment;Filename=[% Data.Filename | uri %];ConfigItemID=[% Data.ConfigItemID | uri %]">
+                                            [% Data.Filename | html %]
+                                        </a>
+                                        ([% Data.Filesize | Localize('Filesize') | html %])
+[% RenderBlockEnd("AttachmentRow") %]
+                        </p>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("Attachments") %]
+                    </fieldset>
+                </div>
+            </div>
+[% RenderBlockEnd("Meta") %]
+[% RenderBlockStart("LinkTableSimple") %]
+            <div class="WidgetSimple DontPrint">
+                <div class="Header">
+                    <h2>[% Translate("Linked Objects") | html %]</h2>
+                </div>
+                <div class="Content">
+                    [% Data.LinkTableStrg %]
+                </div>
+            </div>
+[% RenderBlockEnd("LinkTableSimple") %]
+        </div>
+        <div class="ContentColumn">
+            <div class="ControlRow">
+                <h2></h2>
+            </div>
+            <div class="ActionRow">
+                <ul class="Actions">
+[% RenderBlockStart("Menu") %]
+[% RenderBlockStart("MenuItem") %]
+                    <li>
+                        <a href="[% Env("Baselink") %][% Data.Link | Interpolate %]" id="Menu[% Data.MenuID | html %]" class="[% Data.MenuClass | html %]" title="[% Translate(Data.Description) | html %]">[% Translate(Data.Name) | html %]</a>
+                    </li>
+[% RenderBlockEnd("MenuItem") %]
+[% RenderBlockEnd("Menu") %]
+                </ul>
+            </div>
+[% RenderBlockStart("SelectionRow") %]
+            <div id="SelectionRow">
+                <div id="PageSelection">
+[% RenderBlockStart("PageName") %]
+                    <h2>[% Translate(Data.PageName) | html %]</h2>
+[% RenderBlockEnd("PageName") %]
+[% RenderBlockStart("PageLink") %]
+                    <a href="[% Env("Baselink") %]Action=[% Env("Action") %];ConfigItemID=[% Data.ConfigItemID | uri %];VersionID=[% Data.VersionID | uri %];Page=[% Data.PageName | uri %]">
+                        <button class="oooS PageSelectionButton CallForAction[% IF Data.Disabled %] Disabled[% ELSIF Data.Selected %] Selected[% END %]">[% Translate(Data.PageName) | html %]</button>
+                    </a>
+[% RenderBlockEnd("PageLink") %]
+                </div>
+                <div class="Field" id="VersionSelectionContainer">
+                    [% Data.VersionSelection %]
+                </div>
+            </div>
+[% RenderBlockEnd("SelectionRow") %]
+            <div id="ITSMItems">
+                [% Data.DynamicFieldHTML %]
+            </div>
+[% RenderBlockStart("LinkTableComplex") %]
+            <div class="Content">
+                [% Data.LinkTableStrg %]
+            </div>
+[% RenderBlockEnd("LinkTableComplex") %]
+        </div>
+        <div class="Clear"></div>
+    </div>
+</div>

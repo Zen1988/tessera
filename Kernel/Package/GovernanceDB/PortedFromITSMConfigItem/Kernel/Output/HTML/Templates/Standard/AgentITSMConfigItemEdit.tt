@@ -1,0 +1,130 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+[% RenderBlockStart("StartNormal") %]
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarLast">
+    <h1>[% Translate("Edit") | html %]: [% Translate("Config Item") | html %]: [% Translate(Data.Number) | html %] - [% Translate("Class") | html %]: [% Translate(Data.Class) | html %]</h1>
+    <div class="ContentColumn">
+[% RenderBlockEnd("StartNormal") %]
+        <form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" name="ClassItem" class="Validate PreventMultipleSubmits" id="ClassItem">
+[% RenderBlockStart("StartSmall") %]
+            <div class="LayoutPopup ARIARoleMain">
+                <div class="Header">
+                    <h1>[% Translate("Edit") | html %]: [% Translate("Config Item") | html %]: [% Translate(Data.Number) | html %] - [% Translate("Class") | html %]: [% Translate(Data.Class) | html %]</h1>
+                    <p>
+                        <a class="CancelClosePopup" href="#">[% Translate("Cancel & close") | html %]</a>
+                    </p>
+                </div>
+                <input type="hidden" name="ScreenType" value="Popup"/>
+[% RenderBlockEnd("StartSmall") %]
+                <div class="Content">
+                    <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+                    <input type="hidden" name="Subaction" value="Save"/>
+                    <input type="hidden" name="ClassID" value="[% Data.ClassID | html %]"/>
+                    <input type="hidden" name="ConfigItemID" value="[% Data.ConfigItemID | html %]"/>
+                    <input type="hidden" name="DuplicateID" value="[% Data.DuplicateID | html %]"/>
+                    <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
+                    <fieldset class="TableLike">
+[% RenderBlockStart("RowName") %]
+                        <label class="Mandatory" for="Name"><span class="Marker">*</span> [% Translate("Name") | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="Name" id="Name" class="W50pc Validate_Required [% Data.RowNameInvalid | html %]" maxlength="250" value="[% Data.Name | html %]" title="[% Translate("The name of this config item") | html %]"[% IF Data.Readonly %] readonly[% END %]/>
+                            <div id="NameError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+[% RenderBlockStart("RowNameErrorDefault") %]
+                            <div id="NameServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+[% RenderBlockEnd("RowNameErrorDefault") %]
+[% RenderBlockStart("RowNameErrorDuplicates") %]
+                            <div id="NameServerError" class="TooltipErrorMessage"><p>[% Translate("Name is already in use by the ConfigItems with the following Number(s): %s", Data.Duplicates) | html %]</p></div>
+[% RenderBlockEnd("RowNameErrorDuplicates") %]
+[% RenderBlockStart("RowNameErrorRegEx") %]
+                            <div id="NameServerError" class="TooltipErrorMessage"><p>[% Translate(Data.RegExErrorMessage) | html %]</p></div>
+[% RenderBlockEnd("RowNameErrorRegEx") %]
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("RowName") %]
+[% RenderBlockStart("RowVersionString") %]
+                        <label class="Mandatory" for="VersionString"><span class="Marker">*</span> [% Translate("Version Number") | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="VersionString" id="VersionString" class="W50pc Validate_Required [% Data.RowVersionStringInvalid | html %]" maxlength="250" value="[% Data.VersionString | html %]" title="[% Translate("Version number of this config item") | html %]" />
+                            <div id="VersionStringError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+[% RenderBlockStart("RowVersionStringErrorDefault") %]
+                            <div id="VersionStringServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+[% RenderBlockEnd("RowVersionStringErrorDefault") %]
+[% RenderBlockStart("RowVersionStringErrorDuplicates") %]
+                            <div id="VersionStringServerError" class="TooltipErrorMessage"><p>[% Translate("Version Number is already in use by the ConfigItems with the following Number(s): %s", Data.Duplicates) | html %]</p></div>
+[% RenderBlockEnd("RowVersionStringErrorDuplicates") %]
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("RowVersionString") %]
+[% RenderBlockStart("RowDeplState") %]
+                        <label class="Mandatory" for="DeplStateID"><span class="Marker">*</span> [% Translate("Deployment State") | html %]: </label>
+                        <div class="Field">
+                            [% Data.DeplStateOptionStrg %]
+                            <div id="DeplStateIDError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                            <div id="DeplStateIDServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("RowDeplState") %]
+[% RenderBlockStart("RowInciState") %]
+                        <label class="Mandatory" for="InciStateID"><span class="Marker">*</span> [% Translate("Incident State") | html %]: </label>
+                        <div class="Field">
+                            [% Data.InciStateOptionStrg %]
+                            <div id="InciStateIDError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                            <div id="InciStateIDServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("RowInciState") %]
+
+[% Data.DynamicFieldHTML %]
+
+[% RenderBlockStart("RowDescription") %]
+                            <label for="Description">[% Translate("Description") | html %]:</label>
+                            <div id="RichTextField" class="RichTextField">
+                                <textarea id="Description" class="RichText [% Data.RichTextInvalid | html %]" name="Description" title="[% Translate("Description") | html %]" rows="15" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]">[% Data.Description | html %]</textarea>
+                            </div>
+                            <div class="Clear"></div>
+                        </details>
+[% RenderBlockEnd("RowDescription") %]
+                    </fieldset>
+
+                    <fieldset class="TableLike">
+                        <label>[% Translate("Attachments") | html %]:</label>
+                        <div class="Field">
+                            [% INCLUDE "FormElements/AttachmentList.tt" %]
+                        </div>
+                        <div class="Clear"></div>
+                    </fieldset>
+
+                    <fieldset class="TableLike">
+                        <div class="Field SpacingTop">
+                            <button name="Submit" class="CallForAction Primary" id="SubmitButton" type="submit" value="Submit">
+                                <span>[% Translate("Save") | html %]</span>
+                            </button>
+                            [% Translate("or") | html %]
+                            <a id="CancelButton" href="[% Env("Baselink") %]Action=AgentITSMConfigItemAdd">[% Translate("Cancel") | html %]</a>
+                        </div>
+                    </fieldset>
+                </div>
+
+[% RenderBlockStart("EndSmall") %]
+            </div>
+[% RenderBlockEnd("EndSmall") %]
+        </form>
+[% RenderBlockStart("EndNormal") %]
+    </div>
+    <div class="Clear"></div>
+</div>
+[% RenderBlockEnd("EndNormal") %]

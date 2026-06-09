@@ -1,0 +1,46 @@
+<div class="MainBox ARIARoleMain">
+    <h1>[% Data.Name | html %]</h1>
+
+    <div class="WidgetSimple">
+        <div class="Header">
+            <h2>[% Translate("Governance Object") | html %]</h2>
+            <div class="Actions">
+                <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObject"><span>[% Translate("Back") | html %]</span></a>
+            </div>
+        </div>
+        <div class="Content">
+            <table class="DataTable">
+                <tbody>
+                    <tr>
+                        <th>GOID</th>
+                        <td>[% Data.GOID | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>ZTSM Code</th>
+                        <td>[% Data.ZTSMCode | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>ZTSM Status</th>
+                        <td>[% Data.ZTSMStatus | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>Version</th>
+                        <td>[% Data.VersionString | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td>[% Data.Description | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>Created</th>
+                        <td>[% Data.CreateTime | html %]</td>
+                    </tr>
+                    <tr>
+                        <th>Changed</th>
+                        <td>[% Data.ChangeTime | html %]</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

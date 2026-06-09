@@ -1,0 +1,66 @@
+<div class="MainBox ARIARoleMain">
+    <h1>[% Translate("Add Governance Object") | html %]</h1>
+
+[% IF Data.ErrorMessage %]
+    <div class="MessageBox Error">
+        <p>[% Data.ErrorMessage | html %]</p>
+    </div>
+[% END %]
+
+    <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+        <input type="hidden" name="Action" value="AgentGovernanceObjectAdd"/>
+        <input type="hidden" name="Subaction" value="Create"/>
+        <input type="hidden" id="ChallengeToken" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]"/>
+
+        <fieldset class="TableLike">
+            <label for="Class">[% Translate("Class") | html %]</label>
+            <div class="Field">
+                <select id="Class" name="Class">
+[% RenderBlockStart("ClassOption") %]
+                    <option value="[% Data.Key | html %]"[% Data.Selected %]>[% Data.Value | html %]</option>
+[% RenderBlockEnd("ClassOption") %]
+                </select>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="ZTSMCode" class="Mandatory"><span class="Marker">*</span> [% Translate("ZTSM Code") | html %]</label>
+            <div class="Field">
+                <input type="text" id="ZTSMCode" name="ZTSMCode" value="[% Data.ZTSMCode | html %]" class="W50pc Validate_Required"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="ZTSMStatus" class="Mandatory"><span class="Marker">*</span> [% Translate("ZTSM Status") | html %]</label>
+            <div class="Field">
+                <select id="ZTSMStatus" name="ZTSMStatus" class="Validate_Required">
+[% RenderBlockStart("StatusOption") %]
+                    <option value="[% Data.Key | html %]"[% Data.Selected %]>[% Data.Value | html %]</option>
+[% RenderBlockEnd("StatusOption") %]
+                </select>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Name" class="Mandatory"><span class="Marker">*</span> [% Translate("Name") | html %]</label>
+            <div class="Field">
+                <input type="text" id="Name" name="Name" value="[% Data.Name | html %]" class="W75pc Validate_Required"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Description">[% Translate("Description") | html %]</label>
+            <div class="Field">
+                <textarea id="Description" name="Description" rows="5" class="W75pc">[% Data.Description | html %]</textarea>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Definition">[% Translate("Definition") | html %]</label>
+            <div class="Field">
+                <textarea id="Definition" name="Definition" rows="12" class="W75pc">[% Data.Definition | html %]</textarea>
+            </div>
+            <div class="Clear"></div>
+        </fieldset>
+
+        <div class="Buttons">
+            <button class="Primary" type="submit" value="Submit">[% Translate("Create") | html %]</button>
+            <a class="CancelClosePopup" href="[% Env("Baselink") %]Action=AgentGovernanceObject">[% Translate("Cancel") | html %]</a>
+        </div>
+    </form>
+</div>

@@ -8,9 +8,13 @@ copy	files/Kernel/Modules/CustomerTicketOverview.pm	Kernel/Modules/CustomerTicke
 copy	files/Kernel/Modules/CustomerDashboardCommon.pm	Kernel/Modules/CustomerDashboardCommon.pm
 copy	files/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm	Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm
 copy	files/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt	Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/Footer.tt	Kernel/Output/HTML/Templates/Standard/Footer.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/HTMLHead.tt	Kernel/Output/HTML/Templates/Standard/HTMLHead.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/Login.tt	Kernel/Output/HTML/Templates/Standard/Login.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt	Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt	Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerHeader.tt	Kernel/Output/HTML/Templates/Standard/CustomerHeader.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerHTMLHead.tt	Kernel/Output/HTML/Templates/Standard/CustomerHTMLHead.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt	Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt	Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
@@ -40,6 +44,10 @@ copy	files/Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm	Kernel/Sys
 copy	files/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm	Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm
 copy	files/var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg	var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg
 copy	files/var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg	var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg
+copy	files/var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg	var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg
+copy	files/var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGIN_v2.svg	var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGIN_v2.svg
+copy	files/var/httpd/htdocs/common/img/icons/favicon.ico	var/httpd/htdocs/common/img/icons/favicon.ico
+copy	files/var/httpd/htdocs/common/img/icons/product.ico	var/httpd/htdocs/common/img/icons/product.ico
 patch	patches/admin-service-dynamic-fields.patch
 patch	patches/admin-dynamic-field-screen-service-fields.patch
 patch	patches/customer-ticket-message-service-fields.patch

@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Config">
+
+    <Setting Name="Frontend::Module###AdminGovernanceObjectDefinition" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for GovernanceObject definition administration.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                            <Item>governance-db</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Manage GovernanceObject class definitions.</Item>
+                    <Item Key="Title" Translatable="1">Governance Object Definitions</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Navigation###AdminGovernanceObjectDefinition###003-GovernanceDB" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::NavigationModule###AdminGovernanceObjectDefinition" Required="0" Valid="1">
+        <Description Translatable="1">Admin overview tile for GovernanceObject definitions.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Group">
+                    <Array>
+                        <Item>admin</Item>
+                        <Item>governance-db</Item>
+                    </Array>
+                </Item>
+                <Item Key="GroupRo">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+                <Item Key="Name" Translatable="1">Governance Objects</Item>
+                <Item Key="Block">CMDBSettings</Item>
+                <Item Key="Description" Translatable="1">Create and manage definitions for Governance Objects.</Item>
+                <Item Key="IconBig">fa-sitemap</Item>
+                <Item Key="IconSmall"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Module###AgentGovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the GovernanceDB overview.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                            <Item>governance-db</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">GovernanceDB overview.</Item>
+                    <Item Key="Title" Translatable="1">GovernanceDB</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Module###AgentGovernanceObjectAdd" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for adding GovernanceDB objects.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                            <Item>governance-db</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Add Governance Object.</Item>
+                    <Item Key="Title" Translatable="1">Add Governance Object</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Module###AgentGovernanceObjectZoom" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for viewing GovernanceDB objects.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                            <Item>governance-db</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object zoom.</Item>
+                    <Item Key="Title" Translatable="1">Governance Object</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Module###AgentGovernanceObjectTransform" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for copying ITSM ConfigItems into GovernanceDB.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                            <Item>governance-db</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Copy ConfigItem into GovernanceDB.</Item>
+                    <Item Key="Title" Translatable="1">Transform ConfigItem</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="Frontend::Navigation###AgentGovernanceObject###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                                <Item>admin</Item>
+                                <Item>governance-db</Item>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Governance object database.</Item>
+                        <Item Key="Name">GovernanceDB</Item>
+                        <Item Key="Link">Action=AgentGovernanceObject</Item>
+                        <Item Key="LinkOption"></Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type">Menu</Item>
+                        <Item Key="Block">ItemArea</Item>
+                        <Item Key="AccessKey"></Item>
+                        <Item Key="Prio">3300</Item>
+                    </Hash>
+                </Item>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                                <Item>admin</Item>
+                                <Item>governance-db</Item>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Add Governance Object.</Item>
+                        <Item Key="Name">Add</Item>
+                        <Item Key="Link">Action=AgentGovernanceObjectAdd</Item>
+                        <Item Key="LinkOption"></Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Block"></Item>
+                        <Item Key="AccessKey"></Item>
+                        <Item Key="Prio">100</Item>
+                    </Hash>
+                </Item>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                                <Item>admin</Item>
+                                <Item>governance-db</Item>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Copy an existing ITSM ConfigItem into GovernanceDB.</Item>
+                        <Item Key="Name">Transform ConfigItem</Item>
+                        <Item Key="Link">Action=AgentGovernanceObjectTransform</Item>
+                        <Item Key="LinkOption"></Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Block"></Item>
+                        <Item Key="AccessKey"></Item>
+                        <Item Key="Prio">200</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::ObjectType###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField object registration for GovernanceDB objects.</Description>
+        <Navigation>Core::DynamicFields::ObjectTypeRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Governance Object</Item>
+                <Item Key="Module">Kernel::System::DynamicField::ObjectType::GovernanceObject</Item>
+                <Item Key="Prio">116</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::Driver###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration for GovernanceObject references.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">GovernanceObject</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::GovernanceObject</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::Driver###GovernanceObjectVersion" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration for GovernanceObject version references.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">GovernanceObject Version</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::GovernanceObjectVersion</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::Driver###CustomerCompany" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerCompany</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerCompany</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::Driver###CustomerUser" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerUser</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerUser</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::NumberGenerator" Required="1" Valid="1">
+        <Description Translatable="1">Defines the module that creates Governance Object IDs (GOID).</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Item ValueType="String">Kernel::System::GovernanceDB::Number::GOID</Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::Permission::Group" Required="1" Valid="1">
+        <Description Translatable="1">Defines the primary group for GovernanceDB access. The agent frontend also keeps admin access to avoid installer lockout.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Item ValueType="String">governance-db</Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::GeneralCatalogClasses" Required="1" Valid="1">
+        <Description Translatable="1">Defines the GeneralCatalog namespaces owned by GovernanceDB.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="ClassCategory">ZTSM::GovernanceObject::Class::Category</Item>
+                <Item Key="Status">ZTSM::GovernanceObject::Status</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::StatusValues" Required="1" Valid="1">
+        <Description Translatable="1">Defines the official governance lifecycle statuses used by ZTSM-Status.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Draft">Draft</Item>
+                <Item Key="Review">Review</Item>
+                <Item Key="Approved">Approved</Item>
+                <Item Key="Active">Active</Item>
+                <Item Key="Retired">Retired</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::ServiceSupportMap::Condition" Required="1" Valid="1">
+        <Description Translatable="1">Defines how a GovernanceDB ServiceSupportMap matches a ticket. The hash key is the ServiceSupportMap field and the value is the ticket field. Extend this hash for more matching conditions.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="ZTSMSupportAssignment-Application">ZTicket-Application</Item>
+                <Item Key="ZTSMSupportAssignment-Environment">ZTicket-Env</Item>
+                <Item Key="ZTSMSupportAssignment-Location">ZTicket-Location</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::OfficialFields" Required="1" Valid="1">
+        <Description Translatable="1">Defines first-class GovernanceDB fields. These names are reserved and must not be duplicated with ad hoc dynamic fields.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="GOID">goid</Item>
+                <Item Key="ZTSM-Code">ztsm_code</Item>
+                <Item Key="ZTSM-Status">ztsm_status</Item>
+                <Item Key="Name">name</Item>
+                <Item Key="Description">description</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::OfficialDynamicFields" Required="1" Valid="1">
+        <Description Translatable="1">Defines optional GovernanceObject dynamic fields. Identity, status, name, and description are first-class fields, not dynamic fields.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="ZTSM-Definition">
+                    <Hash>
+                        <Item Key="Label" Translatable="1">Governance Definition</Item>
+                        <Item Key="FieldType">TextArea</Item>
+                        <Item Key="ObjectType">GovernanceObject</Item>
+                        <Item Key="Required">0</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::Frontend::AdminGovernanceObjectDefinition###EditorRows" Required="1" Valid="1">
+        <Description Translatable="1">Defines the number of rows for the GovernanceObject definition editor in the admin interface.</Description>
+        <Navigation>Frontend::Admin::View::GovernanceObjectDefinition</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">30</Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceDB::MigrationReadiness" Required="1" Valid="1">
+        <Description Translatable="1">Documents the source CMDB classes that are expected to be copied into GovernanceDB later. This package does not delete those source records.</Description>
+        <Navigation>Core::GovernanceDB</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="SourceObjectType">ITSMConfigItem</Item>
+                <Item Key="SourceClasses">
+                    <Array>
+                        <Item>Book</Item>
+                        <Item>StateBook</Item>
+                        <Item>BlueBook</Item>
+                        <Item>ServiceSupportMap</Item>
+                    </Array>
+                </Item>
+                <Item Key="DeleteSourceAfterCopy">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+</otobo_config>
