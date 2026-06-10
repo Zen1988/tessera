@@ -22,9 +22,10 @@
                     <li>
                         <form action="[% Env("CGIHandle") %]" method="get">
                             <input type="hidden" name="Action" value="[% Env("Action") %]"/>
-                            <div>[% Data.ClassOptionStrg %]</div>
+                            <div>[% Data.ScopeOptionStrg %]</div>
+                            <div>[% Data.TargetOptionStrg %]</div>
                             <button class="CallForAction Fullsize Center" type="submit">
-                                <span>[% Translate("Change class") | html %]</span>
+                                <span>[% Translate("Change target") | html %]</span>
                             </button>
                         </form>
                     </li>
@@ -52,13 +53,14 @@
     <div class="ContentColumn">
         <div class="WidgetSimple">
             <div class="Header">
-                <h2>[% Data.Class | html %] [% Translate("Definition") | html %]</h2>
+                <h2>[% Data.Target | html %] [% Translate("Definition") | html %]</h2>
             </div>
             <div class="Content">
                 <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
                     <input type="hidden" name="Action" value="[% Env("Action") %]"/>
                     <input type="hidden" name="Subaction" value="DefinitionSave"/>
-                    <input type="hidden" name="ClassID" value="[% Data.ClassID | html %]"/>
+                    <input type="hidden" name="Scope" value="[% Data.Scope | html %]"/>
+                    <input type="hidden" name="[% Data.TargetIDParam | html %]" value="[% Data.TargetID | html %]"/>
 
                     <fieldset class="TableLike">
                         <label for="Definition">[% Translate("Definition") | html %]</label>

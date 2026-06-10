@@ -40,7 +40,7 @@ sub ObjectAdd {
         }
     }
 
-    my $Class      = $Param{Class}      || 'GovernanceConfigItem';
+    my $Class      = $Param{Class}      || 'StateBook';
     my $Status     = $Param{ZTSMStatus} || 'Draft';
     my $Definition = $Param{Definition} || '';
     my $Description = $Param{Description} // '';
@@ -227,8 +227,26 @@ sub ObjectList {
 sub ClassList {
     my ( $Self, %Param ) = @_;
 
+    return $Self->_DefinitionTargetList(
+        Type  => 'Class',
+        Valid => $Param{Valid},
+    );
+}
+
+sub CategoryList {
+    my ( $Self, %Param ) = @_;
+
     return $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
-        Class => $Self->_GeneralCatalogClassName(Type => 'Class'),
+        Class => $Self->_GeneralCatalogClassName(Type => 'Category'),
+        Valid => $Param{Valid},
+    );
+}
+
+sub RoleList {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->_DefinitionTargetList(
+        Type  => 'Role',
         Valid => $Param{Valid},
     );
 }
@@ -280,7 +298,7 @@ sub ObjectCopyFromConfigItem {
 
     my $Class = $Param{Class}
         || $ConfigItem->{Class}
-        || 'GovernanceConfigItem';
+        || 'StateBook';
 
     my %DefinitionPayload = (
         SourceObjectType => 'ITSMConfigItem',
@@ -313,7 +331,10 @@ sub ObjectCopyFromConfigItem {
 sub DefinitionList {
     my ( $Self, %Param ) = @_;
 
-    return if !$Param{ClassID};
+    my $TargetID = $Param{ClassID} || $Param{RoleID};
+    my $Type     = $Param{RoleID} ? 'Role' : 'Class';
+
+    return if !$TargetID;
 
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
@@ -323,17 +344,16 @@ sub DefinitionList {
             FROM governance_object_definition
             WHERE class_id = ?
             ORDER BY version ASC, id ASC',
-        Bind => [ \$Param{ClassID} ],
+        Bind => [ \$TargetID ],
     );
 
     my @Definitions;
-    my $ClassList = $Self->ClassList();
+    my $TargetList = $Self->_DefinitionTargetLookup(Type => $Type);
 
     while ( my @Row = $DBObject->FetchrowArray() ) {
         push @Definitions, {
             DefinitionID => $Row[0],
-            ClassID      => $Row[1],
-            Class        => $ClassList->{ $Row[1] } || '',
+            ( $Type eq 'Role' ? ( RoleID => $Row[1], Role => $TargetList->{ $Row[1] } || '' ) : ( ClassID => $Row[1], Class => $TargetList->{ $Row[1] } || '' ) ),
             Definition   => $Row[2],
             Version      => $Row[3],
             CreateTime   => $Row[4],
@@ -347,10 +367,12 @@ sub DefinitionList {
 sub DefinitionGet {
     my ( $Self, %Param ) = @_;
 
-    if ( !$Param{DefinitionID} && !$Param{ClassID} ) {
+    my $Type = $Param{RoleID} ? 'Role' : 'Class';
+
+    if ( !$Param{DefinitionID} && !$Param{ClassID} && !$Param{RoleID} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Need DefinitionID or ClassID!',
+            Message  => 'Need DefinitionID, ClassID, or RoleID!',
         );
         return;
     }
@@ -362,7 +384,7 @@ sub DefinitionGet {
     }
     else {
         $Where = 'class_id = ?';
-        @Bind  = ( \$Param{ClassID} );
+        @Bind  = ( $Type eq 'Role' ? \$Param{RoleID} : \$Param{ClassID} );
     }
 
     my @Row = $Kernel::OM->Get('Kernel::System::DB')->SelectRowArray(
@@ -377,12 +399,11 @@ sub DefinitionGet {
 
     return if !@Row;
 
-    my $ClassList = $Self->ClassList();
+    my $TargetList = $Self->_DefinitionTargetLookup(Type => $Type);
 
     return {
         DefinitionID => $Row[0],
-        ClassID      => $Row[1],
-        Class        => $ClassList->{ $Row[1] } || '',
+        ( $Type eq 'Role' ? ( RoleID => $Row[1], Role => $TargetList->{ $Row[1] } || '' ) : ( ClassID => $Row[1], Class => $TargetList->{ $Row[1] } || '' ) ),
         Definition   => $Row[2],
         Version      => $Row[3],
         CreateTime   => $Row[4],
@@ -393,7 +414,9 @@ sub DefinitionGet {
 sub DefinitionAdd {
     my ( $Self, %Param ) = @_;
 
-    for my $Needed (qw(ClassID Definition UserID)) {
+    my $TargetID = $Param{ClassID} || $Param{RoleID};
+
+    for my $Needed (qw(Definition UserID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -401,6 +424,13 @@ sub DefinitionAdd {
             );
             return;
         }
+    }
+    if ( !$TargetID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ClassID or RoleID!',
+        );
+        return;
     }
 
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
@@ -410,7 +440,7 @@ sub DefinitionAdd {
             SELECT MAX(version)
             FROM governance_object_definition
             WHERE class_id = ?',
-        Bind => [ \$Param{ClassID} ],
+        Bind => [ \$TargetID ],
     );
     $Version ||= 0;
     $Version++;
@@ -420,7 +450,7 @@ sub DefinitionAdd {
             INSERT INTO governance_object_definition
                 (class_id, definition, version, create_time, create_by)
             VALUES (?, ?, ?, current_timestamp, ?)',
-        Bind => [ \$Param{ClassID}, \$Param{Definition}, \$Version, \$Param{UserID} ],
+        Bind => [ \$TargetID, \$Param{Definition}, \$Version, \$Param{UserID} ],
     );
 
     my ($DefinitionID) = $DBObject->SelectRowArray(
@@ -429,11 +459,35 @@ sub DefinitionAdd {
             FROM governance_object_definition
             WHERE class_id = ?
             ORDER BY id DESC',
-        Bind  => [ \$Param{ClassID} ],
+        Bind  => [ \$TargetID ],
         Limit => 1,
     );
 
     return $DefinitionID;
+}
+
+sub RoleDefinitionList {
+    my ( $Self, %Param ) = @_;
+
+    $Param{RoleID} = delete $Param{ClassID} if $Param{ClassID} && !$Param{RoleID};
+
+    return $Self->DefinitionList(%Param);
+}
+
+sub RoleDefinitionGet {
+    my ( $Self, %Param ) = @_;
+
+    $Param{RoleID} = delete $Param{ClassID} if $Param{ClassID} && !$Param{RoleID};
+
+    return $Self->DefinitionGet(%Param);
+}
+
+sub RoleDefinitionAdd {
+    my ( $Self, %Param ) = @_;
+
+    $Param{RoleID} = delete $Param{ClassID} if $Param{ClassID} && !$Param{RoleID};
+
+    return $Self->DefinitionAdd(%Param);
 }
 
 sub ServiceSupportConditionList {
@@ -508,7 +562,7 @@ sub GOIDCreate {
 sub _ClassIDGet {
     my ( $Self, %Param ) = @_;
 
-    my $Class = $Param{Class} || 'GovernanceConfigItem';
+    my $Class = $Param{Class} || 'StateBook';
 
     my $Item = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
         Class => $Self->_GeneralCatalogClassName(Type => 'Class'),
@@ -519,7 +573,7 @@ sub _ClassIDGet {
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'error',
-        Message  => "Unknown GovernanceObject class '$Class'!",
+        Message  => "Unknown Governance Object class '$Class'!",
     );
 
     return;
@@ -529,8 +583,72 @@ sub _GeneralCatalogClassName {
     my ( $Self, %Param ) = @_;
 
     my $Classes = $Kernel::OM->Get('Kernel::Config')->Get('GovernanceDB::GeneralCatalogClasses') || {};
+    return $Classes->{ $Param{Type} } if $Classes->{ $Param{Type} };
 
-    return $Classes->{ $Param{Type} } || 'ZTSM::GovernanceObject::Class';
+    my %Default = (
+        Category      => 'ZTSM::GovernanceObject::Category',
+        Class         => 'ZTSM::GovernanceObject::Class',
+        ClassCategory => 'ZTSM::GovernanceObject::Class::Category',
+        Definition    => 'ZTSM::GovernanceObject::Definition',
+        Role          => 'ZTSM::GovernanceObject::Role',
+        Status        => 'ZTSM::GovernanceObject::Status',
+    );
+
+    return $Default{ $Param{Type} } || 'ZTSM::GovernanceObject::Class';
+}
+
+sub _DefinitionTargetLookup {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->RoleList( Valid => 1 ) if ( $Param{Type} || '' ) eq 'Role';
+
+    return $Self->ClassList( Valid => 1 );
+}
+
+sub _DefinitionTargetList {
+    my ( $Self, %Param ) = @_;
+
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $List = $GeneralCatalogObject->ItemList(
+        Class => $Self->_GeneralCatalogClassName( Type => $Param{Type} ),
+        Valid => $Param{Valid},
+    ) || {};
+
+    my $Defaults = $Self->DefaultDefinitionTargetsGet();
+    my %Allowed  = map { $_ => 1 } @{ $Defaults->{ $Param{Type} } || [] };
+
+    return $List if !%Allowed;
+
+    my %Filtered = map {
+        my $ID = $_;
+        my $Name = $List->{$ID};
+        $Allowed{$Name} ? ( $ID => $Name ) : ();
+    } sort keys %{$List};
+
+    return \%Filtered;
+}
+
+sub DefaultDefinitionTargetsGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $File = "$Home/var/governancedb/default_classes.json";
+
+    my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+        Location => $File,
+        Mode     => 'utf8',
+        DisableWarnings => 1,
+    );
+    return {} if !$ContentRef;
+
+    my $Data = $Kernel::OM->Get('Kernel::System::JSON')->Decode(
+        Data => ${$ContentRef},
+    ) || {};
+
+    return {
+        Class => [ map { $_->{Name} } @{ $Data->{Classes} || [] } ],
+        Role  => [ map { ref $_ eq 'HASH' ? $_->{Name} : $_ } @{ $Data->{Roles} || [] } ],
+    };
 }
 
 sub _FieldValueGet {

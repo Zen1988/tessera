@@ -1,0 +1,2142 @@
+---
+- Class:
+    Categories:
+    - Business
+    Name: Application
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Application\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Application\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n
+    \ CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Application
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Application
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Criticality:
+      CIClass: Application
+      Config:
+        DefaultValue: Medium
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Critical: Critical
+          High: High
+          Low: Low
+          Medium: Medium
+        Tooltip: Criticality
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Criticality
+      Name: ZTSMAppSystem-Criticality
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-DataClassification:
+      CIClass: Application
+      Config:
+        DefaultValue: Internal
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Confidential: Confidential
+          Internal: Internal
+          Public: Public
+          Restricted: Restricted
+          Secret: Secret
+        Tooltip: Data Classification
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Data Classification
+      Name: ZTSMAppSystem-DataClassification
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-DefaultApprovalModel:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Approval Model
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Default Approval Model
+      FieldType: ConfigItem
+      Label: Default Approval Model
+      Name: ZTSMAppSystem-DefaultApprovalModel
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-DefaultApprovalProfile:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Support Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Default Approval Profile
+      FieldType: ConfigItem
+      Label: Default Approval Profile
+      Name: ZTSMAppSystem-DefaultApprovalProfile
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Environment:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Environment
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: ConfigItem
+      Label: Environment
+      Name: ZTSMAppSystem-Environment
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Location:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Location
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Application System
+      FieldType: ConfigItem
+      Label: Location
+      Name: ZTSMAppSystem-Location
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Owner:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Organization
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Owner
+      FieldType: ConfigItem
+      Label: Owner
+      Name: ZTSMAppSystem-Owner
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Parent:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Application
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: App System
+      FieldType: ConfigItem
+      Label: Parent
+      Name: ZTSMAppSystem-Parent
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Platform:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - Platform
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Platform
+      FieldType: ConfigItem
+      Label: Platform
+      Name: ZTSMAppSystem-Platform
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Tier:
+      CIClass: Application
+      Config:
+        DefaultValue: '3'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          '1': '1'
+          '2': '2'
+          '3': '3'
+          '4': '4'
+          '5': '5'
+        Tooltip: Tier
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Tier
+      Name: ZTSMAppSystem-Tier
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: Approval Model
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::ApprovalModel\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Approval Model\r\n  CMDB Backlinks:\r\n    Name: CMDB
+    Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-ApprovelTimeout:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout (Hours)
+      FieldType: Text
+      Label: Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-ApprovelTimeout
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-FinalAction:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: Reject with Timeout
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Approve: Approve
+          Approve with Timeout: Approve with Timeout
+          Do Nothing: Do Nothing
+          Reject: Reject
+          Reject with Timeout: Reject with Timeout
+        Tooltip: Final Action after timeout
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Final Action on Timeout
+      Name: ZTSMApprovalModel-FinalAction
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-L2Escalation:
+      CIClass: Approval Model
+      Config:
+        ClassIDs:
+        - Governance Role
+        - Support Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: L2 Escalation
+      FieldType: ConfigItem
+      Label: Approval Escalation L2
+      Name: ZTSMApprovalModel-L2Escalation
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-L2Timeout:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout in hours
+      FieldType: Text
+      Label: L2 Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-L2Timeout
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-L3Escalation:
+      CIClass: Approval Model
+      Config:
+        ClassIDs:
+        - Governance Role
+        - Support Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: L3 Escalation
+      FieldType: ConfigItem
+      Label: Approval Escalation L3
+      Name: ZTSMApprovalModel-L3Escalation
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-L3Timeout:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout in hours
+      FieldType: Text
+      Label: L3 Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-L3Timeout
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-Mode:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: Escalation
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Escalation: Escalation
+          Parallel: Parallel
+          Primary + Secondary: Primary + Secondary
+          Primary Only: Primary Only
+        Tooltip: Approval Mode
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Mode
+      Name: ZTSMApprovalModel-Mode
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-RequiredWeightage:
+      CIClass: Approval Model
+      Config:
+        DefaultValue: '1'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Weightage must be in number only
+          Value: ^[0-9]+$
+        Tooltip: Required Approval Weightage
+      FieldType: Text
+      Label: Required Approval Weightage
+      Name: ZTSMApprovalModel-RequiredWeightage
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: BlueBook
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Blue Book\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n
+    \ CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZBlue-Record:
+      CIClass: BlueBook
+      Config:
+        Include:
+        - DF: ZBlue-Chapter
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: BR-001
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList: []
+              Tooltip: Chapter ID (make sure it unique inside BlueBook)
+            FieldType: Text
+            Label: ID
+            Name: ZBlue-Chapter
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-BlueLevel
+          Definition:
+            CIClass: BlueBook
+            Config:
+              Class: BlueLevel
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: Blue Level
+            FieldType: GeneralCatalog
+            Label: Level
+            Name: ZBlue-BlueLevel
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Profile
+          Definition:
+            CIClass: BlueBook
+            Config:
+              ClassIDs:
+              - Governance Role
+              - Support Profile
+              DeplStateIDs: []
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: '0'
+              PossibleNone: '0'
+              ReferenceFilterList: []
+              ReferencedObjectType: ITSMConfigItem
+              SearchAttribute: ''
+              Tooltip: Support/Approval Profile
+            FieldType: ConfigItem
+            Label: Profile
+            Name: ZBlue-Profile
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Role
+          Definition:
+            CIClass: BlueBook
+            Config:
+              ClassIDs:
+              - Governance Role
+              DeplStateIDs: []
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: '0'
+              PossibleNone: '1'
+              ReferenceFilterList: []
+              ReferencedObjectType: ITSMConfigItem
+              SearchAttribute: ''
+              Tooltip: Role
+            FieldType: ConfigItem
+            Label: Role
+            Name: ZBlue-Role
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-TicketType
+          Definition:
+            CIClass: BlueBook
+            Config:
+              Class: ZTSM::Type
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: Ticket Type
+            FieldType: GeneralCatalog
+            Label: Ticket Type
+            Name: ZBlue-TicketType
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Activity
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: ''
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList: []
+              Tooltip: Activity
+            FieldType: Text
+            Label: Activity
+            Name: ZBlue-Activity
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Duration
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '120'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Duration must be in numbers only
+                Value: ^[0-9]+$
+              Tooltip: Duration (mins)
+            FieldType: Text
+            Label: Duration (mins)
+            Name: ZBlue-Duration
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-RequiredWeightage
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '1'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Weightage must be number format
+                Value: ^[0-9]+$
+              Tooltip: Required Weightage
+            FieldType: Text
+            Label: Required Weightage
+            Name: ZBlue-RequiredWeightage
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Mandatory
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '0'
+              MultiValue: ~
+              Tooltip: Mandatory
+            FieldType: Checkbox
+            Label: Mandatory
+            Name: ZBlue-Mandatory
+            ObjectType: ITSMConfigItem
+        - DF: ZBlue-Strict
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '0'
+              MultiValue: ~
+              Tooltip: Strict Mode
+            FieldType: Checkbox
+            Label: Strict
+            Name: ZBlue-Strict
+            ObjectType: ITSMConfigItem
+        MultiValue: '1'
+        Tooltip: ~
+      FieldType: Set
+      Label: BlueBook Chapters
+      Name: ZBlue-Record
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: BlueBook
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Definition: "---\r\nSections:\r\n  Accounting:\r\n    Content:\r\n    - Header:
+    Accounting Information\r\n    - DF: ITSMAccounting-InventoryNumber\r\n    - DF:
+    ITSMAccounting-DateOfInvoice\r\n    - DF: ITSMAccounting-OrderDate\r\n    - DF:
+    ITSMAccounting-WarrantyDate\r\n    - DF: ITSMAccounting-CostUnit\r\n    - DF:
+    ITSMAccounting-OrderNumber\r\n    - DF: ITSMAccounting-InvoiceNumber\r\n    -
+    DF: ITSMAccounting-InvestmentCosts\r\n    - DF: ITSMAccounting-OperatingCosts\r\n
+    \   - DF: ITSMAccounting-ReferenceToAccount"
+  RoleName: CMDB Accounting
+- Definition: "---\r\nSections:\r\n  Backlinks:\r\n    Type: ConfigItemLinks\r\n    Header:
+    Backlinks\r\n    LinkedAs: Source"
+  RoleName: CMDB Backlinks
+- Definition: "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header:
+    Description"
+  RoleName: CMDB Description
+- Definition: "---\r\nSections:\r\n  Subsidiary:\r\n    Content:\r\n      - Header:
+    Subsidiary\r\n      - DF: Location-ReferenceToSubsidiary\r\n  Address:\r\n    Type:
+    ReferencedSection\r\n    ReferenceField: Location-ReferenceToSubsidiary\r\n    SectionName:
+    Address\r\n    FieldListPre:\r\n      - DF: Location-ReferenceToSubsidiary"
+  RoleName: CMDB GF Building
+- Definition: "---\r\nSections:\r\n  Location:\r\n    Content:\r\n      - Header:
+    Location\r\n      - DF: Location-ReferenceToLocation\r\n  Address:\r\n    Type:
+    ReferencedSection\r\n    ReferenceField: Location-ReferenceToLocation\r\n    SectionName:
+    Address"
+  RoleName: CMDB Located in
+- Class:
+    Categories:
+    - Context
+    Name: Environment
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Environment\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Environment\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n
+    \ CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSMEnvironment-Criticality:
+      CIClass: Environment
+      Config:
+        DefaultValue: Critical
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Critical: Critical
+          High: High
+          Low: Low
+          Medium: Medium
+        Tooltip: Criticality
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Criticality
+      Name: ZTSMEnvironment-Criticality
+      ObjectType: ITSMConfigItem
+    ZTSMEnvironment-Type:
+      CIClass: Environment
+      Config:
+        DefaultValue: Production
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          DR: DR
+          Development: Development
+          Lab: Lab
+          Non-Production: Non-Production
+          Pre-Production: Pre-Production
+          Production: Production
+          SIT: SIT
+          Test: Test
+          UAT: UAT
+          Warm: Warm
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMEnvironment-Type
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: Governance Role
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Role\r\n        RowStart: 1\r\n
+    \       ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart:
+    2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Governance Role\r\n  CMDB Backlinks:\r\n    Name: CMDB
+    Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Governance Role
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Governance Role
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Business
+    Name: Organization
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DeplStateID
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Organization\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Organization\r\n  CMDB Backlinks:\r\n    Name: CMDB
+    Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Organization
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Organization
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMOrganization-DefaultApprovalProfile:
+      CIClass: Organization
+      Config:
+        ClassIDs:
+        - Support Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Default Approval Profile
+      FieldType: ConfigItem
+      Label: Default Approval Profile
+      Name: ZTSMOrganization-DefaultApprovalProfile
+      ObjectType: ITSMConfigItem
+    ZTSMOrganization-Parent:
+      CIClass: Organization
+      Config:
+        ClassIDs:
+        - Organization
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Parent Organization / OU
+      FieldType: ConfigItem
+      Label: Parent
+      Name: ZTSMOrganization-Parent
+      ObjectType: ITSMConfigItem
+    ZTSMOrganization-Tier:
+      CIClass: Organization
+      Config:
+        DefaultValue: '3'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          '1': '1'
+          '2': '2'
+          '3': '3'
+        Tooltip: "1 for VIP\r\n2 for normal\r\n3 for low priority"
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Tier
+      Name: ZTSMOrganization-Tier
+      ObjectType: ITSMConfigItem
+    ZTSMOrganization-Type:
+      CIClass: Organization
+      Config:
+        DefaultValue: Vendor
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Agency: Agency
+          OrganizationUnit: OrganizationUnit
+          Vendor: Vendor
+        Tooltip: Organization Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMOrganization-Type
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Context
+    Name: Platform
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Platform\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Platform\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n
+    \ CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Platform
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Platform
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMPlatform-Location:
+      CIClass: Platform
+      Config:
+        ClassIDs:
+        - Location
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: ConfigItem
+      Label: Location
+      Name: ZTSMPlatform-Location
+      ObjectType: ITSMConfigItem
+    ZTSMPlatform-Owner:
+      CIClass: Platform
+      Config:
+        ClassIDs:
+        - Organization
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Platform Owner
+      FieldType: ConfigItem
+      Label: Owner
+      Name: ZTSMPlatform-Owner
+      ObjectType: ITSMConfigItem
+    ZTSMPlatform-Type:
+      CIClass: Platform
+      Config:
+        DefaultValue: Virtualization
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Containerization: Containerization
+          Hybrid Cloud: Hybrid Cloud
+          Physical: Physical
+          Private Cloud: Private Cloud
+          Public Cloud: Public Cloud
+          Virtualization: Virtualization
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMPlatform-Type
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Service
+    Name: Service Profile
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Service\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Service Profile\r\n  CMDB Backlinks:\r\n    Name: CMDB
+    Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Service Profile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Service Profile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMServiceProfile-Category:
+      CIClass: Service Profile
+      Config:
+        DefaultValue: Managed Service
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Compliance Service: Compliance Service
+          Consulting: Consulting
+          Governance Service: Governance Service
+          Managed Service: Managed Service
+          Operational Service: Operational Service
+          Professional Service: Professional Service
+          Project Service: Project Service
+        Tooltip: Service Category
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Category
+      Name: ZTSMServiceProfile-Category
+      ObjectType: ITSMConfigItem
+    ZTSMServiceProfile-Contract:
+      CIClass: Service Profile
+      Config:
+        ClassIDs:
+        - Contract
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Contract
+      FieldType: ConfigItem
+      Label: Contract
+      Name: ZTSMServiceProfile-Contract
+      ObjectType: ITSMConfigItem
+    ZTSMServiceProfile-Owner:
+      CIClass: Service Profile
+      Config:
+        ClassIDs:
+        - Organization
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Service Owner
+      FieldType: ConfigItem
+      Label: Owner
+      Name: ZTSMServiceProfile-Owner
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Service
+    Name: Service Support Map
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 3\r\n      ColumnWidth: 1fr 1fr 1fr\r\n    Interfaces:\r\n      -
+    Agent\r\n      - Customer\r\n    Content:\r\n      - Section: General Fields::Mapping\r\n
+    \       RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 3\r\n        ColumnStart: 2\r\n        ColumnSpan:
+    2\r\nRoles:\r\n  # Roles are used to define the Sections and their individual
+    fields.\r\n  # Of course, sections can also be defined directly here in the class
+    definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Service Support Map\r\n  CMDB Backlinks:\r\n    Name:
+    CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Status:
+      CIClass: Service Support Map
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-Application:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - Application
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Application
+      FieldType: ConfigItem
+      Label: Application
+      Name: ZTSMServiceSupportMap-Application
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-ApprovalModel:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - Approval Model
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Approval Model
+      FieldType: ConfigItem
+      Label: Approval Model
+      Name: ZTSMServiceSupportMap-ApprovalModel
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-Environment:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - Environment
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: ConfigItem
+      Label: Environment
+      Name: ZTSMServiceSupportMap-Environment
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-Location:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - Location
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: ConfigItem
+      Label: Location
+      Name: ZTSMServiceSupportMap-Location
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-Service:
+      CIClass: Service Support Map
+      Config:
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkObjectForReferenceType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferencedObjectType: Service
+        Tooltip: Service Catalog
+      FieldType: Service
+      Label: Service Offering
+      Name: ZTSMServiceSupportMap-Service
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-ServiceProfile:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - Service Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Service Profile
+      FieldType: ConfigItem
+      Label: Service Profile
+      Name: ZTSMServiceSupportMap-ServiceProfile
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-StateBook:
+      CIClass: Service Support Map
+      Config:
+        ClassIDs:
+        - StateBook
+        DeplStateIDs:
+        - '63'
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: State Book
+      FieldType: ConfigItem
+      Label: State Book
+      Name: ZTSMServiceSupportMap-StateBook
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: StateBook
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::StateMap\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM State Book\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n
+    \ CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZState-StateRecord:
+      CIClass: StateBook
+      Config:
+        Include:
+        - DF: ZState-Seq
+          Definition:
+            CIClass: StateBook
+            Config:
+              DefaultValue: '1'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Please make sure is number and in sequential
+                Value: ^[0-9]+$
+              Tooltip: Sequence
+            FieldType: Text
+            Label: Sequence
+            Name: ZState-Seq
+            ObjectType: ITSMConfigItem
+        - DF: ZState-State
+          Definition:
+            CIClass: StateBook
+            Config:
+              Class: ZTSM::State
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: State State
+            FieldType: GeneralCatalog
+            Label: State
+            Name: ZState-State
+            ObjectType: ITSMConfigItem
+        - DF: ZState-Book
+          Definition:
+            CIClass: StateBook
+            Config:
+              ClassIDs:
+              - BlueBook
+              DeplStateIDs: []
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: 0
+              PossibleNone: '1'
+              ReferenceFilterList: []
+              ReferencedObjectType: ITSMConfigItem
+              SearchAttribute: ''
+              Tooltip: BlueBook
+            FieldType: ConfigItem
+            Label: Book
+            Name: ZState-Book
+            ObjectType: ITSMConfigItem
+        MultiValue: '1'
+        Tooltip: ~
+      FieldType: Set
+      Label: Record
+      Name: ZState-StateRecord
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: StateBook
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: Support Assignment
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Assignment\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Support Assignment\r\n  CMDB Backlinks:\r\n    Name:
+    CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Status:
+      CIClass: Support Assignment
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Application:
+      CIClass: Support Assignment
+      Config:
+        ClassIDs:
+        - Application
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Application System
+      FieldType: ConfigItem
+      Label: Application
+      Name: ZTSMSupportAssignment-Application
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Environment:
+      CIClass: Support Assignment
+      Config:
+        ClassIDs:
+        - Environment
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: ConfigItem
+      Label: Environment
+      Name: ZTSMSupportAssignment-Environment
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Location:
+      CIClass: Support Assignment
+      Config:
+        ClassIDs:
+        - Location
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: ConfigItem
+      Label: Location
+      Name: ZTSMSupportAssignment-Location
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Role:
+      CIClass: Support Assignment
+      Config:
+        ClassIDs:
+        - Appliance
+        - Governance Role
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Assignment Role
+      FieldType: ConfigItem
+      Label: Role
+      Name: ZTSMSupportAssignment-Role
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-SupportProfile:
+      CIClass: Support Assignment
+      Config:
+        ClassIDs:
+        - Support Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Support Profile
+      FieldType: ConfigItem
+      Label: Support Profile
+      Name: ZTSMSupportAssignment-SupportProfile
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Type:
+      CIClass: Support Assignment
+      Config:
+        DefaultValue: Primary
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Consult: Consult
+          Escalation: Escalation
+          Primary: Primary
+          Secondary: Secondary
+        Tooltip: Support Assignment
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMSupportAssignment-Type
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-UserAccount:
+      CIClass: Support Assignment
+      Config:
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferencedObjectType: CustomerUser
+        Tooltip: User Account
+      FieldType: CustomerUser
+      Label: User Account
+      Name: ZTSMSupportAssignment-UserAccount
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Weightage:
+      CIClass: Support Assignment
+      Config:
+        DefaultValue: '1'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Weightage must be number format
+          Value: ^[0-9\.]+$
+        Tooltip: Weightage
+      FieldType: Text
+      Label: Weightage
+      Name: ZTSMSupportAssignment-Weightage
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Governance
+    Name: Support Profile
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::SupportProfile\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Support Profile\r\n  CMDB Backlinks:\r\n    Name: CMDB
+    Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Support Profile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Support Profile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMSupportProfile-ServiceProfile:
+      CIClass: Support Profile
+      Config:
+        ClassIDs:
+        - Service Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Service Offering
+      FieldType: ConfigItem
+      Label: Service Profile
+      Name: ZTSMSupportProfile-ServiceProfile
+      ObjectType: ITSMConfigItem
+    ZTSMSupportProfile-TechnologyProfile:
+      CIClass: Support Profile
+      Config:
+        ClassIDs:
+        - Technology Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Technology Profile
+      FieldType: ConfigItem
+      Label: Technology Profile
+      Name: ZTSMSupportProfile-TechnologyProfile
+      ObjectType: ITSMConfigItem
+    ZTSMSupportProfile-Type:
+      CIClass: Support Profile
+      Config:
+        DefaultValue: Support
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Assessment: Assessment
+          Authority: Authority
+          Governance: Governance
+          Implementation: Implementation
+          Support: Support
+        Tooltip: Profile Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMSupportProfile-Type
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Service
+    Name: Technology Profile
+    NumberModule: AutoIncrement
+    PermissionGroup: itsm-configitem
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - DeplStateID
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentITSMConfigItemZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Profile\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n
+    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles:
+    \r\n  # Roles are used to define the Sections and their individual fields.\r\n
+    \ # Of course, sections can also be defined directly here in the class definitions.
+    \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"ITSM GF class name\". \r\n
+    \ # This is where the fields of the respective class can be customised.\r\n  General
+    Fields:\r\n    Name: ZTSM Technology Profile\r\n  CMDB Backlinks:\r\n    Name:
+    CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Technology Profile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Technology Profile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMTechnologyProfile-Parent:
+      CIClass: Technology Profile
+      Config:
+        ClassIDs:
+        - Technology Profile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Parent
+      FieldType: ConfigItem
+      Label: Parent
+      Name: ZTSMTechnologyProfile-Parent
+      ObjectType: ITSMConfigItem
+    ZTSMTechnologyProfile-Type:
+      CIClass: Technology Profile
+      Config:
+        DefaultValue: Server Infrastructure
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          AI: AI
+          Application Platform: Application Platform
+          Automation Platform: Automation Platform
+          Backup Technology: Backup Technology
+          CICD: CICD
+          Cloud Technology: Cloud Technology
+          Containerization: Containerization
+          Data Center: Data Center
+          Database Platform: Database Platform
+          Enterprise Content Management: Enterprise Content Management
+          Identity Platform: Identity Platform
+          Messaging Platform: Messaging Platform
+          Middleware Platform: Middleware Platform
+          Monitoring Platform: Monitoring Platform
+          Network Infrastructure: Network Infrastructure
+          Security Platform: Security Platform
+          Server Infrastructure: Server Infrastructure
+          Storage Technology: Storage Technology
+          Virtualization: Virtualization
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMTechnologyProfile-Type
+      ObjectType: ITSMConfigItem
+- Definition: "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header:
+    Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF:
+    ZTSMAppSystem-Tier\r\n    - DF: ZTSMAppSystem-Criticality\r\n    - DF: ZTSMAppSystem-Owner\r\n
+    \   - DF: ZTSMAppSystem-Parent\r\n    - DF: ZTSMAppSystem-Platform\r\n    - DF:
+    ZTSMAppSystem-Environment\r\n    - DF: ZTSMAppSystem-Location\r\n    - DF: ZTSMAppSystem-DataClassification\r\n
+    \   - DF: ZTSMAppSystem-DefaultApprovalModel\r\n    - DF: ZTSMAppSystem-DefaultApprovalProfile"
+  RoleName: ZTSM Application
+- Definition: "---\r\nSections:\r\n  ApprovalModel:\r\n    Content:\r\n    - Header:
+    Approval Model\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMApprovalModel-Mode\r\n
+    \   - DF: ZTSMApprovalModel-RequiredWeightage\r\n    - DF: ZTSMApprovalModel-ApprovelTimeout\r\n
+    \   - DF: ZTSMApprovalModel-L2Escalation\r\n    - DF: ZTSMApprovalModel-L2Timeout\r\n
+    \   - DF: ZTSMApprovalModel-L3Escalation\r\n    - DF: ZTSMApprovalModel-L3Timeout\r\n
+    \   - DF: ZTSMApprovalModel-FinalAction"
+  RoleName: ZTSM Approval Model
+- Definition: "---\r\nSections:\r\n  BlueBook:\r\n    Content:\r\n    - Header: Context\r\n
+    \   - DF: ZTSM-Status\r\n    - DF: ZBlue-Record"
+  RoleName: ZTSM Blue Book
+- Definition: "---\r\nSections:\r\n  Environment:\r\n    Content:\r\n    - Header:
+    Environment\r\n    - DF: ZTSMEnvironment-Type\r\n    - DF: ZTSMEnvironment-Criticality"
+  RoleName: ZTSM Environment
+- Definition: "---\r\nSections:\r\n  Role:\r\n    Content:\r\n    - Header: Role\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status"
+  RoleName: ZTSM Governance Role
+- Definition: "---\r\nSections:\r\n  Address:\r\n    Content:\r\n    - Header: Address\r\n
+    \   - DF: ZTSMLocation-Address"
+  RoleName: ZTSM Location
+- Definition: "---\r\nSections:\r\n  Organization:\r\n    Content:\r\n    - Header:
+    General Information\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF:
+    ZTSMOrganization-Type\r\n    - DF: ZTSMOrganization-Tier\r\n    - DF: ZTSMOrganization-Parent\r\n
+    \   - DF: ZTSMOrganization-DefaultApprovalProfile"
+  RoleName: ZTSM Organization
+- Definition: "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n
+    \   - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location"
+  RoleName: ZTSM Platform
+- Definition: "---\r\nSections:\r\n  Service:\r\n    Content:\r\n    - Header: Service
+    Profile\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMServiceProfile-Category\r\n
+    \   - DF: ZTSMServiceProfile-Owner\r\n    - DF: ZTSMServiceProfile-Contract"
+  RoleName: ZTSM Service Profile
+- Definition: "---\r\nSections:\r\n  Mapping:\r\n    Content:\r\n    - Header: Service
+    Support Map\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMServiceSupportMap-Service\r\n
+    \   - DF: ZTSMServiceSupportMap-ServiceProfile\r\n    - DF: ZTSMServiceSupportMap-Application\r\n
+    \   - DF: ZTSMServiceSupportMap-Environment\r\n    - DF: ZTSMServiceSupportMap-Location\r\n
+    \   - DF: ZTSMServiceSupportMap-StateBook\r\n    - DF: ZTSMServiceSupportMap-ApprovalModel"
+  RoleName: ZTSM Service Support Map
+- Definition: "---\r\nSections:\r\n  StateMap:\r\n    Content:\r\n    - Header: Book\r\n
+    \   - DF: ZTSM-Status\r\n    - DF: ZState-StateRecord"
+  RoleName: ZTSM State Book
+- Definition: "---\r\nSections:\r\n  Assignment:\r\n    Content:\r\n    - Header:
+    Assignment\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMSupportAssignment-UserAccount\r\n
+    \   - DF: ZTSMSupportAssignment-Type\r\n    - DF: ZTSMSupportAssignment-Role\r\n
+    \   - DF: ZTSMSupportAssignment-Weightage\r\n    - DF: ZTSMSupportAssignment-SupportProfile\r\n
+    \   - DF: ZTSMSupportAssignment-Application\r\n    - DF: ZTSMSupportAssignment-Environment\r\n
+    \   - DF: ZTSMSupportAssignment-Location"
+  RoleName: ZTSM Support Assignment
+- Definition: "---\r\nSections:\r\n  SupportProfile:\r\n    Content:\r\n    - Header:
+    Support Profile\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMSupportProfile-Type\r\n
+    \   - DF: ZTSMSupportProfile-ServiceProfile\r\n    - DF: ZTSMSupportProfile-TechnologyProfile"
+  RoleName: ZTSM Support Profile
+- Definition: "---\r\nSections:\r\n  Profile:\r\n    Content:\r\n    - Header: Technology
+    Profile\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMTechnologyProfile-Type\r\n
+    \   - DF: ZTSMTechnologyProfile-Parent"
+  RoleName: ZTSM Technology Profile

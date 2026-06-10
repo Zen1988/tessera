@@ -1,94 +1,104 @@
 # --
-# Copyright (C) 2026 TESSERA
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
 package Kernel::Modules::AgentGovernanceObjectAdd;
 
+use v5.24;
 use strict;
 use warnings;
+use namespace::autoclean;
+use utf8;
+
+# core modules
+
+# CPAN modules
+
+# OTOBO modules
+use Kernel::Language qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
 
 sub new {
     my ( $Type, %Param ) = @_;
 
+    # allocate new hash for object
     return bless {%Param}, $Type;
 }
 
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my $LayoutObject       = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $ParamObject        = $Kernel::OM->Get('Kernel::System::Web::Request');
-    my $GovernanceDBObject = $Kernel::OM->Get('Kernel::System::GovernanceDB');
+    # get general catalog object
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
 
-    my $Subaction = $Self->{Subaction} || '';
+    # get class list
+    my $ClassList = $GeneralCatalogObject->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    );
 
-    my %GetParam;
-    for my $Name (qw(Class ZTSMCode ZTSMStatus Name Description Definition)) {
-        $GetParam{$Name} = $ParamObject->GetParam( Param => $Name ) || '';
-    }
-    $GetParam{ZTSMStatus} ||= 'Draft';
+    # check for access rights
+    CLASS_ID:
+    for my $ClassID ( sort keys %{$ClassList} ) {
+        my $HasAccess = $Kernel::OM->Get('Kernel::System::GovernanceObject')->Permission(
+            Type    => $Kernel::OM->Get('Kernel::Config')->Get("GovernanceObject::Frontend::$Self->{Action}")->{Permission},
+            Scope   => 'Class',
+            ClassID => $ClassID,
+            UserID  => $Self->{UserID},
+        );
 
-    if ( $Subaction eq 'Create' ) {
-        my @Errors;
-        for my $Needed (qw(ZTSMCode Name)) {
-            push @Errors, $Needed if !$GetParam{$Needed};
-        }
+        next CLASS_ID if $HasAccess;
 
-        if (!@Errors) {
-            my $ObjectID = $GovernanceDBObject->ObjectAdd(
-                %GetParam,
-                UserID => $Self->{UserID},
-            );
-
-            if ($ObjectID) {
-                return $LayoutObject->Redirect(
-                    OP => "Action=AgentGovernanceObjectZoom;ObjectID=$ObjectID",
-                );
-            }
-
-            $GetParam{ErrorMessage} = 'Could not create governance object.';
-        }
-        else {
-            $GetParam{ErrorMessage} = 'Missing required fields: ' . join ', ', @Errors;
-        }
+        # remove from class list when access is denied
+        delete $ClassList->{$ClassID};
     }
 
-    my $Classes = $GovernanceDBObject->ClassList( Valid => 1 ) || {};
-    for my $ClassID ( sort { $Classes->{$a} cmp $Classes->{$b} } keys %{$Classes} ) {
-        my $Class = $Classes->{$ClassID};
+    # get layout object
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    # show the list of CI classes sorted by name
+    for my $ItemID (
+        sort {
+            $LayoutObject->{LanguageObject}->Translate( ${$ClassList}{$a} ) cmp $LayoutObject->{LanguageObject}->Translate( ${$ClassList}{$b} )
+        } keys %{$ClassList}
+        )
+    {
+
+        # output overview item list
         $LayoutObject->Block(
-            Name => 'ClassOption',
+            Name => 'OverviewItemList',
             Data => {
-                Key      => $Class,
-                Value    => $Class,
-                Selected => $GetParam{Class} eq $Class ? ' selected="selected"' : '',
+                ClassID => $ItemID,
+                Name    => $ClassList->{$ItemID},
             },
         );
     }
 
-    my $Statuses = $GovernanceDBObject->StatusList( Valid => 1 ) || {};
-    for my $StatusID ( sort { $Statuses->{$a} cmp $Statuses->{$b} } keys %{$Statuses} ) {
-        my $Status = $Statuses->{$StatusID};
-        $LayoutObject->Block(
-            Name => 'StatusOption',
-            Data => {
-                Key      => $Status,
-                Value    => $Status,
-                Selected => $GetParam{ZTSMStatus} eq $Status ? ' selected="selected"' : '',
-            },
-        );
-    }
-
+    # output header
     return join '',
-        $LayoutObject->Header( Title => 'Add Governance Object' ),
-        $LayoutObject->NavigationBar(),
+        $LayoutObject->Header(
+            Title => Translatable('Add'),
+        ),
+        $LayoutObject->NavigationBar,
         $LayoutObject->Output(
             TemplateFile => 'AgentGovernanceObjectAdd',
-            Data         => \%GetParam,
+            Data         => {
+                %Param,
+            },
         ),
-        $LayoutObject->Footer();
+        $LayoutObject->Footer;
 }
 
 1;

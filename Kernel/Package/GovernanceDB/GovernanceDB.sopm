@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.1</Version>
+    <Version>0.0.10</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -15,23 +15,104 @@
     </IntroUninstall>
 
     <Filelist>
-        <File Location="Kernel/Config/Files/XML/GovernanceDB.xml" Permission="660"></File>
-        <File Location="Kernel/Modules/AdminGovernanceObjectDefinition.pm" Permission="660"></File>
-        <File Location="Kernel/Modules/AgentGovernanceObject.pm" Permission="660"></File>
-        <File Location="Kernel/Modules/AgentGovernanceObjectAdd.pm" Permission="660"></File>
-        <File Location="Kernel/Modules/AgentGovernanceObjectTransform.pm" Permission="660"></File>
-        <File Location="Kernel/Modules/AgentGovernanceObjectZoom.pm" Permission="660"></File>
-        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObject.tt" Permission="660"></File>
-        <File Location="Kernel/Output/HTML/Templates/Standard/AdminGovernanceObjectDefinition.tt" Permission="660"></File>
-        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectAdd.tt" Permission="660"></File>
-        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectTransform.tt" Permission="660"></File>
-        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectZoom.tt" Permission="660"></File>
-        <File Location="Kernel/System/DynamicField/Driver/GovernanceObject.pm" Permission="660"></File>
-        <File Location="Kernel/System/DynamicField/Driver/GovernanceObjectVersion.pm" Permission="660"></File>
-        <File Location="Kernel/System/DynamicField/ObjectType/GovernanceObject.pm" Permission="660"></File>
-        <File Location="Kernel/System/GovernanceDB.pm" Permission="660"></File>
-        <File Location="Kernel/System/GovernanceDB/Number/GOID.pm" Permission="660"></File>
+        <File Location="Kernel/Config/Files/XML/GovernanceDB.xml" Permission="660"/>
+        <File Location="Kernel/Modules/AdminGovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AdminGovernanceObjectDefinition.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectAdd.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectAttachment.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectBulk.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectDelete.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectEdit.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectHistory.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectLabelPrint.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectPrint.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectSearch.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectTransform.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectTreeView.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectZoom.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Dashboard/GovernanceObjectGeneric.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GeneralCatalogPreferences/GovernanceObjectGeneric.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/CustomerOverviewSmall.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/DynamicField.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutCustomer.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutCustomerCompany.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutDate.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutDateTime.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutDummy.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutGeneralCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutInteger.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutText.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/LayoutTextArea.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/MenuGeneric.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/OverviewSmall.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Layout/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Layout/GovernanceObjectTreeView.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/LinkObject/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminGovernanceObjectDefinition.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminGovernanceObject.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObject.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectAdd.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectBulk.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectDelete.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectEdit.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectHistory.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectOverviewNavBar.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectOverviewSmall.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectSearch.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectTransform.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectTreeView.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectZoom.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/DynamicField/Agent/GovernanceObjectLens.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectDetails.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectTreeView/GovernanceObjectTreeViewGraph.tt" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Driver/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Driver/GovernanceObjectVersion.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Event/GovernanceObjectDefinitionSync.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/ObjectType/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceDB.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceDB/Bootstrap.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceDB/Number/GOID.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/ColumnFilter.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Definition.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Event/DefinitionGovernanceObjectUpdate.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Event/DoHistory.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Event/EvaluateScriptFields.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Event/RebuildACLPreselectionCache.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/FieldRestrictions.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/GovernanceObjectACL.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/GovernanceObjectSearch.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/History.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Link.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Mask.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Number.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Number/AutoIncrement.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Permission.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Permission/ClassGroupCheck.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Permission/ItemClassGroupCheck.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Version.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/VersionString/Incremental.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/VersionString/TemplateToolkit.pm" Permission="660"/>
+        <File Location="Kernel/System/ImportExport/ObjectBackend/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/LinkObject/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectAdd.pm" Permission="660"/>
+        <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectUpdate.pm" Permission="660"/>
+        <File Location="Kernel/System/Stats/Dynamic/GovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/System/SysConfig/ValueType/Entity/GovernanceObjectClass.pm" Permission="660"/>
+        <File Location="README.md" Permission="660"/>
+        <File Location="var/governancedb/default_classes.json" Permission="660"/>
     </Filelist>
+
+    <CodeInstall Type="post"><![CDATA[
+        my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
+        $BootstrapObject->InstallDefaults();
+    ]]></CodeInstall>
+
+    <CodeUpgrade Type="post"><![CDATA[
+        my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
+        $BootstrapObject->InstallDefaults();
+    ]]></CodeUpgrade>
 
     <DatabaseInstall Type="post">
         <Insert Type="post" Table="groups_table">
@@ -45,135 +126,221 @@
         </Insert>
 
         <TableCreate Type="post" Name="governance_object">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"></Column>
-            <Column Name="goid" Required="true" Size="100" Type="VARCHAR"></Column>
-            <Column Name="ztsm_code" Required="true" Size="100" Type="VARCHAR"></Column>
-            <Column Name="ztsm_status" Required="true" Size="50" Type="VARCHAR"></Column>
-            <Column Name="class_id" Required="true" Type="INTEGER"></Column>
-            <Column Name="last_version_id" Required="false" Type="BIGINT"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
-            <Column Name="change_time" Required="true" Type="DATE"></Column>
-            <Column Name="change_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="goid" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="ztsm_code" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="ztsm_status" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
             <Unique Name="governance_object_goid">
-                <UniqueColumn Name="goid"></UniqueColumn>
+                <UniqueColumn Name="goid"/>
             </Unique>
             <Unique Name="governance_object_ztsm_code">
-                <UniqueColumn Name="ztsm_code"></UniqueColumn>
+                <UniqueColumn Name="ztsm_code"/>
             </Unique>
             <Index Name="governance_object_ztsm_status">
-                <IndexColumn Name="ztsm_status"></IndexColumn>
+                <IndexColumn Name="ztsm_status"/>
             </Index>
             <Index Name="governance_object_class_id">
-                <IndexColumn Name="class_id"></IndexColumn>
+                <IndexColumn Name="class_id"/>
             </Index>
             <Index Name="governance_object_last_version_id">
-                <IndexColumn Name="last_version_id"></IndexColumn>
+                <IndexColumn Name="last_version_id"/>
             </Index>
             <ForeignKey ForeignTable="general_catalog">
-                <Reference Foreign="id" Local="class_id"></Reference>
+                <Reference Foreign="id" Local="class_id"/>
             </ForeignKey>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_definition">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"></Column>
-            <Column Name="class_id" Required="true" Type="INTEGER"></Column>
-            <Column Name="definition" Required="true" Type="LONGBLOB"></Column>
-            <Column Name="version" Required="true" Type="INTEGER"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="definition" Required="true" Type="LONGBLOB"/>
+            <Column Name="version" Required="true" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
             <ForeignKey ForeignTable="general_catalog">
-                <Reference Foreign="id" Local="class_id"></Reference>
+                <Reference Foreign="id" Local="class_id"/>
             </ForeignKey>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_version">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"></Column>
-            <Column Name="governance_object_id" Required="true" Type="BIGINT"></Column>
-            <Column Name="name" Required="true" Size="250" Type="VARCHAR"></Column>
-            <Column Name="description" Required="false" Size="250" Type="VARCHAR"></Column>
-            <Column Name="definition_id" Required="true" Type="BIGINT"></Column>
-            <Column Name="version_string" Required="true" Size="50" Type="VARCHAR"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="name" Required="true" Size="250" Type="VARCHAR"/>
+            <Column Name="description" Required="false" Size="250" Type="VARCHAR"/>
+            <Column Name="definition_id" Required="true" Type="BIGINT"/>
+            <Column Name="version_string" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
             <Index Name="governance_object_version_object_id">
-                <IndexColumn Name="governance_object_id"></IndexColumn>
+                <IndexColumn Name="governance_object_id"/>
             </Index>
             <Index Name="governance_object_version_definition_id">
-                <IndexColumn Name="definition_id"></IndexColumn>
+                <IndexColumn Name="definition_id"/>
             </Index>
             <ForeignKey ForeignTable="governance_object">
-                <Reference Foreign="id" Local="governance_object_id"></Reference>
+                <Reference Foreign="id" Local="governance_object_id"/>
             </ForeignKey>
             <ForeignKey ForeignTable="governance_object_definition">
-                <Reference Foreign="id" Local="definition_id"></Reference>
+                <Reference Foreign="id" Local="definition_id"/>
             </ForeignKey>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_counter">
-            <Column Name="counter_key" Required="true" PrimaryKey="true" Size="100" Type="VARCHAR"></Column>
-            <Column Name="counter_value" Required="true" Type="BIGINT"></Column>
+            <Column Name="counter_key" Required="true" PrimaryKey="true" Size="100" Type="VARCHAR"/>
+            <Column Name="counter_value" Required="true" Type="BIGINT"/>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_history_type">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="SMALLINT"></Column>
-            <Column Name="name" Required="true" Size="100" Type="VARCHAR"></Column>
-            <Column Name="comments" Required="false" Size="250" Type="VARCHAR"></Column>
-            <Column Name="valid_id" Required="true" Type="SMALLINT"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
-            <Column Name="change_time" Required="true" Type="DATE"></Column>
-            <Column Name="change_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="SMALLINT"/>
+            <Column Name="name" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="comments" Required="false" Size="250" Type="VARCHAR"/>
+            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
             <Unique Name="governance_object_history_type_name">
-                <UniqueColumn Name="name"></UniqueColumn>
+                <UniqueColumn Name="name"/>
             </Unique>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_history">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"></Column>
-            <Column Name="governance_object_id" Required="true" Type="BIGINT"></Column>
-            <Column Name="history_type_id" Required="true" Type="SMALLINT"></Column>
-            <Column Name="name" Required="true" Size="200" Type="VARCHAR"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="history_type_id" Required="true" Type="SMALLINT"/>
+            <Column Name="name" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
             <ForeignKey ForeignTable="governance_object">
-                <Reference Foreign="id" Local="governance_object_id"></Reference>
+                <Reference Foreign="id" Local="governance_object_id"/>
             </ForeignKey>
             <ForeignKey ForeignTable="governance_object_history_type">
-                <Reference Foreign="id" Local="history_type_id"></Reference>
+                <Reference Foreign="id" Local="history_type_id"/>
             </ForeignKey>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_definition_sync">
-            <Column Name="class_id" Required="true" PrimaryKey="true" Type="INTEGER"></Column>
-            <Column Name="definition_hash" Required="true" Size="32" Type="VARCHAR"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
-            <Column Name="change_time" Required="true" Type="DATE"></Column>
-            <Column Name="change_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="class_id" Required="true" PrimaryKey="true" Type="INTEGER"/>
+            <Column Name="definition_hash" Required="true" Size="32" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
         </TableCreate>
 
         <TableCreate Type="post" Name="governance_object_link">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"></Column>
-            <Column Name="source_governance_object_id" Required="false" Type="BIGINT"></Column>
-            <Column Name="source_governance_object_version_id" Required="false" Type="BIGINT"></Column>
-            <Column Name="target_governance_object_id" Required="false" Type="BIGINT"></Column>
-            <Column Name="target_governance_object_version_id" Required="false" Type="BIGINT"></Column>
-            <Column Name="link_type_id" Required="true" Type="SMALLINT"></Column>
-            <Column Name="create_time" Required="true" Type="DATE"></Column>
-            <Column Name="create_by" Required="true" Type="INTEGER"></Column>
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="source_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="source_governance_object_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
             <ForeignKey ForeignTable="governance_object">
-                <Reference Foreign="id" Local="source_governance_object_id"></Reference>
+                <Reference Foreign="id" Local="source_governance_object_id"/>
             </ForeignKey>
             <ForeignKey ForeignTable="governance_object_version">
-                <Reference Foreign="id" Local="source_governance_object_version_id"></Reference>
+                <Reference Foreign="id" Local="source_governance_object_version_id"/>
             </ForeignKey>
             <ForeignKey ForeignTable="governance_object">
-                <Reference Foreign="id" Local="target_governance_object_id"></Reference>
+                <Reference Foreign="id" Local="target_governance_object_id"/>
             </ForeignKey>
             <ForeignKey ForeignTable="governance_object_version">
-                <Reference Foreign="id" Local="target_governance_object_version_id"></Reference>
+                <Reference Foreign="id" Local="target_governance_object_version_id"/>
             </ForeignKey>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="goid" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
+            <Unique Name="governance_object_item_goid"><UniqueColumn Name="goid"/></Unique>
+            <Index Name="governance_object_item_class_id"><IndexColumn Name="class_id"/></Index>
+            <Index Name="governance_object_item_last_version_id"><IndexColumn Name="last_version_id"/></Index>
+            <Index Name="governance_object_item_ztsm_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_definition">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="governance_object_item_definition" Required="true" Type="LONGBLOB"/>
+            <Column Name="dynamicfield_definition" Required="false" Type="LONGBLOB"/>
+            <Column Name="version" Required="true" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_version">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="version_string" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="definition_id" Required="true" Type="INTEGER"/>
+            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
+            <Column Name="description" Required="false" Size="1800000" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
+            <Index Name="governance_object_item_version_object_id"><IndexColumn Name="governance_object_id"/></Index>
+            <Index Name="governance_object_item_version_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_counter">
+            <Column Name="class_id" PrimaryKey="true" Required="true" Type="INTEGER"/>
+            <Column Name="counter_type" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="counter" Required="true" Size="50" Type="VARCHAR"/>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_history_type">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
+            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="comments" Required="false" Size="191" Type="VARCHAR"/>
+            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="false" Type="DATE"/>
+            <Column Name="change_by" Required="false" Type="INTEGER"/>
+            <Unique Name="governance_object_item_history_type_name"><UniqueColumn Name="name"/></Unique>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_history">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="type_id" Required="true" Type="INTEGER"/>
+            <Column Name="content" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_definition_sync">
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="field_id" Required="true" Type="INTEGER"/>
+        </TableCreate>
+
+        <TableCreate Type="post" Name="governance_object_item_link">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="source_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="source_governance_object_item_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_item_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
+            <Column Name="dynamic_field_id" Required="false" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
         </TableCreate>
 
         <Insert Type="post" Table="general_catalog">
@@ -204,15 +371,6 @@
             <Data Key="change_by">1</Data>
         </Insert>
 
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::GovernanceObject::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Book</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
         <Insert Type="post" Table="general_catalog">
             <Data Key="general_catalog_class" Type="Quote">ZTSM::GovernanceObject::Class</Data>
             <Data Key="name" Translatable="1" Type="Quote">BlueBook</Data>
@@ -249,16 +407,6 @@
             <Data Key="change_time">current_timestamp</Data>
             <Data Key="change_by">1</Data>
         </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::GovernanceObject::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">GovernanceConfigItem</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-
         <Insert Type="post" Table="general_catalog">
             <Data Key="general_catalog_class" Type="Quote">ZTSM::GovernanceObject::Status</Data>
             <Data Key="name" Translatable="1" Type="Quote">Draft</Data>
@@ -341,16 +489,248 @@
             <Data Key="change_time">current_timestamp</Data>
             <Data Key="change_by">1</Data>
         </Insert>
+    
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">GovernanceObjectCreate</Data>
+            <Data Key="comments" Type="Quote">GovernanceObjectCreate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">GovernanceObjectUpdate</Data>
+            <Data Key="comments" Type="Quote">GovernanceObjectUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">GovernanceObjectDelete</Data>
+            <Data Key="comments" Type="Quote">GovernanceObjectDelete history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">LinkAdd</Data>
+            <Data Key="comments" Type="Quote">LinkAdd history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">LinkDelete</Data>
+            <Data Key="comments" Type="Quote">LinkDelete history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">NameUpdate</Data>
+            <Data Key="comments" Type="Quote">NameUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">DefinitionUpdate</Data>
+            <Data Key="comments" Type="Quote">DefinitionUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">VersionCreate</Data>
+            <Data Key="comments" Type="Quote">VersionCreate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">VersionUpdate</Data>
+            <Data Key="comments" Type="Quote">VersionUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">DefinitionCreate</Data>
+            <Data Key="comments" Type="Quote">DefinitionCreate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">VersionDelete</Data>
+            <Data Key="comments" Type="Quote">VersionDelete history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">AttachmentAdd</Data>
+            <Data Key="comments" Type="Quote">AttachmentAdd history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">AttachmentDelete</Data>
+            <Data Key="comments" Type="Quote">AttachmentDelete history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">ValueUpdate</Data>
+            <Data Key="comments" Type="Quote">ValueUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">DeploymentStateUpdate</Data>
+            <Data Key="comments" Type="Quote">DeploymentStateUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
+        <Insert Type="post" Table="governance_object_item_history_type">
+            <Data Key="name" Type="Quote">IncidentStateUpdate</Data>
+            <Data Key="comments" Type="Quote">IncidentStateUpdate history entry.</Data>
+            <Data Key="valid_id">1</Data>
+            <Data Key="create_time">current_timestamp</Data>
+            <Data Key="create_by">1</Data>
+            <Data Key="change_time">current_timestamp</Data>
+            <Data Key="change_by">1</Data>
+        </Insert>
     </DatabaseInstall>
-
+    <DatabaseUpgrade>
+        <TableCreate Type="post" Name="governance_object_item" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="goid" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
+            <Unique Name="governance_object_item_goid"><UniqueColumn Name="goid"/></Unique>
+            <Index Name="governance_object_item_class_id"><IndexColumn Name="class_id"/></Index>
+            <Index Name="governance_object_item_last_version_id"><IndexColumn Name="last_version_id"/></Index>
+            <Index Name="governance_object_item_ztsm_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_definition" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="governance_object_item_definition" Required="true" Type="LONGBLOB"/>
+            <Column Name="dynamicfield_definition" Required="false" Type="LONGBLOB"/>
+            <Column Name="version" Required="true" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_version" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="version_string" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="definition_id" Required="true" Type="INTEGER"/>
+            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
+            <Column Name="description" Required="false" Size="1800000" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Column Name="change_by" Required="true" Type="INTEGER"/>
+            <Index Name="governance_object_item_version_object_id"><IndexColumn Name="governance_object_id"/></Index>
+            <Index Name="governance_object_item_version_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_counter" Version="0.0.8">
+            <Column Name="class_id" PrimaryKey="true" Required="true" Type="INTEGER"/>
+            <Column Name="counter_type" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="counter" Required="true" Size="50" Type="VARCHAR"/>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_history_type" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
+            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="comments" Required="false" Size="191" Type="VARCHAR"/>
+            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Column Name="change_time" Required="false" Type="DATE"/>
+            <Column Name="change_by" Required="false" Type="INTEGER"/>
+            <Unique Name="governance_object_item_history_type_name"><UniqueColumn Name="name"/></Unique>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_history" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="governance_object_id" Required="true" Type="BIGINT"/>
+            <Column Name="type_id" Required="true" Type="INTEGER"/>
+            <Column Name="content" Required="true" Size="191" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_definition_sync" Version="0.0.8">
+            <Column Name="class_id" Required="true" Type="INTEGER"/>
+            <Column Name="field_id" Required="true" Type="INTEGER"/>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_item_link" Version="0.0.8">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="source_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="source_governance_object_item_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_id" Required="false" Type="BIGINT"/>
+            <Column Name="target_governance_object_item_version_id" Required="false" Type="BIGINT"/>
+            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
+            <Column Name="dynamic_field_id" Required="false" Type="INTEGER"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+        </TableCreate>
+    </DatabaseUpgrade>
     <DatabaseUninstall Type="pre">
-        <TableDrop Type="pre" Name="governance_object_definition_sync"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_link"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_counter"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_history"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_history_type"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_version"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object_definition"></TableDrop>
-        <TableDrop Type="pre" Name="governance_object"></TableDrop>
+        <TableDrop Type="pre" Name="governance_object_item"/>
+        <TableDrop Type="pre" Name="governance_object_item_definition"/>
+        <TableDrop Type="pre" Name="governance_object_item_version"/>
+        <TableDrop Type="pre" Name="governance_object_item_history_type"/>
+        <TableDrop Type="pre" Name="governance_object_item_history"/>
+        <TableDrop Type="pre" Name="governance_object_item_counter"/>
+        <TableDrop Type="pre" Name="governance_object_item_link"/>
+        <TableDrop Type="pre" Name="governance_object_item_definition_sync"/>
+        <TableDrop Type="pre" Name="governance_object_definition_sync"/>
+        <TableDrop Type="pre" Name="governance_object_link"/>
+        <TableDrop Type="pre" Name="governance_object_counter"/>
+        <TableDrop Type="pre" Name="governance_object_history"/>
+        <TableDrop Type="pre" Name="governance_object_history_type"/>
+        <TableDrop Type="pre" Name="governance_object_version"/>
+        <TableDrop Type="pre" Name="governance_object_definition"/>
+        <TableDrop Type="pre" Name="governance_object"/>
     </DatabaseUninstall>
 </otobo_package>

@@ -23,44 +23,55 @@ sub Run {
     my $GovernanceDBObject = $Kernel::OM->Get('Kernel::System::GovernanceDB');
     my $UserObject         = $Kernel::OM->Get('Kernel::System::User');
 
-    my $ClassList = $GovernanceDBObject->ClassList( Valid => 1 ) || {};
+    my $Scope = $ParamObject->GetParam( Param => 'Scope' ) || 'Class';
+    $Scope = $Scope eq 'Role' ? 'Role' : 'Class';
 
-    my $ClassID = $ParamObject->GetParam( Param => 'ClassID' )
-        || ( sort keys %{$ClassList} )[0];
+    my $TargetList = $Scope eq 'Role'
+        ? ( $GovernanceDBObject->RoleList( Valid => 1 ) || {} )
+        : ( $GovernanceDBObject->ClassList( Valid => 1 ) || {} );
+
+    my $TargetIDParam = $Scope . 'ID';
+    my $TargetID = $ParamObject->GetParam( Param => $TargetIDParam )
+        || ( sort keys %{$TargetList} )[0];
 
     if ( $Self->{Subaction} && $Self->{Subaction} eq 'DefinitionSave' ) {
         my $Definition = $ParamObject->GetParam( Param => 'Definition' ) || '';
 
-        if ( !$ClassID || !$Definition ) {
+        if ( !$TargetID || !$Definition ) {
             return $LayoutObject->ErrorScreen(
-                Message => $LayoutObject->{LanguageObject}->Translate('Need class and definition.'),
+                Message => $LayoutObject->{LanguageObject}->Translate('Need target and definition.'),
             );
         }
 
         my $DefinitionID = $GovernanceDBObject->DefinitionAdd(
-            ClassID    => $ClassID,
+            ( $Scope eq 'Role' ? ( RoleID => $TargetID ) : ( ClassID => $TargetID ) ),
             Definition => $Definition,
             UserID     => $Self->{UserID},
         );
 
         return $LayoutObject->ErrorScreen(
-            Message => $LayoutObject->{LanguageObject}->Translate('Could not save GovernanceObject definition.'),
+            Message => $LayoutObject->{LanguageObject}->Translate('Could not save Governance Object definition.'),
         ) if !$DefinitionID;
 
         return $LayoutObject->Redirect(
-            OP => "Action=$Self->{Action};ClassID=$ClassID",
+            OP => "Action=$Self->{Action};Scope=$Scope;$TargetIDParam=$TargetID",
         );
     }
 
-    my $Definition = $GovernanceDBObject->DefinitionGet( ClassID => $ClassID )
+    my $Definition = $GovernanceDBObject->DefinitionGet(
+        $Scope eq 'Role' ? ( RoleID => $TargetID ) : ( ClassID => $TargetID )
+        )
         || {
-        ClassID    => $ClassID,
-        Class      => $ClassList->{$ClassID} || '',
+        ( $Scope eq 'Role'
+            ? ( RoleID => $TargetID, Role => $TargetList->{$TargetID} || '' )
+            : ( ClassID => $TargetID, Class => $TargetList->{$TargetID} || '' ) ),
         Definition => "---\nFields: []\n",
         Version    => 0,
         };
 
-    my $DefinitionList = $GovernanceDBObject->DefinitionList( ClassID => $ClassID ) || [];
+    my $DefinitionList = $GovernanceDBObject->DefinitionList(
+        $Scope eq 'Role' ? ( RoleID => $TargetID ) : ( ClassID => $TargetID )
+    ) || [];
 
     for my $DefinitionRow ( reverse @{$DefinitionList} ) {
         my $FullName = $UserObject->UserName(
@@ -77,9 +88,20 @@ sub Run {
     }
 
     my $ClassOptionStrg = $LayoutObject->BuildSelection(
-        Data        => $ClassList,
-        Name        => 'ClassID',
-        SelectedID  => $ClassID,
+        Data        => {
+            Class => 'Class',
+            Role  => 'Role',
+        },
+        Name        => 'Scope',
+        SelectedID  => $Scope,
+        Translation => 0,
+        Class       => 'Modernize',
+    );
+
+    my $TargetOptionStrg = $LayoutObject->BuildSelection(
+        Data        => $TargetList,
+        Name        => $TargetIDParam,
+        SelectedID  => $TargetID,
         Translation => 0,
         Class       => 'Modernize',
     );
@@ -94,9 +116,13 @@ sub Run {
             TemplateFile => 'AdminGovernanceObjectDefinition',
             Data         => {
                 %Param,
-                ClassID         => $ClassID,
-                Class           => $ClassList->{$ClassID} || '',
+                Scope           => $Scope,
+                ScopeOptionStrg => $ClassOptionStrg,
+                TargetID        => $TargetID,
+                TargetIDParam   => $TargetIDParam,
+                Target          => $TargetList->{$TargetID} || '',
                 ClassOptionStrg => $ClassOptionStrg,
+                TargetOptionStrg => $TargetOptionStrg,
                 Definition      => $Definition->{Definition},
                 Version         => $Definition->{Version},
                 Rows            => $EditorRows,
