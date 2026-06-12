@@ -1104,12 +1104,7 @@ sub _RiskAssessmentWorkspaceHTML {
         Fields => [ map { $_->{Field} } ( @Columns, @Targets ) ],
     );
 
-    my $HTML = '<div class="ZTSMRiskAssessmentScroll"><table class="ZTSMRiskAssessmentTable">';
-    $HTML .= '<thead><tr><th class="ZTSMRiskAssessmentAction"></th>';
-    for my $Column (@Columns) {
-        $HTML .= '<th>' . _HTML( $Column->{Label} ) . '</th>';
-    }
-    $HTML .= '</tr></thead><tbody id="ZTSMRiskAssessmentRows">';
+    my $HTML = '<div id="ZTSMRiskAssessmentRows" class="ZTSMRiskAssessmentRows">';
 
     my $Index = 0;
     for my $Row ( @{$Rows} ) {
@@ -1122,7 +1117,7 @@ sub _RiskAssessmentWorkspaceHTML {
         );
     }
 
-    $HTML .= '</tbody></table></div>';
+    $HTML .= '</div>';
     $HTML .= '<template id="ZTSMRiskAssessmentTemplate">'
         . $Self->_RiskAssessmentRowHTML(
         Row      => {},
@@ -1142,39 +1137,58 @@ sub _RiskAssessmentRowHTML {
 
     my $Index = $Param{Index};
     my $Row   = $Param{Row} || {};
+    my %Column = map { $_->{Field} => $_ } @{ $Param{Columns} || [] };
+    my %Target = map { $_->{Field} => $_ } @{ $Param{Targets} || [] };
 
-    my $HTML = '<tr class="ZTSMRiskAssessmentRow" data-row-index="' . _HTML($Index) . '">';
-    $HTML .= '<td class="ZTSMRiskAssessmentAction">'
-        . '<input type="hidden" name="RA_RowIndex" value="' . _HTML($Index) . '"/>'
-        . '<button type="button" class="ZTSMRiskAssessmentRemove" title="Remove row">-</button>'
-        . '</td>';
+    my $FieldHTML = sub {
+        my ($Field) = @_;
+        my $Definition = $Column{$Field} || $Target{$Field} || {};
 
-    for my $Column ( @{ $Param{Columns} } ) {
-        my $Field = $Column->{Field};
-        $HTML .= '<td>' . $Self->_RiskAssessmentInputHTML(
-            Field  => $Field,
-            Type   => $Column->{Type},
-            Index  => $Index,
-            Value  => $Row->{$Field},
-            Config => $Param{Configs}->{$Field},
-        ) . '</td>';
-    }
-
-    $HTML .= '</tr><tr class="ZTSMRiskAssessmentTargets" data-row-index="' . _HTML($Index) . '"><td></td><td colspan="12">';
-    for my $Target ( @{ $Param{Targets} } ) {
-        my $Field = $Target->{Field};
-        $HTML .= '<div class="ZTSMRiskAssessmentTargetField">'
-            . '<strong>' . _HTML( $Target->{Label} ) . '</strong>'
+        return '<div class="ZTSMRiskAssessmentField ZTSMRiskAssessmentField_' . _HTML($Field) . '">'
+            . '<label>' . _HTML( $Definition->{Label} || $Field ) . '</label>'
             . $Self->_RiskAssessmentInputHTML(
             Field  => $Field,
-            Type   => $Target->{Type},
+            Type   => $Definition->{Type},
             Index  => $Index,
             Value  => $Row->{$Field},
             Config => $Param{Configs}->{$Field},
             )
             . '</div>';
-    }
-    $HTML .= '</td></tr>';
+    };
+
+    my $HTML = '<section class="ZTSMRiskAssessmentRow" data-row-index="' . _HTML($Index) . '">';
+    $HTML .= '<div class="ZTSMRiskAssessmentRowHead">'
+        . '<input type="hidden" name="RA_RowIndex" value="' . _HTML($Index) . '"/>'
+        . '<strong>Risk Row <span class="ZTSMRiskAssessmentRowNumber"></span></strong>'
+        . '<button type="button" class="ZTSMRiskAssessmentRemove" title="Remove row">-</button>'
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid2">'
+        . $FieldHTML->('ZRM-ImpactCategory')
+        . $FieldHTML->('ZRM-RiskCategory')
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid2">'
+        . $FieldHTML->('ZRM-RiskStatement')
+        . $FieldHTML->('ZRM-RiskDetail')
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid3">'
+        . $FieldHTML->('ZRM-InherentLikelihood')
+        . $FieldHTML->('ZRM-InherentImpact')
+        . $FieldHTML->('ZRM-InherentCalculatedRisk')
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid2">'
+        . $FieldHTML->('ZRM-RiskAction')
+        . $FieldHTML->('ZRM-RiskPlan')
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid3">'
+        . $FieldHTML->('ZRM-ResidualLikelihood')
+        . $FieldHTML->('ZRM-ResidualImpact')
+        . $FieldHTML->('ZRM-ResidualCalculatedRisk')
+        . '</div>';
+    $HTML .= '<div class="ZTSMRiskAssessmentGrid ZTSMRiskAssessmentGrid2">'
+        . $FieldHTML->('ZRM-RiskTargetCI')
+        . $FieldHTML->('ZRM-RiskTargetGO')
+        . '</div>';
+    $HTML .= '</section>';
 
     return $HTML;
 }
@@ -1185,6 +1199,10 @@ sub _RiskAssessmentInputHTML {
     my $Field = $Param{Field};
     my $Index = $Param{Index};
     my $Value = $Param{Value};
+
+    if ( IsHashRefWithData( $Param{Config} ) && ( $Param{Config}->{FieldType} || '' ) =~ m{\A(?:ConfigItem|ConfigItemVersion|GovernanceObject|Reference)\z} ) {
+        return $Self->_RiskAssessmentReferenceInputHTML(%Param);
+    }
 
     if ( IsHashRefWithData( $Param{Config} ) ) {
         my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->EditFieldRender(
@@ -1223,6 +1241,26 @@ sub _RiskAssessmentInputHTML {
     }
 
     return '<input type="text" class="' . $FieldClass . '" name="' . _HTML($Name) . '" value="' . _HTML($EditValue) . '"/>';
+}
+
+sub _RiskAssessmentReferenceInputHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Field = $Param{Field};
+    my $Index = $Param{Index};
+    my $Name  = 'RA_' . $Index . '_' . $Field;
+    my $ID    = 'DynamicField_' . $Field . '_' . $Index;
+    my $Value = _NormalizeValue( $Param{Value} );
+    my $Label = $Param{Config}->{Label} || $Field;
+    my $VisibleValue = $Self->_RiskAssessmentDisplayValue(
+        Field => $Field,
+        Type  => $Param{Type},
+        Value => $Value,
+    );
+
+    return '<input type="hidden" id="' . _HTML($ID) . '" name="' . _HTML($Name) . '" value="' . _HTML( $Value // '' ) . '" />'
+        . '<input type="text" class="DynamicFieldReference DynamicFieldText Modernize W100pc" id="Autocomplete_' . _HTML($ID) . '" name="Autocomplete_' . _HTML($ID)
+        . '" title="' . _HTML($Label) . '" value="' . _HTML($VisibleValue) . '" data-dynamic-field="' . _HTML($Field) . '" />';
 }
 
 sub _RiskAssessmentFieldConfigs {

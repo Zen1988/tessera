@@ -6,9 +6,12 @@
     <style>
         .ZTSMRiskAssessmentPage #oooMainBox.ZTSMRiskAssessmentLayout {
             --ZTSMNavigationOffset: 56px;
+            --ZTSMRiskViewportWidth: 1200px;
+            --ZTSMRiskViewportHeight: 720px;
             width: auto;
             max-width: none;
-            padding: 24px 28px 42px calc(var(--ZTSMNavigationOffset) + 28px);
+            min-height: 100vh;
+            padding: 16px 20px 32px calc(var(--ZTSMNavigationOffset) + 20px);
             background: #f4f6fb;
             transition: padding-left 0.3s ease;
         }
@@ -16,89 +19,111 @@
             padding: 0;
         }
         .ZTSMRiskAssessmentShell h1 {
-            margin: 0 0 18px;
-            font-size: 22px;
+            margin: 0 0 12px;
+            font-size: 18px;
             line-height: 1.3;
         }
-        .ZTSMRiskAssessmentScroll {
-            overflow-x: auto;
+        .ZTSMRiskAssessmentRows {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: max(360px, calc(var(--ZTSMRiskViewportHeight) - 260px));
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .ZTSMRiskAssessmentRow {
+            padding: 12px;
             border: 1px solid #d6d9e6;
+            border-radius: 8px;
             background: #fff;
+            box-shadow: 0 8px 18px rgba(3, 10, 46, 0.05);
         }
-        .ZTSMRiskAssessmentTable {
-            width: 100%;
-            min-width: 1920px;
-            border-collapse: collapse;
-        }
-        .ZTSMRiskAssessmentTable th,
-        .ZTSMRiskAssessmentTable td {
-            padding: 8px;
-            border: 1px solid #d6d9e6;
-            vertical-align: top;
-        }
-        .ZTSMRiskAssessmentTable th {
-            background: #f3f5fb;
+        .ZTSMRiskAssessmentRowHead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
             color: #11194f;
+            font-size: 12px;
+        }
+        .ZTSMRiskAssessmentGrid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .ZTSMRiskAssessmentGrid2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .ZTSMRiskAssessmentGrid3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .ZTSMRiskAssessmentField label {
+            display: block;
+            margin: 0 0 4px;
+            color: #555b82;
+            font-size: 11px;
             font-weight: 700;
-            text-align: left;
+            line-height: 1.2;
         }
-        .ZTSMRiskAssessmentTable input,
-        .ZTSMRiskAssessmentTable select,
-        .ZTSMRiskAssessmentTable textarea,
-        .ZTSMRiskAssessmentTable .InputField_Container {
+        .ZTSMRiskAssessmentField input,
+        .ZTSMRiskAssessmentField select,
+        .ZTSMRiskAssessmentField textarea,
+        .ZTSMRiskAssessmentField .InputField_Container {
             width: 100%;
-            min-width: 120px;
+            min-width: 0;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+        .ZTSMRiskAssessmentField input,
+        .ZTSMRiskAssessmentField select {
+            min-height: 30px;
+        }
+        .ZTSMRiskAssessmentField .InputField_InputContainer,
+        .ZTSMRiskAssessmentField .InputField_Selection {
+            width: 100%;
             box-sizing: border-box;
         }
-        .ZTSMRiskAssessmentTable .InputField_InputContainer,
-        .ZTSMRiskAssessmentTable .InputField_Selection {
-            width: 100%;
-            box-sizing: border-box;
+        .ZTSMRiskAssessmentField .InputField_Selection {
+            min-height: 30px;
+            padding: 5px 8px;
+            font-size: 12px;
         }
-        .ZTSMRiskAssessmentTable .InputField_Selection {
-            min-height: 34px;
-            padding: 6px 10px;
-        }
-        .ZTSMRiskAssessmentTable textarea {
-            min-height: 96px;
+        .ZTSMRiskAssessmentField textarea {
+            min-height: 72px;
             resize: vertical;
-        }
-        .ZTSMRiskAssessmentAction {
-            width: 44px;
-            text-align: center;
         }
         .ZTSMRiskAssessmentRemove,
         .ZTSMRiskAssessmentAdd {
-            min-width: 34px;
-            min-height: 30px;
+            min-width: 32px;
+            min-height: 28px;
             border-radius: 4px;
         }
-        .ZTSMRiskAssessmentTargets td {
-            background: #fafbff;
+        .ZTSMRiskAssessmentRemarks {
+            margin-top: 12px;
         }
-        .ZTSMRiskAssessmentTargetField {
-            display: inline-block;
-            width: 48%;
-            margin-right: 1.5%;
-            color: #555b82;
-            vertical-align: top;
-        }
-        .ZTSMRiskAssessmentTargetField strong {
+        .ZTSMRiskAssessmentRemarks label {
             display: block;
             margin-bottom: 4px;
+            font-size: 12px;
             font-weight: 700;
-        }
-        .ZTSMRiskAssessmentRemarks {
-            margin-top: 18px;
+            color: #555b82;
         }
         .ZTSMRiskAssessmentRemarks textarea {
             width: 100%;
-            min-height: 120px;
+            min-height: 90px;
             box-sizing: border-box;
+            font-size: 12px;
         }
         .ZTSMRiskAssessmentActions {
-            margin-top: 18px;
+            margin-top: 12px;
             text-align: right;
+        }
+        @media (max-width: 980px) {
+            .ZTSMRiskAssessmentGrid2,
+            .ZTSMRiskAssessmentGrid3 {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
@@ -146,6 +171,29 @@
         var template = document.getElementById('ZTSMRiskAssessmentTemplate');
         var nextIndex = body ? body.querySelectorAll('.ZTSMRiskAssessmentRow').length : 0;
 
+        function syncViewportSize() {
+            var mainBox = document.querySelector('.ZTSMRiskAssessmentPage #oooMainBox.ZTSMRiskAssessmentLayout');
+            var navigation = document.getElementById('oooNavigation');
+            var navWidth = navigation ? navigation.getBoundingClientRect().width : 0;
+            if (!mainBox) {
+                return;
+            }
+            mainBox.style.setProperty('--ZTSMRiskViewportWidth', Math.max(320, window.innerWidth - navWidth) + 'px');
+            mainBox.style.setProperty('--ZTSMRiskViewportHeight', Math.max(360, window.innerHeight) + 'px');
+        }
+
+        function syncRowNumbers() {
+            if (!body) {
+                return;
+            }
+            body.querySelectorAll('.ZTSMRiskAssessmentRow').forEach(function (row, index) {
+                var number = row.querySelector('.ZTSMRiskAssessmentRowNumber');
+                if (number) {
+                    number.textContent = String(index + 1);
+                }
+            });
+        }
+
         function bindRemove(scope) {
             var buttons = (scope || document).querySelectorAll('.ZTSMRiskAssessmentRemove');
             buttons.forEach(function (button) {
@@ -154,20 +202,13 @@
                     if (!row) {
                         return;
                     }
-                    var index = row.getAttribute('data-row-index');
-                    var targets = body.querySelector('.ZTSMRiskAssessmentTargets[data-row-index="' + index + '"]');
                     if (body.querySelectorAll('.ZTSMRiskAssessmentRow').length <= 1) {
                         row.querySelectorAll('input[type="text"], input[type="hidden"], textarea').forEach(function (field) { field.value = ''; });
                         row.querySelectorAll('select').forEach(function (field) { field.selectedIndex = 0; });
-                        if (targets) {
-                            targets.querySelectorAll('input[type="text"], input[type="hidden"], textarea').forEach(function (field) { field.value = ''; });
-                        }
                         return;
                     }
-                    if (targets) {
-                        targets.remove();
-                    }
                     row.remove();
+                    syncRowNumbers();
                 };
             });
         }
@@ -248,34 +289,54 @@
             });
         }
 
-        function initializeDynamicFields() {
-            if (window.Core && Core.UI && Core.UI.InputFields && typeof Core.UI.InputFields.Init === 'function') {
-                Core.UI.InputFields.Init();
+        function initializeReferenceFields() {
+            if (!window.Core || !Core.Agent || !Core.Agent.DynamicFieldReferenceSearch || typeof Core.Agent.DynamicFieldReferenceSearch.InitElement !== 'function' || !window.jQuery) {
+                return;
             }
-            if (window.Core && Core.Customer && Core.Customer.InputFields && typeof Core.Customer.InputFields.Init === 'function') {
-                Core.Customer.InputFields.Init();
+
+            var autoComplete = Core.Config && typeof Core.Config.Get === 'function' ? Core.Config.Get('Autocomplete') : {};
+            var autoCompleteActive = true;
+            if (
+                autoComplete
+                && autoComplete.DynamicFieldReference
+                && typeof autoComplete.DynamicFieldReference.AutoCompleteActive !== 'undefined'
+            ) {
+                autoCompleteActive = autoComplete.DynamicFieldReference.AutoCompleteActive !== '0';
             }
+
+            jQuery('.ZTSMRiskAssessmentField .DynamicFieldReference').each(function () {
+                var field = jQuery(this);
+                if (field.data('ZTSMReferenceReady')) {
+                    return;
+                }
+                Core.Agent.DynamicFieldReferenceSearch.InitElement(field, autoCompleteActive);
+                field.data('ZTSMReferenceReady', true);
+            });
         }
 
         if (addButton && body && template) {
             addButton.onclick = function () {
                 var html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex++));
-                var wrapper = document.createElement('tbody');
+                var wrapper = document.createElement('div');
                 wrapper.innerHTML = html;
                 while (wrapper.firstElementChild) {
                     body.appendChild(wrapper.firstElementChild);
                 }
                 bindRemove(body);
                 bindCalculation(body);
-                initializeDynamicFields();
+                syncRowNumbers();
+                initializeReferenceFields();
             };
         }
 
         bindRemove(document);
         bindCalculation(document);
-        initializeDynamicFields();
+        syncRowNumbers();
+        initializeReferenceFields();
         syncNavigationOffset();
+        syncViewportSize();
         window.addEventListener('resize', syncNavigationOffset);
+        window.addEventListener('resize', syncViewportSize);
     }());
     </script>
 </div>
