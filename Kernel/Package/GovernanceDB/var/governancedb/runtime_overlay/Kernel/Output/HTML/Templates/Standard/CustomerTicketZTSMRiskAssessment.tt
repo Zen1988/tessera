@@ -2,10 +2,18 @@
 # Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt
 # --
 
-<div class="MainBox ARIARoleMain">
+<div id="oooContent" class="TicketZoom ZTSMRiskAssessmentPage ARIARoleMain">
     <style>
+        .ZTSMRiskAssessmentPage #oooMainBox.ZTSMRiskAssessmentLayout {
+            --ZTSMNavigationOffset: 56px;
+            width: auto;
+            max-width: none;
+            padding: 24px 28px 42px calc(var(--ZTSMNavigationOffset) + 28px);
+            background: #f4f6fb;
+            transition: padding-left 0.3s ease;
+        }
         .ZTSMRiskAssessmentShell {
-            padding: 24px;
+            padding: 0;
         }
         .ZTSMRiskAssessmentShell h1 {
             margin: 0 0 18px;
@@ -36,10 +44,24 @@
         }
         .ZTSMRiskAssessmentTable input,
         .ZTSMRiskAssessmentTable select,
-        .ZTSMRiskAssessmentTable textarea {
+        .ZTSMRiskAssessmentTable textarea,
+        .ZTSMRiskAssessmentTable .InputField_Container {
             width: 100%;
             min-width: 120px;
             box-sizing: border-box;
+        }
+        .ZTSMRiskAssessmentTable .InputField_InputContainer,
+        .ZTSMRiskAssessmentTable .InputField_Selection {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ZTSMRiskAssessmentTable .InputField_Selection {
+            min-height: 34px;
+            padding: 6px 10px;
+        }
+        .ZTSMRiskAssessmentTable textarea {
+            min-height: 96px;
+            resize: vertical;
         }
         .ZTSMRiskAssessmentAction {
             width: 44px;
@@ -54,17 +76,17 @@
         .ZTSMRiskAssessmentTargets td {
             background: #fafbff;
         }
-        .ZTSMRiskAssessmentTargets label {
+        .ZTSMRiskAssessmentTargetField {
             display: inline-block;
             width: 48%;
             margin-right: 1.5%;
             color: #555b82;
-            font-weight: 700;
+            vertical-align: top;
         }
-        .ZTSMRiskAssessmentTargets input {
+        .ZTSMRiskAssessmentTargetField strong {
             display: block;
-            margin-top: 4px;
-            font-weight: 400;
+            margin-bottom: 4px;
+            font-weight: 700;
         }
         .ZTSMRiskAssessmentRemarks {
             margin-top: 18px;
@@ -80,6 +102,7 @@
         }
     </style>
 
+    <div id="oooMainBox" class="ZTSMRiskAssessmentLayout">
     <div class="ZTSMRiskAssessmentShell">
         <h1>[% Translate("Risk Assessment") | html %] [% Data.TicketNumber | html %]</h1>
         <form action="[% Env("CGIHandle") | html %]" method="post" class="Validate PreventMultipleSubmits">
@@ -105,9 +128,19 @@
             </div>
         </form>
     </div>
+    </div>
 
     <script>
     (function () {
+        function syncNavigationOffset() {
+            var mainBox = document.querySelector('.ZTSMRiskAssessmentPage #oooMainBox.ZTSMRiskAssessmentLayout');
+            var navigation = document.getElementById('oooNavigation');
+            if (!mainBox || !navigation) {
+                return;
+            }
+            mainBox.style.setProperty('--ZTSMNavigationOffset', navigation.getBoundingClientRect().width + 'px');
+        }
+
         var addButton = document.querySelector('.ZTSMRiskAssessmentAdd');
         var body = document.getElementById('ZTSMRiskAssessmentRows');
         var template = document.getElementById('ZTSMRiskAssessmentTemplate');
@@ -124,10 +157,10 @@
                     var index = row.getAttribute('data-row-index');
                     var targets = body.querySelector('.ZTSMRiskAssessmentTargets[data-row-index="' + index + '"]');
                     if (body.querySelectorAll('.ZTSMRiskAssessmentRow').length <= 1) {
-                        row.querySelectorAll('input[type="text"], textarea').forEach(function (field) { field.value = ''; });
+                        row.querySelectorAll('input[type="text"], input[type="hidden"], textarea').forEach(function (field) { field.value = ''; });
                         row.querySelectorAll('select').forEach(function (field) { field.selectedIndex = 0; });
                         if (targets) {
-                            targets.querySelectorAll('input[type="text"]').forEach(function (field) { field.value = ''; });
+                            targets.querySelectorAll('input[type="text"], input[type="hidden"], textarea').forEach(function (field) { field.value = ''; });
                         }
                         return;
                     }
@@ -139,6 +172,91 @@
             });
         }
 
+        function fieldValue(row, fieldName) {
+            var field = row.querySelector('[name="' + fieldName + '"]');
+            if (!field) {
+                return '';
+            }
+
+            if (field.tagName === 'SELECT') {
+                var option = field.options[field.selectedIndex];
+                return option ? (option.text || option.value || '') : '';
+            }
+
+            return field.value || '';
+        }
+
+        function scoreValue(value) {
+            value = String(value || '').toLowerCase();
+
+            var numeric = value.match(/(?:^|[^0-9])([1-5])(?:[^0-9]|$)/);
+            if (numeric) {
+                return Number(numeric[1]);
+            }
+
+            if (value.indexOf('very low') >= 0 || value.indexOf('negligible') >= 0) {
+                return 1;
+            }
+            if (value.indexOf('very high') >= 0 || value.indexOf('critical') >= 0) {
+                return 5;
+            }
+            if (value.indexOf('high') >= 0 || value.indexOf('major') >= 0) {
+                return 4;
+            }
+            if (value.indexOf('medium') >= 0 || value.indexOf('moderate') >= 0) {
+                return 3;
+            }
+            if (value.indexOf('low') >= 0 || value.indexOf('minor') >= 0) {
+                return 2;
+            }
+            return 0;
+        }
+
+        function setField(row, fieldName, value) {
+            row.querySelectorAll('[name="' + fieldName + '"]').forEach(function (field) {
+                field.value = value;
+                field.setAttribute('readonly', 'readonly');
+            });
+        }
+
+        function recalculateRow(row) {
+            var index = row.getAttribute('data-row-index');
+            if (!index) {
+                return;
+            }
+
+            var inherentLikelihood = scoreValue(fieldValue(row, 'RA_' + index + '_ZRM-InherentLikelihood'));
+            var inherentImpact = scoreValue(fieldValue(row, 'RA_' + index + '_ZRM-InherentImpact'));
+            var residualLikelihood = scoreValue(fieldValue(row, 'RA_' + index + '_ZRM-ResidualLikelihood'));
+            var residualImpact = scoreValue(fieldValue(row, 'RA_' + index + '_ZRM-ResidualImpact'));
+
+            setField(row, 'RA_' + index + '_ZRM-InherentCalculatedRisk', inherentLikelihood && inherentImpact ? inherentLikelihood * inherentImpact : '');
+            setField(row, 'RA_' + index + '_ZRM-ResidualCalculatedRisk', residualLikelihood && residualImpact ? residualLikelihood * residualImpact : '');
+        }
+
+        function bindCalculation(scope) {
+            (scope || document).querySelectorAll('.ZTSMRiskAssessmentRow').forEach(function (row) {
+                row.querySelectorAll('select, input').forEach(function (field) {
+                    field.addEventListener('change', function () {
+                        recalculateRow(row);
+                    });
+                    field.addEventListener('input', function () {
+                        recalculateRow(row);
+                    });
+                });
+                recalculateRow(row);
+            });
+        }
+
+        function initializeDynamicFields() {
+            if (window.Core && Core.UI && Core.UI.InputFields && typeof Core.UI.InputFields.Init === 'function') {
+                Core.UI.InputFields.Init();
+            }
+            if (window.Core && Core.Customer && Core.Customer.InputFields && typeof Core.Customer.InputFields.Init === 'function') {
+                Core.Customer.InputFields.Init();
+            }
+        }
+
         if (addButton && body && template) {
             addButton.onclick = function () {
                 var html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex++));
@@ -148,10 +266,16 @@
                     body.appendChild(wrapper.firstElementChild);
                 }
                 bindRemove(body);
+                bindCalculation(body);
+                initializeDynamicFields();
             };
         }
 
         bindRemove(document);
+        bindCalculation(document);
+        initializeDynamicFields();
+        syncNavigationOffset();
+        window.addEventListener('resize', syncNavigationOffset);
     }());
     </script>
 </div>

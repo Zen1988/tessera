@@ -1100,6 +1100,9 @@ sub _RiskAssessmentWorkspaceHTML {
 
     my @Columns = _RiskAssessmentColumns();
     my @Targets = _RiskAssessmentTargetColumns();
+    my $Configs = $Self->_RiskAssessmentFieldConfigs(
+        Fields => [ map { $_->{Field} } ( @Columns, @Targets ) ],
+    );
 
     my $HTML = '<div class="ZTSMRiskAssessmentScroll"><table class="ZTSMRiskAssessmentTable">';
     $HTML .= '<thead><tr><th class="ZTSMRiskAssessmentAction"></th>';
@@ -1115,6 +1118,7 @@ sub _RiskAssessmentWorkspaceHTML {
             Index   => $Index++,
             Columns => \@Columns,
             Targets => \@Targets,
+            Configs => $Configs,
         );
     }
 
@@ -1125,6 +1129,7 @@ sub _RiskAssessmentWorkspaceHTML {
         Index    => '__INDEX__',
         Columns  => \@Columns,
         Targets  => \@Targets,
+        Configs   => $Configs,
         Template => 1,
         )
         . '</template>';
@@ -1147,19 +1152,27 @@ sub _RiskAssessmentRowHTML {
     for my $Column ( @{ $Param{Columns} } ) {
         my $Field = $Column->{Field};
         $HTML .= '<td>' . $Self->_RiskAssessmentInputHTML(
-            Field => $Field,
-            Type  => $Column->{Type},
-            Name  => "RA_${Index}_$Field",
-            Value => $Row->{$Field},
+            Field  => $Field,
+            Type   => $Column->{Type},
+            Index  => $Index,
+            Value  => $Row->{$Field},
+            Config => $Param{Configs}->{$Field},
         ) . '</td>';
     }
 
     $HTML .= '</tr><tr class="ZTSMRiskAssessmentTargets" data-row-index="' . _HTML($Index) . '"><td></td><td colspan="12">';
     for my $Target ( @{ $Param{Targets} } ) {
         my $Field = $Target->{Field};
-        $HTML .= '<label>' . _HTML( $Target->{Label} ) . '<input type="text" name="RA_' . _HTML($Index) . '_' . _HTML($Field)
-            . '" value="' . _HTML( $Self->_RiskAssessmentEditValue( Field => $Field, Value => $Row->{$Field} ) )
-            . '"/></label>';
+        $HTML .= '<div class="ZTSMRiskAssessmentTargetField">'
+            . '<strong>' . _HTML( $Target->{Label} ) . '</strong>'
+            . $Self->_RiskAssessmentInputHTML(
+            Field  => $Field,
+            Type   => $Target->{Type},
+            Index  => $Index,
+            Value  => $Row->{$Field},
+            Config => $Param{Configs}->{$Field},
+            )
+            . '</div>';
     }
     $HTML .= '</td></tr>';
 
@@ -1169,29 +1182,83 @@ sub _RiskAssessmentRowHTML {
 sub _RiskAssessmentInputHTML {
     my ( $Self, %Param ) = @_;
 
-    my $Name  = _HTML( $Param{Name} );
-    my $Value = _NormalizeValue( $Param{Value} );
+    my $Field = $Param{Field};
+    my $Index = $Param{Index};
+    my $Value = $Param{Value};
 
-    if ( $Param{Type} eq 'GeneralCatalog' || $Param{Type} eq 'Dropdown' ) {
-        my $Options = $Self->_RiskAssessmentOptions(
-            Field => $Param{Field},
-            Type  => $Param{Type},
+    if ( IsHashRefWithData( $Param{Config} ) ) {
+        my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->EditFieldRender(
+            DynamicFieldConfig => $Param{Config},
+            Value              => $Value,
+            LayoutObject       => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
+            ParamObject        => $Kernel::OM->Get('Kernel::System::Web::Request'),
+            Mandatory          => 0,
+            CustomerInterface  => 1,
+            Object             => {},
         );
 
-        my $HTML = '<select name="' . $Name . '"><option value=""></option>';
-        for my $Key ( sort { ( $Options->{$a} || '' ) cmp ( $Options->{$b} || '' ) } keys %{$Options} ) {
-            my $Selected = defined $Value && "$Value" eq "$Key" ? ' selected="selected"' : '';
-            $HTML .= '<option value="' . _HTML($Key) . '"' . $Selected . '>' . _HTML( $Options->{$Key} ) . '</option>';
+        if ( IsHashRefWithData($DynamicFieldHTML) ) {
+            my $FieldHTML = $DynamicFieldHTML->{Field} || '';
+            if ( !$FieldHTML && IsArrayRefWithData( $DynamicFieldHTML->{MultiValue} ) ) {
+                $FieldHTML = join "\n", @{ $DynamicFieldHTML->{MultiValue} };
+                $FieldHTML .= "\n" . ( $DynamicFieldHTML->{MultiValueTemplate} || '' );
+            }
+
+            if ($FieldHTML) {
+                return $Self->_RiskAssessmentFieldNameRewrite(
+                    HTML  => $FieldHTML,
+                    Field => $Field,
+                    Index => $Index,
+                );
+            }
         }
-        $HTML .= '</select>';
-        return $HTML;
     }
+
+    my $Name       = 'RA_' . $Index . '_' . $Field;
+    my $EditValue  = $Self->_RiskAssessmentEditValue(%Param);
+    my $FieldClass = $Param{Type} eq 'TextArea' ? 'ZTSMRiskAssessmentTextarea' : 'ZTSMRiskAssessmentInput';
 
     if ( $Param{Type} eq 'TextArea' ) {
-        return '<textarea name="' . $Name . '" rows="3">' . _HTML($Value) . '</textarea>';
+        return '<textarea class="' . $FieldClass . '" name="' . _HTML($Name) . '" rows="3">' . _HTML($EditValue) . '</textarea>';
     }
 
-    return '<input type="text" name="' . $Name . '" value="' . _HTML( $Self->_RiskAssessmentEditValue(%Param) ) . '"/>';
+    return '<input type="text" class="' . $FieldClass . '" name="' . _HTML($Name) . '" value="' . _HTML($EditValue) . '"/>';
+}
+
+sub _RiskAssessmentFieldConfigs {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my %Config;
+
+    FIELD:
+    for my $Field ( @{ $Param{Fields} || [] } ) {
+        next FIELD if !$Field;
+        next FIELD if $Config{$Field};
+
+        my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $Field,
+        );
+
+        next FIELD if !IsHashRefWithData($DynamicFieldConfig);
+        next FIELD if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
+
+        $Config{$Field} = $DynamicFieldConfig;
+    }
+
+    return \%Config;
+}
+
+sub _RiskAssessmentFieldNameRewrite {
+    my ( $Self, %Param ) = @_;
+
+    my $HTML = $Param{HTML} || '';
+    my $From = 'DynamicField_' . $Param{Field};
+    my $To   = 'RA_' . $Param{Index} . '_' . $Param{Field};
+
+    $HTML =~ s{\Q$From\E}{$To}g;
+
+    return $HTML;
 }
 
 sub _RiskAssessmentOptions {
@@ -1253,14 +1320,23 @@ sub _RiskAssessmentRowsFromParam {
         for my $Column (@Columns) {
             my $Field = $Column->{Field};
             my $Param = "RA_${Index}_$Field";
-            my $Value = $ParamObject->GetParam( Param => $Param );
-            $Value = '' if !defined $Value;
-            $Value =~ s{\A\s+|\s+\z}{}g;
-            $HasValue ||= $Value ne '';
+            my @Value = $ParamObject->GetArray( Param => $Param );
+            if ( !@Value ) {
+                my $SingleValue = $ParamObject->GetParam( Param => $Param );
+                @Value = defined $SingleValue ? ($SingleValue) : ();
+            }
+            @Value = grep { defined $_ } @Value;
+            for my $Value (@Value) {
+                $Value =~ s{\A\s+|\s+\z}{}g;
+            }
+            @Value = grep { $_ ne '' } @Value;
+            my $Value = @Value > 1 ? \@Value : ( $Value[0] // '' );
+            $HasValue ||= ref $Value eq 'ARRAY' ? @{$Value} : $Value ne '';
 
             if ( $Field eq 'ZRM-RiskTargetGO' || $Field eq 'ZRM-RiskTargetCI' ) {
                 my @Values;
-                for my $Entry ( split m{\s*,\s*}, $Value ) {
+                my @RawValues = ref $Value eq 'ARRAY' ? @{$Value} : split m{\s*,\s*}, $Value;
+                for my $Entry (@RawValues) {
                     $Entry =~ s{\A\s+|\s+\z}{}g;
                     push @Values, $Entry if $Entry ne '';
                 }

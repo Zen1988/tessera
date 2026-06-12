@@ -676,7 +676,7 @@
 [% RenderBlockEnd("ActivityDialog") %]
 [% RenderBlockStart("ZTSMRuntimeAction") %]
 [% IF Data.DirectURL %]
-                <a id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivityStartButton" href="[% Env("CGIHandle") | html %]?[% Data.DirectURL | html %]">[% Translate(Data.Label) | html %]</a>
+                <a id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM" href="[% Env("CGIHandle") | html %]?[% Data.DirectURL | html %]">[% Translate(Data.Label) | html %]</a>
 [% ELSE %]
                 <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivityStartButton" type="button" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.classList.toggle('Visible'); } return false;">[% Translate(Data.Label) | html %]</button>
 [% END %]
