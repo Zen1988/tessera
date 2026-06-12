@@ -1424,9 +1424,8 @@ sub _RiskAssessmentSetFieldValue {
 
     my $FieldType = IsHashRefWithData( $Param{Config} ) ? ( $Param{Config}->{FieldType} || '' ) : '';
     if ( $FieldType =~ m{\A(?:GeneralCatalog|Queue|SLA|Type|WebService|ConfigItem|ConfigItemVersion|GovernanceObject|GovernanceObjectVersion|Reference)\z} ) {
-        return ( $Param{Config}->{Config}->{MultiValue} || $Param{Config}->{Config}->{Multiselect} )
-            ? \@Value
-            : [ $Value[0] ];
+        return $Value[0] if $Param{Config}->{Config}->{Multiselect};
+        return $Param{Config}->{Config}->{MultiValue} ? \@Value : [ $Value[0] ];
     }
 
     return @Value > 1 ? \@Value : $Value[0];

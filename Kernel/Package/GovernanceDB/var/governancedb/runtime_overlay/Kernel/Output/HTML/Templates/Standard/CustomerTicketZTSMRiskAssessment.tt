@@ -95,6 +95,11 @@
         .ZTSMRiskAssessmentField {
             min-height: 0;
         }
+        #oooContent.ZTSMRiskAssessmentPage .ZTSMRiskAssessmentField_ZRM-RiskDetail,
+        #oooContent.ZTSMRiskAssessmentPage .ZTSMRiskAssessmentField_ZRM-RiskPlan {
+            max-height: 130px;
+            overflow: hidden;
+        }
         #oooContent.ZTSMRiskAssessmentPage .ZTSMRiskAssessmentField .Field,
         #oooContent.ZTSMRiskAssessmentPage .ZTSMRiskAssessmentField .Value,
         #oooContent.ZTSMRiskAssessmentPage .ZTSMRiskAssessmentField .InputField_Container,
