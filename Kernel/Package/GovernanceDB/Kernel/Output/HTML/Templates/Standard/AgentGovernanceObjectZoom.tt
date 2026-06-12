@@ -18,10 +18,10 @@
     <div class="ClearLeft"></div>
     <div class="Headline">
         <div class="Flag" title="[% Translate(Data.ZTSMStatus) | html %]">
-            <span class="[% Data.CurInciSignal | html %]"></span>
+            <span class="[% Data.CurDeplSignal | html %]"></span>
         </div>
-        <h1 title="[% Translate("Configuration Item") | html %]: [% Data.Number | html %] &ndash; [% Data.Name | truncate(40) | html %]">
-            [% Translate("Configuration Item") | html %]: [% Data.Number | html %] <span>&mdash;</span> [% Data.Name | truncate(60) | html %]
+        <h1 title="[% Translate("Governance Object") | html %]: [% Data.Number | html %] &ndash; [% Data.Name | truncate(40) | html %]">
+            [% Translate("Governance Object") | html %]: [% Data.Number | html %] <span>&mdash;</span> [% Data.Name | truncate(60) | html %]
         </h1>
     </div>
     <div class="LayoutFixedSidebar SidebarLast">
@@ -35,7 +35,7 @@
                     <div class="WidgetAction Toggle">
                         <a href="#" title="[% Translate("Show or hide the content") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
                     </div>
-                    <h2>[% Translate("Configuration Item Information") | html %]</h2>
+                    <h2>[% Translate("Governance Object Information") | html %]</h2>
                 </div>
                 <div class="Content">
                     <fieldset class="TableLike FixedLabelSmall Tight">
@@ -52,15 +52,6 @@
                         <div class="Value" title="[% Translate(Data.ZTSMStatus) | html %]">
                             <div class="Flag Small">
                                 <span class="[% Data.CurDeplSignal | html %]"></span>
-                            </div>
-                            [% Translate(Data.ZTSMStatus) | html %]
-                        </div>
-                        <div class="Clear"></div>
-
-                        <label>[% Translate("Current ZTSM Status") | html %]:</label>
-                        <div class="Value" title="[% Translate(Data.ZTSMStatus) | html %]">
-                            <div class="Flag Small">
-                                <span class="[% Data.CurInciSignal | html %]"></span>
                             </div>
                             [% Translate(Data.ZTSMStatus) | html %]
                         </div>

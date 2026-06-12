@@ -17,7 +17,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Log',
     'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader',
     'Kernel::System::State',
@@ -263,8 +263,8 @@ sub Run {
         return;
     }
 
-    my $StateBook = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
-        ConfigItemID  => $StateBookID,
+    my $StateBook = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $StateBookID,
         DynamicFields => 1,
     );
 

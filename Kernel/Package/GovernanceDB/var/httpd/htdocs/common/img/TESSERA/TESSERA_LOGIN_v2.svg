@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220" role="img" aria-label="TESSERA">
+  <rect width="320" height="220" fill="none"/>
+  <g transform="translate(82 10)">
+    <polygon points="18,74 78,112 78,142 18,104" fill="#00A9E0"/>
+    <polygon points="138,74 78,112 78,142 138,104" fill="#00A9E0"/>
+    <polygon points="78,36 138,72 78,110 18,72" fill="#6C2EB9"/>
+    <polygon points="78,10 138,46 78,84 18,46" fill="#EE0000"/>
+  </g>
+  <text x="160" y="190" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="34" font-weight="700" letter-spacing="2"
+        fill="#184A8B">TESSERA</text>
+</svg>

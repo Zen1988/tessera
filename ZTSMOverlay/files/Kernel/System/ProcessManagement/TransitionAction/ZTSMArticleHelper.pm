@@ -108,22 +108,22 @@ sub ZTSMArticleBodyConfigItemReferencesExpand {
         return $Value if !defined $Value || $Value !~ m{\A\d+\z};
         return $Cache{$Value} if exists $Cache{$Value};
 
-        my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+        my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
         for my $GetParam (
-            { ConfigItemID => $Value },
-            { VersionID    => $Value },
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
             )
         {
-            my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
                 %{$GetParam},
                 DynamicFields => 0,
                 Silent        => 1,
             );
 
-            next if !$ConfigItem || ref $ConfigItem ne 'HASH';
-            next if !$ConfigItem->{Name};
+            next if !$GovernanceObject || ref $GovernanceObject ne 'HASH';
+            next if !$GovernanceObject->{Name};
 
-            return $Cache{$Value} = $Value . ' - ' . $ConfigItem->{Name};
+            return $Cache{$Value} = $Value . ' - ' . $GovernanceObject->{Name};
         }
 
         return $Cache{$Value} = $Value;

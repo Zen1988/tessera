@@ -1032,8 +1032,16 @@ sub DefinitionCheck {
     );
 
     my %DFName2IDList = reverse $DFID2NameListRef->%*;
+    my %OfficialFields = map { $_ => 1 } qw(
+        GOID
+        ZTSM-Code
+        ZTSM-Status
+        Name
+        Description
+    );
 
     for my $DefinedFieldName ( keys %DefinedDynamicFields ) {
+        next if $OfficialFields{$DefinedFieldName};
 
         # check with dynamic field list
         if ( !$DFName2IDList{$DefinedFieldName} ) {
@@ -2358,7 +2366,7 @@ sub _DynamicFieldConfigTransform {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
 
-    if ( grep { $Param{DynamicFieldConfig}{FieldType} eq $_ } qw(Agent Governance Object GovernanceObjectVersion CustomerCompany CustomerUser FAQ Ticket) ) {
+    if ( grep { $Param{DynamicFieldConfig}{FieldType} eq $_ } qw(Agent GovernanceObject GovernanceObjectVersion CustomerCompany CustomerUser FAQ Ticket) ) {
 
         # needed transformation: Name -> ID
         if ( $Param{Action} eq 'Import' ) {

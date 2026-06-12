@@ -2348,8 +2348,10 @@ sub _ServiceExtensionDisplayValueRender {
     my $LayoutObject       = $Param{LayoutObject};
     my $HTMLOutput         = $Param{HTMLOutput} ? 1 : 0;
 
-    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem' ) {
-        my $ConfigItemValue = $Self->_ServiceExtensionConfigItemValueRender(
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject' )
+    {
+        my $ConfigItemValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
             Value        => $Value,
             LayoutObject => $LayoutObject,
             HTMLOutput   => $HTMLOutput,
@@ -2369,7 +2371,7 @@ sub _ServiceExtensionDisplayValueRender {
     return $Rendered->{Value};
 }
 
-sub _ServiceExtensionConfigItemValueRender {
+sub _ServiceExtensionGovernanceObjectValueRender {
     my ( $Self, %Param ) = @_;
 
     my @Values = ref $Param{Value} eq 'ARRAY' ? @{ $Param{Value} } : ( $Param{Value} );
@@ -2379,7 +2381,7 @@ sub _ServiceExtensionConfigItemValueRender {
     for my $Value (@Values) {
         next VALUE if !defined $Value || $Value eq '';
 
-        my $Display = $Self->_ServiceExtensionConfigItemDisplayName(
+        my $Display = $Self->_ServiceExtensionGovernanceObjectDisplayName(
             Value => $Value,
         );
         next VALUE if !$Display;
@@ -2395,7 +2397,7 @@ sub _ServiceExtensionConfigItemValueRender {
     return join( $Param{HTMLOutput} ? '<br />' : "\n", @Display );
 }
 
-sub _ServiceExtensionConfigItemDisplayName {
+sub _ServiceExtensionGovernanceObjectDisplayName {
     my ( $Self, %Param ) = @_;
 
     my $Value = $Param{Value};
@@ -2403,22 +2405,22 @@ sub _ServiceExtensionConfigItemDisplayName {
 
     return $Value if $Value !~ m{\A\d+\z};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     for my $GetParam (
-        { ConfigItemID => $Value },
+        { GovernanceObjectID => $Value },
         { VersionID    => $Value },
         )
     {
-        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+        my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
             %{$GetParam},
             DynamicFields => 0,
             Silent        => 1,
         );
 
-        next if !IsHashRefWithData($ConfigItem);
-        next if !$ConfigItem->{Name};
+        next if !IsHashRefWithData($GovernanceObject);
+        next if !$GovernanceObject->{Name};
 
-        return $Value . ' - ' . $ConfigItem->{Name};
+        return $Value . ' - ' . $GovernanceObject->{Name};
     }
 
     return $Value;

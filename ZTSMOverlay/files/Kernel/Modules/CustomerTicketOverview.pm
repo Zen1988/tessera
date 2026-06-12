@@ -153,17 +153,17 @@ sub _ZTSMSupportProfileVariants {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my %Value;
 
     my @SupportProfiles;
     if ( $Value =~ m{\A\d+\z} ) {
         for my $GetParam (
-            { ConfigItemID => $Value },
+            { GovernanceObjectID => $Value },
             { VersionID    => $Value },
             )
         {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
+            my $SupportProfile = $GovernanceObjectObject->GovernanceObjectGet(
                 %{$GetParam},
                 DynamicFields => 1,
                 Silent        => 1,
@@ -171,20 +171,20 @@ sub _ZTSMSupportProfileVariants {
 
             push @SupportProfiles, $SupportProfile
                 if $SupportProfile
-                && ( $SupportProfile->{Class} || '' ) eq 'Support Profile';
+                && ( $SupportProfile->{Class} || '' ) eq 'SupportProfile';
         }
     }
     else {
-        my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(
+        my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
             Result  => 'ARRAY',
-            Classes => ['Support Profile'],
+            Classes => ['SupportProfile'],
             Name    => $Value,
             Limit   => 10,
         );
 
         for my $SupportProfileID (@SupportProfileIDs) {
-            my $SupportProfile = $ConfigItemObject->ConfigItemGet(
-                ConfigItemID  => $SupportProfileID,
+            my $SupportProfile = $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $SupportProfileID,
                 DynamicFields => 1,
                 Silent        => 1,
             );
@@ -195,7 +195,7 @@ sub _ZTSMSupportProfileVariants {
     }
 
     for my $SupportProfile (@SupportProfiles) {
-        $Value{ $SupportProfile->{ConfigItemID} }  = 1 if $SupportProfile->{ConfigItemID};
+        $Value{ $SupportProfile->{GovernanceObjectID} } = 1 if $SupportProfile->{GovernanceObjectID};
         $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
         $Value{ $SupportProfile->{Name} }          = 1 if !$Param{ReferenceOnly} && $SupportProfile->{Name};
     }
@@ -212,7 +212,7 @@ sub _ZTSMSupportProfileList {
 
     return if !$Param{CustomerUserID};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'debug',
@@ -224,8 +224,8 @@ sub _ZTSMSupportProfileList {
     my %AssignmentID;
 
     for my $CustomerUserID (@CustomerUserIDs) {
-        my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
-            Classes => ['Support Assignment'],
+        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Classes => ['SupportAssignment'],
             'DynamicField_ZTSMSupportAssignment-UserAccount' => {
                 Equals => $CustomerUserID,
             },
@@ -254,16 +254,14 @@ sub _ZTSMSupportProfileList {
 
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
-            ConfigItemID  => $AssignmentID,
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
             DynamicFields => 1,
         );
 
         next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
-        $AssignmentUser ||= $Assignment->{XMLData}
-            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'};
 
         next ASSIGNMENT if !_ZTSMCustomerUserMatches(
             AssignmentUser => $AssignmentUser,
@@ -271,8 +269,6 @@ sub _ZTSMSupportProfileList {
         );
 
         my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
-        $AssignmentSupportProfile ||= $Assignment->{XMLData}
-            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'info',

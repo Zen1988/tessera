@@ -373,7 +373,7 @@ SELECT ci.id, ci.goid, ci.class_id, ci.last_version_id,
     v.id, v.name, v.version_string, v.definition_id, v.ztsm_status_id, v.ztsm_status_id, v.description,
     v.create_time, v.create_by, v.change_time, v.change_by
   FROM governance_object_item_version v
-  INNER JOIN Governance Object ci
+  INNER JOIN governance_object_item ci
     ON v.governance_object_id = ci.id
   WHERE v.id = ?
 END_SQL

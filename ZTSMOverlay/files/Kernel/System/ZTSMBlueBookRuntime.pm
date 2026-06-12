@@ -290,23 +290,23 @@ sub _SupportProfileResolve {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     my %Search = (
         Result  => 'ARRAY',
-        Classes => ['Support Profile'],
+        Classes => ['SupportProfile'],
         Limit   => 1,
         UserID  => $Param{UserID} || 1,
     );
 
     if ( $Value =~ m{\A\d+\z} ) {
-        $Search{ConfigItemID} = [$Value];
+        $Search{GovernanceObjectID} = [$Value];
     }
     else {
         $Search{Name} = $Value;
     }
 
-    my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(%Search);
+    my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(%Search);
 
     return if !@SupportProfileIDs;
 
@@ -328,8 +328,8 @@ sub BlueBookGet {
 
     return if !$Param{BlueBookID};
 
-    return $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
-        ConfigItemID  => $Param{BlueBookID},
+    return $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $Param{BlueBookID},
         DynamicFields => 1,
     );
 }
@@ -341,7 +341,8 @@ sub RecordsParse {
 
     return if !$BlueBook || ref $BlueBook ne 'HASH';
 
-    my $Records = $BlueBook->{XMLData}->{'ZBlue-Record'};
+    my $Records = $BlueBook->{'DynamicField_ZBlue-Record'}
+        || ( ref $BlueBook->{XMLData} eq 'HASH' ? $BlueBook->{XMLData}->{'ZBlue-Record'} : undef );
 
     return if !$Records;
 

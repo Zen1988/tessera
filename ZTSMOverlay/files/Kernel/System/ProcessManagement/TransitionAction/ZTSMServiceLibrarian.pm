@@ -30,7 +30,7 @@ use parent qw(
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Service',
     'Kernel::System::Ticket',
     'Kernel::System::Log',
@@ -142,24 +142,24 @@ sub _ConfigItemDisplayValue {
     return 'N/A' if !defined $Value || $Value eq '';
     return $Value if $Value !~ m{\A\d+\z};
 
-    my $ConfigItemObject = $Param{ConfigItemObject}
-        || $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Param{GovernanceObjectObject}
+        || $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     for my $GetParam (
-        { ConfigItemID => $Value },
-        { VersionID    => $Value },
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
     ) {
-        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+        my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
             %{$GetParam},
             DynamicFields => 0,
             Silent        => 1,
         );
 
-        next if !$ConfigItem;
-        next if ref $ConfigItem ne 'HASH';
-        next if !$ConfigItem->{Name};
+        next if !$GovernanceObject;
+        next if ref $GovernanceObject ne 'HASH';
+        next if !$GovernanceObject->{Name};
 
-        return $Value . ' - ' . $ConfigItem->{Name};
+        return $Value . ' - ' . $GovernanceObject->{Name};
     }
 
     return $Value;
@@ -177,7 +177,7 @@ sub _ConfigItemDisplayList {
 
         push @DisplayValues, _ConfigItemDisplayValue(
             Value            => $Value,
-            ConfigItemObject => $Param{ConfigItemObject},
+            GovernanceObjectObject => $Param{GovernanceObjectObject},
         );
     }
 
@@ -225,8 +225,8 @@ sub Run {
         'Kernel::System::DynamicField::Backend'
     );
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     my $TicketObject = $Kernel::OM->Get(
@@ -275,11 +275,11 @@ sub Run {
     # FIND SERVICE SUPPORT MAPS
     # ------------------------------------------------------------ #
 
-    my @CandidateIDs = $ConfigItemObject->ConfigItemSearch(
+    my @CandidateIDs = $GovernanceObjectObject->GovernanceObjectSearch(
 
         Result => 'ARRAY',
 
-        Classes => ['Service Support Map'],
+        Classes => ['ServiceSupportMap'],
 
         'DynamicField_ZTSMServiceSupportMap-Service' => {
             Equals => $ServiceID,
@@ -342,9 +342,9 @@ sub Run {
 	MAP:
 	for my $MapID (@CandidateIDs) {
 
-		my $Map = $ConfigItemObject->ConfigItemGet(
+		my $Map = $GovernanceObjectObject->GovernanceObjectGet(
 
-			ConfigItemID => $MapID,
+			GovernanceObjectID => $MapID,
 
 			DynamicFields => 1,
 		);
@@ -584,7 +584,7 @@ sub Run {
     # RESOLVE GOVERNANCE SNAPSHOT
     # ------------------------------------------------------------ #
 
-    my $WinnerID = $Winner->{ConfigItemID};
+    my $WinnerID = $Winner->{GovernanceObjectID};
 
     my $WinnerName = $Winner->{Name} || 'Unknown';
 
@@ -656,27 +656,27 @@ sub Run {
 
     my $StateBookDisplay = _ConfigItemDisplayValue(
         Value            => $StateBookID,
-        ConfigItemObject => $ConfigItemObject,
+        GovernanceObjectObject => $GovernanceObjectObject,
     );
 
     my $ApprovalModelDisplay = _ConfigItemDisplayValue(
         Value            => $ApprovalModel,
-        ConfigItemObject => $ConfigItemObject,
+        GovernanceObjectObject => $GovernanceObjectObject,
     );
 
     my $ApplicationDisplay = _ConfigItemDisplayList(
         Values           => \@TicketApplications,
-        ConfigItemObject => $ConfigItemObject,
+        GovernanceObjectObject => $GovernanceObjectObject,
     );
 
     my $EnvironmentDisplay = _ConfigItemDisplayList(
         Values           => \@TicketEnvironments,
-        ConfigItemObject => $ConfigItemObject,
+        GovernanceObjectObject => $GovernanceObjectObject,
     );
 
     my $LocationDisplay = _ConfigItemDisplayList(
         Values           => \@TicketLocations,
-        ConfigItemObject => $ConfigItemObject,
+        GovernanceObjectObject => $GovernanceObjectObject,
     );
 
     my $SuccessBody

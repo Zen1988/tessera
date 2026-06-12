@@ -169,10 +169,7 @@ sub GovernanceObjectSearch {
         GovernanceObject => 'ci.goid',
         Number       => 'ci.goid',
         Name         => 'v.name',
-        ZTSMStatus    => 'gc_depl.name',
-        ZTSMStatus    => 'gc_inci.name',
-        ZTSMStatus => 'gc_cdepl.name',
-        ZTSMStatus => 'gc_cinci.name',
+        ZTSMStatus  => 'gc_status.name',
         Age          => 'ci.create_time',
         Created      => 'ci.create_time',
         Changed      => 'ci.change_time',
@@ -355,42 +352,6 @@ sub GovernanceObjectSearch {
         $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
     }
 
-    # lookup ZTSM Statuss
-    if ( $Param{ZTSMStatuss} ) {
-
-        # get class list
-        my %ZTSMStatusLookup = reverse %{
-            $GeneralCatalogObject->ItemList(
-                Class => 'ZTSM::GovernanceObject::Status',
-            ) // {}
-        };
-
-        for my $ZTSMStatus ( @{ $Param{ZTSMStatuss} } ) {
-
-            if ( !$ZTSMStatusLookup{$ZTSMStatus} ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "No ID for $ZTSMStatus found!",
-                );
-
-                return;
-            }
-
-            push @{ $Param{ZTSMStatusIDs} }, $ZTSMStatusLookup{$ZTSMStatus};
-        }
-    }
-
-    # ZTSM Status ids
-    if ( $Param{ZTSMStatusIDs} ) {
-        my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
-            Key       => 'v.ztsm_status_id',
-            Values    => $Param{ZTSMStatusIDs},
-            QuoteType => 'Integer',
-            BindMode  => 0,
-        );
-        $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
-    }
-
     # lookup current ZTSM Statuss
     if ( $Param{ZTSMStatuss} ) {
 
@@ -417,78 +378,6 @@ sub GovernanceObjectSearch {
     }
 
     # current ZTSM Status ids
-    if ( $Param{ZTSMStatusIDs} ) {
-        my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
-            Key       => 'ci.ztsm_status_id',
-            Values    => $Param{ZTSMStatusIDs},
-            QuoteType => 'Integer',
-            BindMode  => 0,
-        );
-        $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
-    }
-
-    # lookup ZTSM Statuss
-    if ( $Param{ZTSMStatuss} ) {
-
-        # get class list
-        my %ZTSMStatusLookup = reverse %{
-            $GeneralCatalogObject->ItemList(
-                Class => 'ZTSM::GovernanceObject::Status',
-            ) // {}
-        };
-
-        for my $ZTSMStatus ( @{ $Param{ZTSMStatuss} } ) {
-
-            if ( !$ZTSMStatusLookup{$ZTSMStatus} ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "No ID for $ZTSMStatus found!",
-                );
-
-                return;
-            }
-
-            push @{ $Param{ZTSMStatusIDs} }, $ZTSMStatusLookup{$ZTSMStatus};
-        }
-    }
-
-    # ZTSM Status ids
-    if ( $Param{ZTSMStatusIDs} ) {
-        my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
-            Key       => 'v.ztsm_status_id',
-            Values    => $Param{ZTSMStatusIDs},
-            QuoteType => 'Integer',
-            BindMode  => 0,
-        );
-        $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
-    }
-
-    # lookup current ZTSM Statuss
-    if ( $Param{ZTSMStatuss} ) {
-
-        # get class list
-        my %ZTSMStatusLookup = reverse %{
-            $GeneralCatalogObject->ItemList(
-                Class => 'ZTSM::GovernanceObject::Status',
-            ) // {}
-        };
-
-        for my $ZTSMStatus ( @{ $Param{ZTSMStatuss} } ) {
-
-            if ( !$ZTSMStatusLookup{$ZTSMStatus} ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "No ID for $ZTSMStatus found!",
-                );
-
-                return;
-            }
-
-            push @{ $Param{ZTSMStatusIDs} }, $ZTSMStatusLookup{$ZTSMStatus};
-        }
-    }
-
-    # ZTSM Status ids
     if ( $Param{ZTSMStatusIDs} ) {
         my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
             Key       => 'ci.ztsm_status_id',
@@ -962,16 +851,7 @@ sub GovernanceObjectSearch {
 
                 # join the general catalog for sorting
                 if ( $SortByArray[$Count] eq 'ZTSMStatus' && !$JoinedTables{ZTSMStatus}++ ) {
-                    $SQLFrom .= ' INNER JOIN general_catalog gc_depl ON (v.ztsm_status_id = gc_depl.id)';
-                }
-                elsif ( $SortByArray[$Count] eq 'ZTSMStatus' && !$JoinedTables{ZTSMStatus}++ ) {
-                    $SQLFrom .= ' INNER JOIN general_catalog gc_inci ON (v.ztsm_status_id = gc_inci.id)';
-                }
-                elsif ( $SortByArray[$Count] eq 'ZTSMStatus' && !$JoinedTables{ZTSMStatus}++ ) {
-                    $SQLFrom .= ' INNER JOIN general_catalog gc_cdepl ON (ci.ztsm_status_id = gc_cdepl.id)';
-                }
-                elsif ( $SortByArray[$Count] eq 'ZTSMStatus' && !$JoinedTables{ZTSMStatus}++ ) {
-                    $SQLFrom .= ' INNER JOIN general_catalog gc_cinci ON (ci.ztsm_status_id = gc_cinci.id)';
+                    $SQLFrom .= ' INNER JOIN general_catalog gc_status ON (ci.ztsm_status_id = gc_status.id)';
                 }
 
                 # Regular sort.

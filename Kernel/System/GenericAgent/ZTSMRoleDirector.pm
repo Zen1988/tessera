@@ -31,7 +31,7 @@ use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZT
 our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Ticket',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::CustomerUser',
@@ -168,18 +168,18 @@ sub _UpdateTicketField {
 # GET CONFIG ITEM
 # ------------------------------------------------------------ #
 
-sub _GetConfigItem {
+sub _GetGovernanceObject {
     my ( %Param ) = @_;
 
-    return if !$Param{ConfigItemID};
+    return if !$Param{GovernanceObjectID};
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
-    return $ConfigItemObject->ConfigItemGet(
+    return $GovernanceObjectObject->GovernanceObjectGet(
 
-        ConfigItemID  => $Param{ConfigItemID},
+        GovernanceObjectID => $Param{GovernanceObjectID},
 
         DynamicFields => 1,
     );
@@ -192,14 +192,14 @@ sub _GetConfigItem {
 sub _IsSupportProfile {
     my (%Param) = @_;
 
-    return if !$Param{ConfigItemID};
+    return if !$Param{GovernanceObjectID};
 
-    my @SupportProfileIDs = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
-        Result       => 'ARRAY',
-        Classes      => ['Support Profile'],
-        ConfigItemID => [ $Param{ConfigItemID} ],
-        Limit        => 1,
-        UserID       => $Param{UserID} || 1,
+    my @SupportProfileIDs = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectSearch(
+        Result             => 'ARRAY',
+        Classes            => ['SupportProfile'],
+        GovernanceObjectID => [ $Param{GovernanceObjectID} ],
+        Limit              => 1,
+        UserID             => $Param{UserID} || 1,
     );
 
     return @SupportProfileIDs ? 1 : 0;
@@ -221,19 +221,19 @@ sub _ResolveProfileDirective {
         Display => $Profile,
     );
 
-    my $ConfigItem;
+    my $GovernanceObject;
     if ( $Profile =~ m{\A\d+\z} ) {
-        $ConfigItem = _GetConfigItem(
-            ConfigItemID => $Profile,
+        $GovernanceObject = _GetGovernanceObject(
+            GovernanceObjectID => $Profile,
         );
     }
 
-    if ($ConfigItem) {
-        $Result{Display} = $ConfigItem->{Name} || $Profile;
+    if ($GovernanceObject) {
+        $Result{Display} = $GovernanceObject->{Name} || $Profile;
 
         if (
-            ( $ConfigItem->{Class} || '' ) eq 'Support Profile'
-            || _IsSupportProfile( ConfigItemID => $Profile, UserID => $Param{UserID} )
+            ( $GovernanceObject->{Class} || '' ) eq 'SupportProfile'
+            || _IsSupportProfile( GovernanceObjectID => $Profile, UserID => $Param{UserID} )
             )
         {
             $Result{SupportProfile} = $Profile;
@@ -241,11 +241,11 @@ sub _ResolveProfileDirective {
         }
 
         my $Code = _GetDynamicFieldValue(
-            Object => $ConfigItem,
+            Object => $GovernanceObject,
             Field  => 'ZTSM-Code',
         );
 
-        $Result{ProfileKey} = _ProfileKey( $Code || $ConfigItem->{Name} || $Profile );
+        $Result{ProfileKey} = _ProfileKey( $Code || $GovernanceObject->{Name} || $Profile );
         return %Result;
     }
 
@@ -289,9 +289,9 @@ sub _ResolveAppProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -313,9 +313,9 @@ sub _ResolveAppOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -329,9 +329,9 @@ sub _ResolveAppOwnerProfile {
 
     return if !$OrganizationID;
 
-    my $Organization = _GetConfigItem(
+    my $Organization = _GetGovernanceObject(
 
-        ConfigItemID => $OrganizationID,
+        GovernanceObjectID => $OrganizationID,
     );
 
     return if !$Organization;
@@ -353,9 +353,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -369,9 +369,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$PlatformID;
 
-    my $Platform = _GetConfigItem(
+    my $Platform = _GetGovernanceObject(
 
-        ConfigItemID => $PlatformID,
+        GovernanceObjectID => $PlatformID,
     );
 
     return if !$Platform;
@@ -385,9 +385,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$OrganizationID;
 
-    my $Organization = _GetConfigItem(
+    my $Organization = _GetGovernanceObject(
 
-        ConfigItemID => $OrganizationID,
+        GovernanceObjectID => $OrganizationID,
     );
 
     return if !$Organization;
@@ -409,9 +409,9 @@ sub _ResolveTopOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -428,9 +428,9 @@ sub _ResolveTopOwnerProfile {
     LOOP:
     while ($OrganizationID) {
 
-        my $Organization = _GetConfigItem(
+        my $Organization = _GetGovernanceObject(
 
-            ConfigItemID => $OrganizationID,
+            GovernanceObjectID => $OrganizationID,
         );
 
         last LOOP if !$Organization;
@@ -472,13 +472,14 @@ sub _ReadProfile {
     return if !$Param{BlueBookID};
 	return if !$Param{Chapter};
 
-    my $BlueBook = _GetConfigItem(
-        ConfigItemID => $Param{BlueBookID},
+    my $BlueBook = _GetGovernanceObject(
+        GovernanceObjectID => $Param{BlueBookID},
     );
 
     return if !$BlueBook;
 	
-	my $Chapters = $BlueBook->{XMLData}->{'ZBlue-Record'};
+	my $Chapters = $BlueBook->{'DynamicField_ZBlue-Record'}
+        || ( ref $BlueBook->{XMLData} eq 'HASH' ? $BlueBook->{XMLData}->{'ZBlue-Record'} : undef );
 
 	return if !$Chapters;
 	

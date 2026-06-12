@@ -443,29 +443,33 @@ sub ObjectDescriptionGet {
         $ClassNameStrg = $Param{LayoutObject}{LanguageObject}->Translate($ClassNameStrg);
     }
 
+    my $DFConfig = $Param{DynamicFieldConfig} || {};
+    my $DFDetails = $DFConfig->{Config} || $DFConfig;
+
     my %Descriptions;
-    if ( $Param{DynamicFieldConfig} && $Param{DynamicFieldConfig}{Config}{DisplayType} ) {
+    if ( $DFDetails->{DisplayType} ) {
 
         # prepare string as configured
-        my $DisplayType = $Param{DynamicFieldConfig}{Config}{DisplayType};
-        if ( $DisplayType eq 'GOID' ) {
-            $Descriptions{Normal} = "$GovernanceObject->{GOID}";
-            $Descriptions{Long}   = "$GovernanceObject->{GOID}";
+        my $DisplayType = $DFDetails->{DisplayType};
+        if ( $DisplayType eq 'GOID' || $DisplayType eq 'ConfigItemNumber' ) {
+            $Descriptions{Normal} = "$GovernanceObject->{Number}";
+            $Descriptions{Long}   = "$GovernanceObject->{Number}";
         }
-        elsif ( $DisplayType eq 'GovernanceObjectName' ) {
+        elsif ( $DisplayType eq 'GovernanceObjectName' || $DisplayType eq 'ConfigItemName' ) {
             $Descriptions{Normal} = "$GovernanceObject->{Name}";
             $Descriptions{Long}   = "$GovernanceObject->{Name}";
         }
-        elsif ( $DisplayType eq 'ClassGOID' ) {
+        elsif ( $DisplayType eq 'ClassGOID' || $DisplayType eq 'ClassConfigItemNumber' ) {
             $Descriptions{Normal} = "$ClassNameStrg: $GovernanceObject->{Number}";
             $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Number}";
         }
-        elsif ( $DisplayType eq 'ClassGovernanceObjectName' ) {
+        elsif ( $DisplayType eq 'ClassGovernanceObjectName' || $DisplayType eq 'ClassConfigItemName' ) {
             $Descriptions{Normal} = "$ClassNameStrg: $GovernanceObject->{Name}";
             $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Name}";
         }
     }
-    else {
+
+    if ( !$Descriptions{Long} ) {
         $Descriptions{Normal} = "$GovernanceObject->{Name}";
         $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Name}";
     }
@@ -510,6 +514,14 @@ sub SearchObjects {
     $Param{Term} //= '';
 
     my $DFDetails = $Param{DynamicFieldConfig}{Config} // {};
+    my $ClassIDs  = $Self->_GeneralCatalogRestrictionIDsGet(
+        Class  => 'ZTSM::GovernanceObject::Class',
+        Values => $DFDetails->{ClassIDs},
+    );
+    my $ZTSMStatusIDs = $Self->_GeneralCatalogRestrictionIDsGet(
+        Class  => 'ZTSM::GovernanceObject::Status',
+        Values => $DFDetails->{ZTSMStatusIDs},
+    );
 
     my %SearchParams;
 
@@ -528,7 +540,9 @@ sub SearchObjects {
         # include configured search param if present
         my $SearchAttribute = $DFDetails->{SearchAttribute} || 'Name';
 
-        $SearchParams{$SearchAttribute} = "*$Param{Term}*";
+        if ( length $Param{Term} ) {
+            $SearchParams{$SearchAttribute} = "*$Param{Term}*";
+        }
     }
 
     # prepare mapping of edit mask attribute names
@@ -686,11 +700,11 @@ sub SearchObjects {
     }
 
     # Support restriction by class
-    if ( IsArrayRefWithData( $DFDetails->{ClassIDs} ) && !$Param{ExternalSource} ) {
+    if ( IsArrayRefWithData($ClassIDs) && !$Param{ExternalSource} ) {
         if ( $SearchParams{ClassIDs} ) {
             my @ClassIDs;
             for my $ClassID ( $SearchParams{ClassIDs}->@* ) {
-                if ( any { $_ eq $ClassID } $DFDetails->{ClassIDs}->@* ) {
+                if ( any { $_ eq $ClassID } $ClassIDs->@* ) {
                     push @ClassIDs, $ClassID;
                 }
             }
@@ -700,16 +714,16 @@ sub SearchObjects {
             $SearchParams{ClassIDs} = \@ClassIDs;
         }
         else {
-            $SearchParams{ClassIDs} = $DFDetails->{ClassIDs};
+            $SearchParams{ClassIDs} = $ClassIDs;
         }
     }
 
     # Support restriction by ZTSM Status
-    if ( IsArrayRefWithData( $DFDetails->{ZTSMStatusIDs} ) ) {
+    if ( IsArrayRefWithData($ZTSMStatusIDs) ) {
         if ( $SearchParams{ZTSMStatusIDs} ) {
             my @DeploymentStateIDs;
             for my $DeploymentStateID ( $SearchParams{ZTSMStatusIDs}->@* ) {
-                if ( any { $_ eq $DeploymentStateID } $DFDetails->{ZTSMStatusIDs}->@* ) {
+                if ( any { $_ eq $DeploymentStateID } $ZTSMStatusIDs->@* ) {
                     push @DeploymentStateIDs, $DeploymentStateID;
                 }
             }
@@ -719,7 +733,7 @@ sub SearchObjects {
             $SearchParams{ZTSMStatusIDs} = \@DeploymentStateIDs;
         }
         else {
-            $SearchParams{ZTSMStatusIDs} = $DFDetails->{ZTSMStatusIDs};
+            $SearchParams{ZTSMStatusIDs} = $ZTSMStatusIDs;
         }
     }
 
@@ -729,8 +743,36 @@ sub SearchObjects {
         Result  => 'ARRAY',
         SortBy  => 'Number',
         OrderBy => 'Down',
+        UserID  => 1,
         %SearchParams,
     );
+}
+
+sub _GeneralCatalogRestrictionIDsGet {
+    my ( $Self, %Param ) = @_;
+
+    return [] if !IsArrayRefWithData( $Param{Values} );
+
+    my $ID2Name = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => $Param{Class},
+    ) || {};
+
+    my %Name2ID = reverse %{$ID2Name};
+    my @IDs;
+    my %Seen;
+
+    VALUE:
+    for my $Value ( $Param{Values}->@* ) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $ID = $Value =~ m{\A\d+\z} ? $Value : $Name2ID{$Value};
+        next VALUE if !$ID;
+        next VALUE if $Seen{$ID}++;
+
+        push @IDs, $ID;
+    }
+
+    return \@IDs;
 }
 
 =head2 ValueForLens()

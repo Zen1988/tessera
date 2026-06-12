@@ -598,9 +598,7 @@ sub _OwnerWeightage {
     return 1 if !IsHashRefWithData($SelectedAssignment);
 
     my $Weightage = _NormalizeValue(
-        $SelectedAssignment->{XMLData}
-            && $SelectedAssignment->{XMLData}->{'ZTSMSupportAssignment-Weightage'}
-            && $SelectedAssignment->{XMLData}->{'ZTSMSupportAssignment-Weightage'}->{Content}
+        $SelectedAssignment->{'DynamicField_ZTSMSupportAssignment-Weightage'}
     );
 
     return defined $Weightage && $Weightage ne '' ? $Weightage : 1;
@@ -611,15 +609,15 @@ sub _SupportAssignments {
 
     return if !$Param{SupportProfile};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my %AssignmentID;
 
     SUPPORTPROFILE:
     for my $SupportProfile ( $Self->_SupportProfileReferences( SupportProfile => $Param{SupportProfile} ) ) {
         next SUPPORTPROFILE if !$SupportProfile;
 
-        my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
-            Classes => ['Support Assignment'],
+        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Classes => ['SupportAssignment'],
             'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
                 Equals => $SupportProfile,
             },
@@ -633,8 +631,8 @@ sub _SupportAssignments {
     my @Assignments;
     ASSIGNMENT:
     for my $AssignmentID ( sort { $a <=> $b } keys %AssignmentID ) {
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
-            ConfigItemID  => $AssignmentID,
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
             DynamicFields => 1,
         );
 
@@ -642,9 +640,7 @@ sub _SupportAssignments {
 
         if ( $Param{CustomerUserID} ) {
             my $UserAccount = _NormalizeValue(
-                $Assignment->{XMLData}
-                    && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}
-                    && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}->{Content}
+                $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'}
             );
 
             next ASSIGNMENT if !$UserAccount;
@@ -683,8 +679,9 @@ sub _SupportAssignmentUsers {
     ASSIGNMENT:
     for my $Assignment ( $Self->_SupportAssignments( SupportProfile => $Param{SupportProfile} ) ) {
         my $UserAccount = $Assignment->{XMLData}
-            ->{'ZTSMSupportAssignment-UserAccount'}
-            ->{Content};
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'}->{Content};
+        $UserAccount ||= $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
 
         if ( ref $UserAccount eq 'ARRAY' ) {
             $UserAccount = $UserAccount->[0];

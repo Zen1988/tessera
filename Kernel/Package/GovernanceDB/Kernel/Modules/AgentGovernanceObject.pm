@@ -88,7 +88,7 @@ sub Run {
     my $UserObject = $Kernel::OM->Get('Kernel::System::User');
 
     # get filter from web request
-    my $Filter         = $ParamObject->GetParam( Param => 'Filter' ) || 'All';
+    my $Filter         = $ParamObject->GetParam( Param => 'Filter' ) || '';
     my $CategoryFilter = $ParamObject->GetParam( Param => 'Category' );
 
     # get general catalog object
@@ -547,7 +547,7 @@ sub Run {
         View                  => $View,
         Bulk                  => 1,
         TitleName             => $LayoutObject->{LanguageObject}->Translate('Overview: Governance Object'),
-        TitleValue            => $Self->{Filters}{$Filter}{Name},
+        TitleValue            => $Filter && $Self->{Filters}{$Filter} ? $Self->{Filters}{$Filter}{Name} : '',
         Env                   => $Self,
         LinkPage              => $LinkPage,
         LinkSort              => $LinkSort,

@@ -1870,23 +1870,23 @@ sub _ZTSMSupportProfileDisplayName {
     return if !defined $SupportProfile || $SupportProfile eq '';
     return $SupportProfile if $SupportProfile !~ m{\A\d+\z};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     for my $GetParam (
-        { ConfigItemID => $SupportProfile },
+        { GovernanceObjectID => $SupportProfile },
         { VersionID    => $SupportProfile },
         )
     {
-        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+        my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
             %{$GetParam},
             DynamicFields => 0,
             Silent        => 1,
         );
 
-        next if !IsHashRefWithData($ConfigItem);
-        next if ( $ConfigItem->{Class} || '' ) ne 'Support Profile';
+        next if !IsHashRefWithData($GovernanceObject);
+        next if ( $GovernanceObject->{Class} || '' ) ne 'SupportProfile';
 
-        return $ConfigItem->{Name} || $SupportProfile;
+        return $GovernanceObject->{Name} || $SupportProfile;
     }
 
     return $SupportProfile;
@@ -2443,9 +2443,9 @@ sub _ZTSMSupportAssignmentUsers {
 
     return if !$Param{SupportProfile};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-    my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
-        Classes => ['Support Assignment'],
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
         'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
             Equals => $Param{SupportProfile},
         },
@@ -2453,22 +2453,19 @@ sub _ZTSMSupportAssignmentUsers {
         Limit  => 1000,
     );
 
-    return if !$AssignmentList;
-    return if ref $AssignmentList ne 'ARRAY';
+    return if !@AssignmentList;
 
     my %Users;
     ASSIGNMENT:
-    for my $AssignmentID ( @{$AssignmentList} ) {
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
-            ConfigItemID  => $AssignmentID,
+    for my $AssignmentID (@AssignmentList) {
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
             DynamicFields => 1,
         );
 
         next ASSIGNMENT if !$Assignment;
 
-        my $UserAccount = $Assignment->{XMLData}
-            ->{'ZTSMSupportAssignment-UserAccount'}
-            ->{Content};
+        my $UserAccount = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
 
         if ( ref $UserAccount eq 'ARRAY' ) {
             $UserAccount = $UserAccount->[0];

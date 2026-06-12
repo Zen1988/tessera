@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+
+  <defs>
+    <style>
+      .roof {
+        fill: none;
+        stroke: #184a8b;
+        stroke-width: 26;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .brand {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 110px;
+        font-weight: 700;
+        fill: #184a8b;
+        letter-spacing: 10px;
+      }
+      .tag {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 24px;
+        fill: #666666;
+        letter-spacing: 2px;
+      }
+    </style>
+  </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="none"/>
+
+    <!-- Cyan extrusion (depth) -->
+
+
+    <polygon points="0,400 400,650 400,800 0,550"
+             fill="#0099DC"/>
+
+    <polygon points="800,400 400,650 400,800 800,550"
+             fill="#0099DC"/>
+
+      <!-- Purple middle layer -->
+    <polygon points="400,130 800,380 400,630 0,380"
+             fill="#5C068C"/>
+
+    <!-- Red top layer -->
+    <polygon points="400,0 800,250 400,500 0,250"
+             fill="#EE0000"/>
+
+</svg>

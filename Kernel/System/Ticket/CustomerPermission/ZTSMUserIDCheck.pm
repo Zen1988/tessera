@@ -23,7 +23,7 @@ our @ObjectDependencies = (
     'Kernel::System::CustomerUser',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Group',
     'Kernel::System::User',
 );
@@ -194,8 +194,8 @@ sub _UserParticipateSupportProfile {
     return if !$Param{SupportProfile};
     return if !$Param{CustomerUserID};
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     #
@@ -223,9 +223,9 @@ sub _UserParticipateSupportProfile {
     my %AssignmentID;
 
     for my $CustomerUserID (@CustomerUserIDs) {
-    my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
 
-        Classes => ['Support Assignment'],
+        Classes => ['SupportAssignment'],
         'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
             Equals => $SupportProfile,
         },
@@ -258,9 +258,9 @@ sub _UserParticipateSupportProfile {
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
 
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
 
-            ConfigItemID  => $AssignmentID,
+            GovernanceObjectID => $AssignmentID,
 
             DynamicFields => 1,
         );
@@ -268,8 +268,6 @@ sub _UserParticipateSupportProfile {
         next ASSIGNMENT if !$Assignment;
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
-        $AssignmentUser ||= $Assignment->{XMLData}
-            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'};
 
         next ASSIGNMENT if !_CustomerUserMatches(
             AssignmentUser => $AssignmentUser,
@@ -321,8 +319,8 @@ sub _UserHasSupportAssignmentType {
     return if !$Param{CustomerUserID};
     return if !$Param{AssignmentType};
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     SUPPORTPROFILE:
@@ -338,8 +336,8 @@ sub _UserHasSupportAssignmentType {
     my %AssignmentID;
 
     for my $CustomerUserID (@CustomerUserIDs) {
-    my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
-        Classes => ['Support Assignment'],
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
         'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
             Equals => $SupportProfile,
         },
@@ -359,16 +357,14 @@ sub _UserHasSupportAssignmentType {
 
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
-            ConfigItemID  => $AssignmentID,
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
             DynamicFields => 1,
         );
 
         next ASSIGNMENT if !$Assignment;
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
-        $AssignmentUser ||= $Assignment->{XMLData}
-            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'};
 
         next ASSIGNMENT if !_CustomerUserMatches(
             AssignmentUser => $AssignmentUser,

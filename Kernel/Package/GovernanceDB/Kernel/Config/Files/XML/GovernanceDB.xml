@@ -1756,7 +1756,7 @@
         <Description Translatable="1">The default category which is shown, if none is selected.</Description>
         <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
         <Value>
-            <Item>All</Item>
+            <Item>Governance</Item>
         </Value>
     </Setting>
     <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###ClassColumnsDisabled" Required="0" Valid="0">
@@ -2323,6 +2323,122 @@
         </Value>
     </Setting>
 
+    <!-- Extend existing reference drivers so Governance Objects can model ownership, service and ticket relationships. -->
+    <Setting Name="DynamicFields::Driver###Ticket" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Ticket</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Ticket</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Agent" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Agent</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Agent</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###CustomerCompany" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerCompany</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerCompany</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###CustomerUser" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerUser</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerUser</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Service" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Service</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Service</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Set" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Dynamic Field Set</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Set</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldSet</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
     <!-- dynamic field Governance Object Reference -->
     <Setting Name="DynamicFields::Driver###GovernanceObject" Required="0" Valid="1">
         <Description Translatable="1">DynamicField backend registration.</Description>
@@ -2565,7 +2681,7 @@
         </Value>
     </Setting>
 
-    <Setting Name="DynamicFields::DynamicFieldSet::InnerFieldsTicketToCI" Required="0" Valid="0">
+    <Setting Name="DynamicFields::DynamicFieldSet::InnerFieldsTicketToGovernanceObject" Required="0" Valid="0">
         <Description Translatable="1">A mapping of inner field names used in the Process Management TransitionActions GovernanceObjectAdd and -Update. The keys are the names of the set inner fields of the set with object type ticket which will be used to create/update the CI, and the values are the names of the inner fields of the set with object type GovernanceObject.</Description>
         <Navigation>Core::DynamicFields</Navigation>
         <Value>

@@ -244,7 +244,7 @@ sub Run {
     );
 
     # output header
-    my $Output = $LayoutObject->Header( Value => "CI#$GovernanceObject->{Number}" );
+    my $Output = $LayoutObject->Header( Value => "GO#$GovernanceObject->{Number}" );
     $Output .= $LayoutObject->NavigationBar();
 
     # if a version already exists (TODO: When does it not?)
@@ -265,19 +265,6 @@ sub Run {
                 Description => Translatable('The name of this Governance Object'),
                 Value       => $GovernanceObjectName,
                 Identation  => 10,
-            },
-        );
-
-        # output ZTSM Status
-        $LayoutObject->Block(
-            Name => 'Data',
-            Data => {
-                Name        => Translatable('ZTSM Status'),
-                Description => Translatable('The ZTSM Status of this Governance Object'),
-                Value       => $LayoutObject->{LanguageObject}->Translate(
-                    $GovernanceObject->{ZTSMStatus},
-                ),
-                Identation => 10,
             },
         );
 

@@ -17,7 +17,7 @@ use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZT
 use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Log',
     'Kernel::System::Ticket',
 );

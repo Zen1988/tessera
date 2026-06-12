@@ -37,7 +37,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::CustomerUser',
 );
 
@@ -58,6 +58,20 @@ sub _NormalizeValue {
 
     if ( ref $Value eq 'ARRAY' ) {
         return $Value->[0];
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Content}
+            if defined $Value->{Content}
+            && $Value->{Content} ne '';
+
+        return $Value->{Value}
+            if defined $Value->{Value}
+            && $Value->{Value} ne '';
+
+        return $Value->{Key}
+            if defined $Value->{Key}
+            && $Value->{Key} ne '';
     }
 
     return $Value;
@@ -86,8 +100,8 @@ sub Run {
         'Kernel::System::DynamicField::Backend'
     );
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     my $CustomerUserObject = $Kernel::OM->Get(
@@ -178,16 +192,15 @@ sub Run {
     # SUPPORT ASSIGNMENT RESOLUTION
     # -------------------------------------------------------- #
 
-    my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
+    my @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
 
-		Classes  => ['Support Assignment'],
+		Classes  => ['SupportAssignment'],
 
-		SearchByDynamicField => {
-
-			'ZTSMSupportAssignment-SupportProfile'
-				=> $SupportProfile,
-			'ZTSMSupportAssignment-UserAccount'
-				=> $CustomerUserID,
+        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+            Equals => $SupportProfile,
+        },
+        'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+            Equals => $CustomerUserID,
 		},
 
 		Result => 'ARRAY',
@@ -196,17 +209,16 @@ sub Run {
 	my $SelectedAssignment;
 
 	PICK:
-	for my $AssignmentID ( @{$AssignmentList} ) {
+	for my $AssignmentID (@AssignmentList) {
 
-		my $Assignment = $ConfigItemObject->ConfigItemGet(
+		my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
 
-			ConfigItemID  => $AssignmentID,
+			GovernanceObjectID => $AssignmentID,
 
 			DynamicFields => 1,
 		);
 
 		next PICK if !$Assignment;
-		next PICK if !$Assignment->{XMLData};
 
 		#
 		# First match fallback
@@ -218,9 +230,7 @@ sub Run {
 		}
 
         my $AssignmentRole = _NormalizeValue(
-            $Assignment->{XMLData}
-                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}
-                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}->{Content}
+            $Assignment->{'DynamicField_ZTSMSupportAssignment-Role'}
         );
 
         if (
@@ -240,9 +250,7 @@ sub Run {
             && $TicketRole ne '';
 
         my $Type = _NormalizeValue(
-			$Assignment->{XMLData}
-			->{'ZTSMSupportAssignment-Type'}
-			->{Content}
+			$Assignment->{'DynamicField_ZTSMSupportAssignment-Type'}
 		);
 
 		next PICK
@@ -265,9 +273,7 @@ sub Run {
     if ($SelectedAssignment) {
 
         my $Weightage = _NormalizeValue(
-            $SelectedAssignment->{XMLData}
-            ->{'ZTSMSupportAssignment-Weightage'}
-            ->{Content}
+            $SelectedAssignment->{'DynamicField_ZTSMSupportAssignment-Weightage'}
         );
 
         if ( defined $Weightage ) {

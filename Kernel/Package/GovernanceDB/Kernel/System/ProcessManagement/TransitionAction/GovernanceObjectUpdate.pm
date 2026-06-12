@@ -256,7 +256,9 @@ sub Run {
     }
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $SetMapping         = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::DynamicFieldSet::InnerFieldsTicketToCI') // {};
+    my $SetMapping = $Kernel::OM->Get('Kernel::Config')->Get(
+        'DynamicFields::DynamicFieldSet::InnerFieldsTicketToGovernanceObject'
+    ) // $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::DynamicFieldSet::InnerFieldsTicketToCI') // {};
 
     # add dynamic fields
     CONFIGPARAM:

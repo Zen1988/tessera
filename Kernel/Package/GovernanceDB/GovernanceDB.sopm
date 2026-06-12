@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.10</Version>
+    <Version>0.0.28</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -102,6 +102,57 @@
         <File Location="Kernel/System/SysConfig/ValueType/Entity/GovernanceObjectClass.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
+
+        <File Location="Kernel/Config/Files/XML/ZTSMGovernanceRuntime.xml" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketDecision.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketQuickClose.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerDashboardCommon.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketMessage.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketOverview.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZTSMAction.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerHTMLHead.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerHeader.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Footer.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/HTMLHead.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Login.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/TicketOverview/CustomerList.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMRoleDirector.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/TESSERAResolveGovernance.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMCharacterEngage.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookComplete.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueBookHasNextLevel.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionValidation/ZTSMBlueLevelComplete.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/TESSERAResolveGovernance.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/ZTSMBlueBookRuntime.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGIN_v2.svg" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/favicon.ico" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/product.ico" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
@@ -489,7 +540,7 @@
             <Data Key="change_time">current_timestamp</Data>
             <Data Key="change_by">1</Data>
         </Insert>
-    
+
         <Insert Type="post" Table="governance_object_item_history_type">
             <Data Key="name" Type="Quote">GovernanceObjectCreate</Data>
             <Data Key="comments" Type="Quote">GovernanceObjectCreate history entry.</Data>

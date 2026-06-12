@@ -14,7 +14,7 @@
    "Classes" : [
       {
          "Category" : "Governance",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::StateMap\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM State Book\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::StateMap\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM State Book\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZState-StateRecord" : {
                "CIClass" : "StateBook",
@@ -132,9 +132,9 @@
       },
       {
          "Category" : "Governance",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Blue Book\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Blue Book\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
-            "ZBlue-Chapter" : {
+            "ZBlue-Record" : {
                "CIClass" : "BlueBook",
                "Config" : {
                   "Include" : [
@@ -349,7 +349,7 @@
                },
                "FieldType" : "Set",
                "Label" : "BlueBook Chapters",
-               "Name" : "ZBlue-Chapter",
+               "Name" : "ZBlue-Record",
                "ObjectType" : "GovernanceObject"
             },
             "ZTSM-Status" : {
@@ -385,8 +385,240 @@
          "VersionStringModule" : "Incremental"
       },
       {
+         "Category" : "Governance",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::ApprovalModel\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Approval Model\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
+         "DynamicFields" : {
+            "ZTSM-Code" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [],
+                  "Tooltip" : "Unique code"
+               },
+               "FieldType" : "Text",
+               "Label" : "Code",
+               "Name" : "ZTSM-Code",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSM-Status" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "Draft",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "PossibleNone" : "0",
+                  "PossibleValues" : {
+                     "Active" : "Active",
+                     "Archived" : "Archived",
+                     "Draft" : "Draft",
+                     "Inactive" : "Inactive",
+                     "Retired" : "Retired",
+                     "Suspended" : "Suspended"
+                  },
+                  "Tooltip" : "Governance / operational validity",
+                  "TranslatableValues" : "0",
+                  "TreeView" : "0"
+               },
+               "FieldType" : "Dropdown",
+               "Label" : "Status",
+               "Name" : "ZTSM-Status",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-ApprovelTimeout" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "72",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     }
+                  ],
+                  "Tooltip" : "Approval Timeout (Hours)"
+               },
+               "FieldType" : "Text",
+               "Label" : "Approval Timeout (Hours)",
+               "Name" : "ZTSMApprovalModel-ApprovelTimeout",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-FinalAction" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "Reject with Timeout",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "PossibleNone" : "0",
+                  "PossibleValues" : {
+                     "Approve" : "Approve",
+                     "Approve with Timeout" : "Approve with Timeout",
+                     "Do Nothing" : "Do Nothing",
+                     "Reject" : "Reject",
+                     "Reject with Timeout" : "Reject with Timeout"
+                  },
+                  "Tooltip" : "Final Action after timeout",
+                  "TranslatableValues" : "0",
+                  "TreeView" : "0"
+               },
+               "FieldType" : "Dropdown",
+               "Label" : "Final Action on Timeout",
+               "Name" : "ZTSMApprovalModel-FinalAction",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-L2Escalation" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "ClassIDs" : [
+                     "GovernanceRole",
+                     "SupportProfile"
+                  ],
+                  "DeplStateIDs" : [],
+                  "DisplayType" : "",
+                  "EditFieldMode" : "Dropdown",
+                  "ImportSearchAttribute" : "",
+                  "LinkDirection" : "ReferencingIsSource",
+                  "LinkReferencingType" : "Dynamic",
+                  "LinkType" : "",
+                  "MultiValue" : "0",
+                  "Multiselect" : 0,
+                  "PossibleNone" : "1",
+                  "ReferenceFilterList" : [],
+                  "ReferencedObjectType" : "GovernanceObject",
+                  "SearchAttribute" : "",
+                  "Tooltip" : "L2 Escalation"
+               },
+               "FieldType" : "GovernanceObject",
+               "Label" : "Approval Escalation L2",
+               "Name" : "ZTSMApprovalModel-L2Escalation",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-L2Timeout" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "72",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     }
+                  ],
+                  "Tooltip" : "Approval Timeout in hours"
+               },
+               "FieldType" : "Text",
+               "Label" : "L2 Approval Timeout (Hours)",
+               "Name" : "ZTSMApprovalModel-L2Timeout",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-L3Escalation" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "ClassIDs" : [
+                     "GovernanceRole",
+                     "SupportProfile"
+                  ],
+                  "DeplStateIDs" : [],
+                  "DisplayType" : "",
+                  "EditFieldMode" : "Dropdown",
+                  "ImportSearchAttribute" : "",
+                  "LinkDirection" : "ReferencingIsSource",
+                  "LinkReferencingType" : "Dynamic",
+                  "LinkType" : "",
+                  "MultiValue" : "0",
+                  "Multiselect" : 0,
+                  "PossibleNone" : "0",
+                  "ReferenceFilterList" : [],
+                  "ReferencedObjectType" : "GovernanceObject",
+                  "SearchAttribute" : "",
+                  "Tooltip" : "L3 Escalation"
+               },
+               "FieldType" : "GovernanceObject",
+               "Label" : "Approval Escalation L3",
+               "Name" : "ZTSMApprovalModel-L3Escalation",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-L3Timeout" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "72",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     }
+                  ],
+                  "Tooltip" : "Approval Timeout in hours"
+               },
+               "FieldType" : "Text",
+               "Label" : "L3 Approval Timeout (Hours)",
+               "Name" : "ZTSMApprovalModel-L3Timeout",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-Mode" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "Escalation",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "PossibleNone" : "0",
+                  "PossibleValues" : {
+                     "Escalation" : "Escalation",
+                     "Parallel" : "Parallel",
+                     "Primary + Secondary" : "Primary + Secondary",
+                     "Primary Only" : "Primary Only"
+                  },
+                  "Tooltip" : "Approval Mode",
+                  "TranslatableValues" : "0",
+                  "TreeView" : "0"
+               },
+               "FieldType" : "Dropdown",
+               "Label" : "Mode",
+               "Name" : "ZTSMApprovalModel-Mode",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMApprovalModel-RequiredWeightage" : {
+               "CIClass" : "ApprovalModel",
+               "Config" : {
+                  "DefaultValue" : "1",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     }
+                  ],
+                  "Tooltip" : "Required Approval Weightage"
+               },
+               "FieldType" : "Text",
+               "Label" : "Required Approval Weightage",
+               "Name" : "ZTSMApprovalModel-RequiredWeightage",
+               "ObjectType" : "GovernanceObject"
+            }
+         },
+         "Name" : "ApprovalModel",
+         "NumberModule" : "GOID",
+         "PermissionGroup" : "governance-db",
+         "SourceName" : "Approval Model",
+         "VersionStringModule" : "Incremental"
+      },
+      {
          "Category" : "Business",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Organization\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Organization\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Organization\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Organization\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "Organization",
@@ -426,6 +658,31 @@
                "FieldType" : "Dropdown",
                "Label" : "Status",
                "Name" : "ZTSM-Status",
+               "ObjectType" : "GovernanceObject"
+            },
+            "ZTSMOrganization-DefaultApprovalModel" : {
+               "CIClass" : "Organization",
+               "Config" : {
+                  "ClassIDs" : [
+                     "ApprovalModel"
+                  ],
+                  "DisplayType" : "",
+                  "EditFieldMode" : "Dropdown",
+                  "ImportSearchAttribute" : "",
+                  "LinkDirection" : "ReferencingIsSource",
+                  "LinkReferencingType" : "Dynamic",
+                  "LinkType" : "",
+                  "MultiValue" : "0",
+                  "Multiselect" : 0,
+                  "PossibleNone" : "1",
+                  "ReferenceFilterList" : [],
+                  "ReferencedObjectType" : "GovernanceObject",
+                  "SearchAttribute" : "",
+                  "Tooltip" : "Default Approval Model"
+               },
+               "FieldType" : "GovernanceObject",
+               "Label" : "Default Approval Model",
+               "Name" : "ZTSMOrganization-DefaultApprovalModel",
                "ObjectType" : "GovernanceObject"
             },
             "ZTSMOrganization-DefaultApprovalProfile" : {
@@ -533,7 +790,7 @@
       },
       {
          "Category" : "Business",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Application\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Application\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Application\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Application\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "Application",
@@ -626,7 +883,7 @@
                "CIClass" : "Application",
                "Config" : {
                   "ClassIDs" : [
-                     "Approval Model"
+                     "ApprovalModel"
                   ],
                   "DeplStateIDs" : [],
                   "DisplayType" : "",
@@ -837,7 +1094,7 @@
       },
       {
          "Category" : "Context",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Environment\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Environment\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Environment\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Environment\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSMEnvironment-Criticality" : {
                "CIClass" : "Environment",
@@ -900,14 +1157,13 @@
       },
       {
          "Category" : "Context",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Address\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Location\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Address\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Location\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSMLocation-Address" : {
                "CIClass" : "Location",
                "Config" : {
                   "ClassIDs" : [
-                     "Building",
-                     "Subsidiary"
+                     "Location"
                   ],
                   "DeplStateIDs" : [],
                   "DisplayType" : "",
@@ -938,7 +1194,7 @@
       },
       {
          "Category" : "Context",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Platform\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Platform\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Platform\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Platform\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "Platform",
@@ -1032,6 +1288,31 @@
                "Name" : "ZTSMPlatform-Owner",
                "ObjectType" : "GovernanceObject"
             },
+            "ZTSMPlatform-ServiceSupportMap" : {
+               "CIClass" : "Platform",
+               "Config" : {
+                  "ClassIDs" : [
+                     "ServiceSupportMap"
+                  ],
+                  "DisplayType" : "",
+                  "EditFieldMode" : "Dropdown",
+                  "ImportSearchAttribute" : "",
+                  "LinkDirection" : "ReferencingIsSource",
+                  "LinkReferencingType" : "Dynamic",
+                  "LinkType" : "",
+                  "MultiValue" : "1",
+                  "Multiselect" : 1,
+                  "PossibleNone" : "1",
+                  "ReferenceFilterList" : [],
+                  "ReferencedObjectType" : "GovernanceObject",
+                  "SearchAttribute" : "",
+                  "Tooltip" : "Service Support Maps available on this platform"
+               },
+               "FieldType" : "GovernanceObject",
+               "Label" : "Service Offering",
+               "Name" : "ZTSMPlatform-ServiceSupportMap",
+               "ObjectType" : "GovernanceObject"
+            },
             "ZTSMPlatform-Type" : {
                "CIClass" : "Platform",
                "Config" : {
@@ -1066,7 +1347,7 @@
       },
       {
          "Category" : "Service",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 3\r\n      ColumnWidth: 1fr 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n      - Customer\r\n    Content:\r\n      - Section: General Fields::Mapping\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 3\r\n        ColumnStart: 2\r\n        ColumnSpan: 2\r\nRoles:\r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM ServiceSupportMap\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 3\r\n      ColumnWidth: 1fr 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n      - Customer\r\n    Content:\r\n      - Section: General Fields::Mapping\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 3\r\n        ColumnStart: 2\r\n        ColumnSpan: 2\r\nRoles:\r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM ServiceSupportMap\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Status" : {
                "CIClass" : "ServiceSupportMap",
@@ -1123,7 +1404,7 @@
                "CIClass" : "ServiceSupportMap",
                "Config" : {
                   "ClassIDs" : [
-                     "Approval Model"
+                     "ApprovalModel"
                   ],
                   "DeplStateIDs" : [],
                   "DisplayType" : "",
@@ -1278,7 +1559,7 @@
       },
       {
          "Category" : "Service",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Service\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM ServiceProfile\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Service\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM ServiceProfile\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "ServiceProfile",
@@ -1350,7 +1631,7 @@
                "CIClass" : "ServiceProfile",
                "Config" : {
                   "ClassIDs" : [
-                     "Contract"
+                     "ServiceProfile"
                   ],
                   "DeplStateIDs" : [],
                   "DisplayType" : "",
@@ -1407,7 +1688,7 @@
       },
       {
          "Category" : "Profile",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Profile\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM TechnologyProfile\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Profile\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM TechnologyProfile\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "TechnologyProfile",
@@ -1522,7 +1803,7 @@
       },
       {
          "Category" : "Profile",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::SupportProfile\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportProfile\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::SupportProfile\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportProfile\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "SupportProfile",
@@ -1649,7 +1930,7 @@
       },
       {
          "Category" : "Profile",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Role\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM GovernanceRole\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Role\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM GovernanceRole\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Code" : {
                "CIClass" : "GovernanceRole",
@@ -1700,7 +1981,7 @@
       },
       {
          "Category" : "Assignment",
-         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Assignment\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: CMDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: CMDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"ITSM GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportAssignment\r\n  CMDB Backlinks:\r\n    Name: CMDB Backlinks\r\n  CMDB Description:\r\n    Name: CMDB Description",
+         "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Assignment\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportAssignment\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSM-Status" : {
                "CIClass" : "SupportAssignment",
@@ -1809,7 +2090,6 @@
                "CIClass" : "SupportAssignment",
                "Config" : {
                   "ClassIDs" : [
-                     "Appliance",
                      "GovernanceRole"
                   ],
                   "DeplStateIDs" : [],
@@ -1930,19 +2210,19 @@
    "RoleNamespace" : "ZTSM::GovernanceObject::Role",
    "Roles" : [
       {
-         "Definition" : "---\r\nSections:\r\n  Backlinks:\r\n    Type: ConfigItemLinks\r\n    Header: Backlinks\r\n    LinkedAs: Source",
-         "Name" : "CMDB Backlinks"
+         "Definition" : "---\r\nSections:\r\n  Backlinks:\r\n    Type: GovernanceObjectLinks\r\n    Header: Backlinks\r\n    LinkedAs: Source",
+         "Name" : "GovernanceDB Backlinks"
       },
       {
          "Definition" : "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header: Description",
-         "Name" : "CMDB Description"
+         "Name" : "GovernanceDB Description"
       },
       {
          "Definition" : "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header: Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMAppSystem-Tier\r\n    - DF: ZTSMAppSystem-Criticality\r\n    - DF: ZTSMAppSystem-Owner\r\n    - DF: ZTSMAppSystem-Parent\r\n    - DF: ZTSMAppSystem-Platform\r\n    - DF: ZTSMAppSystem-Environment\r\n    - DF: ZTSMAppSystem-Location\r\n    - DF: ZTSMAppSystem-DataClassification\r\n    - DF: ZTSMAppSystem-DefaultApprovalModel\r\n    - DF: ZTSMAppSystem-DefaultApprovalProfile",
          "Name" : "ZTSM Application"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  BlueBook:\r\n    Content:\r\n    - Header: Context\r\n    - DF: ZTSM-Status\r\n    - DF: ZBlue-Chapter",
+         "Definition" : "---\r\nSections:\r\n  BlueBook:\r\n    Content:\r\n    - Header: Context\r\n    - DF: ZTSM-Status\r\n    - DF: ZBlue-Record",
          "Name" : "ZTSM Blue Book"
       },
       {
@@ -1958,11 +2238,11 @@
          "Name" : "ZTSM Location"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  Organization:\r\n    Content:\r\n    - Header: General Information\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMOrganization-Type\r\n    - DF: ZTSMOrganization-Tier\r\n    - DF: ZTSMOrganization-Parent\r\n    - DF: ZTSMOrganization-DefaultApprovalProfile",
+         "Definition" : "---\r\nSections:\r\n  Organization:\r\n    Content:\r\n    - Header: General Information\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMOrganization-Type\r\n    - DF: ZTSMOrganization-Tier\r\n    - DF: ZTSMOrganization-Parent\r\n    - DF: ZTSMOrganization-DefaultApprovalModel\r\n    - DF: ZTSMOrganization-DefaultApprovalProfile",
          "Name" : "ZTSM Organization"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n    - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location",
+         "Definition" : "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n    - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location\r\n    - DF: ZTSMPlatform-ServiceSupportMap",
          "Name" : "ZTSM Platform"
       },
       {
@@ -1988,6 +2268,10 @@
       {
          "Definition" : "---\r\nSections:\r\n  Profile:\r\n    Content:\r\n    - Header: TechnologyProfile\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMTechnologyProfile-Type\r\n    - DF: ZTSMTechnologyProfile-Parent",
          "Name" : "ZTSM TechnologyProfile"
+      },
+      {
+         "Definition" : "---\r\nSections:\r\n  ApprovalModel:\r\n    Content:\r\n    - Header: Approval Model\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMApprovalModel-Mode\r\n    - DF: ZTSMApprovalModel-RequiredWeightage\r\n    - DF: ZTSMApprovalModel-ApprovelTimeout\r\n    - DF: ZTSMApprovalModel-L2Escalation\r\n    - DF: ZTSMApprovalModel-L2Timeout\r\n    - DF: ZTSMApprovalModel-L3Escalation\r\n    - DF: ZTSMApprovalModel-L3Timeout\r\n    - DF: ZTSMApprovalModel-FinalAction",
+         "Name" : "ZTSM Approval Model"
       }
    ],
    "Source" : "Export/ExportClass (1).yml"

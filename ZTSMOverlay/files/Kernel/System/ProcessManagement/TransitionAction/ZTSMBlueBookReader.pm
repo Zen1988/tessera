@@ -18,7 +18,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Ticket',
     'Kernel::System::Type',
     'Kernel::System::Log',
@@ -167,23 +167,23 @@ sub _SupportProfileResolve {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     my %Search = (
         Result  => 'ARRAY',
-        Classes => ['Support Profile'],
+        Classes => ['SupportProfile'],
         Limit   => 1,
         UserID  => $Param{UserID} || 1,
     );
 
     if ( $Value =~ m{\A\d+\z} ) {
-        $Search{ConfigItemID} = [$Value];
+        $Search{GovernanceObjectID} = [$Value];
     }
     else {
         $Search{Name} = $Value;
     }
 
-    my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(%Search);
+    my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(%Search);
 
     return if !@SupportProfileIDs;
 
@@ -275,8 +275,8 @@ sub Run {
         return;
     }
 
-    my $BlueBook = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
-        ConfigItemID  => $BlueBookID,
+    my $BlueBook = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $BlueBookID,
         DynamicFields => 1,
     );
 

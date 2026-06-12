@@ -78,7 +78,7 @@ sub PageRender {
     my ( $Self, %Param ) = @_;
 
     # Check needed stuff.
-    for my $Needed (qw(Governance Object Definition)) {
+    for my $Needed (qw(GovernanceObject Definition)) {
         if ( !IsHashRefWithData( $Param{$Needed} ) ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',

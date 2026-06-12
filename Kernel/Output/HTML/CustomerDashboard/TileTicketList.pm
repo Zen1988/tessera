@@ -24,7 +24,7 @@ our @ObjectDependencies = (
     'Kernel::Output::HTML::Layout',
     'Kernel::Output::HTML::TicketOverview::CustomerList',
     'Kernel::System::CustomerUser',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::CustomerGroup',
     'Kernel::System::Log',
     'Kernel::System::State',
@@ -159,14 +159,14 @@ sub _SupportProfileList {
 
     return if !$Param{CustomerUserID};
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;
 
     for my $CustomerUserID (@CustomerUserIDs) {
-        my @FoundAssignmentIDs = $ConfigItemObject->ConfigItemSearch(
-            Classes => ['Support Assignment'],
+        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Classes => ['SupportAssignment'],
             'DynamicField_ZTSMSupportAssignment-UserAccount' => {
                 Equals => $CustomerUserID,
             },
@@ -186,16 +186,14 @@ sub _SupportProfileList {
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
 
-        my $Assignment = $ConfigItemObject->ConfigItemGet(
-            ConfigItemID  => $AssignmentID,
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
             DynamicFields => 1,
         );
 
         next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
-        $AssignmentUser ||= $Assignment->{XMLData}
-            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-UserAccount'};
 
         next ASSIGNMENT if !_CustomerUserMatches(
             AssignmentUser => $AssignmentUser,
@@ -327,18 +325,19 @@ sub _TypeColor {
     return $Color{ $Type || '' } || $Color{Unclassified};
 }
 
-sub _ConfigItemNameGet {
+sub _GovernanceObjectNameGet {
     my (%Param) = @_;
 
-    my $ConfigItemID = _NormalizeValue( $Param{ConfigItemID} );
-    return '-' if !defined $ConfigItemID || $ConfigItemID eq '';
+    my $GovernanceObjectID = _NormalizeValue( $Param{GovernanceObjectID} );
+    return '-' if !defined $GovernanceObjectID || $GovernanceObjectID eq '';
 
-    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
-        ConfigItemID => $ConfigItemID,
+    my $GovernanceObject = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $GovernanceObjectID,
+        Silent             => 1,
     );
 
-    return $ConfigItem->{Name} if $ConfigItem && $ConfigItem->{Name};
-    return $ConfigItemID;
+    return $GovernanceObject->{Name} if $GovernanceObject && $GovernanceObject->{Name};
+    return $GovernanceObjectID;
 }
 
 sub _TicketRowsBuild {
@@ -377,7 +376,7 @@ sub _TicketRowsBuild {
             Type           => $Type,
             TypeColor      => _TypeColor($Type),
             State          => $Ticket{State} || '-',
-            OwnerGroup     => _ConfigItemNameGet( ConfigItemID => $OwnerGroup ),
+            OwnerGroup     => _GovernanceObjectNameGet( GovernanceObjectID => $OwnerGroup ),
             Changed        => $Changed,
             Created        => $Created,
             SortTime       => $Changed || $Created,

@@ -30,7 +30,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::State',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::Article',
@@ -220,8 +220,8 @@ sub Run {
         'Kernel::System::Log'
     );
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     my $TicketObject = $Kernel::OM->Get(
@@ -274,9 +274,9 @@ sub Run {
         return;
     }
 
-    my $StateBook = $ConfigItemObject->ConfigItemGet(
+    my $StateBook = $GovernanceObjectObject->GovernanceObjectGet(
 
-        ConfigItemID  => $StateBookID,
+        GovernanceObjectID  => $StateBookID,
 
         DynamicFields => 1,
     );
@@ -301,9 +301,9 @@ sub Run {
     # ------------------------------------------------------------ #
 
     my $StateRecords
-        = $StateBook->{XMLData}->{'ZState-StateRecord'}
-        || $StateBook->{'DynamicField_ZState-StateRecord'}
-        || $StateBook->{XMLData}->{'ZState-Record'}
+        = $StateBook->{'DynamicField_ZState-StateRecord'}
+        || ( ref $StateBook->{XMLData} eq 'HASH' ? $StateBook->{XMLData}->{'ZState-StateRecord'} : undef )
+        || ( ref $StateBook->{XMLData} eq 'HASH' ? $StateBook->{XMLData}->{'ZState-Record'} : undef )
         || $StateBook->{'DynamicField_ZState-Record'};
 
     if ( !$StateRecords ) {
