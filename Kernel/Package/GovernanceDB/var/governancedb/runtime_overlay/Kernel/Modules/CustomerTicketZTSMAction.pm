@@ -1259,7 +1259,7 @@ sub _RiskAssessmentReferenceInputHTML {
     );
 
     return '<input type="hidden" id="' . _HTML($ID) . '" name="' . _HTML($Name) . '" value="' . _HTML( $Value // '' ) . '" />'
-        . '<input type="text" class="DynamicFieldReference DynamicFieldText Modernize W100pc" id="Autocomplete_' . _HTML($ID) . '" name="Autocomplete_' . _HTML($ID)
+        . '<input type="text" class="DynamicFieldReference DynamicFieldText W100pc" id="Autocomplete_' . _HTML($ID) . '" name="Autocomplete_' . _HTML($ID)
         . '" title="' . _HTML($Label) . '" value="' . _HTML($VisibleValue) . '" data-dynamic-field="' . _HTML($Field) . '" />';
 }
 
@@ -1295,8 +1295,19 @@ sub _RiskAssessmentFieldNameRewrite {
     my $To   = 'RA_' . $Param{Index} . '_' . $Param{Field};
 
     $HTML =~ s{\Q$From\E}{$To}g;
+    $HTML =~ s{class="([^"]*?)\bModernize\b([^"]*?)"}{'class="' . _RiskAssessmentNormalizeClass( "$1 $2" ) . '"'}eg;
 
     return $HTML;
+}
+
+sub _RiskAssessmentNormalizeClass {
+    my ($Class) = @_;
+
+    $Class //= '';
+    $Class =~ s{\s+}{ }g;
+    $Class =~ s{\A\s+|\s+\z}{}g;
+
+    return $Class;
 }
 
 sub _RiskAssessmentOptions {
@@ -1347,6 +1358,9 @@ sub _RiskAssessmentRowsFromParam {
     my @Index       = $ParamObject->GetArray( Param => 'RA_RowIndex' );
 
     my @Columns = ( _RiskAssessmentColumns(), _RiskAssessmentTargetColumns() );
+    my $Configs = $Self->_RiskAssessmentFieldConfigs(
+        Fields => [ map { $_->{Field} } @Columns ],
+    );
     my @Rows;
 
     INDEX:
@@ -1378,10 +1392,18 @@ sub _RiskAssessmentRowsFromParam {
                     $Entry =~ s{\A\s+|\s+\z}{}g;
                     push @Values, $Entry if $Entry ne '';
                 }
-                $Row{$Field} = @Values > 1 ? \@Values : $Values[0];
+                $Row{$Field} = $Self->_RiskAssessmentSetFieldValue(
+                    Field  => $Field,
+                    Config => $Configs->{$Field},
+                    Value  => \@Values,
+                );
             }
             else {
-                $Row{$Field} = $Value;
+                $Row{$Field} = $Self->_RiskAssessmentSetFieldValue(
+                    Field  => $Field,
+                    Config => $Configs->{$Field},
+                    Value  => $Value,
+                );
             }
         }
 
@@ -1389,6 +1411,41 @@ sub _RiskAssessmentRowsFromParam {
     }
 
     return \@Rows;
+}
+
+sub _RiskAssessmentSetFieldValue {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    my @Value = _RiskAssessmentFlattenValues($Value);
+
+    @Value = grep { defined $_ && $_ ne '' } @Value;
+    return if !@Value;
+
+    my $FieldType = IsHashRefWithData( $Param{Config} ) ? ( $Param{Config}->{FieldType} || '' ) : '';
+    if ( $FieldType =~ m{\A(?:GeneralCatalog|Queue|SLA|Type|WebService|ConfigItem|ConfigItemVersion|GovernanceObject|GovernanceObjectVersion|Reference)\z} ) {
+        return ( $Param{Config}->{Config}->{MultiValue} || $Param{Config}->{Config}->{Multiselect} )
+            ? \@Value
+            : [ $Value[0] ];
+    }
+
+    return @Value > 1 ? \@Value : $Value[0];
+}
+
+sub _RiskAssessmentFlattenValues {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        my @Values;
+        for my $Item ( @{$Value} ) {
+            push @Values, _RiskAssessmentFlattenValues($Item);
+        }
+        return @Values;
+    }
+
+    return $Value;
 }
 
 sub _RiskAssessmentArticleBody {

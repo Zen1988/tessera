@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.38</Version>
+    <Version>0.0.46</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
