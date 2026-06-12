@@ -1036,7 +1036,7 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###DeploymentStates" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectStatusFunctionality" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the ZTSM Statuss in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
@@ -1060,7 +1060,7 @@
     </Setting>
 
     <!-- GeneralCatalog settings -->
-    <Setting Name="GeneralCatalogPreferences###DeploymentStatesColors" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectStatusColor" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the ZTSM Statuss color in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
@@ -1076,12 +1076,12 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###NameModule" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectNameModule" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the name module for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Name Module</Item>
                 <Item Key="Priority">30</Item>
@@ -1091,17 +1091,17 @@
                     </Hash>
                 </Item>
                 <Item Key="PrefKey">NameModule</Item>
-                <Item Key="Block">NameModule</Item>
+                <Item Key="Block">GovernanceObjectNameModule</Item>
                 <Item Key="Mandatory" ValueType="Checkbox">0</Item>
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###NumberModule" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectNumberModule" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the number module for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Number Module</Item>
                 <Item Key="Priority">40</Item>
@@ -1110,18 +1110,19 @@
                     <Hash>
                     </Hash>
                 </Item>
+                <Item Key="DataSelected">GOID</Item>
                 <Item Key="PrefKey">NumberModule</Item>
-                <Item Key="Block">NumberModule</Item>
+                <Item Key="Block">GovernanceObjectNumberModule</Item>
                 <Item Key="Mandatory" ValueType="Checkbox">1</Item>
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###VersionStringModule" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionStringModule" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the version string module for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Version String Module</Item>
                 <Item Key="Priority">50</Item>
@@ -1134,16 +1135,16 @@
                 <Item Key="DataSelected">Incremental</Item>
                 <Item Key="Mandatory" ValueType="Checkbox">0</Item>
                 <Item Key="PrefKey">VersionStringModule</Item>
-                <Item Key="Block">VersionStringModule</Item>
+                <Item Key="Block">GovernanceObjectVersionStringModule</Item>
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###VersionStringExpression" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionStringExpression" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the version string template toolkit module for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Version String Expression</Item>
                 <Item Key="Priority">60</Item>
@@ -1154,12 +1155,12 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###VersionTrigger" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionTrigger" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the version trigger for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Version Trigger</Item>
                 <Item Key="Priority">70</Item>
@@ -1179,12 +1180,12 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="GeneralCatalogPreferences###Categories" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectCategories" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the categories for Governance Object classes in the preferences view of the agent interface.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
                 <Item Key="Label" Translatable="1">Categories</Item>
                 <Item Key="Priority">80</Item>
@@ -1599,12 +1600,12 @@
         </Value>
     </Setting>
 
-    <Setting Name="GeneralCatalogPreferences###Permissions" Required="0" Valid="1">
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectPermissions" Required="0" Valid="1">
         <Description Translatable="1">Parameters for the example permission groups of the general catalog attributes.</Description>
         <Navigation>Core::GeneralCatalog</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
                 <Item Key="Label" Translatable="1">Permission Group</Item>
                 <Item Key="Priority">10</Item>
                 <Item Key="Block">Permission</Item>

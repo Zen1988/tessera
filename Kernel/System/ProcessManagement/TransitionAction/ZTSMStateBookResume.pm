@@ -49,6 +49,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 sub _FieldCandidates {
     my ($Value) = @_;
 
@@ -251,6 +261,14 @@ sub Run {
 
     my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMStateBookResume: Ticket is onhold, skip lifecycle resume TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     my $StateBookID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-StateBook'} )
         || $Param{StateBookID};

@@ -61,6 +61,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RUN
 # ------------------------------------------------------------ #
@@ -95,6 +105,14 @@ sub Run {
     my $TicketID = $Ticket->{TicketID};
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMChapterDirector: Ticket is onhold, skip chapter orchestration TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     # -------------------------------------------------------- #
     # CHAPTERPLAY CONTEXT

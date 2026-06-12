@@ -70,6 +70,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # NORMALIZE ARRAY
 # ------------------------------------------------------------ #
@@ -248,6 +258,14 @@ sub Run {
     my $TicketID = $Ticket->{TicketID};
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMServiceLibrarian: Ticket is onhold, skip governance context resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     my $ServiceID = $Ticket->{ServiceID};
 

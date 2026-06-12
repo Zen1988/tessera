@@ -1,0 +1,157 @@
+# --
+# Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt
+# --
+
+<div class="MainBox ARIARoleMain">
+    <style>
+        .ZTSMRiskAssessmentShell {
+            padding: 24px;
+        }
+        .ZTSMRiskAssessmentShell h1 {
+            margin: 0 0 18px;
+            font-size: 22px;
+            line-height: 1.3;
+        }
+        .ZTSMRiskAssessmentScroll {
+            overflow-x: auto;
+            border: 1px solid #d6d9e6;
+            background: #fff;
+        }
+        .ZTSMRiskAssessmentTable {
+            width: 100%;
+            min-width: 1920px;
+            border-collapse: collapse;
+        }
+        .ZTSMRiskAssessmentTable th,
+        .ZTSMRiskAssessmentTable td {
+            padding: 8px;
+            border: 1px solid #d6d9e6;
+            vertical-align: top;
+        }
+        .ZTSMRiskAssessmentTable th {
+            background: #f3f5fb;
+            color: #11194f;
+            font-weight: 700;
+            text-align: left;
+        }
+        .ZTSMRiskAssessmentTable input,
+        .ZTSMRiskAssessmentTable select,
+        .ZTSMRiskAssessmentTable textarea {
+            width: 100%;
+            min-width: 120px;
+            box-sizing: border-box;
+        }
+        .ZTSMRiskAssessmentAction {
+            width: 44px;
+            text-align: center;
+        }
+        .ZTSMRiskAssessmentRemove,
+        .ZTSMRiskAssessmentAdd {
+            min-width: 34px;
+            min-height: 30px;
+            border-radius: 4px;
+        }
+        .ZTSMRiskAssessmentTargets td {
+            background: #fafbff;
+        }
+        .ZTSMRiskAssessmentTargets label {
+            display: inline-block;
+            width: 48%;
+            margin-right: 1.5%;
+            color: #555b82;
+            font-weight: 700;
+        }
+        .ZTSMRiskAssessmentTargets input {
+            display: block;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .ZTSMRiskAssessmentRemarks {
+            margin-top: 18px;
+        }
+        .ZTSMRiskAssessmentRemarks textarea {
+            width: 100%;
+            min-height: 120px;
+            box-sizing: border-box;
+        }
+        .ZTSMRiskAssessmentActions {
+            margin-top: 18px;
+            text-align: right;
+        }
+    </style>
+
+    <div class="ZTSMRiskAssessmentShell">
+        <h1>[% Translate("Risk Assessment") | html %] [% Data.TicketNumber | html %]</h1>
+        <form action="[% Env("CGIHandle") | html %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
+            <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
+            <input type="hidden" name="RuntimeAction" value="Assess"/>
+            <input type="hidden" name="Subaction" value="SubmitRiskAssessment"/>
+
+            [% Data.WorkspaceHTML %]
+
+            <div class="ZTSMRiskAssessmentActions">
+                <button type="button" class="ZTSMRiskAssessmentAdd">+</button>
+            </div>
+
+            <div class="ZTSMRiskAssessmentRemarks">
+                <label for="Remarks">[% Translate("Remarks") | html %]</label>
+                <textarea id="Remarks" name="Remarks" rows="5"></textarea>
+            </div>
+
+            <div class="ZTSMRiskAssessmentActions">
+                <a class="Button" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %]">[% Translate("Cancel") | html %]</a>
+                <button type="submit" class="Primary">[% Translate("Submit Assessment") | html %]</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    (function () {
+        var addButton = document.querySelector('.ZTSMRiskAssessmentAdd');
+        var body = document.getElementById('ZTSMRiskAssessmentRows');
+        var template = document.getElementById('ZTSMRiskAssessmentTemplate');
+        var nextIndex = body ? body.querySelectorAll('.ZTSMRiskAssessmentRow').length : 0;
+
+        function bindRemove(scope) {
+            var buttons = (scope || document).querySelectorAll('.ZTSMRiskAssessmentRemove');
+            buttons.forEach(function (button) {
+                button.onclick = function () {
+                    var row = button.closest('.ZTSMRiskAssessmentRow');
+                    if (!row) {
+                        return;
+                    }
+                    var index = row.getAttribute('data-row-index');
+                    var targets = body.querySelector('.ZTSMRiskAssessmentTargets[data-row-index="' + index + '"]');
+                    if (body.querySelectorAll('.ZTSMRiskAssessmentRow').length <= 1) {
+                        row.querySelectorAll('input[type="text"], textarea').forEach(function (field) { field.value = ''; });
+                        row.querySelectorAll('select').forEach(function (field) { field.selectedIndex = 0; });
+                        if (targets) {
+                            targets.querySelectorAll('input[type="text"]').forEach(function (field) { field.value = ''; });
+                        }
+                        return;
+                    }
+                    if (targets) {
+                        targets.remove();
+                    }
+                    row.remove();
+                };
+            });
+        }
+
+        if (addButton && body && template) {
+            addButton.onclick = function () {
+                var html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex++));
+                var wrapper = document.createElement('tbody');
+                wrapper.innerHTML = html;
+                while (wrapper.firstElementChild) {
+                    body.appendChild(wrapper.firstElementChild);
+                }
+                bindRemove(body);
+            };
+        }
+
+        bindRemove(document);
+    }());
+    </script>
+</div>

@@ -49,6 +49,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 sub _RecordValueGet {
     my (%Param) = @_;
 
@@ -235,6 +245,14 @@ sub Run {
             Message  => 'ZTSMBlueBookReader: Stop, missing TicketID',
         );
         return;
+    }
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMBlueBookReader: Ticket is onhold, skip BlueBook orchestration TicketID=$TicketID",
+        );
+        return 1;
     }
 
     $LogObject->Log(

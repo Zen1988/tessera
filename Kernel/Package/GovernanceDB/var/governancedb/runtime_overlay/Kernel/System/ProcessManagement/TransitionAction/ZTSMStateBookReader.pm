@@ -71,6 +71,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 sub _FieldCandidates {
     my ($Value) = @_;
 
@@ -250,6 +260,14 @@ sub Run {
 
     if ( !$TicketID ) {
         return;
+    }
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMStateBookReader: Ticket is onhold, skip lifecycle orchestration TicketID=$TicketID",
+        );
+        return 1;
     }
 
     # ------------------------------------------------------------ #

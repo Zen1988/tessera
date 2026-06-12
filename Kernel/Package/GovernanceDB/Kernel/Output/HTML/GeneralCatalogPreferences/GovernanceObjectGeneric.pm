@@ -53,12 +53,19 @@ sub Param {
         $Param{Data}  = { $Kernel::OM->Get('Kernel::System::Group')->GroupList( Valid => 1 ) };
         $Param{Block} = 'Option';
     }
+    elsif ( $Block eq 'GovernanceObjectNameModule' ) {
+        $Param{Data}  = {};
+        $Param{Block} = 'Option';
+    }
     elsif ( $Block eq 'GovernanceObjectNumberModule' ) {
         $Param{Data}  = { GOID => 'GOID' };
         $Param{Block} = 'Option';
     }
     elsif ( $Block eq 'GovernanceObjectVersionStringModule' ) {
-        $Param{Data}  = { Incremental => 'Incremental' };
+        $Param{Data}  = {
+            Incremental      => 'Incremental',
+            TemplateToolkit  => 'TemplateToolkit',
+        };
         $Param{Block} = 'Option';
     }
     elsif ( $Block eq 'GovernanceObjectVersionTrigger' ) {
@@ -82,7 +89,7 @@ sub Param {
     }
     elsif ( $Block eq 'GovernanceObjectClassCategories' ) {
         my $Classes = $Kernel::OM->Get('Kernel::Config')->Get('GovernanceDB::GeneralCatalogClasses') || {};
-        my $CategoryClass = $Classes->{Category} || $Classes->{ClassCategory} || 'ZTSM::GovernanceObject::Category';
+        my $CategoryClass = $Classes->{ClassCategory} || $Classes->{Category} || 'ZTSM::GovernanceObject::Class::Category';
 
         my @Categories = values %{
             $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(

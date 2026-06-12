@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.28</Version>
+    <Version>0.0.35</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -88,6 +88,7 @@
         <File Location="Kernel/System/GovernanceObject/Mask.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Number.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Number/AutoIncrement.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Number/GOID.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Permission.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Permission/ClassGroupCheck.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Permission/ItemClassGroupCheck.pm" Permission="660"/>
@@ -104,6 +105,11 @@
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
 
         <File Location="Kernel/Config/Files/XML/ZTSMGovernanceRuntime.xml" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Config/Files/XML/Framework.xml" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldDB.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldScreen.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldSet.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminService.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketDecision.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketQuickClose.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerDashboardCommon.pm" Permission="660"/>
@@ -111,7 +117,11 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketOverview.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZTSMAction.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Layout.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldDB.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldSet.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminService.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerFooter.tt" Permission="660"/>
@@ -120,14 +130,20 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketMessage.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/DynamicField/Agent/Set.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/DynamicField/Customer/Set.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Footer.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/HTMLHead.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Login.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/TicketOverview/CustomerList.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicFieldDB.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMRoleDirector.pm" Permission="660"/>

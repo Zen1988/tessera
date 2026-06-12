@@ -70,6 +70,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # NORMALIZE ARRAY
 # ------------------------------------------------------------ #
@@ -184,92 +194,6 @@ sub _ConfigItemDisplayList {
     return join( ', ', @DisplayValues ) || 'N/A';
 }
 
-sub _HashFromArray {
-    my (@Values) = @_;
-
-    my %Lookup;
-    VALUE:
-    for my $Value (@Values) {
-        next VALUE if !defined $Value || $Value eq '';
-        $Lookup{$Value} = 1;
-    }
-
-    return %Lookup;
-}
-
-sub _ApplicationPlatformIDsGet {
-    my (%Param) = @_;
-
-    my $GovernanceObjectObject = $Param{GovernanceObjectObject}
-        || $Kernel::OM->Get('Kernel::System::GovernanceObject');
-
-    my @CurrentApplicationIDs = _NormalizeArray( $Param{ApplicationIDs} || [] );
-    my %VisitedApplicationID;
-    my %PlatformID;
-
-    while (@CurrentApplicationIDs) {
-        my @ParentApplicationIDs;
-
-        APPLICATION:
-        for my $ApplicationID (@CurrentApplicationIDs) {
-            next APPLICATION if !$ApplicationID;
-            next APPLICATION if $VisitedApplicationID{$ApplicationID}++;
-
-            my $Application = $GovernanceObjectObject->GovernanceObjectGet(
-                GovernanceObjectID => $ApplicationID,
-                DynamicFields      => 1,
-                Silent             => 1,
-            );
-            next APPLICATION if !$Application || ref $Application ne 'HASH';
-
-            my @ApplicationPlatformIDs = _NormalizeArray(
-                $Application->{'DynamicField_ZTSMAppSystem-Platform'}
-            );
-
-            if (@ApplicationPlatformIDs) {
-                $PlatformID{$_} = 1 for @ApplicationPlatformIDs;
-                next APPLICATION;
-            }
-
-            push @ParentApplicationIDs, _NormalizeArray(
-                $Application->{'DynamicField_ZTSMAppSystem-Parent'}
-            );
-        }
-
-        last if %PlatformID;
-        @CurrentApplicationIDs = @ParentApplicationIDs;
-    }
-
-    return keys %PlatformID;
-}
-
-sub _PlatformServiceSupportMapIDsGet {
-    my (%Param) = @_;
-
-    my $GovernanceObjectObject = $Param{GovernanceObjectObject}
-        || $Kernel::OM->Get('Kernel::System::GovernanceObject');
-
-    my %ServiceSupportMapID;
-
-    PLATFORM:
-    for my $PlatformID ( _NormalizeArray( $Param{PlatformIDs} || [] ) ) {
-        next PLATFORM if !$PlatformID;
-
-        my $Platform = $GovernanceObjectObject->GovernanceObjectGet(
-            GovernanceObjectID => $PlatformID,
-            DynamicFields      => 1,
-            Silent             => 1,
-        );
-        next PLATFORM if !$Platform || ref $Platform ne 'HASH';
-
-        $ServiceSupportMapID{$_} = 1 for _NormalizeArray(
-            $Platform->{'DynamicField_ZTSMPlatform-ServiceSupportMap'}
-        );
-    }
-
-    return keys %ServiceSupportMapID;
-}
-
 sub _TransitionContextGet {
     my (%Param) = @_;
 
@@ -334,6 +258,14 @@ sub Run {
     my $TicketID = $Ticket->{TicketID};
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMServiceLibrarian: Ticket is onhold, skip governance context resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     my $ServiceID = $Ticket->{ServiceID};
 
@@ -424,7 +356,6 @@ sub Run {
 
 	my $Winner;
 	my $HighestScore = -1;
-    my @HighestScoreMaps;
 
 	MAP:
 	for my $MapID (@CandidateIDs) {
@@ -610,36 +541,8 @@ sub Run {
 			$HighestScore = $Score;
 
 			$Winner = $Map;
-
-            @HighestScoreMaps = ($Map);
 		}
-        elsif ( $Score == $HighestScore ) {
-            push @HighestScoreMaps, $Map;
-        }
 	}
-
-    if ( @HighestScoreMaps > 1 ) {
-        my @ApplicationPlatformIDs = _ApplicationPlatformIDsGet(
-            GovernanceObjectObject => $GovernanceObjectObject,
-            ApplicationIDs         => \@TicketApplications,
-        );
-
-        my %PlatformServiceSupportMapID = _HashFromArray(
-            _PlatformServiceSupportMapIDsGet(
-                GovernanceObjectObject => $GovernanceObjectObject,
-                PlatformIDs            => \@ApplicationPlatformIDs,
-            ),
-        );
-
-        my @PlatformMatchedMaps = grep {
-            $_->{GovernanceObjectID}
-                && $PlatformServiceSupportMapID{ $_->{GovernanceObjectID} }
-        } @HighestScoreMaps;
-
-        if (@PlatformMatchedMaps) {
-            $Winner = $PlatformMatchedMaps[0];
-        }
-    }
 
     # ------------------------------------------------------------ #
     # NO GOVERNANCE MATCH

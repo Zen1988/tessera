@@ -12,12 +12,41 @@ use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
     'Kernel::System::Log',
+    'Kernel::System::Ticket',
 );
 
 sub new {
     my ( $Type, %Param ) = @_;
 
     return bless {}, $Type;
+}
+
+sub _NormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+    return _NormalizeValue( $Value->[0] ) if ref $Value eq 'ARRAY';
+    return _NormalizeValue( $Value->{Content} ) if ref $Value eq 'HASH';
+    return $Value;
+}
+
+sub _TicketOnHold {
+    my (%Param) = @_;
+
+    return if !$Param{TicketID};
+
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $Param{TicketID},
+        DynamicFields => 1,
+        UserID        => $Param{UserID} || 1,
+        Silent        => 1,
+    );
+
+    return if !%Ticket;
+    return 1 if _NormalizeValue( $Ticket{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket{State} || '' ) eq 'onhold';
+
+    return;
 }
 
 sub Validate {
@@ -34,6 +63,11 @@ sub Validate {
     my $TicketID = $Param{Data}->{TicketID};
 
     return if !$TicketID;
+
+    return if _TicketOnHold(
+        TicketID => $TicketID,
+        UserID   => $Param{UserID} || 1,
+    );
 
     my $BlueBookID = Kernel::System::ZTSMBlueBookRuntime::BlueBookIDGet(
         Data => $Param{Data},

@@ -75,7 +75,9 @@ sub InstallDefaults {
 
         next ROLE if ref $Role ne 'HASH' || !$Role->{Definition};
 
-        $GovernanceObjectObject->RoleDefinitionAdd(
+        $Self->_DefinitionEnsure(
+            GovernanceObjectObject => $GovernanceObjectObject,
+            Type                   => 'Role',
             RoleID     => $RoleID,
             Definition => $Role->{Definition},
             UserID     => 1,
@@ -99,7 +101,9 @@ sub InstallDefaults {
 
         next CLASS if !$Class->{Definition};
 
-        $GovernanceObjectObject->DefinitionAdd(
+        $Self->_DefinitionEnsure(
+            GovernanceObjectObject => $GovernanceObjectObject,
+            Type                   => 'Class',
             ClassID    => $ClassID,
             Definition => $Class->{Definition},
             UserID     => 1,
@@ -109,6 +113,8 @@ sub InstallDefaults {
     $Self->_DynamicFieldsEnsure(
         Classes => $Defaults->{Classes} || [],
     );
+
+    $Self->_TicketRuntimeDynamicFieldsEnsure();
 
     $Self->_TicketReferenceDynamicFieldsRepair(
         Classes => $Defaults->{Classes} || [],
@@ -127,6 +133,71 @@ sub InstallDefaults {
     $Self->_SysConfigDeploy();
 
     return 1;
+}
+
+sub _DefinitionEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $GovernanceObjectObject = $Param{GovernanceObjectObject};
+    my $Definition             = $Param{Definition};
+    my $Type                   = $Param{Type} || 'Class';
+
+    return if !$GovernanceObjectObject || !$Definition;
+
+    my %GetParam;
+    my %AddParam = (
+        Definition => $Definition,
+        UserID     => $Param{UserID} || 1,
+    );
+
+    if ( $Type eq 'Role' ) {
+        return if !$Param{RoleID};
+
+        %GetParam = ( RoleID => $Param{RoleID} );
+        $AddParam{RoleID} = $Param{RoleID};
+    }
+    else {
+        return if !$Param{ClassID};
+
+        %GetParam = ( ClassID => $Param{ClassID} );
+        $AddParam{ClassID} = $Param{ClassID};
+    }
+
+    my $CurrentDefinition = $Type eq 'Role'
+        ? $GovernanceObjectObject->RoleDefinitionGet(%GetParam)
+        : $GovernanceObjectObject->DefinitionGet(%GetParam);
+
+    if ( $CurrentDefinition && $CurrentDefinition->{DefinitionID} ) {
+        my $Current = $Self->_DefinitionNormalize( $CurrentDefinition->{Definition} || '' );
+        my $Wanted  = $Self->_DefinitionNormalize($Definition);
+
+        return 1 if $Current eq $Wanted;
+
+        $AddParam{Force} = 1;
+    }
+
+    my $Result = $Type eq 'Role'
+        ? $GovernanceObjectObject->RoleDefinitionAdd(%AddParam)
+        : $GovernanceObjectObject->DefinitionAdd(%AddParam);
+
+    if ( $Result && $Result->{Success} ) {
+        $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+            Type => 'GovernanceObjectDefinition',
+        );
+    }
+
+    return $Result && $Result->{Success};
+}
+
+sub _DefinitionNormalize {
+    my ( $Self, $Definition ) = @_;
+
+    $Definition ||= '';
+    $Definition =~ s{\r\n}{\n}xmsg;
+    $Definition =~ s{\r}{\n}xmsg;
+    $Definition =~ s{\s+\z}{}xms;
+
+    return $Definition;
 }
 
 sub _RuntimeOverlayInstall {
@@ -732,6 +803,48 @@ sub _DynamicFieldsEnsure {
             Priority => 'error',
             Message  => "GovernanceDB bootstrap could not create dynamic field $FieldName.",
         );
+    }
+
+    $DynamicFieldObject->EventHandlerTransaction();
+
+    return 1;
+}
+
+sub _TicketRuntimeDynamicFieldsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+
+    my $Existing = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZTicket-HoldState',
+    );
+    return 1 if $Existing && $Existing->{ID};
+
+    my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
+        Name       => 'ZTicket-HoldState',
+        Label      => 'Requester Hold State',
+        FieldOrder => 10100,
+        FieldType  => 'Text',
+        ObjectType => 'Ticket',
+        Config     => {
+            DefaultValue => '',
+            Link         => '',
+            LinkPreview  => '',
+            MultiValue   => 0,
+            RegExList    => [],
+            Tooltip      => 'Stores the previous ticket state while requester hold is active.',
+        },
+        ValidID => 1,
+        UserID  => 1,
+        Reorder => 0,
+    );
+
+    if ( !$FieldID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB bootstrap could not create dynamic field ZTicket-HoldState.',
+        );
+        return;
     }
 
     $DynamicFieldObject->EventHandlerTransaction();

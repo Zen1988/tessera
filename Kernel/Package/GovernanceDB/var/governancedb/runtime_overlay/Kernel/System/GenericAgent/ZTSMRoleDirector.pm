@@ -67,6 +67,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # GET DYNAMIC FIELD VALUE
 # ------------------------------------------------------------ #
@@ -544,6 +554,14 @@ sub Run {
     );
 	
 	return 0 if !%Ticket;
+
+    if ( _TicketOnHold( \%Ticket ) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMRoleDirector: Ticket is onhold, skip GenericAgent role resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
 	
     # -------------------------------------------------------- #
     # RUNTIME CONTEXT

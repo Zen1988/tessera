@@ -2303,7 +2303,31 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
     );
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess;
+    my $RequesterPauseAccess = $Self->_ZTSMRequesterExecutionPauseAllowed(
+        Ticket => $Ticket,
+        Config => $Config,
+    );
+
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess;
+
+    my $HoldState = $Ticket->{'DynamicField_ZTicket-HoldState'};
+    if ( ref $HoldState eq 'ARRAY' ) {
+        $HoldState = $HoldState->[0];
+    }
+
+    if ( $HoldState && $RequesterPauseAccess ) {
+        return [
+            {
+                Action          => 'RequesterResume',
+                Label           => 'Resume',
+                RiskFieldsHTML  => '',
+                RemarksRequired => 0,
+                InActionMenu    => 1,
+            },
+        ];
+    }
+
+    return if $HoldState;
 
     my $TicketOwner = $Ticket->{'DynamicField_ZTicket-Owner'};
     if ( ref $TicketOwner eq 'ARRAY' ) {
@@ -2328,12 +2352,10 @@ sub _ZTSMRuntimeActions {
         push @RuntimeActions, {
             Action         => $Action,
             Label          => $ActionConfig->{Label} || $Action,
-            RiskFieldsHTML => $Ticket->{Type} eq 'Assessment'
-                ? $Self->_ZTSMRuntimeRiskFieldsHTML(
-                    Ticket => $Ticket,
-                    Fields => $AssessmentFields,
-                )
+            DirectURL      => $Ticket->{Type} eq 'Assessment' && $Action eq 'Assess'
+                ? "Action=CustomerTicketZTSMAction;TicketID=$Ticket->{TicketID};RuntimeAction=Assess"
                 : '',
+            RiskFieldsHTML => '',
         };
     }
 
@@ -2365,7 +2387,96 @@ sub _ZTSMRuntimeActions {
         };
     }
 
+    if ($RequesterPauseAccess) {
+        if (
+            $Self->_ZTSMRequesterHoldStateName( Config => $Config )
+            && !$Self->_ZTSMRequesterHoldStateActive( Ticket => $Ticket, Config => $Config )
+            )
+        {
+            push @RuntimeActions, {
+                Action          => 'RequesterHold',
+                Label           => 'On Hold',
+                RiskFieldsHTML  => '',
+                RemarksRequired => 0,
+                InActionMenu    => 1,
+            };
+        }
+    }
+
     return \@RuntimeActions if @RuntimeActions;
+    return;
+}
+
+sub _ZTSMRequesterExecutionPauseAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+
+    return if !IsHashRefWithData($Ticket);
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    if ( ref $ParentTicketID eq 'ARRAY' ) {
+        $ParentTicketID = $ParentTicketID->[0];
+    }
+
+    return if $ParentTicketID;
+    return 1;
+}
+
+sub _ZTSMRequesterHoldStateName {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+    my @StateCandidates;
+    push @StateCandidates, $Config->{RequesterHoldState} if $Config->{RequesterHoldState};
+    if ( IsArrayRefWithData( $Config->{RequesterHoldStates} ) ) {
+        push @StateCandidates, @{ $Config->{RequesterHoldStates} };
+    }
+    push @StateCandidates, ( 'onhold', 'On Hold', 'on hold' );
+
+    my %Seen;
+    my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+
+    STATE:
+    for my $State (@StateCandidates) {
+        next STATE if !$State;
+        next STATE if $Seen{$State}++;
+
+        my $StateID = $StateObject->StateLookup(
+            State => $State,
+        );
+
+        return $State if $StateID;
+    }
+
+    return;
+}
+
+sub _ZTSMRequesterHoldStateActive {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+
+    my @StateCandidates;
+    push @StateCandidates, $Config->{RequesterHoldState} if $Config->{RequesterHoldState};
+    if ( IsArrayRefWithData( $Config->{RequesterHoldStates} ) ) {
+        push @StateCandidates, @{ $Config->{RequesterHoldStates} };
+    }
+    push @StateCandidates, ( 'onhold', 'On Hold', 'on hold' );
+
+    my $CurrentState = $Ticket->{State} || '';
+    STATE:
+    for my $State (@StateCandidates) {
+        next STATE if !$State;
+        return 1 if lc $State eq lc $CurrentState;
+    }
+
     return;
 }
 
@@ -2580,6 +2691,8 @@ sub _Mask {
 
     if ( IsArrayRefWithData( $Param{ZTSMRuntimeActions} ) ) {
         for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
+            next if $RuntimeAction->{DirectURL};
+
             $LayoutObject->Block(
                 Name => 'ZTSMRuntimeActionDialog',
                 Data => {
