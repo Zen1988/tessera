@@ -340,6 +340,19 @@ sub _GovernanceObjectNameGet {
     return $GovernanceObjectID;
 }
 
+sub _UserTimeString {
+    my ($TimeStamp) = @_;
+
+    return '' if !defined $TimeStamp || $TimeStamp eq '';
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    return $LayoutObject->{LanguageObject}->FormatTimeString(
+        $TimeStamp,
+        'DateFormatLong',
+    ) || $TimeStamp;
+}
+
 sub _TicketRowsBuild {
     my (%Param) = @_;
 
@@ -368,6 +381,8 @@ sub _TicketRowsBuild {
         my $OwnerGroup = _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerGroup'} );
         my $Changed    = $Ticket{Changed} || $Ticket{Created} || '';
         my $Created    = $Ticket{Created} || '';
+        my $ChangedDisplay = _UserTimeString($Changed);
+        my $CreatedDisplay = _UserTimeString($Created);
 
         push @Rows, {
             TicketID       => $TicketID,
@@ -377,8 +392,8 @@ sub _TicketRowsBuild {
             TypeColor      => _TypeColor($Type),
             State          => $Ticket{State} || '-',
             OwnerGroup     => _GovernanceObjectNameGet( GovernanceObjectID => $OwnerGroup ),
-            Changed        => $Changed,
-            Created        => $Created,
+            Changed        => $ChangedDisplay || $Changed,
+            Created        => $CreatedDisplay || $Created,
             SortTime       => $Changed || $Created,
             IsClosed       => $IsClosed,
         };

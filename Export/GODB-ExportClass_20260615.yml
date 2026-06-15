@@ -1,0 +1,2359 @@
+---
+- Class:
+    Categories:
+    - Business
+    Name: Application
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - Description
+    - Name
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Application\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Application\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Application
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Application
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMAppSystem-Criticality:
+      CIClass: Application
+      Config:
+        DefaultValue: Medium
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Critical: Critical
+          High: High
+          Low: Low
+          Medium: Medium
+        Tooltip: Criticality
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Criticality
+      Name: ZTSMAppSystem-Criticality
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-DataClassification:
+      CIClass: Application
+      Config:
+        DefaultValue: Internal
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Confidential: Confidential
+          Internal: Internal
+          Public: Public
+          Restricted: Restricted
+          Secret: Secret
+        Tooltip: Data Classification
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Data Classification
+      Name: ZTSMAppSystem-DataClassification
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-DefaultApprovalModel:
+      CIClass: Application
+      Config:
+        ClassIDs: []
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Default Approval Model
+      FieldType: GovernanceObject
+      Label: Default Approval Model
+      Name: ZTSMAppSystem-DefaultApprovalModel
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-DefaultApprovalProfile:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Default Approval Profile
+      FieldType: GovernanceObject
+      Label: Default Approval Profile
+      Name: ZTSMAppSystem-DefaultApprovalProfile
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Environment:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: GovernanceObject
+      Label: Environment
+      Name: ZTSMAppSystem-Environment
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Location:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Application System
+      FieldType: GovernanceObject
+      Label: Location
+      Name: ZTSMAppSystem-Location
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Owner:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Owner
+      FieldType: GovernanceObject
+      Label: Owner
+      Name: ZTSMAppSystem-Owner
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Parent:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: App System
+      FieldType: GovernanceObject
+      Label: Parent
+      Name: ZTSMAppSystem-Parent
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Platform:
+      CIClass: Application
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Platform
+      FieldType: GovernanceObject
+      Label: Platform
+      Name: ZTSMAppSystem-Platform
+      ObjectType: GovernanceObject
+    ZTSMAppSystem-Tier:
+      CIClass: Application
+      Config:
+        DefaultValue: '3'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          '1': '1'
+          '2': '2'
+          '3': '3'
+          '4': '4'
+          '5': '5'
+        Tooltip: Tier
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Tier
+      Name: ZTSMAppSystem-Tier
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Governance
+    Name: ApprovalModel
+    NumberModule: GOID
+    PermissionGroup: admin
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::ApprovalModel\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Approval Model\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMApprovalModel-ApprovelTimeout:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout (Hours)
+      FieldType: Text
+      Label: Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-ApprovelTimeout
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-FinalAction:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: Reject with Timeout
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Approve: Approve
+          Approve with Timeout: Approve with Timeout
+          Do Nothing: Do Nothing
+          Reject: Reject
+          Reject with Timeout: Reject with Timeout
+        Tooltip: Final Action after timeout
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Final Action on Timeout
+      Name: ZTSMApprovalModel-FinalAction
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-L2Escalation:
+      CIClass: ApprovalModel
+      Config:
+        ClassIDs:
+        - GovernanceRole
+        - SupportProfile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: L2 Escalation
+      FieldType: GovernanceObject
+      Label: Approval Escalation L2
+      Name: ZTSMApprovalModel-L2Escalation
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-L2Timeout:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout in hours
+      FieldType: Text
+      Label: L2 Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-L2Timeout
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-L3Escalation:
+      CIClass: ApprovalModel
+      Config:
+        ClassIDs:
+        - GovernanceRole
+        - SupportProfile
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: L3 Escalation
+      FieldType: GovernanceObject
+      Label: Approval Escalation L3
+      Name: ZTSMApprovalModel-L3Escalation
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-L3Timeout:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: '72'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        Tooltip: Approval Timeout in hours
+      FieldType: Text
+      Label: L3 Approval Timeout (Hours)
+      Name: ZTSMApprovalModel-L3Timeout
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-Mode:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: Escalation
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Escalation: Escalation
+          Parallel: Parallel
+          Primary + Secondary: Primary + Secondary
+          Primary Only: Primary Only
+        Tooltip: Approval Mode
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Mode
+      Name: ZTSMApprovalModel-Mode
+      ObjectType: GovernanceObject
+    ZTSMApprovalModel-RequiredWeightage:
+      CIClass: ApprovalModel
+      Config:
+        DefaultValue: '1'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Approval Weightage must be in number only
+          Value: ^[0-9]+$
+        Tooltip: Required Approval Weightage
+      FieldType: Text
+      Label: Required Approval Weightage
+      Name: ZTSMApprovalModel-RequiredWeightage
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Governance
+    Name: BlueBook
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Blue Book\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZBlue-Record:
+      CIClass: BlueBook
+      Config:
+        Include:
+        - DF: ZBlue-Chapter
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: BR-001
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList: []
+              Tooltip: Chapter ID (make sure it unique inside BlueBook)
+            FieldType: Text
+            Label: ID
+            Name: ZBlue-Chapter
+            ObjectType: GovernanceObject
+        - DF: ZBlue-BlueLevel
+          Definition:
+            CIClass: BlueBook
+            Config:
+              Class: BlueLevel
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: Blue Level
+            FieldType: GeneralCatalog
+            Label: Level
+            Name: ZBlue-BlueLevel
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Profile
+          Definition:
+            CIClass: BlueBook
+            Config:
+              ClassIDs:
+              - GovernanceRole
+              - SupportProfile
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: '0'
+              PossibleNone: '0'
+              ReferenceFilterList: []
+              ReferencedObjectType: GovernanceObject
+              SearchAttribute: ''
+              Tooltip: Support/Approval Profile
+            FieldType: GovernanceObject
+            Label: Profile
+            Name: ZBlue-Profile
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Role
+          Definition:
+            CIClass: BlueBook
+            Config:
+              ClassIDs:
+              - GovernanceRole
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: '0'
+              PossibleNone: '1'
+              ReferenceFilterList: []
+              ReferencedObjectType: GovernanceObject
+              SearchAttribute: ''
+              Tooltip: Role
+            FieldType: GovernanceObject
+            Label: Role
+            Name: ZBlue-Role
+            ObjectType: GovernanceObject
+        - DF: ZBlue-TicketType
+          Definition:
+            CIClass: BlueBook
+            Config:
+              Class: ZTSM::Type
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: Ticket Type
+            FieldType: GeneralCatalog
+            Label: Ticket Type
+            Name: ZBlue-TicketType
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Activity
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: ''
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList: []
+              Tooltip: Activity
+            FieldType: Text
+            Label: Activity
+            Name: ZBlue-Activity
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Duration
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '120'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Duration must be in numbers only
+                Value: ^[0-9]+$
+              Tooltip: Duration (mins)
+            FieldType: Text
+            Label: Duration (mins)
+            Name: ZBlue-Duration
+            ObjectType: GovernanceObject
+        - DF: ZBlue-RequiredWeightage
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '1'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Weightage must be number format
+                Value: ^[0-9]+$
+              Tooltip: Required Weightage
+            FieldType: Text
+            Label: Required Weightage
+            Name: ZBlue-RequiredWeightage
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Mandatory
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '0'
+              MultiValue: ~
+              Tooltip: Mandatory
+            FieldType: Checkbox
+            Label: Mandatory
+            Name: ZBlue-Mandatory
+            ObjectType: GovernanceObject
+        - DF: ZBlue-Strict
+          Definition:
+            CIClass: BlueBook
+            Config:
+              DefaultValue: '0'
+              MultiValue: ~
+              Tooltip: Strict Mode
+            FieldType: Checkbox
+            Label: Strict
+            Name: ZBlue-Strict
+            ObjectType: GovernanceObject
+        MultiValue: '1'
+        Tooltip: ~
+      FieldType: Set
+      Label: BlueBook Chapters
+      Name: ZBlue-Record
+      ObjectType: GovernanceObject
+    ZTSM-Status:
+      CIClass: BlueBook
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Definition: "---\r\nSections:\r\n  Backlinks:\r\n    Type: GovernanceObjectLinks\r\n
+    \   Header: Backlinks\r\n    LinkedAs: Source"
+  RoleName: CMDB Backlinks
+- Definition: "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header:
+    Description"
+  RoleName: CMDB Description
+- Class:
+    Categories:
+    - Context
+    Name: Environment
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Environment\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Environment\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSMEnvironment-Criticality:
+      CIClass: Environment
+      Config:
+        DefaultValue: Critical
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Critical: Critical
+          High: High
+          Low: Low
+          Medium: Medium
+        Tooltip: Criticality
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Criticality
+      Name: ZTSMEnvironment-Criticality
+      ObjectType: GovernanceObject
+    ZTSMEnvironment-Type:
+      CIClass: Environment
+      Config:
+        DefaultValue: Production
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          DR: DR
+          Development: Development
+          Lab: Lab
+          Non-Production: Non-Production
+          Pre-Production: Pre-Production
+          Production: Production
+          SIT: SIT
+          Test: Test
+          UAT: UAT
+          Warm: Warm
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMEnvironment-Type
+      ObjectType: GovernanceObject
+- Definition: "---\r\nSections:\r\n  Backlinks:\r\n    Type: GovernanceObjectLinks\r\n
+    \   Header: Backlinks\r\n    LinkedAs: Source"
+  RoleName: GovernanceDB Backlinks
+- Definition: "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header:
+    Description"
+  RoleName: GovernanceDB Description
+- Class:
+    Categories:
+    - Profile
+    Name: GovernanceRole
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Role\r\n        RowStart: 1\r\n
+    \       ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual
+    fields.\r\n  # Of course, sections can also be defined directly here in the class
+    definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"GovernanceDB GF class name\".
+    \r\n  # This is where the fields of the respective class can be customised.\r\n
+    \ General Fields:\r\n    Name: ZTSM GovernanceRole\r\n  GovernanceDB Backlinks:\r\n
+    \   Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB
+    Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: GovernanceRole
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: GovernanceRole
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Context
+    Name: Location
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Address\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Location\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSMLocation-Address:
+      CIClass: Location
+      Config:
+        ClassIDs: []
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Location Address
+      FieldType: GovernanceObject
+      Label: Address
+      Name: ZTSMLocation-Address
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Business
+    Name: Organization
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Organization\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM Organization\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Organization
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Organization
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMOrganization-DefaultApprovalModel:
+      CIClass: Organization
+      Config:
+        ClassIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Default Approval Model
+      FieldType: GovernanceObject
+      Label: Default Approval Model
+      Name: ZTSMOrganization-DefaultApprovalModel
+      ObjectType: GovernanceObject
+    ZTSMOrganization-DefaultApprovalProfile:
+      CIClass: Organization
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Default Approval Profile
+      FieldType: GovernanceObject
+      Label: Default Approval Profile
+      Name: ZTSMOrganization-DefaultApprovalProfile
+      ObjectType: GovernanceObject
+    ZTSMOrganization-Parent:
+      CIClass: Organization
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Parent Organization / OU
+      FieldType: GovernanceObject
+      Label: Parent
+      Name: ZTSMOrganization-Parent
+      ObjectType: GovernanceObject
+    ZTSMOrganization-Tier:
+      CIClass: Organization
+      Config:
+        DefaultValue: '3'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          '1': '1'
+          '2': '2'
+          '3': '3'
+        Tooltip: "1 for VIP\r\n2 for normal\r\n3 for low priority"
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Tier
+      Name: ZTSMOrganization-Tier
+      ObjectType: GovernanceObject
+    ZTSMOrganization-Type:
+      CIClass: Organization
+      Config:
+        DefaultValue: Vendor
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Agency: Agency
+          OrganizationUnit: OrganizationUnit
+          Vendor: Vendor
+        Tooltip: Organization Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMOrganization-Type
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Context
+    Name: Platform
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Platform\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual
+    fields.\r\n  # Of course, sections can also be defined directly here in the class
+    definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"GovernanceDB GF class name\".
+    \r\n  # This is where the fields of the respective class can be customised.\r\n
+    \ General Fields:\r\n    Name: ZTSM Platform\r\n  GovernanceDB Backlinks:\r\n
+    \   Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB
+    Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: Platform
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: Platform
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMPlatform-Location:
+      CIClass: Platform
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: GovernanceObject
+      Label: Location
+      Name: ZTSMPlatform-Location
+      ObjectType: GovernanceObject
+    ZTSMPlatform-Owner:
+      CIClass: Platform
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Platform Owner
+      FieldType: GovernanceObject
+      Label: Owner
+      Name: ZTSMPlatform-Owner
+      ObjectType: GovernanceObject
+    ZTSMPlatform-ServiceSupportMap:
+      CIClass: Platform
+      Config:
+        ClassIDs:
+        - ServiceSupportMap
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkReferencingType: Dynamic
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Service Offering
+        ZTSMStatusIDs:
+        - '319'
+      FieldType: GovernanceObject
+      Label: Service Offering
+      Name: ZTSMPlatform-ServiceSupportMap
+      ObjectType: GovernanceObject
+    ZTSMPlatform-Type:
+      CIClass: Platform
+      Config:
+        DefaultValue: Virtualization
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Containerization: Containerization
+          Hybrid Cloud: Hybrid Cloud
+          Physical: Physical
+          Private Cloud: Private Cloud
+          Public Cloud: Public Cloud
+          Virtualization: Virtualization
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMPlatform-Type
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Governance
+    Name: RiskStatement
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+    - Description
+    - Name
+    - ZTSMStatusID
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::RiskStatement\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZRM RiskStatement\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZRM-AdvisoryStatus:
+      CIClass: RiskStatement
+      Config:
+        DefaultValue: Current
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Current: Current
+          Deprecated: Deprecated
+          End of Life: End of Life
+          End of Support: End of Support
+          Sunset: Sunset
+        Tooltip: Advisory Status
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Advisory Status
+      Name: ZRM-AdvisoryStatus
+      ObjectType: GovernanceObject
+    ZRM-BaseImpact:
+      CIClass: RiskStatement
+      Config:
+        Class: ZRM::Impact
+        MultiValue: '0'
+        Multiselect: ~
+        PossibleNone: '0'
+        Tooltip: Base Impact Score
+      FieldType: GeneralCatalog
+      Label: Base Impact Score
+      Name: ZRM-BaseImpact
+      ObjectType: GovernanceObject
+    ZRM-BaseLikelihood:
+      CIClass: RiskStatement
+      Config:
+        Class: ZRM::Impact
+        MultiValue: '0'
+        Multiselect: ~
+        PossibleNone: '0'
+        Tooltip: Base Likelihood
+      FieldType: GeneralCatalog
+      Label: Base Likelihood Score
+      Name: ZRM-BaseLikelihood
+      ObjectType: GovernanceObject
+    ZRM-ImpactCategoryGO:
+      CIClass: RiskStatement
+      Config:
+        Class: ZRM::ImpactCategory
+        MultiValue: 0
+        Multiselect: checked=checked
+        PossibleNone: '0'
+        Tooltip: Impact Category
+      FieldType: GeneralCatalog
+      Label: Impact
+      Name: ZRM-ImpactCategoryGO
+      ObjectType: GovernanceObject
+    ZRM-RiskCategoryGO:
+      CIClass: RiskStatement
+      Config:
+        Class: ZRM::RiskCategory
+        MultiValue: '0'
+        Multiselect: ~
+        PossibleNone: '0'
+        Tooltip: Risk Category
+      FieldType: GeneralCatalog
+      Label: Risk Category
+      Name: ZRM-RiskCategoryGO
+      ObjectType: GovernanceObject
+    ZRM-SupersededRS:
+      CIClass: RiskStatement
+      Config:
+        ClassIDs:
+        - RiskStatement
+        DisplayType: ''
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        LinkReferencingType: Dynamic
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: 1
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Superseded By
+        ZTSMStatusIDs:
+        - '319'
+        - '318'
+        - '317'
+      FieldType: GovernanceObject
+      Label: Superseded By
+      Name: ZRM-SupersededRS
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Service
+    Name: ServiceProfile
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Service\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual
+    fields.\r\n  # Of course, sections can also be defined directly here in the class
+    definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n
+    \ # For each class with class-specific fields, there is a \"General Fields\"\r\n
+    \ # definition referring to a role with the name \"GovernanceDB GF class name\".
+    \r\n  # This is where the fields of the respective class can be customised.\r\n
+    \ General Fields:\r\n    Name: ZTSM ServiceProfile\r\n  GovernanceDB Backlinks:\r\n
+    \   Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB
+    Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: ServiceProfile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: ServiceProfile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMServiceProfile-Category:
+      CIClass: ServiceProfile
+      Config:
+        DefaultValue: Managed Service
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Compliance Service: Compliance Service
+          Consulting: Consulting
+          Governance Service: Governance Service
+          Managed Service: Managed Service
+          Operational Service: Operational Service
+          Professional Service: Professional Service
+          Project Service: Project Service
+        Tooltip: Service Category
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Category
+      Name: ZTSMServiceProfile-Category
+      ObjectType: GovernanceObject
+    ZTSMServiceProfile-Contract:
+      CIClass: ServiceProfile
+      Config:
+        ClassIDs: []
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Contract
+      FieldType: GovernanceObject
+      Label: Contract
+      Name: ZTSMServiceProfile-Contract
+      ObjectType: GovernanceObject
+    ZTSMServiceProfile-Owner:
+      CIClass: ServiceProfile
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Service Owner
+      FieldType: GovernanceObject
+      Label: Owner
+      Name: ZTSMServiceProfile-Owner
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Service
+    Name: ServiceSupportMap
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 3\r\n      ColumnWidth: 1fr 1fr 1fr\r\n    Interfaces:\r\n      -
+    Agent\r\n      - Customer\r\n    Content:\r\n      - Section: General Fields::Mapping\r\n
+    \       RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      -
+    Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan:
+    3\r\n        ColumnStart: 2\r\n        ColumnSpan: 2\r\nRoles:\r\n  # Roles are
+    used to define the Sections and their individual fields.\r\n  # Of course, sections
+    can also be defined directly here in the class definitions. \r\n  # We have simply
+    moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with
+    class-specific fields, there is a \"General Fields\"\r\n  # definition referring
+    to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where
+    the fields of the respective class can be customised.\r\n  General Fields:\r\n
+    \   Name: ZTSM ServiceSupportMap\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB
+    Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Status:
+      CIClass: ServiceSupportMap
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMServiceSupportMap-Application:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Application
+      FieldType: GovernanceObject
+      Label: Application
+      Name: ZTSMServiceSupportMap-Application
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-ApprovalModel:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs: []
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Approval Model
+      FieldType: GovernanceObject
+      Label: Approval Model
+      Name: ZTSMServiceSupportMap-ApprovalModel
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-Environment:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: GovernanceObject
+      Label: Environment
+      Name: ZTSMServiceSupportMap-Environment
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-Location:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: GovernanceObject
+      Label: Location
+      Name: ZTSMServiceSupportMap-Location
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-Service:
+      CIClass: ServiceSupportMap
+      Config:
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkObjectForReferenceType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferencedObjectType: Service
+        Tooltip: Service Catalog
+      FieldType: Service
+      Label: Service Offering
+      Name: ZTSMServiceSupportMap-Service
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-ServiceProfile:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: ServiceProfile
+      FieldType: GovernanceObject
+      Label: ServiceProfile
+      Name: ZTSMServiceSupportMap-ServiceProfile
+      ObjectType: GovernanceObject
+    ZTSMServiceSupportMap-StateBook:
+      CIClass: ServiceSupportMap
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs:
+        - '63'
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: State Book
+      FieldType: GovernanceObject
+      Label: State Book
+      Name: ZTSMServiceSupportMap-StateBook
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Governance
+    Name: StateBook
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::StateMap\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM State Book\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZState-StateRecord:
+      CIClass: StateBook
+      Config:
+        Include:
+        - DF: ZState-Seq
+          Definition:
+            CIClass: StateBook
+            Config:
+              DefaultValue: '1'
+              Link: ''
+              LinkPreview: ''
+              MultiValue: '0'
+              RegExList:
+              - ErrorMessage: Please make sure is number and in sequential
+                Value: ^[0-9]+$
+              Tooltip: Sequence
+            FieldType: Text
+            Label: Sequence
+            Name: ZState-Seq
+            ObjectType: GovernanceObject
+        - DF: ZState-State
+          Definition:
+            CIClass: StateBook
+            Config:
+              Class: ZTSM::State
+              MultiValue: '0'
+              Multiselect: ~
+              PossibleNone: '0'
+              Tooltip: State State
+            FieldType: GeneralCatalog
+            Label: State
+            Name: ZState-State
+            ObjectType: GovernanceObject
+        - DF: ZState-Book
+          Definition:
+            CIClass: StateBook
+            Config:
+              ClassIDs:
+              - ~
+              DeplStateIDs: []
+              DisplayType: ''
+              EditFieldMode: Dropdown
+              ImportSearchAttribute: ''
+              LinkDirection: ReferencingIsSource
+              LinkReferencingType: Dynamic
+              LinkType: ''
+              MultiValue: '0'
+              Multiselect: 0
+              PossibleNone: '1'
+              ReferenceFilterList: []
+              ReferencedObjectType: GovernanceObject
+              SearchAttribute: ''
+              Tooltip: BlueBook
+            FieldType: GovernanceObject
+            Label: Book
+            Name: ZState-Book
+            ObjectType: GovernanceObject
+        MultiValue: '1'
+        Tooltip: ~
+      FieldType: Set
+      Label: Record
+      Name: ZState-StateRecord
+      ObjectType: GovernanceObject
+    ZTSM-Status:
+      CIClass: StateBook
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+- Class:
+    Categories:
+    - Assignment
+    Name: SupportAssignment
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Assignment\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportAssignment\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Status:
+      CIClass: SupportAssignment
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMSupportAssignment-Application:
+      CIClass: SupportAssignment
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Application System
+      FieldType: GovernanceObject
+      Label: Application
+      Name: ZTSMSupportAssignment-Application
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-Environment:
+      CIClass: SupportAssignment
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Environment
+      FieldType: GovernanceObject
+      Label: Environment
+      Name: ZTSMSupportAssignment-Environment
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-Location:
+      CIClass: SupportAssignment
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Location
+      FieldType: GovernanceObject
+      Label: Location
+      Name: ZTSMSupportAssignment-Location
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-Role:
+      CIClass: SupportAssignment
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: 0
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Assignment Role
+      FieldType: GovernanceObject
+      Label: Role
+      Name: ZTSMSupportAssignment-Role
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-SupportProfile:
+      CIClass: SupportAssignment
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '0'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: SupportProfile
+      FieldType: GovernanceObject
+      Label: SupportProfile
+      Name: ZTSMSupportAssignment-SupportProfile
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-Type:
+      CIClass: SupportAssignment
+      Config:
+        DefaultValue: Primary
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Consult: Consult
+          Escalation: Escalation
+          Primary: Primary
+          Secondary: Secondary
+        Tooltip: SupportAssignment
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMSupportAssignment-Type
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-UserAccount:
+      CIClass: SupportAssignment
+      Config:
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferencedObjectType: CustomerUser
+        Tooltip: User Account
+      FieldType: CustomerUser
+      Label: User Account
+      Name: ZTSMSupportAssignment-UserAccount
+      ObjectType: GovernanceObject
+    ZTSMSupportAssignment-Weightage:
+      CIClass: SupportAssignment
+      Config:
+        DefaultValue: '1'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList:
+        - ErrorMessage: Weightage must be number format
+          Value: ^[0-9\.]+$
+        Tooltip: Weightage
+      FieldType: Text
+      Label: Weightage
+      Name: ZTSMSupportAssignment-Weightage
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Profile
+    Name: SupportProfile
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::SupportProfile\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM SupportProfile\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: SupportProfile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: SupportProfile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMSupportProfile-ServiceProfile:
+      CIClass: SupportProfile
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Service Offering
+      FieldType: GovernanceObject
+      Label: ServiceProfile
+      Name: ZTSMSupportProfile-ServiceProfile
+      ObjectType: GovernanceObject
+    ZTSMSupportProfile-TechnologyProfile:
+      CIClass: SupportProfile
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '1'
+        Multiselect: 0
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: TechnologyProfile
+      FieldType: GovernanceObject
+      Label: TechnologyProfile
+      Name: ZTSMSupportProfile-TechnologyProfile
+      ObjectType: GovernanceObject
+    ZTSMSupportProfile-Type:
+      CIClass: SupportProfile
+      Config:
+        DefaultValue: Support
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Assessment: Assessment
+          Authority: Authority
+          Governance: Governance
+          Implementation: Implementation
+          Support: Support
+        Tooltip: Profile Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMSupportProfile-Type
+      ObjectType: GovernanceObject
+- Class:
+    Categories:
+    - Profile
+    Name: TechnologyProfile
+    NumberModule: GOID
+    PermissionGroup: governance-db
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
+    are called Pages.\r\n  # The fields to be displayed there are defined in the roles
+    \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
+    \     Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n
+    \   Content:\r\n      - Section: General Fields::Profile\r\n        RowStart:
+    1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
+    \       RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
+    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
+    2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their
+    individual fields.\r\n  # Of course, sections can also be defined directly here
+    in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the
+    sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is
+    a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB
+    GF class name\". \r\n  # This is where the fields of the respective class can
+    be customised.\r\n  General Fields:\r\n    Name: ZTSM TechnologyProfile\r\n  GovernanceDB
+    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
+    \   Name: GovernanceDB Description"
+  DynamicFields:
+    ZTSM-Code:
+      CIClass: TechnologyProfile
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Unique code
+      FieldType: Text
+      Label: Code
+      Name: ZTSM-Code
+      ObjectType: ITSMConfigItem
+    ZTSM-Status:
+      CIClass: TechnologyProfile
+      Config:
+        DefaultValue: Draft
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Active: Active
+          Archived: Archived
+          Draft: Draft
+          Inactive: Inactive
+          Retired: Retired
+          Suspended: Suspended
+        Tooltip: Governance / operational validity
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Status
+      Name: ZTSM-Status
+      ObjectType: ITSMConfigItem
+    ZTSMTechnologyProfile-Parent:
+      CIClass: TechnologyProfile
+      Config:
+        ClassIDs:
+        - ~
+        DeplStateIDs: []
+        DisplayType: ''
+        EditFieldMode: Dropdown
+        ImportSearchAttribute: ''
+        LinkDirection: ReferencingIsSource
+        LinkReferencingType: Dynamic
+        LinkType: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Parent
+      FieldType: GovernanceObject
+      Label: Parent
+      Name: ZTSMTechnologyProfile-Parent
+      ObjectType: GovernanceObject
+    ZTSMTechnologyProfile-Type:
+      CIClass: TechnologyProfile
+      Config:
+        DefaultValue: Server Infrastructure
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          AI: AI
+          Application Platform: Application Platform
+          Automation Platform: Automation Platform
+          Backup Technology: Backup Technology
+          CICD: CICD
+          Cloud Technology: Cloud Technology
+          Containerization: Containerization
+          Data Center: Data Center
+          Database Platform: Database Platform
+          Enterprise Content Management: Enterprise Content Management
+          Identity Platform: Identity Platform
+          Messaging Platform: Messaging Platform
+          Middleware Platform: Middleware Platform
+          Monitoring Platform: Monitoring Platform
+          Network Infrastructure: Network Infrastructure
+          Security Platform: Security Platform
+          Server Infrastructure: Server Infrastructure
+          Storage Technology: Storage Technology
+          Virtualization: Virtualization
+        Tooltip: Type
+        TranslatableValues: '0'
+        TreeView: '0'
+      FieldType: Dropdown
+      Label: Type
+      Name: ZTSMTechnologyProfile-Type
+      ObjectType: GovernanceObject
+- Definition: ~
+  RoleName: ~
+- Definition: ~
+  RoleName: ~
+- Definition: ~
+  RoleName: ~
+- Definition: ~
+  RoleName: ~
+- Definition: "---\r\nSections:\r\n  RiskStatement:\r\n    Content:\r\n    - Header:
+    General Information\r\n    - DF: ZRM-RiskCategoryGO\r\n    - DF: ZRM-ImpactCategoryGO\r\n
+    \   - DF: ZRM-BaseLikelihood\r\n    - DF: ZRM-BaseImpact\r\n    - DF: ZRM-AdvisoryStatus\r\n
+    \   - DF: ZRM-SupersededRS"
+  RoleName: ZRM RiskStatement
+- Definition: "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header:
+    Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF:
+    ZTSMAppSystem-Tier\r\n    - DF: ZTSMAppSystem-Criticality\r\n    - DF: ZTSMAppSystem-Owner\r\n
+    \   - DF: ZTSMAppSystem-Parent\r\n    - DF: ZTSMAppSystem-Platform\r\n    - DF:
+    ZTSMAppSystem-Environment\r\n    - DF: ZTSMAppSystem-Location\r\n    - DF: ZTSMAppSystem-DataClassification\r\n
+    \   - DF: ZTSMAppSystem-DefaultApprovalModel\r\n    - DF: ZTSMAppSystem-DefaultApprovalProfile"
+  RoleName: ZTSM Application
+- Definition: "---\r\nSections:\r\n  ApprovalModel:\r\n    Content:\r\n    - Header:
+    Approval Model\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMApprovalModel-Mode\r\n
+    \   - DF: ZTSMApprovalModel-RequiredWeightage\r\n    - DF: ZTSMApprovalModel-ApprovelTimeout\r\n
+    \   - DF: ZTSMApprovalModel-L2Escalation\r\n    - DF: ZTSMApprovalModel-L2Timeout\r\n
+    \   - DF: ZTSMApprovalModel-L3Escalation\r\n    - DF: ZTSMApprovalModel-L3Timeout\r\n
+    \   - DF: ZTSMApprovalModel-FinalAction"
+  RoleName: ZTSM Approval Model
+- Definition: "---\r\nSections:\r\n  BlueBook:\r\n    Content:\r\n    - Header: Context\r\n
+    \   - DF: ZTSM-Status\r\n    - DF: ZBlue-Record"
+  RoleName: ZTSM Blue Book
+- Definition: "---\r\nSections:\r\n  Environment:\r\n    Content:\r\n    - Header:
+    Environment\r\n    - DF: ZTSMEnvironment-Type\r\n    - DF: ZTSMEnvironment-Criticality"
+  RoleName: ZTSM Environment
+- Definition: "---\r\nSections:\r\n  Role:\r\n    Content:\r\n    - Header: Role\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status"
+  RoleName: ZTSM GovernanceRole
+- Definition: "---\r\nSections:\r\n  Address:\r\n    Content:\r\n    - Header: Address\r\n
+    \   - DF: ZTSMLocation-Address"
+  RoleName: ZTSM Location
+- Definition: "---\r\nSections:\r\n  Organization:\r\n    Content:\r\n    - Header:
+    General Information\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF:
+    ZTSMOrganization-Type\r\n    - DF: ZTSMOrganization-Tier\r\n    - DF: ZTSMOrganization-Parent\r\n
+    \   - DF: ZTSMOrganization-DefaultApprovalModel\r\n    - DF: ZTSMOrganization-DefaultApprovalProfile"
+  RoleName: ZTSM Organization
+- Definition: "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n
+    \   - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location\r\n    - DF: ZTSMPlatform-ServiceSupportMap"
+  RoleName: ZTSM Platform
+- Definition: "---\r\nSections:\r\n  Service:\r\n    Content:\r\n    - Header: ServiceProfile\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMServiceProfile-Category\r\n
+    \   - DF: ZTSMServiceProfile-Owner\r\n    - DF: ZTSMServiceProfile-Contract"
+  RoleName: ZTSM ServiceProfile
+- Definition: "---\r\nSections:\r\n  Mapping:\r\n    Content:\r\n    - Header: ServiceSupportMap\r\n
+    \   - DF: ZTSM-Status\r\n    - DF: ZTSMServiceSupportMap-Service\r\n    - DF:
+    ZTSMServiceSupportMap-ServiceProfile\r\n    - DF: ZTSMServiceSupportMap-Application\r\n
+    \   - DF: ZTSMServiceSupportMap-Environment\r\n    - DF: ZTSMServiceSupportMap-Location\r\n
+    \   - DF: ZTSMServiceSupportMap-StateBook\r\n    - DF: ZTSMServiceSupportMap-ApprovalModel"
+  RoleName: ZTSM ServiceSupportMap
+- Definition: "---\r\nSections:\r\n  StateMap:\r\n    Content:\r\n    - Header: Book\r\n
+    \   - DF: ZTSM-Status\r\n    - DF: ZState-StateRecord"
+  RoleName: ZTSM State Book
+- Definition: "---\r\nSections:\r\n  Assignment:\r\n    Content:\r\n    - Header:
+    Assignment\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMSupportAssignment-UserAccount\r\n
+    \   - DF: ZTSMSupportAssignment-Type\r\n    - DF: ZTSMSupportAssignment-Role\r\n
+    \   - DF: ZTSMSupportAssignment-Weightage\r\n    - DF: ZTSMSupportAssignment-SupportProfile\r\n
+    \   - DF: ZTSMSupportAssignment-Application\r\n    - DF: ZTSMSupportAssignment-Environment\r\n
+    \   - DF: ZTSMSupportAssignment-Location"
+  RoleName: ZTSM SupportAssignment
+- Definition: "---\r\nSections:\r\n  SupportProfile:\r\n    Content:\r\n    - Header:
+    SupportProfile\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMSupportProfile-Type\r\n
+    \   - DF: ZTSMSupportProfile-ServiceProfile\r\n    - DF: ZTSMSupportProfile-TechnologyProfile"
+  RoleName: ZTSM SupportProfile
+- Definition: "---\r\nSections:\r\n  Profile:\r\n    Content:\r\n    - Header: TechnologyProfile\r\n
+    \   - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMTechnologyProfile-Type\r\n
+    \   - DF: ZTSMTechnologyProfile-Parent"
+  RoleName: ZTSM TechnologyProfile

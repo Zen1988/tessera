@@ -500,6 +500,10 @@
         gap: 10px;
     }
 
+    .TicketZoom #NextActivities form {
+        margin: 0;
+    }
+
     .TicketZoom #oooArticleList,
     .TicketZoom #oooArticleListExpanded {
         width: 100%;
@@ -675,7 +679,16 @@
                 <button id="Button_[% Data.ActivityDialogEntityID | uri %]" title="[% Translate(Data.Name) | html %]" class="oooM ActivityStartButton">[% Translate(Data.Name) | html %]</button>
 [% RenderBlockEnd("ActivityDialog") %]
 [% RenderBlockStart("ZTSMRuntimeAction") %]
+[% IF Data.DirectURL %]
+                <form title="[% Translate(Data.Label) | html %]" action="[% Env("CGIHandle") | html %]" method="get">
+                    <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
+                    <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
+                    <input type="hidden" name="RuntimeAction" value="[% Data.Action | html %]"/>
+                    <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivitySubmitButton ZTSMDirectActionButton" type="submit">[% Translate(Data.Label) | html %]</button>
+                </form>
+[% ELSE %]
                 <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivityStartButton" type="button" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.classList.toggle('Visible'); } return false;">[% Translate(Data.Label) | html %]</button>
+[% END %]
 [% RenderBlockEnd("ZTSMRuntimeAction") %]
             </div>
 [% RenderBlockEnd("NextActivities") %]
@@ -688,6 +701,79 @@
 [% RenderBlockEnd("ProcessActivity") %]
 [% RenderBlockStart("ZTSMRuntimeActionDialog") %]
             <li id="Process_ZTSM_[% Data.Action | uri %]" class="Activity ZTSMRuntimeActionDialog">
+[% IF Data.IsRiskAssessment %]
+                <div id="ZTSMRiskAssessmentLazy_[% Data.Action | uri %]" class="ZTSMRiskAssessmentLazy" data-loaded="0">
+                    <div class="Messenger">
+                        <fieldset class="DontPrint">
+                            <div class="MessageHeader">
+                                <h2>[% Translate(Data.Label) | html %]</h2>
+                            </div>
+                            <div class="ZTSMRiskAssessmentLazyBody">[% Translate("Loading...") | html %]</div>
+                        </fieldset>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var Container = document.getElementById('ZTSMRiskAssessmentLazy_[% Data.Action | uri %]');
+                    var Button = document.getElementById('Button_ZTSM_[% Data.Action | uri %]');
+
+                    function ExecuteScripts(Scope) {
+                        var Scripts = Scope.querySelectorAll('script');
+                        Array.prototype.forEach.call(Scripts, function (Script) {
+                            var NewScript = document.createElement('script');
+                            if (Script.src) {
+                                NewScript.src = Script.src;
+                            }
+                            else {
+                                NewScript.text = Script.text || Script.textContent || Script.innerHTML || '';
+                            }
+                            Script.parentNode.replaceChild(NewScript, Script);
+                        });
+                    }
+
+                    function LoadRiskAssessment() {
+                        if (!Container || Container.getAttribute('data-loaded') === '1') {
+                            return;
+                        }
+
+                        Container.setAttribute('data-loaded', '1');
+                        var Body = Container.querySelector('.ZTSMRiskAssessmentLazyBody');
+                        var BaseLink = window.Core && Core.Config && typeof Core.Config.Get === 'function'
+                            ? Core.Config.Get('Baselink')
+                            : '[% Env("CGIHandle") | html %]?';
+                        var URL = BaseLink
+                            + 'Action=CustomerTicketZTSMAction'
+                            + ';TicketID=[% Data.TicketID | uri %]'
+                            + ';RuntimeAction=[% Data.Action | uri %]'
+                            + ';Subaction=RiskAssessmentInline';
+
+                        var Request = new XMLHttpRequest();
+                        Request.open('GET', URL, true);
+                        Request.onreadystatechange = function () {
+                            if (Request.readyState !== 4 || !Body) {
+                                return;
+                            }
+                            if (Request.status >= 200 && Request.status < 300) {
+                                Body.innerHTML = Request.responseText;
+                                ExecuteScripts(Body);
+                                return;
+                            }
+                            Container.setAttribute('data-loaded', '0');
+                            Body.innerHTML = '[% Translate("Could not load risk assessment.") | html %]';
+                        };
+                        Request.send();
+                    }
+
+                    if (Button) {
+                        Button.addEventListener('click', function () {
+                            window.setTimeout(LoadRiskAssessment, 0);
+                        });
+                    }
+                }());
+                </script>
+[% ELSIF Data.InlineHTML %]
+                [% Data.InlineHTML %]
+[% ELSE %]
                 <style>
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks {
@@ -765,6 +851,7 @@
                         </div>
                     </div>
                 </form>
+[% END %]
             </li>
 [% RenderBlockEnd("ZTSMRuntimeActionDialog") %]
 [% RenderBlockStart("FollowUp") %]

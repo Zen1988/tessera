@@ -266,6 +266,9 @@ sub DefinitionGet {
     $Definition{DynamicFieldRef} = $Kernel::OM->Get('Kernel::System::YAML')->Load(
         Data => $DynamicFields,
     );
+    $Definition{DynamicFieldRef} = $Self->_DefinitionDynamicFieldRefCurrentApply(
+        DynamicFieldRef => $Definition{DynamicFieldRef},
+    );
 
     # merge the roles into the DefinitionRef, the passed in reference is modified in place
     $Self->_ProcessRoles(
@@ -296,6 +299,43 @@ sub DefinitionGet {
     $Self->{Cache}->{DefinitionGet}->{ $Definition{DefinitionID} } = \%Definition;
 
     return \%Definition;
+}
+
+sub _DefinitionDynamicFieldRefCurrentApply {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldRef = $Param{DynamicFieldRef};
+    return {} if ref $DynamicFieldRef ne 'HASH';
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my %CurrentRef;
+
+    DYNAMICFIELD:
+    for my $FieldName ( keys %{$DynamicFieldRef} ) {
+        my $StoredConfig = $DynamicFieldRef->{$FieldName};
+        next DYNAMICFIELD if !IsHashRefWithData($StoredConfig);
+
+        my $CurrentConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $StoredConfig->{Name} || $FieldName,
+        );
+
+        if (
+            IsHashRefWithData($CurrentConfig)
+            && ( $CurrentConfig->{ObjectType} || '' ) eq 'GovernanceObject'
+            )
+        {
+            $CurrentRef{ $CurrentConfig->{Name} } = {
+                %{$CurrentConfig},
+                Label => $StoredConfig->{Label} // $CurrentConfig->{Label},
+            };
+
+            next DYNAMICFIELD;
+        }
+
+        $CurrentRef{$FieldName} = $StoredConfig;
+    }
+
+    return \%CurrentRef;
 }
 
 =head2 RoleDefinitionGet()

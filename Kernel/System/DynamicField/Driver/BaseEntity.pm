@@ -68,6 +68,15 @@ sub ValueGet {
 
     if ( $Param{DynamicFieldConfig}{Config}{Multiselect} ) {
 
+        if ( $Param{Set} ) {
+            return $Self->ValueStructureFromDB(
+                ValueDB    => $DFValue,
+                ValueKey   => $ValueKey,
+                Set        => 1,
+                MultiValue => 1,
+            );
+        }
+
         return unless $DFValue;
         return unless IsArrayRefWithData($DFValue);
         return unless IsHashRefWithData( $DFValue->[0] );
@@ -131,13 +140,20 @@ sub ValueSet {
         }
     }
 
-    # for multiselect no set or multivalue structures
+    # for multiselect outside a set no set or multivalue structures
     if ( $Param{DynamicFieldConfig}{Config}{Multiselect} ) {
-        my $DBValue = [
-            map {
-                { $ValueKey => $_ }
-            } $Param{Value}->@*
-        ];
+        my $DBValue = $Param{Set}
+            ? $Self->ValueStructureToDB(
+                Value      => $Param{Value},
+                ValueKey   => $ValueKey,
+                Set        => 1,
+                MultiValue => 1,
+            )
+            : [
+                map {
+                    { $ValueKey => $_ }
+                } $Param{Value}->@*
+            ];
 
         return $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueSet(
             FieldID  => $Param{DynamicFieldConfig}{ID},

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.47</Version>
+    <Version>0.0.71</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -66,6 +66,7 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/DynamicField/Agent/GovernanceObjectLens.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectDetails.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectTreeView/GovernanceObjectTreeViewGraph.tt" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Driver/BaseEntity.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Driver/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Driver/GovernanceObjectVersion.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Event/GovernanceObjectDefinitionSync.pm" Permission="660"/>

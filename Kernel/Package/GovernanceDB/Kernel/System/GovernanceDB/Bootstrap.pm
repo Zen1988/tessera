@@ -276,6 +276,9 @@ sub _TicketReferenceValuesRepair {
         ZTicket-Profile
         ZTicket-Role
         ZTicket-StateBook
+        ZFirewall-DstSystem
+        ZFirewall-Env
+        ZFirewall-SrcSystem
         ZTSMSupportAssignment-SupportProfile
         ZTSMServiceSupportMap-Application
         ZTSMServiceSupportMap-Environment
@@ -382,6 +385,9 @@ sub _TicketReferenceDynamicFieldsRepair {
         'ZTicket-Profile'       => ['Governance Role'],
         'ZTicket-Role'          => ['Governance Role'],
         'ZTicket-StateBook'     => ['StateBook'],
+        'ZFirewall-DstSystem'   => [ 'Application', 'Location' ],
+        'ZFirewall-Env'         => ['Environment'],
+        'ZFirewall-SrcSystem'   => [ 'Application', 'Location' ],
     );
 
     FIELD:

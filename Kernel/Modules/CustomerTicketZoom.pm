@@ -2349,14 +2349,18 @@ sub _ZTSMRuntimeActions {
         next ACTION if !$TicketOwner;
         next ACTION if lc $TicketOwner ne lc $Self->{UserID};
 
-        push @RuntimeActions, {
+        my %RuntimeAction = (
             Action         => $Action,
             Label          => $ActionConfig->{Label} || $Action,
-            DirectURL      => $Ticket->{Type} eq 'Assessment' && $Action eq 'Assess'
-                ? "Action=CustomerTicketZTSMAction;TicketID=$Ticket->{TicketID};RuntimeAction=Assess"
-                : '',
+            DirectURL      => '',
             RiskFieldsHTML => '',
-        };
+        );
+
+        if ( $Ticket->{Type} eq 'Assessment' && $Action eq 'Assess' ) {
+            $RuntimeAction{IsRiskAssessment} = 1;
+        }
+
+        push @RuntimeActions, \%RuntimeAction;
     }
 
     if ( !$TicketOwner && $ActionableType ) {

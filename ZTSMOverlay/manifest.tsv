@@ -18,6 +18,7 @@ copy	files/Kernel/Output/HTML/Templates/Standard/CustomerHTMLHead.tt	Kernel/Outp
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt	Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt	Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt
+copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt	Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom/TicketInfo.tt
 copy	files/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt	Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt

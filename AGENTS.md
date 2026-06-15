@@ -297,3 +297,250 @@ Neither action changes StateBook position.
 Neither action changes BlueBook position.
 
 Only ticket state is modified.
+
+# TESSERA Development Rules (Critical)
+
+## Source of Truth Priority
+
+When generating, modifying, or rebuilding code:
+
+Priority order MUST be:
+
+1. Latest `.sopm`
+2. Latest generated `.opm`
+3. Current repository source code
+4. Current architecture documents
+5. Historical context files
+
+Historical examples, legacy implementations, and deprecated architecture MUST NOT override the latest build artifacts.
+
+---
+
+## Upgrade-Safe Development
+
+All generated code MUST support:
+
+* Fresh installation
+* Package upgrade installation
+* Reinstallation of same version
+* Future version upgrades
+
+Implementation MUST NOT assume a clean environment.
+
+Whenever configuration, DynamicFields, SysConfig, Processes, ACLs, or ConfigItems are introduced:
+
+* Upgrade path must be considered.
+* Existing data must be preserved where possible.
+* Installation must be idempotent.
+* Repeated package installation must not create duplicate records.
+
+---
+
+## OPM / SOPM Authority
+
+The latest `.sopm` and generated `.opm` represent the authoritative package definition.
+
+If generated code, Perl modules, XML definitions, YAML exports, AGENTS instructions, or documentation conflict with the latest package definition:
+
+The latest `.sopm` and `.opm` take precedence.
+
+Do NOT regenerate package structure from historical assumptions.
+
+Do NOT infer removed objects, DynamicFields, ConfigItems, or workflows from previous versions.
+
+---
+
+## Architecture Evolution Rule
+
+TESSERA architecture evolves continuously.
+
+Deprecated patterns must not be reintroduced.
+
+Examples of deprecated assumptions include:
+
+* Static queue routing
+* Hardcoded approval routing
+* OwnerGroup resolution from Service Support Map
+* ApprovalGroup resolution from Service Support Map
+* ZTicket-Profile ownership assumptions
+* Legacy governance field mappings
+
+Always validate implementation against the latest architecture before generating code.
+
+---
+
+## Runtime Governance Rule
+
+Books define truth.
+Process orchestrates runtime.
+Tickets contain execution evidence.
+
+Code generation must follow current TESSERA architecture:
+
+ServiceSupportMap
+→ resolves governance applicability
+
+StateBook
+→ resolves lifecycle choreography
+
+BlueBook
+→ resolves execution choreography
+
+Support Assignment
+→ resolves actual operational scope
+
+Never collapse these responsibilities into a single module.
+
+---
+
+## Backward Compatibility Rule
+
+Where architecture changes occur:
+
+* Preserve upgradeability whenever practical.
+* Add migration logic when required.
+* Do not silently remove previously deployed structures.
+* Prefer controlled deprecation over destructive replacement.
+
+All package changes should be installable on both:
+
+* Existing upgraded environments
+* Brand new environments
+
+without manual intervention.
+
+## Mandatory Project Continuity Rule
+
+Before performing any analysis, design, code generation, refactoring, or implementation:
+
+1. Read AGENTS.md
+2. Read PROJECT_STATUS.md
+3. Read latest SOPM
+4. Read latest generated OPM
+
+PROJECT_STATUS.md is the authoritative project memory.
+
+Whenever a significant change is made:
+
+* Update completed work
+* Update current focus
+* Record architectural decisions
+* Record rejected approaches
+* Record known issues
+* Record next priorities
+
+Future sessions must continue from PROJECT_STATUS.md rather than reconstructing history from chat context.
+
+Do not assume previous conversation history is available.
+
+# TESSERA Development Rules (Critical)
+
+## Source of Truth Priority
+
+When generating, modifying, or rebuilding code:
+
+Priority order MUST be:
+
+1. Latest `.sopm`
+2. Latest generated `.opm`
+3. Current repository source code
+4. Current architecture documents
+5. Historical context files
+
+Historical examples, legacy implementations, and deprecated architecture MUST NOT override the latest build artifacts.
+
+---
+
+## Upgrade-Safe Development
+
+All generated code MUST support:
+
+* Fresh installation
+* Package upgrade installation
+* Reinstallation of same version
+* Future version upgrades
+
+Implementation MUST NOT assume a clean environment.
+
+Whenever configuration, DynamicFields, SysConfig, Processes, ACLs, or ConfigItems are introduced:
+
+* Upgrade path must be considered.
+* Existing data must be preserved where possible.
+* Installation must be idempotent.
+* Repeated package installation must not create duplicate records.
+
+---
+
+## OPM / SOPM Authority
+
+The latest `.sopm` and generated `.opm` represent the authoritative package definition.
+
+If generated code, Perl modules, XML definitions, YAML exports, AGENTS instructions, or documentation conflict with the latest package definition:
+
+The latest `.sopm` and `.opm` take precedence.
+
+Do NOT regenerate package structure from historical assumptions.
+
+Do NOT infer removed objects, DynamicFields, ConfigItems, or workflows from previous versions.
+
+---
+
+## Architecture Evolution Rule
+
+TESSERA architecture evolves continuously.
+
+Deprecated patterns must not be reintroduced.
+
+Examples of deprecated assumptions include:
+
+* Static queue routing
+* Hardcoded approval routing
+* OwnerGroup resolution from Service Support Map
+* ApprovalGroup resolution from Service Support Map
+* ZTicket-Profile ownership assumptions
+* Legacy governance field mappings
+
+Always validate implementation against the latest architecture before generating code.
+
+---
+
+## Runtime Governance Rule
+
+Books define truth.
+Process orchestrates runtime.
+Tickets contain execution evidence.
+
+Code generation must follow current TESSERA architecture:
+
+ServiceSupportMap
+→ resolves governance applicability
+
+StateBook
+→ resolves lifecycle choreography
+
+BlueBook
+→ resolves execution choreography
+
+Support Assignment
+→ resolves actual operational scope
+
+Never collapse these responsibilities into a single module.
+
+---
+
+## Backward Compatibility Rule
+
+Where architecture changes occur:
+
+* Preserve upgradeability whenever practical.
+* Add migration logic when required.
+* Do not silently remove previously deployed structures.
+* Prefer controlled deprecation over destructive replacement.
+
+All package changes should be installable on both:
+
+* Existing upgraded environments
+* Brand new environments
+
+without manual intervention.
+
