@@ -2267,8 +2267,18 @@ sub _ZTSMRuntimeActions {
             Types => ['Endorsement'],
         },
         Assess => {
-            Label => 'Assess',
+            Label => 'Submit Assessment',
             State => 'closed successful',
+            Types => ['Assessment'],
+        },
+        CloseDuplicate => {
+            Label => 'Close Duplicate',
+            State => 'closed duplicate',
+            Types => ['Assessment'],
+        },
+        CloseNoAction => {
+            Label => 'Close No Action',
+            State => 'closed no action',
             Types => ['Assessment'],
         },
         Reject => {
@@ -2308,7 +2318,12 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
     );
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess;
+    my $ExternalPartyRequestAccess = $Self->_ZTSMExternalPartyRequestAllowed(
+        Ticket => $Ticket,
+        Config => $Config,
+    );
+
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess;
 
     my $HoldState = $Ticket->{'DynamicField_ZTicket-HoldState'};
     if ( ref $HoldState eq 'ARRAY' ) {
@@ -2363,6 +2378,56 @@ sub _ZTSMRuntimeActions {
         push @RuntimeActions, \%RuntimeAction;
     }
 
+    if (
+        $ActionAccess
+        && $ActionableType
+        && $TicketOwner
+        && lc $TicketOwner eq lc $Self->{UserID}
+        && $Self->_ZTSMAddRequiredSupportProfileAllowed(
+            Ticket => $Ticket,
+            Config => $Config,
+        )
+        )
+    {
+        push @RuntimeActions, {
+            Action          => 'AddRequiredSupportProfile',
+            Label           => 'Add Required Support Profile',
+            RiskFieldsHTML  => $Self->_ZTSMSupportProfileSelectionHTML(),
+            RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+    }
+
+    if (
+        $ActionAccess
+        && ( $Ticket->{Type} || '' ) eq 'Task'
+        && $TicketOwner
+        && lc $TicketOwner eq lc $Self->{UserID}
+        )
+    {
+        push @RuntimeActions, {
+            Action          => 'CompleteTask',
+            Label           => 'Complete Task',
+            RiskFieldsHTML  => $Self->_ZTSMTaskCompletionHTML(
+                Ticket => $Ticket,
+            ),
+            RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+    }
+
+    if ($ExternalPartyRequestAccess) {
+        push @RuntimeActions, {
+            Action          => 'CreateExternalPartyRequest',
+            Label           => 'Create External Party Request',
+            RiskFieldsHTML  => $Self->_ZTSMTargetServiceSelectionHTML(
+                Ticket => $Ticket,
+            ),
+            RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+    }
+
     if ( !$TicketOwner && $ActionableType ) {
         push @RuntimeActions, {
             Action         => 'TakeOwnership',
@@ -2408,6 +2473,218 @@ sub _ZTSMRuntimeActions {
     }
 
     return \@RuntimeActions if @RuntimeActions;
+    return;
+}
+
+sub _ZTSMAddRequiredSupportProfileAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    if ( ref $ParentTicketID eq 'ARRAY' ) {
+        $ParentTicketID = $ParentTicketID->[0];
+    }
+    return if !$ParentTicketID;
+
+    for my $FieldName (qw(ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
+        my $Value = $Ticket->{ 'DynamicField_' . $FieldName };
+        if ( ref $Value eq 'ARRAY' ) {
+            $Value = $Value->[0];
+        }
+        return if !defined $Value || $Value eq '';
+    }
+
+    my $AllowedTypes = $Config->{AddRequiredSupportProfileTypes} || [
+        'Assessment',
+        'Endorsement',
+        'Approval',
+    ];
+    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
+
+    return $AllowedType{ $Ticket->{Type} };
+}
+
+sub _ZTSMTaskCompletionHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $OutcomeValues = $Self->_ZTSMTaskOutcomeValues();
+    my $SelectedOutcome = $Param{Ticket}->{'DynamicField_ZTicket-Outcome'} || '';
+    if ( ref $SelectedOutcome eq 'ARRAY' ) {
+        $SelectedOutcome = $SelectedOutcome->[0];
+    }
+
+    my $OutcomeSelection = $LayoutObject->BuildSelection(
+        Data         => $OutcomeValues,
+        Name         => 'ZTicketOutcome',
+        SelectedID   => $SelectedOutcome,
+        PossibleNone => 1,
+        Class        => 'Modernize Validate_Required',
+    );
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">' . $OutcomeSelection . '</div>'
+        . '<label for="ZTicketOutcome" class="Mandatory">Outcome: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><textarea id="ZTicketResult" name="ZTicketResult" rows="6" cols="'
+        . $LayoutObject->Ascii2Html( Text => $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Frontend::TextAreaNote') || 80 )
+        . '" class="Validate_Required"></textarea></div>'
+        . '<label for="ZTicketResult" class="Mandatory">Details: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><input type="file" id="ZTSMTaskFileUpload" name="file_upload" /></div>'
+        . '<label for="ZTSMTaskFileUpload">Attachment:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
+sub _ZTSMTaskOutcomeValues {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZTicket-Outcome',
+    );
+
+    my $PossibleValues = IsHashRefWithData($DynamicFieldConfig) ? $DynamicFieldConfig->{Config}->{PossibleValues} : undef;
+    return $PossibleValues if IsHashRefWithData($PossibleValues);
+
+    return {
+        0    => 'Successful',
+        1    => 'No Action',
+        2    => 'Partial Success',
+        '-1' => 'Failed',
+        '-2' => 'Rollback',
+    };
+}
+
+sub _ZTSMExternalPartyRequestAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    if ( ref $ParentTicketID eq 'ARRAY' ) {
+        $ParentTicketID = $ParentTicketID->[0];
+    }
+
+    if ($ParentTicketID) {
+        my $Owner = $Ticket->{'DynamicField_ZTicket-Owner'};
+        if ( ref $Owner eq 'ARRAY' ) {
+            $Owner = $Owner->[0];
+        }
+
+        return 1 if defined $Owner && $Owner ne '' && lc $Owner eq lc $Self->{UserID};
+        return;
+    }
+
+    return 1
+        if $Ticket->{CustomerUserID}
+        && lc $Ticket->{CustomerUserID} eq lc $Self->{UserID};
+
+    return;
+}
+
+sub _ZTSMTargetServiceSelectionHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my %Services = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
+        Valid  => 1,
+        UserID => 1,
+    );
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">'
+        . '<span class="Marker">*</span> No services available.'
+        . '</div>'
+        . '<label for="TargetServiceID">Target Service:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>' if !%Services;
+
+    my $Ticket = $Param{Ticket} || {};
+    my $Selection = $LayoutObject->BuildSelection(
+        Data         => \%Services,
+        Name         => 'TargetServiceID',
+        SelectedID   => $Ticket->{ServiceID} || '',
+        PossibleNone => 1,
+        Class        => 'Modernize Validate_Required',
+    );
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">' . $Selection . '</div>'
+        . '<label for="TargetServiceID" class="Mandatory">Target Service: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
+sub _ZTSMSupportProfileSelectionHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $SupportProfiles = $Self->_ZTSMSupportProfileList();
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">'
+        . '<span class="Marker">*</span> No support profiles available.'
+        . '</div>'
+        . '<label for="SupportProfile">Support Profile:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>' if !IsHashRefWithData($SupportProfiles);
+
+    my $Selection = $LayoutObject->BuildSelection(
+        Data         => $SupportProfiles,
+        Name         => 'SupportProfile',
+        SelectedID   => '',
+        PossibleNone => 1,
+        Class        => 'Modernize Validate_Required',
+    );
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">' . $Selection . '</div>'
+        . '<label for="SupportProfile" class="Mandatory">Support Profile: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
+sub _ZTSMSupportProfileList {
+    my ( $Self, %Param ) = @_;
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportProfile'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+        UserID  => 1,
+    );
+
+    return if !@SupportProfileIDs;
+
+    my %SupportProfile;
+    SUPPORTPROFILEID:
+    for my $SupportProfileID (@SupportProfileIDs) {
+        my $SupportProfileObject = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $SupportProfileID,
+            DynamicFields      => 0,
+            UserID             => 1,
+            Silent             => 1,
+        );
+        next SUPPORTPROFILEID if !IsHashRefWithData($SupportProfileObject);
+
+        $SupportProfile{$SupportProfileID} = $SupportProfileObject->{Name} || $SupportProfileID;
+    }
+
+    return \%SupportProfile if %SupportProfile;
     return;
 }
 

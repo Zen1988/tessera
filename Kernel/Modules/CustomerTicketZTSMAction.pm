@@ -11,6 +11,8 @@ use warnings;
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian ();
+use Kernel::System::ZTSMBlueBookRuntime ();
 use Kernel::System::VariableCheck qw(:all);
 
 our $ObjectManagerDisabled = 1;
@@ -34,6 +36,10 @@ sub Run {
     my $Subaction     = $ParamObject->GetParam( Param => 'Subaction' ) || '';
     my $Remarks       = $ParamObject->GetParam( Param => 'Remarks' ) || '';
     my $OwnerTarget   = $ParamObject->GetParam( Param => 'OwnerTarget' ) || '';
+    my $SupportProfile = $ParamObject->GetParam( Param => 'SupportProfile' ) || '';
+    my $TargetServiceID = $ParamObject->GetParam( Param => 'TargetServiceID' ) || '';
+    my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' ) || '';
+    my $ZTicketResult  = $ParamObject->GetParam( Param => 'ZTicketResult' ) || '';
 
     if ( !$TicketID ) {
         return $LayoutObject->CustomerErrorScreen(
@@ -179,6 +185,36 @@ sub Run {
 
         return $LayoutObject->Redirect(
             OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
+    if ( $RuntimeAction eq 'CreateExternalPartyRequest' ) {
+        if (
+            !$Self->_ExternalPartyRequestAllowed(
+                Ticket => \%Ticket,
+                Config => $Config,
+            )
+            )
+        {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        my $NewTicketID = $Self->_ExternalPartyRequestApply(
+            Ticket              => \%Ticket,
+            TargetServiceID     => $TargetServiceID,
+            Remarks             => $Remarks,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        if ( !$NewTicketID ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not create external party request.',
+            );
+        }
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$NewTicketID",
         );
     }
 
@@ -365,6 +401,138 @@ sub Run {
     my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
     if ( !$Owner || lc $Owner ne lc $Self->{UserID} ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
+
+    if ( $RuntimeAction eq 'AddRequiredSupportProfile' ) {
+        if (
+            !$Self->_AddRequiredSupportProfileAllowed(
+                Ticket => \%Ticket,
+                Config => $Config,
+            )
+            )
+        {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        my $NewTicketID = $Self->_AddRequiredSupportProfileApply(
+            Ticket              => \%Ticket,
+            SupportProfile      => $SupportProfile,
+            Remarks             => $Remarks,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        if ( !$NewTicketID ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not add required support profile.',
+            );
+        }
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
+    if ( $RuntimeAction eq 'CompleteTask' ) {
+        if ( ( $Ticket{Type} || '' ) ne 'Task' ) {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( !$ZTicketResult ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please enter task completion details.',
+            );
+        }
+
+        my $TaskState = $Self->_TaskOutcomeState(
+            Outcome => $ZTicketOutcome,
+        );
+
+        if ( !$TaskState ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select a valid task outcome.',
+            );
+        }
+
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Outcome',
+                TicketID  => $TicketID,
+                Value     => $ZTicketOutcome,
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update task outcome.',
+            );
+        }
+
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Result',
+                TicketID  => $TicketID,
+                Value     => $ZTicketResult,
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update task result.',
+            );
+        }
+
+        my $StateSet = $TicketObject->TicketStateSet(
+            State    => $TaskState,
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        );
+
+        if ( !$StateSet ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update task state.',
+            );
+        }
+
+        $TicketObject->TicketLockSet(
+            TicketID => $TicketID,
+            Lock     => 'unlock',
+            UserID   => $CustomerPanelUserID,
+        );
+
+        my @Attachments = $Self->_RuntimeUploadAttachments();
+        my $OutcomeLabel = $Self->_TaskOutcomeLabel(
+            Outcome => $ZTicketOutcome,
+        );
+
+        my $Body = "** Note: This is a system-generated task completion message.\n\n"
+            . "Task outcome was submitted by customer user '$Self->{UserID}'.\n\n"
+            . "Outcome:\n"
+            . ( $OutcomeLabel || $ZTicketOutcome )
+            . "\n\n"
+            . "Details:\n"
+            . $ZTicketResult;
+
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $TicketID,
+            RuntimeAction       => $RuntimeAction,
+            Label               => 'Complete Task',
+            Subject             => 'Task completion submitted',
+            Body                => $Body,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+            Attachments         => \@Attachments,
+        );
+
+        $Self->_ChapterDirectorRun(
+            TicketID            => $TicketID,
+            TicketObject        => $TicketObject,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
     }
 
     my $ActionConfig = _ActionConfig(
@@ -568,6 +736,493 @@ sub _RequesterCancelAllowed {
     my %AllowedType = map { $_ => 1 } @{$ParentTypes};
 
     return $AllowedType{ $Ticket->{Type} };
+}
+
+sub _ExternalPartyRequestAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+
+    if ($ParentTicketID) {
+        my $Owner = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Owner'} );
+        return 1 if defined $Owner && $Owner ne '' && lc $Owner eq lc $Self->{UserID};
+        return;
+    }
+
+    return 1
+        if $Ticket->{CustomerUserID}
+        && lc $Ticket->{CustomerUserID} eq lc $Self->{UserID};
+
+    return;
+}
+
+sub _ExternalPartyRequestApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $RootTicket = $Self->_ExternalPartyRootTicket(
+        Ticket => $Ticket,
+        UserID => $Param{CustomerPanelUserID},
+    );
+    return if !IsHashRefWithData($RootTicket);
+
+    my $TargetServiceID = $Param{TargetServiceID} || $RootTicket->{ServiceID};
+    return if !$TargetServiceID;
+
+    my $NewTicketID = $Self->_ExternalPartyRootTicketCreate(
+        RootTicket           => $RootTicket,
+        TargetServiceID      => $TargetServiceID,
+        CustomerPanelUserID  => $Param{CustomerPanelUserID},
+    );
+    return if !$NewTicketID;
+
+    return if !$Self->_TicketDynamicFieldsCopy(
+        SourceTicketID => $RootTicket->{TicketID},
+        TargetTicketID => $NewTicketID,
+        UserID         => $Param{CustomerPanelUserID},
+    );
+
+    my %FreshTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $NewTicketID,
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID},
+        Silent        => 1,
+    );
+
+    if ( IsHashRefWithData( \%FreshTicket ) ) {
+        my $ServiceLibrarian = Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian->new();
+        $ServiceLibrarian->Run(
+            Ticket => \%FreshTicket,
+            UserID => $Param{CustomerPanelUserID} || 1,
+        );
+    }
+
+    my $TargetServiceName = $Self->_ServiceName(
+        ServiceID => $TargetServiceID,
+    ) || $TargetServiceID;
+
+    my $Body = "** Note: This is a system-generated runtime external party request message.\n\n"
+        . "A separate governance request was created by customer user '$Self->{UserID}'.\n\n"
+        . "Source Ticket:\n"
+        . ( $Ticket->{TicketID} || '' )
+        . "\n\n"
+        . "Duplicated Parent Ticket:\n"
+        . ( $RootTicket->{TicketID} || '' )
+        . "\n\n"
+        . "New Request Ticket:\n$NewTicketID\n\n"
+        . "Target Service:\n$TargetServiceName\n\n"
+        . "Ticket type and ticket dynamic fields were copied from the parent request.\n\n"
+        . "ServiceLibrarian was invoked for the new request. If ZTicket-StateBook was already present, governance resolution was skipped.";
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $Ticket->{TicketID},
+        RuntimeAction       => 'CreateExternalPartyRequest',
+        Label               => 'Create External Party Request',
+        Remarks             => $Param{Remarks},
+        Subject             => 'External party request created',
+        Body                => $Body,
+        Config              => $Param{Config},
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $NewTicketID,
+        RuntimeAction       => 'CreateExternalPartyRequest',
+        Label               => 'Create External Party Request',
+        Subject             => 'External party request created',
+        Body                => "** Note: This is a system-generated runtime external party request message.\n\n"
+            . "This request was duplicated from parent ticket "
+            . ( $RootTicket->{TicketNumber} || $RootTicket->{TicketID} )
+            . ".\n\n"
+            . "Created By:\n$Self->{UserID}\n\n"
+            . "Target Service:\n$TargetServiceName",
+        Config              => $Param{Config},
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+
+    return $NewTicketID;
+}
+
+sub _ExternalPartyRootTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return $Ticket if !$ParentTicketID;
+
+    my $ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $Param{UserID} || 1,
+        Silent        => 1,
+    );
+
+    return $ParentTicket if IsHashRefWithData($ParentTicket);
+    return;
+}
+
+sub _ExternalPartyRootTicketCreate {
+    my ( $Self, %Param ) = @_;
+
+    my $RootTicket = $Param{RootTicket};
+    return if !IsHashRefWithData($RootTicket);
+
+    my $Title = $RootTicket->{Title} || 'External Party Request';
+    $Title = 'External Party - ' . $Title;
+
+    return $Kernel::OM->Get('Kernel::System::Ticket')->TicketCreate(
+        TN            => undef,
+        Title         => $Title,
+        Queue         => $RootTicket->{Queue},
+        Lock          => 'unlock',
+        Priority      => $RootTicket->{Priority},
+        State         => 'new',
+        CustomerUser  => $RootTicket->{CustomerUserID},
+        OwnerID       => 1,
+        UserID        => $Param{CustomerPanelUserID} || 1,
+        Type          => $RootTicket->{Type},
+        ServiceID     => $Param{TargetServiceID} || $RootTicket->{ServiceID},
+        SLAID         => $RootTicket->{SLAID},
+        ResponsibleID => 1,
+    );
+}
+
+sub _TicketDynamicFieldsCopy {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{SourceTicketID};
+    return if !$Param{TargetTicketID};
+    return if !$Param{UserID};
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $ConfigObject              = $Kernel::OM->Get('Kernel::Config');
+
+    my %SkipField = map { $_ => 1 } grep { $_ } (
+        $ConfigObject->Get('Process::DynamicFieldProcessManagementProcessID'),
+        $ConfigObject->Get('Process::DynamicFieldProcessManagementActivityID'),
+    );
+
+    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => ['Ticket'],
+    ) || [];
+
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{$DynamicFieldList} ) {
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+        next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+        next DYNAMICFIELD if $SkipField{ $DynamicFieldConfig->{Name} };
+
+        my $Value = $DynamicFieldBackendObject->ValueGet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{SourceTicketID},
+        );
+
+        next DYNAMICFIELD if !defined $Value;
+        next DYNAMICFIELD if !ref $Value && $Value eq '';
+
+        my $Success = $DynamicFieldBackendObject->ValueSet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{TargetTicketID},
+            Value              => $Value,
+            UserID             => $Param{UserID},
+        );
+
+        return if !$Success;
+    }
+
+    return 1;
+}
+
+sub _ServiceName {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ServiceID};
+
+    my %Service = $Kernel::OM->Get('Kernel::System::Service')->ServiceGet(
+        ServiceID => $Param{ServiceID},
+        UserID    => 1,
+    );
+
+    return $Service{Name} if %Service && $Service{Name};
+    return;
+}
+
+sub _AddRequiredSupportProfileAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+
+    my $AllowedTypes = $Config->{AddRequiredSupportProfileTypes} || [
+        'Assessment',
+        'Endorsement',
+        'Approval',
+    ];
+    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
+
+    return $AllowedType{ $Ticket->{Type} };
+}
+
+sub _AddRequiredSupportProfileApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $SupportProfile = _NormalizeValue( $Param{SupportProfile} );
+    return if !defined $SupportProfile || $SupportProfile eq '';
+
+    my $SupportProfileObject = $Self->_SupportProfileGet(
+        SupportProfile => $SupportProfile,
+        UserID         => $Param{CustomerPanelUserID},
+    );
+    return if !IsHashRefWithData($SupportProfileObject);
+
+    my $SupportProfileID = $SupportProfileObject->{GovernanceObjectID};
+    return if !$SupportProfileID;
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $BlueBookID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    my $BlueLevel      = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    my $Chapter        = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+
+    return if !$ParentTicketID || !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+
+    my $DuplicateTicketID = $Self->_AdditionalSupportProfileTicketID(
+        ParentTicketID   => $ParentTicketID,
+        BlueBookID       => $BlueBookID,
+        BlueLevel        => $BlueLevel,
+        Chapter          => $Chapter,
+        Type             => $Ticket->{Type},
+        SupportProfileID => $SupportProfileID,
+        UserID           => $Param{CustomerPanelUserID},
+    );
+    return if $DuplicateTicketID;
+
+    my $ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID},
+        Silent        => 1,
+    );
+    return if !IsHashRefWithData($ParentTicket);
+
+    my $NewTicketID = $Self->_RequiredSupportProfileTicketCreate(
+        SourceTicket        => $Ticket,
+        ParentTicket        => $ParentTicket,
+        ParentTicketID      => $ParentTicketID,
+        SupportProfile      => $SupportProfileObject,
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+    return if !$NewTicketID;
+
+    my $ProfileName = $SupportProfileObject->{Name} || $SupportProfileID;
+    my $Body = "** Note: This is a system-generated runtime stakeholder update message.\n\n"
+        . "A mandatory support profile was added by customer user '$Self->{UserID}'.\n\n"
+        . "Support Profile:\n$ProfileName\n\n"
+        . "Parent Ticket:\n$ParentTicketID\n\n"
+        . "BlueBook:\n$BlueBookID\n\n"
+        . "BlueLevel:\n$BlueLevel\n\n"
+        . "Chapter:\n$Chapter\n\n"
+        . "Created Child Ticket:\n$NewTicketID\n\n"
+        . "No lifecycle transition has occurred.";
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $Ticket->{TicketID},
+        RuntimeAction       => 'AddRequiredSupportProfile',
+        Label               => 'Add Required Support Profile',
+        Remarks             => $Param{Remarks},
+        Subject             => 'Required support profile added',
+        Body                => $Body,
+        Config              => $Param{Config},
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $NewTicketID,
+        RuntimeAction       => 'AddRequiredSupportProfile',
+        Label               => 'Add Required Support Profile',
+        Subject             => 'Mandatory execution task created',
+        Body                => "** Note: This is a system-generated runtime stakeholder update message.\n\n"
+            . "This mandatory execution task was added during the active gate.\n\n"
+            . "Added By:\n$Self->{UserID}\n\n"
+            . "Support Profile:\n$ProfileName\n\n"
+            . "Parent Ticket:\n$ParentTicketID\n\n"
+            . "No lifecycle transition has occurred.",
+        Config              => $Param{Config},
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+
+    return $NewTicketID;
+}
+
+sub _SupportProfileGet {
+    my ( $Self, %Param ) = @_;
+
+    my $SupportProfile = _NormalizeValue( $Param{SupportProfile} );
+    return if !defined $SupportProfile || $SupportProfile eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @SupportProfileIDs;
+
+    if ( $SupportProfile =~ m{\A\d+\z} ) {
+        @SupportProfileIDs = ($SupportProfile);
+    }
+    else {
+        @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Classes => ['SupportProfile'],
+            Name    => $SupportProfile,
+            Result  => 'ARRAY',
+            Limit   => 1,
+            UserID  => $Param{UserID} || 1,
+        );
+    }
+
+    for my $SupportProfileID (@SupportProfileIDs) {
+        my $SupportProfileObject = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $SupportProfileID,
+            DynamicFields      => 1,
+            UserID             => $Param{UserID} || 1,
+            Silent             => 1,
+        );
+        next if !IsHashRefWithData($SupportProfileObject);
+        next if ( $SupportProfileObject->{Class} || '' ) ne 'SupportProfile';
+
+        return $SupportProfileObject;
+    }
+
+    return;
+}
+
+sub _AdditionalSupportProfileTicketID {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ParentTicketID};
+    return if !$Param{BlueBookID};
+    return if !defined $Param{BlueLevel};
+    return if $Param{BlueLevel} eq '';
+    return if !$Param{Chapter};
+    return if !$Param{Type};
+    return if !$Param{SupportProfileID};
+
+    my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+        Result => 'ARRAY',
+        Limit  => 1000,
+        UserID => $Param{UserID} || 1,
+        'DynamicField_ZTicket-Parent' => {
+            Equals => $Param{ParentTicketID},
+        },
+        'DynamicField_ZTicket-BlueBook' => {
+            Equals => $Param{BlueBookID},
+        },
+        'DynamicField_ZTicket-BlueLevel' => {
+            Equals => $Param{BlueLevel},
+        },
+        'DynamicField_ZTicket-Chapter' => {
+            Equals => $Param{Chapter},
+        },
+        'DynamicField_ZTicket-OwnerGroup' => {
+            Equals => $Param{SupportProfileID},
+        },
+        Type => $Param{Type},
+    );
+
+    return $TicketIDs[0] if @TicketIDs;
+    return;
+}
+
+sub _RequiredSupportProfileTicketCreate {
+    my ( $Self, %Param ) = @_;
+
+    my $SourceTicket   = $Param{SourceTicket};
+    my $ParentTicket   = $Param{ParentTicket};
+    my $SupportProfile = $Param{SupportProfile};
+    return if !IsHashRefWithData($SourceTicket);
+    return if !IsHashRefWithData($ParentTicket);
+    return if !IsHashRefWithData($SupportProfile);
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my $ParentRef   = $ParentTicket->{TicketNumber} || $Param{ParentTicketID};
+    my $ProfileName = $SupportProfile->{Name} || $SupportProfile->{GovernanceObjectID};
+    my $ChildTitle  = join ' - ', grep { defined $_ && $_ ne '' } (
+        $SourceTicket->{Type},
+        ( $ParentTicket->{Type} || 'ParentTicket' ) . "#$ParentRef",
+        _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Chapter'} ),
+        $ProfileName,
+    );
+
+    my $NewTicketID = $TicketObject->TicketCreate(
+        TN            => undef,
+        Title         => $ChildTitle,
+        Queue         => $SourceTicket->{Queue} || $ParentTicket->{Queue},
+        Lock          => 'unlock',
+        Priority      => $SourceTicket->{Priority} || $ParentTicket->{Priority},
+        State         => 'new',
+        CustomerUser  => $ParentTicket->{CustomerUserID} || $SourceTicket->{CustomerUserID},
+        OwnerID       => 1,
+        UserID        => $Param{CustomerPanelUserID} || 1,
+        Type          => $SourceTicket->{Type},
+        ServiceID     => $ParentTicket->{ServiceID} || $SourceTicket->{ServiceID},
+        SLAID         => $ParentTicket->{SLAID} || $SourceTicket->{SLAID},
+        ResponsibleID => 1,
+    );
+
+    return if !$NewTicketID;
+
+    Kernel::System::ZTSMBlueBookRuntime::ChildProcessSet(
+        TicketID => $NewTicketID,
+        UserID   => $Param{CustomerPanelUserID} || 1,
+    );
+
+    my %FieldMap = (
+        'ZTicket-Parent'            => $Param{ParentTicketID},
+        'ZTicket-BlueBook'          => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-BlueBook'} ),
+        'ZTicket-BlueLevel'         => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-BlueLevel'} ),
+        'ZTicket-Chapter'           => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Chapter'} ),
+        'ZTicket-Application'       => _NormalizeValue( $ParentTicket->{'DynamicField_ZTicket-Application'} )
+            || _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Application'} ),
+        'ZTicket-Profile'           => $SupportProfile->{GovernanceObjectID},
+        'ZTicket-OwnerGroup'        => $SupportProfile->{GovernanceObjectID},
+        'ZTicket-Role'              => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Role'} ),
+        'ZTicket-Mandatory'         => 1,
+        'ZTicket-Strict'            => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Strict'} ),
+        'ZTicket-Duration'          => _NormalizeValue( $SourceTicket->{'DynamicField_ZTicket-Duration'} ),
+        'ZTicket-RequiredWeightage' => 1,
+    );
+
+    FIELD:
+    for my $FieldName ( sort keys %FieldMap ) {
+        next FIELD if !defined $FieldMap{$FieldName};
+        next FIELD if $FieldMap{$FieldName} eq '';
+
+        my $Success = $Self->_TicketDynamicFieldSet(
+            FieldName => $FieldName,
+            TicketID  => $NewTicketID,
+            Value     => $FieldMap{$FieldName},
+            UserID    => $Param{CustomerPanelUserID} || 1,
+        );
+        return if !$Success;
+    }
+
+    return $NewTicketID;
 }
 
 sub _RequesterExecutionPauseAllowed {
@@ -884,6 +1539,58 @@ sub _TicketDynamicFieldSet {
     );
 }
 
+sub _RuntimeUploadAttachments {
+    my ( $Self, %Param ) = @_;
+
+    my %UploadStuff = $Kernel::OM->Get('Kernel::System::Web::Request')->GetUploadAll(
+        Param => 'file_upload',
+    );
+
+    return if !%UploadStuff;
+    return \%UploadStuff;
+}
+
+sub _TaskOutcomeState {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    return 'closed successful'   if $Outcome eq '0';
+    return 'closed no action'    if $Outcome eq '1';
+    return 'closed successful'   if $Outcome eq '2';
+    return 'closed unsuccessful' if $Outcome eq '-1';
+    return 'closed rollback'     if $Outcome eq '-2';
+
+    return;
+}
+
+sub _TaskOutcomeLabel {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZTicket-Outcome',
+    );
+
+    my $PossibleValues = IsHashRefWithData($DynamicFieldConfig) ? $DynamicFieldConfig->{Config}->{PossibleValues} : undef;
+    return $PossibleValues->{$Outcome}
+        if IsHashRefWithData($PossibleValues)
+        && defined $PossibleValues->{$Outcome};
+
+    my %Fallback = (
+        0    => 'Successful',
+        1    => 'No Action',
+        2    => 'Partial Success',
+        '-1' => 'Failed',
+        '-2' => 'Rollback',
+    );
+
+    return $Fallback{$Outcome} || $Outcome;
+}
+
 sub _OwnerTargetAllowed {
     my ( $Self, %Param ) = @_;
 
@@ -1086,7 +1793,7 @@ sub _RuntimeArticleCreate {
         Body => $Body,
     );
 
-    return $ArticleBackendObject->ArticleCreate(
+    my $ArticleID = $ArticleBackendObject->ArticleCreate(
         TicketID             => $Param{TicketID},
         IsVisibleForCustomer => $Config->{IsVisibleForCustomer} // 1,
         SenderType           => $Config->{SenderType} || 'customer',
@@ -1098,6 +1805,24 @@ sub _RuntimeArticleCreate {
         HistoryComment       => $Config->{HistoryComment} || '%%',
         UserID               => $Param{CustomerPanelUserID},
     );
+
+    return if !$ArticleID;
+
+    if ( IsArrayRefWithData( $Param{Attachments} ) ) {
+        ATTACHMENT:
+        for my $Attachment ( @{ $Param{Attachments} } ) {
+            next ATTACHMENT if !IsHashRefWithData($Attachment);
+            next ATTACHMENT if !$Attachment->{Filename};
+
+            $ArticleBackendObject->ArticleWriteAttachment(
+                %{$Attachment},
+                ArticleID => $ArticleID,
+                UserID    => $Param{CustomerPanelUserID},
+            );
+        }
+    }
+
+    return $ArticleID;
 }
 
 sub _RiskAssessmentColumns {
@@ -2448,8 +3173,18 @@ sub _ActionConfig {
             Types => ['Endorsement'],
         },
         Assess => {
-            Label => 'Assess',
+            Label => 'Submit Assessment',
             State => 'closed successful',
+            Types => ['Assessment'],
+        },
+        CloseDuplicate => {
+            Label => 'Close Duplicate',
+            State => 'closed duplicate',
+            Types => ['Assessment'],
+        },
+        CloseNoAction => {
+            Label => 'Close No Action',
+            State => 'closed no action',
             Types => ['Assessment'],
         },
         Reject => {
@@ -2486,8 +3221,18 @@ sub _ActionableTicketType {
             Types => ['Endorsement'],
         },
         Assess => {
-            Label => 'Assess',
+            Label => 'Submit Assessment',
             State => 'closed successful',
+            Types => ['Assessment'],
+        },
+        CloseDuplicate => {
+            Label => 'Close Duplicate',
+            State => 'closed duplicate',
+            Types => ['Assessment'],
+        },
+        CloseNoAction => {
+            Label => 'Close No Action',
+            State => 'closed no action',
             Types => ['Assessment'],
         },
         Reject => {

@@ -71,6 +71,35 @@ sub _TicketOnHold {
     return;
 }
 
+sub _NeutralClosureState {
+    my ($State) = @_;
+
+    return if !defined $State;
+    return 1 if $State eq 'closed no action';
+    return 1 if $State eq 'closed duplicate';
+
+    return;
+}
+
+sub _OutcomeValue {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $Outcome = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Outcome'} );
+    return $Outcome if defined $Outcome && $Outcome ne '';
+
+    my $State = $Ticket->{State} || '';
+    return '0'  if $State eq 'closed successful';
+    return '1'  if $State eq 'closed no action';
+    return '1'  if $State eq 'closed duplicate';
+    return '-1' if $State eq 'closed rejected';
+    return '-1' if $State eq 'closed unsuccessful';
+    return '-2' if $State eq 'closed rollback';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RUN
 # ------------------------------------------------------------ #
@@ -237,6 +266,19 @@ sub Run {
         && defined $FailureState
         && $ParentTicketID
     ) {
+        my $ParentOutcome = $FailureState eq 'closed rollback' ? '-2' : '-1';
+        my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => 'ZTicket-Outcome',
+        );
+
+        if ($DynamicFieldConfig) {
+            $DynamicFieldBackendObject->ValueSet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectID           => $ParentTicketID,
+                Value              => $ParentOutcome,
+                UserID             => 1,
+            );
+        }
 
         $TicketObject->TicketStateSet(
 
@@ -351,6 +393,187 @@ sub Run {
         );
 
         return 1;
+    }
+
+    # -------------------------------------------------------- #
+    # MANDATORY OUTCOME ROLL-UP
+    # -------------------------------------------------------- #
+
+    my @BlueLevelPlays = Kernel::System::ZTSMBlueBookRuntime::ChildTicketIDsGet(
+        ParentTicketID => $ParentTicketID,
+        BlueBookID     => $BlueBook,
+        BlueLevel      => $BlueLevel,
+        UserID         => 1,
+    );
+
+    my @MandatoryOutcomes;
+    my $RollbackOutcome;
+    my $FailedOutcome;
+
+    BLUELEVELPLAY:
+    for my $BlueLevelPlayID (@BlueLevelPlays) {
+        my %BlueLevelPlay = $TicketObject->TicketGet(
+            TicketID      => $BlueLevelPlayID,
+            DynamicFields => 1,
+            UserID        => 1,
+            Silent        => 1,
+        );
+
+        next BLUELEVELPLAY if !%BlueLevelPlay;
+        next BLUELEVELPLAY if !_NormalizeValue( $BlueLevelPlay{'DynamicField_ZTicket-Mandatory'} );
+
+        my $Outcome = _OutcomeValue( \%BlueLevelPlay );
+        next BLUELEVELPLAY if !defined $Outcome || $Outcome eq '';
+
+        push @MandatoryOutcomes, $Outcome;
+        $RollbackOutcome = 1 if $Outcome eq '-2';
+        $FailedOutcome   = 1 if $Outcome eq '-1';
+    }
+
+    if (@MandatoryOutcomes) {
+        my $ParentOutcome;
+        my $ParentHardStopState;
+
+        if ($RollbackOutcome) {
+            $ParentOutcome       = '-2';
+            $ParentHardStopState = 'closed rollback';
+        }
+        elsif ($FailedOutcome) {
+            $ParentOutcome       = '-1';
+            $ParentHardStopState = 'closed unsuccessful';
+        }
+        else {
+            my $PartialOutcome;
+            my $SuccessfulOutcome;
+            my $NoActionOutcome;
+
+            OUTCOME:
+            for my $Outcome (@MandatoryOutcomes) {
+                $PartialOutcome    = 1 if $Outcome eq '2';
+                $SuccessfulOutcome = 1 if $Outcome eq '0';
+                $NoActionOutcome   = 1 if $Outcome eq '1';
+            }
+
+            if ($PartialOutcome) {
+                $ParentOutcome = '2';
+            }
+            elsif ( @MandatoryOutcomes == 1 ) {
+                $ParentOutcome = $MandatoryOutcomes[0];
+            }
+            elsif ($SuccessfulOutcome) {
+                $ParentOutcome = '0';
+            }
+            elsif ($NoActionOutcome) {
+                $ParentOutcome = '1';
+            }
+        }
+
+        if ( defined $ParentOutcome && $ParentOutcome ne '' ) {
+            my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+                Name => 'ZTicket-Outcome',
+            );
+
+            if ($DynamicFieldConfig) {
+                $DynamicFieldBackendObject->ValueSet(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    ObjectID           => $ParentTicketID,
+                    Value              => $ParentOutcome,
+                    UserID             => 1,
+                );
+            }
+        }
+
+        if ($ParentHardStopState) {
+            $TicketObject->TicketStateSet(
+                TicketID => $ParentTicketID,
+                State    => $ParentHardStopState,
+                UserID   => 1,
+            );
+
+            my $Body
+                = "** Note: This is a system-generated orchestration update message.\n\n"
+                . "Mandatory BlueBook outcome caused a hard stop.\n\n"
+                . "BlueBook:\n"
+                . ( $BlueBook || 'N/A' )
+                . "\n\n"
+                . "BlueLevel:\n"
+                . ( $BlueLevel || 'N/A' )
+                . "\n\n"
+                . "Parent Outcome:\n"
+                . $ParentOutcome
+                . "\n\n"
+                . "Parent State:\n"
+                . $ParentHardStopState;
+
+            ZTSMArticleCreate(
+                %Param,
+                TicketID => $ParentTicketID,
+                Subject  => 'ZTSM Mandatory Outcome Hard Stop',
+                Body     => $Body,
+                HistoryComment =>
+                    'ZTSM: Mandatory outcome hard stop',
+                UserID => 1,
+            );
+
+            return 1;
+        }
+    }
+
+    # -------------------------------------------------------- #
+    # SOLE MANDATORY NO-ACTION / DUPLICATE CLOSURE
+    # -------------------------------------------------------- #
+
+    if (
+        $Mandatory
+        && _NeutralClosureState( $Ticket->{State} )
+        && $ParentTicketID
+    ) {
+        if ( @BlueLevelPlays == 1 && $BlueLevelPlays[0] == $TicketID ) {
+            $TicketObject->TicketStateSet(
+                TicketID => $ParentTicketID,
+                State    => $Ticket->{State},
+                UserID   => 1,
+            );
+
+            my $Body
+                = "** Note: This is a system-generated orchestration update message.\n\n"
+                . "Sole mandatory BlueBook task closed without execution.\n\n"
+                . "BlueBook:\n"
+                . ( $BlueBook || 'N/A' )
+                . "\n\n"
+                . "Chapter:\n"
+                . ( $Chapter || 'N/A' )
+                . "\n\n"
+                . "BlueLevel:\n"
+                . ( $BlueLevel || 'N/A' )
+                . "\n\n"
+                . "Result:\n"
+                . "Parent ticket closed as "
+                . $Ticket->{State}
+                . ".";
+
+            ZTSMArticleCreate(
+                %Param,
+                TicketID => $ParentTicketID,
+                Subject  => 'ZTSM Parent Closed Without Action',
+                Body     => $Body,
+                HistoryComment =>
+                    'ZTSM: Parent closed from sole mandatory no-action task',
+                UserID => 1,
+            );
+
+            $LogObject->Log(
+                Priority => 'notice',
+                Message  =>
+                      'ZTSMChapterDirector: '
+                    . 'Sole mandatory neutral closure propagated '
+                    . "ParentTicketID=$ParentTicketID "
+                    . "ChildTicketID=$TicketID "
+                    . "State=$Ticket->{State}",
+            );
+
+            return 1;
+        }
     }
 
     # -------------------------------------------------------- #

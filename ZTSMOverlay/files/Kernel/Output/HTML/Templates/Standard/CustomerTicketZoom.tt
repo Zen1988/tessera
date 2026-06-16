@@ -829,7 +829,7 @@
                         outline: 0;
                     }
                 </style>
-                <form action="[% Env("CGIHandle") | html %]" method="post" name="ZTSMRuntimeAction[% Data.Action | html %]" class="Validate PreventMultipleSubmits">
+                <form action="[% Env("CGIHandle") | html %]" method="post" enctype="multipart/form-data" name="ZTSMRuntimeAction[% Data.Action | html %]" class="Validate PreventMultipleSubmits">
                     <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
                     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
                     <input type="hidden" name="RuntimeAction" value="[% Data.Action | html %]"/>

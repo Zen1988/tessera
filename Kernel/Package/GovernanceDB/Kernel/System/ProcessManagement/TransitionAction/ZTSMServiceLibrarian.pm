@@ -267,6 +267,14 @@ sub Run {
         return 1;
     }
 
+    if ( _NormalizeValue( $Ticket->{'DynamicField_ZTicket-StateBook'} ) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMServiceLibrarian: Ticket already has ZTicket-StateBook, skip governance context resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
+
     my $ServiceID = $Ticket->{ServiceID};
 
     return if !$ServiceID;
