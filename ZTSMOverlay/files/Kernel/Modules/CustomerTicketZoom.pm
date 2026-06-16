@@ -28,6 +28,7 @@ use List::Util  qw(any);
 
 # OTOBO modules
 use Kernel::Language              qw(Translatable);
+use Kernel::System::ZTSMBlueBookRuntime ();
 use Kernel::System::VariableCheck qw(:all);
 
 our $ObjectManagerDisabled = 1;
@@ -2416,6 +2417,41 @@ sub _ZTSMRuntimeActions {
         };
     }
 
+    if (
+        $ActionAccess
+        && ( $Ticket->{Type} || '' ) eq 'Verification'
+        && $TicketOwner
+        && lc $TicketOwner eq lc $Self->{UserID}
+        )
+    {
+        push @RuntimeActions, {
+            Action          => 'CompleteVerification',
+            Label           => 'Complete Verification',
+            RiskFieldsHTML  => $Self->_ZTSMVerificationCompletionHTML(),
+            RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+    }
+
+    if (
+        $ActionAccess
+        && $TicketOwner
+        && lc $TicketOwner eq lc $Self->{UserID}
+        && $Self->_ZTSMFollowUpAllowed(
+            Ticket => $Ticket,
+            Config => $Config,
+        )
+        )
+    {
+        push @RuntimeActions, {
+            Action          => 'FollowUp',
+            Label           => 'Follow-up',
+            RiskFieldsHTML  => '',
+            RemarksRequired => 1,
+            InActionMenu    => 1,
+        };
+    }
+
     if ($ExternalPartyRequestAccess) {
         push @RuntimeActions, {
             Action          => 'CreateExternalPartyRequest',
@@ -2564,6 +2600,113 @@ sub _ZTSMTaskOutcomeValues {
         '-1' => 'Failed',
         '-2' => 'Rollback',
     };
+}
+
+sub _ZTSMVerificationCompletionHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $OutcomeSelection = $LayoutObject->BuildSelection(
+        Data => {
+            0    => 'Successful',
+            '-1' => 'Failed',
+        },
+        Name         => 'ZTicketOutcome',
+        PossibleNone => 1,
+        Class        => 'Modernize Validate_Required',
+    );
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">' . $OutcomeSelection . '</div>'
+        . '<label for="ZTicketOutcome" class="Mandatory">Result: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><textarea id="ZTicketResult" name="ZTicketResult" rows="6" cols="'
+        . $LayoutObject->Ascii2Html( Text => $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Frontend::TextAreaNote') || 80 )
+        . '" class="Validate_Required"></textarea></div>'
+        . '<label for="ZTicketResult" class="Mandatory">Details: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><input type="file" id="ZTSMVerificationFileUpload" name="file_upload" class="Validate_Required" /></div>'
+        . '<label for="ZTSMVerificationFileUpload" class="Mandatory">Artifact: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
+sub _ZTSMFollowUpAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+
+    my $AllowedTypes = $Config->{FollowUpTypes} || [
+        'Assessment',
+        'Endorsement',
+        'Approval',
+        'Implementation',
+        'Verification',
+    ];
+    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
+    return if !$AllowedType{ $Ticket->{Type} || '' };
+
+    for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
+        my $Value = $Ticket->{ 'DynamicField_' . $FieldName };
+        if ( ref $Value eq 'ARRAY' ) {
+            $Value = $Value->[0];
+        }
+        return if !defined $Value || $Value eq '';
+    }
+
+    return $Self->_ZTSMFollowUpPurpleBookID( Ticket => $Ticket );
+}
+
+sub _ZTSMFollowUpPurpleBookID {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $BlueBookID = $Ticket->{'DynamicField_ZTicket-BlueBook'};
+    my $BlueLevel  = $Ticket->{'DynamicField_ZTicket-BlueLevel'};
+    my $Chapter    = $Ticket->{'DynamicField_ZTicket-Chapter'};
+
+    for my $Value ( \$BlueBookID, \$BlueLevel, \$Chapter ) {
+        if ( ref ${$Value} eq 'ARRAY' ) {
+            ${$Value} = ${$Value}->[0];
+        }
+    }
+
+    return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+
+    my $BlueBook = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
+        BlueBookID => $BlueBookID,
+    );
+    my @Records = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
+        BlueBook => $BlueBook,
+    );
+
+    RECORD:
+    for my $Record (@Records) {
+        next RECORD if !$Record || ref $Record ne 'HASH';
+        next RECORD if !defined $Record->{BlueLevel} || $Record->{BlueLevel} ne $BlueLevel;
+        next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
+        next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
+
+        my $PurpleBookID = $Record->{PurpleBook};
+        if ( ref $PurpleBookID eq 'ARRAY' ) {
+            $PurpleBookID = $PurpleBookID->[0];
+        }
+
+        return $PurpleBookID if $PurpleBookID;
+    }
+
+    return;
 }
 
 sub _ZTSMExternalPartyRequestAllowed {

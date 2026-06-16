@@ -171,6 +171,16 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-RequiredWeightage'}
     ) || 1;
 
+    my %ParentTicket;
+    if ($ParentTicketID) {
+        %ParentTicket = $TicketObject->TicketGet(
+            TicketID      => $ParentTicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+            Silent        => 1,
+        );
+    }
+
     # -------------------------------------------------------- #
     # CHAPTERPLAY SEARCH
     # -------------------------------------------------------- #
@@ -370,6 +380,13 @@ sub Run {
                 . "Chapter=$Chapter",
         );
 		
+        if ( %ParentTicket && ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
+            $Self->Run(
+                %Param,
+                Ticket => \%ParentTicket,
+                UserID => 1,
+            );
+        }
 		
 
         return 1;
@@ -514,6 +531,14 @@ sub Run {
                     'ZTSM: Mandatory outcome hard stop',
                 UserID => 1,
             );
+
+            if ( %ParentTicket && ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
+                $Self->Run(
+                    %Param,
+                    Ticket => \%ParentTicket,
+                    UserID => 1,
+                );
+            }
 
             return 1;
         }
@@ -748,13 +773,6 @@ sub Run {
             . "Weightage=$CurrentWeightage/$RequiredWeightage",
     );
 
-    my %ParentTicket = $TicketObject->TicketGet(
-        TicketID      => $ParentTicketID,
-        DynamicFields => 1,
-        UserID        => 1,
-        Silent        => 1,
-    );
-
     if ( !%ParentTicket ) {
         $LogObject->Log(
             Priority => 'error',
@@ -762,6 +780,40 @@ sub Run {
                   'ZTSMChapterDirector: '
                 . "Parent ticket not found ParentTicketID=$ParentTicketID "
                 . "ChildTicketID=$TicketID",
+        );
+
+        return 1;
+    }
+
+    if ( ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
+        $TicketObject->TicketStateSet(
+            TicketID => $ParentTicketID,
+            State    => 'in-progress',
+            UserID   => 1,
+        );
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $ParentTicketID,
+            Subject  => 'ZTSM Follow-up Completed',
+            Body     =>
+                  "** Note: This is a system-generated follow-up orchestration update message.\n\n"
+                . "Follow-up BlueBook completed successfully.\n\n"
+                . "PurpleBook:\n"
+                . ( $BlueBook || 'N/A' )
+                . "\n\n"
+                . "Original ticket returned to in-progress.",
+            HistoryComment => 'ZTSM: Follow-up completed',
+            UserID         => 1,
+        );
+
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  'ZTSMChapterDirector: '
+                . 'Follow-up BlueBook complete, original ticket returned to in-progress '
+                . "ParentTicketID=$ParentTicketID "
+                . "PurpleBook=$BlueBook",
         );
 
         return 1;

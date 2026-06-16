@@ -383,6 +383,8 @@ sub RecordsParse {
             Activity => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role    => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
+            Template => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
+            PurpleBook => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] ),
             Mandatory => _RecordValueGet(
                 Record => $Record,
                 Fields => ['ZBlue-Mandatory'],
@@ -704,16 +706,271 @@ sub LevelSpawn {
             HistoryComment => 'ZTSM: ChapterPlay initiated',
             UserID         => $Param{UserID} || 1,
         );
+
+        ChildTemplateApply(
+            TicketID       => $NewTicketID,
+            TemplateID     => $Record->{Template},
+            ArticleParam   => $Param{ArticleParam},
+            UserID         => $Param{UserID} || 1,
+        );
     }
 
-    _TicketFieldSet(
-        TicketID  => $Param{ParentTicketID},
-        FieldName => 'ZTicket-BlueLevel',
-        Value     => $Param{BlueLevel},
-        UserID    => $Param{UserID} || 1,
-    );
+    if ( !$Param{PreserveParentBlueLevel} ) {
+        _TicketFieldSet(
+            TicketID  => $Param{ParentTicketID},
+            FieldName => 'ZTicket-BlueLevel',
+            Value     => $Param{BlueLevel},
+            UserID    => $Param{UserID} || 1,
+        );
+    }
 
     return @CreatedTicketIDs;
+}
+
+sub ChildTemplateApply {
+    my (%Param) = @_;
+
+    return if !$Param{TicketID};
+    return if !$Param{TemplateID};
+
+    my $UserID = $Param{UserID} || 1;
+    my $Template = eval {
+        $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $Param{TemplateID},
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+    };
+
+    return if !$Template || ref $Template ne 'HASH';
+
+    my $Description = _NormalizeValue( $Template->{Description} );
+    my $Rows        = _TemplateRiskAssessmentRows( Template => $Template );
+
+    if ( $Rows && @{$Rows} ) {
+        _TicketFieldSet(
+            TicketID  => $Param{TicketID},
+            FieldName => 'ZRM-RiskAssessment',
+            Value     => $Rows,
+            UserID    => $UserID,
+        );
+    }
+
+    return 1 if !$Description && !( $Rows && @{$Rows} );
+
+    my $Body = "** Note: This is a system-generated template hydration message.\n\n"
+        . "Template:\n"
+        . ( $Template->{Name} || $Template->{Number} || $Param{TemplateID} )
+        . "\n\n";
+
+    if ($Description) {
+        $Body .= "Description:\n$Description\n\n";
+    }
+
+    if ( $Rows && @{$Rows} ) {
+        $Body .= "Risk Assessment Rows:\n" . scalar @{$Rows};
+    }
+
+    ZTSMArticleCreate(
+        %{ $Param{ArticleParam} || {} },
+        TicketID => $Param{TicketID},
+        Subject  => 'DO-NOT-REPLY: Template applied.',
+        Body     => $Body,
+        HistoryComment => 'ZTSM: Template applied',
+        UserID         => $UserID,
+    );
+
+    return 1;
+}
+
+sub _TemplateRiskAssessmentRows {
+    my (%Param) = @_;
+
+    my $Template = $Param{Template};
+    return if !$Template || ref $Template ne 'HASH';
+
+    my $Rows = _ObjectValueGet(
+        Object => $Template,
+        Field  => 'ZTemplate-RiskAssessment',
+    );
+
+    return if !$Rows;
+    $Rows = [$Rows] if ref $Rows eq 'HASH';
+    return if ref $Rows ne 'ARRAY';
+
+    my @MappedRows;
+
+    ROW:
+    for my $Row ( @{$Rows} ) {
+        next ROW if !$Row || ref $Row ne 'HASH';
+
+        my %Mapped = (
+            'ZRM-RiskStatement'      => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskStatement'] ),
+            'ZRM-ImpactCategory'     => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-ImpactCategory'] ),
+            'ZRM-RiskCategory'       => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskCategory'] ),
+            'ZRM-RiskDetail'         => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskDetail'] ),
+            'ZRM-InherentLikelihood' => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-InherentLikelihood'] ),
+            'ZRM-InherentImpact'     => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-InherentImpact'] ),
+            'ZRM-RiskAction'         => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskAction'] ),
+            'ZRM-RiskOwner'          => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskOwner'] ),
+            'ZRM-RiskPlan'           => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-RiskPlan'] ),
+            'ZRM-ResidualLikelihood' => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-ResidualLikelihood'] ),
+            'ZRM-ResidualImpact'     => _RecordValueGet( Record => $Row, Fields => ['ZTemplate-ResidualImpact'] ),
+        );
+
+        my %Defaults = _RiskStatementDefaults(
+            RiskStatementID => $Mapped{'ZRM-RiskStatement'},
+        );
+
+        for my $Field ( keys %Defaults ) {
+            $Mapped{$Field} = $Defaults{$Field}
+                if !defined $Mapped{$Field} || $Mapped{$Field} eq '';
+        }
+
+        $Mapped{'ZRM-InherentCalculatedRisk'} = _RiskScoreCalculate(
+            $Mapped{'ZRM-InherentLikelihood'},
+            $Mapped{'ZRM-InherentImpact'},
+        );
+        $Mapped{'ZRM-ResidualCalculatedRisk'} = _RiskScoreCalculate(
+            $Mapped{'ZRM-ResidualLikelihood'},
+            $Mapped{'ZRM-ResidualImpact'},
+        );
+
+        push @MappedRows, \%Mapped;
+    }
+
+    return \@MappedRows if @MappedRows;
+    return;
+}
+
+sub _ObjectValueGet {
+    my (%Param) = @_;
+
+    my $Object = $Param{Object};
+    my $Field  = $Param{Field};
+
+    return if !$Object || ref $Object ne 'HASH';
+    return if !$Field;
+
+    for my $Key ( 'DynamicField_' . $Field, $Field ) {
+        return $Object->{$Key} if defined $Object->{$Key};
+    }
+
+    my $XMLData = $Object->{XMLData};
+    return if ref $XMLData ne 'HASH';
+
+    my $Value = $XMLData->{$Field};
+    if ( ref $Value eq 'HASH' ) {
+        my $Normalized = _NormalizeValue($Value);
+        return defined $Normalized ? $Normalized : $Value;
+    }
+    return _NormalizeValue($Value) if ref $Value ne 'ARRAY';
+
+    my @Values;
+    for my $Item ( @{$Value} ) {
+        if ( ref $Item eq 'HASH' ) {
+            my $Normalized = _NormalizeValue($Item);
+            push @Values, defined $Normalized ? $Normalized : $Item;
+            next;
+        }
+        push @Values, $Item;
+    }
+
+    return \@Values if @Values > 1;
+    return $Values[0] if @Values;
+    return;
+}
+
+sub _RiskStatementDefaults {
+    my (%Param) = @_;
+
+    my $RiskStatementID = _NormalizeValue( $Param{RiskStatementID} );
+    return if !$RiskStatementID || $RiskStatementID !~ m{\A\d+\z};
+
+    my $GovernanceObject = eval {
+        $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $RiskStatementID,
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+    };
+
+    return if !$GovernanceObject || ref $GovernanceObject ne 'HASH';
+
+    my %Defaults;
+    my @DefaultFields = (
+        { Source => 'ZRM-ImpactCategoryGO', Target => 'ZRM-ImpactCategory',     Type => 'GeneralCatalog' },
+        { Source => 'ZRM-RiskCategoryGO',   Target => 'ZRM-RiskCategory',       Type => 'GeneralCatalog' },
+        { Source => 'ZRM-BaseLikelihood',   Target => 'ZRM-InherentLikelihood', Type => 'GeneralCatalog' },
+        { Source => 'ZRM-BaseImpact',       Target => 'ZRM-InherentImpact',     Type => 'GeneralCatalog' },
+        { Source => 'ZRM-RiskDetail',       Target => 'ZRM-RiskDetail' },
+    );
+
+    FIELD:
+    for my $Field (@DefaultFields) {
+        my $Value = _ObjectValueGet(
+            Object => $GovernanceObject,
+            Field  => $Field->{Source},
+        );
+        next FIELD if !defined $Value || $Value eq '';
+
+        if ( ( $Field->{Type} || '' ) eq 'GeneralCatalog' ) {
+            $Value = _GeneralCatalogValueWithName($Value);
+        }
+
+        $Defaults{ $Field->{Target} } = $Value;
+    }
+
+    return %Defaults;
+}
+
+sub _GeneralCatalogValueWithName {
+    my ($Value) = @_;
+
+    my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+    my @Expanded;
+    my %Seen;
+
+    VALUE:
+    for my $ItemID (@Values) {
+        next VALUE if !defined $ItemID || $ItemID eq '';
+
+        if ( !$Seen{$ItemID}++ ) {
+            push @Expanded, $ItemID;
+        }
+
+        next VALUE if $ItemID !~ m{\A\d+\z};
+
+        my $Item = eval {
+            $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
+                ItemID => $ItemID,
+            );
+        };
+
+        next VALUE if !$Item || ref $Item ne 'HASH';
+        next VALUE if !defined $Item->{Name} || $Item->{Name} eq '';
+        next VALUE if $Seen{ $Item->{Name} }++;
+
+        push @Expanded, $Item->{Name};
+    }
+
+    return $Expanded[0] if @Expanded == 1;
+    return \@Expanded if @Expanded;
+    return;
+}
+
+sub _RiskScoreCalculate {
+    my ( $Likelihood, $Impact ) = @_;
+
+    $Likelihood = _NormalizeValue($Likelihood);
+    $Impact     = _NormalizeValue($Impact);
+
+    return '' if !defined $Likelihood || $Likelihood eq '';
+    return '' if !defined $Impact     || $Impact eq '';
+    return '' if $Likelihood !~ m{\A-?\d+(?:\.\d+)?\z};
+    return '' if $Impact     !~ m{\A-?\d+(?:\.\d+)?\z};
+
+    return $Likelihood * $Impact;
 }
 
 1;

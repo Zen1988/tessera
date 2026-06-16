@@ -386,6 +386,8 @@ sub Run {
             Activity         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
+            Template         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
+            PurpleBook       => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] ),
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
             Strict           => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Strict'] ),
             Duration         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Duration'] ),
@@ -583,6 +585,13 @@ sub Run {
                 . $Record->{Chapter},
             HistoryComment => 'ZTSM: ChapterPlay initiated',
             UserID         => $UserID,
+        );
+
+        Kernel::System::ZTSMBlueBookRuntime::ChildTemplateApply(
+            TicketID     => $NewTicketID,
+            TemplateID   => $Record->{Template},
+            ArticleParam => \%Param,
+            UserID       => $UserID,
         );
     }
 

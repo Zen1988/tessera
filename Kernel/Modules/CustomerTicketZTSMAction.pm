@@ -433,6 +433,142 @@ sub Run {
         );
     }
 
+    if ( $RuntimeAction eq 'FollowUp' ) {
+        if (
+            !$Self->_FollowUpAllowed(
+                Ticket => \%Ticket,
+                Config => $Config,
+            )
+            )
+        {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        my $CreatedTicketIDs = $Self->_FollowUpApply(
+            Ticket              => \%Ticket,
+            Remarks             => $Remarks,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        if ( !IsArrayRefWithData($CreatedTicketIDs) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not start follow-up.',
+            );
+        }
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
+    if ( $RuntimeAction eq 'CompleteVerification' ) {
+        if ( ( $Ticket{Type} || '' ) ne 'Verification' ) {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( $ZTicketOutcome ne '0' && $ZTicketOutcome ne '-1' ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select a valid verification result.',
+            );
+        }
+
+        if ( !$ZTicketResult ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please enter verification details.',
+            );
+        }
+
+        my @Attachments = $Self->_RuntimeUploadAttachments();
+        if ( !@Attachments ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please attach the verification artifact.',
+            );
+        }
+
+        my $StartedFollowUp;
+        if ( $ZTicketOutcome eq '-1' && $Self->_FollowUpPurpleBookID( Ticket => \%Ticket ) ) {
+            my $CreatedTicketIDs = $Self->_FollowUpApply(
+                Ticket              => \%Ticket,
+                Remarks             => $ZTicketResult,
+                Config              => $Config,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Attachments         => \@Attachments,
+                VerificationFailed  => 1,
+            );
+            $StartedFollowUp = IsArrayRefWithData($CreatedTicketIDs);
+        }
+
+        if ( !$StartedFollowUp ) {
+            my $State = $ZTicketOutcome eq '0' ? 'closed successful' : 'closed unsuccessful';
+
+            for my $Field (
+                [ 'ZTicket-Outcome', $ZTicketOutcome ],
+                [ 'ZTicket-Result',  $ZTicketResult ],
+                )
+            {
+                if (
+                    !$Self->_TicketDynamicFieldSet(
+                        FieldName => $Field->[0],
+                        TicketID  => $TicketID,
+                        Value     => $Field->[1],
+                        UserID    => $CustomerPanelUserID,
+                    )
+                    )
+                {
+                    return $LayoutObject->CustomerErrorScreen(
+                        Message => 'Could not update verification result.',
+                    );
+                }
+            }
+
+            my $StateSet = $TicketObject->TicketStateSet(
+                State    => $State,
+                TicketID => $TicketID,
+                UserID   => $CustomerPanelUserID,
+            );
+
+            if ( !$StateSet ) {
+                return $LayoutObject->CustomerErrorScreen(
+                    Message => 'Could not update verification state.',
+                );
+            }
+
+            $TicketObject->TicketLockSet(
+                TicketID => $TicketID,
+                Lock     => 'unlock',
+                UserID   => $CustomerPanelUserID,
+            );
+
+            my $Label = $ZTicketOutcome eq '0' ? 'Successful' : 'Failed';
+            my $Body = "** Note: This is a system-generated verification message.\n\n"
+                . "Verification was submitted by customer user '$Self->{UserID}'.\n\n"
+                . "Result:\n$Label\n\n"
+                . "Details:\n$ZTicketResult";
+
+            $Self->_RuntimeArticleCreate(
+                TicketID            => $TicketID,
+                RuntimeAction       => $RuntimeAction,
+                Label               => 'Complete Verification',
+                Subject             => 'Verification submitted',
+                Body                => $Body,
+                Config              => $Config,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Attachments         => \@Attachments,
+            );
+
+            $Self->_ChapterDirectorRun(
+                TicketID            => $TicketID,
+                TicketObject        => $TicketObject,
+                CustomerPanelUserID => $CustomerPanelUserID,
+            );
+        }
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
     if ( $RuntimeAction eq 'CompleteTask' ) {
         if ( ( $Ticket{Type} || '' ) ne 'Task' ) {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
@@ -978,6 +1114,145 @@ sub _AddRequiredSupportProfileAllowed {
     my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
 
     return $AllowedType{ $Ticket->{Type} };
+}
+
+sub _FollowUpAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
+
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+
+    my $AllowedTypes = $Config->{FollowUpTypes} || [
+        'Assessment',
+        'Endorsement',
+        'Approval',
+        'Implementation',
+        'Verification',
+    ];
+    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
+    return if !$AllowedType{ $Ticket->{Type} || '' };
+
+    return $Self->_FollowUpPurpleBookID( Ticket => $Ticket );
+}
+
+sub _FollowUpPurpleBookID {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $BlueBookID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    my $BlueLevel  = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    my $Chapter    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+
+    return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+
+    my $BlueBook = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
+        BlueBookID => $BlueBookID,
+    );
+    my @Records = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
+        BlueBook => $BlueBook,
+    );
+
+    RECORD:
+    for my $Record (@Records) {
+        next RECORD if !$Record || ref $Record ne 'HASH';
+        next RECORD if !defined $Record->{BlueLevel} || $Record->{BlueLevel} ne $BlueLevel;
+        next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
+        next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
+
+        my $PurpleBookID = _NormalizeValue( $Record->{PurpleBook} );
+        return $PurpleBookID if $PurpleBookID;
+    }
+
+    return;
+}
+
+sub _FollowUpApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $TicketID     = $Ticket->{TicketID};
+    my $PurpleBookID = $Self->_FollowUpPurpleBookID( Ticket => $Ticket );
+    return if !$TicketID || !$PurpleBookID;
+
+    my $UserID       = $Param{CustomerPanelUserID} || 1;
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $BlueBook     = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
+        BlueBookID => $PurpleBookID,
+    );
+    my @Records = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
+        BlueBook => $BlueBook,
+    );
+    return if !@Records;
+
+    my $FirstBlueLevel = $Records[0]->{BlueLevel};
+    return if !defined $FirstBlueLevel || $FirstBlueLevel eq '';
+
+    my $StateSet = $TicketObject->TicketStateSet(
+        State    => 'follow-up',
+        TicketID => $TicketID,
+        UserID   => $UserID,
+    );
+    return if !$StateSet;
+
+    if ( $Param{VerificationFailed} && defined $Param{Remarks} && $Param{Remarks} ne '' ) {
+        $Self->_TicketDynamicFieldSet(
+            FieldName => 'ZTicket-Result',
+            TicketID  => $TicketID,
+            Value     => $Param{Remarks},
+            UserID    => $UserID,
+        );
+    }
+
+    my @CreatedTicketIDs = Kernel::System::ZTSMBlueBookRuntime::LevelSpawn(
+        ParentTicket   => $Ticket,
+        ParentTicketID => $TicketID,
+        BlueBookID     => $PurpleBookID,
+        BlueLevel      => $FirstBlueLevel,
+        Records        => \@Records,
+        ArticleParam   => {
+            UserID => $UserID,
+        },
+        PreserveParentBlueLevel => 1,
+        UserID                  => $UserID,
+    );
+
+    return if !@CreatedTicketIDs;
+
+    my $Body = "** Note: This is a system-generated follow-up orchestration message.\n\n"
+        . "Follow-up was started by customer user '$Self->{UserID}'.\n\n"
+        . "Original Child Ticket:\n$TicketID\n\n"
+        . "PurpleBook:\n$PurpleBookID\n\n"
+        . "Follow-up Tickets Created:\n"
+        . join( ', ', @CreatedTicketIDs );
+
+    if ( $Param{VerificationFailed} ) {
+        $Body .= "\n\nVerification Result:\nFailed";
+    }
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $TicketID,
+        RuntimeAction       => 'FollowUp',
+        Label               => 'Follow-up',
+        Remarks             => $Param{Remarks},
+        Subject             => 'Follow-up started',
+        Body                => $Body,
+        Config              => $Param{Config} || {},
+        CustomerPanelUserID => $UserID,
+        Attachments         => $Param{Attachments},
+    );
+
+    return \@CreatedTicketIDs;
 }
 
 sub _AddRequiredSupportProfileApply {

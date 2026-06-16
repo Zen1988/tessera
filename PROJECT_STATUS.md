@@ -11,6 +11,8 @@ Last Updated: 2026-06-16
 - Assessor Assessment task outcomes on `CustomerTicketZoom`.
 - Implementer Task completion outcome handling on `CustomerTicketZoom`.
 - Mandatory BlueBook outcome roll-up using `ZTicket-Outcome`.
+- Follow-up/PurpleBook corrective execution from active child tickets.
+- Template-driven child ticket hydration from BlueBook records.
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
@@ -81,6 +83,31 @@ Last Updated: 2026-06-16
   - Success/No Action outcomes are non-negative completion outcomes.
 - Bumped `GovernanceDB.sopm` package version to `0.0.72`.
 - Generated `Kernel/Package/GovernanceDB-0.0.72.opm` for upgrade testing.
+- Added BlueBook record support for `ZBlue-PurpleBook` and `ZBlue-Template`.
+- Added customer runtime action `Follow-up`:
+  - Visible on owned active child tickets of type `Assessment`, `Endorsement`, `Approval`, `Implementation`, and `Verification`.
+  - Requires the current BlueBook record to contain `ZBlue-PurpleBook`.
+  - Sets the current child ticket state to `follow-up`.
+  - Spawns the configured PurpleBook as child execution tickets under the current child ticket.
+  - Preserves the original child ticket `ZTicket-BlueLevel` so it can still return to its original parent BlueBook level.
+  - Writes a follow-up article with the acting owner and created corrective tickets.
+- Added Verification completion action:
+  - Visible only for owned active `Verification` tickets.
+  - Prompts for success/failed result, details stored in `ZTicket-Result`, and a mandatory artifact upload.
+  - Successful verification sets `ZTicket-Outcome = 0` and closes `closed successful`.
+  - Failed verification starts Follow-up when `ZBlue-PurpleBook` is configured; otherwise it sets `ZTicket-Outcome = -1` and closes `closed unsuccessful`.
+  - Writes a verification article and attachment.
+- Updated `ZTSMChapterDirector` for PurpleBook return flow:
+  - When a PurpleBook under a `follow-up` parent completes successfully, the original child ticket returns to `in-progress`.
+  - When a mandatory PurpleBook task fails, existing failed-first logic closes the original child and immediately evaluates its original parent level.
+- Added Template hydration during child creation in both `ZTSMBlueBookRuntime` and `ZTSMBlueBookReader`:
+  - `ZBlue-Template` can be empty.
+  - Template description is written to the generated child ticket as an article.
+  - `ZTemplate-RiskAssessment` rows are mapped into existing `ZRM-RiskAssessment`.
+  - Risk statement defaults are applied from the Risk Statement governance object where present.
+  - Inherent and residual calculated risk scores are computed from likelihood and impact.
+- Bumped `GovernanceDB.sopm` package version to `0.0.73`.
+- Generated `Kernel/Package/GovernanceDB-0.0.73.opm` for upgrade testing.
 - Synced implementation across:
   - `Kernel/Modules/CustomerTicketZTSMAction.pm`
   - `Kernel/Modules/CustomerTicketZoom.pm`
@@ -96,6 +123,13 @@ Last Updated: 2026-06-16
   - `Kernel/Package/GovernanceDB/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm`
   - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm`
   - `ZTSMOverlay/files/Kernel/System/ProcessManagement/TransitionAction/ZTSMServiceLibrarian.pm`
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/ZTSMBlueBookRuntime.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/ZTSMBlueBookRuntime.pm`
+  - `ZTSMOverlay/files/Kernel/System/ZTSMBlueBookRuntime.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`
+  - `ZTSMOverlay/files/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`
   - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt`
   - `ZTSMOverlay/files/Kernel/Output/HTML/Templates/Standard/CustomerTicketZoom.tt`
 
@@ -121,6 +155,13 @@ Last Updated: 2026-06-16
 - Task completion is an implementer task outcome, not a requester action.
 - `ZTicket-Result` is the Task details field.
 - Parent request status evidence is represented by `ZTicket-Outcome`; hard-stop negative outcomes additionally close the parent ticket state.
+- Follow-up is a runtime corrective execution action, not a StateBook transition.
+- PurpleBook is read from the current BlueBook record using `ZBlue-PurpleBook`; no ticket Dynamic Field was introduced for PurpleBook.
+- Template is read from the current BlueBook record using `ZBlue-Template`; no ticket Dynamic Field was introduced for Template.
+- PurpleBook child tickets use their PurpleBook as `ZTicket-BlueBook` and the original child ticket as `ZTicket-Parent`.
+- Successful PurpleBook completion returns the original child to `in-progress`; it does not resume StateBook directly.
+- Failed mandatory PurpleBook completion propagates through the original child so the original parent BlueBook receives failed-first handling.
+- Template risk assessment hydration uses existing `ZRM-*` ticket fields because the current risk assessment workspace stores ticket risk rows there.
 - Mandatory outcome precedence:
   - Rollback outranks Failed.
   - Failed outranks Partial Success.
@@ -143,18 +184,27 @@ Last Updated: 2026-06-16
 - Do not expose `closed duplicate` or `closed no action` as generic outcomes for Endorsement or Approval yet; current requirement is Assessment/Assessor only.
 - Do not use Task free-text remarks as the canonical result; store Task details in `ZTicket-Result`.
 - Do not let non-mandatory child outcomes drive parent outcome roll-up.
+- Do not show Follow-up when the BlueBook record has no `ZBlue-PurpleBook`.
+- Do not store PurpleBook or Template on new `ZTicket-*` fields.
+- Do not let PurpleBook spawning overwrite the original child ticket BlueLevel.
 
 ## Known Issues / Follow-Up
 
 - `PROJECT_STATUS.md` was empty before this update; older project memory is not present here.
 - The current action hardcodes allowed Ticket Types in module defaults. Move to SysConfig or governance object control later if needed.
-- Latest generated OPM is `Kernel/Package/GovernanceDB-0.0.72.opm`.
+- Latest generated OPM is `Kernel/Package/GovernanceDB-0.0.73.opm`.
+- `Kernel/Package/GovernanceDB-0.0.73.opm` SHA256: `F4D3F8F1C39D10F6B20EB8FAB0AD189CE9F012DC6B59D0361EDD20E3AC8ED569`.
 - Runtime verification is still needed for the target service list and external-party request clone flow inside OTOBO.
 - Runtime verification is still needed for sole mandatory `closed no action` / `closed duplicate` propagation.
 - Runtime verification is still needed that only the Assessment owner sees and can submit `Submit Assessment`, `Close Duplicate`, and `Close No Action`.
 - Runtime verification is still needed that only the Task owner sees and can submit `Complete Task`.
 - Runtime verification is still needed for Task attachment upload into the generated article.
 - Runtime verification is still needed for parent `ZTicket-Outcome` roll-up across mandatory BlueLevel children.
+- Runtime verification is still needed for Follow-up visibility on each configured child type.
+- Runtime verification is still needed for PurpleBook spawn and successful return to `in-progress`.
+- Runtime verification is still needed for failed PurpleBook propagation to the original parent level.
+- Runtime verification is still needed for Template hydration into `ZRM-RiskAssessment`.
+- Runtime verification is still needed for Verification artifact upload and failed-with-PurpleBook behavior.
 
 ## Next Priorities
 
@@ -174,5 +224,8 @@ Last Updated: 2026-06-16
   - Details saved to `ZTicket-Result`
   - Attachment written to the task completion article
   - Parent mandatory outcome roll-up
-- Install or upgrade using `Kernel/Package/GovernanceDB-0.0.72.opm` and perform runtime verification.
+- Install or upgrade using `Kernel/Package/GovernanceDB-0.0.73.opm` and perform runtime verification.
+- Verify Follow-up on owned `Assessment`, `Endorsement`, `Approval`, `Implementation`, and `Verification` child tickets.
+- Verify an empty `ZBlue-PurpleBook` does not expose Follow-up and failed Verification closes `closed unsuccessful`.
+- Verify `ZTemplate-RiskAssessment` creates multiple `ZRM-RiskAssessment` rows when the Template carries multiple risk statements.
 - Consider adding SysConfig for `AddRequiredSupportProfileTypes` after the hardcoded behavior is accepted.

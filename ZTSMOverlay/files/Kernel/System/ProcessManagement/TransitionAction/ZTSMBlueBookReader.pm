@@ -49,6 +49,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 sub _RecordValueGet {
     my (%Param) = @_;
 
@@ -237,6 +247,14 @@ sub Run {
         return;
     }
 
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMBlueBookReader: Ticket is onhold, skip BlueBook orchestration TicketID=$TicketID",
+        );
+        return 1;
+    }
+
     $LogObject->Log(
         Priority => 'notice',
         Message  => "ZTSMBlueBookReader: Enter Run TicketID=$TicketID",
@@ -368,6 +386,8 @@ sub Run {
             Activity         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
+            Template         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
+            PurpleBook       => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] ),
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
             Strict           => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Strict'] ),
             Duration         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Duration'] ),
@@ -565,6 +585,13 @@ sub Run {
                 . $Record->{Chapter},
             HistoryComment => 'ZTSM: ChapterPlay initiated',
             UserID         => $UserID,
+        );
+
+        Kernel::System::ZTSMBlueBookRuntime::ChildTemplateApply(
+            TicketID     => $NewTicketID,
+            TemplateID   => $Record->{Template},
+            ArticleParam => \%Param,
+            UserID       => $UserID,
         );
     }
 
