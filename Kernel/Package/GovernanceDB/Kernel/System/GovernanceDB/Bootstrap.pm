@@ -41,6 +41,8 @@ sub InstallDefaults {
     my $GeneralCatalogObject  = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
+    $Self->_HistoryTypesEnsure();
+
     my $ClassNamespace       = $Defaults->{ClassNamespace}       || 'ZTSM::GovernanceObject::Class';
     my $RoleNamespace        = $Defaults->{RoleNamespace}        || 'ZTSM::GovernanceObject::Role';
     my $DefinitionNamespace  = $Defaults->{DefinitionNamespace}  || 'ZTSM::GovernanceObject::Definition';
@@ -113,6 +115,8 @@ sub InstallDefaults {
     $Self->_DynamicFieldsEnsure(
         Classes => $Defaults->{Classes} || [],
     );
+
+    $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
 
@@ -382,7 +386,7 @@ sub _TicketReferenceDynamicFieldsRepair {
         'ZTicket-Env'           => ['Environment'],
         'ZTicket-Location'      => ['Location'],
         'ZTicket-OwnerGroup'    => ['Support Profile'],
-        'ZTicket-Profile'       => ['Governance Role'],
+        'ZTicket-Profile'       => [ 'Governance Role', 'Support Profile' ],
         'ZTicket-Role'          => ['Governance Role'],
         'ZTicket-StateBook'     => ['StateBook'],
         'ZFirewall-DstSystem'   => [ 'Application', 'Location' ],
@@ -604,20 +608,92 @@ sub _DefaultsLoad {
 sub _CatalogItemEnsure {
     my ( $Self, %Param ) = @_;
 
+    return if !$Param{Class} || !defined $Param{Name} || $Param{Name} eq '';
+
     my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
 
-    my $Item = $GeneralCatalogObject->ItemGet(
+    my $ItemID2Name = $GeneralCatalogObject->ItemList(
         Class => $Param{Class},
-        Name  => $Param{Name},
+        Valid => 0,
     );
-    return $Item->{ItemID} if $Item && $Item->{ItemID};
+    for my $ItemID ( sort keys %{ $ItemID2Name || {} } ) {
+        return $ItemID if $ItemID2Name->{$ItemID} eq $Param{Name};
+    }
 
-    return $GeneralCatalogObject->ItemAdd(
+    my $ItemID = $GeneralCatalogObject->ItemAdd(
         Class   => $Param{Class},
         Name    => $Param{Name},
         ValidID => 1,
         UserID  => 1,
     );
+    return $ItemID if $ItemID;
+
+    # ItemAdd can return false when another install/upgrade already created the item.
+    # Re-read the catalog so package upgrades stay idempotent and do not fail on duplicates.
+    $ItemID2Name = $GeneralCatalogObject->ItemList(
+        Class => $Param{Class},
+        Valid => 0,
+    );
+    for my $ExistingItemID ( sort keys %{ $ItemID2Name || {} } ) {
+        return $ExistingItemID if $ItemID2Name->{$ExistingItemID} eq $Param{Name};
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => "Could not ensure GovernanceDB catalog item '$Param{Name}' in class '$Param{Class}'.",
+    );
+
+    return;
+}
+
+sub _HistoryTypesEnsure {
+    my ($Self) = @_;
+
+    my @HistoryTypes = qw(
+        GovernanceObjectCreate
+        LinkAdd
+        LinkDelete
+        NameUpdate
+        IncidentStateUpdate
+        DeploymentStateUpdate
+        DefinitionUpdate
+        VersionCreate
+        VersionDelete
+        AttachmentAddPost
+        AttachmentDeletePost
+        ValueUpdate
+    );
+
+    HISTORYTYPE:
+    for my $HistoryType (@HistoryTypes) {
+        next HISTORYTYPE if !$HistoryType;
+
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+        return if !$DBObject->Prepare(
+            SQL   => 'SELECT id FROM governance_object_item_history_type WHERE name = ?',
+            Bind  => [ \$HistoryType ],
+            Limit => 1,
+        );
+
+        my $HistoryTypeID;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $HistoryTypeID = $Row[0];
+        }
+        next HISTORYTYPE if $HistoryTypeID;
+
+        my $Comment = "$HistoryType history entry.";
+        return if !$DBObject->Do(
+            SQL => 'INSERT INTO governance_object_item_history_type '
+                . '(name, comments, valid_id, create_time, create_by, change_time, change_by) '
+                . 'VALUES (?, ?, 1, current_timestamp, 1, current_timestamp, 1)',
+            Bind => [
+                \$HistoryType,
+                \$Comment,
+            ],
+        );
+    }
+
+    return 1;
 }
 
 sub _ClassPreferencesEnsure {
@@ -858,6 +934,125 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     return 1;
 }
 
+sub _CustomerUserPreferenceDynamicFieldsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+
+    my $ClassID2Name = $GeneralCatalogObject->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {};
+    my %ClassName2ID = map { $ClassID2Name->{$_} => $_ } keys %{$ClassID2Name};
+
+    my @Fields = (
+        {
+            Name       => 'ZUser-Location',
+            Label      => 'Ticket Location',
+            FieldOrder => 10200,
+            Classes    => ['Location'],
+        },
+        {
+            Name       => 'ZUser-Application',
+            Label      => 'Application System',
+            FieldOrder => 10201,
+            Classes    => ['Application'],
+        },
+        {
+            Name       => 'ZUser-Environment',
+            Label      => 'Environment',
+            FieldOrder => 10202,
+            Classes    => ['Environment'],
+        },
+        {
+            Name       => 'ZUser-SupportProfile',
+            Label      => 'Support Profile',
+            FieldOrder => 10203,
+            Classes    => ['SupportProfile'],
+        },
+    );
+
+    FIELD:
+    for my $Field (@Fields) {
+        my @ClassIDs = grep {$_} map { $ClassName2ID{$_} } @{ $Field->{Classes} || [] };
+        my $Config = {
+            ClassIDs     => \@ClassIDs,
+            DisplayType  => 'GovernanceObjectName',
+            DefaultValue => '',
+            Link         => '',
+            LinkPreview  => '',
+            MultiValue   => 0,
+            Tooltip      => '',
+        };
+
+        my $Existing = $DynamicFieldObject->DynamicFieldGet( Name => $Field->{Name} );
+        if ($Existing) {
+            my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
+                Config         => $Existing->{Config} || {},
+                AllowedClasses => { map { $_ => $_ } @ClassIDs },
+            );
+            my $NeedsClassIDRepair = $Self->_DynamicFieldClassIDsNeedRepair(
+                Config       => $Existing->{Config} || {},
+                WantedConfig => $Config,
+            );
+
+            next FIELD if !$NeedsClassIDRepair && $Self->_DynamicFieldConfigEqual(
+                Left  => {
+                    Name       => $Existing->{Name},
+                    Label      => $Existing->{Label},
+                    FieldType  => $Existing->{FieldType},
+                    ObjectType => $Existing->{ObjectType},
+                    Config     => $CurrentConfig,
+                },
+                Right => {
+                    Name       => $Field->{Name},
+                    Label      => $Field->{Label},
+                    FieldType  => 'GovernanceObject',
+                    ObjectType => 'CustomerUser',
+                    Config     => $Config,
+                },
+            );
+
+            $Self->_DynamicFieldUpdateForce(
+                ID          => $Existing->{ID},
+                Name        => $Field->{Name},
+                Label       => $Field->{Label},
+                FieldOrder  => $Existing->{FieldOrder} || $Field->{FieldOrder},
+                FieldType   => 'GovernanceObject',
+                ObjectType  => 'CustomerUser',
+                Config      => $Config,
+                ValidID     => $Existing->{ValidID} || 1,
+                UserID      => 1,
+                Reorder     => 0,
+            );
+            next FIELD;
+        }
+
+        my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
+            Name       => $Field->{Name},
+            Label      => $Field->{Label},
+            FieldOrder => $Field->{FieldOrder},
+            FieldType  => 'GovernanceObject',
+            ObjectType => 'CustomerUser',
+            Config     => $Config,
+            ValidID    => 1,
+            UserID     => 1,
+            Reorder    => 0,
+        );
+
+        next FIELD if $FieldID;
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "GovernanceDB bootstrap could not create dynamic field $Field->{Name}.",
+        );
+    }
+
+    $DynamicFieldObject->EventHandlerTransaction();
+
+    return 1;
+}
+
 sub _DynamicFieldCollect {
     my ( $Self, %Param ) = @_;
 
@@ -1021,6 +1216,7 @@ sub _SysConfigDeploy {
         'CustomerTicket::Permission###5-ZTSMUserIDCheck',
         'CustomerFrontend::Module###CustomerTicketZTSMAction',
         'ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime',
+        'CustomerPreferencesGroups###ZTSMRequestDefaults',
     );
 
     my %DeploymentResult = $SysConfigObject->ConfigurationDeploy(

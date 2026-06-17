@@ -2273,12 +2273,12 @@ sub _ZTSMRuntimeActions {
             Types => ['Assessment'],
         },
         CloseDuplicate => {
-            Label => 'Close Duplicate',
+            Label => 'Duplicate',
             State => 'closed duplicate',
             Types => ['Assessment'],
         },
         CloseNoAction => {
-            Label => 'Close No Action',
+            Label => 'No Action',
             State => 'closed no action',
             Types => ['Assessment'],
         },
@@ -2336,6 +2336,7 @@ sub _ZTSMRuntimeActions {
             {
                 Action          => 'RequesterResume',
                 Label           => 'Resume',
+                DirectURL       => 1,
                 RiskFieldsHTML  => '',
                 RemarksRequired => 0,
                 InActionMenu    => 1,
@@ -2359,6 +2360,8 @@ sub _ZTSMRuntimeActions {
 
         my %AllowedTypes = map { $_ => 1 } @{ $ActionConfig->{Types} || [] };
         next ACTION if !$AllowedTypes{ $Ticket->{Type} };
+        next ACTION if ( $Ticket->{Type} || '' ) eq 'Assessment'
+            && ( $Action eq 'CloseDuplicate' || $Action eq 'CloseNoAction' );
 
         $ActionableType = 1;
 
@@ -2392,7 +2395,7 @@ sub _ZTSMRuntimeActions {
     {
         push @RuntimeActions, {
             Action          => 'AddRequiredSupportProfile',
-            Label           => 'Add Required Support Profile',
+            Label           => 'Amend',
             RiskFieldsHTML  => $Self->_ZTSMSupportProfileSelectionHTML(),
             RemarksRequired => 0,
             InActionMenu    => 1,
@@ -2401,7 +2404,7 @@ sub _ZTSMRuntimeActions {
 
     if (
         $ActionAccess
-        && ( $Ticket->{Type} || '' ) eq 'Task'
+        && $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket )
         && $TicketOwner
         && lc $TicketOwner eq lc $Self->{UserID}
         )
@@ -2455,8 +2458,8 @@ sub _ZTSMRuntimeActions {
     if ($ExternalPartyRequestAccess) {
         push @RuntimeActions, {
             Action          => 'CreateExternalPartyRequest',
-            Label           => 'Create External Party Request',
-            RiskFieldsHTML  => $Self->_ZTSMTargetServiceSelectionHTML(
+            Label           => 'Clone',
+            RiskFieldsHTML  => $Self->_ZTSMServiceSupportMapSelectionHTML(
                 Ticket => $Ticket,
             ),
             RemarksRequired => 0,
@@ -2501,6 +2504,7 @@ sub _ZTSMRuntimeActions {
             push @RuntimeActions, {
                 Action          => 'RequesterHold',
                 Label           => 'On Hold',
+                DirectURL       => 1,
                 RiskFieldsHTML  => '',
                 RemarksRequired => 0,
                 InActionMenu    => 1,
@@ -2738,37 +2742,121 @@ sub _ZTSMExternalPartyRequestAllowed {
     return;
 }
 
-sub _ZTSMTargetServiceSelectionHTML {
+sub _ZTSMTaskLikeTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    return 1 if ( $Ticket->{Type} || '' ) eq 'Task';
+    return 1 if ( $Ticket->{Title} || '' ) =~ m{\ATask\s+-\s+}i;
+
+    return;
+}
+
+sub _ZTSMServiceSupportMapSelectionHTML {
     my ( $Self, %Param ) = @_;
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my %Services = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
-        Valid  => 1,
-        UserID => 1,
+    my $ServiceSupportMaps = $Self->_ZTSMServiceSupportMapList(
+        Ticket => $Param{Ticket},
     );
 
     return '<div class="Row ZTSMRiskField">'
         . '<div class="Field">'
-        . '<span class="Marker">*</span> No services available.'
+        . '<span class="Marker">*</span> No ServiceSupportMap records available.'
         . '</div>'
-        . '<label for="TargetServiceID">Target Service:</label>'
+        . '<label for="TargetServiceSupportMapID">ServiceSupportMap:</label>'
         . '<div class="Clear"></div>'
-        . '</div>' if !%Services;
+        . '</div>' if !IsHashRefWithData($ServiceSupportMaps);
 
-    my $Ticket = $Param{Ticket} || {};
     my $Selection = $LayoutObject->BuildSelection(
-        Data         => \%Services,
-        Name         => 'TargetServiceID',
-        SelectedID   => $Ticket->{ServiceID} || '',
+        Data         => $ServiceSupportMaps,
+        Name         => 'TargetServiceSupportMapID',
+        SelectedID   => '',
         PossibleNone => 1,
         Class        => 'Modernize Validate_Required',
     );
 
     return '<div class="Row ZTSMRiskField">'
         . '<div class="Field">' . $Selection . '</div>'
-        . '<label for="TargetServiceID" class="Mandatory">Target Service: <span class="Marker">*</span></label>'
+        . '<label for="TargetServiceSupportMapID" class="Mandatory">ServiceSupportMap: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
         . '</div>';
+}
+
+sub _ZTSMServiceSupportMapList {
+    my ( $Self, %Param ) = @_;
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my $Ticket = $Param{Ticket};
+    my $SourceServiceID;
+
+    if ( IsHashRefWithData($Ticket) ) {
+        my $RootTicket = $Self->_ZTSMRequestRootTicketGet(
+            Ticket => $Ticket,
+        );
+        $SourceServiceID = IsHashRefWithData($RootTicket)
+            ? $RootTicket->{ServiceID}
+            : $Ticket->{ServiceID};
+    }
+
+    my @ServiceSupportMapIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['ServiceSupportMap'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+        UserID  => 1,
+    );
+
+    return if !@ServiceSupportMapIDs;
+
+    my %ServiceSupportMap;
+    SERVICESUPPORTMAPID:
+    for my $ServiceSupportMapID (@ServiceSupportMapIDs) {
+        my $ServiceSupportMapObject = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $ServiceSupportMapID,
+            DynamicFields      => 1,
+            UserID             => 1,
+            Silent             => 1,
+        );
+        next SERVICESUPPORTMAPID if !IsHashRefWithData($ServiceSupportMapObject);
+
+        if ($SourceServiceID) {
+            my $MapServiceID = $Self->_ZTSMServiceIDResolve(
+                Service => $ServiceSupportMapObject->{'DynamicField_ZTSMServiceSupportMap-Service'},
+            );
+            next SERVICESUPPORTMAPID if !$MapServiceID;
+            next SERVICESUPPORTMAPID if $MapServiceID ne $SourceServiceID;
+        }
+
+        $ServiceSupportMap{$ServiceSupportMapID} = $ServiceSupportMapObject->{Name} || $ServiceSupportMapID;
+    }
+
+    return \%ServiceSupportMap if %ServiceSupportMap;
+    return;
+}
+
+sub _ZTSMServiceIDResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $Service = $Param{Service};
+    if ( ref $Service eq 'ARRAY' ) {
+        $Service = $Service->[0];
+    }
+    if ( ref $Service eq 'HASH' ) {
+        $Service = $Service->{Key} || $Service->{Value} || $Service->{Content};
+    }
+
+    return if !defined $Service || $Service eq '';
+    return $Service if $Service =~ m{\A\d+\z};
+
+    $Service =~ s{\AService:\s*}{}i;
+    $Service =~ s{\s+\z}{};
+    return if $Service eq '';
+
+    return $Kernel::OM->Get('Kernel::System::Service')->ServiceLookup(
+        Name => $Service,
+    );
 }
 
 sub _ZTSMSupportProfileSelectionHTML {
@@ -2911,8 +2999,6 @@ sub _ZTSMRequesterCancelAllowed {
     my $Config = $Param{Config} || {};
 
     return if !IsHashRefWithData($Ticket);
-    return if !$Ticket->{CustomerUserID};
-    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
 
     my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
     if ( ref $ParentTicketID eq 'ARRAY' ) {
@@ -2920,6 +3006,16 @@ sub _ZTSMRequesterCancelAllowed {
     }
 
     return if $ParentTicketID;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $CustomerAccess = $TicketObject->TicketCustomerPermission(
+        Type     => 'ro',
+        TicketID => $Ticket->{TicketID},
+        UserID   => $Self->{UserID},
+        LogNo    => 1,
+    );
+
+    return if !$CustomerAccess;
 
     my $ParentTypes = $Config->{RequesterCancelTypes} || [
         'ServiceRequest',
@@ -3535,6 +3631,17 @@ sub _Mask {
         }
 
         for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
+            if ( $RuntimeAction->{InActionMenu} ) {
+                $LayoutObject->Block(
+                    Name => 'ZTSMRuntimeActionMenuItem',
+                    Data => {
+                        %{$RuntimeAction},
+                        TicketID => $Param{TicketID},
+                    },
+                );
+                next;
+            }
+
             $LayoutObject->Block(
                 Name => 'ZTSMRuntimeAction',
                 Data => {

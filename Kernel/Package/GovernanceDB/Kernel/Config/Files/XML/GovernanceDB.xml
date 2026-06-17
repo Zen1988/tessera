@@ -2324,6 +2324,22 @@
         </Value>
     </Setting>
 
+    <Setting Name="CustomerPreferencesGroups###ZTSMRequestDefaults" Required="0" Valid="1">
+        <Description Translatable="1">Defines customer-selectable default governance request context.</Description>
+        <Navigation>Frontend::Customer::View::Preferences</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Preferences::ZTSMCustomerDefaults</Item>
+                <Item Key="PreferenceGroup">UserProfile</Item>
+                <Item Key="Label" Translatable="1">Request defaults</Item>
+                <Item Key="Desc" Translatable="1">Select default governance request context values.</Item>
+                <Item Key="PrefKey">ZTSMRequestDefaults</Item>
+                <Item Key="Prio">3900</Item>
+                <Item Key="Active">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
     <!-- Extend existing reference drivers so Governance Objects can model ownership, service and ticket relationships. -->
     <Setting Name="DynamicFields::Driver###Ticket" Required="0" Valid="1">
         <Description Translatable="1">DynamicField backend registration.</Description>

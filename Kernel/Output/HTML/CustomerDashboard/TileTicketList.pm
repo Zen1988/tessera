@@ -164,18 +164,13 @@ sub _SupportProfileList {
     my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;
 
-    for my $CustomerUserID (@CustomerUserIDs) {
-        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
-            Classes => ['SupportAssignment'],
-            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-                Equals => $CustomerUserID,
-            },
-            Result => 'ARRAY',
-            Limit  => 1000,
-        );
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+    );
 
-        $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
-    }
+    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
 
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
@@ -195,10 +190,22 @@ sub _SupportProfileList {
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
 
-        next ASSIGNMENT if !_CustomerUserMatches(
-            AssignmentUser => $AssignmentUser,
-            CustomerUserID => $Param{CustomerUserID},
-        );
+        my $CustomerMatch;
+        CUSTOMERUSERID:
+        for my $CustomerUserID (@CustomerUserIDs) {
+            if (
+                _CustomerUserMatches(
+                    AssignmentUser => $AssignmentUser,
+                    CustomerUserID => $CustomerUserID,
+                )
+                )
+            {
+                $CustomerMatch = 1;
+                last CUSTOMERUSERID;
+            }
+        }
+
+        next ASSIGNMENT if !$CustomerMatch;
 
         my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
         $AssignmentSupportProfile ||= $Assignment->{XMLData}
@@ -340,19 +347,6 @@ sub _GovernanceObjectNameGet {
     return $GovernanceObjectID;
 }
 
-sub _UserTimeString {
-    my ($TimeStamp) = @_;
-
-    return '' if !defined $TimeStamp || $TimeStamp eq '';
-
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    return $LayoutObject->{LanguageObject}->FormatTimeString(
-        $TimeStamp,
-        'DateFormatLong',
-    ) || $TimeStamp;
-}
-
 sub _TicketRowsBuild {
     my (%Param) = @_;
 
@@ -381,8 +375,6 @@ sub _TicketRowsBuild {
         my $OwnerGroup = _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerGroup'} );
         my $Changed    = $Ticket{Changed} || $Ticket{Created} || '';
         my $Created    = $Ticket{Created} || '';
-        my $ChangedDisplay = _UserTimeString($Changed);
-        my $CreatedDisplay = _UserTimeString($Created);
 
         push @Rows, {
             TicketID       => $TicketID,
@@ -392,8 +384,8 @@ sub _TicketRowsBuild {
             TypeColor      => _TypeColor($Type),
             State          => $Ticket{State} || '-',
             OwnerGroup     => _GovernanceObjectNameGet( GovernanceObjectID => $OwnerGroup ),
-            Changed        => $ChangedDisplay || $Changed,
-            Created        => $CreatedDisplay || $Created,
+            Changed        => $Changed,
+            Created        => $Created,
             SortTime       => $Changed || $Created,
             IsClosed       => $IsClosed,
         };

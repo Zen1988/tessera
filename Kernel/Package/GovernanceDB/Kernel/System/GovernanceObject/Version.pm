@@ -89,7 +89,6 @@ END_SQL
                 Name          => $Row[1],
                 VersionString => $Row[2],
                 ZTSMStatusID   => $Row[3],
-                ZTSMStatusID   => $Row[4],
                 Description   => $Row[4],
                 CreateTime    => $Row[5],
                 CreateBy      => $Row[6],
@@ -102,12 +101,17 @@ END_SQL
     for my $Version (@VersionList) {
 
         # get ZTSM Status functionality
-        my $ZTSMStatus = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
-            ItemID => $Version->{ZTSMStatusID},
-        );
+        my $ZTSMStatus;
+        if ( $Version->{ZTSMStatusID} ) {
+            $ZTSMStatus = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
+                ItemID => $Version->{ZTSMStatusID},
+            );
+        }
 
-        $Version->{ZTSMStatus}     = $ZTSMStatus->{Name};
-        $Version->{ZTSMStatusType} = $ZTSMStatus->{Functionality}[0] // '';
+        $Version->{ZTSMStatus}     = $ZTSMStatus->{Name} if $ZTSMStatus;
+        $Version->{ZTSMStatusType} = $ZTSMStatus && ref $ZTSMStatus->{Functionality} eq 'ARRAY'
+            ? $ZTSMStatus->{Functionality}[0] // ''
+            : '';
 
         # add Governance Object data
         $Version->{ClassID}          = $GovernanceObject->{ClassID};
@@ -716,6 +720,7 @@ END_SQL
             Value              => $Version{ 'DynamicField_' . $DynamicField->{Name} },
             UserID             => $Param{UserID},
             GovernanceObjectHandled  => 1,
+            ConfigItemHandled        => 1,
             ExternalSource     => ( $Param{ExternalSource} && exists $Param{ 'DynamicField_' . $DynamicField->{Name} } ),
         );
 
@@ -933,14 +938,13 @@ sub VersionUpdate {
         my $UpdateSuccess = $DBObject->Do(
             SQL => <<'END_SQL',
 UPDATE governance_object_item_version
-  SET name = ?, version_string = ?, definition_id = ?, ztsm_status_id = ?, ztsm_status_id = ?, description = ?, change_time = current_timestamp, change_by = ?
+  SET name = ?, version_string = ?, definition_id = ?, ztsm_status_id = ?, description = ?, change_time = current_timestamp, change_by = ?
   WHERE id = ?
 END_SQL
             Bind => [
                 \$Param{Name},
                 \$Param{VersionString},
                 \$Param{DefinitionID},
-                \$Param{ZTSMStatusID},
                 \$Param{ZTSMStatusID},
                 \$Param{Description},
                 \$Param{UserID},
@@ -1018,6 +1022,7 @@ END_SQL
             Value              => $Param{$Attribute},
             UserID             => $Param{UserID},
             GovernanceObjectHandled  => 1,
+            ConfigItemHandled        => 1,
             ExternalSource     => $Param{ExternalSource},
         );
 

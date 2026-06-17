@@ -100,6 +100,53 @@ sub _OutcomeValue {
     return;
 }
 
+sub _OutcomeLabel {
+    my ($Outcome) = @_;
+
+    $Outcome = _NormalizeValue($Outcome);
+    return 'N/A' if !defined $Outcome || $Outcome eq '';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZTicket-Outcome',
+    );
+
+    my $PossibleValues = ref $DynamicFieldConfig eq 'HASH'
+        ? $DynamicFieldConfig->{Config}->{PossibleValues}
+        : undef;
+
+    return $PossibleValues->{$Outcome}
+        if ref $PossibleValues eq 'HASH'
+        && defined $PossibleValues->{$Outcome};
+
+    my %Fallback = (
+        0    => 'Successful',
+        1    => 'No Action',
+        2    => 'Partial Success',
+        '-1' => 'Failed',
+        '-2' => 'Rollback',
+    );
+
+    return $Fallback{$Outcome} || $Outcome;
+}
+
+sub _NeutralParentState {
+    my (@States) = @_;
+
+    my $HasNoAction;
+    my $HasDuplicate;
+
+    STATE:
+    for my $State (@States) {
+        next STATE if !defined $State || $State eq '';
+        $HasNoAction  = 1 if $State eq 'closed no action';
+        $HasDuplicate = 1 if $State eq 'closed duplicate';
+    }
+
+    return 'closed no action' if $HasNoAction;
+    return 'closed duplicate' if $HasDuplicate;
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RUN
 # ------------------------------------------------------------ #
@@ -424,6 +471,8 @@ sub Run {
     );
 
     my @MandatoryOutcomes;
+    my @MandatoryStates;
+    my $MandatoryCount = 0;
     my $RollbackOutcome;
     my $FailedOutcome;
 
@@ -439,10 +488,13 @@ sub Run {
         next BLUELEVELPLAY if !%BlueLevelPlay;
         next BLUELEVELPLAY if !_NormalizeValue( $BlueLevelPlay{'DynamicField_ZTicket-Mandatory'} );
 
+        $MandatoryCount++;
+
         my $Outcome = _OutcomeValue( \%BlueLevelPlay );
         next BLUELEVELPLAY if !defined $Outcome || $Outcome eq '';
 
         push @MandatoryOutcomes, $Outcome;
+        push @MandatoryStates, $BlueLevelPlay{State} || '';
         $RollbackOutcome = 1 if $Outcome eq '-2';
         $FailedOutcome   = 1 if $Outcome eq '-1';
     }
@@ -463,16 +515,23 @@ sub Run {
             my $PartialOutcome;
             my $SuccessfulOutcome;
             my $NoActionOutcome;
+            my $AllMandatoryNeutralOutcome = $MandatoryCount
+                && @MandatoryOutcomes == $MandatoryCount;
 
             OUTCOME:
             for my $Outcome (@MandatoryOutcomes) {
                 $PartialOutcome    = 1 if $Outcome eq '2';
                 $SuccessfulOutcome = 1 if $Outcome eq '0';
                 $NoActionOutcome   = 1 if $Outcome eq '1';
+                $AllMandatoryNeutralOutcome = 0 if $Outcome ne '1';
             }
 
             if ($PartialOutcome) {
                 $ParentOutcome = '2';
+            }
+            elsif ($AllMandatoryNeutralOutcome) {
+                $ParentOutcome       = '1';
+                $ParentHardStopState = _NeutralParentState(@MandatoryStates);
             }
             elsif ( @MandatoryOutcomes == 1 ) {
                 $ParentOutcome = $MandatoryOutcomes[0];
@@ -501,6 +560,8 @@ sub Run {
         }
 
         if ($ParentHardStopState) {
+            my $NeutralStop = _NeutralClosureState($ParentHardStopState);
+
             $TicketObject->TicketStateSet(
                 TicketID => $ParentTicketID,
                 State    => $ParentHardStopState,
@@ -509,7 +570,7 @@ sub Run {
 
             my $Body
                 = "** Note: This is a system-generated orchestration update message.\n\n"
-                . "Mandatory BlueBook outcome caused a hard stop.\n\n"
+                . "Mandatory BlueBook outcome stopped further orchestration.\n\n"
                 . "BlueBook:\n"
                 . ( $BlueBook || 'N/A' )
                 . "\n\n"
@@ -517,7 +578,7 @@ sub Run {
                 . ( $BlueLevel || 'N/A' )
                 . "\n\n"
                 . "Parent Outcome:\n"
-                . $ParentOutcome
+                . _OutcomeLabel($ParentOutcome)
                 . "\n\n"
                 . "Parent State:\n"
                 . $ParentHardStopState;
@@ -525,10 +586,13 @@ sub Run {
             ZTSMArticleCreate(
                 %Param,
                 TicketID => $ParentTicketID,
-                Subject  => 'ZTSM Mandatory Outcome Hard Stop',
+                Subject  => $NeutralStop
+                    ? 'ZTSM Mandatory Neutral Completion'
+                    : 'ZTSM Mandatory Outcome Hard Stop',
                 Body     => $Body,
-                HistoryComment =>
-                    'ZTSM: Mandatory outcome hard stop',
+                HistoryComment => $NeutralStop
+                    ? 'ZTSM: Mandatory neutral completion'
+                    : 'ZTSM: Mandatory outcome hard stop',
                 UserID => 1,
             );
 

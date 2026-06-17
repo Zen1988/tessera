@@ -18,7 +18,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::Ticket',
     'Kernel::System::Type',
     'Kernel::System::Log',
@@ -49,6 +49,45 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
+sub _TicketSummary {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+
+    if ( !$Ticket && $Param{TicketID} ) {
+        my %TicketData = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID => $Param{TicketID},
+            UserID   => 1,
+            Silent   => 1,
+        );
+        $Ticket = \%TicketData if %TicketData;
+    }
+
+    return 'N/A' if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $TicketNumber = $Ticket->{TicketNumber} || '';
+    my $TicketID     = $Ticket->{TicketID}     || $Param{TicketID} || '';
+    my $Type         = $Ticket->{Type}         || 'Ticket';
+    my $Title        = $Ticket->{Title}        || '';
+
+    my $Label = $TicketNumber ? "Ticket#$TicketNumber" : "TicketID#$TicketID";
+    $Label .= " (ID $TicketID)" if $TicketNumber && $TicketID;
+    $Label .= " - $Type" if $Type;
+    $Label .= ": $Title" if $Title;
+
+    return $Label;
+}
+
 sub _RecordValueGet {
     my (%Param) = @_;
 
@@ -58,16 +97,52 @@ sub _RecordValueGet {
 
     FIELD:
     for my $Field ( @{ $Param{Fields} || [] } ) {
+        my $StructuredValue = _RecordStructuredFieldValue(
+            Record => $Record,
+            Field  => $Field,
+        );
+        return $StructuredValue if defined $StructuredValue && $StructuredValue ne '';
 
         next FIELD if !exists $Record->{$Field};
 
-        my $Value = ref $Record->{$Field} eq 'HASH'
-            ? $Record->{$Field}->{Content}
-            : $Record->{$Field};
+        my $Value = $Record->{$Field};
 
         $Value = _NormalizeValue($Value);
 
         return $Value if defined $Value && $Value ne '';
+    }
+
+    return;
+}
+
+sub _RecordStructuredFieldValue {
+    my (%Param) = @_;
+
+    my $Record = $Param{Record};
+    my $Field  = $Param{Field};
+    return if !$Record || ref $Record ne 'HASH';
+    return if !$Field;
+
+    if ( ( $Record->{DF} || '' ) eq $Field ) {
+        my $Value = exists $Record->{Value} ? $Record->{Value} : $Record->{Content};
+        $Value = _NormalizeValue($Value);
+        return $Value if defined $Value && $Value ne '';
+    }
+
+    for my $ContainerKey (qw(Fields Items Values Content Value)) {
+        my $Container = $Record->{$ContainerKey};
+        next if ref $Container ne 'ARRAY';
+
+        ITEM:
+        for my $Item ( @{$Container} ) {
+            next ITEM if ref $Item ne 'HASH';
+
+            my $Value = _RecordStructuredFieldValue(
+                Record => $Item,
+                Field  => $Field,
+            );
+            return $Value if defined $Value && $Value ne '';
+        }
     }
 
     return;
@@ -167,23 +242,23 @@ sub _SupportProfileResolve {
     return if !defined $Value;
     return if $Value eq '';
 
-    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     my %Search = (
         Result  => 'ARRAY',
-        Classes => ['Support Profile'],
+        Classes => ['SupportProfile'],
         Limit   => 1,
         UserID  => $Param{UserID} || 1,
     );
 
     if ( $Value =~ m{\A\d+\z} ) {
-        $Search{ConfigItemID} = [$Value];
+        $Search{GovernanceObjectID} = [$Value];
     }
     else {
         $Search{Name} = $Value;
     }
 
-    my @SupportProfileIDs = $ConfigItemObject->ConfigItemSearch(%Search);
+    my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(%Search);
 
     return if !@SupportProfileIDs;
 
@@ -237,6 +312,14 @@ sub Run {
         return;
     }
 
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMBlueBookReader: Ticket is onhold, skip BlueBook orchestration TicketID=$TicketID",
+        );
+        return 1;
+    }
+
     $LogObject->Log(
         Priority => 'notice',
         Message  => "ZTSMBlueBookReader: Enter Run TicketID=$TicketID",
@@ -275,8 +358,8 @@ sub Run {
         return;
     }
 
-    my $BlueBook = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
-        ConfigItemID  => $BlueBookID,
+    my $BlueBook = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $BlueBookID,
         DynamicFields => 1,
     );
 
@@ -368,6 +451,8 @@ sub Run {
             Activity         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Activity'] ),
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
+            Template         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
+            PurpleBook       => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] ),
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
             Strict           => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Strict'] ),
             Duration         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Duration'] ),
@@ -553,7 +638,10 @@ sub Run {
                 . "ChapterPlay:\n"
                 . "Initiated\n\n"
                 . "Parent Ticket:\n"
-                . $TicketID
+                . _TicketSummary(
+                    Ticket   => $Ticket,
+                    TicketID => $TicketID,
+                )
                 . "\n\n"
                 . "BlueBook:\n"
                 . $BlueBookID
@@ -565,6 +653,13 @@ sub Run {
                 . $Record->{Chapter},
             HistoryComment => 'ZTSM: ChapterPlay initiated',
             UserID         => $UserID,
+        );
+
+        Kernel::System::ZTSMBlueBookRuntime::ChildTemplateApply(
+            TicketID     => $NewTicketID,
+            TemplateID   => $Record->{Template},
+            ArticleParam => \%Param,
+            UserID       => $UserID,
         );
     }
 
@@ -583,7 +678,14 @@ sub Run {
             . $CurrentBlueLevel
             . "\n\n"
             . "ChapterPlay Tickets Created:\n"
-            . ( join( ', ', @CreatedTicketIDs ) || 'None' ),
+            . (
+                @CreatedTicketIDs
+                ? join(
+                    "\n",
+                    map { _TicketSummary( TicketID => $_ ) } @CreatedTicketIDs
+                )
+                : 'None'
+            ),
         HistoryComment => 'ZTSM: BlueBook orchestration started',
         UserID         => $UserID,
     );

@@ -174,6 +174,8 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-Role'}
     );
 
+    my $RequesterRole = defined $TicketRole && $TicketRole =~ m{\bRequester\b}i;
+
     # -------------------------------------------------------- #
     # PREVENT DUPLICATE ENGAGEMENT
     # -------------------------------------------------------- #
@@ -197,12 +199,19 @@ sub Run {
     # CUSTOMER USER RESOLUTION
     # -------------------------------------------------------- #
 
-    my %UserData = $CustomerUserObject->CustomerUserDataGet(
+    my $CustomerUserID;
 
-        User => $UserID,
-    );
+    if ($RequesterRole) {
+        $CustomerUserID = $Ticket->{CustomerUserID};
+    }
+    else {
+        my %UserData = $CustomerUserObject->CustomerUserDataGet(
 
-    my $CustomerUserID = $UserData{UserLogin};
+            User => $UserID,
+        );
+
+        $CustomerUserID = $UserData{UserLogin};
+    }
 
     return if !$CustomerUserID;
 
@@ -210,19 +219,23 @@ sub Run {
     # SUPPORT ASSIGNMENT RESOLUTION
     # -------------------------------------------------------- #
 
-    my @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
+    my @AssignmentList;
 
-		Classes  => ['SupportAssignment'],
+    if ( !$RequesterRole ) {
+        @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
 
-        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
-            Equals => $SupportProfile,
-        },
-        'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-            Equals => $CustomerUserID,
-		},
+    		Classes  => ['SupportAssignment'],
 
-		Result => 'ARRAY',
-	);
+            'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+                Equals => $SupportProfile,
+            },
+            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                Equals => $CustomerUserID,
+    		},
+
+    		Result => 'ARRAY',
+    	);
+    }
 
 	my $SelectedAssignment;
 

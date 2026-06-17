@@ -194,6 +194,56 @@ sub _ConfigItemDisplayList {
     return join( ', ', @DisplayValues ) || 'N/A';
 }
 
+sub _GovernanceObjectGet {
+    my (%Param) = @_;
+
+    return if !$Param{GovernanceObjectID};
+
+    return $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $Param{GovernanceObjectID},
+        DynamicFields      => 1,
+        Silent             => 1,
+    );
+}
+
+sub _ObjectDynamicFieldValues {
+    my (%Param) = @_;
+
+    my $Object = $Param{Object};
+    my $Field  = $Param{Field};
+
+    return if !$Object || ref $Object ne 'HASH';
+    return if !$Field;
+
+    my @Values = _NormalizeArray( $Object->{ 'DynamicField_' . $Field } );
+    return @Values if @Values;
+
+    my $XMLData = $Object->{XMLData};
+    return if !$XMLData || ref $XMLData ne 'HASH';
+    return if !exists $XMLData->{$Field};
+
+    my $XMLValue = $XMLData->{$Field};
+    my @Items = ref $XMLValue eq 'ARRAY' ? @{$XMLValue} : ($XMLValue);
+    my @XMLValues;
+
+    ITEM:
+    for my $Item (@Items) {
+        next ITEM if !defined $Item;
+        next ITEM if !ref $Item && $Item eq '';
+
+        if ( ref $Item eq 'HASH' ) {
+            push @XMLValues, _NormalizeArray(
+                exists $Item->{Content} ? $Item->{Content} : $Item
+            );
+            next ITEM;
+        }
+
+        push @XMLValues, _NormalizeArray($Item);
+    }
+
+    return grep { defined $_ && $_ ne '' } @XMLValues;
+}
+
 sub _TransitionContextGet {
     my (%Param) = @_;
 
@@ -297,6 +347,46 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-Location'}
     );
 
+    my %PlatformServiceSupportMap;
+    my @TicketPlatforms;
+
+    APPLICATION:
+    for my $ApplicationID (@TicketApplications) {
+        next APPLICATION if !$ApplicationID;
+
+        my $Application = _GovernanceObjectGet(
+            GovernanceObjectID => $ApplicationID,
+        );
+        next APPLICATION if !$Application;
+
+        my @PlatformIDs = _ObjectDynamicFieldValues(
+            Object => $Application,
+            Field  => 'ZTSMAppSystem-Platform',
+        );
+
+        PLATFORM:
+        for my $PlatformID (@PlatformIDs) {
+            next PLATFORM if !$PlatformID;
+            push @TicketPlatforms, $PlatformID;
+
+            my $Platform = _GovernanceObjectGet(
+                GovernanceObjectID => $PlatformID,
+            );
+            next PLATFORM if !$Platform;
+
+            for my $PlatformMapID (
+                _ObjectDynamicFieldValues(
+                    Object => $Platform,
+                    Field  => 'ZTSMPlatform-ServiceSupportMap',
+                )
+                )
+            {
+                next if !$PlatformMapID;
+                $PlatformServiceSupportMap{$PlatformMapID} = 1;
+            }
+        }
+    }
+
     # ------------------------------------------------------------ #
     # FIND SERVICE SUPPORT MAPS
     # ------------------------------------------------------------ #
@@ -364,6 +454,7 @@ sub Run {
 
 	my $Winner;
 	my $HighestScore = -1;
+    my $WinnerPlatformFailsafe;
 
 	MAP:
 	for my $MapID (@CandidateIDs) {
@@ -398,6 +489,7 @@ sub Run {
 		# -------------------------------------------------------- #
 
 		my $Score = 0;
+        my $PlatformFailsafe = $PlatformServiceSupportMap{$MapID} ? 1 : 0;
 
 		# -------------------------------------------------------- #
 		# APPLICATION FILTER
@@ -437,14 +529,18 @@ sub Run {
 			# Defined but no intersect
 			#
 
-			next MAP if !$Matched;
+			next MAP if !$Matched && !$PlatformFailsafe;
 
 			#
 			# Specificity score
 			#
 
-			$Score += 100;
+			$Score += 100 if $Matched;
 		}
+
+        if ($PlatformFailsafe) {
+            $Score += 50;
+        }
 
 		# -------------------------------------------------------- #
 		# LOCATION FILTER
@@ -549,6 +645,7 @@ sub Run {
 			$HighestScore = $Score;
 
 			$Winner = $Map;
+            $WinnerPlatformFailsafe = $PlatformFailsafe;
 		}
 	}
 
@@ -705,6 +802,11 @@ sub Run {
         GovernanceObjectObject => $GovernanceObjectObject,
     );
 
+    my $PlatformDisplay = _ConfigItemDisplayList(
+        Values           => \@TicketPlatforms,
+        GovernanceObjectObject => $GovernanceObjectObject,
+    );
+
     my $SuccessBody
         = "** Note: This is a system-generated orchestration update message.\n\n"
         . "Governance Resolution:\n"
@@ -721,11 +823,17 @@ sub Run {
         . "Specificity Score:\n"
         . $HighestScore
         . "\n\n"
+        . "Platform Failsafe:\n"
+        . ( $WinnerPlatformFailsafe ? 'Applied' : 'Not applied' )
+        . "\n\n"
         . "Service:\n"
         . $ServiceDisplay
         . "\n\n"
         . "Application:\n"
         . $ApplicationDisplay
+        . "\n\n"
+        . "Platform:\n"
+        . $PlatformDisplay
         . "\n\n"
         . "Environment:\n"
         . $EnvironmentDisplay

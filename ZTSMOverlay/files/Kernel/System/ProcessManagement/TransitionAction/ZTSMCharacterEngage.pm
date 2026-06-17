@@ -77,6 +77,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RUN
 # ------------------------------------------------------------ #
@@ -120,6 +130,14 @@ sub Run {
 
     return if !$TicketID;
 
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMCharacterEngage: Ticket is onhold, skip participant engagement TicketID=$TicketID",
+        );
+        return 1;
+    }
+
     my $UserID = $Param{UserID};
 
     return if !$UserID;
@@ -156,6 +174,8 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-Role'}
     );
 
+    my $RequesterRole = defined $TicketRole && $TicketRole =~ m{\bRequester\b}i;
+
     # -------------------------------------------------------- #
     # PREVENT DUPLICATE ENGAGEMENT
     # -------------------------------------------------------- #
@@ -179,12 +199,19 @@ sub Run {
     # CUSTOMER USER RESOLUTION
     # -------------------------------------------------------- #
 
-    my %UserData = $CustomerUserObject->CustomerUserDataGet(
+    my $CustomerUserID;
 
-        User => $UserID,
-    );
+    if ($RequesterRole) {
+        $CustomerUserID = $Ticket->{CustomerUserID};
+    }
+    else {
+        my %UserData = $CustomerUserObject->CustomerUserDataGet(
 
-    my $CustomerUserID = $UserData{UserLogin};
+            User => $UserID,
+        );
+
+        $CustomerUserID = $UserData{UserLogin};
+    }
 
     return if !$CustomerUserID;
 
@@ -192,19 +219,23 @@ sub Run {
     # SUPPORT ASSIGNMENT RESOLUTION
     # -------------------------------------------------------- #
 
-    my @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
+    my @AssignmentList;
 
-		Classes  => ['SupportAssignment'],
+    if ( !$RequesterRole ) {
+        @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
 
-        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
-            Equals => $SupportProfile,
-        },
-        'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-            Equals => $CustomerUserID,
-		},
+    		Classes  => ['SupportAssignment'],
 
-		Result => 'ARRAY',
-	);
+            'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+                Equals => $SupportProfile,
+            },
+            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                Equals => $CustomerUserID,
+    		},
+
+    		Result => 'ARRAY',
+    	);
+    }
 
 	my $SelectedAssignment;
 

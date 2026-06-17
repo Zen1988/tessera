@@ -610,6 +610,13 @@
 [% RenderBlockStart("Expand") %]
                 <a role="menuitem" href="[% Env("Baselink") %]Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %];ZoomExpand=[% Data.ZoomExpand | uri %]">[% Translate(Data.ExpandText) | html %]</a>
 [% RenderBlockEnd("Expand") %]
+[% RenderBlockStart("ZTSMRuntimeActionMenuItem") %]
+[% IF Data.DirectURL %]
+                <a role="menuitem" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZTSMAction;TicketID=[% Data.TicketID | uri %];RuntimeAction=[% Data.Action | uri %]">[% Translate(Data.Label) | html %]</a>
+[% ELSE %]
+                <a role="menuitem" href="#Process_ZTSM_[% Data.Action | uri %]" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.hidden = false; Element.style.display = 'block'; Element.classList.remove('Hidden'); Element.classList.add('Visible'); var Menu = this.closest('details'); if (Menu) { Menu.open = false; } Element.scrollIntoView({ behavior: 'smooth', block: 'start' }); var Field = Element.querySelector('textarea, select, input:not([type=hidden]), button[type=submit]'); if (Field) { window.setTimeout(function () { Field.focus(); }, 250); } } return false;">[% Translate(Data.Label) | html %]</a>
+[% END %]
+[% RenderBlockEnd("ZTSMRuntimeActionMenuItem") %]
             </div>
         </details>
         <div id='oooCategories'>
@@ -775,6 +782,13 @@
                 [% Data.InlineHTML %]
 [% ELSE %]
                 <style>
+                    .ZTSMRuntimeActionDialog .Messenger .MessageHeader {
+                        margin: 0 0 24px;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .MessageHeader h2 {
+                        margin: 0;
+                        line-height: 1.25;
+                    }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks {
                         position: relative;
@@ -786,6 +800,10 @@
                         border-radius: 10px;
                         background: #fff;
                         box-sizing: border-box;
+                        clear: both;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField:first-of-type {
+                        margin-top: 8px;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > label,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label {
@@ -802,12 +820,14 @@
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .Field,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea {
                         width: 100%;
+                        box-sizing: border-box;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField select,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField input,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Container {
                         width: 100%;
                         min-height: 34px;
+                        box-sizing: border-box;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Selection {
                         min-height: 34px;

@@ -6,6 +6,7 @@ package Kernel::System::ZTSMBlueBookRuntime;
 
 use strict;
 use warnings;
+no warnings 'redefine';
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
 
@@ -28,6 +29,93 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _PlainTextValue {
+    my ($Value) = @_;
+
+    $Value = _NormalizeValue($Value);
+    return if !defined $Value;
+
+    return $Value if $Value !~ m{<[^>]+>}s;
+
+    if ( $Value =~ m{<body[^>]*>(.*?)</body>}is ) {
+        $Value = $1;
+    }
+
+    $Value =~ s{<script\b[^>]*>.*?</script>}{}gis;
+    $Value =~ s{<style\b[^>]*>.*?</style>}{}gis;
+    $Value =~ s{<br\s*/?>}{\n}gi;
+    $Value =~ s{</(?:p|div|li|tr|h[1-6])>}{\n}gi;
+    $Value =~ s{<[^>]+>}{}g;
+
+    my %Entity = (
+        amp  => '&',
+        lt   => '<',
+        gt   => '>',
+        quot => '"',
+        apos => q{'},
+        nbsp => ' ',
+    );
+    $Value =~ s{&([A-Za-z]+);}{ exists $Entity{lc $1} ? $Entity{lc $1} : ' ' }eg;
+    $Value =~ s{&#(\d+);}{ chr($1) }eg;
+    $Value =~ s{&#x([0-9A-Fa-f]+);}{ chr(hex($1)) }eg;
+    $Value =~ s{\r\n?}{\n}g;
+    $Value =~ s{[ \t]+}{ }g;
+    $Value =~ s{[ \t]*\n[ \t]*}{\n}g;
+    $Value =~ s{\n{3,}}{\n\n}g;
+    $Value =~ s{\A\s+|\s+\z}{}g;
+
+    return $Value;
+}
+
+sub _SetEntityValueNormalize {
+    my ($Value) = @_;
+
+    return [] if !defined $Value;
+
+    my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+    my @Clean;
+
+    VALUE:
+    for my $Item (@Values) {
+        $Item = _NormalizeValue($Item);
+        next VALUE if !defined $Item || $Item eq '';
+        next VALUE if $Item =~ m{\AZ(?:RM|Template)-[A-Za-z0-9-]+\z};
+
+        push @Clean, $Item;
+    }
+
+    return \@Clean;
+}
+
+sub _ScalarValueNormalize {
+    my ($Value) = @_;
+
+    $Value = _PlainTextValue($Value);
+    return if !defined $Value || $Value eq '';
+    return if $Value =~ m{\AZ(?:RM|Template)-[A-Za-z0-9-]+\z};
+
+    return $Value;
+}
+
+sub _TicketSummary {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return $Param{TicketID} || 'N/A' if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $TicketNumber = $Ticket->{TicketNumber} || '';
+    my $TicketID     = $Ticket->{TicketID}     || $Param{TicketID} || '';
+    my $Type         = $Ticket->{Type}         || 'Ticket';
+    my $Title        = $Ticket->{Title}        || '';
+
+    my $Label = $TicketNumber ? "Ticket#$TicketNumber" : "TicketID#$TicketID";
+    $Label .= " (ID $TicketID)" if $TicketNumber && $TicketID;
+    $Label .= " - $Type" if $Type;
+    $Label .= ": $Title" if $Title;
+
+    return $Label;
+}
+
 sub _RecordValueGet {
     my (%Param) = @_;
 
@@ -37,16 +125,52 @@ sub _RecordValueGet {
 
     FIELD:
     for my $Field ( @{ $Param{Fields} || [] } ) {
+        my $StructuredValue = _RecordStructuredFieldValue(
+            Record => $Record,
+            Field  => $Field,
+        );
+        return $StructuredValue if defined $StructuredValue && $StructuredValue ne '';
 
         next FIELD if !exists $Record->{$Field};
 
-        my $Value = ref $Record->{$Field} eq 'HASH'
-            ? $Record->{$Field}->{Content}
-            : $Record->{$Field};
+        my $Value = $Record->{$Field};
 
         $Value = _NormalizeValue($Value);
 
         return $Value if defined $Value && $Value ne '';
+    }
+
+    return;
+}
+
+sub _RecordStructuredFieldValue {
+    my (%Param) = @_;
+
+    my $Record = $Param{Record};
+    my $Field  = $Param{Field};
+    return if !$Record || ref $Record ne 'HASH';
+    return if !$Field;
+
+    if ( ( $Record->{DF} || '' ) eq $Field ) {
+        my $Value = exists $Record->{Value} ? $Record->{Value} : $Record->{Content};
+        $Value = _NormalizeValue($Value);
+        return $Value if defined $Value && $Value ne '';
+    }
+
+    for my $ContainerKey (qw(Fields Items Values Content Value)) {
+        my $Container = $Record->{$ContainerKey};
+        next if ref $Container ne 'ARRAY';
+
+        ITEM:
+        for my $Item ( @{$Container} ) {
+            next ITEM if ref $Item ne 'HASH';
+
+            my $Value = _RecordStructuredFieldValue(
+                Record => $Item,
+                Field  => $Field,
+            );
+            return $Value if defined $Value && $Value ne '';
+        }
     }
 
     return;
@@ -693,7 +817,10 @@ sub LevelSpawn {
                 . "ChapterPlay:\n"
                 . "Initiated\n\n"
                 . "Parent Ticket:\n"
-                . $Param{ParentTicketID}
+                . _TicketSummary(
+                    Ticket   => $Param{ParentTicket},
+                    TicketID => $Param{ParentTicketID},
+                )
                 . "\n\n"
                 . "BlueBook:\n"
                 . $Param{BlueBookID}
@@ -734,26 +861,34 @@ sub ChildTemplateApply {
     return if !$Param{TemplateID};
 
     my $UserID = $Param{UserID} || 1;
-    my $Template = eval {
-        $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
-            GovernanceObjectID => $Param{TemplateID},
-            DynamicFields      => 1,
-            Silent             => 1,
-        );
-    };
+    my $Template = _GovernanceObjectResolve(
+        Value   => $Param{TemplateID},
+        Classes => ['Template'],
+    );
 
     return if !$Template || ref $Template ne 'HASH';
 
-    my $Description = _NormalizeValue( $Template->{Description} );
+    my $Description = _PlainTextValue( $Template->{Description} );
     my $Rows        = _TemplateRiskAssessmentRows( Template => $Template );
 
     if ( $Rows && @{$Rows} ) {
-        _TicketFieldSet(
+        my $FieldSet = _TicketFieldSet(
             TicketID  => $Param{TicketID},
             FieldName => 'ZRM-RiskAssessment',
             Value     => $Rows,
             UserID    => $UserID,
         );
+
+        if ( !$FieldSet ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  =>
+                      "ZTSMBlueBookRuntime: Template risk assessment field set failed TicketID='$Param{TicketID}' "
+                    . "TemplateID='$Param{TemplateID}' RowCount='"
+                    . scalar( @{$Rows} )
+                    . "'.",
+            );
+        }
     }
 
     return 1 if !$Description && !( $Rows && @{$Rows} );
@@ -783,6 +918,34 @@ sub ChildTemplateApply {
     return 1;
 }
 
+sub TemplateIDForTicket {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $BlueBookID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    my $BlueLevel  = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    my $Chapter    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+
+    my $BlueBook = BlueBookGet( BlueBookID => $BlueBookID );
+    my @Records  = RecordsParse( BlueBook => $BlueBook );
+
+    RECORD:
+    for my $Record (@Records) {
+        next RECORD if !$Record || ref $Record ne 'HASH';
+        next RECORD if !defined $Record->{BlueLevel} || $Record->{BlueLevel} ne $BlueLevel;
+        next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
+        next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
+
+        my $TemplateID = _NormalizeValue( $Record->{Template} );
+        return $TemplateID if $TemplateID;
+    }
+
+    return;
+}
+
 sub _TemplateRiskAssessmentRows {
     my (%Param) = @_;
 
@@ -795,7 +958,7 @@ sub _TemplateRiskAssessmentRows {
     );
 
     return if !$Rows;
-    $Rows = [$Rows] if ref $Rows eq 'HASH';
+    $Rows = _SetRowsNormalize($Rows);
     return if ref $Rows ne 'ARRAY';
 
     my @MappedRows;
@@ -836,11 +999,56 @@ sub _TemplateRiskAssessmentRows {
             $Mapped{'ZRM-ResidualImpact'},
         );
 
+        for my $Field (
+            qw(
+            ZRM-RiskStatement
+            ZRM-ImpactCategory
+            ZRM-RiskCategory
+            ZRM-InherentLikelihood
+            ZRM-InherentImpact
+            ZRM-ResidualLikelihood
+            ZRM-ResidualImpact
+            )
+            )
+        {
+            $Mapped{$Field} = _SetEntityValueNormalize( $Mapped{$Field} );
+        }
+
+        for my $Field (
+            qw(
+            ZRM-RiskDetail
+            ZRM-RiskAction
+            ZRM-RiskOwner
+            ZRM-RiskPlan
+            ZRM-InherentCalculatedRisk
+            ZRM-ResidualCalculatedRisk
+            )
+            )
+        {
+            $Mapped{$Field} = _ScalarValueNormalize( $Mapped{$Field} );
+        }
+
         push @MappedRows, \%Mapped;
     }
 
     return \@MappedRows if @MappedRows;
     return;
+}
+
+sub _SetRowsNormalize {
+    my ($Rows) = @_;
+
+    return if !$Rows;
+    return $Rows if ref $Rows eq 'ARRAY';
+    return if ref $Rows ne 'HASH';
+
+    for my $Key (qw(Values Value Content Items Rows)) {
+        my $Value = $Rows->{$Key};
+        next if ref $Value ne 'ARRAY';
+        return $Value if @{$Value};
+    }
+
+    return [$Rows];
 }
 
 sub _ObjectValueGet {
@@ -881,19 +1089,80 @@ sub _ObjectValueGet {
     return;
 }
 
+sub _GovernanceObjectResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value || $Value eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        my $Object = eval {
+            $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $Value,
+                DynamicFields      => 1,
+                Silent             => 1,
+            );
+        };
+        return $Object if $Object && ref $Object eq 'HASH';
+    }
+
+    my $Search = $Value;
+    $Search =~ s{\A [^:]+: \s*}{}xms;
+    $Search =~ s{\s+\z}{};
+    return if $Search eq '';
+
+    my %ClassFilter = ref $Param{Classes} eq 'ARRAY' && @{ $Param{Classes} }
+        ? ( Classes => $Param{Classes} )
+        : ();
+
+    my @SearchParam;
+    for my $Name ( $Search, "%$Search%" ) {
+        push @SearchParam, {
+            Name   => $Name,
+            Result => 'ARRAY',
+            Limit  => 1,
+            %ClassFilter,
+        };
+        push @SearchParam, {
+            Number => $Name,
+            Result => 'ARRAY',
+            Limit  => 1,
+            %ClassFilter,
+        };
+    }
+
+    SEARCH:
+    for my $SearchParam (@SearchParam) {
+        my @IDs = eval {
+            $GovernanceObjectObject->GovernanceObjectSearch( %{$SearchParam} );
+        };
+        next SEARCH if !@IDs;
+
+        my $Object = eval {
+            $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $IDs[0],
+                DynamicFields      => 1,
+                Silent             => 1,
+            );
+        };
+        return $Object if $Object && ref $Object eq 'HASH';
+    }
+
+    return;
+}
+
 sub _RiskStatementDefaults {
     my (%Param) = @_;
 
     my $RiskStatementID = _NormalizeValue( $Param{RiskStatementID} );
-    return if !$RiskStatementID || $RiskStatementID !~ m{\A\d+\z};
+    return if !$RiskStatementID;
 
-    my $GovernanceObject = eval {
-        $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
-            GovernanceObjectID => $RiskStatementID,
-            DynamicFields      => 1,
-            Silent             => 1,
-        );
-    };
+    my $GovernanceObject = _GovernanceObjectResolve(
+        Value   => $RiskStatementID,
+        Classes => ['RiskStatement'],
+    );
 
     return if !$GovernanceObject || ref $GovernanceObject ne 'HASH';
 

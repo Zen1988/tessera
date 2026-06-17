@@ -287,11 +287,40 @@ sub _ResolveRequesterProfile {
 
     return if !%CustomerUser;
 
-    return _NormalizeValue(
-        $CustomerUser{
-            'DynamicField_ZTSMUser-DefaultSupportProfile'
-        }
+    my $Profile = _NormalizeValue( $CustomerUser{'DynamicField_ZUser-SupportProfile'} );
+    return $Profile if $Profile;
+
+    $Profile = _NormalizeValue( $CustomerUser{'DynamicField_ZTSMUser-DefaultSupportProfile'} );
+    return $Profile if $Profile;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZUser-SupportProfile',
     );
+    if ($DynamicFieldConfig) {
+        $Profile = _NormalizeValue(
+            $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectName         => $Param{CustomerUserID},
+            )
+        );
+        return $Profile if $Profile;
+    }
+
+    $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZTSMUser-DefaultSupportProfile',
+    );
+    if ($DynamicFieldConfig) {
+        $Profile = _NormalizeValue(
+            $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectName         => $Param{CustomerUserID},
+            )
+        );
+        return $Profile if $Profile;
+    }
+
+    return;
 }
 
 # ------------------------------------------------------------ #

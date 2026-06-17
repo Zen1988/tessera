@@ -37,7 +37,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::CustomerUser',
 );
 
@@ -60,7 +60,31 @@ sub _NormalizeValue {
         return $Value->[0];
     }
 
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Content}
+            if defined $Value->{Content}
+            && $Value->{Content} ne '';
+
+        return $Value->{Value}
+            if defined $Value->{Value}
+            && $Value->{Value} ne '';
+
+        return $Value->{Key}
+            if defined $Value->{Key}
+            && $Value->{Key} ne '';
+    }
+
     return $Value;
+}
+
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
 }
 
 # ------------------------------------------------------------ #
@@ -86,8 +110,8 @@ sub Run {
         'Kernel::System::DynamicField::Backend'
     );
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
     my $CustomerUserObject = $Kernel::OM->Get(
@@ -105,6 +129,14 @@ sub Run {
     my $TicketID = $Ticket->{TicketID};
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMCharacterEngage: Ticket is onhold, skip participant engagement TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     my $UserID = $Param{UserID};
 
@@ -142,6 +174,8 @@ sub Run {
         $Ticket->{'DynamicField_ZTicket-Role'}
     );
 
+    my $RequesterRole = defined $TicketRole && $TicketRole =~ m{\bRequester\b}i;
+
     # -------------------------------------------------------- #
     # PREVENT DUPLICATE ENGAGEMENT
     # -------------------------------------------------------- #
@@ -165,12 +199,19 @@ sub Run {
     # CUSTOMER USER RESOLUTION
     # -------------------------------------------------------- #
 
-    my %UserData = $CustomerUserObject->CustomerUserDataGet(
+    my $CustomerUserID;
 
-        User => $UserID,
-    );
+    if ($RequesterRole) {
+        $CustomerUserID = $Ticket->{CustomerUserID};
+    }
+    else {
+        my %UserData = $CustomerUserObject->CustomerUserDataGet(
 
-    my $CustomerUserID = $UserData{UserLogin};
+            User => $UserID,
+        );
+
+        $CustomerUserID = $UserData{UserLogin};
+    }
 
     return if !$CustomerUserID;
 
@@ -178,35 +219,37 @@ sub Run {
     # SUPPORT ASSIGNMENT RESOLUTION
     # -------------------------------------------------------- #
 
-    my $AssignmentList = $ConfigItemObject->ConfigItemSearch(
+    my @AssignmentList;
 
-		Classes  => ['Support Assignment'],
+    if ( !$RequesterRole ) {
+        @AssignmentList = $GovernanceObjectObject->GovernanceObjectSearch(
 
-		SearchByDynamicField => {
+    		Classes  => ['SupportAssignment'],
 
-			'ZTSMSupportAssignment-SupportProfile'
-				=> $SupportProfile,
-			'ZTSMSupportAssignment-UserAccount'
-				=> $CustomerUserID,
-		},
+            'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+                Equals => $SupportProfile,
+            },
+            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                Equals => $CustomerUserID,
+    		},
 
-		Result => 'ARRAY',
-	);
+    		Result => 'ARRAY',
+    	);
+    }
 
 	my $SelectedAssignment;
 
 	PICK:
-	for my $AssignmentID ( @{$AssignmentList} ) {
+	for my $AssignmentID (@AssignmentList) {
 
-		my $Assignment = $ConfigItemObject->ConfigItemGet(
+		my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
 
-			ConfigItemID  => $AssignmentID,
+			GovernanceObjectID => $AssignmentID,
 
 			DynamicFields => 1,
 		);
 
 		next PICK if !$Assignment;
-		next PICK if !$Assignment->{XMLData};
 
 		#
 		# First match fallback
@@ -218,9 +261,7 @@ sub Run {
 		}
 
         my $AssignmentRole = _NormalizeValue(
-            $Assignment->{XMLData}
-                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}
-                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-Role'}->{Content}
+            $Assignment->{'DynamicField_ZTSMSupportAssignment-Role'}
         );
 
         if (
@@ -240,9 +281,7 @@ sub Run {
             && $TicketRole ne '';
 
         my $Type = _NormalizeValue(
-			$Assignment->{XMLData}
-			->{'ZTSMSupportAssignment-Type'}
-			->{Content}
+			$Assignment->{'DynamicField_ZTSMSupportAssignment-Type'}
 		);
 
 		next PICK
@@ -265,9 +304,7 @@ sub Run {
     if ($SelectedAssignment) {
 
         my $Weightage = _NormalizeValue(
-            $SelectedAssignment->{XMLData}
-            ->{'ZTSMSupportAssignment-Weightage'}
-            ->{Content}
+            $SelectedAssignment->{'DynamicField_ZTSMSupportAssignment-Weightage'}
         );
 
         if ( defined $Weightage ) {

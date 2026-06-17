@@ -164,18 +164,13 @@ sub _SupportProfileList {
     my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;
 
-    for my $CustomerUserID (@CustomerUserIDs) {
-        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
-            Classes => ['SupportAssignment'],
-            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-                Equals => $CustomerUserID,
-            },
-            Result => 'ARRAY',
-            Limit  => 1000,
-        );
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+    );
 
-        $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
-    }
+    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
 
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
@@ -195,10 +190,22 @@ sub _SupportProfileList {
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
 
-        next ASSIGNMENT if !_CustomerUserMatches(
-            AssignmentUser => $AssignmentUser,
-            CustomerUserID => $Param{CustomerUserID},
-        );
+        my $CustomerMatch;
+        CUSTOMERUSERID:
+        for my $CustomerUserID (@CustomerUserIDs) {
+            if (
+                _CustomerUserMatches(
+                    AssignmentUser => $AssignmentUser,
+                    CustomerUserID => $CustomerUserID,
+                )
+                )
+            {
+                $CustomerMatch = 1;
+                last CUSTOMERUSERID;
+            }
+        }
+
+        next ASSIGNMENT if !$CustomerMatch;
 
         my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
         $AssignmentSupportProfile ||= $Assignment->{XMLData}

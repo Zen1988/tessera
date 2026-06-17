@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.73</Version>
+    <Version>0.0.90</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -67,6 +67,7 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectDetails.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectTreeView/GovernanceObjectTreeViewGraph.tt" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Driver/BaseEntity.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Driver/Agent.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Driver/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Driver/GovernanceObjectVersion.pm" Permission="660"/>
         <File Location="Kernel/System/DynamicField/Event/GovernanceObjectDefinitionSync.pm" Permission="660"/>
@@ -120,6 +121,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZoom.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Layout.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Preferences/ZTSMCustomerDefaults.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldDB.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldSet.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminService.tt" Permission="660"/>
@@ -658,8 +660,8 @@
             <Data Key="change_by">1</Data>
         </Insert>
         <Insert Type="post" Table="governance_object_item_history_type">
-            <Data Key="name" Type="Quote">AttachmentAdd</Data>
-            <Data Key="comments" Type="Quote">AttachmentAdd history entry.</Data>
+            <Data Key="name" Type="Quote">AttachmentAddPost</Data>
+            <Data Key="comments" Type="Quote">AttachmentAddPost history entry.</Data>
             <Data Key="valid_id">1</Data>
             <Data Key="create_time">current_timestamp</Data>
             <Data Key="create_by">1</Data>
@@ -667,8 +669,8 @@
             <Data Key="change_by">1</Data>
         </Insert>
         <Insert Type="post" Table="governance_object_item_history_type">
-            <Data Key="name" Type="Quote">AttachmentDelete</Data>
-            <Data Key="comments" Type="Quote">AttachmentDelete history entry.</Data>
+            <Data Key="name" Type="Quote">AttachmentDeletePost</Data>
+            <Data Key="comments" Type="Quote">AttachmentDeletePost history entry.</Data>
             <Data Key="valid_id">1</Data>
             <Data Key="create_time">current_timestamp</Data>
             <Data Key="create_by">1</Data>
