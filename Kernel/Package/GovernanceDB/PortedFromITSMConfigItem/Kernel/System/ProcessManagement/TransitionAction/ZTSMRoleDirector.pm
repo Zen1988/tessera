@@ -35,7 +35,7 @@ use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZT
 our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Ticket',
-    'Kernel::System::ITSMConfigItem',
+    'Kernel::System::GovernanceObject',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::CustomerUser',
@@ -69,6 +69,16 @@ sub _NormalizeValue {
     }
 
     return $Value;
+}
+
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
 }
 
 # ------------------------------------------------------------ #
@@ -131,6 +141,18 @@ sub _ProfileKey {
     return $Value;
 }
 
+sub _IsRequesterDefaultProfile {
+    my ($Profile) = @_;
+
+    $Profile = _ProfileKey($Profile);
+    return if !defined $Profile;
+
+    return 1 if $Profile eq 'REQUESTER-DEFAULT';
+    return 1 if $Profile eq 'REQUESTER-SUPPORT-GROUP';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # UPDATE TICKET FIELD
 # ------------------------------------------------------------ #
@@ -172,18 +194,18 @@ sub _UpdateTicketField {
 # GET CONFIG ITEM
 # ------------------------------------------------------------ #
 
-sub _GetConfigItem {
+sub _GetGovernanceObject {
     my ( %Param ) = @_;
 
-    return if !$Param{ConfigItemID};
+    return if !$Param{GovernanceObjectID};
 
-    my $ConfigItemObject = $Kernel::OM->Get(
-        'Kernel::System::ITSMConfigItem'
+    my $GovernanceObjectObject = $Kernel::OM->Get(
+        'Kernel::System::GovernanceObject'
     );
 
-    return $ConfigItemObject->ConfigItemGet(
+    return $GovernanceObjectObject->GovernanceObjectGet(
 
-        ConfigItemID  => $Param{ConfigItemID},
+        GovernanceObjectID => $Param{GovernanceObjectID},
 
         DynamicFields => 1,
     );
@@ -196,14 +218,14 @@ sub _GetConfigItem {
 sub _IsSupportProfile {
     my (%Param) = @_;
 
-    return if !$Param{ConfigItemID};
+    return if !$Param{GovernanceObjectID};
 
-    my @SupportProfileIDs = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
-        Result       => 'ARRAY',
-        Classes      => ['Support Profile'],
-        ConfigItemID => [ $Param{ConfigItemID} ],
-        Limit        => 1,
-        UserID       => $Param{UserID} || 1,
+    my @SupportProfileIDs = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectSearch(
+        Result             => 'ARRAY',
+        Classes            => ['SupportProfile'],
+        GovernanceObjectID => [ $Param{GovernanceObjectID} ],
+        Limit              => 1,
+        UserID             => $Param{UserID} || 1,
     );
 
     return @SupportProfileIDs ? 1 : 0;
@@ -225,19 +247,19 @@ sub _ResolveProfileDirective {
         Display => $Profile,
     );
 
-    my $ConfigItem;
+    my $GovernanceObject;
     if ( $Profile =~ m{\A\d+\z} ) {
-        $ConfigItem = _GetConfigItem(
-            ConfigItemID => $Profile,
+        $GovernanceObject = _GetGovernanceObject(
+            GovernanceObjectID => $Profile,
         );
     }
 
-    if ($ConfigItem) {
-        $Result{Display} = $ConfigItem->{Name} || $Profile;
+    if ($GovernanceObject) {
+        $Result{Display} = $GovernanceObject->{Name} || $Profile;
 
         if (
-            ( $ConfigItem->{Class} || '' ) eq 'Support Profile'
-            || _IsSupportProfile( ConfigItemID => $Profile, UserID => $Param{UserID} )
+            ( $GovernanceObject->{Class} || '' ) eq 'SupportProfile'
+            || _IsSupportProfile( GovernanceObjectID => $Profile, UserID => $Param{UserID} )
             )
         {
             $Result{SupportProfile} = $Profile;
@@ -245,11 +267,11 @@ sub _ResolveProfileDirective {
         }
 
         my $Code = _GetDynamicFieldValue(
-            Object => $ConfigItem,
+            Object => $GovernanceObject,
             Field  => 'ZTSM-Code',
         );
 
-        $Result{ProfileKey} = _ProfileKey( $Code || $ConfigItem->{Name} || $Profile );
+        $Result{ProfileKey} = _ProfileKey( $Code || $GovernanceObject->{Name} || $Profile );
         return %Result;
     }
 
@@ -322,9 +344,9 @@ sub _ResolveAppProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -346,9 +368,9 @@ sub _ResolveAppOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -362,9 +384,9 @@ sub _ResolveAppOwnerProfile {
 
     return if !$OrganizationID;
 
-    my $Organization = _GetConfigItem(
+    my $Organization = _GetGovernanceObject(
 
-        ConfigItemID => $OrganizationID,
+        GovernanceObjectID => $OrganizationID,
     );
 
     return if !$Organization;
@@ -386,9 +408,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -402,9 +424,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$PlatformID;
 
-    my $Platform = _GetConfigItem(
+    my $Platform = _GetGovernanceObject(
 
-        ConfigItemID => $PlatformID,
+        GovernanceObjectID => $PlatformID,
     );
 
     return if !$Platform;
@@ -418,9 +440,9 @@ sub _ResolvePlatformOwnerProfile {
 
     return if !$OrganizationID;
 
-    my $Organization = _GetConfigItem(
+    my $Organization = _GetGovernanceObject(
 
-        ConfigItemID => $OrganizationID,
+        GovernanceObjectID => $OrganizationID,
     );
 
     return if !$Organization;
@@ -442,9 +464,9 @@ sub _ResolveTopOwnerProfile {
 
     return if !$Param{ApplicationID};
 
-    my $Application = _GetConfigItem(
+    my $Application = _GetGovernanceObject(
 
-        ConfigItemID => $Param{ApplicationID},
+        GovernanceObjectID => $Param{ApplicationID},
     );
 
     return if !$Application;
@@ -461,9 +483,9 @@ sub _ResolveTopOwnerProfile {
     LOOP:
     while ($OrganizationID) {
 
-        my $Organization = _GetConfigItem(
+        my $Organization = _GetGovernanceObject(
 
-            ConfigItemID => $OrganizationID,
+            GovernanceObjectID => $OrganizationID,
         );
 
         last LOOP if !$Organization;
@@ -517,6 +539,14 @@ sub Run {
     my $TicketID = $Ticket->{TicketID};
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMRoleDirector: Ticket is onhold, skip role resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
 
     # -------------------------------------------------------- #
     # RUNTIME CONTEXT
@@ -576,11 +606,12 @@ sub Run {
     # -------------------------------------------------------- #
 
     my $ResolutionCandidate;
+    my $RequesterOwnerUserID;
 
     if (
         !$ResolvedSupportProfile
         &&
-        $Profile eq 'REQUESTER-SUPPORT-GROUP'
+        _IsRequesterDefaultProfile($Profile)
     ) {
 
         $ResolutionCandidate = _ResolveRequesterProfile(
@@ -589,6 +620,9 @@ sub Run {
         );
 
         $ResolvedSupportProfile = $ResolutionCandidate;
+        if ( !$ResolvedSupportProfile ) {
+            $RequesterOwnerUserID = $CustomerUserID;
+        }
     }
 
     # -------------------------------------------------------- #
@@ -686,6 +720,51 @@ sub Run {
     # RESOLUTION FAILED
     # -------------------------------------------------------- #
 
+    if ($RequesterOwnerUserID) {
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-OwnerGroup',
+
+            Value => '',
+        );
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => $RequesterOwnerUserID,
+        );
+
+        my $Body
+            = "** Note: This is a system-generated orchestration update message.\n\n"
+            . "Requester default resolved successfully.\n\n"
+            . "Profile:\n"
+            . ( $ProfileDisplay || 'N/A' )
+            . "\n\n"
+            . "Requester Support Profile:\nN/A\n\n"
+            . "Assigned Owner:\n"
+            . $RequesterOwnerUserID
+            . "\n\n"
+            . "Runtime Role:\n"
+            . ( $Role || 'N/A' );
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $TicketID,
+            Subject  => 'ZTSM Requester Default Resolved',
+            Body     => $Body,
+            HistoryComment => 'ZTSM: Requester default resolved to owner',
+            UserID   => 1,
+        );
+
+        return 1;
+    }
+
     if ( !$ResolvedSupportProfile ) {
 
         my $Body
@@ -730,6 +809,17 @@ sub Run {
 
         Value => $ResolvedSupportProfile,
     );
+
+    if ( _IsRequesterDefaultProfile($Profile) ) {
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => '',
+        );
+    }
 
     #
     # Role remains unchanged intentionally.

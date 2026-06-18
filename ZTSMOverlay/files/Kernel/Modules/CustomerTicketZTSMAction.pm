@@ -203,6 +203,10 @@ sub Run {
         );
     }
 
+    if ( lc( $Ticket{State} || '' ) eq 'follow-up' ) {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
+
     if ( $RuntimeAction eq 'CreateExternalPartyRequest' ) {
         if (
             !$Self->_ExternalPartyRequestAllowed(
@@ -329,7 +333,7 @@ sub Run {
         my $ActionableTicketType = _ActionableTicketType(
             Config => $Config,
             Type   => $Ticket{Type},
-        );
+        ) || $Self->_TaskLikeTicket( Ticket => \%Ticket );
 
         if ( !$ActionableTicketType ) {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
@@ -908,6 +912,18 @@ sub _ChapterDirectorRun {
     );
 }
 
+sub _TaskLikeTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    return 1 if ( $Ticket->{Type} || '' ) eq 'Task';
+    return 1 if ( $Ticket->{Title} || '' ) =~ m{\ATask\s+-\s+}i;
+
+    return;
+}
+
 sub _RequesterCancelAllowed {
     my ( $Self, %Param ) = @_;
 
@@ -1462,6 +1478,7 @@ sub _AddRequiredSupportProfileAllowed {
 
     return if !IsHashRefWithData($Ticket);
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if lc( $Ticket->{State} || '' ) eq 'follow-up';
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
@@ -1485,6 +1502,7 @@ sub _FollowUpAllowed {
 
     return if !IsHashRefWithData($Ticket);
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if lc( $Ticket->{State} || '' ) eq 'follow-up';
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
@@ -1525,12 +1543,31 @@ sub _FollowUpPurpleBookID {
     RECORD:
     for my $Record (@Records) {
         next RECORD if !$Record || ref $Record ne 'HASH';
-        next RECORD if !defined $Record->{BlueLevel} || $Record->{BlueLevel} ne $BlueLevel;
+        next RECORD if !_BlueLevelMatch(
+            BlueLevel => $BlueLevel,
+            Record    => $Record,
+        );
         next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
         my $PurpleBookID = _NormalizeValue( $Record->{PurpleBook} );
         return $PurpleBookID if $PurpleBookID;
+    }
+
+    return;
+}
+
+sub _BlueLevelMatch {
+    my (%Param) = @_;
+
+    my $BlueLevel = _NormalizeValue( $Param{BlueLevel} );
+    return if !defined $BlueLevel || $BlueLevel eq '';
+    return if !$Param{Record} || ref $Param{Record} ne 'HASH';
+
+    for my $RecordBlueLevel ( $Param{Record}->{BlueLevel}, $Param{Record}->{RawBlueLevel} ) {
+        $RecordBlueLevel = _NormalizeValue($RecordBlueLevel);
+        next if !defined $RecordBlueLevel || $RecordBlueLevel eq '';
+        return 1 if $RecordBlueLevel eq $BlueLevel;
     }
 
     return;

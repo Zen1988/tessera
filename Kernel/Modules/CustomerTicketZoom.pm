@@ -2251,6 +2251,7 @@ sub _ZTSMRuntimeActions {
     my $Ticket = $Param{Ticket};
     return if !IsHashRefWithData($Ticket);
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if lc( $Ticket->{State} || '' ) eq 'follow-up';
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -2353,6 +2354,7 @@ sub _ZTSMRuntimeActions {
 
     my @RuntimeActions;
     my $ActionableType;
+    my $TaskLikeTicket = $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
     ACTION:
     for my $Action ( sort keys %{$Actions} ) {
         my $ActionConfig = $Actions->{$Action};
@@ -2382,6 +2384,8 @@ sub _ZTSMRuntimeActions {
         push @RuntimeActions, \%RuntimeAction;
     }
 
+    $ActionableType ||= $TaskLikeTicket;
+
     if (
         $ActionAccess
         && $ActionableType
@@ -2404,7 +2408,7 @@ sub _ZTSMRuntimeActions {
 
     if (
         $ActionAccess
-        && $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket )
+        && $TaskLikeTicket
         && $TicketOwner
         && lc $TicketOwner eq lc $Self->{UserID}
         )
@@ -2698,7 +2702,10 @@ sub _ZTSMFollowUpPurpleBookID {
     RECORD:
     for my $Record (@Records) {
         next RECORD if !$Record || ref $Record ne 'HASH';
-        next RECORD if !defined $Record->{BlueLevel} || $Record->{BlueLevel} ne $BlueLevel;
+        next RECORD if !$Self->_ZTSMBlueLevelMatch(
+            BlueLevel => $BlueLevel,
+            Record    => $Record,
+        );
         next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
@@ -2708,6 +2715,28 @@ sub _ZTSMFollowUpPurpleBookID {
         }
 
         return $PurpleBookID if $PurpleBookID;
+    }
+
+    return;
+}
+
+sub _ZTSMBlueLevelMatch {
+    my ( $Self, %Param ) = @_;
+
+    my $BlueLevel = $Param{BlueLevel};
+    if ( ref $BlueLevel eq 'ARRAY' ) {
+        $BlueLevel = $BlueLevel->[0];
+    }
+
+    return if !defined $BlueLevel || $BlueLevel eq '';
+    return if !$Param{Record} || ref $Param{Record} ne 'HASH';
+
+    for my $RecordBlueLevel ( $Param{Record}->{BlueLevel}, $Param{Record}->{RawBlueLevel} ) {
+        if ( ref $RecordBlueLevel eq 'ARRAY' ) {
+            $RecordBlueLevel = $RecordBlueLevel->[0];
+        }
+        next if !defined $RecordBlueLevel || $RecordBlueLevel eq '';
+        return 1 if $RecordBlueLevel eq $BlueLevel;
     }
 
     return;

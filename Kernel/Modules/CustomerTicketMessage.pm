@@ -189,6 +189,10 @@ sub Run {
     $Self->_ServiceExtensionDynamicFieldValuesSync(
         GetParam => \%GetParam,
     );
+    $Self->_ZTSMRequestDefaultsHydrate(
+        DynamicFieldValues => \%DynamicFieldValues,
+        GetParam           => \%GetParam,
+    );
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $QueueObject  = $Kernel::OM->Get('Kernel::System::Queue');
@@ -1063,6 +1067,11 @@ sub Run {
                 UserID             => $ConfigObject->Get('CustomerPanelUserID'),
             );
         }
+
+        $Self->_ZTSMRequesterOwnerSnapshotSet(
+            TicketID => $TicketID,
+            UserID   => $ConfigObject->Get('CustomerPanelUserID'),
+        );
 
         # if no article has to be created clean up and return
         if ( !$VisibilityStd{Article} ) {
@@ -2073,6 +2082,126 @@ sub _ServiceExtensionFieldNamesParse {
     my ( $Self, %Param ) = @_;
 
     return map { $_->{Name} } $Self->_ServiceExtensionFieldSpecsParse(%Param);
+}
+
+sub _ZTSMRequestDefaultsHydrate {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+    return if !IsHashRefWithData( $Param{GetParam} );
+    return if !$Self->{UserID};
+
+    my %FieldMap = (
+        'ZUser-Application'  => 'ZTicket-Application',
+        'ZUser-Environment' => 'ZTicket-Env',
+        'ZUser-Location'    => 'ZTicket-Location',
+    );
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my %CustomerUser       = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+        User => $Self->{UserID},
+    );
+
+    SOURCEFIELD:
+    for my $SourceField ( sort keys %FieldMap ) {
+        my $TargetField = $FieldMap{$SourceField};
+
+        next SOURCEFIELD if $Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$TargetField} );
+
+        my $TargetFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $TargetField,
+        );
+        next SOURCEFIELD if !IsHashRefWithData($TargetFieldConfig);
+        next SOURCEFIELD if $TargetFieldConfig->{ObjectType} ne 'Ticket';
+
+        my $SourceValue = $Self->_ZTSMNormalizeValue( $CustomerUser{"DynamicField_$SourceField"} );
+        if ( !$SourceValue ) {
+            my $SourceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+                Name => $SourceField,
+            );
+            next SOURCEFIELD if !IsHashRefWithData($SourceFieldConfig);
+
+            $SourceValue = $Self->_ZTSMNormalizeValue(
+                $BackendObject->ValueGet(
+                    DynamicFieldConfig => $SourceFieldConfig,
+                    ObjectName         => $Self->{UserID},
+                )
+            );
+        }
+        next SOURCEFIELD if !$SourceValue;
+
+        my $IsMultiValue = IsHashRefWithData( $TargetFieldConfig->{Config} )
+            && $TargetFieldConfig->{Config}->{MultiValue};
+        my $Value = $IsMultiValue ? [$SourceValue] : $SourceValue;
+
+        $Param{DynamicFieldValues}->{$TargetField} = $Value;
+        $Param{GetParam}->{DynamicField}{"DynamicField_$TargetField"} = $Value;
+    }
+
+    return 1;
+}
+
+sub _ZTSMValueHasData {
+    my ( $Self, $Value ) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        ITEM:
+        for my $Item ( @{$Value} ) {
+            next ITEM if !defined $Item;
+            return 1 if "$Item" ne '';
+        }
+        return;
+    }
+
+    return 1 if ref $Value;
+    return 1 if "$Value" ne '';
+
+    return;
+}
+
+sub _ZTSMNormalizeValue {
+    my ( $Self, $Value ) = @_;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        $Value = $Value->[0];
+    }
+
+    return if !defined $Value;
+    return if ref $Value;
+
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return $Value;
+}
+
+sub _ZTSMRequesterOwnerSnapshotSet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketID};
+    return if !$Self->{UserID};
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZTicket-Owner',
+    );
+    return if !IsHashRefWithData($DynamicFieldConfig);
+    return if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
+
+    my $ExistingValue = $BackendObject->ValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+    );
+    return if $Self->_ZTSMValueHasData($ExistingValue);
+
+    return $BackendObject->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+        Value              => $Self->{UserID},
+        UserID             => $Param{UserID} || 1,
+    );
 }
 
 sub _ServiceExtensionDynamicFieldValuesSync {

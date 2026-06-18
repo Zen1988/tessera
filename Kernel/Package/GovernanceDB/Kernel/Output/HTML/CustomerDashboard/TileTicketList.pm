@@ -290,6 +290,7 @@ sub _ZTSMWorkableTicketIDs {
     }
 
     for my $CustomerUserID ( _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
+        next if !$CustomerUserID;
 
         my @OwnerTicketIDs = $TicketObject->TicketSearch(
             Result => 'ARRAY',
@@ -305,6 +306,28 @@ sub _ZTSMWorkableTicketIDs {
             next if !$TicketID;
             next if $Candidate{$TicketID}++;
             push @Candidate, $TicketID;
+        }
+    }
+
+    if ( $Param{CustomerUserLogin} && $Param{CustomerUserLogin} ne $Param{CustomerUserID} ) {
+        for my $CustomerUserLogin ( _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserLogin} ) ) {
+            next if !$CustomerUserLogin;
+
+            my @OwnerTicketIDs = $TicketObject->TicketSearch(
+                Result => 'ARRAY',
+                'DynamicField_ZTicket-Owner' => {
+                    Equals => $CustomerUserLogin,
+                },
+                SortBy  => $Param{SortBy}  || 'Changed',
+                OrderBy => $Param{OrderBy} || 'Down',
+                UserID  => 1,
+            );
+
+            for my $TicketID (@OwnerTicketIDs) {
+                next if !$TicketID;
+                next if $Candidate{$TicketID}++;
+                push @Candidate, $TicketID;
+            }
         }
     }
 
@@ -450,9 +473,10 @@ sub Run {
     my $ShowAllWorkspace = $ParamObject->GetParam( Param => 'ShowAllWorkspace' ) ? 1 : 0;
 
     my @WorkableTicketIDs = _ZTSMWorkableTicketIDs(
-        CustomerUserID => $Param{UserID},
-        SortBy         => $Param{Config}{SortBy}  || 'Changed',
-        OrderBy        => $Param{Config}{OrderBy} || 'Down',
+        CustomerUserID    => $Param{UserID},
+        CustomerUserLogin => $Param{UserLogin},
+        SortBy            => $Param{Config}{SortBy}  || 'Changed',
+        OrderBy           => $Param{Config}{OrderBy} || 'Down',
     );
 
     my @WorkspaceRows = _TicketRowsBuild(

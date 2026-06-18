@@ -137,6 +137,18 @@ sub _ProfileKey {
     return $Value;
 }
 
+sub _IsRequesterDefaultProfile {
+    my ($Profile) = @_;
+
+    $Profile = _ProfileKey($Profile);
+    return if !defined $Profile;
+
+    return 1 if $Profile eq 'REQUESTER-DEFAULT';
+    return 1 if $Profile eq 'REQUESTER-SUPPORT-GROUP';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # UPDATE TICKET FIELD
 # ------------------------------------------------------------ #
@@ -600,8 +612,6 @@ sub Run {
 		$Ticket{'DynamicField_ZTicket-OwnerGroup'}
 	);
 
-	return 1 if $ExistingOwnerGroup;
-	
 	my $Profile = _NormalizeValue(
         $Ticket{'DynamicField_ZTicket-Profile'}
     );
@@ -670,16 +680,21 @@ sub Run {
         $Profile = $ProfileDirective{ProfileKey} || $Profile;
     }
 
+    return 1
+        if $ExistingOwnerGroup
+        && !_IsRequesterDefaultProfile($Profile);
+
     # -------------------------------------------------------- #
     # REQUESTER DEFAULT
     # -------------------------------------------------------- #
 
     my $ResolutionCandidate;
+    my $RequesterOwnerUserID;
 
     if (
         !$ResolvedSupportProfile
         &&
-        $Profile eq 'REQUESTER-SUPPORT-GROUP'
+        _IsRequesterDefaultProfile($Profile)
     ) {
 
         $ResolutionCandidate = _ResolveRequesterProfile(
@@ -688,6 +703,9 @@ sub Run {
         );
 
         $ResolvedSupportProfile = $ResolutionCandidate;
+        if ( !$ResolvedSupportProfile ) {
+            $RequesterOwnerUserID = $CustomerUserID;
+        }
     }
 
     # -------------------------------------------------------- #
@@ -785,6 +803,51 @@ sub Run {
     # RESOLUTION FAILED
     # -------------------------------------------------------- #
 
+    if ($RequesterOwnerUserID) {
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-OwnerGroup',
+
+            Value => '',
+        );
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => $RequesterOwnerUserID,
+        );
+
+        my $Body
+            = "** Note: This is a system-generated orchestration update message.\n\n"
+            . "Requester default resolved successfully.\n\n"
+            . "Profile:\n"
+            . ( $ProfileDisplay || 'N/A' )
+            . "\n\n"
+            . "Requester Support Profile:\nN/A\n\n"
+            . "Assigned Owner:\n"
+            . $RequesterOwnerUserID
+            . "\n\n"
+            . "Runtime Role:\n"
+            . ( $Role || 'N/A' );
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $TicketID,
+            Subject  => 'ZTSM Requester Default Resolved',
+            Body     => $Body,
+            HistoryComment => 'ZTSM: Requester default resolved to owner',
+            UserID   => 1,
+        );
+
+        return 1;
+    }
+
     if ( !$ResolvedSupportProfile ) {
 
         my $Body
@@ -829,6 +892,17 @@ sub Run {
 
         Value => $ResolvedSupportProfile,
     );
+
+    if ( _IsRequesterDefaultProfile($Profile) ) {
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => '',
+        );
+    }
 
     #
     # Role remains unchanged intentionally.

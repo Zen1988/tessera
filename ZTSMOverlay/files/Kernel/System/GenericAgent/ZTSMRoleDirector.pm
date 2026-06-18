@@ -67,6 +67,16 @@ sub _NormalizeValue {
     return $Value;
 }
 
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # GET DYNAMIC FIELD VALUE
 # ------------------------------------------------------------ #
@@ -125,6 +135,18 @@ sub _ProfileKey {
     return 'APP-OWNER'   if $Value eq 'APPLICATION-OWNER';
 
     return $Value;
+}
+
+sub _IsRequesterDefaultProfile {
+    my ($Profile) = @_;
+
+    $Profile = _ProfileKey($Profile);
+    return if !defined $Profile;
+
+    return 1 if $Profile eq 'REQUESTER-DEFAULT';
+    return 1 if $Profile eq 'REQUESTER-SUPPORT-GROUP';
+
+    return;
 }
 
 # ------------------------------------------------------------ #
@@ -273,11 +295,40 @@ sub _ResolveRequesterProfile {
 
     return if !%CustomerUser;
 
-    return _NormalizeValue(
-        $CustomerUser{
-            'DynamicField_ZTSMUser-DefaultSupportProfile'
-        }
+    my $Profile = _NormalizeValue( $CustomerUser{'DynamicField_ZUser-SupportProfile'} );
+    return $Profile if $Profile;
+
+    $Profile = _NormalizeValue( $CustomerUser{'DynamicField_ZTSMUser-DefaultSupportProfile'} );
+    return $Profile if $Profile;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZUser-SupportProfile',
     );
+    if ($DynamicFieldConfig) {
+        $Profile = _NormalizeValue(
+            $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectName         => $Param{CustomerUserID},
+            )
+        );
+        return $Profile if $Profile;
+    }
+
+    $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZTSMUser-DefaultSupportProfile',
+    );
+    if ($DynamicFieldConfig) {
+        $Profile = _NormalizeValue(
+            $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ObjectName         => $Param{CustomerUserID},
+            )
+        );
+        return $Profile if $Profile;
+    }
+
+    return;
 }
 
 # ------------------------------------------------------------ #
@@ -544,6 +595,14 @@ sub Run {
     );
 	
 	return 0 if !%Ticket;
+
+    if ( _TicketOnHold( \%Ticket ) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMRoleDirector: Ticket is onhold, skip GenericAgent role resolution TicketID=$TicketID",
+        );
+        return 1;
+    }
 	
     # -------------------------------------------------------- #
     # RUNTIME CONTEXT
@@ -553,8 +612,6 @@ sub Run {
 		$Ticket{'DynamicField_ZTicket-OwnerGroup'}
 	);
 
-	return 1 if $ExistingOwnerGroup;
-	
 	my $Profile = _NormalizeValue(
         $Ticket{'DynamicField_ZTicket-Profile'}
     );
@@ -623,16 +680,21 @@ sub Run {
         $Profile = $ProfileDirective{ProfileKey} || $Profile;
     }
 
+    return 1
+        if $ExistingOwnerGroup
+        && !_IsRequesterDefaultProfile($Profile);
+
     # -------------------------------------------------------- #
     # REQUESTER DEFAULT
     # -------------------------------------------------------- #
 
     my $ResolutionCandidate;
+    my $RequesterOwnerUserID;
 
     if (
         !$ResolvedSupportProfile
         &&
-        $Profile eq 'REQUESTER-SUPPORT-GROUP'
+        _IsRequesterDefaultProfile($Profile)
     ) {
 
         $ResolutionCandidate = _ResolveRequesterProfile(
@@ -641,6 +703,9 @@ sub Run {
         );
 
         $ResolvedSupportProfile = $ResolutionCandidate;
+        if ( !$ResolvedSupportProfile ) {
+            $RequesterOwnerUserID = $CustomerUserID;
+        }
     }
 
     # -------------------------------------------------------- #
@@ -738,6 +803,51 @@ sub Run {
     # RESOLUTION FAILED
     # -------------------------------------------------------- #
 
+    if ($RequesterOwnerUserID) {
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-OwnerGroup',
+
+            Value => '',
+        );
+
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => $RequesterOwnerUserID,
+        );
+
+        my $Body
+            = "** Note: This is a system-generated orchestration update message.\n\n"
+            . "Requester default resolved successfully.\n\n"
+            . "Profile:\n"
+            . ( $ProfileDisplay || 'N/A' )
+            . "\n\n"
+            . "Requester Support Profile:\nN/A\n\n"
+            . "Assigned Owner:\n"
+            . $RequesterOwnerUserID
+            . "\n\n"
+            . "Runtime Role:\n"
+            . ( $Role || 'N/A' );
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $TicketID,
+            Subject  => 'ZTSM Requester Default Resolved',
+            Body     => $Body,
+            HistoryComment => 'ZTSM: Requester default resolved to owner',
+            UserID   => 1,
+        );
+
+        return 1;
+    }
+
     if ( !$ResolvedSupportProfile ) {
 
         my $Body
@@ -782,6 +892,17 @@ sub Run {
 
         Value => $ResolvedSupportProfile,
     );
+
+    if ( _IsRequesterDefaultProfile($Profile) ) {
+        _UpdateTicketField(
+
+            TicketID => $TicketID,
+
+            FieldName => 'ZTicket-Owner',
+
+            Value => '',
+        );
+    }
 
     #
     # Role remains unchanged intentionally.

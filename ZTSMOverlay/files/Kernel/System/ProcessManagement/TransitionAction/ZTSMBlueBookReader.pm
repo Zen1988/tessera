@@ -212,6 +212,40 @@ sub _TicketTypeResolve {
     return;
 }
 
+sub _GeneralCatalogDynamicFieldValueResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value;
+    return if $Value eq '';
+
+    FIELDNAME:
+    for my $FieldName ( @{ $Param{FieldNames} || [] } ) {
+        my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => $FieldName,
+        );
+        next FIELDNAME if !$DynamicFieldConfig;
+        next FIELDNAME if ( $DynamicFieldConfig->{FieldType} || '' ) ne 'GeneralCatalog';
+
+        if ( $Value =~ m{\A\d+\z} ) {
+            my $Item = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
+                ItemID => $Value,
+            );
+            return $Item->{Name} if $Item && $Item->{Name};
+        }
+
+        next FIELDNAME if !$DynamicFieldConfig->{ID};
+
+        my $DisplayValue = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueLookup(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Key                => $Value,
+        );
+        return $DisplayValue if defined $DisplayValue && $DisplayValue ne '';
+    }
+
+    return $Value;
+}
+
 sub _TicketFieldSet {
     my (%Param) = @_;
 
@@ -416,10 +450,14 @@ sub Run {
             next RECORD;
         }
 
-        my $BlueLevel = _RecordValueGet(
+        my $RawBlueLevel = _RecordValueGet(
             Record => $Record,
             Fields => [ 'ZBlue-BlueLevel', 'ZBlue-Level', 'ZBlue-Seq' ],
         ) || 1;
+        my $BlueLevel = _GeneralCatalogDynamicFieldValueResolve(
+            Value      => $RawBlueLevel,
+            FieldNames => [ 'ZBlue-BlueLevel', 'ZBlue-Level', 'ZBlue-Seq' ],
+        ) || $RawBlueLevel;
 
         my $Chapter = _RecordValueGet(
             Record => $Record,
@@ -445,6 +483,7 @@ sub Run {
 
         push @ParsedRecords, {
             BlueLevel        => $BlueLevel,
+            RawBlueLevel     => $RawBlueLevel,
             Chapter          => $Chapter,
             Type             => $Type,
             RawType          => $RawType,

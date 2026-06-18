@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-17
+Last Updated: 2026-06-18
 
 ## Current Focus
 
@@ -774,3 +774,416 @@ Last Updated: 2026-06-17
 ### Next Priorities
 
 - Install/upgrade 0.0.90, restart PSGI/web workers, and retest customer preference defaults end-to-end.
+
+## 2026-06-17 Customer Request Hydration / Follow-up Ownership Design
+
+### Architectural Decisions
+
+* Customer request defaults are requester convenience values, not governance truth.
+* Customer defaults are stored on the CustomerUser object through:
+
+  * `ZUser-Application`
+  * `ZUser-Environment`
+  * `ZUser-Location`
+  * `ZUser-SupportProfile`
+* Request defaults should automatically hydrate new root governance requests during customer ticket creation.
+* Hydration occurs only when the ticket field is empty; explicitly supplied ticket values always win.
+* User defaults are snapshots at request creation time and must not remain linked to the CustomerUser record after ticket creation.
+* Follow-up remains a runtime corrective execution action and not a StateBook transition.
+* Follow-up child tickets inherit execution ownership context from the initiating child ticket.
+* PurpleBook execution must preserve ownership continuity so the initiating owner can continue the corrective workflow without reassignment surprises.
+* Successful PurpleBook completion returns the original child ticket to its previous execution owner and execution group.
+
+### Completed Design
+
+#### Customer Request Default Hydration
+
+When a new customer request is created:
+
+* `ZUser-Application` hydrates `ZTicket-Application`.
+* `ZUser-Environment` hydrates `ZTicket-Env`.
+* `ZUser-Location` hydrates `ZTicket-Location`.
+* `ZUser-SupportProfile` remains requester preference context and is not automatically written to execution ownership fields.
+
+#### Multi-Value Handling
+
+Customer preference fields are currently single-select.
+
+Ticket fields may be multi-select.
+
+Hydration rules:
+
+* Single → Single:
+
+  * Copy value directly.
+* Single → Multi:
+
+  * Wrap value as a single-item array.
+* Empty User Value:
+
+  * Do not write ticket value.
+* Existing Ticket Value:
+
+  * Do not overwrite.
+
+Example:
+
+Customer:
+
+* `ZUser-Location = Singapore DC`
+
+Ticket:
+
+* `ZTicket-Location` supports multiple values
+
+Result:
+
+* `["Singapore DC"]`
+
+#### Follow-up Ownership Propagation
+
+When Follow-up is executed:
+
+Source Child Ticket:
+
+* `ZTicket-Owner`
+* `ZTicket-OwnerGroup`
+
+must be copied to newly created PurpleBook child tickets.
+
+This preserves:
+
+* Visibility
+* Ownership continuity
+* Runtime action permissions
+* Corrective execution accountability
+
+#### Follow-up Return Ownership
+
+When PurpleBook execution completes successfully:
+
+* Original child ticket returns to `in-progress`.
+* Original child ticket retains:
+
+  * `ZTicket-Owner`
+  * `ZTicket-OwnerGroup`
+
+PurpleBook completion must not:
+
+* Reassign ownership.
+* Clear ownership.
+* Replace ownership with PurpleBook executor values.
+
+### Rejected Approaches
+
+* Do not force customers to repeatedly select Application, Environment, and Location for every request when defaults already exist.
+* Do not overwrite explicitly supplied ticket values using CustomerUser defaults.
+* Do not link tickets dynamically back to CustomerUser defaults after ticket creation.
+* Do not create new ownership fields for PurpleBook execution.
+* Do not recalculate ownership during PurpleBook return.
+* Do not transfer ownership to the last PurpleBook executor when returning to the original child ticket.
+
+### Next Priorities
+
+* Implement CustomerTicketMessage hydration from CustomerUser defaults.
+* Verify single-value to multi-value field conversion behavior.
+* Verify new customer requests receive default Application, Environment, and Location values.
+* Verify Follow-up child tickets inherit Owner and OwnerGroup.
+* Verify PurpleBook successful completion returns original child tickets to the same Owner and OwnerGroup.
+* Verify all runtime action visibility rules continue to function after ownership propagation.
+
+## 2026-06-18 Customer Request Hydration / Follow-up Ownership 0.0.91
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.91`.
+- Implemented CustomerTicketMessage request-default hydration:
+  - `ZUser-Application` hydrates empty `ZTicket-Application`.
+  - `ZUser-Environment` hydrates empty `ZTicket-Env`.
+  - `ZUser-Location` hydrates empty `ZTicket-Location`.
+  - Explicit ticket values still win.
+  - `ZUser-SupportProfile` remains requester preference context and is not written to execution ownership fields.
+- Added single-value to multi-value wrapping when the target ticket Dynamic Field is configured as multi-value.
+- Added Follow-up ownership propagation:
+  - Follow-up PurpleBook children inherit `ZTicket-Owner` from the initiating child.
+  - Follow-up PurpleBook children inherit `ZTicket-OwnerGroup` from the initiating child.
+  - Normal BlueBook child spawning remains unchanged unless ownership overrides are passed.
+- Generated `Kernel/Package/GovernanceDB-0.0.91.opm`.
+- `Kernel/Package/GovernanceDB-0.0.91.opm` SHA256: `1F90FE05B945A89AA4C7737FEAFF3EC7E0C0F30A68D544832819123B400CB68E`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.91.opm`: XML parsed successfully, version `0.0.91`, 156 file nodes, `MissingBase64=0`.
+- Embedded runtime overlay hashes matched package-source runtime overlay copies for:
+  - `CustomerTicketMessage.pm`
+  - `CustomerTicketZTSMAction.pm`
+  - `ZTSMBlueBookRuntime.pm`
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for:
+  - `Kernel/Modules/CustomerTicketMessage.pm`
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`
+
+### Architectural Decisions
+
+- Latest package field authority uses `ZTicket-Env`, not `ZTicket-Environment`.
+- Customer defaults are creation-time snapshots only; they do not create a live dependency on the CustomerUser defaults after ticket creation.
+- PurpleBook ownership inheritance is scoped to Follow-up child spawning and does not alter the successful return path, which only moves the original child ticket back to `in-progress`.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.91` package.
+- Verify CustomerTicketMessage creates new requests with defaults when Application, Environment, and Location are left empty.
+- Verify explicit CustomerTicketMessage values are not overwritten by CustomerUser defaults.
+- Verify Follow-up PurpleBook children inherit `ZTicket-Owner` and `ZTicket-OwnerGroup`.
+
+### Next Priorities
+
+- Install/upgrade 0.0.91, restart PSGI/web workers, and retest request-default hydration plus Follow-up ownership propagation.
+
+## 2026-06-18 BlueLevel GeneralCatalog Repair 0.0.92
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.92`.
+- Repaired BlueBook BlueLevel parsing for GeneralCatalog-backed values:
+  - `ZBlue-BlueLevel`, `ZBlue-Level`, and `ZBlue-Seq` now resolve GeneralCatalog item IDs back to their item names before runtime use.
+  - Example: raw GeneralCatalog item ID `207` resolves to BlueLevel value `1`.
+- Applied the repair in both:
+  - `ZTSMBlueBookReader`
+  - `ZTSMBlueBookRuntime`
+- This fixes both stored execution context (`ZTicket-BlueLevel`) and generated evidence article display for BlueBook orchestration and ChapterPlay initiation.
+- Generated `Kernel/Package/GovernanceDB-0.0.92.opm`.
+- `Kernel/Package/GovernanceDB-0.0.92.opm` SHA256: `2AA627296194A6BC6106DD12F9445B2BB506C3818DDE85E5F620F34CD751CDA9`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.92.opm`: XML parsed successfully, version `0.0.92`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across live source, package source, runtime overlay, and ZTSMOverlay copies for:
+  - `ZTSMBlueBookReader.pm`
+  - `ZTSMBlueBookRuntime.pm`
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for:
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`
+
+### Architectural Decisions
+
+- BlueLevel remains runtime choreography data sourced from BlueBook records.
+- GeneralCatalog IDs must not leak into ticket evidence articles when the catalog item name is the operational value.
+- The fix resolves values at parse time so sorting, child-ticket matching, ticket field storage, and evidence rendering all use the same runtime value.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.92` package.
+- Retest BlueBook orchestration article generation and confirm `BlueLevel` displays `1` rather than the raw GeneralCatalog item ID such as `207`.
+
+### Next Priorities
+
+- Install/upgrade 0.0.92, restart PSGI/web workers, and retest BlueBook orchestration from a BlueBook record whose BlueLevel is stored as a GeneralCatalog item ID.
+
+## 2026-06-18 Requester Owner Workspace Repair 0.0.93
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.93`.
+- Updated CustomerTicketMessage creation so new customer-created tickets snapshot the requester into `ZTicket-Owner` when `ZTicket-Owner` is empty.
+- Hardened `CustomerDashboard::TileTicketList` workspace lookup:
+  - Workspace tickets continue to resolve through SupportAssignment / `ZTicket-OwnerGroup`.
+  - Workspace tickets also resolve through direct `ZTicket-Owner`.
+  - Direct-owner lookup now checks both the dashboard `UserID` and `UserLogin` identity forms.
+- Synced changed files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.93.opm`.
+- `Kernel/Package/GovernanceDB-0.0.93.opm` SHA256: `A1C10FCAB0935A54D4FCDEF60E9C5C02DC846A49886C6775CE37D6994B795AEE`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.93.opm`: XML parsed successfully, version `0.0.93`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across live source, package source, runtime overlay, and ZTSMOverlay copies for:
+  - `CustomerTicketMessage.pm`
+  - `TileTicketList.pm`
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for:
+  - `Kernel/Modules/CustomerTicketMessage.pm`
+  - `Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm`
+
+### Architectural Decisions
+
+- Requester ownership on ticket creation is execution visibility context, not governance truth.
+- `ZTicket-Owner` is set only when empty so explicit/runtime assignment is preserved.
+- Customer workspace visibility is inclusive: SupportAssignment participation OR direct ticket ownership.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.93` package.
+- Retest new requester-created tickets and confirm they appear in the requester workspace.
+- Retest Follow-up PurpleBook child tickets and confirm they appear for the direct `ZTicket-Owner`.
+
+### Next Priorities
+
+- Install/upgrade 0.0.93, restart PSGI/web workers, and retest the customer dashboard workspace tile for requester-created tickets and Follow-up children.
+
+## 2026-06-18 Follow-up BlueLevel Compatibility Repair 0.0.94
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.94`.
+- Restored Follow-up action visibility for tickets created before the BlueLevel GeneralCatalog repair:
+  - BlueBook record parsing now preserves both resolved `BlueLevel` and original `RawBlueLevel`.
+  - `CustomerTicketZoom` Follow-up visibility matches the ticket `ZTicket-BlueLevel` against either representation.
+  - `CustomerTicketZTSMAction` Follow-up execution uses the same compatibility match.
+  - `ZTSMBlueBookRuntime` template lookup also matches either representation for existing tickets.
+- Synced changed runtime files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.94.opm`.
+- `Kernel/Package/GovernanceDB-0.0.94.opm` SHA256: `B5E79848451658ACE747A64DCD3E6E81F2C5EDB49E8A3F28FDAEEB03F0F80BCC`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.94.opm`: XML parsed successfully, version `0.0.94`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across live source, package source, runtime overlay, and ZTSMOverlay copies for:
+  - `CustomerTicketZoom.pm`
+  - `CustomerTicketZTSMAction.pm`
+  - `ZTSMBlueBookRuntime.pm`
+  - `ZTSMBlueBookReader.pm`
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for the four changed runtime modules.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Architectural Decisions
+
+- BlueLevel GeneralCatalog IDs remain repaired to readable operational values for new execution context and evidence.
+- Existing tickets that already stored the raw GeneralCatalog item ID remain valid runtime execution ledgers and must still expose Follow-up when their BlueBook record contains `ZBlue-PurpleBook`.
+- Compatibility is handled in matching logic; no new Dynamic Fields or governance recalculation are introduced.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.94` package.
+- Retest an existing Assessment ticket whose `ZTicket-BlueLevel` is a raw GeneralCatalog item ID such as `207` and confirm `Follow-up` appears in the header action menu.
+
+### Next Priorities
+
+- Install/upgrade 0.0.94, restart PSGI/web workers, and retest Follow-up visibility plus submission on the affected Assessment ticket.
+
+## 2026-06-18 Follow-up Pause / Requester Default Assignment Repair 0.0.95
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.95`.
+- Tightened Follow-up pause behavior:
+  - `CustomerTicketZoom` now hides customer runtime execution actions when the original child ticket state is `follow-up`.
+  - `CustomerTicketZTSMAction` now blocks direct runtime execution submissions while the ticket state is `follow-up`.
+  - The original Assessment child remains paused until PurpleBook completion returns it to `in-progress`.
+- Corrected Follow-up PurpleBook ownership spawning:
+  - Follow-up child tickets no longer receive a blanket `OwnerOverride` / `OwnerGroupOverride` from the initiating child.
+  - PurpleBook child assignment now follows the child BlueBook record profile and role path.
+- Repaired Requester Default assignment in both RoleDirector paths:
+  - If requester `ZUser-SupportProfile` is populated, RoleDirector assigns it to `ZTicket-OwnerGroup`.
+  - If requester `ZUser-SupportProfile` is empty, RoleDirector assigns the requester CustomerUserID to `ZTicket-Owner`.
+  - GenericAgent RoleDirector no longer skips requester-default repair just because an OwnerGroup is already present.
+- Synced changed runtime files across live source, package source, runtime overlay, PortedFromITSMConfigItem, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.95.opm`.
+- `Kernel/Package/GovernanceDB-0.0.95.opm` SHA256: `F887611CE3AB821E2E598A0D1AE1E28DF28EFB8D7C126872A8F87C5709F8E4DC`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.95.opm`: XML parsed successfully, version `0.0.95`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across all mirror copies for:
+  - `CustomerTicketZoom.pm`
+  - `CustomerTicketZTSMAction.pm`
+  - `Kernel/System/GenericAgent/ZTSMRoleDirector.pm`
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm`
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for the four changed runtime modules.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Architectural Decisions
+
+- `follow-up` is a corrective execution pause for the original child ticket, not an active Assessment submission state.
+- PurpleBook child assignment should be resolved by the child BlueBook record through RoleDirector, not copied wholesale from the initiating child.
+- Requester Default means requester preference first, direct requester ownership second:
+  - `ZUser-SupportProfile` present -> `ZTicket-OwnerGroup`.
+  - `ZUser-SupportProfile` empty -> `ZTicket-Owner`.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.95` package.
+- Retest Follow-up on an Assessment child and confirm `Submit Assessment` / `Reject` disappear while the ticket is in `follow-up`.
+- Retest the PurpleBook `Clarification Required` Task and confirm Requester Default assignment resolves to the requester support profile or requester CustomerUserID according to `ZUser-SupportProfile`.
+
+### Next Priorities
+
+- Install/upgrade 0.0.95, restart PSGI/web workers, and retest Follow-up pause plus requester clarification ownership end-to-end.
+
+## 2026-06-18 GovernanceRole Requester Default Code Repair 0.0.96
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.96`.
+- Corrected RoleDirector requester-default directive handling:
+  - BlueBook `Profile` continues to resolve to either SupportProfile or GovernanceRole.
+  - GovernanceRole `ZTSM-Code` / name such as `Requester Default` now normalizes to `REQUESTER-DEFAULT`.
+  - RoleDirector now treats `REQUESTER-DEFAULT` as the requester-default branch.
+  - Legacy `REQUESTER-SUPPORT-GROUP` remains accepted only as a backward-compatible alias.
+- Applied the correction in both RoleDirector paths:
+  - `Kernel/System/GenericAgent/ZTSMRoleDirector.pm`
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMRoleDirector.pm`
+- Synced changed runtime files across live source, package source, runtime overlay, PortedFromITSMConfigItem, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.96.opm`.
+- `Kernel/Package/GovernanceDB-0.0.96.opm` SHA256: `9F515FB791E9983A5ADFE03BB5EE054B655B198E06455CDF7E43AA100737DE86`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.96.opm`: XML parsed successfully, version `0.0.96`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across all RoleDirector mirror copies.
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for both RoleDirector modules.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Architectural Decisions
+
+- BlueBook `ZBlue-Profile` points to a GovernanceRole or SupportProfile.
+- GovernanceRole `ZTSM-Code` is the behavior contract; names/codes such as `Requester Default` must drive requester-default assignment directly.
+- `APP-PROFILE` and related directive keys are legacy normalized internal aliases, not values invented from BlueBook. The requester-default path must not depend on those aliases.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.96` package.
+- Retest the GenericAgent log and confirm `Unsupported governance profile: Requester Default` no longer appears.
+- Retest the PurpleBook `Clarification Required` Task requester-default assignment.
+
+### Next Priorities
+
+- Install/upgrade 0.0.96, restart PSGI/web workers, and rerun the Follow-up clarification flow.
+
+## 2026-06-18 Task-Like Take Ownership Visibility Repair 0.0.97
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.97`.
+- Repaired customer portal `Take Ownership` visibility for task-like execution tickets:
+  - `CustomerTicketZoom` now treats task-like tickets as ownership-actionable even when they do not expose normal assessment/approval outcome actions.
+  - Task-like detection continues to support real Ticket Type `Task` and fallback titles beginning `Task -`.
+- Repaired backend submission validation:
+  - `CustomerTicketZTSMAction` now accepts `TakeOwnership` for the same task-like ticket definition.
+- Preserved support-assignment authorization:
+  - Customer users still need `ztsm_action` access through direct ownership or SupportAssignment participation in `ZTicket-OwnerGroup`.
+  - A requester who is not in the ICS Support Team SupportAssignment can still reply, but cannot take ICS ownership.
+- Synced changed runtime files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.97.opm`.
+- `Kernel/Package/GovernanceDB-0.0.97.opm` SHA256: `C0EECD9E1E431305AB5E10D8FD1BBC00E1F491CB82141D927AF49C4821397AAB`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.97.opm`: XML parsed successfully, version `0.0.97`, 156 file nodes, `MissingBase64=0`.
+- Synced hashes matched across all `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` mirror copies.
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for both changed customer modules.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Architectural Decisions
+
+- Ownership claim is a runtime execution action for task-like ledgers and should not depend on the normal assessment/approval outcome-action list.
+- Support Assignment remains the authorization boundary for taking ownership of a SupportProfile-owned task.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.97` package.
+- Retest with a customer user who has SupportAssignment membership in `ICS Support Team` and confirm `Take Ownership` appears.
+- Retest with the requester account if it is not an ICS Support Team member and confirm it can reply but cannot take ownership.
+
+### Next Priorities
+
+- Install/upgrade 0.0.97, restart PSGI/web workers, and retest ownership claim on the clarification task.
