@@ -723,11 +723,22 @@ sub _ClassPreferencesEnsure {
         push @GroupIDs, $GroupID if $GroupID;
     }
 
+    my @Categories = grep {$_} (
+        ref $Class->{Categories} eq 'ARRAY' ? @{ $Class->{Categories} } : (),
+        $Class->{Category},
+    );
+    my %CategorySeen;
+    @Categories = grep { !$CategorySeen{$_}++ } @Categories;
+
+    my @VersionTrigger = ref $Class->{VersionTrigger} eq 'ARRAY' && @{ $Class->{VersionTrigger} }
+        ? @{ $Class->{VersionTrigger} }
+        : qw(Name Description DefinitionUpdate);
+
     my %Wanted = (
-        Categories          => $Class->{Category} ? [ $Class->{Category} ] : undef,
+        Categories          => @Categories ? \@Categories : undef,
         NumberModule        => $Class->{NumberModule} ? [ $Class->{NumberModule} ] : ['GOID'],
         VersionStringModule => $Class->{VersionStringModule} ? [ $Class->{VersionStringModule} ] : ['Incremental'],
-        VersionTrigger      => [ qw(Name Description DefinitionUpdate) ],
+        VersionTrigger      => \@VersionTrigger,
         Permission          => @GroupIDs ? \@GroupIDs : undef,
     );
 
@@ -1105,6 +1116,7 @@ sub _DynamicFieldConfigSanitize {
     my %Sanitized      = %{$Config};
 
     delete $Sanitized{DeplStateIDs};
+    delete $Sanitized{ZTSMStatusIDs};
 
     if ( ref $Sanitized{ClassIDs} eq 'ARRAY' ) {
         my @ClassIDs;

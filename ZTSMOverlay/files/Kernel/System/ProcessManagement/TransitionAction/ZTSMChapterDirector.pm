@@ -849,40 +849,6 @@ sub Run {
         return 1;
     }
 
-    if ( ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
-        $TicketObject->TicketStateSet(
-            TicketID => $ParentTicketID,
-            State    => 'in-progress',
-            UserID   => 1,
-        );
-
-        ZTSMArticleCreate(
-            %Param,
-            TicketID => $ParentTicketID,
-            Subject  => 'ZTSM Follow-up Completed',
-            Body     =>
-                  "** Note: This is a system-generated follow-up orchestration update message.\n\n"
-                . "Follow-up BlueBook completed successfully.\n\n"
-                . "PurpleBook:\n"
-                . ( $BlueBook || 'N/A' )
-                . "\n\n"
-                . "Original ticket returned to in-progress.",
-            HistoryComment => 'ZTSM: Follow-up completed',
-            UserID         => 1,
-        );
-
-        $LogObject->Log(
-            Priority => 'notice',
-            Message  =>
-                  'ZTSMChapterDirector: '
-                . 'Follow-up BlueBook complete, original ticket returned to in-progress '
-                . "ParentTicketID=$ParentTicketID "
-                . "PurpleBook=$BlueBook",
-        );
-
-        return 1;
-    }
-
     my $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBook,
@@ -916,6 +882,91 @@ sub Run {
         CurrentBlueLevel => $BlueLevel,
         Records          => \@BlueBookRecords,
     );
+
+    if ( ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
+        if ( defined $NextBlueLevel && $NextBlueLevel ne '' ) {
+            my @CreatedTicketIDs = Kernel::System::ZTSMBlueBookRuntime::LevelSpawn(
+                ParentTicket            => \%ParentTicket,
+                ParentTicketID          => $ParentTicketID,
+                BlueBookID              => $BlueBook,
+                BlueLevel               => $NextBlueLevel,
+                Records                 => \@BlueBookRecords,
+                UserID                  => 1,
+                ArticleParam            => \%Param,
+                PreserveParentBlueLevel => 1,
+                AllowRepeatClosed       => 1,
+            );
+
+            ZTSMArticleCreate(
+                %Param,
+                TicketID => $ParentTicketID,
+                Subject  => 'ZTSM Follow-up Advanced',
+                Body     =>
+                      "** Note: This is a system-generated follow-up orchestration update message.\n\n"
+                    . "Follow-up PurpleBook advanced to the next level.\n\n"
+                    . "PurpleBook:\n"
+                    . ( $BlueBook || 'N/A' )
+                    . "\n\n"
+                    . "From BlueLevel:\n"
+                    . ( defined $BlueLevel ? $BlueLevel : 'N/A' )
+                    . "\n\n"
+                    . "To BlueLevel:\n"
+                    . $NextBlueLevel
+                    . "\n\n"
+                    . "Follow-up Tickets Created:\n"
+                    . ( join( ', ', @CreatedTicketIDs ) || 'None' ),
+                HistoryComment => 'ZTSM: Follow-up advanced',
+                UserID         => 1,
+            );
+
+            $LogObject->Log(
+                Priority => 'notice',
+                Message  =>
+                      'ZTSMChapterDirector: '
+                    . 'Follow-up PurpleBook advanced '
+                    . "ParentTicketID=$ParentTicketID "
+                    . "PurpleBook=$BlueBook "
+                    . "FromBlueLevel=$BlueLevel "
+                    . "ToBlueLevel=$NextBlueLevel "
+                    . 'Created='
+                    . scalar @CreatedTicketIDs,
+            );
+
+            return 1;
+        }
+
+        $TicketObject->TicketStateSet(
+            TicketID => $ParentTicketID,
+            State    => 'in-progress',
+            UserID   => 1,
+        );
+
+        ZTSMArticleCreate(
+            %Param,
+            TicketID => $ParentTicketID,
+            Subject  => 'ZTSM Follow-up Completed',
+            Body     =>
+                  "** Note: This is a system-generated follow-up orchestration update message.\n\n"
+                . "Follow-up BlueBook completed successfully.\n\n"
+                . "PurpleBook:\n"
+                . ( $BlueBook || 'N/A' )
+                . "\n\n"
+                . "Original ticket returned to in-progress.",
+            HistoryComment => 'ZTSM: Follow-up completed',
+            UserID         => 1,
+        );
+
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  =>
+                  'ZTSMChapterDirector: '
+                . 'Follow-up BlueBook complete, original ticket returned to in-progress '
+                . "ParentTicketID=$ParentTicketID "
+                . "PurpleBook=$BlueBook",
+        );
+
+        return 1;
+    }
 
     if ( defined $NextBlueLevel && $NextBlueLevel ne '' ) {
         $LogObject->Log(

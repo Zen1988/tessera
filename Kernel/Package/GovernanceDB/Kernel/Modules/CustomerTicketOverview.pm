@@ -223,18 +223,13 @@ sub _ZTSMSupportProfileList {
     my @CustomerUserIDs = _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
     my %AssignmentID;
 
-    for my $CustomerUserID (@CustomerUserIDs) {
-        my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
-            Classes => ['SupportAssignment'],
-            'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-                Equals => $CustomerUserID,
-            },
-            Result => 'ARRAY',
-            Limit  => 1000,
-        );
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+    );
 
-        $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
-    }
+    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
 
     my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
@@ -263,12 +258,26 @@ sub _ZTSMSupportProfileList {
 
         my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
 
-        next ASSIGNMENT if !_ZTSMCustomerUserMatches(
-            AssignmentUser => $AssignmentUser,
-            CustomerUserID => $Param{CustomerUserID},
-        );
+        my $CustomerMatch;
+        CUSTOMERUSERID:
+        for my $CustomerUserID (@CustomerUserIDs) {
+            if (
+                _ZTSMCustomerUserMatches(
+                    AssignmentUser => $AssignmentUser,
+                    CustomerUserID => $CustomerUserID,
+                )
+                )
+            {
+                $CustomerMatch = 1;
+                last CUSTOMERUSERID;
+            }
+        }
+
+        next ASSIGNMENT if !$CustomerMatch;
 
         my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
+        $AssignmentSupportProfile ||= $Assignment->{XMLData}
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'info',
@@ -331,6 +340,7 @@ sub _ZTSMWorkableTicketIDs {
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my %Candidate;
+    my @Candidate;
 
     my %SearchBase = (
         Result  => 'ARRAY',
@@ -341,15 +351,6 @@ sub _ZTSMWorkableTicketIDs {
 
     $SearchBase{StateType} = $Param{StateType}
         if $Param{StateType};
-
-    my @DirectOwnerTicketIDs = $TicketObject->TicketSearch(
-        %SearchBase,
-        'DynamicField_ZTicket-Owner' => {
-            Equals => $Param{CustomerUserID},
-        },
-    );
-
-    $Candidate{$_} = 1 for @DirectOwnerTicketIDs;
 
     PROFILE:
     for my $SupportProfile ( _ZTSMSupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
@@ -362,12 +363,52 @@ sub _ZTSMWorkableTicketIDs {
             },
         );
 
-        $Candidate{$_} = 1 for @ProfileTicketIDs;
+        for my $TicketID (@ProfileTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    for my $CustomerUserID ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
+        next if !$CustomerUserID;
+
+        my @OwnerTicketIDs = $TicketObject->TicketSearch(
+            %SearchBase,
+            'DynamicField_ZTicket-Owner' => {
+                Equals => $CustomerUserID,
+            },
+        );
+
+        for my $TicketID (@OwnerTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    if ( $Param{CustomerUserLogin} && $Param{CustomerUserLogin} ne $Param{CustomerUserID} ) {
+        for my $CustomerUserLogin ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserLogin} ) ) {
+            next if !$CustomerUserLogin;
+
+            my @OwnerTicketIDs = $TicketObject->TicketSearch(
+                %SearchBase,
+                'DynamicField_ZTicket-Owner' => {
+                    Equals => $CustomerUserLogin,
+                },
+            );
+
+            for my $TicketID (@OwnerTicketIDs) {
+                next if !$TicketID;
+                next if $Candidate{$TicketID}++;
+                push @Candidate, $TicketID;
+            }
+        }
     }
 
     return _ZTSMPermissionFilter(
         CustomerUserID => $Param{CustomerUserID},
-        TicketIDs      => [ sort { $a <=> $b } keys %Candidate ],
+        TicketIDs      => \@Candidate,
     );
 }
 
@@ -635,15 +676,30 @@ sub Run {
     my $AllTickets      = 0;
     my $AllTicketsTotal = 0;
     my $TicketObject    = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %ZTSMFilterTicketIDs;
+    my %StandardFilterTicketIDs;
 
     for my $Filter ( sort keys %{ $Filters{ $Self->{Subaction} } } ) {
         $Counter++;
 
-        my $Count = $TicketObject->TicketSearch(
+        my @StandardTicketIDs = $TicketObject->TicketSearch(
             %{ $Filters{ $Self->{Subaction} }->{$Filter}->{Search} },
             %SearchInArchive,
-            Result => 'COUNT',
-        ) || 0;
+            Result => 'ARRAY',
+        );
+        $StandardFilterTicketIDs{$Filter} = \@StandardTicketIDs;
+
+        my @ZTSMWorkableTicketIDs = _ZTSMWorkableTicketIDs(
+            CustomerUserID    => $Self->{UserID},
+            CustomerUserLogin => $Self->{UserLogin},
+            StateType         => $Filters{ $Self->{Subaction} }->{$Filter}->{Search}->{StateType},
+            SortBy            => $SortBy,
+            OrderBy           => $OrderByCurrent,
+        );
+        $ZTSMFilterTicketIDs{$Filter} = \@ZTSMWorkableTicketIDs;
+
+        my %Counted;
+        my $Count = grep { !$Counted{$_}++ } ( @StandardTicketIDs, @ZTSMWorkableTicketIDs );
 
         my $ClassA = '';
         if ( $Filter eq $FilterCurrent ) {
@@ -926,18 +982,17 @@ sub Run {
             }
         }
 
-        my @ViewableTickets = $TicketObject->TicketSearch(
-            %{ $Filters{ $Self->{Subaction} }->{$FilterCurrent}->{Search} },
-            %SearchInArchive,
-            Result => 'ARRAY',
-        );
+        my @ViewableTickets = @{ $StandardFilterTicketIDs{$FilterCurrent} || [] };
 
         my @ZTSMWorkableTicketIDs = _ZTSMWorkableTicketIDs(
-            CustomerUserID => $Self->{UserID},
-            StateType      => $Filters{ $Self->{Subaction} }->{$FilterCurrent}->{Search}->{StateType},
-            SortBy         => $SortBy,
-            OrderBy        => $OrderByCurrent,
+            CustomerUserID    => $Self->{UserID},
+            CustomerUserLogin => $Self->{UserLogin},
+            StateType         => $Filters{ $Self->{Subaction} }->{$FilterCurrent}->{Search}->{StateType},
+            SortBy            => $SortBy,
+            OrderBy           => $OrderByCurrent,
         );
+        @ZTSMWorkableTicketIDs = @{ $ZTSMFilterTicketIDs{$FilterCurrent} || [] }
+            if $ZTSMFilterTicketIDs{$FilterCurrent};
 
         if (@ZTSMWorkableTicketIDs) {
             my %Seen;

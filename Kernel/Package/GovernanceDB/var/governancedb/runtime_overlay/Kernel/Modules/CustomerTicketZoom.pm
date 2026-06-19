@@ -2415,12 +2415,11 @@ sub _ZTSMRuntimeActions {
     {
         push @RuntimeActions, {
             Action          => 'CompleteTask',
-            Label           => 'Complete Task',
+            Label           => 'Complete',
             RiskFieldsHTML  => $Self->_ZTSMTaskCompletionHTML(
                 Ticket => $Ticket,
             ),
             RemarksRequired => 0,
-            InActionMenu    => 1,
         };
     }
 
@@ -2481,11 +2480,12 @@ sub _ZTSMRuntimeActions {
 
     if ( $FailbackAccess && $ActionableType ) {
         push @RuntimeActions, {
-            Action         => 'Unlock',
-            Label          => 'Unlock',
-            RiskFieldsHTML => $Self->_ZTSMUnlockAssignmentHTML(
+            Action          => 'Unlock',
+            Label           => 'Unlock',
+            RiskFieldsHTML  => $Self->_ZTSMUnlockAssignmentHTML(
                 Ticket => $Ticket,
             ),
+            InActionMenu    => 1,
         };
     }
 
@@ -2593,13 +2593,6 @@ sub _ZTSMTaskCompletionHTML {
 
 sub _ZTSMTaskOutcomeValues {
     my ( $Self, %Param ) = @_;
-
-    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
-        Name => 'ZTicket-Outcome',
-    );
-
-    my $PossibleValues = IsHashRefWithData($DynamicFieldConfig) ? $DynamicFieldConfig->{Config}->{PossibleValues} : undef;
-    return $PossibleValues if IsHashRefWithData($PossibleValues);
 
     return {
         0    => 'Successful',

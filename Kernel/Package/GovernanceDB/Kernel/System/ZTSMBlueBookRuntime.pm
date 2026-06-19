@@ -718,10 +718,31 @@ sub LevelSpawn {
         UserID         => $Param{UserID} || 1,
     );
 
-    return @ExistingTicketIDs if @ExistingTicketIDs;
-
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
+
+    if (@ExistingTicketIDs) {
+        return @ExistingTicketIDs if !$Param{AllowRepeatClosed};
+
+        my @OpenExistingTicketIDs;
+        EXISTINGTICKETID:
+        for my $ExistingTicketID (@ExistingTicketIDs) {
+            my %ExistingTicket = $TicketObject->TicketGet(
+                TicketID      => $ExistingTicketID,
+                DynamicFields => 0,
+                UserID        => $Param{UserID} || 1,
+                Silent        => 1,
+            );
+
+            next EXISTINGTICKETID if !%ExistingTicket;
+            next EXISTINGTICKETID if ( $ExistingTicket{StateType} || '' ) eq 'closed';
+
+            push @OpenExistingTicketIDs, $ExistingTicketID;
+        }
+
+        return @OpenExistingTicketIDs if @OpenExistingTicketIDs;
+    }
+
     my @CreatedTicketIDs;
 
     RECORD:

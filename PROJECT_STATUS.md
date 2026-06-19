@@ -1184,6 +1184,239 @@ PurpleBook completion must not:
 - Retest with a customer user who has SupportAssignment membership in `ICS Support Team` and confirm `Take Ownership` appears.
 - Retest with the requester account if it is not an ICS Support Team member and confirm it can reply but cannot take ownership.
 
+## 2026-06-19 Task Completion Outcome and Action Placement Repair 0.0.98
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.98`.
+- Repaired customer portal Task completion outcome selection:
+  - `Complete` now renders as a first-class runtime action instead of an action-menu item.
+  - Task outcome choices are rendered from the canonical stored outcome keys `0`, `1`, `2`, `-1`, and `-2` with user-facing labels `Successful`, `No Action`, `Partial Success`, `Failed`, and `Rollback`.
+  - The form no longer trusts the deployed `ZTicket-Outcome` DynamicField `PossibleValues` orientation, avoiding duplicate numeric labels such as `1` and invalid submitted labels.
+  - Backend submission normalizes older/display-label posts such as `Successful` back to stored values such as `0` before validation and DynamicField write.
+- Renamed the runtime customer action label from `Complete Task` to `Complete`.
+- Moved `Unlock` into the customer action menu.
+- Synced changed runtime files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.98.opm`.
+- `Kernel/Package/GovernanceDB-0.0.98.opm` SHA256: `D3B1195B3757C2448ED0E160F964EF0F667C6821E81A86C1C81C22B08D12DB20`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.98.opm`: XML parsed successfully, version `0.0.98`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- Synced hashes matched across all `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` mirror copies.
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for both changed customer modules.
+- `git diff --check` reported only the existing CRLF normalization warning for `Kernel/Package/GovernanceDB/GovernanceDB.sopm`.
+
+### Architectural Decisions
+
+- Task completion remains a runtime execution action and writes execution evidence only; it does not invoke StateBook or BlueBook transitions directly outside the existing chapter director evaluation after closure.
+- The Task outcome form uses the canonical runtime outcome map instead of the DynamicField display configuration because completion logic depends on stored outcome values.
+- `Unlock` is treated as a utility/failback action and belongs in the action menu, while `Complete` is the primary task outcome action.
+
+### Known Issues / Follow-Up
+
+- Superseded by `Kernel/Package/GovernanceDB-0.0.99.opm`; install/upgrade `0.0.99` instead because `0.0.98` still dropped submitted outcome value `0`.
+- Retest the Task completion dropdown and confirm it shows text labels once each, stores numeric `ZTicket-Outcome`, and closes the Task according to the selected outcome.
+- Retest that `Complete` appears in the main action row and `Unlock` appears under the menu.
+
+## 2026-06-19 Task Completion Outcome Zero Preservation Diagnostic 0.0.99
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.99`.
+- Corrected Task completion request parameter handling:
+  - `ZTicketOutcome` is now read with definedness preservation instead of `|| ''`.
+  - This preserves valid submitted outcome value `0` instead of converting it to empty before validation.
+- Added requested error-level diagnostic logging for every `CompleteTask` submission:
+  - Log priority is `error`.
+  - Message prefix is `ZTSM CompleteTask outcome debug`.
+  - Log includes `TicketID`, `CustomerUser`, raw posted `ZTicketOutcome`, normalized outcome value, and mapped task state.
+- Synced changed `CustomerTicketZTSMAction.pm` across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.99.opm`.
+- `Kernel/Package/GovernanceDB-0.0.99.opm` SHA256: `E256CFC4E54A8E00D27967CC0B2C1A04F1861C465D3A0C03482175D4CCCA6FD5`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.99.opm`: XML parsed successfully, version `0.0.99`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- Synced hashes matched across all `CustomerTicketZTSMAction.pm` mirror copies.
+- Perl syntax check passed with `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketZTSMAction.pm`.
+
+### Architectural Decisions
+
+- `0` is a valid Task outcome and must be preserved as a submitted value; empty-string fallback must only happen when the parameter is truly undefined.
+- The temporary diagnostic is intentionally error-level because runtime OTOBO access is using error logs for immediate customer portal debugging.
+
+### Known Issues / Follow-Up
+
+- Superseded by `Kernel/Package/GovernanceDB-0.0.100.opm`; install/upgrade `0.0.100` instead because `0.0.99` did not advance multi-level follow-up PurpleBooks or mirror task completion evidence to the direct parent.
+- Retest `Complete` with `Successful`; expected debug log should show `RawZTicketOutcome='0'`, `NormalizedZTicketOutcome='0'`, and `TaskState='closed successful'`.
+- Once confirmed, consider removing or lowering the diagnostic log level.
+
+## 2026-06-19 Follow-up PurpleBook Advancement and Parent Evidence Repair 0.0.100
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.100`.
+- Repaired Task completion evidence propagation:
+  - `CompleteTask` still writes the task completion article to the completed child ticket.
+  - `CompleteTask` now also writes a child task completion article to the direct parent from `ZTicket-Parent`.
+  - The parent article includes the completed child ticket summary, outcome, details, and uploaded attachments.
+- Repaired follow-up PurpleBook multi-level advancement:
+  - `ZTSMChapterDirector` no longer returns the original follow-up parent to `in-progress` immediately after the first completed PurpleBook level.
+  - When the direct parent ticket is in `follow-up` and the PurpleBook has a next BlueLevel, the director now spawns that next PurpleBook level directly.
+  - The original parent ticket `ZTicket-BlueLevel` remains preserved during PurpleBook advancement.
+  - The original ticket returns to `in-progress` only when the follow-up PurpleBook has no next BlueLevel.
+- Added parent evidence article `ZTSM Follow-up Advanced` when a follow-up PurpleBook advances to another level.
+- Synced changed runtime files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.100.opm`.
+- `Kernel/Package/GovernanceDB-0.0.100.opm` SHA256: `BD160619494E650F715079A59A2CDFFD9738CEBB02B9F7E20F67604B4BCC69CA`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.100.opm`: XML parsed successfully, version `0.0.100`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- Synced hashes matched across all `CustomerTicketZTSMAction.pm` and `ZTSMChapterDirector.pm` mirror copies.
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for `CustomerTicketZTSMAction.pm` and `ZTSMChapterDirector.pm`.
+
+### Architectural Decisions
+
+- Follow-up/PurpleBook advancement is execution choreography under the direct follow-up parent, not a StateBook transition.
+- PurpleBook advancement must use the completed child ticket's current PurpleBook BlueLevel, not the original parent ticket's preserved `ZTicket-BlueLevel`.
+- Child task completion is execution evidence and should be visible on the direct parent execution ledger.
+
+### Known Issues / Follow-Up
+
+- Superseded by `Kernel/Package/GovernanceDB-0.0.101.opm`; install/upgrade `0.0.101` instead because `0.0.100` still reused closed PurpleBook children on a repeated Follow-up run.
+- Retest a multi-level PurpleBook and confirm completion of the first follow-up task spawns the second follow-up task.
+- Retest that completion of a follow-up task writes the completion article on the direct parent ticket.
+- Once Task outcome diagnostics are no longer needed, consider removing or lowering the `ZTSM CompleteTask outcome debug` error-level log.
+
+## 2026-06-19 Repeat Follow-up Closed PurpleBook Child Reuse Repair 0.0.101
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.101`.
+- Repaired repeated Follow-up execution after a previous PurpleBook run completed:
+  - `ZTSMBlueBookRuntime::LevelSpawn` now supports `AllowRepeatClosed`.
+  - Default behavior still reuses any existing child tickets for normal BlueBook duplicate protection.
+  - When `AllowRepeatClosed` is enabled, existing open children are reused, but closed children from a previous run no longer block creation of new follow-up children.
+- Enabled `AllowRepeatClosed` for PurpleBook follow-up spawning:
+  - Initial customer `FollowUp` action.
+  - ChapterDirector advancement to later PurpleBook BlueLevels.
+- Synced changed runtime files across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.101.opm`.
+- `Kernel/Package/GovernanceDB-0.0.101.opm` SHA256: `E6EEBDBD3844FC56B0E3097EC299A1C6AD67F602AA874D2D9404AD86F93E80B6`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.101.opm`: XML parsed successfully, version `0.0.101`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- Synced hashes matched across all `ZTSMBlueBookRuntime.pm`, `CustomerTicketZTSMAction.pm`, and `ZTSMChapterDirector.pm` mirror copies.
+- Perl syntax checks passed with `perl -I. -IKernel\cpan-lib -c` for all three changed modules.
+
+### Architectural Decisions
+
+- Repeat Follow-up is a new execution run under the same original child and PurpleBook.
+- Closed PurpleBook children are historical execution evidence and must not block a new follow-up run.
+- Active/open PurpleBook children are still reused to avoid duplicate active follow-up tasks.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.101` package.
+- Retest: complete the first follow-up run, trigger Follow-up again on the original child, and confirm a new PurpleBook task is created instead of the article referencing the old closed task.
+- Once Task outcome diagnostics are no longer needed, consider removing or lowering the `ZTSM CompleteTask outcome debug` error-level log.
+
 ### Next Priorities
 
-- Install/upgrade 0.0.97, restart PSGI/web workers, and retest ownership claim on the clarification task.
+- Install/upgrade 0.0.101, restart PSGI/web workers, and retest repeated Follow-up after previous PurpleBook completion.
+
+## 2026-06-19 Customer Chapter Overview Workspace Logic Repair 0.0.102
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.102`.
+- Repaired the customer chapter/ticket overview page so it uses the same workspace ownership logic as the front dashboard tile:
+  - SupportAssignment discovery now scans SupportAssignment objects and matches the current customer user's reference IDs, instead of relying only on direct DynamicField search.
+  - SupportProfile values can be read from the normal DynamicField value or the stored XMLData fallback.
+  - Workable ticket lookup now includes tickets owned by all customer user reference IDs and by `CustomerUserLogin` when it differs from `UserID`.
+  - Overview filter counts and the empty-state decision now use the merged requester ticket IDs plus ZTSM workspace ticket IDs.
+- Synced `CustomerTicketOverview.pm` across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Generated `Kernel/Package/GovernanceDB-0.0.102.opm`.
+- `Kernel/Package/GovernanceDB-0.0.102.opm` SHA256: `7F41963C74208F5E027188CFFCC763A094E7D2013BAFB3C4A5E200D9F203A7DB`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.102.opm`: XML parsed successfully, version `0.0.102`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- Synced hashes matched across all `CustomerTicketOverview.pm` mirror copies.
+- Perl syntax check passed with `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketOverview.pm`.
+- `git diff --check` reported only CRLF normalization warnings for touched files.
+
+### Architectural Decisions
+
+- The customer overview/chapter page should not fall back to requester-only ticket visibility when the dashboard workspace already knows the customer has assigned execution ledgers.
+- Workspace visibility remains based on execution ownership fields and SupportAssignment participation, not lifecycle state or hardcoded routing.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.102` package.
+- Retest the chapter/ticket overview page with a user who has assigned SupportAssignment work and confirm the page lists the same active workspace tickets that appear on the dashboard front page.
+- Once Task outcome diagnostics are no longer needed, consider removing or lowering the `ZTSM CompleteTask outcome debug` error-level log.
+
+### Next Priorities
+
+- Install/upgrade 0.0.102, restart PSGI/web workers, and retest the customer chapter overview plus the repeated Follow-up flow from 0.0.101.
+
+## 2026-06-19 Export-Driven Governance Object Defaults Refresh 0.0.103
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.103`.
+- Regenerated `Kernel/Package/GovernanceDB/var/governancedb/default_classes.json` from the latest exports:
+  - `Export/GOID_2026-06-19.yml`
+  - `Export/ALL_DynamicFields_2026-06-19 06_28_14.yml`
+- Added the new first-class Governance Object classes from the export defaults:
+  - `CriticalityProfile`
+  - `DataClassification`
+  - `ExposureProfile`
+  - `FunctionProfile`
+  - `ServiceTier`
+- Refreshed Application class defaults so Application now references first-class Governance Object profile classes instead of the older simple dropdown-style fields:
+  - `ZTSMAppSystem-CriticalityProfile`
+  - `ZTSMAppSystem-DataClassificationProfile`
+  - `ZTSMAppSystem-ExposureProfile`
+  - `ZTSMAppSystem-ServiceTier`
+  - `ZTSMAppSystem-DefaultApprovalModel`
+  - `ZTSMAppSystem-DefaultApprovalProfile`
+- Added exported role defaults including `CMDB Backlinks` and `CMDB Description`.
+- Enriched DynamicField Set members from the full DynamicFields export so fresh installs create nested Set fields such as `ZBlue-Chapter`, `ZBlue-PurpleBook`, and template risk fields with their real field types and config.
+- Updated GovernanceDB bootstrap install/upgrade handling:
+  - Class preferences now preserve exported multi-category definitions.
+  - Class preferences now preserve exported `VersionTrigger` values.
+  - DynamicField config sanitization strips source-environment `ZTSMStatusIDs`, matching existing protection for stale `DeplStateIDs`.
+- Generated `Kernel/Package/GovernanceDB-0.0.103.opm`.
+- `Kernel/Package/GovernanceDB-0.0.103.opm` SHA256: `4E1281BDF390D3BBF9B694112CA331A6E674FCCDB12106EAD52EFFA3B2FE0349`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.0.103.opm`: XML parsed successfully, version `0.0.103`, 156 file nodes, `MissingBase64=0`, with `CodeInstall` and `CodeUpgrade`.
+- `default_classes.json` parsed successfully with 21 classes and 21 roles.
+- Confirmed new first-class classes are present: `CriticalityProfile`, `DataClassification`, `ExposureProfile`, `FunctionProfile`, and `ServiceTier`.
+- Confirmed Application defaults contain the new GO-backed Application fields and no longer contain the old `ZTSMAppSystem-Criticality`, `ZTSMAppSystem-DataClassification`, or `ZTSMAppSystem-Tier` class fields.
+- Confirmed nested Set definitions are enriched, for example `ZBlue-Chapter` is `Text` and `ZBlue-PurpleBook` is `GovernanceObject`.
+- Perl syntax check passed with `perl -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\GovernanceDB\Bootstrap.pm`.
+- `git diff --check` reported only CRLF normalization warnings for touched files.
+
+### Architectural Decisions
+
+- The latest export is treated as the source for matching Governance Object class and role definitions.
+- Existing package-only class and role entries are preserved by name for upgrade safety instead of destructively replacing the entire defaults file.
+- Removed Application fields are not auto-deleted from existing upgraded systems; they are no longer present in fresh-install defaults, while upgrade cleanup can be handled separately if needed.
+- Source-environment numeric status filters from exports must not be installed directly into another environment because those IDs are deployment-specific.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.103` package.
+- Retest fresh install or upgrade and confirm the new classes, class fields, DynamicField Sets, and roles are created automatically.
+- If existing environments should remove the old Application dropdown fields, add an explicit controlled cleanup/migration step rather than relying on defaults refresh.
+
+### Next Priorities
+
+- Install/upgrade 0.0.103, restart PSGI/web workers, and verify the refreshed GO classes and Application profile references in GovernanceDB admin/customer flows.

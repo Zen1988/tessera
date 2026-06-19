@@ -39,7 +39,8 @@ sub Run {
     my $SupportProfile             = $ParamObject->GetParam( Param => 'SupportProfile' ) || '';
     my $TargetServiceSupportMapID  = $ParamObject->GetParam( Param => 'TargetServiceSupportMapID' ) || '';
     my $TargetServiceID            = $ParamObject->GetParam( Param => 'TargetServiceID' ) || '';
-    my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' ) || '';
+    my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' );
+    $ZTicketOutcome = '' if !defined $ZTicketOutcome;
     my $ZTicketResult  = $ParamObject->GetParam( Param => 'ZTicketResult' ) || '';
 
     if ( !$TicketID ) {
@@ -600,6 +601,9 @@ sub Run {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
         }
 
+        my $ZTicketOutcomeRaw = $ZTicketOutcome;
+        $ZTicketOutcome = $Self->_TaskOutcomeValue( Outcome => $ZTicketOutcome );
+
         if ( !$ZTicketResult ) {
             return $LayoutObject->CustomerErrorScreen(
                 Message => 'Please enter task completion details.',
@@ -608,6 +612,17 @@ sub Run {
 
         my $TaskState = $Self->_TaskOutcomeState(
             Outcome => $ZTicketOutcome,
+        );
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "ZTSM CompleteTask outcome debug: TicketID=$TicketID; CustomerUser='$Self->{UserID}'; RawZTicketOutcome='"
+                . _LogValue($ZTicketOutcomeRaw)
+                . "'; NormalizedZTicketOutcome='"
+                . _LogValue($ZTicketOutcome)
+                . "'; TaskState='"
+                . _LogValue($TaskState)
+                . "'.",
         );
 
         if ( !$TaskState ) {
@@ -678,13 +693,37 @@ sub Run {
         $Self->_RuntimeArticleCreate(
             TicketID            => $TicketID,
             RuntimeAction       => $RuntimeAction,
-            Label               => 'Complete Task',
+            Label               => 'Complete',
             Subject             => 'Task completion submitted',
             Body                => $Body,
             Config              => $Config,
             CustomerPanelUserID => $CustomerPanelUserID,
             Attachments         => \@Attachments,
         );
+
+        my $ParentTicketID = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Parent'} );
+        if ($ParentTicketID) {
+            my $ParentBody = "** Note: This is a system-generated task completion message from a child execution ticket.\n\n"
+                . "Completed Child Ticket:\n"
+                . $Self->_TicketSummary( Ticket => \%Ticket )
+                . "\n\n"
+                . "Outcome:\n"
+                . ( $OutcomeLabel || $ZTicketOutcome )
+                . "\n\n"
+                . "Details:\n"
+                . $ZTicketResult;
+
+            $Self->_RuntimeArticleCreate(
+                TicketID            => $ParentTicketID,
+                RuntimeAction       => $RuntimeAction,
+                Label               => 'Complete',
+                Subject             => 'Child task completion submitted',
+                Body                => $ParentBody,
+                Config              => $Config,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Attachments         => \@Attachments,
+            );
+        }
 
         $Self->_ChapterDirectorRun(
             TicketID            => $TicketID,
@@ -1622,6 +1661,7 @@ sub _FollowUpApply {
             UserID => $UserID,
         },
         PreserveParentBlueLevel => 1,
+        AllowRepeatClosed       => 1,
         UserID                  => $UserID,
     );
 
@@ -2486,15 +2526,6 @@ sub _TaskOutcomeLabel {
     my $Outcome = _NormalizeValue( $Param{Outcome} );
     return if !defined $Outcome || $Outcome eq '';
 
-    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
-        Name => 'ZTicket-Outcome',
-    );
-
-    my $PossibleValues = IsHashRefWithData($DynamicFieldConfig) ? $DynamicFieldConfig->{Config}->{PossibleValues} : undef;
-    return $PossibleValues->{$Outcome}
-        if IsHashRefWithData($PossibleValues)
-        && defined $PossibleValues->{$Outcome};
-
     my %Fallback = (
         0    => 'Successful',
         1    => 'No Action',
@@ -2504,6 +2535,36 @@ sub _TaskOutcomeLabel {
     );
 
     return $Fallback{$Outcome} || $Outcome;
+}
+
+sub _TaskOutcomeValue {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my %ValueForLabel = (
+        Successful        => '0',
+        'No Action'       => '1',
+        'Partial Success' => '2',
+        Failed            => '-1',
+        Rollback          => '-2',
+    );
+
+    return $ValueForLabel{$Outcome} if defined $ValueForLabel{$Outcome};
+    return $Outcome;
+}
+
+sub _LogValue {
+    my ($Value) = @_;
+
+    return '<undef>' if !defined $Value;
+    return '<empty>' if $Value eq '';
+
+    $Value =~ s{\r}{\\r}g;
+    $Value =~ s{\n}{\\n}g;
+
+    return $Value;
 }
 
 sub _OwnerTargetAllowed {
