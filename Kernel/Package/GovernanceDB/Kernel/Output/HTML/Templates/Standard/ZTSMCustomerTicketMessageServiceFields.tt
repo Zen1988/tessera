@@ -167,7 +167,37 @@
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDateTime .oooAltCheck {
     display: none;
 }
+
+#NewCustomerTicket .ZTSMServicePayloadTools {
+    width: 100%;
+    max-width: 1060px;
+    margin: 12px auto 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+#NewCustomerTicket .ZTSMServicePayloadTools button {
+    min-height: 34px;
+}
+
+#NewCustomerTicket .ZTSMServicePayloadCode {
+    width: 100%;
+    min-height: 220px;
+    box-sizing: border-box;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+#NewCustomerTicket .ZTSMServicePayloadStatus {
+    flex: 1 1 260px;
+    min-width: 220px;
+    color: #5b6078;
+}
 </style>
+<script type="text/javascript" src="[% Config("Frontend::JavaScriptPath") %]thirdparty/sheetjs-0.20.3/xlsx.full.min.js"></script>
 <script>
 (function () {
     "use strict";
@@ -233,6 +263,7 @@
         ZTSMServiceExtensionMark(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
         ZTSMServiceExtensionInitialize(Start, End);
+        ZTSMServicePayloadToolsEnsure(Start, End);
     }
 
     function ZTSMServiceExtensionMark(Start, End) {
@@ -444,12 +475,13 @@
                 var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
                     End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
 
-                if (Start && End) {
-                    ZTSMServiceExtensionSetIndexNormalize(Start, End);
-                    ZTSMServiceExtensionLayoutFix(Start, End);
-                    ZTSMServiceExtensionDatepickerInit(Start, End);
-                }
-            }, Delay);
+            if (Start && End) {
+                ZTSMServiceExtensionSetIndexNormalize(Start, End);
+                ZTSMServiceExtensionLayoutFix(Start, End);
+                ZTSMServiceExtensionDatepickerInit(Start, End);
+                ZTSMServicePayloadToolsEnsure(Start, End);
+            }
+        }, Delay);
         });
     }
 
@@ -539,6 +571,657 @@
                 window.console.warn('ZTSM service extension init skipped:', Error);
             }
         }
+    }
+
+    function ZTSMServicePayloadNormalize(Value) {
+        return String(Value || '')
+            .replace(/^DynamicField_/, '')
+            .replace(/_(?:\d+|Template)(?:[A-Za-z]*(?:\[\])?)?$/, '')
+            .replace(/[^a-z0-9]+/gi, '')
+            .toLowerCase();
+    }
+
+    function ZTSMServicePayloadEventFire(Element) {
+        var Event;
+
+        if (!Element) {
+            return;
+        }
+
+        Event = document.createEvent('Event');
+        Event.initEvent('change', true, true);
+        Element.dispatchEvent(Event);
+        Event = document.createEvent('Event');
+        Event.initEvent('input', true, true);
+        Element.dispatchEvent(Event);
+    }
+
+    function ZTSMServicePayloadFieldBaseName(Element) {
+        var Name = Element && (Element.name || Element.id) || '';
+
+        Name = Name.replace(/^Autocomplete_/, '');
+        Name = Name.replace(/^DynamicField_/, '');
+        Name = Name.replace(/(?:Day|Month|Year|Hour|Minute)$/, '');
+        Name = Name.replace(/_(?:\d+|Template)(?:[A-Za-z]*(?:\[\])?)?$/, '');
+
+        return Name;
+    }
+
+    function ZTSMServicePayloadLabelText(Element) {
+        var ID = Element && Element.id,
+            Label;
+
+        if (!ID) {
+            return '';
+        }
+
+        Label = document.querySelector('label[for="' + ID.replace(/"/g, '\\"') + '"]');
+        if (!Label && Element.closest) {
+            Label = Element.closest('.FieldCell, .Row_DynamicField');
+            Label = Label ? Label.querySelector('label') : null;
+        }
+
+        return Label ? Label.textContent.replace(/\*/g, '').replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function ZTSMServicePayloadObjectLookup(Object, Names) {
+        var Wanted = {},
+            Key;
+
+        Names.forEach(function (Name) {
+            Wanted[ZTSMServicePayloadNormalize(Name)] = 1;
+        });
+
+        for (Key in Object) {
+            if (!Object.hasOwnProperty(Key)) {
+                continue;
+            }
+            if (Wanted[ZTSMServicePayloadNormalize(Key)]) {
+                return Object[Key];
+            }
+        }
+
+        return undefined;
+    }
+
+    function ZTSMServicePayloadInputSet(Element, Value) {
+        var TextValue = Value === null || Value === undefined ? '' : String(Value),
+            LowerValue = TextValue.toLowerCase(),
+            ExplicitID,
+            Hidden,
+            Matched;
+
+        if (!Element || !Element.name) {
+            return Promise.resolve();
+        }
+
+        if (Element.name.indexOf('Autocomplete_DynamicField_') === 0) {
+            ExplicitID = TextValue.match(/::\s*(\d+)\s*$/);
+            Hidden = document.getElementById(Element.name.replace(/^Autocomplete_/, ''));
+
+            if (ExplicitID && Hidden) {
+                Hidden.value = ExplicitID[1];
+                Element.value = TextValue.replace(/::\s*\d+\s*$/, '');
+                ZTSMServicePayloadEventFire(Hidden);
+                ZTSMServicePayloadEventFire(Element);
+                return Promise.resolve();
+            }
+
+            Element.value = TextValue;
+            ZTSMServicePayloadEventFire(Element);
+            return ZTSMServicePayloadReferenceResolve(Element, TextValue);
+        }
+
+        if (Element.tagName === 'SELECT') {
+            Array.prototype.forEach.call(Element.options || [], function (Option) {
+                if (Matched) {
+                    return;
+                }
+                if (
+                    String(Option.value).toLowerCase() === LowerValue
+                    || String(Option.text || '').trim().toLowerCase() === LowerValue
+                ) {
+                    Matched = Option.value;
+                }
+            });
+
+            Element.value = Matched !== undefined ? Matched : TextValue;
+            ZTSMServicePayloadEventFire(Element);
+            return Promise.resolve();
+        }
+
+        if (Element.type === 'checkbox') {
+            Element.checked = /^(?:1|true|yes|y|on)$/i.test(TextValue);
+            ZTSMServicePayloadEventFire(Element);
+            return Promise.resolve();
+        }
+
+        Element.value = TextValue;
+        ZTSMServicePayloadEventFire(Element);
+        return Promise.resolve();
+    }
+
+    function ZTSMServicePayloadReferenceResolve(Element, Value) {
+        return new Promise(function (Resolve) {
+            var URL,
+                QueryString,
+                XHR,
+                Form,
+                Hidden,
+                SetIndex = '',
+                SetOuterFieldList,
+                MultiValueClass;
+
+            if (!Value || !window.Core || !Core.Config || !Element.id || Element.id.indexOf('Autocomplete_') !== 0) {
+                Resolve();
+                return;
+            }
+
+            Hidden = document.getElementById(Element.id.replace(/^Autocomplete_/, ''));
+            if (!Hidden) {
+                Resolve();
+                return;
+            }
+
+            SetOuterFieldList = window.jQuery ? window.jQuery(Element).parents('.DFSetOuterField') : [];
+            if (SetOuterFieldList.length) {
+                MultiValueClass = Array.prototype.filter.call(SetOuterFieldList[0].parentElement.classList, function (ClassName) {
+                    return /^MultiValue_\d+$/.test(ClassName);
+                })[0];
+                if (MultiValueClass) {
+                    SetIndex = ';SetIndex=' + MultiValueClass.replace(/^MultiValue_/, '');
+                }
+            }
+
+            Form = Element.closest('form');
+            URL = Core.Config.Get('Baselink');
+            QueryString = 'Action=AgentReferenceSearch;Term=' + encodeURIComponent(Value)
+                + ';Field=' + encodeURIComponent(Element.id)
+                + SetIndex
+                + ';MaxResults=20;';
+
+            if (window.Core && Core.AJAX && typeof Core.AJAX.SerializeForm === 'function' && Form && window.jQuery) {
+                QueryString += Core.AJAX.SerializeForm(window.jQuery(Form), {
+                    Action: 1,
+                    Subaction: 1,
+                    Term: 1,
+                    Field: 1,
+                    MaxResults: 1
+                });
+            }
+
+            XHR = new XMLHttpRequest();
+            XHR.open('GET', URL + QueryString, true);
+            XHR.onreadystatechange = function () {
+                var Result,
+                    Match;
+
+                if (XHR.readyState !== 4) {
+                    return;
+                }
+
+                if (XHR.status >= 200 && XHR.status < 300) {
+                    try {
+                        Result = JSON.parse(XHR.responseText || '[]');
+                    }
+                    catch (Error) {
+                        Result = [];
+                    }
+
+                    Match = (Result || []).filter(function (Item) {
+                        return String(Item.Value || '').toLowerCase() === String(Value).toLowerCase()
+                            || String(Item.Key || '') === String(Value);
+                    })[0] || (Result || [])[0];
+
+                    if (Match && Match.Key) {
+                        if (
+                            window.Core
+                            && Core.Agent
+                            && Core.Agent.DynamicFieldReferenceSearch
+                            && typeof Core.Agent.DynamicFieldReferenceSearch.AddTicketReference === 'function'
+                        ) {
+                            Core.Agent.DynamicFieldReferenceSearch.AddTicketReference(Element.id, Match.Value, Match.Key);
+                        }
+                        else {
+                            Hidden.value = Match.Key;
+                            Element.value = Match.Value;
+                            ZTSMServicePayloadEventFire(Hidden);
+                        }
+                    }
+                }
+
+                Resolve();
+            };
+            XHR.send();
+        });
+    }
+
+    function ZTSMServicePayloadRowsFromWorksheet(Worksheet) {
+        var Rows,
+            Header;
+
+        if (!window.XLSX || !Worksheet) {
+            return [];
+        }
+
+        Rows = XLSX.utils.sheet_to_json(Worksheet, {
+            header: 1,
+            defval: ''
+        });
+
+        if (!Rows.length) {
+            return [];
+        }
+
+        Header = Rows.shift().map(function (Value) {
+            return String(Value || '').trim();
+        });
+
+        return Rows.filter(function (Row) {
+            return Row.some(function (Value) {
+                return String(Value || '').trim() !== '';
+            });
+        }).map(function (Row) {
+            var Object = {};
+
+            Header.forEach(function (Name, Index) {
+                if (Name) {
+                    Object[Name] = Row[Index];
+                }
+            });
+
+            return Object;
+        });
+    }
+
+    function ZTSMServicePayloadCSVParse(Text) {
+        var Rows = [],
+            Row = [],
+            Value = '',
+            Index,
+            Char,
+            Next,
+            Headers;
+
+        for (Index = 0; Index < Text.length; Index++) {
+            Char = Text.charAt(Index);
+            Next = Text.charAt(Index + 1);
+
+            if (Char === '"') {
+                Index++;
+                while (Index < Text.length) {
+                    Char = Text.charAt(Index);
+                    Next = Text.charAt(Index + 1);
+                    if (Char === '"' && Next === '"') {
+                        Value += '"';
+                        Index += 2;
+                        continue;
+                    }
+                    if (Char === '"') {
+                        break;
+                    }
+                    Value += Char;
+                    Index++;
+                }
+                continue;
+            }
+
+            if (Char === ',') {
+                Row.push(Value);
+                Value = '';
+                continue;
+            }
+
+            if (Char === '\n' || Char === '\r') {
+                if (Char === '\r' && Next === '\n') {
+                    Index++;
+                }
+                Row.push(Value);
+                Rows.push(Row);
+                Row = [];
+                Value = '';
+                continue;
+            }
+
+            Value += Char;
+        }
+
+        Row.push(Value);
+        Rows.push(Row);
+        Headers = (Rows.shift() || []).map(function (Header) {
+            return String(Header || '').trim();
+        });
+
+        return Rows.filter(function (DataRow) {
+            return DataRow.some(function (Cell) {
+                return String(Cell || '').trim() !== '';
+            });
+        }).map(function (DataRow) {
+            var Object = {};
+
+            Headers.forEach(function (Header, CellIndex) {
+                if (Header) {
+                    Object[Header] = DataRow[CellIndex] || '';
+                }
+            });
+
+            return Object;
+        });
+    }
+
+    function ZTSMServicePayloadFileRead(File) {
+        return new Promise(function (Resolve, Reject) {
+            var Reader = new FileReader();
+
+            Reader.onload = function (Event) {
+                var Name = File.name || '',
+                    Workbook,
+                    Rows;
+
+                try {
+                    if (/\.csv$/i.test(Name)) {
+                        Resolve(ZTSMServicePayloadCSVParse(String(Event.target.result || '')));
+                        return;
+                    }
+
+                    if (!window.XLSX) {
+                        Reject(new Error('XLSX library is not loaded.'));
+                        return;
+                    }
+
+                    Workbook = XLSX.read(Event.target.result, {
+                        type: 'array'
+                    });
+                    Rows = ZTSMServicePayloadRowsFromWorksheet(Workbook.Sheets[Workbook.SheetNames[0]]);
+                    Resolve(Rows);
+                }
+                catch (Error) {
+                    Reject(Error);
+                }
+            };
+            Reader.onerror = Reject;
+
+            if (/\.csv$/i.test(File.name || '')) {
+                Reader.readAsText(File);
+            }
+            else {
+                Reader.readAsArrayBuffer(File);
+            }
+        });
+    }
+
+    function ZTSMServicePayloadSetRows(FieldContainer) {
+        var Rows = [];
+
+        Array.prototype.forEach.call(FieldContainer.querySelectorAll('input[type="hidden"][name^="SetIndex_"]'), function (Input) {
+            var Cell = ZTSMServiceExtensionSetRowGet(Input);
+
+            if (!Cell || Input.value === 'Template' || Cell.classList.contains('MultiValue_Template') || ZTSMServiceExtensionElementHidden(Cell)) {
+                return;
+            }
+
+            Rows.push(Cell);
+        });
+
+        return Rows;
+    }
+
+    function ZTSMServicePayloadSetRowsEnsure(FieldContainer, Count) {
+        var Rows = ZTSMServicePayloadSetRows(FieldContainer),
+            AddButton,
+            Guard = 0;
+
+        while (Rows.length < Count && Guard < Count + 5) {
+            Guard++;
+            AddButton = FieldContainer.querySelector('.AddValueRow');
+            if (!AddButton) {
+                break;
+            }
+            AddButton.click();
+            ZTSMServiceExtensionSetIndexNormalize(ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'), ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'));
+            Rows = ZTSMServicePayloadSetRows(FieldContainer);
+        }
+
+        return Rows;
+    }
+
+    function ZTSMServicePayloadContainerName(FieldContainer) {
+        var Input = FieldContainer.querySelector('input[type="hidden"][name^="SetIndex_"]'),
+            SingleInput,
+            Name;
+
+        if (Input) {
+            return Input.name.replace(/^SetIndex_/, '');
+        }
+
+        SingleInput = FieldContainer.querySelector('[name^="DynamicField_"], [name^="Autocomplete_DynamicField_"]');
+        Name = ZTSMServicePayloadFieldBaseName(SingleInput);
+        return Name || '';
+    }
+
+    function ZTSMServicePayloadControls(Row) {
+        var Controls = [];
+
+        Array.prototype.forEach.call(Row.querySelectorAll('select, textarea, input'), function (Element) {
+            if (!Element.name || Element.type === 'hidden' || Element.name.indexOf('SetIndex_') === 0) {
+                return;
+            }
+            if (Element.name.indexOf('DynamicField_') !== 0 && Element.name.indexOf('Autocomplete_DynamicField_') !== 0) {
+                return;
+            }
+            if (Element.name.indexOf('DynamicField_') === 0 && document.getElementById('Autocomplete_' + Element.name)) {
+                return;
+            }
+
+            Controls.push(Element);
+        });
+
+        return Controls;
+    }
+
+    function ZTSMServicePayloadRowApply(Row, Data, SetName) {
+        var Work = [];
+
+        ZTSMServicePayloadControls(Row).forEach(function (Element) {
+            var FieldName = ZTSMServicePayloadFieldBaseName(Element),
+                Label = ZTSMServicePayloadLabelText(Element),
+                Value = ZTSMServicePayloadObjectLookup(Data, [
+                    FieldName,
+                    'DynamicField_' + FieldName,
+                    Label,
+                    SetName + '.' + FieldName,
+                    SetName + '.' + Label,
+                    'DynamicField_' + SetName + '.' + FieldName
+                ]);
+
+            if (Value === undefined) {
+                return;
+            }
+
+            Work.push(ZTSMServicePayloadInputSet(Element, Value));
+        });
+
+        return Promise.all(Work);
+    }
+
+    function ZTSMServicePayloadApply(Payload) {
+        var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+            End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
+            Root = Start && End ? Start.parentNode : document,
+            Rows,
+            Work = [];
+
+        if (!Root) {
+            return Promise.resolve();
+        }
+
+        Rows = Array.isArray(Payload) ? Payload : [ Payload || {} ];
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField'), function (FieldContainer) {
+            var SetName = ZTSMServicePayloadContainerName(FieldContainer),
+                SetPayload,
+                SetRows;
+
+            if (!SetName) {
+                return;
+            }
+
+            if (FieldContainer.querySelector('input[type="hidden"][name^="SetIndex_"]')) {
+                SetPayload = ZTSMServicePayloadObjectLookup(Payload || {}, [ SetName, 'DynamicField_' + SetName ]);
+                SetPayload = Array.isArray(SetPayload) ? SetPayload : Rows;
+                SetRows = ZTSMServicePayloadSetRowsEnsure(FieldContainer, SetPayload.length);
+                SetPayload.forEach(function (RowData, Index) {
+                    if (SetRows[Index]) {
+                        Work.push(ZTSMServicePayloadRowApply(SetRows[Index], RowData || {}, SetName));
+                    }
+                });
+            }
+            else {
+                Work.push(ZTSMServicePayloadRowApply(FieldContainer, Rows[0] || {}, SetName));
+            }
+        });
+
+        return Promise.all(Work).then(function () {
+            ZTSMServiceExtensionSetIndexNormalize(Start, End);
+            ZTSMServiceExtensionLayoutFix(Start, End);
+        });
+    }
+
+    function ZTSMServicePayloadCollect() {
+        var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+            End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
+            Root = Start && End ? Start.parentNode : document,
+            Payload = {};
+
+        if (!Root) {
+            return Payload;
+        }
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField'), function (FieldContainer) {
+            var SetName = ZTSMServicePayloadContainerName(FieldContainer),
+                Rows;
+
+            if (!SetName) {
+                return;
+            }
+
+            if (FieldContainer.querySelector('input[type="hidden"][name^="SetIndex_"]')) {
+                Payload[SetName] = [];
+                Rows = ZTSMServicePayloadSetRows(FieldContainer);
+                Rows.forEach(function (Row) {
+                    var RowData = {};
+
+                    ZTSMServicePayloadControls(Row).forEach(function (Element) {
+                        var Name = ZTSMServicePayloadFieldBaseName(Element);
+
+                        RowData[Name] = Element.value;
+                    });
+                    Payload[SetName].push(RowData);
+                });
+            }
+            else {
+                ZTSMServicePayloadControls(FieldContainer).forEach(function (Element) {
+                    Payload[SetName] = Element.value;
+                });
+            }
+        });
+
+        return Payload;
+    }
+
+    function ZTSMServicePayloadStatus(Tools, Message) {
+        var Status = Tools ? Tools.querySelector('.ZTSMServicePayloadStatus') : null;
+
+        if (Status) {
+            Status.textContent = Message || '';
+        }
+    }
+
+    function ZTSMServicePayloadToolsEnsure(Start, End) {
+        var Existing = ZTSMFirst('#ZTSMServicePayloadTools'),
+            Tools,
+            Upload,
+            Code,
+            ImportButton,
+            CodeButton,
+            ApplyButton;
+
+        if (!Start || !End || Existing) {
+            return;
+        }
+
+        Tools = document.createElement('div');
+        Tools.id = 'ZTSMServicePayloadTools';
+        Tools.className = 'ZTSMServicePayloadTools';
+        Tools.innerHTML = ''
+            + '<button type="button" class="CallForAction" data-ztsm-payload-import="1"><span>Import</span></button>'
+            + '<button type="button" class="CallForAction" data-ztsm-payload-code="1"><span>Code</span></button>'
+            + '<button type="button" class="CallForAction Hidden" data-ztsm-payload-apply="1"><span>Apply</span></button>'
+            + '<input type="file" class="Hidden" accept=".xlsx,.xls,.csv,text/csv" data-ztsm-payload-file="1"/>'
+            + '<span class="ZTSMServicePayloadStatus"></span>'
+            + '<textarea class="ZTSMServicePayloadCode Hidden" spellcheck="false"></textarea>';
+
+        Start.parentNode.insertBefore(Tools, Start);
+
+        Upload = Tools.querySelector('[data-ztsm-payload-file]');
+        Code = Tools.querySelector('.ZTSMServicePayloadCode');
+        ImportButton = Tools.querySelector('[data-ztsm-payload-import]');
+        CodeButton = Tools.querySelector('[data-ztsm-payload-code]');
+        ApplyButton = Tools.querySelector('[data-ztsm-payload-apply]');
+
+        ImportButton.addEventListener('click', function () {
+            Upload.click();
+        });
+
+        Upload.addEventListener('change', function () {
+            var File = Upload.files && Upload.files[0];
+
+            if (!File) {
+                return;
+            }
+
+            ZTSMServicePayloadStatus(Tools, 'Importing...');
+            ZTSMServicePayloadFileRead(File).then(function (Rows) {
+                return ZTSMServicePayloadApply(Rows).then(function () {
+                    ZTSMServicePayloadStatus(Tools, Rows.length + ' row(s) imported.');
+                    Upload.value = '';
+                });
+            }).catch(function (Error) {
+                ZTSMServicePayloadStatus(Tools, Error && Error.message ? Error.message : 'Import failed.');
+                Upload.value = '';
+            });
+        });
+
+        CodeButton.addEventListener('click', function () {
+            var Hidden = Code.classList.contains('Hidden');
+
+            if (Hidden) {
+                Code.value = JSON.stringify(ZTSMServicePayloadCollect(), null, 2);
+                Code.classList.remove('Hidden');
+                ApplyButton.classList.remove('Hidden');
+            }
+            else {
+                Code.classList.add('Hidden');
+                ApplyButton.classList.add('Hidden');
+            }
+        });
+
+        ApplyButton.addEventListener('click', function () {
+            var Payload;
+
+            try {
+                Payload = JSON.parse(Code.value || '{}');
+            }
+            catch (Error) {
+                ZTSMServicePayloadStatus(Tools, 'Invalid JSON.');
+                return;
+            }
+
+            ZTSMServicePayloadStatus(Tools, 'Applying...');
+            ZTSMServicePayloadApply(Payload).then(function () {
+                ZTSMServicePayloadStatus(Tools, 'Payload applied.');
+            });
+        });
     }
 
     function ZTSMServiceExtensionDatepickerConfigEnsure() {
@@ -653,6 +1336,7 @@
 
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
+        ZTSMServicePayloadToolsEnsure(Start, End);
     }
 
     function ZTSMServiceExtensionWatch() {
@@ -760,6 +1444,7 @@
             if (Start && End) {
                 ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
+                ZTSMServicePayloadToolsEnsure(Start, End);
             }
         });
     }
@@ -774,6 +1459,7 @@
                     ZTSMServiceExtensionMark(Start, End);
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
                     ZTSMServiceExtensionLayoutFix(Start, End);
+                    ZTSMServicePayloadToolsEnsure(Start, End);
                 }
                 ZTSMServiceExtensionWatch();
             });
@@ -786,6 +1472,7 @@
                 ZTSMServiceExtensionMark(Start, End);
                 ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
+                ZTSMServicePayloadToolsEnsure(Start, End);
             }
             ZTSMServiceExtensionWatch();
         }

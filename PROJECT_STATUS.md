@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-18
+Last Updated: 2026-06-22
 
 ## Current Focus
 
@@ -1420,3 +1420,259 @@ PurpleBook completion must not:
 ### Next Priorities
 
 - Install/upgrade 0.0.103, restart PSGI/web workers, and verify the refreshed GO classes and Application profile references in GovernanceDB admin/customer flows.
+
+## 2026-06-22 Governance as Code YAML/JSON Foundation 0.0.104
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.104`.
+- Added `Kernel::System::GovernanceObject::Document` as the first document-codec service for Governance as Code:
+  - Exports Governance Objects as YAML or JSON document hashes.
+  - Imports YAML or JSON documents through the existing `GovernanceObjectAdd` / `GovernanceObjectUpdate` APIs.
+  - Preserves normal GOID generation for new objects unless a document identifies an existing object by number or unique class/name.
+  - Resolves `ztsm_status` by GeneralCatalog name or ID.
+  - Exports Dynamic Fields under a `fields` hash using existing field names only.
+  - Resolves GovernanceObject and GovernanceObjectVersion reference fields by exact object name first, then GOID/number, then `ZTSM-Code` where available.
+  - Allows explicit ID fallback with `Name::123` for reference fields.
+  - Resolves GeneralCatalog Dynamic Field values by name before storing IDs.
+  - Recurses into DynamicField Set rows so nested reference fields can be represented in editor-friendly YAML/JSON.
+- Added agent popup module `AgentGovernanceObjectDocument` and template `AgentGovernanceObjectDocument.tt`.
+- Added a `YAML/JSON` action to the Governance Object zoom menu.
+- Registered the new agent frontend module and loader settings in `GovernanceDB.xml`.
+- Added new module/template/service files to the authoritative SOPM file list.
+- Generated `Kernel/Package/GovernanceDB-0.0.104.opm`.
+- `Kernel/Package/GovernanceDB-0.0.104.opm` SHA256: `0734975E068546A6611E2CD4FEC096608CF4FD0F2799877E921B703217F779BB`.
+
+### Validation
+
+- `GovernanceDB.xml` parsed successfully as XML.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.104.opm`: XML parsed successfully, version `0.0.104`, 159 file nodes, `MissingBase64=0`.
+- `git diff --check` passed.
+- Perl syntax checks could not be run in the current desktop runtime because no `perl.exe` / `perl` executable is available.
+
+### Architectural Decisions
+
+- Governance as Code starts as a document-codec service rather than a one-off UI parser, so the same import/export rules can later be reused for ticket, CMDB, and integration surfaces.
+- The codec delegates writes to existing GovernanceObject APIs to preserve versioning, history, link sync, DynamicField driver behavior, and generated GOIDs.
+- Reference fields default to human/code resolution and only accept raw IDs through the explicit `::ID` escape form.
+- The UI entry point is an editor-format popup from Governance Object zoom; the existing rendered UI remains unchanged.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is still needed in OTOBO using the generated `0.0.104` package.
+- Runtime verification is needed that the `YAML/JSON` popup appears from Governance Object zoom for `governance-db` / `admin` users.
+- Runtime verification is needed for import/update of Set fields that contain nested GovernanceObject references.
+- Runtime verification is needed for reference resolution by unique name, GOID/number, `ZTSM-Code`, and explicit `Name::ID`.
+- Perl syntax checks should be run inside the OTOBO Perl runtime before installation if available.
+
+### Next Priorities
+
+- Install/upgrade 0.0.104, restart PSGI/web workers, and test export/import against StateBook, BlueBook, ServiceSupportMap, and Application profile reference fields.
+- Extend the same document-codec pattern to ticket and CMDB adapters after the Governance Object path is accepted.
+
+## 2026-06-22 TESSERA Ticket CSV/XLSX Import Export 0.0.105
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.105`.
+- Added `Kernel::System::TESSERA::TicketTable` as the first tabular ticket import/export service:
+  - Exports selected tickets to CSV or XLSX using OTOBO's existing `Kernel::System::CSV` wrapper.
+  - Uses the package/runtime-native `Excel::Writer::XLSX` writer for Excel export; no Python runtime prerequisite was introduced.
+  - Exports the requested ticket table columns: `ticket_id`, `type`, `parent`, `title`, `description`, `application`, `environment`, `location`, `created_date`, `created_by`, `customer_data`, `ownergroup`, `owner`, `state`, `service`, and `service_payload`.
+  - Maps TESSERA ownership and request context columns to existing custom ticket Dynamic Fields:
+    - `parent` -> `ZTicket-Parent`
+    - `application` -> `ZTicket-Application`
+    - `environment` -> `ZTicket-Env`
+    - `location` -> `ZTicket-Location`
+    - `ownergroup` -> `ZTicket-OwnerGroup`
+    - `owner` -> `ZTicket-Owner`
+  - Exports `customer_data` as JSON with `customer_id` and `customer_user_id`.
+  - Exports `service_payload` as JSON by reading the selected ticket service's `ZService-Field` configuration and collecting the matching ticket Dynamic Fields.
+  - Imports CSV updates for existing tickets by `ticket_id`.
+  - Imports title/type/state/service updates through OTOBO ticket APIs.
+  - Imports TESSERA ticket context fields through Dynamic Field backend APIs.
+  - Imports `customer_data` JSON through `TicketCustomerSet`.
+  - Imports `service_payload` JSON only for fields declared by the ticket's selected service through `ZService-Field` when that declaration exists.
+- Added agent module `AgentTicketTESSERATable` and template `AgentTicketTESSERATable.tt`.
+- Registered `AgentTicketTESSERATable` in `ZTSMGovernanceRuntime.xml`.
+- Added a `Table Export` link on agent ticket zoom for the current ticket.
+- Added new module/template/service files to the authoritative SOPM file list.
+- Generated `Kernel/Package/GovernanceDB-0.0.105.opm`.
+- `Kernel/Package/GovernanceDB-0.0.105.opm` SHA256: `7D568B2130E81AFFE3F428E1B4A79BB51CBF346C2A40245426642788905C5AB1`.
+
+### Validation
+
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- SOPM file list check passed: 162 file nodes, no missing source files.
+- `Kernel/Package/GovernanceDB-0.0.105.opm`: XML parsed successfully, version `0.0.105`, 162 file nodes, `MissingBase64=0`.
+- `git diff --check` passed.
+- Perl syntax checks could not be run in the current desktop runtime because no `perl.exe` / `perl` executable is available.
+
+### Architectural Decisions
+
+- CSV is the canonical import format for this package slice because OTOBO already ships reliable CSV parsing.
+- XLSX is export-only for now because the package already includes a native Perl XLSX writer but no XLSX reader.
+- Python was not introduced as a package prerequisite; adding Python or vendoring a Perl XLSX reader remains a later explicit decision if XLSX import becomes mandatory.
+- `owner` and `ownergroup` intentionally use custom TESSERA fields `ZTicket-Owner` and `ZTicket-OwnerGroup`, not OTOBO owner or queue/group routing fields.
+- Service payload stays generic by using `ZService-Field` as the service's field contract instead of hardcoding service-specific payload fields.
+- Ticket import currently updates existing tickets by `ticket_id`; it does not create brand-new tickets because the requested column contract does not include all safe ticket creation defaults such as queue and priority.
+
+### Known Issues / Follow-Up
+
+- Superseded by `Kernel/Package/GovernanceDB-0.0.106.opm`; install/upgrade `0.0.106` instead because `0.0.105` kept ticket table export admin-oriented/current-ticket-oriented instead of providing access-scoped Ticket menu downloads.
+- Perl syntax checks should be run inside the OTOBO Perl runtime before installation if available.
+- Runtime verification is needed for CSV export/import on tickets with `ZTicket-Application`, `ZTicket-Env`, `ZTicket-Location`, `ZTicket-OwnerGroup`, and `ZTicket-Owner`.
+- Runtime verification is needed for `service_payload` export/import using a service with populated `ZService-Field`.
+- XLSX import is not implemented yet; add a reader dependency only if the operational workflow requires direct `.xlsx` imports.
+- Ticket creation from CSV is not implemented yet; add it only after defining the required defaulting contract for queue, priority, article type/sender, and lifecycle-safe initialization.
+
+### Next Priorities
+
+- Install/upgrade 0.0.106, restart PSGI/web workers, and test ticket CSV export/import from the agent UI.
+- Confirm the exported `service_payload` JSON matches the dynamic service fields shown in the customer request form.
+- Decide whether CSV import is sufficient for governance integration workflows or whether XLSX import should be added with an explicit dependency plan.
+
+## 2026-06-22 Access-Scoped Ticket Table Download Repair 0.0.106
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.106`.
+- Reworked ticket table export/download so it is available from the agent Ticket menu, not only from a specific ticket zoom action.
+- Added `Frontend::Navigation###AgentTicketTESSERATable###002-Ticket` so agents can open `Table Export` from the Ticket navigation area.
+- Removed the admin/governance-db group restriction from `AgentTicketTESSERATable` module registration; export scope is now controlled by ticket permissions.
+- Added access enforcement in `Kernel::System::TESSERA::TicketTable`:
+  - Export checks `TicketPermission(Type => 'ro')` for every requested ticket.
+  - Import checks `TicketPermission(Type => 'rw')` before updating a ticket.
+  - Leaving the ticket ID list empty exports tickets returned by `TicketSearch(UserID => ..., Permission => 'ro')`, limited to 10,000 rows.
+  - The search includes both archived and unarchived tickets through `ArchiveFlags => ['y', 'n']`.
+- Updated the export form flow so opening from a specific ticket pre-fills that ticket ID, while clearing the field exports all readable tickets.
+- Regenerated `Kernel/Package/GovernanceDB-0.0.106.opm`.
+- `Kernel/Package/GovernanceDB-0.0.106.opm` SHA256: `C0CDEFEBD8EF98BAD24DA4884F00A51F5B840D710162EBD520ECBA1E2BAD3CEC`.
+
+### Validation
+
+- Found Strawberry Perl at `C:\Strawberry\perl\bin\perl.exe` and used it for syntax validation.
+- Perl syntax checks passed:
+  - `Kernel/Package/GovernanceDB/Kernel/System/TESSERA/TicketTable.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentTicketTESSERATable.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGovernanceObjectDocument.pm`
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.106.opm`: XML parsed successfully, version `0.0.106`, 162 file nodes, `MissingBase64=0`.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Ticket table download is an access-scoped utility: the user can only export tickets readable through OTOBO ticket permission logic.
+- The Ticket menu export page is the broad download surface; the ticket zoom link remains a convenience entry point for one-ticket export.
+- CSV import remains available through the same module but is protected by per-ticket `rw` checks.
+- Direct database-wide export is intentionally avoided; "all" means "all tickets readable by this user".
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.106` package.
+- Runtime verification is needed that the Ticket menu shows `Table Export` for normal agents.
+- Runtime verification is needed that leaving Ticket IDs empty exports only tickets readable by the current agent.
+- Runtime verification is needed that CSV import rejects tickets where the current agent lacks `rw`.
+
+### Next Priorities
+
+- Install/upgrade 0.0.106, restart PSGI/web workers, and test Table Export from both Ticket menu and ticket zoom.
+
+## 2026-06-22 IPC-Only Ticket Table Import Gate 0.0.107
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.107`.
+- Restricted ticket CSV import in `AgentTicketTESSERATable` to IPC authority only:
+  - Users with `rw` permission on the `IPC` group can import.
+  - Users assigned to the `IPC` role can import.
+  - All other users are rejected before upload parsing or CSV update logic runs.
+- Kept export/download access-scoped by ticket read permission; this remains available from the Ticket menu for users to download tickets they can read.
+- Kept the existing per-ticket `rw` import checks in `Kernel::System::TESSERA::TicketTable`, so IPC import authority does not bypass ticket write permission.
+- Hid the CSV import form from non-IPC users while preserving backend enforcement for direct POST attempts.
+- Generated `Kernel/Package/GovernanceDB-0.0.107.opm`.
+- `Kernel/Package/GovernanceDB-0.0.107.opm` SHA256: `61A2D357724F9241E1844B9F14C20B1555805E00F7722E1CB298D89305103EC3`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentTicketTESSERATable.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/TESSERA/TicketTable.pm`
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.107.opm`: XML parsed successfully, version `0.0.107`, 162 file nodes, `MissingBase64=0`.
+- `git diff --check` could not be run in the current desktop runtime because `git.exe` is not available on PATH.
+
+### Architectural Decisions
+
+- Import is an IPC-controlled operation, while export remains an access-scoped download utility.
+- IPC authority is resolved from existing OTOBO group/role configuration instead of introducing a package-owned permission object.
+- IPC import authority is an additional gate; ticket-level `rw` permission still controls whether each row can update a ticket.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.107` package.
+- Runtime verification is needed that IPC users see the import form and can import only tickets where they have `rw`.
+- Runtime verification is needed that non-IPC users can still export readable tickets but cannot see or POST ticket import.
+
+### Next Priorities
+
+- Install/upgrade 0.0.107, restart PSGI/web workers, and test Table Export from both Ticket menu and ticket zoom.
+- Test CSV import with an IPC user and a non-IPC user to confirm the permission split.
+
+## 2026-06-22 Customer Service Payload Excel/CSV Import and Code View 0.0.108
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.108`.
+- Added offline SheetJS `0.20.3` asset:
+  - `var/httpd/htdocs/js/thirdparty/sheetjs-0.20.3/xlsx.full.min.js`
+  - Asset SHA256: `CC015130AA8521E7F088F88898EBA949CCDCBFB38DF0BD129B44B7273C3A6F41`
+- Extended the CustomerTicketMessage service payload workspace in `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Added service payload `Import`, `Code`, and `Apply` controls.
+  - Excel/CSV import populates currently rendered service dynamic fields without submitting the ticket.
+  - DynamicField Set payloads can create additional rows before filling values.
+  - Spreadsheet headers can use field names, labels, or `SetField.InnerField`.
+  - Code view exports the current service payload as JSON and can apply edited JSON back into the rendered fields.
+  - Select fields resolve imported names against visible option labels before falling back to raw values.
+  - Reference/autocomplete fields resolve imported names through `AgentReferenceSearch` and write the hidden ID via the existing `Core.Agent.DynamicFieldReferenceSearch.AddTicketReference` path.
+  - Explicit ID fallback remains available as `Name::123`.
+- Synced the changed template across package source, runtime overlay, live template, and `ZTSMOverlay`.
+- Generated `Kernel/Package/GovernanceDB-0.0.108.opm`.
+- `Kernel/Package/GovernanceDB-0.0.108.opm` SHA256: `9C8C86D56AF92A4EA14B55A22DA3CB2EE04539E238CD8C1D6806A1FAC2E97FCC`.
+
+### Validation
+
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.108.opm`: XML parsed successfully, version `0.0.108`, 163 file nodes, `MissingBase64=0`.
+- Perl syntax checks passed:
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/CustomerTicketMessage.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentTicketTESSERATable.pm`
+- Embedded service payload JavaScript parsed successfully with Node after stripping Template Toolkit tags.
+- `git diff --check` passed using the bundled Git runtime.
+- Template sync hashes matched across package source, runtime overlay, live template, and `ZTSMOverlay`.
+
+### Architectural Decisions
+
+- Spreadsheet import is a client-side prefill tool, not a ticket submit path.
+- Service payload import operates on the existing dynamic service fields generated from `ZService-Field`, so it remains generic across services.
+- DynamicField Set import treats each spreadsheet row as one set row where a set field is present.
+- Name/label resolution is preferred for user-facing import; raw IDs are only accepted through the explicit `::ID` fallback.
+- SheetJS is vendored offline because runtime environments may not have internet access.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.108` package.
+- Runtime verification is needed for `.xlsx` and `.csv` import on a service whose `ZService-Field` contains both simple fields and DynamicField Set fields.
+- Runtime verification is needed for GovernanceObject/reference field resolution by name and explicit `::ID`.
+- Date and DateTime fields should be tested with the expected spreadsheet date format; the current client mapper primarily fills rendered controls by field name/label.
+
+### Next Priorities
+
+- Install/upgrade 0.0.108, restart PSGI/web workers, and test CustomerTicketMessage service payload import before ticket submit.
+- Prepare a sample service payload spreadsheet for one real service with DynamicField Set rows and reference names.

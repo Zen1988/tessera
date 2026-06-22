@@ -1,0 +1,81 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="MainBox ARIARoleMain">
+    <h1>[% Translate("TESSERA Ticket Import/Export") | html %]</h1>
+
+[% IF Data.Message %]
+    <div class="MessageBox [% Data.MessageClass | html %]">
+        <p>[% Data.Message | html_line_break %]</p>
+    </div>
+[% END %]
+
+    <div class="Content">
+        <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="Subaction" value="Export"/>
+            <fieldset class="TableLike">
+                <label for="TicketIDs">[% Translate("Ticket IDs") | html %]:</label>
+                <div class="Field">
+                    <textarea id="TicketIDs" name="TicketIDs" rows="6" class="W50pc">[% Data.TicketIDs | html %]</textarea>
+                </div>
+                <div class="Clear"></div>
+
+                <label for="Format">[% Translate("Format") | html %]:</label>
+                <div class="Field">
+                    <select id="Format" name="Format">
+                        <option value="csv">CSV</option>
+                        <option value="xlsx">Excel XLSX</option>
+                    </select>
+                </div>
+                <div class="Clear"></div>
+            </fieldset>
+            <fieldset class="TableLike">
+                <div class="Field SpacingTop">
+                    <button class="CallForAction Primary" type="submit" value="Submit">
+                        <span>[% Translate("Export") | html %]</span>
+                    </button>
+                </div>
+            </fieldset>
+        </form>
+
+[% IF Data.CanImport %]
+        <form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" class="Validate PreventMultipleSubmits SpacingTop">
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="Subaction" value="Import"/>
+            <fieldset class="TableLike">
+                <label for="FileUpload">[% Translate("CSV File") | html %]:</label>
+                <div class="Field">
+                    <input type="file" id="FileUpload" name="FileUpload" accept=".csv,text/csv"/>
+                </div>
+                <div class="Clear"></div>
+
+                <label>[% Translate("Columns") | html %]:</label>
+                <div class="Field">
+                    <code>[% Data.Headers | html %]</code>
+                </div>
+                <div class="Clear"></div>
+            </fieldset>
+            <fieldset class="TableLike">
+                <div class="Field SpacingTop">
+                    <button class="CallForAction Primary" type="submit" value="Submit">
+                        <span>[% Translate("Import CSV") | html %]</span>
+                    </button>
+                </div>
+            </fieldset>
+        </form>
+[% END %]
+    </div>
+</div>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.103</Version>
+    <Version>0.0.108</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -23,6 +23,7 @@
         <File Location="Kernel/Modules/AgentGovernanceObjectAttachment.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectBulk.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectDelete.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectDocument.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectEdit.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectHistory.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectLabelPrint.pm" Permission="660"/>
@@ -31,6 +32,7 @@
         <File Location="Kernel/Modules/AgentGovernanceObjectTransform.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectTreeView.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectZoom.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTicketTESSERATable.pm" Permission="660"/>
         <File Location="Kernel/Output/HTML/Dashboard/GovernanceObjectGeneric.pm" Permission="660"/>
         <File Location="Kernel/Output/HTML/GeneralCatalogPreferences/GovernanceObjectGeneric.pm" Permission="660"/>
         <File Location="Kernel/Output/HTML/GovernanceObject/CustomerOverviewSmall.pm" Permission="660"/>
@@ -55,6 +57,7 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectAdd.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectBulk.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectDelete.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectDocument.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectEdit.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectHistory.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectOverviewNavBar.tt" Permission="660"/>
@@ -63,6 +66,7 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectTransform.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectTreeView.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectZoom.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTicketTESSERATable.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/DynamicField/Agent/GovernanceObjectLens.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectDetails.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/GovernanceObjectTreeView/GovernanceObjectTreeViewGraph.tt" Permission="660"/>
@@ -78,6 +82,7 @@
         <File Location="Kernel/System/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/ColumnFilter.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Definition.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Document.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/DefinitionGovernanceObjectUpdate.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/DoHistory.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/EvaluateScriptFields.pm" Permission="660"/>
@@ -103,6 +108,7 @@
         <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectUpdate.pm" Permission="660"/>
         <File Location="Kernel/System/Stats/Dynamic/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/SysConfig/ValueType/Entity/GovernanceObjectClass.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/TicketTable.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
 
@@ -172,6 +178,7 @@
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/favicon.ico" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/product.ico" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/thirdparty/sheetjs-0.20.3/xlsx.full.min.js" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
