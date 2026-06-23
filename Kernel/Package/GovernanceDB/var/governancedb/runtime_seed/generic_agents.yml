@@ -1,0 +1,137 @@
+---
+GenericAgents:
+  TESSERA-ACTIVITY-ROLELOOKUP:
+    ChangeTimeSearchType: ''
+    CloseTimeSearchType: ''
+    CustomerID: ''
+    CustomerUserLogin: ''
+    EscalationResponseTimeSearchType: ''
+    EscalationSolutionTimeSearchType: ''
+    EscalationTimeSearchType: ''
+    EscalationUpdateTimeSearchType: ''
+    EventValues:
+    - TicketCreate
+    LastChangeTimeSearchType: ''
+    LastCloseTimeSearchType: ''
+    MIMEBase_Body: ''
+    MIMEBase_Cc: ''
+    MIMEBase_From: ''
+    MIMEBase_Subject: ''
+    MIMEBase_To: ''
+    Name: TESSERA-ACTIVITY-ROLELOOKUP
+    NewCustomerID: ''
+    NewCustomerUserLogin: ''
+    NewDelete: '0'
+    NewModule: Kernel::System::GenericAgent::ZTSMRoleDirector
+    NewNoteBody: ''
+    NewNoteFrom: ''
+    NewNoteSubject: ''
+    NewNoteTimeUnits: ''
+    NewParamKey1: ''
+    NewParamKey2: ''
+    NewParamKey3: ''
+    NewParamKey4: ''
+    NewParamKey5: ''
+    NewParamKey6: ''
+    NewParamValue1: ''
+    NewParamValue2: ''
+    NewParamValue3: ''
+    NewParamValue4: ''
+    NewParamValue5: ''
+    NewParamValue6: ''
+    NewPendingTime: ''
+    NewPendingTimeType: '60'
+    NewSendNoNotification: '0'
+    NewTitle: ''
+    ScheduleLastRun: 2026-06-19 02:23:13
+    ScheduleLastRunUnixTime: '1781835793'
+    Search_DynamicField_ZTicket-OwnerGroup: ''
+    States:
+    - approve
+    - assess
+    - endorse
+    - in-progress
+    - new
+    - onhold
+    - open
+    - pending
+    - pending reminder
+    - remediate
+    - removed
+    - support
+    - validate
+    - verify
+    TicketNumber: ''
+    TimePendingSearchType: ''
+    TimeSearchType: ''
+    Title: ''
+    Types:
+    - Approval
+    - Assessment
+    - Endorsement
+    - Implementation
+    - Task
+    - Verification
+    Valid: '1'
+  TESSERA-TICKET-LIFECYCLE-INITIATION:
+    ChangeTimeSearchType: ''
+    CloseTimeSearchType: ''
+    CustomerID: ''
+    CustomerUserLogin: ''
+    DynamicField_ProcessManagementActivityID: Activity-34165120277c0bacb81ab0d4238c37d8
+    DynamicField_ProcessManagementProcessID: Process-44258576c8e8bc5e7290607746956473
+    EscalationResponseTimeSearchType: ''
+    EscalationSolutionTimeSearchType: ''
+    EscalationTimeSearchType: ''
+    EscalationUpdateTimeSearchType: ''
+    EventValues:
+    - TicketCreate
+    LastChangeTimeSearchType: ''
+    LastCloseTimeSearchType: ''
+    MIMEBase_Body: ''
+    MIMEBase_Cc: ''
+    MIMEBase_From: ''
+    MIMEBase_Subject: ''
+    MIMEBase_To: ''
+    Name: TESSERA-TICKET-LIFECYCLE-INITIATION
+    NewCustomerID: ''
+    NewCustomerUserLogin: ''
+    NewDelete: '0'
+    NewModule: ''
+    NewNoteBody: |-
+      Process lifecycle initiated for ticket.
+
+      ** Note: This is a system-generated orchestration update message.
+    NewNoteFrom: tessera@local
+    NewNoteIsVisibleForCustomer: on
+    NewNoteSubject: 'DO-NOT-REPLY: Ticket lifecycle initiated.'
+    NewNoteTimeUnits: ''
+    NewParamKey1: ''
+    NewParamKey2: ''
+    NewParamKey3: ''
+    NewParamKey4: ''
+    NewParamKey5: ''
+    NewParamKey6: ''
+    NewParamValue1: ''
+    NewParamValue2: ''
+    NewParamValue3: ''
+    NewParamValue4: ''
+    NewParamValue5: ''
+    NewParamValue6: ''
+    NewPendingTime: ''
+    NewPendingTimeType: '60'
+    NewSendNoNotification: '0'
+    NewTitle: ''
+    ScheduleLastRun: 2026-06-19 02:23:13
+    ScheduleLastRunUnixTime: '1781835793'
+    TicketNumber: ''
+    TimePendingSearchType: ''
+    TimeSearchType: ''
+    Title: ''
+    Types:
+    - Change
+    - Incident
+    - Incident::Major
+    - Problem
+    - ServiceRequest
+    Valid: '1'

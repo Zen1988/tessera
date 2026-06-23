@@ -1,0 +1,45 @@
+// --
+// Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+// --
+// This program is free software: you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at your option) any later version.
+// --
+
+"use strict";
+
+var Core = Core || {};
+Core.Agent = Core.Agent || {};
+Core.Agent.Admin = Core.Agent.Admin || {};
+
+Core.Agent.Admin.GeneralCatalogDocument = (function (TargetNS) {
+
+    TargetNS.Init = function () {
+        var $ActionList = $('.SidebarColumn .ActionList').first(),
+            URL;
+
+        if (!$ActionList.length || $ActionList.find('.GovernanceDBGeneralCatalogDocument').length) {
+            return;
+        }
+
+        URL = Core.Config.Get('Baselink') + 'Action=AgentGeneralCatalogDocument;ReturnAction=AdminGeneralCatalog';
+
+        $('<li/>').append(
+            $('<a/>', {
+                'class': 'CallForAction Fullsize Center GovernanceDBGeneralCatalogDocument',
+                href: URL
+            }).append(
+                $('<span/>').append(
+                    $('<i/>', {
+                        'class': 'fa fa-code'
+                    }),
+                    'Import / Export YAML/JSON'
+                )
+            )
+        ).appendTo($ActionList);
+    };
+
+    Core.Init.RegisterNamespace(TargetNS, 'APP_MODULE');
+
+    return TargetNS;
+}(Core.Agent.Admin.GeneralCatalogDocument || {}));

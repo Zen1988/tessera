@@ -24,7 +24,7 @@
 [% RenderBlockEnd("DocumentActionRowLastColumnFilter") %]
 
 [% RenderBlockStart("DocumentActionRowItem") %]
-    <li class="[% Data.CSS | html %]"><a href="#">[% Translate(Data.Name) | html %]</a></li>
+    <li class="[% Data.CSS | html %]"><a href="[% Env("Baselink") %][% Data.Link | html %]">[% Translate(Data.Name) | html %]</a></li>
 [% RenderBlockEnd("DocumentActionRowItem") %]
 </ul>
 [% RenderBlockEnd("DocumentActionRow") %]

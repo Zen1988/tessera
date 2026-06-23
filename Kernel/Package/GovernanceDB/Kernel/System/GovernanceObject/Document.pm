@@ -237,6 +237,20 @@ sub Import {
     );
 
     if ($GovernanceObjectID) {
+        my $Access = $GovernanceObjectObject->Permission(
+            Scope  => 'Item',
+            ItemID => $GovernanceObjectID,
+            Type   => 'rw',
+            UserID => $Param{UserID},
+        );
+
+        if ( !$Access ) {
+            return {
+                Success => 0,
+                Message => 'No write access is given for this Governance Object.',
+            };
+        }
+
         my $Success = $GovernanceObjectObject->GovernanceObjectUpdate(
             %ObjectData,
             GovernanceObjectID => $GovernanceObjectID,
@@ -248,6 +262,20 @@ sub Import {
             Action             => 'Updated',
             GovernanceObjectID => $GovernanceObjectID,
             Message            => $Success ? 'Governance Object updated.' : 'Governance Object update failed.',
+        };
+    }
+
+    my $Access = $GovernanceObjectObject->Permission(
+        Scope   => 'Class',
+        ClassID => $ClassID,
+        Type    => 'rw',
+        UserID  => $Param{UserID},
+    );
+
+    if ( !$Access ) {
+        return {
+            Success => 0,
+            Message => 'No write access is given for this Governance Object class.',
         };
     }
 
@@ -600,11 +628,22 @@ sub _SetValueFromDocument {
             my $InnerField = $IncludedFields->{$FieldName};
             next FIELD if !IsHashRefWithData($InnerField);
 
-            $ImportRow{$FieldName} = $Self->_ValueFromDocument(
+            my $ImportValue = $Self->_ValueFromDocument(
                 DynamicFieldConfig => $InnerField,
                 Value              => $Row->{$FieldName},
                 UserID             => $Param{UserID},
             );
+
+            $ImportRow{$FieldName} = defined $ImportValue ? $ImportValue : '';
+        }
+
+        # DynamicField Set edit widgets can otherwise fall back to a first
+        # selectable reference value for omitted child fields. Missing means blank.
+        MISSINGFIELD:
+        for my $FieldName ( sort keys %{$IncludedFields} ) {
+            next MISSINGFIELD if exists $ImportRow{$FieldName};
+
+            $ImportRow{$FieldName} = '';
         }
 
         push @Rows, \%ImportRow;
@@ -630,10 +669,104 @@ sub _IncludedDynamicFieldsGet {
         );
         next INCLUDE if !IsHashRefWithData($DynamicField);
 
-        $DynamicFields{ $DynamicField->{Name} || $Name } = $DynamicField;
+        my %DynamicFieldCopy = %{$DynamicField};
+        $DynamicFieldCopy{Config} = {
+            %{ $DynamicFieldCopy{Config} || {} },
+        };
+
+        $Self->_SetChildReferenceConfigApply(
+            DynamicFieldConfig => \%DynamicFieldCopy,
+        );
+
+        $DynamicFields{ $DynamicFieldCopy{Name} || $Name } = \%DynamicFieldCopy;
     }
 
     return \%DynamicFields;
+}
+
+sub _SetChildReferenceConfigApply {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    return if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $Name   = $DynamicFieldConfig->{Name} || '';
+    my $Config = $DynamicFieldConfig->{Config} ||= {};
+
+    my %GovernanceObjectClassByField = (
+        'ZBlue-Profile'    => ['GovernanceRole'],
+        'ZBlue-Role'       => ['GovernanceRole'],
+        'ZBlue-Template'   => ['Template'],
+        'ZBlue-PurpleBook' => ['BlueBook'],
+    );
+
+    my %GovernanceObjectFieldDefaults = (
+        'ZBlue-Profile' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+        'ZBlue-Role' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-Template' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-PurpleBook' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+    );
+
+    if (
+        $Self->_IsGovernanceObjectReference($DynamicFieldConfig)
+        && !IsArrayRefWithData( $Config->{ClassIDs} )
+        && IsArrayRefWithData( $GovernanceObjectClassByField{$Name} )
+        )
+    {
+        my @ClassIDs = $Self->_GeneralCatalogRestrictionIDsGet(
+            Class  => 'ZTSM::GovernanceObject::Class',
+            Values => $GovernanceObjectClassByField{$Name},
+        );
+        $Config->{ClassIDs} = \@ClassIDs if @ClassIDs;
+    }
+
+    if ( IsHashRefWithData( $GovernanceObjectFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GovernanceObjectFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GovernanceObjectFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    my %GeneralCatalogClassByField = (
+        'ZBlue-TicketType' => 'ZTSM::Type',
+    );
+
+    my %GeneralCatalogFieldDefaults = (
+        'ZBlue-TicketType' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+    );
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GeneralCatalog'
+        && !$Config->{Class}
+        && $GeneralCatalogClassByField{$Name}
+        )
+    {
+        $Config->{Class} = $GeneralCatalogClassByField{$Name};
+    }
+
+    if ( IsHashRefWithData( $GeneralCatalogFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GeneralCatalogFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GeneralCatalogFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    return 1;
 }
 
 sub _ExistingObjectIDResolve {

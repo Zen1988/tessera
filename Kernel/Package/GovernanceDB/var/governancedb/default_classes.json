@@ -28,7 +28,11 @@
                         "DF" : "ZState-Seq",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "GovernanceRole"
+                              ]
+                           },
                            "CreateTime" : "2026-05-19 05:43:12",
                            "FieldOrder" : "236",
                            "FieldType" : "Text",
@@ -43,7 +47,11 @@
                         "DF" : "ZState-State",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "GovernanceRole"
+                              ]
+                           },
                            "CreateTime" : "2026-05-19 03:34:31",
                            "FieldOrder" : "234",
                            "FieldType" : "GeneralCatalog",
@@ -58,7 +66,9 @@
                         "DF" : "ZState-Book",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "Class" : "ZTSM::GovernanceObject::Class"
+                           },
                            "CreateTime" : "2026-05-18 05:37:08",
                            "FieldOrder" : "228",
                            "FieldType" : "GovernanceObject",
@@ -169,7 +179,13 @@
                         "DF" : "ZBlue-Profile",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "GovernanceRole"
+                              ],
+                              "MultiValue" : "0",
+                              "PossibleNone" : "0"
+                           },
                            "CreateTime" : "2026-05-18 03:32:20",
                            "FieldOrder" : "222",
                            "FieldType" : "GovernanceObject",
@@ -184,7 +200,13 @@
                         "DF" : "ZBlue-Role",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "GovernanceRole"
+                              ],
+                              "MultiValue" : "0",
+                              "PossibleNone" : "1"
+                           },
                            "CreateTime" : "2026-05-25 03:07:56",
                            "FieldOrder" : "247",
                            "FieldType" : "GovernanceObject",
@@ -199,7 +221,11 @@
                         "DF" : "ZBlue-TicketType",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "Class" : "ZTSM::Type",
+                              "MultiValue" : "0",
+                              "PossibleNone" : "0"
+                           },
                            "CreateTime" : "2026-05-19 02:33:33",
                            "FieldOrder" : "231",
                            "FieldType" : "GeneralCatalog",
@@ -229,7 +255,13 @@
                         "DF" : "ZBlue-Template",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "Template"
+                              ],
+                              "MultiValue" : "0",
+                              "PossibleNone" : "1"
+                           },
                            "CreateTime" : "2026-06-16 07:44:17",
                            "FieldOrder" : "298",
                            "FieldType" : "GovernanceObject",
@@ -244,7 +276,13 @@
                         "DF" : "ZBlue-PurpleBook",
                         "Definition" : {
                            "ChangeTime" : "2026-06-19 02:19:29",
-                           "Config" : {},
+                           "Config" : {
+                              "ClassIDs" : [
+                                 "BlueBook"
+                              ],
+                              "MultiValue" : "0",
+                              "PossibleNone" : "1"
+                           },
                            "CreateTime" : "2026-06-16 05:40:15",
                            "FieldOrder" : "283",
                            "FieldType" : "GovernanceObject",

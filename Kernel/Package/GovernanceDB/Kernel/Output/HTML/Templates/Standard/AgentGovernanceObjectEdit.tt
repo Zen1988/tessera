@@ -25,7 +25,7 @@
                 <div class="Header">
                     <h1>[% Translate("Edit") | html %]: [% Translate("Governance Object") | html %]: [% Translate(Data.Number) | html %] - [% Translate("Class") | html %]: [% Translate(Data.Class) | html %]</h1>
                     <p>
-                        <a class="CancelClosePopup" href="#">[% Translate("Cancel & close") | html %]</a>
+                        <a href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]">[% Translate("Cancel & close") | html %]</a>
                     </p>
                 </div>
                 <input type="hidden" name="ScreenType" value="Popup"/>
@@ -114,7 +114,7 @@
                                 <span>[% Translate("Save") | html %]</span>
                             </button>
                             [% Translate("or") | html %]
-                            <a id="CancelButton" href="[% Env("Baselink") %]Action=AgentGovernanceObjectAdd">[% Translate("Cancel") | html %]</a>
+                            <a id="CancelButton" href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]">[% Translate("Cancel") | html %]</a>
                         </div>
                     </fieldset>
                 </div>

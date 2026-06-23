@@ -1,0 +1,319 @@
+---
+Activities:
+  Activity-2c9b289d02d2935550df191c986e2bb8:
+    ActivityDialogs:
+    - ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ChangeTime: 2026-06-02 02:48:47
+    Config:
+      ActivityDialog:
+        '1': ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    CreateTime: 2026-06-02 02:48:47
+    EntityID: Activity-2c9b289d02d2935550df191c986e2bb8
+    ID: 17
+    Name: BlueBook Reader - 2
+  Activity-34165120277c0bacb81ab0d4238c37d8:
+    ActivityDialogs:
+    - ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ChangeTime: 2026-05-19 07:08:29
+    Config:
+      ActivityDialog:
+        '1': ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    CreateTime: 2026-05-19 06:48:53
+    EntityID: Activity-34165120277c0bacb81ab0d4238c37d8
+    ID: 10
+    Name: Start
+  Activity-7ae5a5a1d78eed43c2c718facb3eae65:
+    ActivityDialogs:
+    - ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ChangeTime: 2026-06-02 02:41:06
+    Config:
+      ActivityDialog:
+        '1': ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    CreateTime: 2026-06-02 02:41:06
+    EntityID: Activity-7ae5a5a1d78eed43c2c718facb3eae65
+    ID: 16
+    Name: BlueBook Director
+  Activity-a08597b234bbccf5791c588eb7eb904d:
+    ActivityDialogs:
+    - ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ChangeTime: 2026-05-29 07:27:10
+    Config:
+      ActivityDialog:
+        '1': ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    CreateTime: 2026-05-19 07:09:33
+    EntityID: Activity-a08597b234bbccf5791c588eb7eb904d
+    ID: 11
+    Name: StateBook Reader
+  Activity-b83380fe3605688f475b6a0cc8a94085:
+    ActivityDialogs:
+    - ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ChangeTime: 2026-05-29 06:31:19
+    Config:
+      ActivityDialog:
+        '1': ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    CreateTime: 2026-05-19 07:12:24
+    EntityID: Activity-b83380fe3605688f475b6a0cc8a94085
+    ID: 12
+    Name: BlueBook Reader
+ActivityDialogs:
+  ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6:
+    ChangeTime: 2026-06-02 02:41:38
+    Config:
+      DescriptionLong: Empty Process Dialog
+      DescriptionShort: Empty Process Dialog
+      DirectSubmit: '1'
+      FieldOrder: []
+      Fields: {}
+      InputFieldDefinition: ''
+      Interface:
+      - AgentInterface
+      - CustomerInterface
+      Permission: owner
+      RequiredLock: '0'
+      SubmitAdviceText: ''
+      SubmitButtonText: ''
+    CreateTime: 2026-05-19 07:06:57
+    EntityID: ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+    ID: 6
+    Name: Process Transition
+Process:
+  Activities:
+  - Activity-2c9b289d02d2935550df191c986e2bb8
+  - Activity-34165120277c0bacb81ab0d4238c37d8
+  - Activity-7ae5a5a1d78eed43c2c718facb3eae65
+  - Activity-a08597b234bbccf5791c588eb7eb904d
+  - Activity-b83380fe3605688f475b6a0cc8a94085
+  ChangeTime: 2026-06-02 08:00:00
+  Config:
+    Description: Standard ZTSM Ticket Lifecycle Ochestrator
+    Path:
+      Activity-2c9b289d02d2935550df191c986e2bb8:
+        Transition-62f721d77000b8a55ffcd36fd50ee25e:
+          ActivityEntityID: Activity-7ae5a5a1d78eed43c2c718facb3eae65
+      Activity-34165120277c0bacb81ab0d4238c37d8:
+        Transition-04744060f9f24ba6ecf9e31e7b3bd54a:
+          ActivityEntityID: Activity-a08597b234bbccf5791c588eb7eb904d
+          TransitionAction:
+          - TransitionAction-86d1455359a643cefdf2176a7194c0fe
+      Activity-7ae5a5a1d78eed43c2c718facb3eae65:
+        Transition-530b2bb23669e9ddd10dbf6f11d73b67:
+          ActivityEntityID: Activity-a08597b234bbccf5791c588eb7eb904d
+          TransitionAction:
+          - TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d
+        Transition-79a9beb15c36092f1be847504957ad37:
+          ActivityEntityID: Activity-2c9b289d02d2935550df191c986e2bb8
+          TransitionAction:
+          - TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8
+      Activity-a08597b234bbccf5791c588eb7eb904d:
+        Transition-daf4722965429ec766dc1edacb18ae3f:
+          ActivityEntityID: Activity-b83380fe3605688f475b6a0cc8a94085
+          TransitionAction:
+          - TransitionAction-7564ca7dec5ec71f214a555bd6f1f055
+      Activity-b83380fe3605688f475b6a0cc8a94085:
+        Transition-3d843ca4f50c50443595ca689fce2c58:
+          ActivityEntityID: Activity-2c9b289d02d2935550df191c986e2bb8
+          TransitionAction:
+          - TransitionAction-baa9deeea687c519eb9b4141f89f94dc
+    StartActivity: Activity-34165120277c0bacb81ab0d4238c37d8
+    StartActivityDialog: ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6
+  CreateTime: 2026-05-19 06:44:01
+  EntityID: Process-44258576c8e8bc5e7290607746956473
+  ID: 2
+  Layout:
+    Activity-2c9b289d02d2935550df191c986e2bb8:
+      left: '584'
+      top: '418'
+    Activity-34165120277c0bacb81ab0d4238c37d8:
+      left: '273'
+      top: '62.3999938964844'
+    Activity-7ae5a5a1d78eed43c2c718facb3eae65:
+      left: '225'
+      top: '328'
+    Activity-a08597b234bbccf5791c588eb7eb904d:
+      left: '626'
+      top: '60'
+    Activity-b83380fe3605688f475b6a0cc8a94085:
+      left: '819'
+      top: '308'
+  Name: ztsm-ticket-lifecycle-ochestration
+  State: Active
+  StateEntityID: S1
+  TransitionActions:
+  - TransitionAction-86d1455359a643cefdf2176a7194c0fe
+  - TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d
+  - TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8
+  - TransitionAction-7564ca7dec5ec71f214a555bd6f1f055
+  - TransitionAction-baa9deeea687c519eb9b4141f89f94dc
+  Transitions:
+  - Transition-62f721d77000b8a55ffcd36fd50ee25e
+  - Transition-04744060f9f24ba6ecf9e31e7b3bd54a
+  - Transition-530b2bb23669e9ddd10dbf6f11d73b67
+  - Transition-79a9beb15c36092f1be847504957ad37
+  - Transition-daf4722965429ec766dc1edacb18ae3f
+  - Transition-3d843ca4f50c50443595ca689fce2c58
+TransitionActions:
+  TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8:
+    ChangeTime: 2026-06-02 02:53:35
+    Config:
+      Config:
+        '': ''
+      Module: Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookDirector
+    CreateTime: 2026-06-02 02:53:35
+    EntityID: TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8
+    ID: 16
+    Name: TESSERA-BlueBookDirector
+  TransitionAction-7564ca7dec5ec71f214a555bd6f1f055:
+    ChangeTime: 2026-05-28 04:21:24
+    Config:
+      Config:
+        '': ''
+      Module: Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader
+    CreateTime: 2026-05-28 04:21:24
+    EntityID: TransitionAction-7564ca7dec5ec71f214a555bd6f1f055
+    ID: 11
+    Name: TESSERA-StateBookReader
+  TransitionAction-86d1455359a643cefdf2176a7194c0fe:
+    ChangeTime: 2026-05-28 04:20:57
+    Config:
+      Config:
+        '': ''
+      Module: Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian
+    CreateTime: 2026-05-28 04:20:57
+    EntityID: TransitionAction-86d1455359a643cefdf2176a7194c0fe
+    ID: 10
+    Name: TESSERA-ServiceLibrarian
+  TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d:
+    ChangeTime: 2026-06-02 07:59:38
+    Config:
+      Config:
+        '': ''
+      Module: Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookResume
+    CreateTime: 2026-06-02 07:59:38
+    EntityID: TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d
+    ID: 17
+    Name: TESSERA-StateBookResume
+  TransitionAction-baa9deeea687c519eb9b4141f89f94dc:
+    ChangeTime: 2026-05-28 04:48:31
+    Config:
+      Config:
+        '': ''
+      Module: Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookReader
+    CreateTime: 2026-05-28 04:48:31
+    EntityID: TransitionAction-baa9deeea687c519eb9b4141f89f94dc
+    ID: 12
+    Name: TESSERA-BlueBookReader
+Transitions:
+  Transition-04744060f9f24ba6ecf9e31e7b3bd54a:
+    ChangeTime: 2026-05-19 07:17:31
+    Config:
+      Condition:
+        '1':
+          Fields:
+            State:
+              Match: new
+              Type: String
+          Type: and
+      ConditionLinking: and
+    CreateTime: 2026-05-19 07:17:31
+    EntityID: Transition-04744060f9f24ba6ecf9e31e7b3bd54a
+    ID: 3
+    Name: new_to_step_in_statebook
+  Transition-3d843ca4f50c50443595ca689fce2c58:
+    ChangeTime: 2026-06-02 02:50:08
+    Config:
+      Condition:
+        '1':
+          Fields:
+            StateType:
+              Match: new
+              Type: String
+          Type: xor
+        '2':
+          Fields:
+            StateType:
+              Match: open
+              Type: String
+          Type: and
+        '3':
+          Fields:
+            StateType:
+              Match: pending
+              Type: String
+          Type: and
+      ConditionLinking: and
+    CreateTime: 2026-05-19 07:26:26
+    EntityID: Transition-3d843ca4f50c50443595ca689fce2c58
+    ID: 5
+    Name: bluebook_step_up
+  Transition-530b2bb23669e9ddd10dbf6f11d73b67:
+    ChangeTime: 2026-06-02 02:57:54
+    Config:
+      Condition:
+        '1':
+          Fields:
+            TicketID:
+              Match: Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookComplete
+              Type: Module
+          Type: and
+      ConditionLinking: and
+    CreateTime: 2026-06-02 02:57:54
+    EntityID: Transition-530b2bb23669e9ddd10dbf6f11d73b67
+    ID: 12
+    Name: BlueBook Complete
+  Transition-62f721d77000b8a55ffcd36fd50ee25e:
+    ChangeTime: 2026-06-02 02:44:56
+    Config:
+      Condition:
+        '1':
+          Fields:
+            TicketID:
+              Match: Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookComplete
+              Type: Module
+          Type: and
+      ConditionLinking: and
+    CreateTime: 2026-06-02 02:44:56
+    EntityID: Transition-62f721d77000b8a55ffcd36fd50ee25e
+    ID: 10
+    Name: BlueLevel Completion
+  Transition-79a9beb15c36092f1be847504957ad37:
+    ChangeTime: 2026-06-02 03:01:45
+    Config:
+      Condition:
+        '1':
+          Fields:
+            TicketID:
+              Match: Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookHasNextLevel
+              Type: Module
+          Type: and
+      ConditionLinking: and
+    CreateTime: 2026-06-02 03:01:45
+    EntityID: Transition-79a9beb15c36092f1be847504957ad37
+    ID: 13
+    Name: BlueBook Has Next Level
+  Transition-daf4722965429ec766dc1edacb18ae3f:
+    ChangeTime: 2026-05-29 07:51:32
+    Config:
+      Condition:
+        '1':
+          Fields:
+            StateType:
+              Match: open
+              Type: String
+          Type: or
+        '2':
+          Fields:
+            StateType:
+              Match: new
+              Type: String
+          Type: or
+        '3':
+          Fields:
+            StateType:
+              Match: pending
+              Type: String
+          Type: or
+      ConditionLinking: or
+    CreateTime: 2026-05-19 07:22:46
+    EntityID: Transition-daf4722965429ec766dc1edacb18ae3f
+    ID: 4
+    Name: statebook_walk_down

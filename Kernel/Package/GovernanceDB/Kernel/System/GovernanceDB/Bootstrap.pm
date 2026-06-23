@@ -14,15 +14,20 @@ our @ObjectDependencies = (
     'Kernel::System::Cache',
     'Kernel::System::DB',
     'Kernel::System::DynamicField',
+    'Kernel::System::GenericAgent',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::GeneralCatalog::Document',
     'Kernel::System::GovernanceDB',
     'Kernel::System::GovernanceObject',
     'Kernel::System::Group',
     'Kernel::System::ITSMConfigItem',
+    'Kernel::System::ProcessManagement::DB::Process',
     'Kernel::System::JSON',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::State',
     'Kernel::System::SysConfig',
+    'Kernel::System::Type',
     'Kernel::System::YAML',
 );
 
@@ -42,6 +47,7 @@ sub InstallDefaults {
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
     $Self->_HistoryTypesEnsure();
+    $Self->_GeneralCatalogSeedEnsure();
 
     my $ClassNamespace       = $Defaults->{ClassNamespace}       || 'ZTSM::GovernanceObject::Class';
     my $RoleNamespace        = $Defaults->{RoleNamespace}        || 'ZTSM::GovernanceObject::Role';
@@ -119,6 +125,8 @@ sub InstallDefaults {
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
+
+    $Self->_RuntimePrerequisitesEnsure();
 
     $Self->_TicketReferenceDynamicFieldsRepair(
         Classes => $Defaults->{Classes} || [],
@@ -582,6 +590,398 @@ sub _ClassNameNormalize {
     return lc $Name;
 }
 
+sub _RuntimePrerequisitesEnsure {
+    my ( $Self, %Param ) = @_;
+
+    $Self->_TicketStatesEnsure();
+    $Self->_TicketTypesEnsure();
+    $Self->_GovernanceRoleObjectsEnsure();
+    $Self->_RuntimeProcessesEnsure();
+    $Self->_GenericAgentJobsEnsure();
+
+    return 1;
+}
+
+sub _TicketStatesEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my @States = (
+        { Name => 'approve',                 Type => 'open',             Comment => 'Pending Approval' },
+        { Name => 'approved',                Type => 'open',             Comment => 'Approved' },
+        { Name => 'assess',                  Type => 'open',             Comment => 'Assessment' },
+        { Name => 'closed cancelled',        Type => 'closed',           Comment => 'Cancelled' },
+        { Name => 'closed canceled',         Type => 'closed',           Comment => 'Canceled' },
+        { Name => 'closed cascaded',         Type => 'closed',           Comment => 'Closed cascaded from parent.' },
+        { Name => 'closed cascading',        Type => 'closed',           Comment => 'Closed because parent execution closed.' },
+        { Name => 'closed duplicate',        Type => 'closed',           Comment => 'Duplicate Request' },
+        { Name => 'closed no action',        Type => 'closed',           Comment => 'No Action Required' },
+        { Name => 'closed rejected',         Type => 'closed',           Comment => 'Rejected during approval or assessment.' },
+        { Name => 'closed rollback',         Type => 'closed',           Comment => 'Roll back' },
+        { Name => 'closed successful',       Type => 'closed',           Comment => 'Ticket is closed successfully.' },
+        { Name => 'closed unsuccessful',     Type => 'closed',           Comment => 'Ticket is closed unsuccessfully.' },
+        { Name => 'closed with workaround',  Type => 'closed',           Comment => 'Ticket is closed with workaround.' },
+        { Name => 'endorse',                 Type => 'open',             Comment => 'Endorsement' },
+        { Name => 'follow-up',               Type => 'open',             Comment => 'Follow Up' },
+        { Name => 'in-progress',             Type => 'open',             Comment => 'In Progress' },
+        { Name => 'merged',                  Type => 'merged',           Comment => 'State for merged tickets.' },
+        { Name => 'new',                     Type => 'new',              Comment => 'New ticket created.' },
+        { Name => 'onhold',                  Type => 'open',             Comment => 'On hold' },
+        { Name => 'open',                    Type => 'open',             Comment => 'Open tickets.' },
+        { Name => 'pending',                 Type => 'open',             Comment => 'Pending Fulfilment' },
+        { Name => 'pending auto close+',     Type => 'pending auto',     Comment => 'Ticket is pending auto close positive.' },
+        { Name => 'pending auto close-',     Type => 'pending auto',     Comment => 'Ticket is pending auto close negative.' },
+        { Name => 'pending reminder',        Type => 'pending reminder', Comment => 'Ticket is pending reminder.' },
+        { Name => 'rejected',                Type => 'open',             Comment => 'Rejected' },
+        { Name => 'remediate',               Type => 'open',             Comment => 'Remediation' },
+        { Name => 'removed',                 Type => 'removed',          Comment => 'Customer removed.' },
+        { Name => 'support',                 Type => 'open',             Comment => 'Pending Support' },
+        { Name => 'validate',                Type => 'open',             Comment => 'Validate' },
+        { Name => 'verify',                  Type => 'open',             Comment => 'Verification' },
+    );
+
+    my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+
+    STATE:
+    for my $State (@States) {
+        my $TypeID = $StateObject->StateTypeLookup(
+            StateType => $State->{Type},
+        );
+        if ( !$TypeID ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "GovernanceDB bootstrap could not resolve state type '$State->{Type}' for '$State->{Name}'.",
+            );
+            next STATE;
+        }
+
+        my $StateID = $StateObject->StateLookup(
+            State => $State->{Name},
+        );
+        if ($StateID) {
+            my %Current = $StateObject->StateGet(
+                ID => $StateID,
+            );
+            next STATE
+                if ( $Current{ValidID} || 0 ) == 1
+                && ( $Current{TypeID} || 0 ) == $TypeID
+                && ( $Current{Comment} || '' ) eq $State->{Comment};
+
+            $StateObject->StateUpdate(
+                ID      => $StateID,
+                Name    => $State->{Name},
+                ValidID => 1,
+                TypeID  => $TypeID,
+                Comment => $State->{Comment},
+                UserID  => 1,
+            );
+            next STATE;
+        }
+
+        $StateObject->StateAdd(
+            Name    => $State->{Name},
+            ValidID => 1,
+            TypeID  => $TypeID,
+            Comment => $State->{Comment},
+            UserID  => 1,
+        );
+    }
+
+    return 1;
+}
+
+sub _TicketTypesEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my @Types = qw(
+        Approval
+        Assessment
+        Change
+        Change::Major
+        Endorsement
+        Implementation
+        Incident
+        Incident::Major
+        Problem
+        ServiceRequest
+        Task
+        Unclassified
+        Verification
+    );
+
+    my $TypeObject = $Kernel::OM->Get('Kernel::System::Type');
+
+    TYPE:
+    for my $Type (@Types) {
+        my $TypeID = $TypeObject->TypeLookup(
+            Type => $Type,
+        );
+        if ($TypeID) {
+            my %Current = $TypeObject->TypeGet(
+                ID => $TypeID,
+            );
+            next TYPE if ( $Current{ValidID} || 0 ) == 1;
+
+            $TypeObject->TypeUpdate(
+                ID      => $TypeID,
+                Name    => $Type,
+                ValidID => 1,
+                UserID  => 1,
+            );
+            next TYPE;
+        }
+
+        $TypeObject->TypeAdd(
+            Name    => $Type,
+            ValidID => 1,
+            UserID  => 1,
+        );
+    }
+
+    return 1;
+}
+
+sub _GovernanceRoleObjectsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my @Roles = qw(
+        REQUESTER
+        REQUESTER-DEFAULT
+        REQUESTER-SUPPORT-GROUP
+        ASSESSOR
+        ENDORSER
+        APPROVER
+        IMPLEMENTER
+        VERIFIER
+        SUPPORT
+        ESCALATION
+    );
+
+    my $GeneralCatalogObject   = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+
+    my %ClassByName = reverse %{ $GeneralCatalogObject->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {} };
+    my $ClassID = $ClassByName{GovernanceRole} || $ClassByName{'Governance Role'};
+    return if !$ClassID;
+
+    my %StatusByName = reverse %{ $GeneralCatalogObject->ItemList(
+        Class => 'ZTSM::GovernanceObject::Status',
+    ) || {} };
+    my $StatusID = $StatusByName{Active} || $StatusByName{Approved} || $StatusByName{Draft};
+    return if !$StatusID;
+
+    ROLE:
+    for my $Role (@Roles) {
+        next ROLE if $Self->_GovernanceObjectNameExists(
+            ClassID => $ClassID,
+            Name    => $Role,
+        );
+
+        my $Number = 'TESSERA-ROLE-' . $Role;
+        $Number =~ s{[^A-Za-z0-9-]}{-}g;
+
+        next ROLE if $GovernanceObjectObject->GovernanceObjectLookup(
+            GOID => $Number,
+        );
+
+        $GovernanceObjectObject->GovernanceObjectAdd(
+            ClassID      => $ClassID,
+            ZTSMStatusID => $StatusID,
+            Number       => $Number,
+            Name         => $Role,
+            Description  => "Default governance role used by TESSERA runtime orchestration.",
+            UserID       => 1,
+        );
+    }
+
+    return 1;
+}
+
+sub _GovernanceObjectNameExists {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ClassID} || !$Param{Name};
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    return if !$DBObject->Prepare(
+        SQL => <<'END_SQL',
+SELECT v.id
+  FROM governance_object_item_version v
+  INNER JOIN governance_object_item i
+    ON i.last_version_id = v.id
+  WHERE i.class_id = ?
+    AND v.name = ?
+END_SQL
+        Bind  => [ \$Param{ClassID}, \$Param{Name} ],
+        Limit => 1,
+    );
+
+    my $Found;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Found = $Row[0];
+    }
+
+    return $Found;
+}
+
+sub _RuntimeProcessesEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my @Files = (
+        "$Home/var/governancedb/runtime_seed/ztsm-ticket-lifecycle-orchestration.yml",
+        "$Home/var/governancedb/runtime_seed/ztsm-activity-lifecycle-orchestration.yml",
+    );
+
+    my $ProcessObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process');
+    my $YAMLObject    = $Kernel::OM->Get('Kernel::System::YAML');
+    my $LogObject     = $Kernel::OM->Get('Kernel::System::Log');
+
+    my $Changed;
+
+    FILE:
+    for my $File (@Files) {
+        my $Content = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+            Location => $File,
+            Mode     => 'utf8',
+        );
+        next FILE if !$Content;
+
+        my $Data = $YAMLObject->Load( Data => ${$Content} );
+        if ( ref $Data ne 'HASH' || ref $Data->{Process} ne 'HASH' || !$Data->{Process}->{Name} ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "GovernanceDB bootstrap could not read process seed $File.",
+            );
+            next FILE;
+        }
+
+        if ( $Self->_ActiveProcessNameExists( Name => $Data->{Process}->{Name} ) ) {
+            next FILE;
+        }
+
+        my %Import = $ProcessObject->ProcessImport(
+            Content                   => ${$Content},
+            OverwriteExistingEntities => 1,
+            UserID                    => 1,
+        );
+        if ( !$Import{Success} ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "GovernanceDB bootstrap could not import process '$Data->{Process}->{Name}': "
+                    . ( $Import{Message} || '' ),
+            );
+            next FILE;
+        }
+
+        $Changed = 1;
+    }
+
+    if ($Changed) {
+        my $ConfigFileLocation = "$Home/Kernel/Config/Files/ZZZProcessManagement.pm";
+        my $Dump = $ProcessObject->ProcessDump(
+            ResultType => 'FILE',
+            Location   => $ConfigFileLocation,
+            UserID     => 1,
+        );
+        if ( !$Dump ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => 'GovernanceDB bootstrap could not dump process configuration after runtime process import.',
+            );
+        }
+    }
+
+    return 1;
+}
+
+sub _ActiveProcessNameExists {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{Name};
+
+    my $List = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process')->ProcessListGet(
+        UserID => 1,
+    ) || [];
+
+    PROCESS:
+    for my $Process ( @{$List} ) {
+        next PROCESS if ref $Process ne 'HASH';
+        next PROCESS if ( $Process->{Name} || '' ) ne $Param{Name};
+        next PROCESS if ( $Process->{State} || '' ) ne 'Active';
+        return 1;
+    }
+
+    return;
+}
+
+sub _GenericAgentJobsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $File = "$Home/var/governancedb/runtime_seed/generic_agents.yml";
+
+    my $Content = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+        Location => $File,
+        Mode     => 'utf8',
+    );
+    return 1 if !$Content;
+
+    my $Data = $Kernel::OM->Get('Kernel::System::YAML')->Load(
+        Data => ${$Content},
+    );
+    return 1 if ref $Data ne 'HASH' || ref $Data->{GenericAgents} ne 'HASH';
+
+    my $GenericAgentObject = $Kernel::OM->Get('Kernel::System::GenericAgent');
+    my $StateObject        = $Kernel::OM->Get('Kernel::System::State');
+    my $TypeObject         = $Kernel::OM->Get('Kernel::System::Type');
+
+    JOB:
+    for my $JobName ( sort keys %{ $Data->{GenericAgents} } ) {
+        my %Job = %{ $Data->{GenericAgents}{$JobName} || {} };
+        $Job{Name} ||= $JobName;
+
+        delete @Job{qw(ChangeTime CreateTime ScheduleLastRun ScheduleLastRunUnixTime)};
+
+        if ( ref $Job{States} eq 'ARRAY' ) {
+            my @StateIDs;
+            for my $State ( @{ $Job{States} } ) {
+                my $StateID = $StateObject->StateLookup( State => $State );
+                push @StateIDs, $StateID if $StateID;
+            }
+            $Job{StateIDs} = \@StateIDs if @StateIDs;
+        }
+
+        if ( ref $Job{Types} eq 'ARRAY' ) {
+            my @TypeIDs;
+            for my $Type ( @{ $Job{Types} } ) {
+                my $TypeID = $TypeObject->TypeLookup( Type => $Type );
+                push @TypeIDs, $TypeID if $TypeID;
+            }
+            $Job{TypeIDs} = \@TypeIDs if @TypeIDs;
+        }
+
+        my %Existing = $GenericAgentObject->JobGet(
+            Name => $Job{Name},
+        );
+        if (%Existing) {
+            $GenericAgentObject->JobDelete(
+                Name   => $Job{Name},
+                UserID => 1,
+            );
+        }
+
+        $GenericAgentObject->JobAdd(
+            Name   => $Job{Name},
+            Data   => \%Job,
+            UserID => 1,
+        );
+    }
+
+    return 1;
+}
+
 sub _DefaultsLoad {
     my ( $Self, %Param ) = @_;
 
@@ -603,6 +1003,42 @@ sub _DefaultsLoad {
     return $Kernel::OM->Get('Kernel::System::JSON')->Decode(
         Data => ${$ContentRef},
     );
+}
+
+sub _GeneralCatalogSeedEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $File = "$Home/var/governancedb/default_general_catalog.yml";
+
+    my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+        Location => $File,
+        Mode     => 'utf8',
+    );
+    if ( !$ContentRef ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "GovernanceDB default General Catalog seed file not found: $File",
+        );
+        return 1;
+    }
+
+    my $Result = $Kernel::OM->Get('Kernel::System::GeneralCatalog::Document')->Import(
+        Content => ${$ContentRef},
+        Format  => 'yaml',
+        UserID  => 1,
+    );
+
+    if ( !$Result || !$Result->{Success} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB default General Catalog seed import failed: '
+                . ( $Result && $Result->{Message} ? $Result->{Message} : 'unknown error' ),
+        );
+        return;
+    }
+
+    return 1;
 }
 
 sub _CatalogItemEnsure {

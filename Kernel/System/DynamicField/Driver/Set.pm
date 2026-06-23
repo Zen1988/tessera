@@ -37,6 +37,7 @@ use Kernel::System::VariableCheck qw(:all);
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::GeneralCatalog',
     'Kernel::Output::HTML::DynamicField::Mask',
     'Kernel::System::Log',
 );
@@ -1013,7 +1014,26 @@ sub _GetIncludedDynamicFields {
             Name => $DFEntry->{DF},
         );
 
-        return $DynamicField;
+        return if !IsHashRefWithData($DynamicField);
+
+        my %DynamicFieldCopy = %{$DynamicField};
+        $DynamicFieldCopy{Config} = {
+            %{ $DynamicFieldCopy{Config} || {} },
+        };
+
+        $Self->_LegacyGovernanceSetReferenceConfigApply(
+            DynamicFieldConfig => \%DynamicFieldCopy,
+        );
+
+        if (
+            ( $DynamicFieldCopy{FieldType} || '' ) eq 'GeneralCatalog'
+            && !$DynamicFieldCopy{Config}{Class}
+            )
+        {
+            $DynamicFieldCopy{FieldType} = 'Text';
+        }
+
+        return \%DynamicFieldCopy;
     };
 
     ITEM:
@@ -1071,6 +1091,136 @@ sub _GetIncludedDynamicFields {
     }
 
     return \%DynamicField;
+}
+
+sub _LegacyGovernanceSetReferenceConfigApply {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    return if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $Name   = $DynamicFieldConfig->{Name} || '';
+    my $Config = $DynamicFieldConfig->{Config} ||= {};
+
+    my %GovernanceObjectClassByField = (
+        'ZBlue-Profile'    => ['GovernanceRole'],
+        'ZBlue-Role'       => ['GovernanceRole'],
+        'ZBlue-Template'   => ['Template'],
+        'ZBlue-PurpleBook' => ['BlueBook'],
+    );
+
+    my %GovernanceObjectFieldDefaults = (
+        'ZBlue-Profile' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+        'ZBlue-Role' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-Template' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-PurpleBook' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+    );
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject'
+        && !IsArrayRefWithData( $Config->{ClassIDs} )
+        && IsArrayRefWithData( $GovernanceObjectClassByField{$Name} )
+        )
+    {
+        my @ClassIDs = $Self->_GovernanceObjectClassIDsResolve(
+            Classes => $GovernanceObjectClassByField{$Name},
+        );
+
+        if (@ClassIDs) {
+            $Config->{ClassIDs}     = \@ClassIDs;
+            $Config->{DisplayType}  ||= 'GovernanceObjectName';
+            $Config->{DefaultValue} = '' if !defined $Config->{DefaultValue};
+            $Config->{Link}         = '' if !defined $Config->{Link};
+            $Config->{LinkPreview}  = '' if !defined $Config->{LinkPreview};
+        }
+    }
+
+    if ( IsHashRefWithData( $GovernanceObjectFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GovernanceObjectFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GovernanceObjectFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    my %GeneralCatalogClassByField = (
+        'ZBlue-TicketType' => 'ZTSM::Type',
+    );
+
+    my %GeneralCatalogFieldDefaults = (
+        'ZBlue-TicketType' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+    );
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GeneralCatalog'
+        && !$Config->{Class}
+        && $GeneralCatalogClassByField{$Name}
+        )
+    {
+        $Config->{Class} = $GeneralCatalogClassByField{$Name};
+    }
+
+    if ( IsHashRefWithData( $GeneralCatalogFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GeneralCatalogFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GeneralCatalogFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    return 1;
+}
+
+sub _GovernanceObjectClassIDsResolve {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsArrayRefWithData( $Param{Classes} );
+
+    my $ClassID2Name = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {};
+
+    my %ClassIDByNormalizedName = map {
+        my $Name = $ClassID2Name->{$_} // '';
+        $Name =~ s{\s+}{}g;
+        lc $Name => $_;
+    } grep { defined $ClassID2Name->{$_} } keys %{$ClassID2Name};
+
+    my @ClassIDs;
+    my %Seen;
+    CLASS:
+    for my $Class ( @{ $Param{Classes} } ) {
+        next CLASS if !defined $Class || $Class eq '';
+
+        if ( $Class =~ m{\A\d+\z}xms ) {
+            next CLASS if $Seen{$Class}++;
+            push @ClassIDs, $Class;
+            next CLASS;
+        }
+
+        my $Normalized = $Class;
+        $Normalized =~ s{\s+}{}g;
+        my $ClassID = $ClassIDByNormalizedName{ lc $Normalized };
+        next CLASS if !$ClassID;
+        next CLASS if $Seen{$ClassID}++;
+
+        push @ClassIDs, $ClassID;
+    }
+
+    return @ClassIDs;
 }
 
 sub _GetIncludedFieldOrdered {

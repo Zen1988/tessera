@@ -290,6 +290,26 @@ sub ActionRow {
         );
     }
 
+    $LayoutObject->Block(
+        Name => 'DocumentActionRowItem',
+        Data => {
+            %Param,
+            CSS  => 'AlwaysPresent',
+            Name => Translatable('Import YAML/JSON'),
+            Link => 'Action=AgentGovernanceObjectDocument',
+        },
+    );
+
+    $LayoutObject->Block(
+        Name => 'DocumentActionRowItem',
+        Data => {
+            %Param,
+            CSS  => 'AlwaysPresent',
+            Name => Translatable('General Catalog YAML/JSON'),
+            Link => 'Action=AgentGeneralCatalogDocument',
+        },
+    );
+
     # check if there was a column filter and no results, and print a link to back
     if ( scalar @{ $Param{GovernanceObjectIDs} } == 0 && $Param{LastColumnFilter} ) {
         $LayoutObject->Block(

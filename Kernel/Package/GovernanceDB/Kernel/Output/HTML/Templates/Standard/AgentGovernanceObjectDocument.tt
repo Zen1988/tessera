@@ -17,7 +17,7 @@
     <div class="Header">
         <h1>[% Translate("Governance as Code") | html %][% IF Data.Number %]: [% Data.Number | html %] - [% Data.Name | html %][% END %]</h1>
         <p>
-            <a class="CancelClosePopup" href="#">[% Translate("Cancel & close") | html %]</a>
+            <a href="[% Env("Baselink") %][% IF Data.GovernanceObjectID %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %][% ELSE %]Action=AgentGovernanceObject[% END %]">[% Translate("Cancel & close") | html %]</a>
         </p>
     </div>
     <div class="Content">
@@ -59,7 +59,7 @@
                         <span>[% Translate("Import") | html %]</span>
                     </button>
                     [% Translate("or") | html %]
-                    <a class="CancelClosePopup" href="#">[% Translate("Cancel") | html %]</a>
+                    <a href="[% Env("Baselink") %][% IF Data.GovernanceObjectID %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %][% ELSE %]Action=AgentGovernanceObject[% END %]">[% Translate("Cancel") | html %]</a>
                 </div>
             </fieldset>
         </form>

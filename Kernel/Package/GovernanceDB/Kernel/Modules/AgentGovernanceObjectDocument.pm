@@ -119,6 +119,8 @@ sub Run {
         );
     }
 
+    $GovernanceObject ||= {};
+
     return join '',
         $LayoutObject->Header(
             Type  => 'Small',

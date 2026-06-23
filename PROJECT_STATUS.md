@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-22
+Last Updated: 2026-06-23
 
 ## Current Focus
 
@@ -1676,3 +1676,434 @@ PurpleBook completion must not:
 
 - Install/upgrade 0.0.108, restart PSGI/web workers, and test CustomerTicketMessage service payload import before ticket submit.
 - Prepare a sample service payload spreadsheet for one real service with DynamicField Set rows and reference names.
+
+## 2026-06-23 Runtime Default Prerequisites 0.0.109
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.109`.
+- Added package-owned runtime seed exports under `var/governancedb/runtime_seed/`:
+  - `generic_agents.yml`
+  - `ztsm-activity-lifecycle-orchestration.yml`
+  - `ztsm-ticket-lifecycle-orchestration.yml`
+- Extended `GovernanceDB::Bootstrap->InstallDefaults()` with idempotent runtime prerequisite seeding for install and upgrade:
+  - Ticket states used by GovernanceDB runtime actions and process exports, including approval, assessment, support, verification, follow-up, on-hold, neutral closure, rollback, duplicate, no-action, cancelled/canceled, cascaded/cascading, and success/failure closure states.
+  - Ticket types used by parent and child execution flows, including `ServiceRequest`, `Task`, `Assessment`, `Endorsement`, `Approval`, `Implementation`, and `Verification`.
+  - Default GovernanceRole objects, including requester, assessor, endorser, approver, implementer, verifier, support, and escalation roles.
+  - Default runtime process exports when active processes of the same name do not already exist.
+  - Default GenericAgent jobs with state/type names resolved to IDs during bootstrap.
+- Updated the GenericAgent role lookup seed to include `Implementation` activity tickets.
+- Generated `Kernel/Package/GovernanceDB-0.0.109.opm`.
+- `Kernel/Package/GovernanceDB-0.0.109.opm` SHA256: `684DA53D7F6F0704D904F0FD117447EC8D9AA9CBB0D2C38ADD7ECACB950F7562`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm` passed Perl syntax check.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.109.opm` parsed successfully as XML.
+- Runtime seed YAML files parsed successfully:
+  - `generic_agents.yml`
+  - `ztsm-activity-lifecycle-orchestration.yml`
+  - `ztsm-ticket-lifecycle-orchestration.yml`
+- `Kernel/Package/GovernanceDB-0.0.109.opm`: version `0.0.109`, 166 file nodes, `MissingBase64=0`.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Runtime prerequisite seeding is centralized in `GovernanceDB::Bootstrap` so fresh installs, upgrades, and reinstalls share the same idempotent path.
+- Existing states, types, processes, jobs, and GovernanceRole objects are preserved where possible and repaired only for validity or expected metadata.
+- GovernanceRole defaults are seeded as Governance Objects, not as hardcoded workflow routing.
+- Runtime process imports are skipped when an active process with the same name already exists, avoiding accidental overwrite of configured process definitions.
+- GenericAgent jobs are rebuilt by name from the package seed so referenced states and types resolve against the deployed environment.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.109` package.
+- Confirm whether the historical `ServiceRequest` process should also become a package seed; it was not added because it is not part of the current GovernanceDB lifecycle export pair.
+- Confirm real environment GovernanceRole class/status naming if a site has renamed the default GeneralCatalog entries.
+
+### Next Priorities
+
+- Install/upgrade 0.0.109, restart PSGI/web workers, and confirm the default state, type, GenericAgent, process, and GovernanceRole records are present.
+- Exercise parent `ServiceRequest` orchestration and child `Assessment`/`Endorsement`/`Approval`/`Implementation`/`Verification` creation on a fresh environment.
+
+## 2026-06-23 Governance as Code Converted Object Edit Fix 0.0.110
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.110`.
+- Added a compatibility guard in the DynamicField Set driver for converted governance objects whose nested child field definitions reference `GeneralCatalog` without a `Config->{Class}`.
+- Applied the Set driver guard to both the live source and GovernanceDB runtime overlay:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+- Updated the Governance as Code YAML/JSON document template so `Cancel & close` and bottom `Cancel` navigate back to the object zoom page or overview when the screen is opened as a normal page rather than a popup.
+- Generated `Kernel/Package/GovernanceDB-0.0.110.opm`.
+- `Kernel/Package/GovernanceDB-0.0.110.opm` SHA256: `FDF0529F5C6B760D6FB8EC66A698C9D9B13ADF02D39E6C9A7532CE5BB706F3CE`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGovernanceObjectDocument.pm`
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.110.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.110.opm`: version `0.0.110`, 166 file nodes, `MissingBase64=0`.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- The missing GeneralCatalog class condition is handled as a compatibility fallback for converted object definitions, not as a mutation of stored governance definitions.
+- Converted nested GeneralCatalog child definitions without a class are treated as text-like display/edit configs so existing stored values remain visible and edit screens do not call GeneralCatalog with an undefined class.
+- Governance as Code cancel navigation must work from a main browser tab as well as from popup launch contexts.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.110` package.
+- Verify zoom and edit for converted BlueBook and StateBook objects after installing `0.0.110` and restarting PSGI/web workers.
+- Consider a future controlled migration to repair converted child field definitions with the intended GeneralCatalog `Class` values once the authoritative mappings are confirmed.
+
+### Next Priorities
+
+- Install/upgrade `0.0.110`, restart PSGI/web workers, and retest `AgentGovernanceObjectZoom` and `AgentGovernanceObjectEdit` for the failing converted object.
+- Retest Governance as Code YAML/JSON format switching and cancel links from both normal-page and popup launch contexts.
+
+## 2026-06-23 Governance as Code Direct YAML/JSON Import 0.0.111
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.111`.
+- Added a list-level `Import YAML/JSON` action to the Governance Object overview action row.
+- Fixed `AgentGovernanceObjectDocument` so the document editor can open without an existing `GovernanceObjectID`, allowing users to paste YAML or JSON directly and create/update the target Governance Object from the document content.
+- Hardened `Kernel::System::GovernanceObject::Document->Import()` permission handling:
+  - Updates require `rw` permission on the resolved existing Governance Object.
+  - Creates require `rw` permission on the resolved Governance Object class.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.111.opm`.
+- `Kernel/Package/GovernanceDB-0.0.111.opm` SHA256: `8F1521184FE33D3A6337A70680B06CA817482402CD5AD1AB77AD8B009AC52631`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGovernanceObjectDocument.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Output/HTML/GovernanceObject/OverviewSmall.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.111.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.111.opm`: version `0.0.111`, 166 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM includes the updated document controller, document import backend, overview action renderer, and overview template.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Governance as Code must be a full edit loop: export from an object, edit YAML/JSON, and import directly from the Governance Object overview without first opening or manually creating a target object.
+- The document import path continues to use the existing GovernanceObject add/update APIs so GOID, versioning, history, field drivers, and link sync remain authoritative.
+- Import authorization is enforced in the document backend because direct document imports may resolve the target object from `number` or `name` instead of from a URL parameter.
+- Direct import does not introduce new field names or a parallel storage model; it consumes the existing document schema and existing Governance Object definitions.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.111` package.
+- Verify that the overview `Import YAML/JSON` action opens a blank Governance as Code editor from the Governance Object list.
+- Verify YAML and JSON imports for:
+  - Creating a new Governance Object where the current agent has class `rw`.
+  - Updating an existing Governance Object resolved by `number`.
+  - Rejecting updates/creates where the current agent lacks `rw` permission.
+
+### Next Priorities
+
+- Install/upgrade `0.0.111`, restart PSGI/web workers, and test the full Governance as Code loop from overview import through object zoom/edit.
+- Retest converted BlueBook/StateBook YAML imports that contain DynamicField Set values and GeneralCatalog names.
+
+## 2026-06-23 General Catalog as Code 0.0.112
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.112`.
+- Added `Kernel::System::GeneralCatalog::Document` as a YAML/JSON document codec for General Catalog classes, items, validity, comments, and preferences.
+- Added `AgentGeneralCatalogDocument` and `AgentGeneralCatalogDocument.tt` as an agent-facing import/export screen.
+- Added a `General Catalog YAML/JSON` action to the Governance Object overview action row.
+- Registered the new module and loader settings in `GovernanceDB.xml`, restricted to the same `governance-db` and `admin` access groups as the Governance Object document editor.
+- Added the new module, backend, and template files to the GovernanceDB SOPM filelist.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.112.opm`.
+- `Kernel/Package/GovernanceDB-0.0.112.opm` SHA256: `4DE98AF0B6527E0261420F86D1940E8C32CB16F304C050B2FFB47D51A59E0CAB`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/Package/GovernanceDB/Kernel/System/GeneralCatalog/Document.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGeneralCatalogDocument.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Output/HTML/GovernanceObject/OverviewSmall.pm`
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `GovernanceDB.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.112.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.112.opm`: version `0.0.112`, 169 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM includes the General Catalog document module, backend codec, template, overview action renderer, and SysConfig registration.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- General Catalog is treated as part of Governance as Code because GovernanceDB dynamic fields and runtime books depend on named catalog classes and items.
+- The document schema exports catalog names and validity names instead of deployment-specific IDs.
+- Imports are idempotent by `class + name`: existing items are updated, missing items are added, and preferences are rewritten through the existing General Catalog preferences API.
+- The first UI entry point lives in the Governance Object overview action row so governance object YAML/JSON and General Catalog YAML/JSON are operated from the same governance maintenance surface.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.112` package.
+- Verify export/import for core GovernanceDB catalog classes such as:
+  - `ZTSM::GovernanceObject::Class`
+  - `ZTSM::GovernanceObject::Status`
+  - `ZTSM::GovernanceObject::Class::Category`
+  - Governance role/status/catalog classes used by BlueBook and StateBook fields.
+- Confirm whether a later enhancement should support class rename/deprecation operations; `0.0.112` intentionally uses non-destructive add/update by class and item name.
+
+### Next Priorities
+
+- Install/upgrade `0.0.112`, restart PSGI/web workers, and test `General Catalog YAML/JSON` from the Governance Object overview.
+- Export a focused set of GovernanceDB catalog classes, import into a clean target environment, then import Governance Object YAML/JSON that references those catalog names.
+
+## 2026-06-23 Governance YAML Set Blank Reference Fix 0.0.113
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.113`.
+- Updated `Kernel::System::GovernanceObject::Document->_SetValueFromDocument()` so imported DynamicField Set rows explicitly write blank values for:
+  - child fields omitted from YAML/JSON
+  - child fields present as YAML null (`~`)
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.113.opm`.
+- `Kernel/Package/GovernanceDB-0.0.113.opm` SHA256: `93D1FF71FBB53A51DB8DA8483D00AD502786B5F37688B2A67C24D70834FF9E85`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm` passed Perl syntax check.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.113.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.113.opm`: version `0.0.113`, 169 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM includes `Kernel/System/GovernanceObject/Document.pm`.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Missing or null fields in a Governance as Code Set row mean empty, not "choose the first selectable reference".
+- The importer now makes that intent explicit before the DynamicField Set edit widget renders the row.
+- This keeps constrained reference fields such as BlueBook Role, Template, Follow-up, Ticket Type, and similar child fields from being silently populated by UI defaults when the YAML did not define them.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.113` package.
+- Retest importing a BlueBook YAML row where only `ZBlue-Profile` is set and `ZBlue-Role`, `ZBlue-Template`, and `ZBlue-Follow-up` are omitted.
+
+### Next Priorities
+
+- Install/upgrade `0.0.113`, restart PSGI/web workers, and verify omitted/null Set child fields render blank in edit and zoom screens.
+
+## 2026-06-23 Governance Reference Filter and General Catalog Admin Import 0.0.114
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.114`.
+- Restored constrained reference behavior for converted BlueBook Set child fields:
+  - `ZBlue-Profile` and `ZBlue-Role` are restricted to `GovernanceRole`.
+  - `ZBlue-Template` is restricted to `Template`.
+  - `ZBlue-PurpleBook` / Follow-up is restricted to `BlueBook`.
+  - `ZBlue-TicketType` is restored as a GeneralCatalog field using `ZTSM::GovernanceObject::Class`.
+- Updated `default_classes.json` so fresh install and package upgrade repair the affected child DynamicField configs.
+- Added runtime compatibility fallback in the DynamicField Set driver so already-bad converted configs do not render all Governance Object classes while the upgraded config is being repaired.
+- Updated Governance Object YAML/JSON import resolution so Set child references use the same restrictions during name lookup.
+- Added `Import / Export YAML/JSON` to the Admin General Catalog action panel and packaged `AdminGeneralCatalog.tt`.
+- Updated `AgentGeneralCatalogDocument` so launch from Admin General Catalog returns to `AdminGeneralCatalog` on cancel instead of Governance Object overview.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.114.opm`.
+- `Kernel/Package/GovernanceDB-0.0.114.opm` SHA256: `497CD868C73FEF885AFA04F057AB34BD1E6AAC45425E70CFE4A64A4B8CB0B807`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGeneralCatalogDocument.pm`
+- `var/governancedb/default_classes.json` parsed successfully as JSON.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `GovernanceDB.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.114.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.114.opm`: 170 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM includes the Admin General Catalog template, General Catalog document controller/template/backend, Governance Object document importer, Set runtime overlay, and default class definitions.
+- `git diff --check` passed with only the existing line-ending warning for `default_classes.json`.
+
+### Architectural Decisions
+
+- `ZBlue-TicketType` represents the intended governance execution class, so it is backed by `ZTSM::GovernanceObject::Class` catalog values such as `Assessment`, `Approval`, `Implementation`, `Task`, and `Verification`.
+- BlueBook child reference filters are treated as package defaults and runtime compatibility guards because converted Set children can exist in deployed environments with empty configs.
+- General Catalog as Code belongs directly on the General Catalog admin surface, while still reusing the existing `AgentGeneralCatalogDocument` import/export module.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.114` package.
+- After upgrade, restart PSGI/web workers and retest BlueBook edit:
+  - Role/Profile dropdowns should show only GovernanceRole objects.
+  - Template dropdown should show Template objects only.
+  - Follow-up dropdown should show BlueBook objects only.
+  - Ticket Type should select from Governance Object class catalog entries, not remain empty or resolve through a wrong Governance Object class.
+- Retest Admin General Catalog > Import / Export YAML/JSON for export, import, and cancel return behavior.
+
+## 2026-06-23 General Catalog Package Conflict Fix 0.0.115
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.115`.
+- Removed `Kernel/Output/HTML/Templates/Standard/AdminGeneralCatalog.tt` from the GovernanceDB package filelist because it is owned by `GeneralCatalog-11.0.10` and causes package install/upgrade conflicts.
+- Replaced the Admin General Catalog template override with package-owned loader JavaScript:
+  - `var/httpd/htdocs/js/Core.Agent.Admin.GeneralCatalogDocument.js`
+- Added `Loader::Module::AdminGeneralCatalog###002-GovernanceDBGeneralCatalogDocument` to load the JS on `AdminGeneralCatalog`.
+- The JS injects the `Import / Export YAML/JSON` action into the existing Admin General Catalog action list and links to `AgentGeneralCatalogDocument;ReturnAction=AdminGeneralCatalog`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.115.opm`.
+- `Kernel/Package/GovernanceDB-0.0.115.opm` SHA256: `D57CECEF819CD054AC07D74BC4FE57D49FE7BA04F7DC53BDD91706A9EAC3A0CC`.
+
+### Validation
+
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `GovernanceDB.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.115.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.115.opm`: 170 file nodes, `MissingBase64=0`.
+- Confirmed generated OPM does not include `Kernel/Output/HTML/Templates/Standard/AdminGeneralCatalog.tt`.
+- Confirmed generated OPM includes `var/httpd/htdocs/js/Core.Agent.Admin.GeneralCatalogDocument.js`.
+- `git diff --check` passed with only the existing line-ending warning for `default_classes.json`.
+
+### Architectural Decisions
+
+- GovernanceDB must not ship files owned by the GeneralCatalog package.
+- Admin General Catalog integration should be extension-based through loader JS, not a template replacement.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.115` package.
+- After upgrade and cache rebuild/restart, verify the Admin General Catalog action list shows `Import / Export YAML/JSON`.
+
+## 2026-06-23 GovernanceDB General Catalog Seed 0.0.116
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.116`.
+- Added `var/governancedb/default_general_catalog.yml` as a GovernanceDB-owned GeneralCatalog seed.
+- The seed is trimmed to GovernanceDB-owned or GovernanceDB-referenced catalog classes, avoiding the full stock ITSM GeneralCatalog set:
+  - `ZTSM::GovernanceObject::Class`
+  - `ZTSM::GovernanceObject::Category`
+  - `ZTSM::GovernanceObject::Class::Category`
+  - `ZTSM::GovernanceObject::Definition`
+  - `ZTSM::GovernanceObject::Role`
+  - `ZTSM::GovernanceObject::Status`
+  - `ZRM::Impact`
+  - `ZRM::ImpactCategory`
+  - `ZRM::Likelihood`
+  - `ZRM::RiskCategory`
+- Updated `Kernel::System::GovernanceDB::Bootstrap->InstallDefaults()` to import the seed via `Kernel::System::GeneralCatalog::Document` during install and upgrade.
+- The seed import is idempotent by catalog class and item name, so existing rows are updated and missing rows are added without duplicate catalog records.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.116.opm`.
+- `Kernel/Package/GovernanceDB-0.0.116.opm` SHA256: `09AD0B6D28EC6D4CDF007DBB39901E5388BFE691E6D7DFF803D587C6C50E8976`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm` passed Perl syntax check.
+- `var/governancedb/default_general_catalog.yml` parsed successfully as YAML and contains 10 catalog classes.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.116.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.116.opm`: 171 file nodes, `MissingBase64=0`.
+- Confirmed generated OPM includes:
+  - `var/governancedb/default_general_catalog.yml`
+  - `var/governancedb/default_classes.json`
+  - `Kernel/System/GovernanceDB/Bootstrap.pm`
+  - `Kernel/System/GeneralCatalog/Document.pm`
+- `git diff --check` passed with only the existing line-ending warning for `default_classes.json`.
+
+### Architectural Decisions
+
+- GovernanceDB package installation must not depend on the stock ITSM GeneralCatalog default set being enabled.
+- GovernanceDB should seed only the catalog classes it owns or directly references, so disabled ITSM catalog defaults are not silently reintroduced.
+- GeneralCatalog seeding runs before class definition/dynamic-field repair so references such as Governance Object class filters and ZRM risk score catalogs can resolve during bootstrap.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.116` package.
+- After upgrade, verify General Catalog contains the seeded GovernanceDB and ZRM classes/items before importing Governance Object YAML/JSON.
+
+## 2026-06-23 BlueBook Ticket Type Catalog Correction 0.0.117
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.117`.
+- Corrected converted BlueBook `ZBlue-TicketType` child field configuration from `ZTSM::GovernanceObject::Class` to the intended GeneralCatalog class `ZTSM::Type`.
+- Applied the same `ZTSM::Type` fallback to:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+- Added `ZTSM::Type` to `var/governancedb/default_general_catalog.yml` so BlueBook ticket type values such as `Assessment`, `Approval`, `Endorsement`, `Task`, `Verification`, and `ServiceRequest` are seeded during install/upgrade.
+- Updated `AgentGovernanceObjectEdit.tt` so `Cancel & close` and bottom `Cancel` navigate back to the Governance Object zoom page when the edit screen is opened in a normal browser tab.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.117.opm`.
+- `Kernel/Package/GovernanceDB-0.0.117.opm` SHA256: `28044E235486FB84E711E3682E1B86F618478B17B724BAF43C94C7EC8CB652A5`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/Modules/AgentGovernanceObjectEdit.pm`
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `var/governancedb/default_classes.json` parsed successfully and `ZBlue-TicketType` resolves to `ZTSM::Type`.
+- `var/governancedb/default_general_catalog.yml` parsed successfully and includes `ZTSM::Type`.
+- `Kernel/Package/GovernanceDB-0.0.117.opm` parsed successfully: version `0.0.117`, 171 file nodes, `MissingBase64=0`.
+- Confirmed generated OPM includes the corrected `default_classes.json`, `default_general_catalog.yml`, edit template, Document importer, and runtime Set overlay.
+- `git diff --check` passed with only the existing line-ending warning for `default_classes.json`.
+
+### Architectural Decisions
+
+- BlueBook `Ticket Type` is a ticket execution type and must use GeneralCatalog `ZTSM::Type`.
+- Governance Object class catalog values remain for object classification and should not be reused as BlueBook ticket type choices.
+- Edit cancel links must work when Governance Object edit is opened as a full page, not only in popup contexts.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.117` package.
+- After upgrade, clear cache/restart web workers and verify BlueBook edit shows ticket types from `ZTSM::Type`, not Governance Object classes.
+- Verify existing BlueBook YAML imports with omitted ticket type still leave the field blank, while explicit values resolve against `ZTSM::Type`.
+
+## 2026-06-23 BlueBook Reference Empty Option Preservation 0.0.118
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.118`.
+- Rechecked `Export/ALL_DynamicFields_2026-06-19 06_28_14.yml` for the original BlueBook DynamicField design.
+- Preserved the exported BlueBook nested Set reference behavior in `var/governancedb/default_classes.json`:
+  - `ZBlue-Profile`: `MultiValue=0`, `PossibleNone=0`
+  - `ZBlue-Role`: `MultiValue=0`, `PossibleNone=1`
+  - `ZBlue-TicketType`: `Class=ZTSM::Type`, `MultiValue=0`, `PossibleNone=0`
+  - `ZBlue-Template`: `MultiValue=0`, `PossibleNone=1`
+  - `ZBlue-PurpleBook`: `MultiValue=0`, `PossibleNone=1`
+- Updated the converted-field compatibility repair so class restrictions no longer force optional fields to become mandatory:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.118.opm`.
+- `Kernel/Package/GovernanceDB-0.0.118.opm` SHA256: `DCEE62A0EACBB19619133F6CC7508BFC862791946CE034EB6DEB6B77D1E1314A`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm`
+- Validated `default_classes.json` against the exported BlueBook field settings for `MultiValue`, `PossibleNone`, and `ZBlue-TicketType` class.
+- `Kernel/Package/GovernanceDB-0.0.118.opm` parsed successfully: version `0.0.118`, 171 file nodes, `MissingBase64=0`.
+- Confirmed generated OPM includes the corrected BlueBook Set child field configs and runtime compatibility repair.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Class restriction and empty-option behavior are independent field decisions.
+- `ZBlue-Template`, `ZBlue-PurpleBook`, and `ZBlue-Role` must remain optional single-value references.
+- `ZBlue-Profile` and `ZBlue-TicketType` remain required single-value fields.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.118` package.
+- After upgrade, verify BlueBook edit allows blank Template, Follow-up/PurpleBook, and Role values while preserving their class-restricted dropdowns.
