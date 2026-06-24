@@ -214,6 +214,17 @@ sub Run {
     }
 # EO ITSMCore
 
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMServicePayloadReferenceResolve' ) {
+        my $ReferenceResult = $Self->_ZTSMServicePayloadReferenceResolve(
+            LayoutObject => $LayoutObject,
+            ParamObject  => $ParamObject,
+        );
+
+        return $LayoutObject->JSONReply(
+            Data => $ReferenceResult,
+        );
+    }
+
     if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMServiceExtensionDynamicFields' ) {
         my %Visibility;
         $Self->_ServiceExtensionVisibilityApply(
@@ -1848,6 +1859,228 @@ sub Run {
             Comment => Translatable('Please contact the administrator.'),
         );
     }
+}
+
+sub _ZTSMServicePayloadReferenceResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $Field        = $ParamObject->GetParam( Param => 'Field' ) || '';
+    my $Value        = $ParamObject->GetParam( Param => 'Value' ) // '';
+    my $FieldName;
+
+    if ( $Field =~ m{\A(?:Autocomplete(?:_Search)?_)?DynamicField_([A-Za-z0-9\-]*?)(?:_[0-9]+){0,2}\z}xms ) {
+        $FieldName = $1;
+    }
+
+    return {
+        Success => 0,
+        Message => 'Need reference field.',
+    } if !$FieldName;
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldConfig        = $DynamicFieldObject->DynamicFieldGet(
+        Name => $FieldName,
+    );
+
+    if (
+        !IsHashRefWithData($DynamicFieldConfig)
+        || !$DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Behavior           => 'IsReferenceField',
+        )
+        )
+    {
+        return {
+            Success => 0,
+            Message => "Dynamic field '$FieldName' is not a reference field.",
+        };
+    }
+
+    my $SearchValue = $Self->_ZTSMServicePayloadReferenceImportValue($Value);
+    return {
+        Success => 1,
+        Key     => '',
+        Value   => '',
+    } if !$SearchValue;
+
+    if ( $SearchValue =~ s{::\s*(\d+)\s*\z}{} ) {
+        my $ObjectID = $1;
+        return $Self->_ZTSMServicePayloadReferenceResult(
+            DynamicFieldBackendObject => $DynamicFieldBackendObject,
+            DynamicFieldConfig        => $DynamicFieldConfig,
+            LayoutObject              => $LayoutObject,
+            ObjectID                  => $ObjectID,
+            SearchValues              => [ $Value, $SearchValue ],
+        );
+    }
+
+    my @SearchTerms = ($SearchValue);
+    if ( $Value && $Value ne $SearchValue ) {
+        push @SearchTerms, $Value;
+    }
+
+    my %CandidateSeen;
+    TERM:
+    for my $Term (@SearchTerms) {
+        next TERM if !defined $Term || $Term eq '';
+
+        my @ObjectIDs = $DynamicFieldBackendObject->SearchObjects(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Term               => $Term,
+            MaxResults         => 50,
+            ExternalSource     => 1,
+            UserID             => 1,
+        );
+
+        OBJECTID:
+        for my $ObjectID (@ObjectIDs) {
+            next OBJECTID if !$ObjectID;
+            next OBJECTID if $CandidateSeen{$ObjectID}++;
+
+            my $Result = $Self->_ZTSMServicePayloadReferenceResult(
+                DynamicFieldBackendObject => $DynamicFieldBackendObject,
+                DynamicFieldConfig        => $DynamicFieldConfig,
+                LayoutObject              => $LayoutObject,
+                ObjectID                  => $ObjectID,
+                SearchValues              => [ $Value, $SearchValue, $Term ],
+            );
+            return $Result if $Result->{Success};
+        }
+    }
+
+    return {
+        Success => 0,
+        Message => "Could not resolve '$Value' for $FieldName.",
+    };
+}
+
+sub _ZTSMServicePayloadReferenceResult {
+    my ( $Self, %Param ) = @_;
+
+    return { Success => 0 } if !$Param{ObjectID};
+    return { Success => 0 } if !$Self->_ZTSMServicePayloadReferenceClassAllowed(%Param);
+
+    my $Description = $Param{DynamicFieldBackendObject}->ObjectDescriptionGet(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        LayoutObject       => $Param{LayoutObject},
+        ObjectID           => $Param{ObjectID},
+    ) || {};
+
+    my @Labels = grep { defined $_ && $_ ne '' } (
+        $Description->{Long},
+        $Description->{Normal},
+        $Description->{Short},
+    );
+
+    my $ObjectData = $Self->_ZTSMServicePayloadReferenceObjectGet(%Param);
+    if ( IsHashRefWithData($ObjectData) ) {
+        push @Labels, grep { defined $_ && $_ ne '' } (
+            $ObjectData->{Name},
+            $ObjectData->{Number},
+        );
+    }
+
+    my %Wanted;
+    for my $SearchValue ( @{ $Param{SearchValues} || [] } ) {
+        my $Normalized = $Self->_ZTSMServicePayloadReferenceNormalize($SearchValue);
+        $Wanted{$Normalized} = 1 if $Normalized;
+    }
+
+    LABEL:
+    for my $Label (@Labels) {
+        my $NormalizedLabel = $Self->_ZTSMServicePayloadReferenceNormalize($Label);
+        next LABEL if !$NormalizedLabel;
+        next LABEL if !$Wanted{$NormalizedLabel};
+
+        return {
+            Success => 1,
+            Key     => "$Param{ObjectID}",
+            Value   => $Description->{Long} || $Description->{Normal} || $Label,
+        };
+    }
+
+    return {
+        Success => 0,
+        Message => "Object '$Param{ObjectID}' does not match the requested value.",
+    };
+}
+
+sub _ZTSMServicePayloadReferenceClassAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig} || {};
+    return 1 if ( $DynamicFieldConfig->{FieldType} || '' ) ne 'GovernanceObject';
+
+    my $ClassValues = $DynamicFieldConfig->{Config}{ClassIDs};
+    return 1 if !IsArrayRefWithData($ClassValues);
+
+    my $ObjectData = $Self->_ZTSMServicePayloadReferenceObjectGet(%Param);
+    return if !IsHashRefWithData($ObjectData);
+
+    my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {};
+    my %ClassName2ID = reverse %{$ClassList};
+    my %AllowedClassID;
+
+    VALUE:
+    for my $Value ( @{$ClassValues} ) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $ClassID = $Value =~ m{\A\d+\z} ? $Value : $ClassName2ID{$Value};
+        next VALUE if !$ClassID;
+
+        $AllowedClassID{$ClassID} = 1;
+    }
+
+    return 1 if !%AllowedClassID;
+    return $AllowedClassID{ $ObjectData->{ClassID} } ? 1 : 0;
+}
+
+sub _ZTSMServicePayloadReferenceObjectGet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ObjectID};
+    return if ( $Param{DynamicFieldConfig}{FieldType} || '' ) ne 'GovernanceObject';
+
+    return $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $Param{ObjectID},
+        DynamicFields      => 0,
+        UserID             => 1,
+        Silent             => 1,
+    );
+}
+
+sub _ZTSMServicePayloadReferenceImportValue {
+    my ( $Self, $Value ) = @_;
+
+    $Value //= '';
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return '' if $Value eq '-';
+
+    my $ExplicitID = '';
+    if ( $Value =~ s{::\s*(\d+)\s*\z}{} ) {
+        $ExplicitID = $1;
+    }
+
+    $Value =~ s{\A[A-Za-z][A-Za-z0-9 _-]{1,40}:\s*}{};
+    $Value =~ s{\A\s+|\s+\z}{}g;
+
+    return $ExplicitID ? "$Value::$ExplicitID" : $Value;
+}
+
+sub _ZTSMServicePayloadReferenceNormalize {
+    my ( $Self, $Value ) = @_;
+
+    $Value = $Self->_ZTSMServicePayloadReferenceImportValue($Value);
+    $Value =~ s{::\s*\d+\s*\z}{};
+    $Value =~ s{\s+}{ }g;
+    $Value =~ s{\A\s+|\s+\z}{}g;
+
+    return lc $Value;
 }
 
 sub _GetPriorities {

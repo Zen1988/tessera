@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.118</Version>
+    <Version>0.0.135</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -163,6 +163,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMRoleDirector.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/TESSERAResolveGovernance.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMArticleHelper.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookDirector.pm" Permission="660"/>

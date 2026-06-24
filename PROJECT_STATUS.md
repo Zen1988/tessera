@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-23
+Last Updated: 2026-06-24
 
 ## Current Focus
 
@@ -17,6 +17,189 @@ Last Updated: 2026-06-23
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-06-24 Governance Object Class Seed Repair 0.0.135
+
+### Completed work
+
+- Repaired the governance-as-code class seed after confirming the StateBook edit UI was rendering wrong field types and wrong GovernanceObject class restrictions.
+- Root cause: `Kernel/Package/GovernanceDB/var/governancedb/default_classes.json` contained corrupted embedded DynamicField definitions for Governance Object classes. StateBook was only the visible failure:
+  - `ZState-State` had lost its `GeneralCatalog` `Class => ZTSM::State` definition.
+  - `ZState-Book` was no longer restricted to `BlueBook`.
+  - Other GO class references also carried wrong or incomplete class restrictions.
+- Rebuilt class DynamicField definitions from `Export/ALL_DynamicFields_2026-06-19 06_28_14.yml` and used `Export/GOID_2026-06-19.yml` plus the current class map to restore symbolic GovernanceObject `ClassIDs`.
+- Restored all GO class DynamicFields in the seed, including Set inner field definitions:
+  - 94 top-level class field definitions refreshed.
+  - 26 embedded Set inner definitions refreshed.
+- Bumped `GovernanceDB.sopm` package version to `0.0.135`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.135.opm`.
+- Supersedes `0.0.134`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.135.opm`.
+- `Kernel/Package/GovernanceDB-0.0.135.opm` SHA256: `E6D1FF7B1B7084E5B7B0700F113540B8BBF37792CCD37ACB288914A01D996834`.
+
+### Validation
+
+- `default_classes.json` parses successfully as JSON.
+- StateBook seed spot-check:
+  - `ZState-Seq` is `Text` with numeric validation.
+  - `ZState-State` is `GeneralCatalog` with `Class => ZTSM::State`.
+  - `ZState-Book` is `GovernanceObject` restricted to `ClassIDs => [BlueBook]`.
+- ServiceSupportMap seed spot-check:
+  - Application, Environment, Location, ServiceProfile, ApprovalModel, and StateBook references are restricted to their matching GO classes.
+- BlueBook seed spot-check:
+  - Profile, Role, Template, and PurpleBook Set inner references are restricted to the exported classes.
+- `Kernel/Package/GovernanceDB-0.0.135.opm` parsed successfully as XML: version `0.0.135`, `FileCount=172`, `MissingBase64=0`.
+
+### Runtime expectation
+
+- Upgrading to `0.0.135` should repair existing DynamicField definitions through the package bootstrap `_DynamicFieldsEnsure` / `_DynamicFieldUpdateForce` path.
+- StateBook edit should show `State` as a `ZTSM::State` GeneralCatalog selector and `Book` restricted to BlueBook objects, not Application objects.
+- If StateBook records were saved while the wrong field definitions were active, reopen StateBook `41`, reselect the State and BlueBook rows, save, and retry submit. The previous `ZTSMStateBookReader: No usable StateBook records` symptom can persist until corrupted stored row values are corrected.
+
+## 2026-06-24 StateBook Record Shape Diagnostics 0.0.134
+
+### Completed work
+
+- Added targeted diagnostics for the remaining `ZTSMStateBookReader: No usable StateBook records ...` runtime blocker.
+- Clarified runtime diagnosis:
+  - `ZTicket-StateBook` resolving proves the ticket has a reference to StateBook governance object `41`.
+  - It does not prove the referenced StateBook object has populated `ZState-StateRecord` rows.
+  - `ZTSMStateBookReader` needs the rows inside `ZState-StateRecord` to resolve lifecycle state and hand off BlueBook execution.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`:
+  - If `ZState-StateRecord` is missing/empty, log available `DynamicField_*` keys on the loaded StateBook object.
+  - If `ZState-StateRecord` exists but parses to zero usable records, log compact shape details: ref type, array count, first row keys, and scalar sample values.
+- Synced `ZTSMStateBookReader.pm` across package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.134`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.134.opm`.
+- Supersedes `0.0.133`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.134.opm`.
+- `Kernel/Package/GovernanceDB-0.0.134.opm` SHA256: `4E33A02BC865EC3761A405348AA39B6BF718881FE1B3FEA291BC5614A60116FD`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookReader.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.134.opm` parsed successfully as XML: version `0.0.134`, `MissingBase64=0`.
+- `ZTSMStateBookReader.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `D116BB68F8CC3D64F66E3A98FDFBE508DB12BED53D9E174B50911DA01E25D532`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.134`, retry submit and inspect the new `ZTSMStateBookReader` error text.
+- If it says `Missing ZState-StateRecord` and lists no `DynamicField_ZState-StateRecord`, StateBook object `41` has no runtime StateRecord value loaded.
+- If it says `No usable StateBook records` with `StateRecords=array(...)`, use the logged first-row keys/sample values to fix the parser or the stored data shape.
+
+## 2026-06-24 StateBook Set Array Row Parsing 0.0.133
+
+### Completed work
+
+- Fixed the next submit-time blocker after `0.0.132`:
+  - Runtime error: `ZTSMStateBookReader: No usable StateBook records TicketID=174 StateBook=41`
+- Root cause: the StateBook reader could still skip DynamicField Set rows when a row is returned as an array of Set cells rather than a single hash. In that shape, each row looks like an array containing cell hashes such as `DF => ZState-Seq`, `DF => ZState-State`, and `DF => ZState-Book`.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`:
+  - `_RecordValue()` now accepts hash or array records.
+  - `_RecordStructuredFieldValue()` recursively searches arrays as well as hashes.
+  - The parse loop no longer skips array-shaped StateBook rows.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm` with the same array-shaped Set row support.
+- Synced both modules across package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.133`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.133.opm`.
+- Supersedes `0.0.132`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.133.opm`.
+- `Kernel/Package/GovernanceDB-0.0.133.opm` SHA256: `E2647364D36D69286C3C257F6500E9EF40A1804B22688062F345E8019BE41F07`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookReader.pm`: syntax OK.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookResume.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.133.opm` parsed successfully as XML: version `0.0.133`, `MissingBase64=0`.
+- `ZTSMStateBookReader.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `73FE97654CEEDCC3B1A98953AEA90336B311F0504F68C61597FD75BBCA77FB3B`.
+- `ZTSMStateBookResume.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `AC3E45CF3C9E0CF1B1FBFC1E89D3658A2910F42992AD2D4CAA95B8F3647032D6`.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After upgrading to `0.0.133`, retry customer submit.
+- The `No usable StateBook records` error should stop if StateBook `41` contains Set-row data.
+- Expected next checkpoint remains BlueBook handoff and child creation:
+  - Notice log `ZTSM: BlueBook resolved ...`
+  - Notice log `ZTSMBlueBookReader: Enter Run ...`
+  - Parent article `DO-NOT-REPLY: BlueBook orchestration started.`
+  - Child article `DO-NOT-REPLY: ChapterPlay initiated`.
+- If the same `No usable StateBook records` error still appears, then StateBook `41` likely has no `ZState-StateRecord` values in the runtime database, and the next fix should be data/import repair rather than parser logic.
+
+## 2026-06-24 StateBook GeneralCatalog Class Guard 0.0.132
+
+### Completed work
+
+- Fixed the submit-time StateBook resolver failure after `0.0.131` advanced far enough to parse StateBook rows:
+  - Runtime error: `Need Class!`
+  - Traceback: `Kernel::System::GeneralCatalog::ItemList` called from `ZTSMStateBookReader::_StateNameResolve`.
+- Root cause: `_StateNameResolve()` called `GeneralCatalog->ItemList()` whenever the DynamicField type was `GeneralCatalog`, even when the DynamicField config did not contain `Config->{Class}`. OTOBO requires `Class`, so the submit transaction failed before BlueBook orchestration could continue.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`:
+  - Only calls `GeneralCatalog->ItemList()` when `Config->{Class}` exists.
+  - Guards `$PossibleValues` before reading candidate display values.
+  - Falls back to `DynamicField::Backend->ValueLookup()` when no GeneralCatalog class is configured.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm` with the same `Config->{Class}` guard.
+- Synced both modules across package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.132`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.132.opm`.
+- Supersedes `0.0.131`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.132.opm`.
+- `Kernel/Package/GovernanceDB-0.0.132.opm` SHA256: `6813EA3753018382B1F4A123B978DE6B866A2C5D7FB7390FA85A01D566A5267D`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookReader.pm`: syntax OK.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookResume.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.132.opm` parsed successfully as XML: version `0.0.132`, `MissingBase64=0`.
+- `ZTSMStateBookReader.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `BE0EA9F8564E98233EACA5EE5ADC78E7A57EC040F8CF2BEB820A5331543AE0D8`.
+- `ZTSMStateBookResume.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `43965B1A7BD10BE979901EF55043A33085D95F7D086C5EA31FB9A9CC66DD9AAF`.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After upgrading to `0.0.132`, retry customer submit.
+- The `Need Class!` error from `GeneralCatalog::ItemList` should stop.
+- Expected next runtime checkpoint remains BlueBook handoff and child creation:
+  - Notice log `ZTSM: BlueBook resolved ...`
+  - Notice log `ZTSMBlueBookReader: Enter Run ...`
+  - Parent article `DO-NOT-REPLY: BlueBook orchestration started.`
+  - Child article `DO-NOT-REPLY: ChapterPlay initiated`.
+
+## 2026-06-24 StateBook Set Row Parsing 0.0.131
+
+### Completed work
+
+- Fixed the no-child-spawn path after the customer submit article `DO-NOT-REPLY: Service Governance Resolved`.
+- Root cause: `ZTSMStateBookReader` loaded the resolved StateBook but still expected flat record keys for `ZState-Seq`, `ZState-State`, and `ZState-Book`. Current GovernanceDB StateBook rows are stored as nested Set rows with `DF`/`Value` entries, so no usable StateBook records were parsed and BlueBook orchestration never ran.
+- Added nested Set-row extraction to:
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookResume.pm`
+- Added a direct error log when `ZTSMStateBookReader` loads a StateBook but parses zero usable records:
+  - `ZTSMStateBookReader: No usable StateBook records TicketID=... StateBook=...`
+- Synced both modules across package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.131`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.131.opm`.
+- Supersedes `0.0.130`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.131.opm`.
+- `Kernel/Package/GovernanceDB-0.0.131.opm` SHA256: `72582FB653E6C7B94BF3B41E2AC7602A9D95FAB41725A6531733D688876180E7`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookReader.pm`: syntax OK.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookResume.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.131.opm` parsed successfully as XML: version `0.0.131`, `MissingBase64=0`.
+- `ZTSMStateBookReader.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `4912E9A6143B4DFD680897A309D46EDAAC424411D0A3F080169741EA0813AE6D`.
+- `ZTSMStateBookResume.pm` canonical/package/runtime-overlay/`ZTSMOverlay` copies all share SHA256 `723DFDE5169530CD4D0D6BBFA248AEC5DDE16E8C4A8DB403E66D67189B64B07A`.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After upgrading to `0.0.131`, retry customer submit for the same firewall service.
+- Expected continuation after `DO-NOT-REPLY: Service Governance Resolved`:
+  - Notice log `ZTSM: BlueBook resolved ...`
+  - Notice log `ZTSMBlueBookReader: Enter Run ...`
+  - Parent article `DO-NOT-REPLY: BlueBook orchestration started.`
+  - Child article `DO-NOT-REPLY: ChapterPlay initiated` on the spawned execution ticket.
+- If child creation still does not happen, the next useful log is now whether `ZTSMStateBookReader: No usable StateBook records ...` appears, or whether BlueBook starts but resolves no playable ChapterPlay rows.
 
 - Added customer ZTSM runtime action `AddRequiredSupportProfile`.
 - Added action visibility on active child execution tickets only:
@@ -2107,3 +2290,471 @@ PurpleBook completion must not:
 
 - Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.118` package.
 - After upgrade, verify BlueBook edit allows blank Template, Follow-up/PurpleBook, and Role values while preserving their class-restricted dropdowns.
+
+## 2026-06-24 Customer Service Payload Import UI Clarity 0.0.119
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.119`.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` service payload controls:
+  - Replaced the large ambiguous `Import`, `Code`, and `Apply` buttons with a compact right-aligned toolbar.
+  - Added a universal upload icon button for CSV/XLSX service payload import.
+  - Added a JSON/code icon button that toggles the full service payload JSON editor.
+  - Shows `Apply JSON` only while the JSON editor is open.
+  - Added button titles and ARIA labels so users can understand the controls without guessing from the icon alone.
+- Synced the template across live source, package source, runtime overlay, and ZTSMOverlay copies.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.119.opm`.
+- `Kernel/Package/GovernanceDB-0.0.119.opm` SHA256: `5D209A6D69E4991E7FD255EB5B1E794281F7F8879468EAF52EA7F2AD3C984B0E`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `7C6751E3E3AF24A214ED21FB86863798D4C918452ED079C49FFF58F95D792F44`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.119.opm` parsed successfully as XML: version `0.0.119`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Service payload import remains generic over the existing rendered `ZService-Field` dynamic fields.
+- This change is presentation-only; it does not introduce new Dynamic Fields or alter service payload import/application semantics.
+- JSON view is treated as a secondary inspection/edit mode, not the default interaction surface.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.119` package.
+- Verify in `CustomerTicketMessage` that the upload icon sits beside the DynamicField Set row controls cleanly and that the JSON editor does not overlap the service payload form.
+
+## 2026-06-24 Customer Service Payload Download Template 0.0.120
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.120`.
+- Added a service payload template download button beside the existing payload upload and JSON controls.
+- The downloaded template is generated from the currently rendered service payload fields for the selected service:
+  - XLSX output when the bundled SheetJS library is available.
+  - CSV fallback if SheetJS is not loaded.
+  - `Template` sheet contains the importable column headers and a blank data row.
+  - `Instructions` sheet lists each column header, field label, Dynamic Field name, payload group, required flag, and accepted value style.
+- Nested DynamicField Set fields use import-compatible headers such as `SetName.FieldName`.
+- Supersedes `0.0.119`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.120.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.120.opm`.
+- `Kernel/Package/GovernanceDB-0.0.120.opm` SHA256: `2DDD534E5A6FE4965D2FCD3B56309FAFC3ED5C2F28BB8A4FF03E4FA0B5B98591`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `A44E56C3D51712D7FC5056BF48722A6BD6FCBD440522F8E728306EB05282CE53`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.120.opm` parsed successfully as XML: version `0.0.120`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- The template is generated client-side from the service-specific rendered form, keeping the import contract aligned with `ZService-Field`.
+- No new Dynamic Fields, backend routes, or storage behavior were introduced.
+- Template download is treated as companion guidance for import, not a separate governance document format.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.120` package.
+- Verify the downloaded XLSX template opens cleanly and that filling its `Template` sheet can be imported back into the same service payload form.
+
+## 2026-06-24 Customer Service Payload Name Export 0.0.121
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.121`.
+- Updated service payload JSON/template export collection so human-readable names are emitted instead of opaque internal IDs:
+  - Dropdown fields export selected option text, such as the environment or application name, instead of values like `11` or `1`.
+  - Reference/autocomplete fields export the visible name from the control instead of the hidden reference ID.
+  - Checkbox export now reflects checked state as `1` or blank.
+- Imports remain backward-compatible because existing import logic still accepts:
+  - dropdown option text or value
+  - reference name or explicit `Name::ID`
+- Supersedes `0.0.120`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.121.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.121.opm`.
+- `Kernel/Package/GovernanceDB-0.0.121.opm` SHA256: `6AE07A828EB2239797D099DB969648E8F7A26DA1C174C0305E6C0E7E0B3A06D5`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `803155FE8FD95C90A8ED0991101DECA4D15A9E233E5377698BA9755157A83E4A`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.121.opm` parsed successfully as XML: version `0.0.121`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Service payload code/export views must be operator-readable and portable, so they should prefer names over deployment-local numeric IDs.
+- Numeric IDs remain accepted on import for compatibility and advanced troubleshooting, but generated guidance should use full names for resolution.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.121` package.
+- Verify the JSON code view shows full names for `ZTicket-Env`, `ZTicket-Application`, firewall environment fields, and similar dropdown/reference fields.
+
+## 2026-06-24 Customer Service Payload Toolbar Visual Hierarchy 0.0.122
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.122`.
+- Redesigned the customer service payload JSON/template toolbar so it behaves as a secondary power-user utility:
+  - Removed `CallForAction` from the payload toolbar buttons so they no longer render as large blue primary actions.
+  - Replaced them with compact 30px icon-only buttons for download template, upload template, view JSON, and apply JSON.
+  - Kept tooltip and ARIA labels for discoverability.
+  - Kept the toolbar right-aligned above the service-specific payload fields.
+  - Added pressed-state feedback to the JSON toggle only while the editor is open.
+- Reduced JSON editor visual weight:
+  - Hidden by default.
+  - Shows only after clicking the JSON icon.
+  - Preserves existing JSON text when collapsed.
+  - Constrained to a scrollable 120px minimum / 180px maximum height.
+- Supersedes `0.0.121`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.122.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.122.opm`.
+- `Kernel/Package/GovernanceDB-0.0.122.opm` SHA256: `0FF688D54B7EB40B7BA329C23C5D81DD1AAB0E7CC7D3949405292FAFC4EFA3F0`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `7A4FA4BCA545CDF5E3AB4DA602AD11725AF94306110E03AA316DFF7AFFFDD201`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.122.opm` parsed successfully as XML: version `0.0.122`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- The request form remains the primary portal interaction; JSON/template actions are advanced utilities and must not visually compete with service fields.
+- JSON editor exposure uses progressive disclosure rather than occupying vertical space by default.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.122` package.
+- Verify visually that the toolbar stays compact on desktop and mobile and that the JSON editor does not push the service request fields too far down when opened.
+
+## 2026-06-24 Floating Service Payload Utility Toolbar 0.0.123
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.123`.
+- Redesigned the customer service payload JSON/template tools as a floating utility component:
+  - Removed the toolbar from the request form flow entirely.
+  - The utility rail is appended to `document.body`, fixed to the right side of the viewport, and remains visible while scrolling.
+  - The rail uses compact vertical icon buttons for download template, upload template, view JSON, and apply JSON.
+  - The rail uses custom styling, semi-transparent background, soft shadow, hover movement, and tooltip/ARIA labels.
+  - The rail no longer uses `CallForAction` or inherited large blue theme button styling.
+- Redesigned JSON editing as an overlay side drawer:
+  - Clicking the JSON icon opens a fixed right-side `JSON Template Editor` drawer.
+  - The drawer overlays the page and does not push request fields downward or reserve form space.
+  - The drawer includes close/cancel and apply controls.
+  - The JSON draft is preserved when the drawer is closed and reopened.
+  - First open still populates the editor from the currently rendered service payload form.
+- Added a small transient status chip attached to the floating rail for download/import/apply feedback without re-entering the form layout.
+- Preserved all existing service payload behavior:
+  - template download
+  - template upload/import
+  - JSON collect/view
+  - JSON apply
+  - name-based export for dropdown/reference fields
+  - backward-compatible import of names or internal values
+- Supersedes `0.0.122`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.123.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.123.opm`.
+- `Kernel/Package/GovernanceDB-0.0.123.opm` SHA256: `1CA4AADADED037DDAADEB1AB47CFB53BCF01DC5721F8EE807F4B0290AE21485F`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `3E57AC769935452C8DC27A3627FE30BEB7582A4C78F5DEAF76F8E05579D3E986`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.123.opm` parsed successfully as XML: version `0.0.123`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Template import/export and raw JSON editing are power-user utilities, not part of the normal request workflow.
+- JSON/template controls must not be rendered between business request fields or consume form height.
+- Overlay utility presentation is preferred here because it preserves portal-first request completion while keeping advanced functions available.
+
+### Rejected Approaches
+
+- Do not keep the compact toolbar inside the request form just because it is small.
+- Do not expand the JSON editor inline under the rich text or service fields.
+- Do not rely on large theme button styling for advanced payload utilities.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.123` package.
+- Verify visually that the rail does not collide with the customer portal side toggle, scrollbar, or mobile viewport.
+- Verify that the JSON drawer overlays the form cleanly and that cancel/close preserves the JSON draft.
+
+## 2026-06-24 Service Payload JSON Apply Resolution Fix 0.0.124
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.124`.
+- Fixed JSON apply/import resolution for human-readable payload values generated by the JSON view:
+  - `Environment: PROD` resolves as `PROD`.
+  - `Application: ICA-ADFS` resolves as `ICA-ADFS`.
+  - `Location: LDC` resolves as `LDC`.
+  - Explicit `Name::ID` values remain supported.
+  - `-` is treated as blank for import so it does not accidentally resolve to the first reference search result.
+- Tightened autocomplete/reference resolution:
+  - Exact normalized matches are accepted.
+  - Existing hidden reference IDs are cleared when no match is found.
+  - The importer no longer falls back to the first reference search result for unresolved values.
+- Widened the floating JSON drawer from 460px to 760px maximum and increased its vertical usable area.
+- Supersedes `0.0.123`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.124.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.124.opm`.
+- `Kernel/Package/GovernanceDB-0.0.124.opm` SHA256: `44A3CB09E3EED1804E49320E4026BE5A0DA2EFFA7211ED3EE11456BEF6D9E4F0`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `A49E8435359F631FBA83F64B180EF729B0A26E9B4D3A7D5CA032F710E6DB3D66`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Import value normalization test confirmed:
+  - `Environment: PROD` -> `PROD`
+  - `Application: ICA-ADFS` -> `ICA-ADFS`
+  - `Location: LDC` -> `LDC`
+  - `-` -> blank
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.124.opm` parsed successfully as XML: version `0.0.124`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- Generated JSON should stay readable for operators, but apply/import must normalize display labels back to resolvable values before touching Dynamic Fields.
+- Import must not use a first-result fallback for reference fields because that can silently select the wrong governance object.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.124` package.
+- Verify JSON apply changes top-level Environment/Application fields and nested Firewall Policy Rule Environment/Application-like reference fields when payload values include display prefixes.
+- Verify blank/dash reference values clear the visible chip and hidden reference ID rather than selecting the first result.
+
+## 2026-06-24 Service Payload Reference Apply Refresh 0.0.125
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.125`.
+- Tightened JSON apply for reference/autocomplete Dynamic Fields after runtime testing still showed unchanged visible chips:
+  - Added a local reference setter that updates both the hidden reference ID field and the visible autocomplete value.
+  - The setter also calls OTOBO `Core.Agent.DynamicFieldReferenceSearch.AddTicketReference()` when available.
+  - Explicit `Name::ID` imports now use the same reference setter path.
+  - Reference resolution now attempts both the normalized value and the original display value, so both `ICA-ADFS` and `Application: ICA-ADFS` can resolve.
+  - Matching compares normalized backend result labels against both normalized payload forms.
+- Supersedes `0.0.124`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.125.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.125.opm`.
+- `Kernel/Package/GovernanceDB-0.0.125.opm` SHA256: `EE66297E09E3EB5BB5B178790F3D133BFCC4EA3D13C4D7B94937C836648C1421`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `854071154417596342AF086ADE2FC62A39BD1D73E9F9ED329E1733F781E9D4B8`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Matching sanity tests confirmed:
+  - `Application: ICA-ADFS` matches `ICA-ADFS`.
+  - `ICA-ADFS` matches `Application: ICA-ADFS`.
+  - `Environment: NON-PROD` matches `NON-PROD`.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.125.opm` parsed successfully as XML: version `0.0.125`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay template hash.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- JSON apply must update the actual reference field state, not only text input values, because ticket submission relies on hidden reference IDs.
+- Display labels and raw names are both acceptable operator-facing JSON forms and must resolve through the same import path.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.125` package.
+- Retest changing `ZTicket-Application` from `Application: Integrated Clearance System` to `Application: ICA-ADFS` from the JSON drawer and confirm both the visible chip and hidden reference ID change.
+- If a value still does not resolve, verify whether the target governance object is returned by `AgentReferenceSearch` for the current service/location/environment restrictions.
+
+## 2026-06-24 Service Payload Customer Reference Resolver 0.0.126
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.126`.
+- Added customer portal payload reference resolution in `CustomerTicketMessage`:
+  - New subaction `ZTSMServicePayloadReferenceResolve`.
+  - Resolves JSON/template import labels such as `Application: ICA-ADFS` and `Application: Integrated Clearance System` to the actual hidden reference object key.
+  - Accepts display labels, raw object names, object numbers, and explicit `Name::ID` values.
+  - Treats `-` as blank and returns an empty key/value for clearing a reference.
+  - For GovernanceObject Dynamic Fields, enforces the field's configured class restriction before returning a match.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` import behavior:
+  - JSON/template apply first calls the customer-side resolver.
+  - The previous `AgentReferenceSearch` lookup remains as a fallback.
+  - Successful resolution updates both the visible autocomplete label and the hidden `DynamicField_*` value.
+- Synced changed files across live source, package source, runtime overlay, and ZTSMOverlay copies:
+  - `Kernel/Modules/CustomerTicketMessage.pm`
+  - `Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt`
+- Supersedes `0.0.125`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.126.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.126.opm`.
+- `Kernel/Package/GovernanceDB-0.0.126.opm` SHA256: `6388CA071389333D6700A3A7022BA2F395D3ACDE7AB0A4B2067562346D8CF8A2`.
+
+### Validation
+
+- Perl syntax check passed for `Kernel/Modules/CustomerTicketMessage.pm`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Mirrored `CustomerTicketMessage.pm` copies have matching SHA256 hash `8194D1C06A7EB206F4A308E06C87D2C8448863A2E731049A880F15F2F4EE3213`.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `27F616A58952E07E62C0110CC07FF6F559B3DFE9529F88268B5FA54D95134CBC`.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.126.opm` parsed successfully as XML: version `0.0.126`, 171 file nodes, `MissingBase64=0`.
+- Confirmed the generated OPM embeds the updated runtime overlay module and template hashes.
+- `git diff --check` passed.
+
+### Architectural Decisions
+
+- JSON/template import remains a portal utility, but reference-name resolution must happen through a customer action because the generic agent autocomplete search can be constrained by current form state.
+- Import resolution must set the hidden reference key, not only the visible autocomplete label.
+- The resolver is exact-match oriented and class-restricted to avoid silently selecting the wrong GovernanceObject.
+
+### Rejected Approaches
+
+- Do not rely only on frontend text assignment for reference fields.
+- Do not fall back to the first autocomplete result for unresolved reference values.
+- Do not bypass GovernanceObject class restrictions while resolving import payload values.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.126` package.
+- Retest changing both top-level `ZTicket-Application` and nested `ZFirewall-SrcSystem` / `ZFirewall-DstSystem` values from the JSON drawer and confirm visible chips and hidden reference IDs change.
+
+## 2026-06-24 GenericAgent Type Array Submit Fix 0.0.127
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.127`.
+- Hardened `Kernel/System/GovernanceDB/Bootstrap.pm` GenericAgent seeding:
+  - Added `_GenericAgentSearchArraysSanitize`.
+  - Removes empty TicketSearch array filters before writing GenericAgent jobs.
+  - Covers `Types`, `TypeIDs`, `States`, `StateIDs`, queues, priorities, services, SLAs, owners, locks, and related created/search array fields.
+  - Runs before and after state/type name-to-ID translation.
+- This repairs installed GenericAgent jobs on package upgrade because bootstrap deletes and re-adds the seed jobs from `runtime_seed/generic_agents.yml`.
+- Confirmed checked-in `generic_agents.yml` still contains non-empty `Types` for:
+  - `TESSERA-ACTIVITY-ROLELOOKUP`
+  - `TESSERA-TICKET-LIFECYCLE-INITIATION`
+- Supersedes `0.0.126`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.127.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.127.opm`.
+- `Kernel/Package/GovernanceDB-0.0.127.opm` SHA256: `1B309FD578FE84FF1448BEB326B1F286175613D11C73F1DCB5699A0E83CB5241`.
+
+### Validation
+
+- Perl syntax check passed for `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm`.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.127.opm` parsed successfully as XML: version `0.0.127`, 171 file nodes, `MissingBase64=0`.
+
+### Architectural Decisions
+
+- GenericAgent seed import must sanitize empty TicketSearch array filters because OTOBO rejects empty arrays such as `Types => []` during event-time `TicketSearch`.
+- The package upgrade path is the correct repair point because GenericAgent jobs live in DB and can be left in a bad state by older package/runtime imports.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is needed in OTOBO using the generated `0.0.127` package.
+- After upgrade, verify the two TESSERA GenericAgent jobs in the admin UI or DB have non-empty type filters, then retry customer request submit.
+- `ZTSMUserIDCheck.pm` showed runtime warnings for redefined `_CanViewStory` and `Run`; repo copies are not internally duplicated, so check runtime deployment/cache or duplicate module loading if the warning remains after upgrade/restart.
+
+## 2026-06-24 GenericAgent Runtime Search Guard 0.0.129
+
+### Completed work
+- Tightened the runtime `GenericAgent->JobRun` TicketSearch guard after live testing still produced `The given param 'Types' is invalid or an empty array reference!` without the previous diagnostic.
+- Updated `Kernel/System/GenericAgent.pm` so `_TESSERATicketSearchArraySanitize` now catches both:
+  - empty array filters such as `Types => []`
+  - invalid truthy non-array filters such as `Types => '...'`
+- Changed the diagnostic priority from `error` to `notice`, because this guard is a sanitizing diagnostic rather than the original fatal failure path.
+- Mirrored the updated module to:
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/GenericAgent.pm`
+  - `ZTSMOverlay/files/Kernel/System/GenericAgent.pm`
+- Bumped `GovernanceDB.sopm` package version to `0.0.129`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.129.opm`.
+- Supersedes `0.0.128`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.129.opm`.
+- `Kernel/Package/GovernanceDB-0.0.129.opm` SHA256: `B5C7BDB3E1B780A9C5E248334CEAD381984D4DDF3084E7BF5AEA070C7A22520C`.
+
+### Validation
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\GenericAgent.pm`: syntax OK.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\var\governancedb\runtime_overlay\Kernel\System\GenericAgent.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.129.opm` parsed successfully as XML: version `0.0.129`, 172 file nodes, `MissingBase64=0`.
+- `Kernel/System/GenericAgent.pm`, package runtime overlay copy, and `ZTSMOverlay` copy all share SHA256 `13ED791D76FE36F1A7EFC99E58D3C162D7C49BCB55CE8AD49759AB5F1CDD564C`.
+
+### Runtime expectation
+- After upgrading to `0.0.129`, retry submit and check the normal OTOBO notice log for:
+  - `TESSERA GenericAgent search guard sanitized invalid TicketSearch filters for Job='...'`
+- The message should identify the exact GenericAgent job and whether the bad value was `Job.Types=[]` or `Job.Types=invalid(...)`.
+- If the original `Types` error still appears without this notice line, the running PSGI process is not executing the overlaid `Kernel/System/GenericAgent.pm` and should be restarted or checked for overlay installation.
+
+## 2026-06-24 StateBook Missing State Value Guard 0.0.130
+
+### Completed work
+- Fixed the submit-time StateBook failure shown after the GenericAgent `Types` guard was no longer the active blocker:
+  - Runtime warning: `Odd number of elements in hash assignment ... ZTSMStateBookReader.pm line 114`
+  - Runtime error: `No State for FieldName found!`
+- Root cause: `_RecordValue()` returned bare `return;` for missing state fields. When used inside another argument list (`Value => _RecordValue(...), FieldName => ...`), Perl flattened the empty return, shifted the argument list, and made `_StateNameResolve()` treat `FieldName` as the state value.
+- Updated `Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`:
+  - `_RecordValue()` now returns explicit scalar `undef` on missing/invalid records.
+  - State record parsing stores `$StateValue` before calling `_StateNameResolve()`, preventing list-context argument collapse.
+- Synced the fixed module across:
+  - `Kernel/Package/GovernanceDB/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`
+  - `ZTSMOverlay/files/Kernel/System/ProcessManagement/TransitionAction/ZTSMStateBookReader.pm`
+- This also brought the `ZTSMOverlay` copy back in sync with canonical source; it had been stale and missing the requester-hold skip guard already present in the package/runtime copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.130`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.130.opm`.
+- Supersedes `0.0.129`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.130.opm`.
+- `Kernel/Package/GovernanceDB-0.0.130.opm` SHA256: `C82BC4041988CC8D5E57D42F11EAC52CE011EBBDB717823E3004DEFB8363E1C3`.
+
+### Validation
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\ProcessManagement\TransitionAction\ZTSMStateBookReader.pm`: syntax OK.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.130.opm` parsed successfully as XML: version `0.0.130`, 172 file nodes, `MissingBase64=0`.
+- Canonical, package-source, runtime-overlay, and `ZTSMOverlay` `ZTSMStateBookReader.pm` copies all share SHA256 `F7C21C6BB80A16805A1596B85535E9A124C739E84DD44F120A574F5C357E2CE4`.
+- `git diff --check` passed.
+
+### Runtime expectation
+- After upgrading to `0.0.130`, retry customer submit. The `No State for FieldName found!` error should stop.
+- The `ZTSMUserIDCheck.pm` subroutine redefinition warnings were checked against repo source; active copies contain one definition each and match by hash, so remaining warnings likely indicate PSGI/cache/module-load duplication in the runtime environment rather than duplicate source in this repo.
+
+## 2026-06-24 GenericAgent Runtime Search Guard 0.0.128
+
+### Completed Work
+
+- Bumped `GovernanceDB.sopm` package version to `0.0.128`.
+- Added runtime instrumentation and guard to `Kernel/System/GenericAgent.pm`:
+  - New helper `_TESSERATicketSearchArraySanitize`.
+  - Runs after DB/config GenericAgent job loading and dynamic-field search parameter construction, before any GenericAgent `TicketSearch`.
+  - Removes empty TicketSearch array filters such as `Types => []` at runtime.
+  - Logs the exact GenericAgent job and sanitized array fields using the message prefix `TESSERA GenericAgent search guard`.
+- Added `var/governancedb/runtime_overlay/Kernel/System/GenericAgent.pm` to the package file list so package upgrade deploys the runtime guard.
+- Synced the instrumented file across:
+  - `Kernel/System/GenericAgent.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/GenericAgent.pm`
+  - `ZTSMOverlay/files/Kernel/System/GenericAgent.pm`
+- Supersedes `0.0.127`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.128.opm`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.128.opm`.
+- `Kernel/Package/GovernanceDB-0.0.128.opm` SHA256: `F703AF66DFA0B8C1A4E3D9E3D9602E5574E2013D5EF60DD6055AF9324C615C0E`.
+
+### Validation
+
+- Perl syntax checks passed:
+  - `Kernel/System/GenericAgent.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/GenericAgent.pm`
+- Mirrored `GenericAgent.pm` copies have matching SHA256 hash `C87587C8EF9D030B54CF918FD4E369FE0A692F96E5BE82599E35491CD3324D6F`.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.128.opm` parsed successfully as XML: version `0.0.128`, 172 file nodes, `MissingBase64=0`.
+
+### Architectural Decisions
+
+- The GenericAgent runtime guard is diagnostic and defensive: it keeps ticket submit from failing while identifying the exact bad GenericAgent job in the logs.
+- This is broader than the GovernanceDB seed repair because the bad job may come from DB state, another package, or runtime mutation outside `runtime_seed/generic_agents.yml`.
+
+### Known Issues / Follow-Up
+
+- After upgrading to `0.0.128`, retry submit and check the OTOBO log for `TESSERA GenericAgent search guard sanitized empty TicketSearch arrays for Job='...'`.
+- Once the offending GenericAgent job is identified and corrected at source, consider removing the runtime guard or reducing its log level.

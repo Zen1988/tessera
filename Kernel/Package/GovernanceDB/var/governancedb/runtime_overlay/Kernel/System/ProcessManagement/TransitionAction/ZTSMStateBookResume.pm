@@ -107,6 +107,8 @@ sub _StateNameResolve {
             if (
                 $DynamicFieldConfig->{FieldType}
                 && $DynamicFieldConfig->{FieldType} eq 'GeneralCatalog'
+                && $DynamicFieldConfig->{Config}
+                && $DynamicFieldConfig->{Config}->{Class}
                 )
             {
                 $PossibleValues = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
@@ -167,7 +169,18 @@ sub _StateNameResolve {
 sub _RecordValue {
     my ( $Record, $Name ) = @_;
 
-    return if ref $Record ne 'HASH';
+    return undef if !$Record;
+
+    my $StructuredValue = _RecordStructuredFieldValue(
+        Record => $Record,
+        Field  => $Name,
+    );
+
+    return $StructuredValue
+        if defined $StructuredValue
+        && $StructuredValue ne '';
+
+    return undef if ref $Record ne 'HASH';
 
     return _NormalizeValue( $Record->{$Name} )
         if exists $Record->{$Name};
@@ -175,7 +188,66 @@ sub _RecordValue {
     return _NormalizeValue( $Record->{"DynamicField_$Name"} )
         if exists $Record->{"DynamicField_$Name"};
 
-    return;
+    return undef;
+}
+
+sub _RecordStructuredFieldValue {
+    my (%Param) = @_;
+
+    my $Record = $Param{Record};
+    my $Field  = $Param{Field};
+
+    return undef if !$Record;
+    return undef if !$Field;
+
+    if ( ref $Record eq 'ARRAY' ) {
+        ITEM:
+        for my $Item ( @{$Record} ) {
+            my $Value = _RecordStructuredFieldValue(
+                Record => $Item,
+                Field  => $Field,
+            );
+
+            return $Value
+                if defined $Value
+                && $Value ne '';
+        }
+
+        return undef;
+    }
+
+    return undef if ref $Record ne 'HASH';
+
+    if ( ( $Record->{DF} || '' ) eq $Field ) {
+        my $Value = exists $Record->{Value} ? $Record->{Value} : $Record->{Content};
+        $Value = _NormalizeValue($Value);
+
+        return $Value
+            if defined $Value
+            && $Value ne '';
+    }
+
+    CONTAINER:
+    for my $ContainerKey (qw(Fields Items Values Content Value)) {
+        my $Container = $Record->{$ContainerKey};
+        next CONTAINER if ref $Container ne 'ARRAY';
+
+        ITEM:
+        for my $Item ( @{$Container} ) {
+            next ITEM if ref $Item ne 'HASH';
+
+            my $Value = _RecordStructuredFieldValue(
+                Record => $Item,
+                Field  => $Field,
+            );
+
+            return $Value
+                if defined $Value
+                && $Value ne '';
+        }
+    }
+
+    return undef;
 }
 
 sub _TicketFieldSet {
@@ -225,11 +297,14 @@ sub _RecordsParse {
 
     RECORD:
     for my $Record ( @{$StateRecords} ) {
-        next RECORD if ref $Record ne 'HASH';
+        next RECORD
+            if ref $Record ne 'HASH'
+            && ref $Record ne 'ARRAY';
 
-        my $Sequence = _RecordValue( $Record, 'ZState-Seq' );
-        my $State    = _StateNameResolve(
-            Value     => _RecordValue( $Record, 'ZState-State' ),
+        my $Sequence   = _RecordValue( $Record, 'ZState-Seq' );
+        my $StateValue = _RecordValue( $Record, 'ZState-State' );
+        my $State      = _StateNameResolve(
+            Value     => $StateValue,
             FieldName => 'ZState-State',
         );
 

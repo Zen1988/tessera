@@ -316,6 +316,12 @@ sub JobRun {
         $Job{TicketID} = $Param{OnlyTicketID};
     }
 
+    $Self->_TESSERATicketSearchArraySanitize(
+        DynamicFieldSearchParameters => \%DynamicFieldSearchParameters,
+        Job                          => \%Job,
+        JobName                      => $Param{Job},
+    );
+
     # get needed objects
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -909,6 +915,65 @@ sub JobEventList {
     );
 
     return %Data;
+}
+
+sub _TESSERATicketSearchArraySanitize {
+    my ( $Self, %Param ) = @_;
+
+    my $Job                          = $Param{Job};
+    my $DynamicFieldSearchParameters = $Param{DynamicFieldSearchParameters};
+    my $JobName                      = $Param{JobName} || '';
+    my @Removed;
+
+    for my $Container (
+        [ Job                          => $Job ],
+        [ DynamicFieldSearchParameters => $DynamicFieldSearchParameters ],
+        )
+    {
+        my ( $ContainerName, $Data ) = @{$Container};
+        next if ref $Data ne 'HASH';
+
+            KEY:
+            for my $Key (
+                qw(
+                    Types TypeIDs CreatedTypes CreatedTypeIDs States StateIDs CreatedStates CreatedStateIDs StateTypeIDs
+                    Locks LockIDs OwnerIDs ResponsibleIDs CreatedUserIDs Queues QueueIDs CreatedQueues CreatedQueueIDs
+                    Priorities PriorityIDs CreatedPriorities CreatedPriorityIDs Services ServiceIDs SLAs SLAIDs WatchUserIDs
+                )
+                )
+            {
+                next KEY if !$Data->{$Key};
+
+                if ( ref $Data->{$Key} eq 'ARRAY' ) {
+                    my @Values = grep { defined $_ && $_ ne '' } @{ $Data->{$Key} };
+                    if (@Values) {
+                        $Data->{$Key} = \@Values;
+                        next KEY;
+                    }
+
+                    delete $Data->{$Key};
+                    push @Removed, "$ContainerName.$Key=[]";
+                    next KEY;
+                }
+
+                my $Type  = ref $Data->{$Key} || 'SCALAR';
+                my $Value = $Type eq 'SCALAR' ? $Data->{$Key} : $Type;
+                $Value = substr $Value, 0, 120;
+
+                delete $Data->{$Key};
+                push @Removed, "$ContainerName.$Key=invalid($Type:$Value)";
+            }
+        }
+
+        if (@Removed) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "TESSERA GenericAgent search guard sanitized invalid TicketSearch filters for Job='$JobName': "
+                    . join( ', ', @Removed ),
+            );
+    }
+
+    return 1;
 }
 
 =begin Internal:

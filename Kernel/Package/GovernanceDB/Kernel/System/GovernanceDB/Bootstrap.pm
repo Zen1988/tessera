@@ -943,6 +943,9 @@ sub _GenericAgentJobsEnsure {
         $Job{Name} ||= $JobName;
 
         delete @Job{qw(ChangeTime CreateTime ScheduleLastRun ScheduleLastRunUnixTime)};
+        $Self->_GenericAgentSearchArraysSanitize(
+            Job => \%Job,
+        );
 
         if ( ref $Job{States} eq 'ARRAY' ) {
             my @StateIDs;
@@ -961,6 +964,9 @@ sub _GenericAgentJobsEnsure {
             }
             $Job{TypeIDs} = \@TypeIDs if @TypeIDs;
         }
+        $Self->_GenericAgentSearchArraysSanitize(
+            Job => \%Job,
+        );
 
         my %Existing = $GenericAgentObject->JobGet(
             Name => $Job{Name},
@@ -977,6 +983,35 @@ sub _GenericAgentJobsEnsure {
             Data   => \%Job,
             UserID => 1,
         );
+    }
+
+    return 1;
+}
+
+sub _GenericAgentSearchArraysSanitize {
+    my ( $Self, %Param ) = @_;
+
+    my $Job = $Param{Job};
+    return if ref $Job ne 'HASH';
+
+    KEY:
+    for my $Key (
+        qw(
+            Types TypeIDs CreatedTypes CreatedTypeIDs States StateIDs CreatedStates CreatedStateIDs StateTypeIDs
+            Locks LockIDs OwnerIDs ResponsibleIDs CreatedUserIDs Queues QueueIDs CreatedQueues CreatedQueueIDs
+            Priorities PriorityIDs CreatedPriorities CreatedPriorityIDs Services ServiceIDs SLAs SLAIDs WatchUserIDs
+        )
+        )
+    {
+        next KEY if ref $Job->{$Key} ne 'ARRAY';
+
+        my @Values = grep { defined $_ && $_ ne '' } @{ $Job->{$Key} };
+        if (@Values) {
+            $Job->{$Key} = \@Values;
+            next KEY;
+        }
+
+        delete $Job->{$Key};
     }
 
     return 1;
