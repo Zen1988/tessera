@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-24
+Last Updated: 2026-06-25
 
 ## Current Focus
 
@@ -17,6 +17,511 @@ Last Updated: 2026-06-24
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-06-25 Customer Ticket Report Export And Payload Service Guard 0.0.150
+
+### Completed work
+
+- Added a real report export on the customer `Your Tickets` page:
+  - The button is labelled `Download Report` and exports the current customer overview tab/search result, not the ticket-message service-payload template.
+  - The export is generated as an `.xlsx` attachment from `CustomerTicketOverview`.
+  - The report columns are: ticket number, ticket type, service, title, description, location, application, environment, state, created by, created date, customer user, `ZTicket-OwnerGroup`, `ZTicket-Owner`, and `ServicePayload`.
+- The description column reads the first article body and converts rich text HTML to plain text with `HTMLUtils->ToAscii`, so the spreadsheet contains the content rather than the full rich text wrapper.
+- The `ServicePayload` column is generated from the ticket's actual `ServiceID` and the service `ZService-Field` definition:
+  - Only fields applicable to that service are included.
+  - DynamicField Set values are exported as JSON row objects.
+  - Display values are resolved through DynamicField backends where possible.
+- Added a stale-service guard to the customer ticket-message payload JSON drawer:
+  - Opening the JSON drawer regenerates the payload from the currently selected service and current form values.
+  - The generated JSON is stamped with a service/payload signature.
+  - Changing service invalidates the existing JSON.
+  - Applying JSON after a service change now regenerates and blocks the apply once, forcing review before the payload can be applied to the new service.
+- Synced runtime/package/overlay copies:
+  - `CustomerTicketOverview.pm`
+  - `CustomerTicketOverview.tt`
+  - `ZTSMCustomerTicketMessageServiceFields.tt`
+- Added the customer overview template to the GovernanceDB runtime overlay package file list.
+- Bumped `GovernanceDB.sopm` package version to `0.0.150`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.150.opm`.
+- Supersedes `0.0.149`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.150.opm`.
+- `Kernel/Package/GovernanceDB-0.0.150.opm` SHA256: `BA539FAC1A10A8EA064275A9403A7E50D23C017C98389231A32B2F6BC003DFBD`.
+
+### Validation
+
+- `perl -I. -IKernel/cpan-lib -c Kernel\Modules\CustomerTicketOverview.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.150.opm` parsed successfully as XML: version `0.0.150`, `FileCount=173`, `MissingBase64=0`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Mirrored `CustomerTicketOverview.pm` copies have matching SHA256 hash `0773DCF13570ADD80BA3313C92C2037FC2E8BC43D0ACDB445A915DE243AA658C`.
+- Mirrored `CustomerTicketOverview.tt` copies have matching SHA256 hash `FB429AAB5AD1928F4B442FB606E951BDEBE6CE80A9D93578F616EAC8CA741948`.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `5AA280D004E4919991518DF6D16758BCF968E430C2C98404ED9C1F63F50087AF`.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for `CustomerTicketOverview.pm` copies only.
+
+### Runtime expectation
+
+- After installing `0.0.150`, customer ticket overview should show `Download Report` beside `New Ticket`.
+- Clicking `Download Report` should download an `.xlsx` report for the currently selected overview filter/search.
+- On customer ticket creation, changing Service after generating payload JSON should not allow stale JSON from the previous service to be applied.
+
+## 2026-06-25 Service Payload Hidden Validator Ignore 0.0.149
+
+### Completed work
+
+- Followed up the `0.0.148` runtime test where the UI theme was acceptable again but Submit still did nothing.
+- Runtime console evidence showed jQuery Validate still blocking the form:
+  - `[ZTSM submit click]`
+  - `validatorErrors = 6`
+  - `validatorPending = 0`
+  - no native browser `:invalid` field.
+- Root cause narrowed: OTOBO's jQuery Validate configuration ignores only `.ValidationIgnore`, not hidden fields in general. DynamicField Set template/blank hidden controls can therefore remain in the validator error list even when the visible service-payload row is correct.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Added `ZTSMServicePayloadValidationIgnoreSync()` to mark template rows and blank hidden service-payload controls as `.ValidationIgnore`.
+  - The sync runs during DynamicField Set normalization and during payload submit reset.
+  - Submit click now calls `ZTSMServicePayloadFormSubmitReset()` before OTOBO submit validation runs, so stale validator errors are cleared after the ignore sync.
+  - Added plain JSON console output for validator details:
+    - `[ZTSM submit click validator] details JSON`
+    - `[ZTSM submit event validator] details JSON`
+    - `[ZTSM submit after handlers validator] details JSON`
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.149`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.149.opm`.
+- Supersedes `0.0.148`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.149.opm`.
+- `Kernel/Package/GovernanceDB-0.0.149.opm` SHA256: `3AA0A1F4C298E06641B5989368CDF2A8F9956362FC4FF0D0FBDCC0E5DCDB7C4C`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `4945F672B595C05B7D1AB69AF71E9ACE9A24BAF9DAC886715A619883E31FC532`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.149.opm` parsed successfully as XML: version `0.0.149`, `FileCount=172`, `MissingBase64=0`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After installing `0.0.149`, Submit should no longer be blocked by hidden/template service-payload validation errors.
+- If jQuery Validate still blocks, copy the new `details JSON` console line; it now names the exact remaining fields without needing manual object expansion.
+
+## 2026-06-25 Service Payload Validator Error Detail And Theme Rebalance 0.0.148
+
+### Completed work
+
+- Followed up the `0.0.147` runtime test where selected values rendered but the customer theme looked worse, and Submit still did not create a ticket.
+- Runtime console evidence showed `[ZTSM submit click]` with:
+  - `formClassName = Validate PreventMultipleSubmits oooSubmitted`
+  - `disabledSubmits = 0`
+  - `validatorErrors = 6`
+  - `validatorPending = 0`
+  - no native `:invalid` field.
+- Interpretation: the blocker is jQuery Validate state, not browser-native required validation and not a disabled submit button.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Restored OTOBO's own selected-container behavior by marking the `InputField_Container`, its direct parent, and the parent `.Field` as `oooSelected` when payload creates/refreshes a Modernize selected chip.
+  - Added the missing selected-chip left offset (`left: 24px`) so manually refreshed selected chips align like OTOBO `ShowSelectionBoxes()`.
+  - Strengthened `ZTSMServicePayloadFormSubmitReset()` to call validator `resetForm()` and clear `submitted`, `invalid`, `errorList`, and `errorMap` after payload apply/import.
+  - Added `validatorErrorDetails` to submit logs, including field name, id, class, value, hidden state, message, and nearby field text, so the six jQuery Validate blockers can be identified exactly if they return.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.148`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.148.opm`.
+- Supersedes `0.0.147`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.148.opm`.
+- `Kernel/Package/GovernanceDB-0.0.148.opm` SHA256: `3A5CF6DAF799B790A6F7A6DAF97DC5DFBCB03B2C546E80895642883D966EFD5D`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `8C7FF396A05599E0692E5CCE192B0E8120E88699EB2A3A63B50E424C1355A631`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.148.opm` parsed successfully as XML: version `0.0.148`, `FileCount=172`, `MissingBase64=0`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After installing `0.0.148`, the selected chips should look closer to the original OTOBO customer theme again, especially top-level Location/Environment/Application and Set-row Source/Destination System controls.
+- If Submit still does not create a ticket, expand `[ZTSM submit click]` or `[ZTSM submit after handlers]` and inspect `validatorErrorDetails`; that list is now the authoritative frontend blocker.
+
+## 2026-06-25 Service Payload Submit Trace And Theme Restore 0.0.147
+
+### Completed work
+
+- Followed up the `0.0.146` runtime test where payload-applied firewall reference values rendered, but the customer theme looked slightly off and Submit still did not create a ticket.
+- Runtime console evidence showed:
+  - `[ZTSM submit click]` had no invalid field.
+  - `[ZTSM submit event]` started with `defaultPrevented=false`.
+  - `[ZTSM submit after handlers]` ended with `defaultPrevented=true`.
+- Interpretation: browser native required validation is not the blocker; a later frontend submit handler prevents the browser event. In OTOBO this can be normal when jQuery Validate calls native `Form.submit()` itself, so the next useful trace is whether native submit is reached.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Removed the custom `ZTSMServicePayloadLabelFloated` styling so selected reference fields fall back to OTOBO customer theme rules (`oooSelected` / `oooFull`) instead of forcing label position.
+  - Stopped marking parent containers as selected beyond the actual Modernize/InputField container, reducing layout drift in horizontal DynamicField Set rows.
+  - Added `ZTSMServicePayloadFormSubmitReset()` after payload apply/import to clear stale `oooSubmitted` state, re-enable the form if it was left `AlreadyDisabled`, and reset jQuery Validate pending/submitted state.
+  - Added native-submit tracing for `#NewCustomerTicket`: `[ZTSM native submit called]`.
+  - Expanded submit diagnostics with form class, disabled submit count, validator error count, and validator pending request count.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.147`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.147.opm`.
+- Supersedes `0.0.146`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.147.opm`.
+- `Kernel/Package/GovernanceDB-0.0.147.opm` SHA256: `495657319CF84C93D4C5255E74892675FD26A370438D27D62DC07B2F676010AB`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `5113F72295928C5F28F1DF13FB5D24F31981639AF4A00B68F2A5798DE35011E4`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.147.opm` parsed successfully as XML: version `0.0.147`, `FileCount=172`, `MissingBase64=0`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After installing `0.0.147`, payload-applied custom reference values should keep the selected value visible without the extra label/theme offset introduced by `0.0.146`.
+- If Submit still does not navigate/create a ticket, check whether the console shows `[ZTSM native submit called]`:
+  - If it appears, frontend validation handed off and the next blocker is server/runtime side.
+  - If it does not appear, jQuery Validate did not invoke native submit and the expanded `[ZTSM submit click]` details should identify stale disabled/validator state.
+
+## 2026-06-25 Service Payload Custom Reference Widget Trace 0.0.146
+
+### Completed work
+
+- Fixed the next customer service payload JSON apply issue for custom-created reference/search controls inside DynamicField Set rows, especially `ZFirewall-SrcSystem` and `ZFirewall-DstSystem`.
+- Root cause: the previous visible refresh treated all reference widgets like the same Modernize selected-chip control. OTOBO select-backed `InputFields` render selected chips inside `.InputField_InputContainer`, not directly under `.InputField_Container`; autocomplete-backed DynamicFieldReference controls use `Core.Agent.DynamicFieldReferenceSearch.AddTicketReference()` to set the visible input and hidden key, and do not create a selected chip.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Select-backed references now rebuild the selected chip inside `.InputField_InputContainer`, matching OTOBO's own `ShowSelectionBoxes()` DOM shape.
+  - Autocomplete-backed references now preserve the real visible input value, mark the widget selected/full, float the field label, and remove stale manually-created selected chips.
+  - Submit tracing now logs `[ZTSM submit click]`, `[ZTSM submit event]`, `[ZTSM submit after handlers]`, and `[ZTSM submit invalid]` so runtime testing can distinguish native required-field blocking from later submit-handler cancellation.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.146`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.146.opm`.
+- Supersedes `0.0.145`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.146.opm`.
+- `Kernel/Package/GovernanceDB-0.0.146.opm` SHA256: `F121180977E924C6983C235EA1C6201B652C4E90D456A9BFCF3B18E90F734310`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `0F1DB07D1B76A90D8D52A56E66D0952ABFCECEF42076DE94D8DEF683DD3A69EA`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.146.opm` parsed successfully as XML: version `0.0.146`, `FileCount=172`, `MissingBase64=0`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After installing `0.0.146`, payload-applied source/destination custom reference fields should show selected values in the normal visible layer rather than tucked behind the placeholder/label.
+- If Submit still appears to click without ticket creation, browser console should now show whether the blocker is a specific invalid field or a later handler preventing submit.
+
+## 2026-06-25 Service Payload Modernize Layout Preserve 0.0.145
+
+### Completed work
+
+- Fixed the regression where payload-applied Modernize/InputField selections appeared selected but visually tucked behind the field label/placeholder, and submit still failed after payload apply.
+- Root cause: `0.0.143` introduced a manual selected-chip refresh that also set `.InputField_InputContainer.style.display = 'none'`. That overrode the Modernize widget's own layout state, causing the selected text to render in the wrong layer and potentially leaving the field in a validation-unfriendly state.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Removed the manual hiding of `.InputField_InputContainer`.
+  - Kept the real autocomplete/search input populated for autocomplete-backed reference fields.
+  - Kept the selected-chip text refresh, but positions newly created `.InputField_Selection` with the same `left: 24px` shape seen in the runtime Modernize DOM.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.145`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.145.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.144.opm` artifact.
+- Supersedes `0.0.144`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.145.opm`.
+- `Kernel/Package/GovernanceDB-0.0.145.opm` SHA256: `A4AC11566EF84EF0F4F255969CAC88295E4DA8A641517C9DD8DD3572FE5CA01F`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `AB8CB58A8E25610C3D306F40F7E058A9F3043CC9D1E0E55701650FB7AFE9853F`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.145.opm` parsed successfully as XML: version `0.0.145`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.145`, payload-applied Location, Environment, Application, and firewall reference fields should render selected values in the normal Modernize selected-chip layer rather than behind labels/placeholders.
+- Submit should no longer be blocked by the previous hidden-input-container mutation.
+
+## 2026-06-25 Service Payload Autocomplete Required Value Preserve 0.0.144
+
+### Completed work
+
+- Fixed the follow-up submit symptom after applying service payload JSON:
+  - The submit button visibly clicked, but no submit/navigation happened.
+  - The likely affected fields were autocomplete-style reference controls such as `ZFirewall-SrcSystem`.
+- Root cause: the shared Modernize/InputField display refresh in `0.0.143` correctly created/updated the selected chip for previously empty autocomplete reference fields, but it also cleared `.InputField_Search`. For autocomplete reference controls, that search input is the actual visible required input that `ZTSMServicePayloadReferenceSet()` had just populated with the selected label. Clearing it could leave `Validate_Required` empty, so browser/OTOBO validation could block submit without an obvious payload-layer click problem.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Modernize reference refresh still clears separate helper search inputs for select-backed fields.
+  - It no longer clears the same autocomplete input element that was just populated with the selected label.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.144`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.144.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.143.opm` artifact.
+- Supersedes `0.0.143`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.144.opm`.
+- `Kernel/Package/GovernanceDB-0.0.144.opm` SHA256: `1D5674CA0760B84F24F49BC69F4FB73484CE20E7F7E4C8EC7F89063C8D695DB6`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `AF79EFF911BEFBFEF891EFF122C6484F5B81ED7F7BF48A2D6052DEB854D009D3`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.144.opm` parsed successfully as XML: version `0.0.144`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.144`, applying JSON with `"ZFirewall-SrcSystem": "Application: ICA-ADFS"` should keep the actual autocomplete input value populated while also showing the selected chip/text.
+- The submit button should no longer appear to click without submitting due to this required autocomplete value being cleared.
+
+## 2026-06-25 Service Payload Drawer Close And Empty Reference Refresh 0.0.143
+
+### Completed work
+
+- Fixed two runtime issues found while applying customer service payload JSON:
+  - After applying JSON, the submit button appeared visible but remained unclickable while the JSON editor drawer/tool layer was still open.
+  - Reference fields that were previously empty, such as `ZFirewall-SrcSystem`, received the resolved value internally but did not update the visible Modernize/InputField UI.
+- Root cause:
+  - The JSON apply handler left the fixed payload drawer open after successful apply/import, so the tool surface could continue intercepting page interaction or focus.
+  - The Modernize display refresh added in `0.0.141` handled hidden selects, but autocomplete-style reference inputs use `ZTSMServicePayloadReferenceSet()` and need the same visible selected-chip refresh when moving from empty to selected.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Successful JSON apply now closes the drawer, blurs the JSON textarea, and returns focus to the payload JSON button.
+  - Successful spreadsheet/CSV import also closes the drawer and returns focus.
+  - Added a shared Modernize/InputField selected-value refresh for both select-backed and autocomplete-backed reference controls.
+  - The refresh creates the missing `.InputField_Selection`, `.Text`, and remove-button structure when a field was previously empty.
+  - Programmatic payload changes now skip synthetic `input` events for all Modernize/InputField widgets, not just hidden selects, while still dispatching `change`.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.143`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.143.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.142.opm` artifact.
+- Supersedes `0.0.142`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.143.opm`.
+- `Kernel/Package/GovernanceDB-0.0.143.opm` SHA256: `70AEAC590220B33E3A728FEE11801BD9B229FD31FCB6558C15032A22C23129FB`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `A60A103553CEF464F5E4FD51686748C23C4230AFC0399B6C8E1C2167029C5BEF`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.143.opm` parsed successfully as XML: version `0.0.143`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.143`, applying JSON should close the JSON drawer automatically and leave the real form submit button clickable.
+- Applying `"ZFirewall-SrcSystem": "Application: ICA-ADFS"` to an empty source-system reference field should update both the hidden/reference value and the visible selected chip/text.
+- Existing Location/Application changes should continue to show ICAB/ICA-ADFS after apply.
+
+## 2026-06-25 Service Payload Autocomplete Submit Guard 0.0.142
+
+### Completed work
+
+- Fixed the submit-blocking browser error observed after service payload JSON apply:
+  - `Uncaught TypeError: Cannot read properties of undefined (reading 'replace')`
+  - Stack was inside `Core.UI.Autocomplete.$.ui.autocomplete._renderItem`.
+- Runtime evidence showed JSON apply had finished and logged date-field apply entries before the shared autocomplete renderer failed.
+- Root cause: the payload apply path was now correctly injecting/selecting resolved reference options and refreshing the Modernize display, but Modernize/autocomplete can later inspect rendered/injected select options during submit or focus handling. Injected options need the same readable label metadata that the renderer expects, and hidden Modernize selects do not need an extra synthetic `input` event after their value is changed.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Resolved reference options now carry `label`, `title`, `data-label`, and `data-value` metadata in addition to native option text/value.
+  - The service payload event helper still dispatches `change`, but skips the synthetic `input` event for Modernize-backed select controls.
+  - The Modernize display refresh still runs before and after the change event.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.142`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.142.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.141.opm` artifact.
+- Supersedes `0.0.141`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.142.opm`.
+- `Kernel/Package/GovernanceDB-0.0.142.opm` SHA256: `84197A3B86FC13AC9EA4C3A7102A265FF4ED026D2868368EA3DD1A04F0F74602`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `2F239FF28B39A3CC05D11AE56A18BD5FBC5C69B96653E9CFF62873635072C122`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.142.opm` parsed successfully as XML: version `0.0.142`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.142`, applying the same JSON should still update Location/Application visible values and should no longer leave the page in a state where submit triggers the shared autocomplete `_renderItem` `replace` error.
+- If a console error remains, capture the expanded first failing autocomplete item/source if possible; the next likely fix would be to align the injected option metadata with the exact field names expected by the deployed `CommonJS` autocomplete build.
+
+## 2026-06-25 Service Payload Modernized Select Display Refresh 0.0.141
+
+### Completed work
+
+- Fixed the remaining customer service payload JSON apply display issue after runtime evidence showed the hidden native selects were correct but the visible Modernize/InputField display stayed stale:
+  - `ZTicket-Application` console showed `nativeValue=2`, `matchedValue=2`, and `selectedOptions[0].text=Application: ICA-ADFS`.
+  - `ZTicket-Location` console showed the resolved ICAB option selected on the native select/template control.
+  - Browser DOM still rendered `.InputField_Container.oooSelected .InputField_Selection .Text` as the old value, such as `Application: Integrated Clearance System` or `Location: LDC`.
+- Root cause: JSON apply updated the real hidden `<select>` value, but the Modernize/InputField rendered div beside it is not automatically refreshed by the browser after programmatic select changes.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Added a focused Modernize select display refresh helper for the existing hidden-select plus `.InputField_Container` DOM shape.
+  - Refresh now updates `.InputField_Selection .Text`, clears the search input, keeps `oooSelected`, and updates the remove-button aria label.
+  - Refresh runs when service payload apply sets a select value and again after the existing change/input event dispatch.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.141`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.141.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.140.opm` artifact.
+- Supersedes `0.0.140`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.141.opm`.
+- `Kernel/Package/GovernanceDB-0.0.141.opm` SHA256: `25C257146D1231F67BC2E59A97B57948B4065887A1AD9C0BD5E26C811FE8F7D6`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `EE83A8C22140F2EB2512A700138C70CD7D93B41C39222C399370DE08A0D83468`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.141.opm` parsed successfully as XML: version `0.0.141`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.141`, applying JSON that changes `ZTicket-Location` to `Location: ICAB` and `ZTicket-Application` to `Application: ICA-ADFS` should update both:
+  - the hidden native select value and selected option
+  - the visible `.InputField_Selection .Text` chip/div shown to the requester
+- Browser console should still show `[ZTSM payload apply] ...` entries with the resolved native value, while the form itself should visibly change from LDC/Integrated Clearance System to ICAB/ICA-ADFS.
+
+## 2026-06-25 Service Payload Reference Select Apply Fix 0.0.140
+
+### Completed work
+
+- Fixed the next customer service payload JSON apply issue after browser-console evidence showed `ZTicket-Application` is rendered as a `DynamicFieldReference` `select-one` control with numeric option keys:
+  - `tagName=SELECT`
+  - `type=select-one`
+  - `id=DynamicField_ZTicket-Application`
+  - `name=DynamicField_ZTicket-Application`
+  - `nativeValue=1`
+  - `selectedOptions[0].text=Application: Integrated Clearance System`
+- Root cause: JSON apply only matched select-one values against the currently loaded option list. When JSON requested a reference label such as `Application: ICA-ADFS`, the raw text was not a valid numeric option key, so the browser kept the old selected key and the visible chip stayed on the previous application.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Added a select-one reference resolver path for `DynamicFieldReference` controls.
+  - Reused `CustomerTicketMessage;Subaction=ZTSMServicePayloadReferenceResolve` for non-autocomplete reference selects.
+  - Ensured the resolved reference option exists in the native select before selecting it.
+  - Applied the resolved object key to the real select control and fired the existing change/input events.
+  - Kept `[ZTSM payload apply] ...` console diagnostics so runtime testing can confirm requested label, matched key, native value, and selected option.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.140`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.140.opm`.
+- Removed the superseded `Kernel/Package/GovernanceDB-0.0.139.opm` artifact.
+- Supersedes `0.0.139`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.140.opm`.
+- `Kernel/Package/GovernanceDB-0.0.140.opm` SHA256: `E7D2DE38D2CD5A5252A54AD18DAAF0107E39E8A7FDCA08D346FE3FDE09512B06`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `EB1B998869E7293634DEAD5246822B75ED9DC8449250794DD9CE93D1B932AF33`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.140.opm` parsed successfully as XML: version `0.0.140`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.140`, applying JSON such as `"ZTicket-Application": "Application: ICA-ADFS"` should resolve the label to the reference object's numeric key, update the native select, and show the ICA-ADFS chip/rendered selection.
+- Browser console should show `[ZTSM payload apply] ZTicket-Application` with `requestedValue=Application: ICA-ADFS`, `matchedValue=<resolved object key>`, and `selectedOptions[0].text=Application: ICA-ADFS`.
+- If a requested reference value is not allowed by the current form constraints, console should show `[ZTSM payload apply] reference select resolve failed ZTicket-Application` with the resolver response for troubleshooting.
+
+## 2026-06-25 Service Payload Repeated Select-One Collection Fix 0.0.139
+
+### Completed work
+
+- Fixed the remaining customer service payload JSON issue for `ZTicket-Location` after browser-console evidence showed Location is rendered as repeated `select-one` controls, not as a native multiselect:
+  - `tagName=SELECT`
+  - `type=select-one`
+  - `id=DynamicField_ZTicket-Location_0`
+  - `name=DynamicField_ZTicket-Location`
+  - `multiple=false`
+  - `nativeValue=22`
+  - `selectedOptions[0].text=Location: LDC`
+  - `outputValue=Location: LDC`
+- Root cause: JSON collection assigned `Payload[SetName] = Value` for every control in a field container. Repeated Dynamic Field controls and template/blank siblings could overwrite the valid selected value with blank.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Added payload value empty/merge helpers.
+  - Non-Set field collection now merges repeated non-empty values instead of overwriting.
+  - DynamicField Set row collection now uses the same merge behavior for repeated inner controls.
+  - JSON apply now maps array payload values back to repeated non-multiple controls by index, while preserving the existing native multiselect apply path.
+  - Kept browser-console diagnostics from `0.0.138` so runtime evidence remains available if another field shape appears.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.139`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.139.opm`.
+- Removed the superseded diagnostic-only `Kernel/Package/GovernanceDB-0.0.138.opm` artifact.
+- Supersedes `0.0.138`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.139.opm`.
+- `Kernel/Package/GovernanceDB-0.0.139.opm` SHA256: `A45AD0571B7F4A6C42A5CBBB0BE0E278B9C43E52217BED394779F7231F44C9D5`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `EADBE8F27960D62B2637DE0013768FAB1D1EABB35678D9C098ADA6E0F128A213`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.139.opm` parsed successfully as XML: version `0.0.139`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime expectation
+
+- After installing `0.0.139`, JSON/code view should export selected Location from `selectedOptions[0].text` rather than blank.
+- For a single selected Location, JSON may emit `"ZTicket-Location": "Location: LDC"`.
+- For multiple repeated Location rows, JSON should emit an array such as `"ZTicket-Location": ["Location: LDC", "Location: ICAB"]`.
+- Applying the JSON array should write values back to repeated `DynamicField_ZTicket-Location_*` controls by row index.
+
+## 2026-06-25 Service Payload Multiselect Console Diagnostics 0.0.138
+
+### Completed work
+
+- Added targeted browser-console diagnostics for the customer service payload JSON collector after runtime testing still showed visible Location chips but JSON emitted `"ZTicket-Location": ""`.
+- Extended `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Payload collection now logs one `[ZTSM payload collect] ...` console entry per collected service field.
+  - Each log includes the field output value, element tag/type/name/id/classes, native value, selected options, jQuery value, Select2 data, rendered chip values, and nearby field text.
+  - Rendered chip fallback now searches the surrounding `.FieldCell`, `.Row_DynamicField`, and `.ZTSMServiceExtensionField`, not only the select sibling/parent.
+  - Empty non-select controls now also try rendered chip values before returning blank, because the runtime symptom suggests the collector may be handed an empty backing control while the visible chip is elsewhere.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.138`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.138.opm`.
+- Removed the intermediate unrecorded `Kernel/Package/GovernanceDB-0.0.137.opm` artifact so install testing has one clear package.
+- Supersedes `0.0.136`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.138.opm`.
+- `Kernel/Package/GovernanceDB-0.0.138.opm` SHA256: `1D688093EE40E907814EA3CF06F50FBBE6E743BD40666DD0A2DE7EC4FAB6A7F7`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `308C7EBA5B4551200F5B3281DF02D67C9215234BBC3396DBBE8BCAA9B853C1BB`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.138.opm` parsed successfully as XML: version `0.0.138`, `FileCount=172`, `MissingBase64=0`.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Runtime troubleshooting steps
+
+- Install/upgrade `0.0.138`, restart PSGI/web workers, hard-refresh the browser.
+- Open browser dev tools Console before clicking the service payload JSON/code button.
+- Click JSON/code and inspect `[ZTSM payload collect] ZTicket-Location`.
+- The important console fields are:
+  - `outputValue`
+  - `tagName`, `type`, `name`, `id`, `className`
+  - `nativeValue`
+  - `selectedOptions`
+  - `jqueryValue`
+  - `select2Data`
+  - `renderedValues`
+  - `fieldText`
+- If `fieldText` contains `Location: LDC` but `renderedValues` is empty, the selected chip is rendered outside the searched field containers and the next fix should use the exact container shown in the console evidence.
+- If `renderedValues` contains `Location: LDC` but `outputValue` is still blank, the fallback return path is not being reached for the actual collected control.
+
+## 2026-06-25 Service Payload Multiselect JSON Apply Fix 0.0.136
+
+### Completed work
+
+- Fixed customer service payload JSON/template handling for multiselect fields such as `ZTicket-Location`.
+- Root cause: `ZTSMServicePayloadInputSet()` treated every `<select>` as a single-value control. For multiselects, JSON apply could update the displayed Select2 text while leaving the real selected option state empty, so submit-time validation still treated Location as missing.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - Multiselect JSON export now emits arrays of selected display names instead of a comma-joined string or `-`.
+  - Multiselect apply now accepts JSON arrays and comma/newline/semicolon-separated text.
+  - Display labels such as `Location: LDC` are normalized to `LDC` before matching visible options.
+  - Apply sets the real native selected options, updates jQuery/Select2 value state when present, and fires change/input events.
+  - JSON export falls back to Select2 displayed data if the native selected-option state is stale.
+- Synced the template across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.136`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.136.opm`.
+- Supersedes `0.0.135`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.136.opm`.
+- `Kernel/Package/GovernanceDB-0.0.136.opm` SHA256: `FD55F877F6E6F02A3E8EF25033F9194DAA0A8781F58E31D6160289DF90ED8F56`.
+
+### Validation
+
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `F7D67B110253D0FD6D8FE40F28F757FD9664733C1A9304497643F45D04C5D9D8`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.136.opm` parsed successfully as XML: version `0.0.136`, `FileCount=172`, `MissingBase64=0`.
+- Import normalization sanity check confirmed:
+  - `Location: LDC` -> `LDC`
+  - `LDC` -> `LDC`
+  - `-` -> blank
+- `perl -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\CustomerTicketMessage.pm`: syntax OK.
+- `git diff --check` passed.
+- Node.js is not available in this desktop runtime, so inline JavaScript parse validation could not be rerun here.
+
+### Architectural decisions
+
+- Service payload JSON remains a frontend prefill utility over the already rendered `ZService-Field` form. It must update the actual submitted controls, not only the Select2 display layer.
+- Multiselect values should be represented as JSON arrays for correctness and readability.
+- Label-prefix normalization remains accepted for operator-readable JSON, but stored/submitted values continue to flow through existing rendered form controls.
+
+### Known issues / follow-up
+
+- Runtime install/upgrade verification is needed in OTOBO using `0.0.136`.
+- Retest the firewall/service request form:
+  - Select `Location: LDC`, open JSON, confirm Location exports as an array containing `LDC` rather than `-`.
+  - Apply JSON with `"ZTicket-Location": ["Location: LDC"]` or `["LDC"]`.
+  - Submit and confirm the Location required prompt no longer appears when LDC is visibly selected.
 
 ## 2026-06-24 Governance Object Class Seed Repair 0.0.135
 

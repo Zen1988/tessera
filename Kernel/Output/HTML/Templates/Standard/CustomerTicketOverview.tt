@@ -14,6 +14,48 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
+<style>
+@media only screen and (min-width: 768px) {
+    #oooContent #oooHeader {
+        grid-template-columns: 1fr auto auto auto;
+        column-gap: 16px;
+    }
+}
+
+#ZTSMTicketReportDownload > button {
+    background: #ffffff;
+    color: #00023c;
+    color: var(--colTextDark);
+    border: 1px solid #e5e5eb;
+    border-radius: 30px;
+    box-shadow: none;
+    min-width: 178px;
+}
+
+#ZTSMTicketReportDownload i {
+    padding-right: 8px;
+}
+
+@media only screen and (max-width: 767px) {
+    #ZTSMTicketReportDownload span {
+        display: none;
+    }
+
+    #ZTSMTicketReportDownload > button {
+        position: fixed;
+        bottom: 92px;
+        right: 16px;
+        width: 48px;
+        min-width: 48px;
+        z-index: 600;
+        box-shadow: 0 12px 16px 0 rgba(0, 27, 255, 0.12);
+    }
+
+    #ZTSMTicketReportDownload i {
+        padding-right: 0;
+    }
+}
+</style>
 <div id='oooContent'>
     <div id='oooHeader'>
         <h1>[% Translate("Your Tickets") | html %]</h1>
@@ -28,6 +70,7 @@
                 </h3>
             </form>
         </div>
+        <a id='ZTSMTicketReportDownload' href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Download Report") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Download Report") | html %]</span></button></a>
         <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerTicketMessage" title="[% Translate("New Ticket") | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]"><button><i class="ooofo ooofo-add"></i><span> [% Translate("New Ticket") | html %]</span></button></a>
     </div>
     <div id='oooMainBox'>
