@@ -154,6 +154,9 @@ sub Run {
     for my $Key (qw( Subject Body PriorityID TypeID ServiceID SLAID Dest FromChatID)) {
         $GetParam{$Key} = $ParamObject->GetParam( Param => $Key );
     }
+    my $OnBehalfCustomerUserID = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserID' ) || '';
+    my $OnBehalfCustomerSearch = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserSearch' ) || '';
+    $OnBehalfCustomerUserID ||= $OnBehalfCustomerSearch;
 
     # get Dynamic fields from ParamObject
     my %DynamicFieldValues;
@@ -189,9 +192,19 @@ sub Run {
     $Self->_ServiceExtensionDynamicFieldValuesSync(
         GetParam => \%GetParam,
     );
+
+    my %EffectiveCustomer = $Self->_ZTSMEffectiveCustomerUser(
+        CustomerUserID => $OnBehalfCustomerUserID,
+    );
+    $GetParam{ZTSMRaiseOnBehalfCustomerUserID}    = $EffectiveCustomer{OnBehalfCustomerUserID} || '';
+    $GetParam{ZTSMRaiseOnBehalfCustomerUserLabel} = $EffectiveCustomer{OnBehalfCustomerUserLabel} || '';
+    $GetParam{ZTSMEffectiveCustomerUserID}        = $EffectiveCustomer{UserID};
+    $GetParam{ZTSMEffectiveCustomerID}            = $EffectiveCustomer{CustomerID};
+
     $Self->_ZTSMRequestDefaultsHydrate(
         DynamicFieldValues => \%DynamicFieldValues,
         GetParam           => \%GetParam,
+        CustomerUserID     => $EffectiveCustomer{UserID},
     );
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -225,6 +238,13 @@ sub Run {
         );
     }
 
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMCustomerUserSearch' ) {
+        return $Self->_ZTSMCustomerUserSearchJSON(
+            LayoutObject => $LayoutObject,
+            ParamObject  => $ParamObject,
+        );
+    }
+
     if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMServiceExtensionDynamicFields' ) {
         my %Visibility;
         $Self->_ServiceExtensionVisibilityApply(
@@ -238,6 +258,8 @@ sub Run {
             ParamObject        => $ParamObject,
             ServiceID          => $GetParam{ServiceID},
             Visibility         => \%Visibility,
+            ZTSMEffectiveCustomerID     => $EffectiveCustomer{CustomerID},
+            ZTSMEffectiveCustomerUserID => $EffectiveCustomer{UserID},
         );
 
         return $LayoutObject->Attachment(
@@ -431,7 +453,7 @@ sub Run {
                     $StdFieldValues{ $Check{ $Field->{FieldID} } } = $Field->{Method}->(
                         $Self,
                         %GetParam,
-                        CustomerUserID => $Self->{UserID},
+                        CustomerUserID => $EffectiveCustomer{UserID},
                         QueueID        => $GetParam{QueueID},
                         Services       => $StdFieldValues{ServiceID} || undef,    # needed for SLAID
                     );
@@ -561,7 +583,7 @@ sub Run {
                     ChangedElements           => \%ChangedElements,       # optional to reduce ACL evaluation
                     Action                    => $Self->{Action},
                     FormID                    => $Self->{FormID},
-                    CustomerUser              => $Self->{UserID},
+                    CustomerUser              => $EffectiveCustomer{UserID},
                     GetParam                  => {
                         %GetParam,
                     },
@@ -611,7 +633,7 @@ sub Run {
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -687,7 +709,7 @@ sub Run {
             my %TypeList = $TicketObject->TicketTypeList(
                 %Param,
                 Action         => $Self->{Action},
-                CustomerUserID => $Self->{UserID},
+                CustomerUserID => $EffectiveCustomer{UserID},
             );
             $Self->_ZTSMRequestTypesFilter( Type => \%TypeList );
 
@@ -753,7 +775,7 @@ sub Run {
         # call ticket ACLs for DynamicFields to check field visibility
         my $ACLResult = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             TicketID       => $Self->{TicketID},
             ReturnType     => 'Form',
@@ -816,7 +838,7 @@ sub Run {
                         ReturnType     => 'Ticket',
                         ReturnSubType  => 'DynamicField_' . $DynamicFieldConfig->{Name},
                         Data           => \%AclData,
-                        CustomerUserID => $Self->{UserID},
+                        CustomerUserID => $EffectiveCustomer{UserID},
                     );
                     if ($ACL) {
                         my %Filter = $TicketObject->TicketAclData();
@@ -921,7 +943,7 @@ sub Run {
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -1055,8 +1077,8 @@ sub Run {
             Priority     => $GetParam{Priority},
             Lock         => 'unlock',
             State        => $Config->{StateDefault},
-            CustomerID   => $Self->{UserCustomerID},
-            CustomerUser => $Self->{UserLogin},
+            CustomerID   => $EffectiveCustomer{CustomerID},
+            CustomerUser => $EffectiveCustomer{UserLogin},
             OwnerID      => $ConfigObject->Get('CustomerPanelUserID'),
             UserID       => $ConfigObject->Get('CustomerPanelUserID'),
         );
@@ -1121,6 +1143,25 @@ sub Run {
             }
             else {
                 $GetParam{Body} .= "\n\n" . $ServiceExtensionSnapshot;
+            }
+        }
+
+        if ( $EffectiveCustomer{OnBehalfCustomerUserID} ) {
+            my $AuditText = "Raised on behalf of: $EffectiveCustomer{OnBehalfCustomerUserLabel}\n"
+                . "Submitted by: $Self->{UserID}";
+
+            if ( $LayoutObject->{BrowserRichText} ) {
+                my $AuditHTML = $LayoutObject->Ascii2Html(
+                    Text           => $AuditText,
+                    HTMLResultMode => 1,
+                );
+                $GetParam{Body} = '<p><strong>Raise on behalf</strong></p><p>'
+                    . $AuditHTML
+                    . '</p><br/>'
+                    . $GetParam{Body};
+            }
+            else {
+                $GetParam{Body} = "Raise on behalf\n\n$AuditText\n\n" . $GetParam{Body};
             }
         }
 
@@ -1342,12 +1383,12 @@ sub Run {
             Fields    => 0,
         );
         my %ChangedElements = $ElementChanged ? ( $ElementChanged => 1 ) : ();
-        if ( $ChangedElements{ServiceID} ) {
-            $ChangedElements{CustomerUserID} = 1;
-            $ChangedElements{CustomerID}     = 1;
+            if ( $ChangedElements{ServiceID} ) {
+                $ChangedElements{CustomerUserID} = 1;
+                $ChangedElements{CustomerID}     = 1;
 
-            $GetParam{CustomerUserID} = $Self->{UserID};
-            $GetParam{CustomerID}     = $Self->{UserCustomerID};
+            $GetParam{CustomerUserID} = $EffectiveCustomer{UserID};
+            $GetParam{CustomerID}     = $EffectiveCustomer{CustomerID};
         }
         my %ChangedElementsDFStart = %ChangedElements;
         my %ChangedStdFields       = $ElementChanged && $ElementChanged !~ /^DynamicField_/ ? %ChangedElements : ();
@@ -1411,7 +1452,7 @@ sub Run {
                     $StdFieldValues{ $Check{ $Field->{FieldID} } } = $Field->{Method}->(
                         $Self,
                         %GetParam,
-                        CustomerUserID => $CustomerUser || '',
+                        CustomerUserID => $EffectiveCustomer{UserID},
                         QueueID        => $GetParam{QueueID},
                         Services       => $StdFieldValues{ServiceID} || undef,    # needed for SLAID
                     );
@@ -1541,7 +1582,7 @@ sub Run {
                     ChangedElements           => \%ChangedElements,       # optional to reduce ACL evaluation
                     Action                    => $Self->{Action},
                     FormID                    => $Self->{FormID},
-                    CustomerUser              => $Self->{UserID},
+                    CustomerUser              => $EffectiveCustomer{UserID},
                     GetParam                  => {
                         %GetParam,
                     },
@@ -1757,6 +1798,8 @@ sub Run {
             PossibleValuesFilter => \%DynamicFieldPossibleValues,
             ServiceID            => $GetParam{ServiceID},
             Visibility           => $DynFieldStates{Visibility},
+            ZTSMEffectiveCustomerID     => $EffectiveCustomer{CustomerID},
+            ZTSMEffectiveCustomerUserID => $EffectiveCustomer{UserID},
         );
         if ( IsHashRefWithData( $DynFieldStates{Visibility} ) ) {
             push @DynamicFieldAJAX, {
@@ -1767,7 +1810,7 @@ sub Run {
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -1815,9 +1858,10 @@ sub Run {
             },
             ServiceID => {
                 PossibleNone => 1,
-                Translation  => $TreeView,
-                TreeView     => $TreeView,
-                Max          => 100,
+                Translation  => 0,
+                TreeView     => 1,
+                Sort         => 'TreeView',
+                Max          => 200,
             },
             SLAID => {
                 PossibleNone => 1,
@@ -2095,7 +2139,7 @@ sub _GetPriorities {
         %Priorities = $Kernel::OM->Get('Kernel::System::Ticket')->TicketPriorityList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
 
@@ -2114,7 +2158,7 @@ sub _GetTypes {
         %Type = $Kernel::OM->Get('Kernel::System::Ticket')->TicketTypeList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
 
@@ -2317,12 +2361,94 @@ sub _ServiceExtensionFieldNamesParse {
     return map { $_->{Name} } $Self->_ServiceExtensionFieldSpecsParse(%Param);
 }
 
+sub _ZTSMEffectiveCustomerUser {
+    my ( $Self, %Param ) = @_;
+
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my $TargetUserID       = $Param{CustomerUserID} || '';
+    my %TargetUser;
+
+    if ($TargetUserID) {
+        %TargetUser = $CustomerUserObject->CustomerUserDataGet(
+            User => $TargetUserID,
+        );
+    }
+
+    if ( !%TargetUser ) {
+        $TargetUserID = $Self->{UserID};
+        %TargetUser   = $CustomerUserObject->CustomerUserDataGet(
+            User => $TargetUserID,
+        );
+    }
+
+    my $CustomerName = $CustomerUserObject->CustomerName(
+        UserLogin => $TargetUserID,
+    ) || $TargetUser{UserFullname} || $TargetUserID;
+
+    my $Label = $CustomerName;
+    if ( $TargetUser{UserEmail} ) {
+        $Label .= " <$TargetUser{UserEmail}>";
+    }
+    if ( $TargetUser{UserCustomerID} ) {
+        $Label .= " ($TargetUser{UserCustomerID})";
+    }
+
+    my %Result = (
+        UserID    => $TargetUserID,
+        UserLogin => $TargetUserID,
+        CustomerID => $TargetUser{UserCustomerID}
+            || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserCustomerID} : '' ),
+        UserEmail => $TargetUser{UserEmail}
+            || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserEmail} : '' ),
+        CustomerName => $CustomerName,
+    );
+
+    if ( $TargetUserID && lc $TargetUserID ne lc( $Self->{UserID} || '' ) ) {
+        $Result{OnBehalfCustomerUserID}    = $TargetUserID;
+        $Result{OnBehalfCustomerUserLabel} = $Label;
+    }
+
+    return %Result;
+}
+
+sub _ZTSMCustomerUserSearchJSON {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $SearchTerm   = $ParamObject->GetParam( Param => 'Term' ) || '';
+    my $MaxResults   = int( $ParamObject->GetParam( Param => 'MaxResults' ) || 0 ) || 20;
+
+    my %CustomerUserList = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerSearch(
+        Search => $SearchTerm,
+    );
+
+    my @Data;
+    CUSTOMERUSER:
+    for my $CustomerUserID ( sort keys %CustomerUserList ) {
+        my $Label = $CustomerUserList{$CustomerUserID} || $CustomerUserID;
+        $Label =~ s/[\r\n]+/ /g;
+
+        push @Data, {
+            Label => $Label,
+            Value => $CustomerUserID,
+        };
+
+        last CUSTOMERUSER if @Data >= $MaxResults;
+    }
+
+    return $LayoutObject->JSONReply(
+        Data => \@Data,
+    );
+}
+
 sub _ZTSMRequestDefaultsHydrate {
     my ( $Self, %Param ) = @_;
 
     return if !IsHashRefWithData( $Param{DynamicFieldValues} );
     return if !IsHashRefWithData( $Param{GetParam} );
-    return if !$Self->{UserID};
+    my $CustomerUserID = $Param{CustomerUserID} || $Self->{UserID};
+    return if !$CustomerUserID;
 
     my %FieldMap = (
         'ZUser-Application'  => 'ZTicket-Application',
@@ -2333,7 +2459,7 @@ sub _ZTSMRequestDefaultsHydrate {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my %CustomerUser       = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
-        User => $Self->{UserID},
+        User => $CustomerUserID,
     );
 
     SOURCEFIELD:
@@ -2358,7 +2484,7 @@ sub _ZTSMRequestDefaultsHydrate {
             $SourceValue = $Self->_ZTSMNormalizeValue(
                 $BackendObject->ValueGet(
                     DynamicFieldConfig => $SourceFieldConfig,
-                    ObjectName         => $Self->{UserID},
+                    ObjectName         => $CustomerUserID,
                 )
             );
         }
@@ -2598,8 +2724,8 @@ sub _ServiceExtensionDynamicFieldHTMLBuild {
         Visibility           => $Param{Visibility},
         CustomerInterface    => 1,
         Object               => {
-            CustomerID     => $Self->{UserCustomerID},
-            CustomerUserID => $Self->{UserID},
+            CustomerID     => $Param{ZTSMEffectiveCustomerID}     || $Self->{UserCustomerID},
+            CustomerUserID => $Param{ZTSMEffectiveCustomerUserID} || $Self->{UserID},
             %{ $Param{DynamicFieldValues} || {} },
         },
     );
@@ -2930,7 +3056,7 @@ sub _GetServices {
         %Service = $Kernel::OM->Get('Kernel::System::Ticket')->TicketServiceList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
     return \%Service;
@@ -2954,7 +3080,7 @@ sub _GetSLAs {
             %SLA = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSLAList(
                 %Param,
                 Action         => $Self->{Action},
-                CustomerUserID => $Self->{UserID},
+                CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
             );
         }
     }
@@ -3015,6 +3141,8 @@ sub _MaskNew {
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $Config       = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
+    my $EffectiveCustomerUserID = $Param{ZTSMEffectiveCustomerUserID} || $Self->{UserID};
+    my $EffectiveCustomerID     = $Param{ZTSMEffectiveCustomerID}     || $Self->{UserCustomerID};
 
     if ( $Config->{Queue} ) {
 
@@ -3082,7 +3210,7 @@ sub _MaskNew {
     if ( $Config->{Priority} ) {
         my %Priorities = $TicketObject->TicketPriorityList(
             %Param,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
             Action         => $Self->{Action},
         );
 
@@ -3111,7 +3239,7 @@ sub _MaskNew {
         my %Type = $TicketObject->TicketTypeList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
         );
 
         $Self->_ZTSMRequestTypesFilter( Type => \%Type );
@@ -3160,7 +3288,7 @@ sub _MaskNew {
             %Param,
             QueueID        => $TmpQueueID,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
         );
 
 # Rother OSS / ServiceCatalog
@@ -3181,9 +3309,9 @@ sub _MaskNew {
                 . ( $Config->{ServiceMandatory} ? 'Validate_Required ' : '' )
                 . ( $Param{Errors}->{ServiceIDInvalid} || '' ),
             PossibleNone => 1,
-            TreeView     => $TreeView,
+            TreeView     => 1,
             Sort         => 'TreeView',
-            Translation  => $TreeView,
+            Translation  => 0,
             Max          => 200,
         );
         $LayoutObject->Block(
@@ -3205,7 +3333,7 @@ sub _MaskNew {
                     QueueID => 1,    # use default QueueID if none is provided in %Param
                     %Param,
                     Action         => $Self->{Action},
-                    CustomerUserID => $Self->{UserID},
+                    CustomerUserID => $EffectiveCustomerUserID,
                 );
             }
 
@@ -3247,6 +3375,8 @@ sub _MaskNew {
         Errors               => $Param{DFErrors},
         Visibility           => $Param{Visibility},
         ServiceID            => $Param{ServiceID},
+        ZTSMEffectiveCustomerID     => $EffectiveCustomerID,
+        ZTSMEffectiveCustomerUserID => $EffectiveCustomerUserID,
     );
 
     if ( !$Param{VisibilityStd}{Article} ) {

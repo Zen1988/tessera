@@ -22,7 +22,7 @@
     }
 }
 
-#ZTSMTicketReportDownload > button {
+.ZTSMTicketReportDownload > button {
     background: #ffffff;
     color: #00023c;
     color: var(--colTextDark);
@@ -32,12 +32,16 @@
     min-width: 178px;
 }
 
-#ZTSMTicketReportDownload i {
+.ZTSMTicketReportDownload i {
     padding-right: 8px;
 }
 
+.ZTSMTicketReportDownloadInline {
+    margin-left: auto;
+}
+
 @media only screen and (max-width: 767px) {
-    #ZTSMTicketReportDownload span {
+    .ZTSMTicketReportDownload span {
         display: none;
     }
 
@@ -51,7 +55,7 @@
         box-shadow: 0 12px 16px 0 rgba(0, 27, 255, 0.12);
     }
 
-    #ZTSMTicketReportDownload i {
+    .ZTSMTicketReportDownload i {
         padding-right: 0;
     }
 }
@@ -70,11 +74,12 @@
                 </h3>
             </form>
         </div>
-        <a id='ZTSMTicketReportDownload' href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Download Report") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Download Report") | html %]</span></button></a>
+        <a id='ZTSMTicketReportDownload' class="ZTSMTicketReportDownload" href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Download Report") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Download Report") | html %]</span></button></a>
         <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerTicketMessage" title="[% Translate("New Ticket") | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]"><button><i class="ooofo ooofo-add"></i><span> [% Translate("New Ticket") | html %]</span></button></a>
     </div>
     <div id='oooMainBox'>
         <div id='oooTicketListHeader'>
+            <a class="ZTSMTicketReportDownload ZTSMTicketReportDownloadInline ooo12g ooor" href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Download Report") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Download Report") | html %]</span></button></a>
 [% IF Env("Subaction") == 'Search' %]
             <p class="ooo12 oool Selected">
                 [% Translate("Search") | html %]:  "[% Data.Fulltext | html %]"

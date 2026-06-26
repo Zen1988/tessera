@@ -690,26 +690,21 @@ sub Run {
         return 1;
     }
 
-    # -------------------------------------------------------- #
-    # STORY VISIBILITY INHERITANCE
-    # -------------------------------------------------------- #
-
     if (
-        _CanViewStory(
-
-            Ticket => \%Ticket,
-
+        _IsIPCAgent(
             CustomerUserID => $CustomerUserID,
         )
-    ) {
-
+        && _CanViewStory(
+            Ticket         => \%Ticket,
+            CustomerUserID => $CustomerUserID,
+        )
+        )
+    {
         $LogObject->Log(
-
             Priority => 'info',
-
             Message =>
                   'ZTSMUserIDCheck: '
-                . 'Story inheritance access granted '
+                . 'IPC story inheritance access granted '
                 . "TicketID=$Param{TicketID} "
                 . "CustomerUserID=$CustomerUserID",
         );

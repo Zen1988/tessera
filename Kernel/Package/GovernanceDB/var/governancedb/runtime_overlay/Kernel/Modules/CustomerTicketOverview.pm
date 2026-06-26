@@ -41,6 +41,7 @@ my @ZTSMReportHead = (
     'ZTicket-OwnerGroup',
     'ZTicket-Owner',
     'ServicePayload',
+    'ArticlesJSON',
 );
 
 sub new {
@@ -349,6 +350,86 @@ sub _ZTSMPermissionFilter {
     }
 
     return @TicketIDs;
+}
+
+sub _ZTSMExecutionTicketProtected {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $Parent = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !defined $Parent || $Parent eq '';
+
+    my $OwnerGroup = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-OwnerGroup'} );
+    my $Owner      = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Owner'} );
+
+    return 1
+        if ( defined $OwnerGroup && $OwnerGroup ne '' )
+        || ( defined $Owner && $Owner ne '' );
+
+    return;
+}
+
+sub _ZTSMStandardTicketIDsFilter {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my @TicketIDs;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+        next TICKETID if !$TicketID;
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+        );
+
+        next TICKETID if !%Ticket;
+
+        if ( _ZTSMExecutionTicketProtected( Ticket => \%Ticket ) ) {
+            my @AllowedTicketIDs = _ZTSMPermissionFilter(
+                CustomerUserID => $Param{CustomerUserID},
+                TicketIDs      => [$TicketID],
+            );
+
+            next TICKETID if !@AllowedTicketIDs;
+        }
+
+        push @TicketIDs, $TicketID;
+    }
+
+    return @TicketIDs;
+}
+
+sub _ZTSMExportActionHTML {
+    my (%Param) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ExportLink   = $Param{ExportLink} || '';
+
+    return if !$ExportLink;
+
+    my $Href = $LayoutObject->{Baselink} . $ExportLink;
+    $Href = $LayoutObject->Ascii2Html( Text => $Href );
+
+    return ''
+        . '<style>'
+        . '.ZTSMExportActionBar{max-width:1608px;margin:0 auto 18px auto;padding:0 52px;display:flex;justify-content:flex-end;box-sizing:border-box;}'
+        . '.ZTSMExportActionButton{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 24px;border-radius:24px;background:#ffffff;color:#00023c;border:1px solid #dfe3f0;box-shadow:0 8px 18px rgba(0,0,0,.08);font-weight:600;text-decoration:none;}'
+        . '.ZTSMExportActionButton:hover,.ZTSMExportActionButton:focus{background:#f7f8ff;color:#001bff;text-decoration:none;}'
+        . '.ZTSMExportActionButton i{font-size:14px;}'
+        . '@media only screen and (max-width:767px){.ZTSMExportActionBar{padding:0 18px;margin-bottom:12px}.ZTSMExportActionButton{width:100%;justify-content:center;}}'
+        . '</style>'
+        . '<div class="ZTSMExportActionBar">'
+        . '<a id="ZTSMExportActionBarDownload" class="ZTSMExportActionButton" href="' . $Href . '" title="Download Report">'
+        . '<i class="fa fa-download" aria-hidden="true"></i><span>Download Report</span>'
+        . '</a>'
+        . '</div>';
 }
 
 sub _ZTSMWorkableTicketIDs {
@@ -760,6 +841,39 @@ sub _ZTSMExportFirstArticle {
     );
 }
 
+sub _ZTSMExportArticleActor {
+    my (%Param) = @_;
+
+    my $Article = $Param{Article} || {};
+    my $Ticket  = $Param{Ticket}  || {};
+
+    if ( $Article->{CustomerUserID} ) {
+        return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+            UserLogin => $Article->{CustomerUserID},
+        ) || $Article->{CustomerUserID};
+    }
+
+    if ( $Article->{From} ) {
+        my $From = $Article->{From};
+        $From =~ s{\A\s+|\s+\z}{}g;
+        return $From if $From ne '';
+    }
+
+    if ( $Ticket->{CustomerUserID} ) {
+        return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+            UserLogin => $Ticket->{CustomerUserID},
+        ) || $Ticket->{CustomerUserID};
+    }
+
+    if ( $Article->{CreateBy} ) {
+        return $Kernel::OM->Get('Kernel::System::User')->UserName(
+            UserID => $Article->{CreateBy},
+        ) || $Article->{CreateBy};
+    }
+
+    return '';
+}
+
 sub _ZTSMExportArticleBodyText {
     my (%Param) = @_;
 
@@ -780,10 +894,13 @@ sub _ZTSMExportArticleBodyText {
 sub _ZTSMExportCreatedBy {
     my (%Param) = @_;
 
-    if ( $Param{Article}->{CustomerUserID} ) {
+    my $Actor = _ZTSMExportArticleActor(%Param);
+    return $Actor if $Actor;
+
+    if ( $Param{Ticket}->{CustomerUserID} ) {
         return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
-            UserLogin => $Param{Article}->{CustomerUserID},
-        ) || $Param{Article}->{CustomerUserID};
+            UserLogin => $Param{Ticket}->{CustomerUserID},
+        ) || $Param{Ticket}->{CustomerUserID};
     }
 
     if ( $Param{Ticket}->{CreateBy} ) {
@@ -793,6 +910,73 @@ sub _ZTSMExportCreatedBy {
     }
 
     return '';
+}
+
+sub _ZTSMExportArticlesJSON {
+    my (%Param) = @_;
+
+    my $TicketID = $Param{TicketID} || return '';
+    my $Ticket   = $Param{Ticket}   || {};
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my @ArticleList   = $ArticleObject->ArticleList(
+        TicketID             => $TicketID,
+        IsVisibleForCustomer => 1,
+    );
+
+    return '' if !@ArticleList;
+
+    my %SenderTypeByID = $ArticleObject->ArticleSenderTypeList();
+    my @Articles;
+
+    METAARTICLE:
+    for my $MetaArticle (
+        sort {
+            ( $b->{CreateTime} || '' ) cmp ( $a->{CreateTime} || '' )
+                || ( $b->{ArticleID} || 0 ) <=> ( $a->{ArticleID} || 0 )
+        } @ArticleList
+        )
+    {
+        next METAARTICLE if !IsHashRefWithData($MetaArticle);
+
+        my $ArticleBackendObject = $ArticleObject->BackendForArticle( %{$MetaArticle} );
+        my %Article              = $ArticleBackendObject->ArticleGet(
+            TicketID  => $TicketID,
+            ArticleID => $MetaArticle->{ArticleID},
+        );
+
+        my $Body = _ZTSMExportArticleBodyText(
+            Article => \%Article,
+        );
+
+        push @Articles, {
+            ArticleID            => $MetaArticle->{ArticleID} || '',
+            ArticleNumber        => $MetaArticle->{ArticleNumber} || '',
+            Created              => $MetaArticle->{CreateTime} || $Article{CreateTime} || '',
+            SenderType           => $SenderTypeByID{ $MetaArticle->{SenderTypeID} || 0 } || '',
+            IsVisibleForCustomer => $MetaArticle->{IsVisibleForCustomer} ? 1 : 0,
+            From                 => $Article{From} || '',
+            To                   => $Article{To} || '',
+            Cc                   => $Article{Cc} || '',
+            Subject              => $Article{Subject} || '',
+            CreatedBy            => _ZTSMExportArticleActor(
+                Ticket  => $Ticket,
+                Article => {
+                    %{$MetaArticle},
+                    %Article,
+                },
+            ),
+            Body => $Body,
+        };
+    }
+
+    return '' if !@Articles;
+
+    return $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+        Data     => \@Articles,
+        SortKeys => 1,
+        Pretty   => 1,
+    ) || '';
 }
 
 sub _ZTSMTicketReportExport {
@@ -831,6 +1015,10 @@ sub _ZTSMTicketReportExport {
         my $CreatedBy = _ZTSMExportCreatedBy(
             Ticket  => \%Ticket,
             Article => \%Article,
+        );
+        my $ArticlesJSON = _ZTSMExportArticlesJSON(
+            TicketID => $TicketID,
+            Ticket   => \%Ticket,
         );
 
         push @Rows, [
@@ -886,6 +1074,7 @@ sub _ZTSMTicketReportExport {
                 BackendObject              => $BackendObject,
                 LayoutObject               => $LayoutObject,
             ),
+            $ArticlesJSON,
         ];
     }
 
@@ -1186,6 +1375,10 @@ sub Run {
             %{ $Filters{ $Self->{Subaction} }->{$Filter}->{Search} },
             %SearchInArchive,
             Result => 'ARRAY',
+        );
+        @StandardTicketIDs = _ZTSMStandardTicketIDsFilter(
+            CustomerUserID => $Self->{UserID},
+            TicketIDs      => \@StandardTicketIDs,
         );
         $StandardFilterTicketIDs{$Filter} = \@StandardTicketIDs;
 
@@ -1535,6 +1728,10 @@ sub Run {
         );
 
     }
+
+    $TicketListHTML = _ZTSMExportActionHTML(
+        ExportLink => $ExportLink,
+    ) . ( $TicketListHTML || '' );
 
     # create & return output
     my $Title = $Self->{Subaction};

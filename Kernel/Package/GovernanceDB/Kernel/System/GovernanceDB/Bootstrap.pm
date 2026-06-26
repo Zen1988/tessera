@@ -122,6 +122,8 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
+    $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
+
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
@@ -933,6 +935,20 @@ sub _GenericAgentJobsEnsure {
     );
     return 1 if ref $Data ne 'HASH' || ref $Data->{GenericAgents} ne 'HASH';
 
+    my $DynamicFieldDriverConfig = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Driver') || {};
+    if (
+        ref $DynamicFieldDriverConfig ne 'HASH'
+        || ref $DynamicFieldDriverConfig->{GovernanceObject} ne 'HASH'
+        || !$DynamicFieldDriverConfig->{GovernanceObject}->{Module}
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => 'GovernanceDB bootstrap deferred GenericAgent job seed because the GovernanceObject dynamic field driver is not active yet.',
+        );
+        return 1;
+    }
+
     my $GenericAgentObject = $Kernel::OM->Get('Kernel::System::GenericAgent');
     my $StateObject        = $Kernel::OM->Get('Kernel::System::State');
     my $TypeObject         = $Kernel::OM->Get('Kernel::System::Type');
@@ -1412,6 +1428,126 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     }
 
     $DynamicFieldObject->EventHandlerTransaction();
+
+    return 1;
+}
+
+sub _ITSMConfigItemLifecycleDateDynamicFieldsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $ConfigItemObject     = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+
+    my @FieldNames = qw(
+        ZTAM-Released
+        ZTAM-EoSale
+        ZTAM-EoStandardSupport
+        ZTAM-EoExtendedSupport
+        ZTAM-EoServiceLife
+    );
+
+    my %FieldIDs;
+
+    FIELD:
+    for my $FieldName (@FieldNames) {
+        my $Field = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
+        next FIELD if !$Field || ref $Field ne 'HASH';
+        next FIELD if ( $Field->{ObjectType} || '' ) ne 'ITSMConfigItem';
+        next FIELD if ( $Field->{FieldType}  || '' ) ne 'Date';
+
+        $FieldIDs{ $Field->{Name} } = $Field->{ID};
+
+        my %Config = %{ $Field->{Config} || {} };
+        my $Changed;
+
+        if ( ( $Config{YearsPeriod} // '' ) ne '1' ) {
+            $Config{YearsPeriod} = '1';
+            $Changed = 1;
+        }
+
+        my $YearsInFuture = $Config{YearsInFuture};
+        if ( !defined $YearsInFuture || $YearsInFuture !~ m{\A\d+\z} || $YearsInFuture < 10 ) {
+            $Config{YearsInFuture} = '10';
+            $Changed = 1;
+        }
+
+        if ( !defined $Config{YearsInPast} || $Config{YearsInPast} !~ m{\A\d+\z} ) {
+            $Config{YearsInPast} = '5';
+            $Changed = 1;
+        }
+
+        next FIELD if !$Changed;
+
+        my $Updated = $Self->_DynamicFieldUpdateForce(
+            ID         => $Field->{ID},
+            Name       => $Field->{Name},
+            Label      => $Field->{Label},
+            FieldOrder => $Field->{FieldOrder},
+            FieldType  => $Field->{FieldType},
+            ObjectType => $Field->{ObjectType},
+            Config     => \%Config,
+            ValidID    => $Field->{ValidID} || 1,
+            UserID     => 1,
+            Reorder    => 0,
+        );
+
+        if ( !$Updated ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "GovernanceDB bootstrap could not extend ITSM ConfigItem lifecycle date range for $FieldName.",
+            );
+        }
+    }
+
+    $DynamicFieldObject->EventHandlerTransaction();
+
+    if (%FieldIDs) {
+        my $ClassList = $GeneralCatalogObject->ItemList(
+            Class => 'ITSM::ConfigItem::Class',
+        ) || {};
+
+        my %OutOfSyncDefinitions;
+        CLASS:
+        for my $ClassID ( sort keys %{$ClassList} ) {
+            my $Definition = $ConfigItemObject->DefinitionGet(
+                ClassID => $ClassID,
+            );
+            next CLASS if !$Definition || ref $Definition ne 'HASH';
+            next CLASS if ref $Definition->{DynamicFieldRef} ne 'HASH';
+
+            FIELD:
+            for my $FieldName ( sort keys %FieldIDs ) {
+                next FIELD if !$Definition->{DynamicFieldRef}{$FieldName};
+
+                push @{ $OutOfSyncDefinitions{$ClassID} }, $FieldIDs{$FieldName};
+            }
+        }
+
+        if (%OutOfSyncDefinitions) {
+            my $SyncMarked = $ConfigItemObject->DefinitionSetOutOfSync(
+                Classes => \%OutOfSyncDefinitions,
+            );
+            if ( !$SyncMarked ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => 'GovernanceDB bootstrap could not mark ITSM ConfigItem definitions out of sync for lifecycle date fields.',
+                );
+            }
+
+            my $Synced = $ConfigItemObject->DefinitionSync();
+            if ( !$Synced ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => 'GovernanceDB bootstrap could not sync ITSM ConfigItem definitions after lifecycle date range repair.',
+                );
+            }
+        }
+    }
+
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ConfigItemDefinition',
+    );
 
     return 1;
 }

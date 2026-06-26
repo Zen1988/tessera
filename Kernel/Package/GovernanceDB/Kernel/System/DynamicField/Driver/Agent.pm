@@ -24,7 +24,25 @@ use warnings;
 use namespace::autoclean;
 use utf8;
 
-use parent qw(Kernel::System::DynamicField::Driver::BaseReference);
+BEGIN {
+    my $Module = __PACKAGE__;
+    my $Parent = 'Kernel::System::DynamicField::Driver::BaseReference';
+    local $SIG{__WARN__} = sub {
+        warn "ZTSM DynamicField Driver diagnostic: warning while loading parent $Parent for $Module: @_";
+    };
+    eval {
+        require parent;
+        parent->import($Parent);
+        1;
+    } or do {
+        my $Error = $@ || 'unknown error';
+        my $ParentFile = "$Parent.pm" =~ s{::}{/}smxgr;
+        die "ZTSM DynamicField Driver diagnostic: failed to load parent $Parent for $Module; "
+            . "INC{$ParentFile}="
+            . ( defined $INC{$ParentFile} ? $INC{$ParentFile} : '<undef>' )
+            . "; error=$Error";
+    };
+}
 
 # core modules
 use List::Util qw(any);

@@ -26,11 +26,24 @@
             <input type="hidden" name="Expand" id="Expand" value="" />
             <input type="hidden" name="FormID" value="[% Data.FormID | html %]" />
             <input type="hidden" name="FromChatID" value="[% Data.FromChatID | html %]" />
+            <input type="hidden" name="ZTSMRaiseOnBehalfCustomerUserID" id="ZTSMRaiseOnBehalfCustomerUserID" value="[% Data.ZTSMRaiseOnBehalfCustomerUserID | html %]" />
             <fieldset>
 
 [% RenderBlockStart("AsteriskExplanation") %]
                 <p class="AsteriskExplanation">[% Translate("All fields marked with an asterisk (*) are mandatory.") | html %]</p>
 [% RenderBlockEnd("AsteriskExplanation") %]
+
+                <div class="Row ZTSMRaiseOnBehalfRow">
+                    <details id="ZTSMRaiseOnBehalf"[% IF Data.ZTSMRaiseOnBehalfCustomerUserID %] open[% END %]>
+                        <summary>[% Translate("Raise on behalf") | html %]</summary>
+                        <div class="Field">
+                            <input type="text" id="ZTSMRaiseOnBehalfCustomerUserSearch" name="ZTSMRaiseOnBehalfCustomerUserSearch" value="[% Data.ZTSMRaiseOnBehalfCustomerUserLabel | html %]" list="ZTSMRaiseOnBehalfCustomerUserList" autocomplete="off" />
+                            <datalist id="ZTSMRaiseOnBehalfCustomerUserList"></datalist>
+                            <p class="FieldExplanation">[% Translate("Search and select the requester for this ticket.") | html %]</p>
+                        </div>
+                        <div class="Clear"></div>
+                    </details>
+                </div>
 
 [% RenderBlockStart("DynamicField_TitleCategory") %]
                 <div class="Row Row_DynamicField_[% Data.Name | html %][% Data.HiddenClass | html %]" [% Data.HiddenStyle | html %]>
@@ -218,3 +231,74 @@
         </form>
     </div>
 </div>
+<script>
+(function () {
+    var Input = document.getElementById('ZTSMRaiseOnBehalfCustomerUserSearch');
+    var Hidden = document.getElementById('ZTSMRaiseOnBehalfCustomerUserID');
+    var List = document.getElementById('ZTSMRaiseOnBehalfCustomerUserList');
+    var Timer;
+    var Choices = {};
+
+    if (!Input || !Hidden || !List) {
+        return;
+    }
+
+    function BaseLink() {
+        return window.Core && Core.Config && typeof Core.Config.Get === 'function'
+            ? Core.Config.Get('Baselink')
+            : '[% Env("CGIHandle") | html %]?';
+    }
+
+    function RefreshForm() {
+        var Service = document.getElementById('ServiceID');
+        if (Service) {
+            Service.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    function Search() {
+        var Term = Input.value || '';
+        if (Term.length < 2) {
+            return;
+        }
+
+        var Request = new XMLHttpRequest();
+        Request.open('GET', BaseLink() + 'Action=CustomerTicketMessage;Subaction=ZTSMCustomerUserSearch;Term=' + encodeURIComponent(Term), true);
+        Request.onreadystatechange = function () {
+            if (Request.readyState !== 4 || Request.status < 200 || Request.status >= 300) {
+                return;
+            }
+
+            var Payload;
+            try {
+                Payload = JSON.parse(Request.responseText);
+            }
+            catch (Error) {
+                return;
+            }
+
+            Payload = Payload && Payload.Data ? Payload.Data : Payload;
+            Choices = {};
+            List.innerHTML = '';
+            (Payload || []).forEach(function (Item) {
+                var Option = document.createElement('option');
+                Option.value = Item.Label;
+                Choices[Item.Label] = Item.Value;
+                List.appendChild(Option);
+            });
+        };
+        Request.send();
+    }
+
+    Input.addEventListener('input', function () {
+        Hidden.value = Choices[Input.value] || '';
+        window.clearTimeout(Timer);
+        Timer = window.setTimeout(Search, 250);
+    });
+
+    Input.addEventListener('change', function () {
+        Hidden.value = Choices[Input.value] || Hidden.value || '';
+        RefreshForm();
+    });
+}());
+</script>

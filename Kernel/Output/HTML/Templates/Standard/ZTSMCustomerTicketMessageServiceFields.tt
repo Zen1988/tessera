@@ -2735,6 +2735,125 @@
         });
     }
 
+    function ZTSMServiceSelectedTreeLabelsEnsure(Service) {
+        Array.prototype.forEach.call(Service.options || [], function (Option) {
+            var RawText,
+                Leading;
+
+            if (Option.dataset.ZTSMTreeLabel) {
+                return;
+            }
+
+            RawText = String(Option.textContent || Option.innerText || '');
+            Leading = RawText.match(/^[\u00a0\s]*/);
+
+            Option.dataset.ZTSMTreeLabel = RawText;
+            Option.dataset.ZTSMTreeDepth = Leading ? String(Math.floor(Leading[0].replace(/[^\u00a0]/g, '').length / 2)) : '0';
+        });
+    }
+
+    function ZTSMServiceSelectedTreeLabelsRestore(Service) {
+        Array.prototype.forEach.call(Service.options || [], function (Option) {
+            if (!Option.dataset.ZTSMTreeLabel) {
+                return;
+            }
+            if (Option.textContent !== Option.dataset.ZTSMTreeLabel) {
+                Option.textContent = Option.dataset.ZTSMTreeLabel;
+            }
+        });
+    }
+
+    function ZTSMServiceSelectedFullPathGet(Service) {
+        var Stack = [],
+            SelectedValue = String(Service.value || ''),
+            Result = '';
+
+        ZTSMServiceSelectedTreeLabelsEnsure(Service);
+
+        Array.prototype.forEach.call(Service.options || [], function (Option) {
+            var RawText = String(Option.dataset.ZTSMTreeLabel || Option.textContent || Option.innerText || ''),
+                Text = RawText.replace(/^\s+|\s+$/g, ''),
+                Depth = parseInt(Option.dataset.ZTSMTreeDepth || '0', 10),
+                IsRealOption = String(Option.value || '') !== '' && String(Option.value || '') !== '-';
+
+            if (!Text || Text === '-') {
+                return;
+            }
+
+            Stack = Stack.slice(0, Depth);
+            Stack[Depth] = Text;
+
+            if (IsRealOption && SelectedValue && String(Option.value) === SelectedValue) {
+                Result = Stack.slice(0, Depth + 1).join('::');
+            }
+        });
+
+        return Result;
+    }
+
+    function ZTSMServiceSelectedFullPathRefresh() {
+        var Service = ZTSMFirst('select#ServiceID, select[name="ServiceID"]'),
+            Label,
+            Container,
+            Selection,
+            SearchInput;
+
+        if (!Service || !Service.options || !Service.value) {
+            return;
+        }
+
+        Label = ZTSMServiceSelectedFullPathGet(Service);
+        if (!Label) {
+            return;
+        }
+
+        Service.setAttribute('data-ztsm-full-service-label', Label);
+        if (Service.options[Service.selectedIndex]) {
+            Service.options[Service.selectedIndex].textContent = Label;
+            Service.options[Service.selectedIndex].setAttribute('title', Label);
+        }
+
+        Container = ZTSMServicePayloadModernizedSelectContainer(Service);
+        if (!Container) {
+            return;
+        }
+
+        Container.classList.remove('ZTSMServiceFullPathSelected');
+        Container.style.removeProperty('height');
+        Container.style.removeProperty('min-height');
+
+        Selection = Container.querySelector('.InputField_Selection');
+        if (Selection) {
+            Selection.textContent = Label;
+            Selection.setAttribute('title', Label);
+            Selection.setAttribute('data-value', Service.value);
+            Selection.setAttribute('aria-label', Label);
+            Selection.style.removeProperty('max-width');
+            Selection.style.removeProperty('white-space');
+            Selection.style.removeProperty('overflow');
+            Selection.style.removeProperty('text-overflow');
+            Selection.style.removeProperty('overflow-wrap');
+            Selection.style.removeProperty('line-height');
+        }
+
+        SearchInput = Container.querySelector('.InputField_Search');
+        if (SearchInput && document.activeElement !== SearchInput) {
+            SearchInput.value = '';
+            SearchInput.setAttribute('placeholder', '');
+            SearchInput.setAttribute('title', Label);
+        }
+    }
+
+    function ZTSMServiceSelectedTreeModePrepare() {
+        var Service = ZTSMFirst('select#ServiceID, select[name="ServiceID"]');
+
+        if (!Service || !Service.options) {
+            return;
+        }
+
+        ZTSMServiceSelectedTreeLabelsRestore(Service);
+    }
+
     function ZTSMServiceExtensionInitialize(Start, End) {
         var Node = Start.nextSibling,
             Event;
@@ -2774,6 +2893,7 @@
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
         ZTSMServicePayloadToolsEnsure(Start, End);
+        window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
     }
 
     function ZTSMServiceExtensionWatch() {
@@ -2905,11 +3025,48 @@
             }, true);
         }
 
+        if (!document.body.dataset.ZTSMServiceFullPathWatch) {
+            document.body.dataset.ZTSMServiceFullPathWatch = '1';
+            [ 'mousedown', 'focus', 'click' ].forEach(function (EventName) {
+                document.body.addEventListener(EventName, function (Event) {
+                    var Element = Event.target;
+
+                    if (
+                        !Element
+                        || !Element.closest
+                        || !Element.closest('#ServiceID, [name="ServiceID"], .InputField_Container, .InputField_InputContainer')
+                    ) {
+                        return;
+                    }
+
+                    ZTSMServiceSelectedTreeModePrepare();
+                }, true);
+            });
+            [ 'change', 'input', 'blur' ].forEach(function (EventName) {
+                document.body.addEventListener(EventName, function (Event) {
+                    var Element = Event.target;
+
+                    if (
+                        !Element
+                        || !Element.matches
+                        || !Element.matches('select#ServiceID, select[name="ServiceID"], input#ServiceID, input[name="ServiceID"]')
+                    ) {
+                        return;
+                    }
+
+                    ZTSMServiceSelectedFullPathRefresh();
+                    window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
+                }, true);
+            });
+        }
+
         if (Service) {
             Events.forEach(function (EventName) {
                 Service.addEventListener(EventName, function () {
                     var CurrentServiceID = ZTSMServiceExtensionValue();
 
+                    ZTSMServiceSelectedFullPathRefresh();
+                    window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
                     if (CurrentServiceID === LastServiceID) {
                         return;
                     }
@@ -2931,6 +3088,7 @@
             LastServiceID = CurrentServiceID;
             ZTSMServicePayloadCodeInvalidate();
             ZTSMServiceExtensionRefresh();
+            window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
         }, 500);
 
         window.addEventListener('resize', function () {
@@ -2958,6 +3116,7 @@
                     ZTSMServicePayloadToolsEnsure(Start, End);
                 }
                 ZTSMServiceExtensionWatch();
+                window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
             });
         }
         else {
@@ -2971,6 +3130,7 @@
                 ZTSMServicePayloadToolsEnsure(Start, End);
             }
             ZTSMServiceExtensionWatch();
+            window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
         }
     }
 

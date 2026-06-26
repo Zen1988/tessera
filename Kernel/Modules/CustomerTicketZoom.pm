@@ -179,6 +179,24 @@ sub Run {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
+    my %ZTSMAccessTicket = $TicketObject->TicketGet(
+        TicketID      => $Self->{TicketID},
+        DynamicFields => 1,
+        UserID        => 1,
+    );
+
+    if (
+        _ZTSMExecutionTicketProtected( Ticket => \%ZTSMAccessTicket )
+        && !$Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
+            TicketID       => $Self->{TicketID},
+            CustomerUserID => $Self->{UserID},
+            Type           => 'ro',
+        )
+        )
+    {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
+
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
@@ -1717,6 +1735,25 @@ sub _ZTSMValueNormalize {
     return $Value;
 }
 
+sub _ZTSMExecutionTicketProtected {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $Parent = _ZTSMValueNormalize( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !defined $Parent || $Parent eq '';
+
+    my $OwnerGroup = _ZTSMValueNormalize( $Ticket->{'DynamicField_ZTicket-OwnerGroup'} );
+    my $Owner      = _ZTSMValueNormalize( $Ticket->{'DynamicField_ZTicket-Owner'} );
+
+    return 1
+        if ( defined $OwnerGroup && $OwnerGroup ne '' )
+        || ( defined $Owner && $Owner ne '' );
+
+    return;
+}
+
 sub _ZTSMRequestDynamicFieldDisplay {
     my ( $Self, %Param ) = @_;
 
@@ -2250,8 +2287,13 @@ sub _ZTSMRuntimeActions {
 
     my $Ticket = $Param{Ticket};
     return if !IsHashRefWithData($Ticket);
-    return if ( $Ticket->{StateType} || '' ) eq 'closed';
-    return if lc( $Ticket->{State} || '' ) eq 'follow-up';
+
+    my $IPCDelegateAccess = $Self->_ZTSMCurrentCustomerIsIPC();
+    my $TicketClosed      = ( $Ticket->{StateType} || '' ) eq 'closed';
+    my $FollowUpState     = lc( $Ticket->{State} || '' ) eq 'follow-up';
+
+    return if $TicketClosed && !$IPCDelegateAccess;
+    return if $FollowUpState && !$IPCDelegateAccess;
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -2325,7 +2367,7 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
     );
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess;
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess;
 
     my $HoldState = $Ticket->{'DynamicField_ZTicket-HoldState'};
     if ( ref $HoldState eq 'ARRAY' ) {
@@ -2353,6 +2395,19 @@ sub _ZTSMRuntimeActions {
     }
 
     my @RuntimeActions;
+
+    if ($IPCDelegateAccess) {
+        push @RuntimeActions, {
+            Action          => 'Delegate',
+            Label           => 'Delegate',
+            RiskFieldsHTML  => $Self->_ZTSMDelegateOverrideHTML( TicketID => $Ticket->{TicketID} ),
+            RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+
+        return \@RuntimeActions if $TicketClosed || $FollowUpState;
+    }
+
     my $ActionableType;
     my $TaskLikeTicket = $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
     ACTION:
@@ -2470,7 +2525,14 @@ sub _ZTSMRuntimeActions {
         };
     }
 
-    if ( !$TicketOwner && $ActionableType ) {
+    if (
+        !$TicketOwner
+        && $ActionableType
+        && $Self->_ZTSMCurrentUserCanTakeOwnership(
+            Ticket => $Ticket,
+        )
+        )
+    {
         push @RuntimeActions, {
             Action         => 'TakeOwnership',
             Label          => 'Take Ownership',
@@ -2518,6 +2580,64 @@ sub _ZTSMRuntimeActions {
 
     return \@RuntimeActions if @RuntimeActions;
     return;
+}
+
+sub _ZTSMCurrentCustomerIsIPC {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Self->{UserID};
+
+    my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+        UserLogin => $Self->{UserID},
+        Silent    => 1,
+    );
+
+    return if !$UserID;
+
+    return $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
+        UserID    => $UserID,
+        GroupName => 'IPC',
+        Type      => 'rw',
+    );
+}
+
+sub _ZTSMDelegateOverrideHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $TextAreaCols = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Frontend::TextAreaNote') || 80;
+    my $TicketID     = $Param{TicketID} || '';
+
+    return '<div class="Row ZTSMRiskField ZTSMDelegateWarning">'
+        . '<div class="Field">'
+        . '<p>This measure must only be used for critical or time-sensitive activities.</p>'
+        . '<p>Use requires written approval from the user, original assignee, or VVIP approver. Upload the approval now or attach it later if the situation is critical.</p>'
+        . '<label><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> I acknowledge the delegation override conditions.</label>'
+        . '</div>'
+        . '<label class="Mandatory">Override conditions: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">'
+        . '<input type="hidden" id="ZTSMDelegateTarget" name="ZTSMDelegateTarget" value="" />'
+        . '<input type="text" id="ZTSMDelegateTargetSearch" name="ZTSMDelegateTargetSearch" list="ZTSMDelegateTargetList" autocomplete="off" class="Validate_Required" />'
+        . '<datalist id="ZTSMDelegateTargetList"></datalist>'
+        . '</div>'
+        . '<label for="ZTSMDelegateTargetSearch" class="Mandatory">Delegate to: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><input type="file" id="ZTSMDelegateFileUpload" name="file_upload" /></div>'
+        . '<label for="ZTSMDelegateFileUpload">Written approval:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<script>(function(){'
+        . 'var Input=document.getElementById("ZTSMDelegateTargetSearch"),Hidden=document.getElementById("ZTSMDelegateTarget"),List=document.getElementById("ZTSMDelegateTargetList"),Timer,Choices={};'
+        . 'if(!Input||!Hidden||!List){return;}'
+        . 'function BaseLink(){return window.Core&&Core.Config&&typeof Core.Config.Get==="function"?Core.Config.Get("Baselink"):"' . $Kernel::OM->Get('Kernel::Output::HTML::Layout')->{Baselink} . '";}'
+        . 'function Search(){var Term=Input.value||"";if(Term.length<2){return;}var Request=new XMLHttpRequest();Request.open("GET",BaseLink()+"Action=CustomerTicketZTSMAction;TicketID=' . $TicketID . ';Subaction=ZTSMCustomerUserSearch;Term="+encodeURIComponent(Term),true);Request.onreadystatechange=function(){if(Request.readyState!==4||Request.status<200||Request.status>=300){return;}var Payload;try{Payload=JSON.parse(Request.responseText);}catch(Error){return;}Payload=Payload&&Payload.Data?Payload.Data:Payload;Choices={};List.innerHTML="";(Payload||[]).forEach(function(Item){var Option=document.createElement("option");Option.value=Item.Label;Choices[Item.Label]=Item.Value;List.appendChild(Option);});};Request.send();}'
+        . 'Input.addEventListener("input",function(){Hidden.value=Choices[Input.value]||"";window.clearTimeout(Timer);Timer=window.setTimeout(Search,250);});'
+        . 'Input.addEventListener("change",function(){Hidden.value=Choices[Input.value]||Hidden.value||"";});'
+        . '}());</script>';
 }
 
 sub _ZTSMAddRequiredSupportProfileAllowed {
@@ -3130,6 +3250,27 @@ sub _ZTSMSupportAssignmentUsers {
     }
 
     return \%Users;
+}
+
+sub _ZTSMCurrentUserCanTakeOwnership {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $OwnerGroup = $Ticket->{'DynamicField_ZTicket-OwnerGroup'};
+    if ( ref $OwnerGroup eq 'ARRAY' ) {
+        $OwnerGroup = $OwnerGroup->[0];
+    }
+
+    return if !$OwnerGroup;
+
+    my $AssignmentUsers = $Self->_ZTSMSupportAssignmentUsers(
+        SupportProfile => $OwnerGroup,
+    );
+
+    return if !IsHashRefWithData($AssignmentUsers);
+    return $AssignmentUsers->{ $Self->{UserID} };
 }
 
 sub _ZTSMRuntimeRiskFieldsHTML {
@@ -3973,6 +4114,10 @@ sub _Mask {
             Subject      => $Article{Subject} || '',
             Size         => 150,
         );
+
+        if ( ( $Article{Subject} || '' ) =~ m{\[VVIP Delegate\]} ) {
+            $Article{Class} = join ' ', grep {$_} $Article{Class}, 'ZTSMDelegateAudit';
+        }
 
         $LastSenderType = $Article{SenderType};
 

@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-25
+Last Updated: 2026-06-26
 
 ## Current Focus
 
@@ -17,6 +17,499 @@ Last Updated: 2026-06-25
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-06-26 Raise On Behalf and IPC VVIP Delegate Override 0.0.164
+
+### Completed work
+
+- Added a collapsed Raise on behalf selector on `CustomerTicketMessage`:
+  - hidden by default, expanded only when needed;
+  - customer-user autocomplete instead of listing all users;
+  - selected target customer user becomes the effective requester for request defaults, preferences, ACL/service/SLA refresh, and `TicketCreate`;
+  - article body includes a raise-on-behalf audit prefix when submitter and target differ.
+- Added IPC-only `Delegate` runtime action on `CustomerTicketZoom`:
+  - uses the actual OTOBO `IPC` group/role permission check;
+  - can be shown for IPC even when the ticket is closed or follow-up-blocked, without opening other runtime actions;
+  - prompts for critical/time-sensitive acknowledgement, delegate target autocomplete, and optional written-approval upload;
+  - writes a visible `[VVIP Delegate]` audit article with performer, delegate target, original state, approval status, and remarks;
+  - copies the audit article and attachment to the parent ticket when the ticket has `ZTicket-Parent`.
+- Styled VVIP delegate audit articles with a light-yellow background in the customer zoom timeline.
+- Extended customer permission `ZTSMUserIDCheck` so IPC users get read-only story visibility through the existing ticket-story mapping, while normal non-delegate actions still follow existing permissions.
+- Synced changed runtime modules/templates across live source, GovernanceDB package source where applicable, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.164`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.164.opm`.
+- Supersedes `0.0.163`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.164.opm`.
+- `Kernel/Package/GovernanceDB-0.0.164.opm` SHA256: `C0448F312649EF7DE1152870134908F9EE51142AAEC2C1059542F605BF9681F8`.
+
+### Validation
+
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c` passed for live `CustomerTicketMessage.pm`, `CustomerTicketZoom.pm`, `CustomerTicketZTSMAction.pm`, and `ZTSMUserIDCheck.pm`.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c` passed for package-source mirrors and runtime-overlay copies of the changed Perl modules.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.164.opm` parsed successfully as XML: version `0.0.164`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded runtime overlay payloads contain the expected Raise on behalf, IPC Delegate, yellow audit, and IPC story visibility markers.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Runtime expectation
+
+- After installing/upgrading `0.0.164`, clear OTOBO caches and restart PSGI.
+- Customer new ticket should keep Raise on behalf collapsed until opened; selecting a target user should immediately refresh request defaults and submit the ticket for that target customer user.
+- IPC users should see `Delegate` on mapped tickets, including closed tickets, while other actions remain governed by existing permissions.
+- Delegate should require acknowledgement and target customer user, optionally accept written approval, and create the yellow `[VVIP Delegate]` audit article on the ticket and parent when present.
+
+## 2026-06-26 ITSM ConfigItem Lifecycle Date Definition Sync 0.0.163
+
+### Completed work
+
+- Corrected the `0.0.162` lifecycle date range fix after runtime testing showed the Admin Dynamic Field screen had `YearsPeriod = Yes` and `YearsInFuture = 10`, but the actual ConfigItem edit dropdown still stopped at one year ahead.
+- Root cause: the ConfigItem edit mask reads the versioned `configitem_definition.dynamicfield_definition` snapshot, not only the live `dynamic_field` admin row. Repairing the dynamic field row alone leaves the runtime dropdown on the stale embedded definition until the ConfigItem class definition is synced.
+- Extended the GovernanceDB bootstrap repair so it now:
+  - repairs the live ITSM ConfigItem Date dynamic field config for `ZTAM-Released`, `ZTAM-EoSale`, `ZTAM-EoStandardSupport`, `ZTAM-EoExtendedSupport`, and `ZTAM-EoServiceLife`;
+  - finds ITSM ConfigItem classes whose current definition snapshot includes those fields;
+  - marks those definitions out of sync;
+  - runs `DefinitionSync()` to create a refreshed ConfigItem definition version with the corrected date range embedded.
+- Bumped `GovernanceDB.sopm` package version to `0.0.163`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.163.opm`.
+- Supersedes `0.0.162`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.163.opm`.
+- `Kernel/Package/GovernanceDB-0.0.163.opm` SHA256: `F40282D92EC79ACC55ABE6CC6C0CDF9FF813AABEA2CC0F98648008DED99373CA`.
+
+### Validation
+
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\GovernanceDB\Bootstrap.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.163.opm` parsed successfully as XML: version `0.0.163`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded `Kernel/System/GovernanceDB/Bootstrap.pm` contains `_ITSMConfigItemLifecycleDateDynamicFieldsEnsure`, `DefinitionSetOutOfSync`, `DefinitionSync`, and `YearsInFuture => '10'`, and compiles successfully.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Runtime expectation
+
+- After installing/upgrading `0.0.163`, open the affected ConfigItem class again and verify the runtime date dropdown includes years through at least 10 years in the future.
+- If the dropdown still shows the stale one-year range immediately after upgrade, clear OTOBO caches and restart PSGI so the newly synced ConfigItem definition version is loaded.
+
+## 2026-06-26 ITSM ConfigItem Lifecycle Date Range 0.0.162
+
+### Completed work
+
+- Fixed the CMDB/ITSM ConfigItem lifecycle date picker range for TESSERA asset fields:
+  - `ZTAM-Released`
+  - `ZTAM-EoSale`
+  - `ZTAM-EoStandardSupport`
+  - `ZTAM-EoExtendedSupport`
+  - `ZTAM-EoServiceLife`
+- Root cause: the dynamic fields had `YearsInFuture`/`YearsInPast` configured, but `YearsPeriod` was disabled, so OTOBO ignored those values and fell back to the default `current year + 1` dropdown range.
+- Added an idempotent GovernanceDB bootstrap repair that enables `YearsPeriod` and raises `YearsInFuture` to at least `10` for those ITSM ConfigItem Date dynamic fields during package install/upgrade.
+- Kept stored ConfigItem values unchanged; this only repairs dynamic-field configuration.
+- Bumped `GovernanceDB.sopm` package version to `0.0.162`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.162.opm`.
+- Supersedes `0.0.161`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.162.opm`.
+- `Kernel/Package/GovernanceDB-0.0.162.opm` SHA256: `551BCF5DABDB733DCA82997CBFEBFD5ED2B9EBE47227964CCA5AEA936CBCAB43`.
+
+### Validation
+
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\GovernanceDB\Bootstrap.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.162.opm` parsed successfully as XML: version `0.0.162`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded `Kernel/System/GovernanceDB/Bootstrap.pm` contains `_ITSMConfigItemLifecycleDateDynamicFieldsEnsure`, `ZTAM-Released`, and `YearsInFuture => '10'`, and compiles successfully.
+- `git diff --check` reported only existing CRLF normalization warnings.
+
+### Runtime expectation
+
+- After installing/upgrading `0.0.162`, the relevant ConfigItem date dropdowns should include years through at least 10 years in the future instead of stopping at the next calendar year.
+- If a live environment has cached dynamic field metadata, restart/clear the OTOBO cache after package upgrade before retesting the date dropdown.
+
+## 2026-06-26 Service Selected Label Native Theme Restore 0.0.161
+
+### Completed work
+
+- Fixed the customer Service selected-label presentation after `0.0.159`/`0.0.160`:
+  - Removed the custom `ZTSMServiceFullPathSelected` CSS that was fighting the Modernize/InputField theme and pulling the selected chip below the field border.
+  - Preserved the original tree labels for dropdown interaction.
+  - Restores the tree labels immediately before the Service field is opened/focused.
+  - Applies the selected full hierarchy label directly to the selected option and selected display immediately on change, so the user should not see the leaf-only value linger before the full label appears.
+  - Kept delayed refresh calls only as safety after AJAX redraws.
+- Kept the original expandable service tree behavior during selection.
+- Kept submitted `ServiceID` unchanged.
+- Preserved the `0.0.160` DynamicField driver diagnostics in this package.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across live source, package runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.161`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.161.opm`.
+- Supersedes `0.0.160`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.161.opm`.
+- `Kernel/Package/GovernanceDB-0.0.161.opm` SHA256: `9D2D556776D437D0C04A12AD2A338F655F195177228879DDC0CFE134D1D980FE`.
+
+### Validation
+
+- `ZTSMCustomerTicketMessageServiceFields.tt` stripped inline JavaScript passed `node --check` with the bundled Node runtime.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `DCAE70539EAD532DD9E941F87258423C31FA16B5090FD2A5BDA831A39366F246`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.161.opm` parsed successfully as XML: version `0.0.161`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payload for the runtime overlay template matches package source and contains `ZTSMServiceSelectedTreeLabelsRestore`.
+- OPM-decoded payloads for `Agent.pm`, `BaseEntity.pm`, and `GovernanceObject.pm` still contain the `ZTSM DynamicField Driver diagnostic` marker and compile successfully.
+
+### Runtime expectation
+
+- Opening the Service selector should show the normal tree labels, including parent/child indentation.
+- Selecting a leaf service should update the closed field to the full hierarchy immediately, without a visible leaf-only lag.
+- The Service field should use the native theme geometry again instead of custom chip positioning.
+
+## 2026-06-26 DynamicField Driver Load Diagnostics 0.0.160
+
+### Completed work
+
+- Added targeted compile-time diagnostics for the persistent customer/agent 500:
+  - `Kernel/System/DynamicField/Driver/Agent.pm`
+  - `Kernel/System/DynamicField/Driver/BaseEntity.pm`
+  - `Kernel/System/DynamicField/Driver/GovernanceObject.pm`
+- Replaced the plain `use parent` call in those drivers with an equivalent `BEGIN` loader that:
+  - captures warnings raised while parent classes load,
+  - reports the parent module being loaded,
+  - reports the relevant `%INC` path/state,
+  - dies with a `ZTSM DynamicField Driver diagnostic` prefix if parent loading fails.
+- This is a diagnostic build, intended to expose the real first failure behind the repeated live message:
+  - `Attempt to reload Kernel/System/DynamicField/Driver/Agent.pm aborted.`
+  - `Can't load dynamic field backend module for field type Agent!`
+- Bumped `GovernanceDB.sopm` package version to `0.0.160`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.160.opm`.
+- Supersedes `0.0.159`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.160.opm`.
+- `Kernel/Package/GovernanceDB-0.0.160.opm` SHA256: `E250AEC0ADE3B52C0F181C6801E8AECC7B123C7CEFD13FED331AFF738624CC67`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\Driver\Agent.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\Driver\BaseEntity.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\DynamicField\Driver\Agent.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\DynamicField\Driver\BaseEntity.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\DynamicField\Driver\GovernanceObject.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.160.opm` parsed successfully as XML: version `0.0.160`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payloads for `Agent.pm`, `BaseEntity.pm`, and `GovernanceObject.pm` match package source, contain the diagnostic marker, and compile successfully.
+
+### Runtime expectation
+
+- After installing `0.0.160`, reproduce the customer page 500 once and search the OTOBO error log for:
+  - `ZTSM DynamicField Driver diagnostic`
+- That entry should show the parent module load warning/failure and `%INC` state needed to identify whether the live server is failing on `BaseReference`, `BaseEntity`, `BaseSelect`, a stale failed `%INC` entry, or a true installed-file mismatch.
+
+## 2026-06-26 Customer Service Selected Display Cleanup 0.0.159
+
+### Completed work
+
+- Fixed the selected Service display overlap visible after `0.0.158`:
+  - The full service hierarchy is now applied only to the selected display/chip.
+  - The hidden/search input is cleared when the field is not focused, so it no longer renders a second clipped `Network...New/Modify` label behind the full path.
+  - The selected display is positioned as a normal wrapped chip inside the field instead of drifting below the field border.
+- Kept the original expandable service tree behavior during selection.
+- Kept the submitted `ServiceID` unchanged.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across live source, package runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.159`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.159.opm`.
+- Supersedes `0.0.158`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.159.opm`.
+- `Kernel/Package/GovernanceDB-0.0.159.opm` SHA256: `0293E2961DAED004B5CF0AA533A15BD4A802F7AD527FDEAAA55C56B157858A83`.
+
+### Customer/agent 500 investigation
+
+- The new customer traceback still reports live reload failures for:
+  - `Kernel/System/DynamicField/Driver/Agent.pm`
+  - `Kernel/Output/HTML/Layout/GovernanceObject.pm`
+  - followed by `Kernel::System::DynamicField::Backend` returning undef inside `CustomerTicketMessage.pm` line 40.
+- The package-source versions of both implicated modules compile successfully.
+- The `0.0.159` OPM-decoded payloads for both implicated modules match package source and compile successfully.
+- This means the current package artifact does not reproduce the live compile failure locally.
+- If the same 500 persists after installing `0.0.159`, verify the live installed `/opt/otobo/Kernel/System/DynamicField/Driver/Agent.pm` and `/opt/otobo/Kernel/Output/HTML/Layout/GovernanceObject.pm` contents, then restart/clear the OTOBO PSGI/module cache.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\DynamicField\Driver\Agent.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Output\HTML\Layout\GovernanceObject.pm` passed.
+- `ZTSMCustomerTicketMessageServiceFields.tt` stripped inline JavaScript passed `node --check` with the bundled Node runtime.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `1B35C931318942CA267CC157197F3F98990E3E957380FDCCCD2625A499277F31`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.159.opm` parsed successfully as XML: version `0.0.159`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payloads for the touched runtime overlay template and both live-traceback modules match package source.
+- OPM-decoded `Kernel/System/DynamicField/Driver/Agent.pm` and `Kernel/Output/HTML/Layout/GovernanceObject.pm` compile successfully.
+
+### Runtime expectation
+
+- After installing `0.0.159`, selecting a service should show one clean full hierarchy label such as `Network::Firewall Policy::New/Modify`.
+- The field should not show a second clipped label behind or below the selected value.
+- The 500/reconnect dialog should stop only after the live OTOBO process can load the installed dynamic-field/layout modules cleanly.
+
+## 2026-06-26 Customer Service Selected Chip No Ellipsis 0.0.158
+
+### Completed work
+
+- Fixed the remaining customer create-ticket Service selected-display issue:
+  - Kept the original expandable service tree behavior during selection.
+  - Kept the submitted `ServiceID` unchanged.
+  - Added scoped selected-chip styling so the closed Service field can show the complete reconstructed hierarchy instead of clipping it with ellipsis/middle truncation.
+  - Added inline fallback styles when the full-path helper refreshes the selected Modernize/InputField display, so AJAX redraws preserve the full label presentation.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across live source, package runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.158`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.158.opm`.
+- Supersedes `0.0.157`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.158.opm`.
+- `Kernel/Package/GovernanceDB-0.0.158.opm` SHA256: `3B6BCE4F50BA0332964D404BF58F700EE918DE1D8C470D902D7EBE722F3E56E1`.
+
+### Agent traceback investigation
+
+- The attached agent traceback reports reload failures for:
+  - `Kernel/Output/HTML/Layout/GovernanceObject.pm`
+  - `Kernel/System/DynamicField/Driver/Agent.pm`
+  - followed by `Kernel::System::DynamicField::Backend` returning undef.
+- The package-source versions of both implicated modules compile successfully.
+- The `0.0.158` OPM-decoded payloads for both implicated modules match package source and compile successfully.
+- If the same agent error persists after installing `0.0.158`, inspect the live `/opt/otobo/Kernel/...` installed files and restart/clear PSGI/module cache; the current package payload does not reproduce the compile failure locally.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Output\HTML\Layout\GovernanceObject.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\DynamicField\Driver\Agent.pm` passed.
+- `ZTSMCustomerTicketMessageServiceFields.tt` stripped inline JavaScript passed `node --check` with the bundled Node runtime.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `CABD4EB08424154F8E8EFA00FB6DB7F297341EDEE1DEBF0FA1199682937EB4DC`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.158.opm` parsed successfully as XML: version `0.0.158`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payloads for the touched runtime overlay template and `CustomerTicketMessage.pm` match package source.
+- OPM-decoded payloads for `Kernel/Output/HTML/Layout/GovernanceObject.pm` and `Kernel/System/DynamicField/Driver/Agent.pm` match package source and compile successfully.
+
+### Runtime expectation
+
+- After installing `0.0.158`, opening the Service selector should still show the previous expandable tree.
+- After selecting a leaf service, the closed Service field should show the complete hierarchy, wrapping if needed, instead of `Network...Firewall Policy...New/Modify`.
+- Governance resolution and service-payload refresh remain driven by the selected `ServiceID`, not by display text.
+
+## 2026-06-26 Customer Service Tree Selected Full Path 0.0.157
+
+### Completed work
+
+- Fixed the customer create-ticket Service selector regression from the previous full-path label work:
+  - Restored tree rendering for `ServiceID` on `CustomerTicketMessage`, so the dropdown remains the expandable hierarchy instead of a flat list of every full service path.
+  - Kept service values and governance resolution driven by `ServiceID`; this remains a display-only change.
+  - Added a customer-page helper that reconstructs the selected service's full hierarchy from the tree options and updates only the closed modernized selected display/chip.
+  - The selected display should show values like `Network::Firewall Policy::New/Modify`, while the opened selector keeps the original tree-style parent/child list.
+- Raised the AJAX ServiceID label cap to 200 characters to match the initial render and avoid truncating normal service hierarchy labels after form refresh.
+- Synced changed files across live source, package source, runtime overlay, and `ZTSMOverlay`:
+  - `CustomerTicketMessage.pm`
+  - `ZTSMCustomerTicketMessageServiceFields.tt`
+- Bumped `GovernanceDB.sopm` package version to `0.0.157`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.157.opm`.
+- Supersedes `0.0.156`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.157.opm`.
+- `Kernel/Package/GovernanceDB-0.0.157.opm` SHA256: `087091AE17473FC273787A1A75261E8FAA527F7114BB70C0ECCE7A08105317EC`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `ZTSMCustomerTicketMessageServiceFields.tt` stripped inline JavaScript passed `node --check` with the bundled Node runtime.
+- Mirrored `CustomerTicketMessage.pm` copies have matching SHA256 hash `8825D7BC05E7AA5C4ACEA3B35A6BDCCA42E69A993FF401005C7CED01D52C3865`.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies have matching SHA256 hash `6C5F476090402F8B1120A93274D9D505281F2E95FE655D414386A817E1DB975B`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.157.opm` parsed successfully as XML: version `0.0.157`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payloads for the touched runtime overlay module/template match package source.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for pre-existing touched files only.
+
+### Runtime expectation
+
+- After installing `0.0.157`, opening the Service selector should show the previous expandable tree behavior.
+- After selecting a leaf service, the closed selected field should show the full service hierarchy instead of only the leaf name.
+- The selected `ServiceID` and subsequent service-payload refresh should remain unchanged.
+
+### Rejected/corrected approach
+
+- Do not flatten the Service dropdown options to full path strings; that breaks the established expandable service-tree interaction and can make the page look disconnected after the frontend redraws.
+- Do not change governance lookup or submitted field values to solve a display-label problem.
+
+## 2026-06-26 GovernanceDB GenericAgent Bootstrap Defer 0.0.156
+
+### Completed work
+
+- Diagnosed the `0.0.155` install log:
+  - The base64 install corruption was fixed; files now install as real source.
+  - The remaining install-time errors came from `Kernel::System::GovernanceDB::Bootstrap::_GenericAgentJobsEnsure`.
+  - `_GenericAgentJobsEnsure` constructed `Kernel::System::GenericAgent` during package post-code.
+  - `GenericAgent->new()` validates all dynamic fields, including existing `GovernanceObject` fields.
+  - During package install/upgrade, the package's `DynamicFields::Driver###GovernanceObject` SysConfig can be not active yet, causing repeated `Backend GovernanceObject is invalid!` errors.
+- Added a bootstrap preflight guard before constructing `Kernel::System::GenericAgent`:
+  - If `DynamicFields::Driver->{GovernanceObject}->{Module}` is not active yet, the GenericAgent seed is deferred with a notice.
+  - This avoids aborting/noising package installation while preserving idempotent job seeding for a later run when the runtime config is active.
+- Bumped `GovernanceDB.sopm` package version to `0.0.156`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.156.opm`.
+- Supersedes `0.0.155`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.156.opm`.
+- `Kernel/Package/GovernanceDB-0.0.156.opm` SHA256: `AF63D7DDFF67867952620C41B79F594EFE205F3A073465C019676A6E307D2E1D`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm` passed `perl -I. -IKernel/cpan-lib -c`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.156.opm` parsed successfully as XML: version `0.0.156`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded `Kernel/System/GovernanceDB/Bootstrap.pm` matches package source and contains the GenericAgent defer guard.
+
+### Runtime expectation
+
+- Installing `0.0.156` should avoid the repeated `Backend GovernanceObject is invalid!` errors during package post-code.
+- If GenericAgent jobs are deferred during install, rerunning GovernanceDB bootstrap after SysConfig is active should seed them.
+
+## 2026-06-26 GovernanceDB OPM Base64 Encoding Repair 0.0.155
+
+### Completed work
+
+- Diagnosed the post-install startup failure from the OTOBO error log:
+  - Runtime errors such as `Identifier too long at ... line 1` indicate installed Perl files were plain base64 text rather than decoded Perl source.
+  - The recent generated packages `0.0.151` through `0.0.154` embedded base64 payloads in `<File>` nodes but missed the required `Encode="Base64"` attribute.
+  - Earlier `MissingBase64=0` validation was not sufficient because it checked payload presence, not the decode instruction attribute.
+- Bumped `GovernanceDB.sopm` package version to `0.0.155`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.155.opm` with `Encode="Base64"` on every embedded package file.
+- Preserved the recent customer overview export, article JSON export, full service path label, and customer ownership-permission changes.
+- Supersedes `0.0.151`, `0.0.152`, `0.0.153`, and `0.0.154`; do not use those generated artifacts for install testing.
+- `Kernel/Package/GovernanceDB-0.0.155.opm` SHA256: `2F9826B62D0B3D9D54C9733EE61891D4D5AA163477890A0F11659634B0943460`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.155.opm` parsed successfully as XML: version `0.0.155`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Spot-decoded OPM payloads matched package source SHA256 and start with real source text, not raw base64:
+  - `var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketOverview.pm`
+  - `var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketMessage.pm`
+  - `Kernel/System/GovernanceDB/Bootstrap.pm`
+  - `Kernel/System/DynamicField/Driver/Agent.pm`
+  - `Kernel/Output/HTML/Layout/GovernanceObject.pm`
+- `perl -I. -IKernel/cpan-lib -c` passed for the recently touched runtime files and the package-source modules implicated by the startup error.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for previously touched files only.
+
+### Recovery expectation
+
+- Install or upgrade with `Kernel/Package/GovernanceDB-0.0.155.opm`.
+- If the live OTOBO instance cannot start because `0.0.154` already wrote base64 text into `/opt/otobo/Kernel/...`, restore the corrupted installed files from the fixed package/source tree or perform a shell-level package upgrade using `0.0.155` after the package manager can load enough Perl to run.
+
+## 2026-06-26 Customer Ticket Export Creator And Article JSON 0.0.154
+
+### Completed work
+
+- Fixed the customer ticket report `Created By` value:
+  - The export now resolves the creator from the first article customer user, article `From`, ticket `CustomerUserID`, and then OTOBO ticket `CreateBy`.
+  - This handles customer-created tickets where OTOBO's ticket `CreateBy` can be a system/frontend user rather than the useful requester identity.
+- Added an `ArticlesJSON` column to the customer ticket report:
+  - Exports customer-visible ticket articles only.
+  - Articles are ordered reverse chronologically, latest first.
+  - Each article JSON object includes article ID, article number, created time, sender type, customer visibility, from/to/cc, subject, created-by display, and plain-text body.
+- Kept the existing description column as the first article body summary.
+- Synced `CustomerTicketOverview.pm` across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.154`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.154.opm`.
+- Supersedes `0.0.153`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.154.opm`.
+- `Kernel/Package/GovernanceDB-0.0.154.opm` SHA256: `CD6FA866206DD75A2AA5CF5411234D3AA25F3F456C78791DA492C722D798921D`.
+
+### Validation
+
+- `perl -I. -IKernel/cpan-lib -c` passed for:
+  - `Kernel\Modules\CustomerTicketOverview.pm`
+  - `Kernel\Modules\CustomerTicketMessage.pm`
+  - `Kernel\Modules\CustomerTicketZoom.pm`
+  - `Kernel\Modules\CustomerTicketZTSMAction.pm`
+  - `Kernel\System\Ticket\CustomerPermission\ZTSMUserIDCheck.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.154.opm` parsed successfully as XML: version `0.0.154`, `FileCount=173`, `MissingBase64=0`.
+- Mirrored `CustomerTicketOverview.pm` copies have matching SHA256 hash `362E1402580A702F9B89CF7336BFDDC01511D87DF484811F65A58F6F1E97A5C2`.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for previously touched Perl files only.
+
+### Runtime expectation
+
+- After installing `0.0.154`, downloaded customer ticket reports should no longer leave `Created By` empty for normal customer-created tickets.
+- The new `ArticlesJSON` column should provide a full customer-visible ticket narrative in Excel without flattening article history into multiple ambiguous spreadsheet columns.
+
+## 2026-06-26 Customer Create Ticket Full Service Path Labels 0.0.153
+
+### Completed work
+
+- Updated the customer create-ticket service selector so selected services show the full service path instead of only the leaf action name:
+  - Example expected label: `Network::Firewall Policy::New/Modify`.
+  - The submitted `ServiceID` remains unchanged; this is a display/selection-label change only.
+  - Initial page render and AJAX form-refresh responses now use the same full-path service label behavior.
+- Kept service ordering by tree path, but disabled tree-collapse rendering for the `ServiceID` field on `CustomerTicketMessage` so the closed selector chip does not collapse to `New/Modify`.
+- Synced `CustomerTicketMessage.pm` across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.153`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.153.opm`.
+- Supersedes `0.0.152`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.153.opm`.
+- `Kernel/Package/GovernanceDB-0.0.153.opm` SHA256: `69AD80B2822AFAF610190C61B007275631A587E4E7C68AC40B957E63C80453C9`.
+
+### Validation
+
+- `perl -I. -IKernel/cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.153.opm` parsed successfully as XML: version `0.0.153`, `FileCount=173`, `MissingBase64=0`.
+- Mirrored `CustomerTicketMessage.pm` copies have matching SHA256 hash `B7D07EF63CC901A147F06C12C70B64B5D53956D5367771264C37CC47F945705C`.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for previously touched Perl files only.
+
+### Runtime expectation
+
+- After installing `0.0.153`, the Service field on `customer.pl?Action=CustomerTicketMessage` should show full service strings in the selected chip and option list, making values like `New/Modify` self-explanatory.
+- Governance resolution remains driven by the selected service ID, not by the display text.
+
+## 2026-06-26 Customer Overview Module Export Action Bar 0.0.152
+
+### Completed work
+
+- Followed up runtime evidence from the customer `Your Tickets` page where no export/download control was visible even after the template-level button work.
+- Added a module-rendered export action bar directly into `CustomerTicketOverview.pm` before the generated ticket list:
+  - The control is labelled `Download Report`.
+  - The link uses the same current filter/search export URL as the existing report action.
+  - The action is rendered as part of `TicketListHTML`, so it remains visible even if the customer overview header/template action area is stale, cached, clipped, or overridden by theme layout.
+- Synced `CustomerTicketOverview.pm` across live source, package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.152`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.152.opm`.
+- Supersedes `0.0.151`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.152.opm`.
+- `Kernel/Package/GovernanceDB-0.0.152.opm` SHA256: `4168364E776CE0D0BD020C3C96AFA02A9A3E990C06651BD41ED9B5C559A4EDB6`.
+
+### Validation
+
+- `perl -I. -IKernel/cpan-lib -c` passed for:
+  - `Kernel\Modules\CustomerTicketOverview.pm`
+  - `Kernel\Modules\CustomerTicketZoom.pm`
+  - `Kernel\Modules\CustomerTicketZTSMAction.pm`
+  - `Kernel\System\Ticket\CustomerPermission\ZTSMUserIDCheck.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.152.opm` parsed successfully as XML: version `0.0.152`, `FileCount=173`, `MissingBase64=0`.
+- Mirrored `CustomerTicketOverview.pm` copies have matching SHA256 hash `FD6A002913299C064144625A84BBF619B8ED644F5481E44E380D15C71C48BB76`.
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for touched Perl files only.
+
+### Runtime expectation
+
+- After installing `0.0.152`, the customer overview/listing page should show `Download Report` above the ticket cards for the active filter/search.
+- If the button still does not appear after installing `0.0.152`, the running system is not serving the updated `CustomerTicketOverview.pm` from this package/runtime overlay or the application cache still needs clearing.
+
+## 2026-06-26 Customer Overview Export Visibility And Child Ownership Guard 0.0.151
+
+### Completed work
+
+- Made the customer `Your Tickets` report export harder to miss:
+  - Kept the existing `Download Report` header action.
+  - Added a second `Download Report` action inside the ticket-list toolbar so the export remains visible when the customer header layout hides or clips header buttons.
+- Tightened customer visibility for execution child tickets:
+  - Standard requester/customer search results are now post-filtered for child execution tickets with `ZTicket-Parent` and `ZTicket-OwnerGroup` or `ZTicket-Owner`.
+  - Those child tickets remain visible only when the customer user passes the ZTSM owner/support-profile permission check.
+  - Direct `CustomerTicketZoom` access now applies the same child execution guard after the standard OTOBO customer permission check.
+  - Removed broad story/sibling inheritance from `ZTSMUserIDCheck`; customer read access now comes from direct `ZTicket-Owner` or support assignment through `ZTicket-OwnerGroup`.
+- Tightened `Take Ownership`:
+  - `CustomerTicketZoom` only renders `Take Ownership` when the current customer user is assigned to the ticket `ZTicket-OwnerGroup` support profile.
+  - `CustomerTicketZTSMAction` enforces the same support-profile assignment server-side before writing `ZTicket-Owner`.
+- Synced runtime/package/overlay copies:
+  - `CustomerTicketOverview.pm`
+  - `CustomerTicketOverview.tt`
+  - `CustomerTicketZoom.pm`
+  - `CustomerTicketZTSMAction.pm`
+  - `ZTSMUserIDCheck.pm`
+- Bumped `GovernanceDB.sopm` package version to `0.0.151`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.151.opm`.
+- Supersedes `0.0.150`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.151.opm`.
+- `Kernel/Package/GovernanceDB-0.0.151.opm` SHA256: `CF6F4EB37361ECE8176C79E08FDE5579D67922EDEBACA122DF0AD018B96DD4EF`.
+
+### Validation
+
+- `perl -I. -IKernel/cpan-lib -c` passed for:
+  - `Kernel\Modules\CustomerTicketOverview.pm`
+  - `Kernel\Modules\CustomerTicketZoom.pm`
+  - `Kernel\Modules\CustomerTicketZTSMAction.pm`
+  - `Kernel\System\Ticket\CustomerPermission\ZTSMUserIDCheck.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.151.opm` parsed successfully as XML: version `0.0.151`, `FileCount=173`, `MissingBase64=0`.
+- Mirrored file families have matching SHA256 hashes:
+  - `CustomerTicketOverview.pm`: `4667E6ACA02BDA5BFF5B6DC61B0A8B9B173FF1AE66714A8977FE7C52288D0137`
+  - `CustomerTicketZoom.pm`: `666FB7FACC8E0F09E44D111D4CD9A7FDC655CDB4ED765CCC885C3AD07C3DF351`
+  - `CustomerTicketZTSMAction.pm`: `2F87270716539133BDFCB6BC9669E4DB247B2BBBE47D29BAAFB6676BB777AACF`
+  - `ZTSMUserIDCheck.pm`: `6AA65791D137353349F8C1020FBB9AD13778DB0EF8F69F0701C15DEB092F7152`
+  - `CustomerTicketOverview.tt`: `3FE99D55B00D6DBCD51AAAF2B13E3E2C2F58325C7D00A0839423DEE6AA9635F0`
+- `git diff --check` passed. Git emitted CRLF-to-LF normalization warnings for touched Perl files only.
+
+### Runtime expectation
+
+- After installing `0.0.151`, the customer overview/listing page should show `Download Report` in the ticket-list toolbar.
+- Requester/customer users should no longer see execution child tickets merely because requester/customer fields match.
+- Direct child-ticket zoom URLs should return no-permission unless the user satisfies `ZTicket-Owner` or `ZTicket-OwnerGroup` support assignment.
+- A customer user can see or take ownership of a child execution ticket only when they are already `ZTicket-Owner` or are assigned to the ticket `ZTicket-OwnerGroup` support profile.
 
 ## 2026-06-25 Customer Ticket Report Export And Payload Service Guard 0.0.150
 

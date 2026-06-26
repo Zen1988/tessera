@@ -39,6 +39,10 @@ sub Run {
     my $SupportProfile             = $ParamObject->GetParam( Param => 'SupportProfile' ) || '';
     my $TargetServiceSupportMapID  = $ParamObject->GetParam( Param => 'TargetServiceSupportMapID' ) || '';
     my $TargetServiceID            = $ParamObject->GetParam( Param => 'TargetServiceID' ) || '';
+    my $DelegateTarget             = $ParamObject->GetParam( Param => 'ZTSMDelegateTarget' ) || '';
+    my $DelegateTargetSearch       = $ParamObject->GetParam( Param => 'ZTSMDelegateTargetSearch' ) || '';
+    my $DelegateAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMDelegateAcknowledge' ) || '';
+    $DelegateTarget ||= $DelegateTargetSearch;
     my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' );
     $ZTicketOutcome = '' if !defined $ZTicketOutcome;
     my $ZTicketResult  = $ParamObject->GetParam( Param => 'ZTicketResult' ) || '';
@@ -76,14 +80,70 @@ sub Run {
         );
     }
 
-    if ( ( $Ticket{StateType} || '' ) eq 'closed' ) {
-        return $LayoutObject->Redirect(
-            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+    if ( $Subaction eq 'ZTSMCustomerUserSearch' ) {
+        return $Self->_CustomerUserSearchJSON(
+            LayoutObject => $LayoutObject,
+            ParamObject  => $ParamObject,
         );
     }
 
     my $Config              = $ConfigObject->Get('Ticket::Frontend::CustomerTicketZTSMAction') || {};
     my $CustomerPanelUserID = $ConfigObject->Get('CustomerPanelUserID') || 1;
+
+    if ( $RuntimeAction eq 'Delegate' ) {
+        if ( !$Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} ) ) {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( !$DelegateAcknowledge ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please acknowledge the delegation override conditions.',
+            );
+        }
+
+        if ( !$DelegateTarget ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select the customer user to delegate to.',
+            );
+        }
+
+        my %DelegateCustomer = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+            User => $DelegateTarget,
+        );
+
+        if ( !%DelegateCustomer ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Selected delegate customer user was not found.',
+            );
+        }
+
+        my @Attachments = $Self->_RuntimeUploadAttachments();
+        my $Success     = $Self->_DelegateOverrideApply(
+            Ticket              => \%Ticket,
+            DelegateTarget      => $DelegateTarget,
+            DelegateCustomer    => \%DelegateCustomer,
+            Remarks             => $Remarks,
+            Attachments         => \@Attachments,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
+        if ( !$Success ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not apply delegation override.',
+            );
+        }
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
+    if ( ( $Ticket{StateType} || '' ) eq 'closed' ) {
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
 
     if ( $RuntimeAction eq 'RequesterHold' || $RuntimeAction eq 'RequesterResume' ) {
         if (
@@ -343,6 +403,16 @@ sub Run {
         my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
 
         if ($Owner) {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if (
+            !$Self->_UserCanTakeOwnership(
+                Ticket         => \%Ticket,
+                CustomerUserID => $Self->{UserID},
+            )
+            )
+        {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
         }
 
@@ -2505,6 +2575,165 @@ sub _RuntimeUploadAttachments {
     return \%UploadStuff;
 }
 
+sub _CustomerUserSearchJSON {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $SearchTerm   = $ParamObject->GetParam( Param => 'Term' ) || '';
+    my $MaxResults   = int( $ParamObject->GetParam( Param => 'MaxResults' ) || 0 ) || 20;
+
+    my %CustomerUserList = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerSearch(
+        Search => $SearchTerm,
+    );
+
+    my @Data;
+    CUSTOMERUSER:
+    for my $CustomerUserID ( sort keys %CustomerUserList ) {
+        my $Label = $CustomerUserList{$CustomerUserID} || $CustomerUserID;
+        $Label =~ s/[\r\n]+/ /g;
+
+        push @Data, {
+            Label => $Label,
+            Value => $CustomerUserID,
+        };
+
+        last CUSTOMERUSER if @Data >= $MaxResults;
+    }
+
+    return $LayoutObject->JSONReply(
+        Data => \@Data,
+    );
+}
+
+sub _IsIPCAgent {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+        UserLogin => $Param{CustomerUserID},
+        Silent    => 1,
+    );
+
+    return if !$UserID;
+
+    return $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
+        UserID    => $UserID,
+        GroupName => 'IPC',
+        Type      => 'rw',
+    );
+}
+
+sub _DelegateOverrideApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{Ticket} );
+    return if !$Param{DelegateTarget};
+    return if !$Param{CustomerPanelUserID};
+
+    my $TicketID = $Param{Ticket}->{TicketID};
+    return if !$TicketID;
+
+    return if !$Self->_TicketDynamicFieldSet(
+        FieldName => 'ZTicket-Owner',
+        TicketID  => $TicketID,
+        Value     => $Param{DelegateTarget},
+        UserID    => $Param{CustomerPanelUserID},
+    );
+
+    $Kernel::OM->Get('Kernel::System::Ticket')->TicketLockSet(
+        TicketID => $TicketID,
+        Lock     => 'lock',
+        UserID   => $Param{CustomerPanelUserID},
+    );
+
+    my $DelegateLabel = $Self->_CustomerUserLabel(
+        CustomerUserID => $Param{DelegateTarget},
+        CustomerUser   => $Param{DelegateCustomer},
+    );
+
+    my $AttachmentStatus = IsArrayRefWithData( $Param{Attachments} )
+        ? 'Written approval attachment was uploaded with this override.'
+        : 'Written approval attachment was not uploaded at override time and must be attached later.';
+
+    my $Body = "TESSERA VVIP DELEGATE OVERRIDE\n\n"
+        . "This exceptional measure was performed by IPC customer user '$Self->{UserID}'.\n\n"
+        . "Delegated owner:\n$DelegateLabel\n\n"
+        . "Original ticket state:\n"
+        . ( $Param{Ticket}->{State} || '' )
+        . "\n\n"
+        . "Conditions acknowledged:\n"
+        . "1. Critical or time-sensitive activity only.\n"
+        . "2. User, original assignee, or VVIP written approval required.\n\n"
+        . "$AttachmentStatus";
+
+    if ( $Param{Remarks} ) {
+        $Body .= "\n\nRemarks:\n" . ( _PlainTextValue( $Param{Remarks} ) || '' );
+    }
+
+    my $ArticleID = $Self->_RuntimeArticleCreate(
+        TicketID            => $TicketID,
+        RuntimeAction       => 'Delegate',
+        Label               => 'Delegate',
+        Subject             => '[VVIP Delegate] Delegation override',
+        Body                => $Body,
+        Config              => {
+            Article              => 1,
+            IsVisibleForCustomer => 1,
+            SenderType           => 'customer',
+            ContentType          => 'text/plain; charset=utf-8',
+            HistoryType          => 'AddNote',
+            HistoryComment       => '%%',
+        },
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+        Attachments         => $Param{Attachments},
+    );
+
+    return if !$ArticleID;
+
+    my $ParentTicketID = _NormalizeValue( $Param{Ticket}->{'DynamicField_ZTicket-Parent'} );
+    if ($ParentTicketID) {
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $ParentTicketID,
+            RuntimeAction       => 'Delegate',
+            Label               => 'Delegate',
+            Subject             => '[VVIP Delegate] Child ticket delegation override',
+            Body                => $Body . "\n\nChild Ticket: " . $Self->_TicketSummary( Ticket => $Param{Ticket} ),
+            Config              => {
+                Article              => 1,
+                IsVisibleForCustomer => 1,
+                SenderType           => 'customer',
+                ContentType          => 'text/plain; charset=utf-8',
+                HistoryType          => 'AddNote',
+                HistoryComment       => '%%',
+            },
+            CustomerPanelUserID => $Param{CustomerPanelUserID},
+            Attachments         => $Param{Attachments},
+        );
+    }
+
+    return 1;
+}
+
+sub _CustomerUserLabel {
+    my ( $Self, %Param ) = @_;
+
+    my $CustomerUserID = $Param{CustomerUserID} || '';
+    my $CustomerUser   = $Param{CustomerUser} || {};
+
+    my $Name = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+        UserLogin => $CustomerUserID,
+    ) || $CustomerUser->{UserFullname} || $CustomerUserID;
+
+    my $Label = $Name;
+    $Label .= " <$CustomerUser->{UserEmail}>"      if $CustomerUser->{UserEmail};
+    $Label .= " ($CustomerUser->{UserCustomerID})" if $CustomerUser->{UserCustomerID};
+    $Label .= " [$CustomerUserID]"                 if $CustomerUserID;
+
+    return $Label;
+}
+
 sub _TaskOutcomeState {
     my ( $Self, %Param ) = @_;
 
@@ -2654,6 +2883,28 @@ sub _OwnerWeightage {
     );
 
     return defined $Weightage && $Weightage ne '' ? $Weightage : 1;
+}
+
+sub _UserCanTakeOwnership {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if !$Param{CustomerUserID};
+
+    my $OwnerGroup = $Ticket->{'DynamicField_ZTicket-OwnerGroup'};
+    if ( ref $OwnerGroup eq 'ARRAY' ) {
+        $OwnerGroup = $OwnerGroup->[0];
+    }
+
+    return if !$OwnerGroup;
+
+    my @Assignments = $Self->_SupportAssignments(
+        SupportProfile  => $OwnerGroup,
+        CustomerUserID   => $Param{CustomerUserID},
+    );
+
+    return scalar @Assignments ? 1 : undef;
 }
 
 sub _SupportAssignments {
