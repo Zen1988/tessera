@@ -178,10 +178,22 @@ sub Import {
                 next ITEM;
             }
 
-            my $Existing = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
+            my $Existing;
+            my $ExistingItemList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
                 Class => $Class,
-                Name  => $Name,
+                Valid => 0,
             );
+            if ( IsHashRefWithData($ExistingItemList) ) {
+                EXISTINGITEMID:
+                for my $ExistingItemID ( sort keys %{$ExistingItemList} ) {
+                    next EXISTINGITEMID if ( $ExistingItemList->{$ExistingItemID} // '' ) ne $Name;
+
+                    $Existing = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemGet(
+                        ItemID => $ExistingItemID,
+                    );
+                    last EXISTINGITEMID;
+                }
+            }
 
             my $ItemID;
             if ( IsHashRefWithData($Existing) ) {

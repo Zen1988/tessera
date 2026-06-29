@@ -373,6 +373,7 @@
         bottom: 16px;
         width: calc(100vw - 74px);
     }
+
 }
 </style>
 <script type="text/javascript" src="[% Config("Frontend::JavaScriptPath") %]thirdparty/sheetjs-0.20.3/xlsx.full.min.js"></script>
@@ -426,6 +427,8 @@
         };
         Request.send(Data);
     }
+
+    window.ZTSMServiceExtensionRefresh = ZTSMServiceExtensionRefresh;
 
     function ZTSMServiceExtensionReplace(Start, End, HTML) {
         var Node = Start.nextSibling,
@@ -1330,6 +1333,38 @@
 
         ZTSMServicePayloadModernizedReferenceRefresh(Element, Text);
     }
+
+    function ZTSMServicePayloadVisibleSelectionRefresh(Root) {
+        Root = Root || document;
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField select'), function (Element) {
+            if (window.jQuery) {
+                try {
+                    window.jQuery(Element).trigger('change.select2');
+                }
+                catch (Error) {
+                    ZTSMServicePayloadConsole('warn', '[ZTSM cosmetic select2 refresh failed]', Error.message);
+                }
+            }
+            ZTSMServicePayloadModernizedSelectRefresh(Element);
+            window.setTimeout(function () {
+                ZTSMServicePayloadModernizedSelectRefresh(Element);
+            }, 0);
+        });
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField input[name^="Autocomplete_DynamicField_"]'), function (Element) {
+            var Text = String(Element.value || '').trim();
+
+            if (Text) {
+                ZTSMServicePayloadModernizedReferenceRefresh(Element, Text);
+                window.setTimeout(function () {
+                    ZTSMServicePayloadModernizedReferenceRefresh(Element, Text);
+                }, 0);
+            }
+        });
+    }
+
+    window.ZTSMServicePayloadVisibleSelectionRefresh = ZTSMServicePayloadVisibleSelectionRefresh;
 
     function ZTSMServicePayloadSelectReferenceOptionEnsure(Element, Key, Text) {
         var KeyString = String(Key === null || Key === undefined ? '' : Key),
@@ -2892,8 +2927,12 @@
 
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
+        ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
         ZTSMServicePayloadToolsEnsure(Start, End);
         window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
+        window.setTimeout(function () {
+            ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
+        }, 50);
     }
 
     function ZTSMServiceExtensionWatch() {

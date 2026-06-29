@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-26
+Last Updated: 2026-06-29
 
 ## Current Focus
 
@@ -17,6 +17,504 @@ Last Updated: 2026-06-26
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-06-29 GovernanceDB 0.0.172 Requester Cosmetic Selection Refresh
+
+### Completed work
+
+- Treated the requester-change issue as a native-value-versus-visible-widget drift, matching the earlier payload/import display problem.
+- Added `ZTSMServicePayloadVisibleSelectionRefresh()` to rebuild visible service-extension Select2/InputField selections from the current native field values.
+- The refresh pass:
+  - triggers `change.select2` for service-extension selects;
+  - rebuilds modernized select display pills from selected `<option>` values;
+  - rebuilds modernized autocomplete/reference display from the visible autocomplete text.
+- Called the visible-selection refresh:
+  - after requester `Core.AJAX.FormUpdate()` callback;
+  - after the service-extension HTML replacement;
+  - again shortly after replacement to catch widgets initialized asynchronously.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.172`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.172.opm`.
+- `Kernel/Package/GovernanceDB-0.0.172.opm` SHA256: `44990BFD3D6CA7D017E269F9ED634F6ADADA6BD4B03D5CDC325FEA6739D9FA66`.
+- Supersedes `0.0.171`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.172.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.172.opm` parsed successfully as XML: version `0.0.172`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payloads contain the requester callback cosmetic-refresh call, `ZTSMServicePayloadVisibleSelectionRefresh()`, `change.select2`, global visible-refresh export, and post-replacement refresh calls.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed `node --check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies compare cleanly for touched template files.
+- `git diff --check` passed.
+
+## 2026-06-29 GovernanceDB 0.0.171 Requester Refresh and Header Styling Repair
+
+### Completed work
+
+- Changed the customer ticket requester header from `Customer user <name> [Change]` to `as <name> [Change]`.
+- Hardened the `Change` control styling so it remains a compact text link and does not inherit the portal button hover/background treatment.
+- Replaced the indirect requester refresh trigger with a direct `Core.AJAX.FormUpdate()` call using `ElementChanged=ZTSMRaiseOnBehalfCustomerUserID`.
+- Exposed `ZTSMServiceExtensionRefresh()` on `window` and call it after the OTOBO form AJAX refresh so service extension fields/preferences reload for the selected requester.
+- Kept the right floating toolbar free of requester controls.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.171`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.171.opm`.
+- `Kernel/Package/GovernanceDB-0.0.171.opm` SHA256: `3B79C7CEEE3FBFC2DF4B4C211D4185CC41C0FE398B42BE0C5579AB1EE4570DF5`.
+- Supersedes `0.0.170`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.171.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.171.opm` parsed successfully as XML: version `0.0.171`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payloads contain the `as` requester label, neutral hover styling, direct `Core.AJAX.FormUpdate()` requester refresh, `ZTSMRaiseOnBehalfCustomerUserID` changed element marker, and global service-extension refresh hook.
+- Decoded OPM payload for `ZTSMCustomerTicketMessageServiceFields.tt` still has no `data-ztsm-behalf` toolbar requester button.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed `node --check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies compare cleanly for touched template files.
+- `git diff --check` passed.
+
+## 2026-06-29 GovernanceDB 0.0.170 Inline Requester Change Design
+
+### Completed work
+
+- Replaced the previous right-toolbar raise-on-behalf user icon with an inline requester display directly under `Issue a new Ticket`.
+- The header now renders `Customer user <current effective requester> [Change]`.
+- Clicking `Change` opens the requester search field in place; selecting a user updates the displayed requester and triggers the standard service refresh path.
+- Added `ZTSMEffectiveCustomerUserLabel` to the customer ticket message payload so the UI can display the current logged-in requester and selected on-behalf requester consistently.
+- Kept the backend effective-customer behavior from `0.0.169`: service/SLA/preference recalculation uses the selected requester via `ZTSMRaiseOnBehalfCustomerUserID`.
+- Removed the raise-on-behalf button, drawer markup, drawer CSS, and drawer JavaScript from the right service-payload toolbar.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.170`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.170.opm`.
+- `Kernel/Package/GovernanceDB-0.0.170.opm` SHA256: `104AF2063260444DD15C67424C76A645F86313EDB96D12EACB1D580E5785704C`.
+- Supersedes `0.0.169`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.170.opm`.
+
+### Architectural decisions
+
+- The requester selector is part of the ticket creation header context, not the service-payload tool surface.
+- The right floating toolbar remains focused on payload template download, Excel upload, JSON editor, and apply/validate actions.
+- Requester selection changes form context immediately by triggering the existing customer ticket AJAX refresh path instead of introducing a separate preference-loading flow.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.170.opm` parsed successfully as XML: version `0.0.170`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payloads contain `ZTSMEffectiveCustomerUserLabel`, `ZTSMRequesterLine`, `ZTSMRequesterChange`, `ZTSMRequesterEditor`, and requester selection refresh markers.
+- Decoded OPM payload for `ZTSMCustomerTicketMessageServiceFields.tt` no longer contains `data-ztsm-behalf` or `ZTSMRaiseOnBehalfDrawer`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB\var\governancedb\runtime_overlay -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\var\governancedb\runtime_overlay\Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed `node --check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies compare cleanly for touched module/template files.
+- `git diff --check` passed.
+
+## 2026-06-29 GovernanceDB 0.0.169 Raise-on-Behalf Toolbar and Effective Requester Refresh
+
+### Completed work
+
+- Moved the customer ticket `Raise on behalf` control out of the main form flow and into the existing right floating service-payload toolbar.
+- Added a right-toolbar user-switch button that opens the raise-on-behalf selector in a floating drawer beside the toolbar.
+- Kept the original `ZTSMRaiseOnBehalfCustomerUserID` form field binding so submissions continue to post the selected requester.
+- Updated the raise-on-behalf refresh path so selecting a requester triggers the standard service refresh path and jQuery change handlers.
+- Updated the AJAX standard-field refresh path so service/SLA/preference recalculation uses the selected effective customer user and customer ID instead of the logged-in customer.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.169`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.169.opm`.
+- `Kernel/Package/GovernanceDB-0.0.169.opm` SHA256: `7C354FBA075398F846BAD8176A2C2725E78A3F33E935C6525F144688C3702928`.
+- Supersedes `0.0.168`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.169.opm`.
+
+### Architectural decisions
+
+- Raise-on-behalf remains a customer-ticket form concern, not a new routing concept.
+- The selected on-behalf customer is treated as the effective requester for service preference refresh and service-extension dynamic field rendering.
+- The toolbar uses the existing service-payload floating action surface instead of adding another visible inline block to the page.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.169.opm` parsed successfully as XML: version `0.0.169`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payloads contain the raise-on-behalf toolbar button, drawer, external form binding, hidden inline source panel, jQuery service refresh trigger, and effective requester AJAX refresh markers.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -IKernel\Package\GovernanceDB\var\governancedb\runtime_overlay -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\var\governancedb\runtime_overlay\Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed `node --check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies compare cleanly for touched module/template files.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.12 Stale Core Preference Cleanup
+
+### Completed work
+
+- Diagnosed why the Admin Service overview could still show the old `TYPE` even after import updated the service timestamp:
+  - `ServiceUpdate()` writes the real service type to `service.type_id`;
+  - `Kernel::System::Service::ServiceListGet()` reads `service.type_id`, then merges `service_preferences` into the same service hash;
+  - `_ServiceGetCurrentIncidentState()` resolves `Type` from `TypeID`, but later merges preferences again;
+  - stale `service_preferences` rows such as `Type` or `TypeID` can therefore override the real service table value in the overview.
+- Fixed `Kernel/Autoload/ServiceImportExport.pm` so every imported service deletes stale service preferences whose keys belong to core service fields.
+- Added cache cleanup for both `ServicePreferencesDB` and `Service` after deleting stale core preferences.
+- Kept scalar non-core preferences such as `Keywords` importable.
+- Bumped ServiceCatalog package version to `11.0.12`.
+- Built `Kernel/Package/ServiceCatalog-11.0.12.opm`.
+- `Kernel/Package/ServiceCatalog-11.0.12.opm` SHA256: `95E29E91CEAC95368372645ED283ED701DC8A24989F743B930A3DBE067F612B7`.
+- Supersedes `ServiceCatalog-11.0.11`; install/upgrade testing should use `ServiceCatalog-11.0.12.opm`.
+
+### Validation
+
+- `ServiceCatalog-11.0.12.opm` parses as XML with package name `ServiceCatalog`, version `11.0.12`, and `FileCount=21`.
+- OPM file list still contains `Kernel/System/DynamicField/ObjectType/Service.pm`.
+- OPM file list still contains `Kernel/Config/Files/XML/ServiceCatalog.xml`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload contains the stale core preference delete SQL and cache cleanup for `ServicePreferencesDB` and `Service`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload still excludes ticket-type/destination-queue helper fields from preferences and skips reference-valued preferences.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\ObjectType\Service.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminSLAImportExport.pm` passed.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.11 Scalar-Safe Service Preferences Import
+
+### Completed work
+
+- Diagnosed the service import failure after the `Criticality` fix:
+  - service updates now reached the preference-writing stage;
+  - `_ServiceImportPreferencesExtract()` treated structured/import-helper service fields as preferences;
+  - `TicketTypes` / `TicketTypeIDs` array values could reach `Kernel::System::Service::PreferencesDB::ServicePreferencesSet`;
+  - OTOBO service preferences bind only scalar values, so DB bind failed with `No SCALAR param in Bind!`.
+- Fixed `Kernel/Autoload/ServiceImportExport.pm` so import helper fields do not become service preferences:
+  - `DestQueue`, `DestQueueID`, `TicketTypes`, and `TicketTypeIDs` are now excluded from preference extraction;
+  - reference values are skipped defensively before preference writes.
+- Kept scalar service preferences such as `Keywords` eligible for import.
+- Bumped ServiceCatalog package version to `11.0.11`.
+- Built `Kernel/Package/ServiceCatalog-11.0.11.opm`.
+- `Kernel/Package/ServiceCatalog-11.0.11.opm` SHA256: `5366B2AF9A55E0D1A9ADFF3FEA55DE4560AF2F05C40F0B5A35A4858DC0207D1A`.
+- Supersedes `ServiceCatalog-11.0.10`; install/upgrade testing should use `ServiceCatalog-11.0.11.opm`.
+
+### Validation
+
+- `ServiceCatalog-11.0.11.opm` parses as XML with package name `ServiceCatalog`, version `11.0.11`, and `FileCount=21`.
+- OPM file list still contains `Kernel/System/DynamicField/ObjectType/Service.pm`.
+- OPM file list still contains `Kernel/Config/Files/XML/ServiceCatalog.xml`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload keeps `Criticality`, excludes ticket-type and destination-queue helper fields from preferences, and skips reference-valued preferences.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\ObjectType\Service.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminSLAImportExport.pm` passed.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.10 Criticality-Safe Service Import
+
+### Completed work
+
+- Diagnosed the service import failure:
+  - YAML exports contained `Criticality`, for example `Criticality: 3 normal`;
+  - installed `Kernel::System::Service::ServiceUpdate` requires `Criticality`;
+  - `_ServiceImportPreferencesExtract()` did not treat `Criticality` as a core service field and deleted it before `ServiceUpdate`;
+  - this caused `Need Criticality!` even though the import YAML had the value.
+- Fixed `Kernel/Autoload/ServiceImportExport.pm` so `Criticality` remains in the service update/add payload.
+- Bumped ServiceCatalog package version to `11.0.10`.
+- Built `Kernel/Package/ServiceCatalog-11.0.10.opm`.
+- `Kernel/Package/ServiceCatalog-11.0.10.opm` SHA256: `4115EC09D618947E62BC7567994FC723D66E0C39F7498687EB6A296253706481`.
+- Supersedes `ServiceCatalog-11.0.9`; install/upgrade testing should use `ServiceCatalog-11.0.10.opm`.
+
+### Validation
+
+- `ServiceCatalog-11.0.10.opm` parses as XML with package name `ServiceCatalog`, version `11.0.10`, and `FileCount=21`.
+- OPM file list still contains `Kernel/System/DynamicField/ObjectType/Service.pm`.
+- OPM file list still contains `Kernel/Config/Files/XML/ServiceCatalog.xml`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload keeps `Criticality` and `Descriptions` out of generic preference extraction.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload still contains the service Type resolution error path and description `ContentType => text/html` fallback.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\ObjectType\Service.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminSLAImportExport.pm` passed.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.9 Description-Safe Service Import
+
+### Completed work
+
+- Diagnosed the service import failure:
+  - installed `Kernel::System::Service::ServiceUpdate` requires `Descriptions`;
+  - the import code built `Descriptions` but `_ServiceImportPreferencesExtract()` treated it as a generic service preference and deleted it before calling `ServiceUpdate`;
+  - this caused `Need Descriptions!` and prevented existing service updates, including Type updates.
+- Fixed `Kernel/Autoload/ServiceImportExport.pm` so `Descriptions` remains in the service update payload.
+- Added a description fallback:
+  - imports with `ShortDescription`/`LongDescription` create a valid `Descriptions` structure with `ContentType => text/html`;
+  - existing services keep their current `Descriptions` when YAML omits descriptions;
+  - new services get an empty `en` description structure when no description data is provided.
+- Bumped ServiceCatalog package version to `11.0.9`.
+- Built `Kernel/Package/ServiceCatalog-11.0.9.opm`.
+- `Kernel/Package/ServiceCatalog-11.0.9.opm` SHA256: `E190610BB7418BB3CBE3183642695C09EA5367D170C3399044DFF220FCED4107`.
+
+### Validation
+
+- `ServiceCatalog-11.0.9.opm` parses as XML with package name `ServiceCatalog`, version `11.0.9`, and `FileCount=21`.
+- OPM file list still contains `Kernel/System/DynamicField/ObjectType/Service.pm`.
+- OPM file list still contains `Kernel/Config/Files/XML/ServiceCatalog.xml`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload keeps `Descriptions` out of generic preference extraction and fills `ContentType => text/html`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\ObjectType\Service.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminSLAImportExport.pm` passed.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.8 Corrective Restore Package
+
+### Completed work
+
+- Diagnosed the failed `ServiceCatalog-11.0.7` install/import issue from the OTOBO log:
+  - the narrow `11.0.7` package upgraded package `ServiceCatalog` but listed only three files;
+  - OTOBO package upgrade cleanup removed the old `ServiceCatalog-11.0.6` files not present in the new file list;
+  - this removed `Kernel/Config/Files/XML/ServiceCatalog.xml` and `Kernel/System/DynamicField/ObjectType/Service.pm`;
+  - runtime then failed with `Can't locate Kernel/System/DynamicField/ObjectType/Service.pm` and `Module Kernel::Modules::AdminServiceImportExport not registered in Kernel/Config.pm`.
+- Rebuilt the ServiceCatalog package definition as version `11.0.8` with all available ServiceCatalog-owned files in this workspace.
+- Built corrective package `Kernel/Package/ServiceCatalog-11.0.8.opm`.
+- `Kernel/Package/ServiceCatalog-11.0.8.opm` SHA256: `0F9B40BDC77817C616FD70423BD46ED77AE2D6F71A8EDC622A2277C6CEFA42A4`.
+
+### Architectural decisions
+
+- Do not ship narrow same-name package upgrades when the installed package owns a larger file set; OTOBO treats omitted old package files as removed during upgrade.
+- Corrective ServiceCatalog package must include `ServiceCatalog.xml`, the Service dynamic-field object handler, SLA import/export companion files, customer tile files, and the service import/export files available in this workspace.
+- `ServiceCatalog-11.0.7.opm` should not be installed again.
+- Superseded by `ServiceCatalog-11.0.9`, which keeps the same restoration file set and fixes the service import `Need Descriptions!` failure.
+
+### Validation
+
+- `ServiceCatalog-11.0.8.opm` parses as XML with package name `ServiceCatalog`, version `11.0.8`, and `FileCount=21`.
+- OPM file list contains `Kernel/System/DynamicField/ObjectType/Service.pm`.
+- OPM file list contains `Kernel/Config/Files/XML/ServiceCatalog.xml`.
+- Decoded `ServiceCatalog.xml` contains `Frontend::Module###AdminServiceImportExport`, `AutoloadPerlPackages###002-ServiceImportExport`, and `DynamicFields::ObjectType###Service`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\System\DynamicField\ObjectType\Service.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminSLAImportExport.pm` passed.
+- `git diff --check` passed.
+
+## 2026-06-29 ServiceCatalog 11.0.7 Service Import Package
+
+### Completed work
+
+- Created a narrow ServiceCatalog upgrade package for the ServiceCatalog-owned service import/export files.
+- Added `Kernel/Package/ServiceCatalog/ServiceCatalog.sopm` with package name `ServiceCatalog` and version `11.0.7`.
+- Built `Kernel/Package/ServiceCatalog-11.0.7.opm`.
+- The package includes only:
+  - `Kernel/Autoload/ServiceImportExport.pm`;
+  - `Kernel/Modules/AdminServiceImportExport.pm`;
+  - `Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt`.
+- `Kernel/Package/ServiceCatalog-11.0.7.opm` SHA256: `B0649E45AAE5BF119664A4A55128A30D953255B44790D6851D661DB4F55D8A6D`.
+
+### Architectural decisions
+
+- Service import/export fixes must upgrade package `ServiceCatalog`, because `ServiceCatalog-11.0.6` owns these files in OTOBO.
+- GovernanceDB must still not package these files.
+- This is a narrow upgrade package, not a full ServiceCatalog source rebuild, because no full ServiceCatalog `.sopm` or `.opm` source artifact exists in this workspace.
+- Superseded by `ServiceCatalog-11.0.8`; do not install `ServiceCatalog-11.0.7.opm` again because it removed old ServiceCatalog-owned files that were not in its narrow file list.
+
+### Validation
+
+- `ServiceCatalog-11.0.7.opm` parses as XML with package name `ServiceCatalog`, version `11.0.7`, and `FileCount=3`.
+- Decoded `Kernel/Autoload/ServiceImportExport.pm` payload contains the unresolved service Type error path.
+- Decoded `Kernel/Modules/AdminServiceImportExport.pm` payload contains canonical service-name selection handling.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+
+## 2026-06-29 Service Import Type Overwrite Fix
+
+### Completed work
+
+- Traced the Admin Service overview `TYPE` column to `Kernel::System::Service->ServiceListGet`, which resolves the `service.type_id` column through General Catalog class `ITSM::Service::Type`.
+- Confirmed the visible `Demonstration` value comes from the service row `type_id`, not from the template or cached display text.
+- Hardened the ServiceCatalog-owned service import path:
+  - import preview now canonicalizes service names from `Name`, `Service`, or the YAML map key;
+  - import confirmation matches selected services against both YAML key and canonical service name;
+  - service Type lookup now resolves exact and normalized General Catalog names;
+  - unresolved Type strings now log a real error instead of silently leaving the old service type in place;
+  - existing `TypeID` and `Criticality` are preserved on update only when the YAML omits them.
+
+### Architectural decisions
+
+- Service type remains `service.type_id`; YAML `Type` remains a readable General Catalog string resolved through `ITSM::Service::Type`.
+- `Kernel/Autoload/ServiceImportExport.pm` and `Kernel/Modules/AdminServiceImportExport.pm` remain ServiceCatalog-owned files and must not be packaged inside GovernanceDB.
+- `ServiceUpdate` must continue receiving the short service name plus `ParentID`; passing full names with `::` would be rejected by `Kernel::System::Service`.
+
+### Runtime expectation
+
+- Deploy the updated ServiceCatalog-owned `Kernel/Autoload/ServiceImportExport.pm` and `Kernel/Modules/AdminServiceImportExport.pm`.
+- Clear caches/restart PSGI, then re-import with `Overwrite existing services` selected.
+- If a YAML `Type` value cannot be found in `ITSM::Service::Type`, the import should now log that exact unresolved Type value.
+
+## 2026-06-29 General Catalog Import Log Cleanup and Service Type Export Clarity 0.0.168
+
+### Completed work
+
+- Fixed General Catalog YAML/JSON import to check for existing items through `ItemList(Class => ..., Valid => 0)` before calling `ItemGet(ItemID => ...)`.
+- Avoided false `Item not found in database!` error logs when importing new General Catalog items such as `Project` under `ITSM::Service::Type`.
+- Kept General Catalog import class/name based and idempotent: existing items update, missing items create.
+- Adjusted the ServiceCatalog-owned service exporter source so service YAML always emits a `Type` key; services without a `TypeID` now export `Type: ''` instead of omitting the field.
+- Bumped `GovernanceDB.sopm` package version to `0.0.168`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.168.opm`.
+- `Kernel/Package/GovernanceDB-0.0.168.opm` SHA256: `080B41E0AC455C6F815D4B159F175624BAE365758E81450BC86964001443153F`.
+
+### Architectural decisions
+
+- `Type` in service YAML remains a readable string resolved from General Catalog class `ITSM::Service::Type`; raw `TypeID` is not exported.
+- GovernanceDB packages the General Catalog document importer fix only.
+- Service YAML exporter changes remain ServiceCatalog-owned and must be delivered through the installed ServiceCatalog file/package, not GovernanceDB.
+
+### Runtime expectation
+
+- Install/upgrade `Kernel/Package/GovernanceDB-0.0.168.opm` after rebuild.
+- General Catalog import of new items should no longer produce false `Item not found in database!` error log entries.
+- Service exports should show `Type` for every service only after the updated `Kernel/Autoload/ServiceImportExport.pm` is deployed through ServiceCatalog ownership.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\GeneralCatalog\Document.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\AgentGeneralCatalogDocument.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.168.opm` parsed successfully as XML: version `0.0.168`, `SopmFileCount=173`, `OpmFileCount=173`.
+- OPM file list does not contain `Kernel/Autoload/ServiceImportExport.pm`, `Kernel/Modules/AdminServiceImportExport.pm`, or `Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt`.
+- OPM-decoded `Kernel/System/GeneralCatalog/Document.pm` contains the non-noisy `ItemList`/`EXISTINGITEMID` existence check.
+- `git diff --check` passed.
+
+## 2026-06-29 GovernanceDB ServiceCatalog Ownership Correction 0.0.167
+
+### Completed work
+
+- Fixed the package install/upgrade blocker reported by OTOBO:
+  - `Kernel/Autoload/ServiceImportExport.pm` is already owned by installed package `ServiceCatalog-11.0.6`;
+  - GovernanceDB must not package `Kernel/Autoload/ServiceImportExport.pm`, `Kernel/Modules/AdminServiceImportExport.pm`, or `Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt`.
+- Removed ServiceCatalog-owned file entries from `GovernanceDB.sopm`.
+- Removed the narrow `AdminServiceImportExport` frontend registration and `ServiceImportExport` autoload registration from GovernanceDB XML, because those registrations belong to ServiceCatalog.
+- Kept the Admin Service menu/runtime overlay change that links to the existing `AdminServiceImportExport` action; that action is provided by ServiceCatalog.
+- Kept the General Catalog selector work from `0.0.166`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.167`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.167.opm`.
+- Supersedes `0.0.166`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.167.opm`.
+- `Kernel/Package/GovernanceDB-0.0.167.opm` SHA256: `5ABA64B2C0934DEB60BF61F02C4EE1DC2B83D415EB54234708FCF38769D295B7`.
+
+### Architectural decisions
+
+- GovernanceDB must not claim files owned by `ServiceCatalog`.
+- Service import/export implementation changes are ServiceCatalog-package changes, not GovernanceDB-package changes, unless ServiceCatalog ownership is deliberately migrated.
+- GovernanceDB can expose links into installed ServiceCatalog actions, but it must not package duplicate controller/autoload/template files.
+
+### Rejected approaches
+
+- Do not force ServiceCatalog-owned files into GovernanceDB to make the feature self-contained.
+- Do not duplicate ServiceCatalog SysConfig registration settings in GovernanceDB.
+- Do not install `0.0.165` or `0.0.166` for this feature, because those artifacts attempted to package ServiceCatalog-owned files.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.167.opm` parsed successfully as XML: version `0.0.167`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM file list does not contain `Kernel/Autoload/ServiceImportExport.pm`, `Kernel/Modules/AdminServiceImportExport.pm`, or `Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt`.
+- OPM-decoded payloads do not contain GovernanceDB-owned `Frontend::Module###AdminServiceImportExport` or `AutoloadPerlPackages###002-ServiceImportExport` registrations.
+- OPM-decoded payloads still contain the General Catalog selector markers from `0.0.166`: `ClassOptions`, `SelectedClass`, `All catalog classes`, `Import / Export Catalog YAML/JSON`, and `;Class=`.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\AgentGeneralCatalogDocument.pm` passed.
+- Bundled Node `--check` passed for `Kernel\Package\GovernanceDB\var\httpd\htdocs\js\Core.Agent.Admin.GeneralCatalogDocument.js`.
+
+### Runtime expectation
+
+- Install/upgrade `Kernel/Package/GovernanceDB-0.0.167.opm`, not `0.0.165` or `0.0.166`.
+- The package should no longer fail with the ServiceCatalog file ownership error.
+- Service YAML import/export enhancements still require the installed ServiceCatalog module/files to carry the updated ServiceImportExport code.
+
+## 2026-06-29 General Catalog Class Export Selector 0.0.166
+
+### Completed work
+
+- Added a catalog selector to the General Catalog YAML/JSON import/export screen:
+  - users can choose one General Catalog class from a dropdown and export only that catalog;
+  - `All catalog classes` remains available for full export;
+  - the existing comma-separated `Classes` field remains as an advanced override for multi-class export.
+- Made the Admin General Catalog sidebar action context-aware:
+  - when opened from a specific catalog class, the import/export screen preselects that class;
+  - when opened from the overview, no class is preselected and the user can choose from the dropdown.
+- Kept the existing `Kernel::System::GeneralCatalog::Document` export model intact; the UI now passes the selected class into the existing `Classes` export filter instead of introducing a parallel export path.
+- Bumped `GovernanceDB.sopm` package version to `0.0.166`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.166.opm`.
+- Superseded by `0.0.167`; do not install `Kernel/Package/GovernanceDB-0.0.166.opm` because it incorrectly included ServiceCatalog-owned files.
+- `Kernel/Package/GovernanceDB-0.0.166.opm` SHA256: `D2D3E146911A7DDFFB12B7D0902A33683CC5D1BBACED1F8EC77216818DF95F86`.
+
+### Architectural decisions
+
+- General Catalog export remains class-name based because `general_catalog_class` is the stable catalog boundary.
+- The dropdown is UI sugar over the existing document codec; YAML/JSON format remains unchanged and import compatibility is preserved.
+- The advanced comma-separated field wins only when the user explicitly enters a value, so changing the dropdown does not get shadowed by a stale text value.
+
+### Rejected approaches
+
+- Do not create a separate GovernanceDB-only catalog exporter.
+- Do not hardcode the list of catalogs; it is read from `Kernel::System::GeneralCatalog->ClassList()`.
+- Do not remove the existing text filter, because multi-class export is still useful for controlled migrations.
+
+### Validation
+
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\Modules\AgentGeneralCatalogDocument.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\Kernel\System\GeneralCatalog\Document.pm` passed.
+- Bundled Node `--check` passed for `Kernel\Package\GovernanceDB\var\httpd\htdocs\js\Core.Agent.Admin.GeneralCatalogDocument.js`.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.166.opm` parsed successfully as XML: version `0.0.166`, `SopmFileCount=176`, `OpmFileCount=176`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- OPM-decoded payloads contain the expected `ClassOptions`, `SelectedClass`, `All catalog classes`, `Optional comma-separated class override`, `Import / Export Catalog YAML/JSON`, and `;Class=` markers.
+
+### Runtime expectation
+
+- After installing/upgrading `0.0.166`, clear OTOBO caches and restart PSGI.
+- Admin > General Catalog > Import / Export Catalog YAML/JSON should show a `Catalog` dropdown.
+- Opening the action while viewing a specific catalog class should preselect that class, and `Export` should produce YAML/JSON containing only that catalog unless the advanced `Classes` override is filled.
+
+## 2026-06-29 Service YAML Import Export 0.0.165
+
+### Completed work
+
+- Added service import/export controls to the Admin Service overview:
+  - `Export Services` opens the existing `AdminServiceImportExport` export screen;
+  - `Import Services YAML` accepts `.yml`/`.yaml` uploads;
+  - `Update existing services` exposes the existing overwrite option.
+- Corrected later in `0.0.167`: the service YAML action files and registrations are owned by `ServiceCatalog-11.0.6`, not GovernanceDB, so GovernanceDB must not package them.
+- Extended `Kernel/Autoload/ServiceImportExport.pm` so exported YAML includes readable service fields:
+  - `State`/`Valid`, `Service`/`Name`, `ShortDescription`, `LongDescription`, `Type`, `Criticality`, `ZService-Field`, `Keywords`, and `TicketDestinationQueue`;
+  - service Dynamic Fields are exported under `DynamicFields`, with `ZService-Field` duplicated as a top-level convenience key.
+- Extended YAML import aliases:
+  - `Service` maps back to `Name`;
+  - `State` maps back to `Valid`;
+  - `TicketDestinationQueue` maps back to `DestQueue`;
+  - top-level `ZService-Field` maps back into the service Dynamic Field write path;
+  - `ShortDescription`/`LongDescription` are converted into the ServiceCatalog description preference structure when full `Descriptions` data is absent.
+- Import now resolves service `Type` strings through GeneralCatalog class `ITSM::Service::Type` and writes the resulting `TypeID`.
+- Import continues resolving destination queue names to `DestQueueID`, and writes ServiceCatalog data such as descriptions, keywords, destination queue, and ticket type preferences through service preferences.
+- Fixed the service export list link to use the current `AdminService;Subaction=ServiceEdit` route.
+- Synced changed Admin Service runtime files into the GovernanceDB runtime overlay.
+- Bumped `GovernanceDB.sopm` package version to `0.0.165`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.165.opm`.
+- Superseded by `0.0.167`; do not install `Kernel/Package/GovernanceDB-0.0.165.opm` because it incorrectly included ServiceCatalog-owned files.
+- `Kernel/Package/GovernanceDB-0.0.165.opm` SHA256: `E9EC56A8ACFA04C7B27C0A09304AFB71E9A49239C2E5C80042EBF087DA1FD190`.
+
+### Architectural decisions
+
+- YAML stays operator-readable: service state, type, and destination queue are exported as strings and resolved to local IDs during import.
+- `Type` is not hardcoded; import uses GeneralCatalog `ITSM::Service::Type` as the authority.
+- Destination queue remains ServiceCatalog/service-preference data, not a new service table column.
+- Service Dynamic Field handling uses the existing DynamicField backend and does not introduce a parallel service model.
+
+### Rejected approaches
+
+- Do not hardcode service type IDs in YAML or Perl.
+- Do not reintroduce deprecated static routing behavior; this import/export only moves admin service catalog data.
+- Do not regenerate package structure from historical assumptions; the GovernanceDB package definition remains the source for packaged runtime overlay content.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Autoload\ServiceImportExport.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminService.pm` passed.
+- `perl -IKernel\Package\GovernanceDB -I. -IKernel\cpan-lib -c Kernel\Package\GovernanceDB\var\governancedb\runtime_overlay\Kernel\Modules\AdminService.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\AdminServiceImportExport.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.165.opm` parsed successfully as XML: version `0.0.165`, `SopmFileCount=176`, `OpmFileCount=176`, `MissingEncodeBase64=0`, `MissingPayload=0`; corrected in `0.0.167` because this included ServiceCatalog-owned files.
+- Live Admin Service and ServiceImportExport runtime files match their GovernanceDB package source or runtime overlay copies by SHA256.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After installing/upgrading `0.0.165`, clear OTOBO caches and restart PSGI.
+- Admin > Services should show `Export Services` and `Import Services YAML` on the overview action panel.
+- Exported YAML should use readable strings for service type, state, and destination queue; import should resolve those strings to the current system IDs.
 
 ## 2026-06-26 Raise On Behalf and IPC VVIP Delegate Override 0.0.164
 

@@ -30,9 +30,20 @@
             <input type="hidden" name="Action" value="[% Env("Action") %]"/>
             <input type="hidden" name="ReturnAction" value="[% Data.ReturnAction | html %]"/>
             <fieldset class="TableLike">
+                <label for="Class">[% Translate("Catalog") | html %]:</label>
+                <div class="Field">
+                    <select id="Class" name="Class" class="W100pc">
+                        <option value=""[% IF !Data.SelectedClass %] selected="selected"[% END %]>[% Translate("All catalog classes") | html %]</option>
+[% FOREACH ClassOption IN Data.ClassOptions %]
+                        <option value="[% ClassOption.Class | html %]"[% IF ClassOption.Selected %] selected="selected"[% END %]>[% ClassOption.Class | html %]</option>
+[% END %]
+                    </select>
+                </div>
+                <div class="Clear"></div>
+
                 <label for="Classes">[% Translate("Classes") | html %]:</label>
                 <div class="Field">
-                    <input id="Classes" name="Classes" class="W100pc" type="text" value="[% Data.Classes | html %]" placeholder="ZTSM::GovernanceObject::Status, ZTSM::GovernanceObject::Class"/>
+                    <input id="Classes" name="Classes" class="W100pc" type="text" value="[% Data.Classes | html %]" placeholder="[% Translate("Optional comma-separated class override") | html %]"/>
                 </div>
                 <div class="Clear"></div>
 

@@ -357,6 +357,8 @@ sub Run {
 
         $LayoutObject->Block( Name => 'ActionList' );
         $LayoutObject->Block( Name => 'ActionAdd' );
+        $LayoutObject->Block( Name => 'ActionImportExport' );
+        $LayoutObject->Block( Name => 'ActionImportForm' );
         $LayoutObject->Block(
             Name => 'IncludeInvalid',
             Data => {

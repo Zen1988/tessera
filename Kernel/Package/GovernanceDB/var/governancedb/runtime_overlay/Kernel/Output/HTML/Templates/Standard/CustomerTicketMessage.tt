@@ -18,6 +18,16 @@
 <div id="oooContent" class="ARIARoleMain TicketCompose">
     <div id="oooHeader">
         <h1>[% Translate("Issue a new Ticket") | html %]</h1>
+        <div class="ZTSMRequesterLine">
+            <span class="ZTSMRequesterLabel">[% Translate("as") | html %]</span>
+            <span class="ZTSMRequesterValue" id="ZTSMRequesterValue">[% Data.ZTSMEffectiveCustomerUserLabel | html %]</span>
+            <button type="button" class="ZTSMRequesterChange" id="ZTSMRequesterChange">[% Translate("Change") | html %]</button>
+        </div>
+        <div class="ZTSMRequesterEditor Hidden" id="ZTSMRequesterEditor">
+            <input type="text" id="ZTSMRaiseOnBehalfCustomerUserSearch" name="ZTSMRaiseOnBehalfCustomerUserSearch" value="[% Data.ZTSMRaiseOnBehalfCustomerUserLabel | html %]" list="ZTSMRaiseOnBehalfCustomerUserList" autocomplete="off" form="NewCustomerTicket" />
+            <datalist id="ZTSMRaiseOnBehalfCustomerUserList"></datalist>
+            <p class="FieldExplanation">[% Translate("Search and select the requester for this ticket.") | html %]</p>
+        </div>
     </div>
     <div id="oooMainBox" class="Content">
         <form action="[% Env("CGIHandle") %]" method="post" name="compose" id="NewCustomerTicket" enctype="multipart/form-data" class="Validate PreventMultipleSubmits">
@@ -32,18 +42,6 @@
 [% RenderBlockStart("AsteriskExplanation") %]
                 <p class="AsteriskExplanation">[% Translate("All fields marked with an asterisk (*) are mandatory.") | html %]</p>
 [% RenderBlockEnd("AsteriskExplanation") %]
-
-                <div class="Row ZTSMRaiseOnBehalfRow">
-                    <details id="ZTSMRaiseOnBehalf"[% IF Data.ZTSMRaiseOnBehalfCustomerUserID %] open[% END %]>
-                        <summary>[% Translate("Raise on behalf") | html %]</summary>
-                        <div class="Field">
-                            <input type="text" id="ZTSMRaiseOnBehalfCustomerUserSearch" name="ZTSMRaiseOnBehalfCustomerUserSearch" value="[% Data.ZTSMRaiseOnBehalfCustomerUserLabel | html %]" list="ZTSMRaiseOnBehalfCustomerUserList" autocomplete="off" />
-                            <datalist id="ZTSMRaiseOnBehalfCustomerUserList"></datalist>
-                            <p class="FieldExplanation">[% Translate("Search and select the requester for this ticket.") | html %]</p>
-                        </div>
-                        <div class="Clear"></div>
-                    </details>
-                </div>
 
 [% RenderBlockStart("DynamicField_TitleCategory") %]
                 <div class="Row Row_DynamicField_[% Data.Name | html %][% Data.HiddenClass | html %]" [% Data.HiddenStyle | html %]>
@@ -231,11 +229,81 @@
         </form>
     </div>
 </div>
+<style>
+.ZTSMRequesterLine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    color: #151a45;
+    font-size: 15px;
+    line-height: 22px;
+}
+
+.ZTSMRequesterLabel {
+    color: #616486;
+}
+
+.ZTSMRequesterValue {
+    font-weight: 600;
+}
+
+.ZTSMRequesterChange {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #0707a8 !important;
+    cursor: pointer;
+    font: inherit !important;
+    font-weight: 600;
+    line-height: 22px !important;
+    margin: 0 !important;
+    padding: 0 2px !important;
+    text-decoration: underline;
+}
+
+.ZTSMRequesterChange:hover,
+.ZTSMRequesterChange:focus,
+.ZTSMRequesterChange:active {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #0707a8 !important;
+    outline: none;
+    text-decoration: underline;
+}
+
+.ZTSMRequesterEditor {
+    width: min(480px, calc(100vw - 48px));
+    margin: 12px auto 0;
+    text-align: left;
+}
+
+.ZTSMRequesterEditor input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ZTSMRequesterEditor .FieldExplanation {
+    margin: 6px 0 0;
+    color: #616486;
+    font-size: 12px;
+    line-height: 18px;
+}
+</style>
 <script>
 (function () {
     var Input = document.getElementById('ZTSMRaiseOnBehalfCustomerUserSearch');
     var Hidden = document.getElementById('ZTSMRaiseOnBehalfCustomerUserID');
     var List = document.getElementById('ZTSMRaiseOnBehalfCustomerUserList');
+    var ChangeButton = document.getElementById('ZTSMRequesterChange');
+    var Editor = document.getElementById('ZTSMRequesterEditor');
+    var RequesterValue = document.getElementById('ZTSMRequesterValue');
     var Timer;
     var Choices = {};
 
@@ -250,10 +318,62 @@
     }
 
     function RefreshForm() {
-        var Service = document.getElementById('ServiceID');
-        if (Service) {
-            Service.dispatchEvent(new Event('change', { bubbles: true }));
+        var Form = document.getElementById('NewCustomerTicket');
+
+        if (window.Core && Core.AJAX && typeof Core.AJAX.FormUpdate === 'function' && window.jQuery && Form) {
+            Core.AJAX.FormUpdate(
+                window.jQuery(Form),
+                'AJAXUpdate',
+                'ZTSMRaiseOnBehalfCustomerUserID',
+                function () {
+                    if (typeof window.ZTSMServiceExtensionRefresh === 'function') {
+                        window.ZTSMServiceExtensionRefresh();
+                    }
+                    if (typeof window.ZTSMServicePayloadVisibleSelectionRefresh === 'function') {
+                        window.ZTSMServicePayloadVisibleSelectionRefresh();
+                    }
+                }
+            );
+            return;
         }
+
+        if (typeof window.ZTSMServiceExtensionRefresh === 'function') {
+            window.ZTSMServiceExtensionRefresh();
+        }
+        if (typeof window.ZTSMServicePayloadVisibleSelectionRefresh === 'function') {
+            window.ZTSMServicePayloadVisibleSelectionRefresh();
+        }
+    }
+
+    function ShowEditor() {
+        if (Editor) {
+            Editor.classList.remove('Hidden');
+        }
+        window.setTimeout(function () {
+            Input.focus();
+            Input.select();
+        }, 0);
+    }
+
+    function HideEditor() {
+        if (Editor) {
+            Editor.classList.add('Hidden');
+        }
+    }
+
+    function SelectRequester() {
+        var UserID = Choices[Input.value] || '';
+
+        if (!UserID) {
+            return;
+        }
+
+        Hidden.value = UserID;
+        if (RequesterValue) {
+            RequesterValue.textContent = Input.value;
+        }
+        HideEditor();
+        RefreshForm();
     }
 
     function Search() {
@@ -297,8 +417,11 @@
     });
 
     Input.addEventListener('change', function () {
-        Hidden.value = Choices[Input.value] || Hidden.value || '';
-        RefreshForm();
+        SelectRequester();
     });
+
+    if (ChangeButton) {
+        ChangeButton.addEventListener('click', ShowEditor);
+    }
 }());
 </script>

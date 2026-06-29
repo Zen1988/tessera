@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_package version="1.1">
+    <Name>ServiceCatalog</Name>
+    <Version>11.0.12</Version>
+    <Framework>11.0.x</Framework>
+    <Vendor>TESSERA</Vendor>
+    <URL>https://tessera.local/</URL>
+    <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
+    <Description Lang="en">ServiceCatalog compatibility update for TESSERA service YAML fields and package upgrade restoration.</Description>
+    <IntroUpgrade Type="post" Lang="en" Title="ServiceCatalog">
+        Restores available ServiceCatalog-owned files and updates service import/export so service YAML imports resolve service Type values through ITSM::Service::Type and update existing services when overwrite is selected.
+    </IntroUpgrade>
+
+    <Filelist>
+        <File Location="Kernel/Autoload/ServiceImportExport.pm" Permission="660"/>
+        <File Location="Kernel/Autoload/SLAImportExport.pm" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/ServiceCatalog.xml" Permission="660"/>
+        <File Location="Kernel/Language/de_ServiceCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Language/es_CO_ServiceCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Language/es_ServiceCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AdminServiceImportExport.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AdminSLAImportExport.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerTileServiceCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/CustomerDashboard/TileServiceCatalog.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminSLAImportExport.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/Dashboard/TileServiceCatalog.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/Dashboard/TileServiceCatalogDynamicFields.tt" Permission="660"/>
+        <File Location="Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogContainer.html.tmpl" Permission="660"/>
+        <File Location="Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogDetailed.html.tmpl" Permission="660"/>
+        <File Location="Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogModal.html.tmpl" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Admin/ServiceCatalog/AddBulkACL.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/ObjectType/Service.pm" Permission="660"/>
+        <File Location="Kernel/System/Ticket/Event/SetDynamicFieldCriticalityFromService.pm" Permission="660"/>
+        <File Location="Kernel/System/Ticket/Event/SetPriorityFromCriticalityAndImpactMatrix.pm" Permission="660"/>
+    </Filelist>
+</otobo_package>

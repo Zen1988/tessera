@@ -22,7 +22,7 @@ use namespace::autoclean;
 use utf8;
 
 use Kernel::Language              qw(Translatable);
-use Kernel::System::VariableCheck qw(IsHashRefWithData);
+use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
 
 our $ObjectManagerDisabled = 1;
 
@@ -36,14 +36,17 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     my $ParamObject    = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $LayoutObject   = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $DocumentObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog::Document');
 
     my $Format = lc( $ParamObject->GetParam( Param => 'Format' ) || 'yaml' );
     $Format = $Format eq 'json' ? 'json' : 'yaml';
 
-    my $Subaction = $Self->{Subaction} || '';
-    my $Classes   = $ParamObject->GetParam( Param => 'Classes' ) || '';
+    my $Subaction      = $Self->{Subaction} || '';
+    my $SelectedClass  = $ParamObject->GetParam( Param => 'Class' ) || '';
+    my $ClassesText    = $ParamObject->GetParam( Param => 'Classes' ) || '';
+    my $Classes        = IsStringWithData($ClassesText) ? $ClassesText : $SelectedClass;
     my $ReturnAction = $ParamObject->GetParam( Param => 'ReturnAction' ) || 'AgentGovernanceObject';
     $ReturnAction = 'AdminGeneralCatalog' if $ReturnAction eq 'AdminGeneralCatalog';
     $ReturnAction = 'AgentGovernanceObject' if $ReturnAction ne 'AdminGeneralCatalog';
@@ -78,6 +81,17 @@ sub Run {
         );
     }
 
+    my @ClassOptions;
+    CLASS:
+    for my $Class ( @{ $GeneralCatalogObject->ClassList() || [] } ) {
+        next CLASS if !IsStringWithData($Class);
+
+        push @ClassOptions, {
+            Class    => $Class,
+            Selected => $Class eq $SelectedClass ? 1 : 0,
+        };
+    }
+
     return join '',
         $LayoutObject->Header(
             Type  => 'Small',
@@ -87,9 +101,11 @@ sub Run {
             TemplateFile => 'AgentGeneralCatalogDocument',
             Data         => {
                 %Param,
-                Classes      => $Classes,
+                Classes      => $ClassesText,
+                ClassOptions => \@ClassOptions,
                 Format       => $Format,
                 ReturnAction => $ReturnAction,
+                SelectedClass => $SelectedClass,
                 Document     => $DocumentText,
                 Message      => $Message,
                 MessageClass => $MessageClass,

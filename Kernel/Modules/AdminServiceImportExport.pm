@@ -127,10 +127,15 @@ sub Run {
             SERVICENAME:
             for my $ServiceName ( keys $ImportData->{Services}->%* ) {
 
-                my $Selected = grep { $ServiceName eq $_ } @ServicesSelected;
-                next SERVICENAME if !$Selected;
-
                 next SERVICENAME if !IsHashRefWithData( $ImportData->{Services}{$ServiceName} );
+
+                my $CanonicalServiceName = _ServiceImportName(
+                    ServiceName => $ServiceName,
+                    ServiceData => $ImportData->{Services}{$ServiceName},
+                );
+
+                my $Selected = grep { $ServiceName eq $_ || $CanonicalServiceName eq $_ } @ServicesSelected;
+                next SERVICENAME if !$Selected;
 
                 $ServicesImport{$ServiceName} = $ImportData->{Services}{$ServiceName};
             }
@@ -299,9 +304,14 @@ sub _ServiceShow {
 
             my $ServiceData = $Param{Data}{Services}{$ServiceName};
 
-            push @ServicesAlreadyUsed, $ServiceData->{Name};
-
             next SERVICENAME if !IsHashRefWithData($ServiceData);
+
+            $ServiceData->{Name} = _ServiceImportName(
+                ServiceName => $ServiceName,
+                ServiceData => $ServiceData,
+            );
+
+            push @ServicesAlreadyUsed, $ServiceData->{Name};
 
             # convert ValidID to Validity string
             my $Valid = $ServiceData->{Valid} || $ValidObject->ValidLookup(
@@ -335,6 +345,16 @@ sub _ServiceShow {
     }
 
     return;
+}
+
+sub _ServiceImportName {
+    my (%Param) = @_;
+
+    my $ServiceData = $Param{ServiceData} || {};
+
+    return $ServiceData->{Name}    if defined $ServiceData->{Name}    && $ServiceData->{Name} ne '';
+    return $ServiceData->{Service} if defined $ServiceData->{Service} && $ServiceData->{Service} ne '';
+    return $Param{ServiceName};
 }
 
 1;

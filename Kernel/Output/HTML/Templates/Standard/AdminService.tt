@@ -67,7 +67,25 @@
                         <a href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=ServiceEdit;ServiceID=NEW" class="CallForAction Fullsize Center"><span><i class="fa fa-plus-square"></i>[% Translate("Add Service") | html %]</span></a>
                     </li>
 [% RenderBlockEnd("ActionAdd") %]
+[% RenderBlockStart("ActionImportExport") %]
+                    <li>
+                        <a href="[% Env("Baselink") %]Action=AdminServiceImportExport;Subaction=Export" class="CallForAction Fullsize Center"><span><i class="fa fa-download"></i>[% Translate("Export Services") | html %]</span></a>
+                    </li>
+[% RenderBlockEnd("ActionImportExport") %]
                 </ul>
+[% RenderBlockStart("ActionImportForm") %]
+                <form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" class="SpacingTop">
+                    <input type="hidden" name="Action" value="AdminServiceImportExport"/>
+                    <input type="hidden" name="Subaction" value="Import"/>
+                    <label for="ServiceImportFile">[% Translate("Import Services YAML") | html %]</label>
+                    <input type="file" id="ServiceImportFile" name="FileUpload" accept=".yml,.yaml,text/yaml,text/x-yaml"/>
+                    <div>
+                        <input type="checkbox" id="OverwriteExistingEntities" name="OverwriteExistingEntities" value="1"/>
+                        <label for="OverwriteExistingEntities">[% Translate("Update existing services") | html %]</label>
+                    </div>
+                    <button class="CallForAction Fullsize Center" type="submit"><span><i class="fa fa-upload"></i>[% Translate("Import Services") | html %]</span></button>
+                </form>
+[% RenderBlockEnd("ActionImportForm") %]
             </div>
 [% RenderBlockEnd("ActionList") %]
         </div>

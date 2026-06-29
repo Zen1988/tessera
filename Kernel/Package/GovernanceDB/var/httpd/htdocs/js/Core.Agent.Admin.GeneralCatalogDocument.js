@@ -16,6 +16,7 @@ Core.Agent.Admin.GeneralCatalogDocument = (function (TargetNS) {
 
     TargetNS.Init = function () {
         var $ActionList = $('.SidebarColumn .ActionList').first(),
+            ClassMatch,
             URL;
 
         if (!$ActionList.length || $ActionList.find('.GovernanceDBGeneralCatalogDocument').length) {
@@ -23,6 +24,10 @@ Core.Agent.Admin.GeneralCatalogDocument = (function (TargetNS) {
         }
 
         URL = Core.Config.Get('Baselink') + 'Action=AgentGeneralCatalogDocument;ReturnAction=AdminGeneralCatalog';
+        ClassMatch = window.location.href.match(/[?;]Class=([^;&]+)/);
+        if (ClassMatch && ClassMatch[1] && ClassMatch[1] !== 'NEW') {
+            URL += ';Class=' + encodeURIComponent(decodeURIComponent(ClassMatch[1].replace(/\+/g, ' ')));
+        }
 
         $('<li/>').append(
             $('<a/>', {
@@ -33,7 +38,7 @@ Core.Agent.Admin.GeneralCatalogDocument = (function (TargetNS) {
                     $('<i/>', {
                         'class': 'fa fa-code'
                     }),
-                    'Import / Export YAML/JSON'
+                    'Import / Export Catalog YAML/JSON'
                 )
             )
         ).appendTo($ActionList);

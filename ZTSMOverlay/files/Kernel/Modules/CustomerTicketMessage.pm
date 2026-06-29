@@ -200,6 +200,7 @@ sub Run {
     $GetParam{ZTSMRaiseOnBehalfCustomerUserLabel} = $EffectiveCustomer{OnBehalfCustomerUserLabel} || '';
     $GetParam{ZTSMEffectiveCustomerUserID}        = $EffectiveCustomer{UserID};
     $GetParam{ZTSMEffectiveCustomerID}            = $EffectiveCustomer{CustomerID};
+    $GetParam{ZTSMEffectiveCustomerUserLabel}     = $EffectiveCustomer{CustomerUserLabel};
 
     $Self->_ZTSMRequestDefaultsHydrate(
         DynamicFieldValues => \%DynamicFieldValues,
@@ -1352,7 +1353,6 @@ sub Run {
             }
         }
 
-        my $CustomerUser   = $Self->{UserID};
         my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
 
         # get list type
@@ -1383,10 +1383,9 @@ sub Run {
             Fields    => 0,
         );
         my %ChangedElements = $ElementChanged ? ( $ElementChanged => 1 ) : ();
-            if ( $ChangedElements{ServiceID} ) {
-                $ChangedElements{CustomerUserID} = 1;
-                $ChangedElements{CustomerID}     = 1;
-
+        if ( $ChangedElements{ServiceID} || $ChangedElements{ZTSMRaiseOnBehalfCustomerUserID} ) {
+            $ChangedElements{CustomerUserID} = 1;
+            $ChangedElements{CustomerID}     = 1;
             $GetParam{CustomerUserID} = $EffectiveCustomer{UserID};
             $GetParam{CustomerID}     = $EffectiveCustomer{CustomerID};
         }
@@ -2400,7 +2399,8 @@ sub _ZTSMEffectiveCustomerUser {
             || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserCustomerID} : '' ),
         UserEmail => $TargetUser{UserEmail}
             || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserEmail} : '' ),
-        CustomerName => $CustomerName,
+        CustomerName       => $CustomerName,
+        CustomerUserLabel  => $Label,
     );
 
     if ( $TargetUserID && lc $TargetUserID ne lc( $Self->{UserID} || '' ) ) {
