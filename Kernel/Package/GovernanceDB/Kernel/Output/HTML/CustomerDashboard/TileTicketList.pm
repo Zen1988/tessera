@@ -331,7 +331,10 @@ sub _ZTSMWorkableTicketIDs {
         }
     }
 
-    return @Candidate;
+    return _PermissionFilter(
+        CustomerUserID => $Param{CustomerUserID},
+        TicketIDs      => \@Candidate,
+    );
 }
 
 sub _TypeColor {

@@ -381,10 +381,23 @@ Returns:
 =cut
 
 sub TicketCreateNumber {
-    my ( $Self, $Offset ) = @_;    # Offset is an internal offset value for the new counter entry.
+    my ( $Self, @Param ) = @_;
+
+    my %Param;
+
+    # Backward compatible support for the historical positional offset argument.
+    if ( @Param == 1 && !ref $Param[0] ) {
+        $Param{Offset} = $Param[0];
+    }
+    else {
+        %Param = @Param;
+    }
 
     # Try to generate a new ticket number.
-    my $TicketNumber = $Self->TicketNumberBuild($Offset);
+    my $TicketNumber = $Self->TicketNumberBuild(
+        $Param{Offset},
+        %Param,
+    );
     return if !$TicketNumber;
 
     my $TicketNumberAlreadyUsed = $Kernel::OM->Get('Kernel::System::Ticket')->TicketIDLookup(
@@ -411,7 +424,9 @@ sub TicketCreateNumber {
         Message  => "TicketNumber ($TicketNumber) exists! Creating a new one.",
     );
 
-    return $Self->TicketCreateNumber( $Self->{LoopProtectionCounter} );
+    $Param{Offset} = $Self->{LoopProtectionCounter};
+
+    return $Self->TicketCreateNumber(%Param);
 }
 
 =head1 PRIVATE INTERFACE

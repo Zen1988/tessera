@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# $origin: otobo - e423ee3f4f0faf7995db27018567746054da97e5 - Kernel/Modules/CustomerTicketMessage.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -98,6 +100,11 @@ sub new {
         }
     }
 
+    $Self->_ServiceExtensionDynamicFieldsLoad(
+        DynamicFieldObject        => $DynamicFieldObject,
+        DynamicFieldBackendObject => $BackendObject,
+    );
+
     # get form id
     $Self->{FormID} = $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
         ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
@@ -147,6 +154,10 @@ sub Run {
     for my $Key (qw( Subject Body PriorityID TypeID ServiceID SLAID Dest FromChatID)) {
         $GetParam{$Key} = $ParamObject->GetParam( Param => $Key );
     }
+    my $OnBehalfCustomerUserID = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserID' ) || '';
+    my $OnBehalfCustomerSearch = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserSearch' ) || '';
+    $OnBehalfCustomerUserID ||= $OnBehalfCustomerSearch;
+    my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
 
     # get Dynamic fields from ParamObject
     my %DynamicFieldValues;
@@ -179,12 +190,102 @@ sub Run {
         $DynamicFieldACLParameters{ 'DynamicField_' . $DynamicField } = $DynamicFieldValues{$DynamicField};
     }
     $GetParam{DynamicField} = \%DynamicFieldACLParameters;
+    $Self->_ServiceExtensionDynamicFieldValuesSync(
+        GetParam => \%GetParam,
+    );
+
+    my %EffectiveCustomer = $Self->_ZTSMEffectiveCustomerUser(
+        CustomerUserID => $OnBehalfCustomerUserID,
+    );
+    $GetParam{ZTSMRaiseOnBehalfCustomerUserID}    = $EffectiveCustomer{OnBehalfCustomerUserID} || '';
+    $GetParam{ZTSMRaiseOnBehalfCustomerUserLabel} = $EffectiveCustomer{OnBehalfCustomerUserLabel} || '';
+    $GetParam{ZTSMEffectiveCustomerUserID}        = $EffectiveCustomer{UserID};
+    $GetParam{ZTSMEffectiveCustomerID}            = $EffectiveCustomer{CustomerID};
+    $GetParam{ZTSMEffectiveCustomerUserLabel}     = $EffectiveCustomer{CustomerUserLabel};
+
+    my %ZTSMRequesterDefaultsDebug = (
+        RequestedCustomerUserID => $OnBehalfCustomerUserID || '',
+        EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
+        EffectiveCustomerID     => $EffectiveCustomer{CustomerID} || '',
+        LoginCustomerUserID     => $Self->{UserID} || '',
+        Subaction               => $Self->{Subaction} || '',
+        ElementChanged          => $ElementChanged || '',
+    );
+
+    $Self->_ZTSMRequestDefaultsHydrate(
+        DynamicFieldValues => \%DynamicFieldValues,
+        GetParam           => \%GetParam,
+        CustomerUserID     => $EffectiveCustomer{UserID},
+        Force              => $Self->{Subaction}
+            && ( $Self->{Subaction} eq 'AJAXUpdate' || $Self->{Subaction} eq 'ZTSMServiceExtensionDynamicFields' )
+            && $ElementChanged eq 'ZTSMRaiseOnBehalfCustomerUserID',
+        Debug              => \%ZTSMRequesterDefaultsDebug,
+    );
+    $GetParam{ZTSMRequesterDefaultsDebug} = \%ZTSMRequesterDefaultsDebug;
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $QueueObject  = $Kernel::OM->Get('Kernel::System::Queue');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     my $Config = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
+
+# Rother OSS / ITSMCore - calculate Priority via CIP matrix
+    my $CIPCalculate = $Config->{PriorityByCIP} // $ConfigObject->Get('ITSM::Frontend::CIPAllocationDefault');
+    my $ServiceObject;
+    my $CIPAllocateObject;
+    if ( $CIPCalculate ) {
+        $ServiceObject     = $Kernel::OM->Get('Kernel::System::Service');
+        $CIPAllocateObject = $Kernel::OM->Get('Kernel::System::ITSMCIPAllocate');
+
+        $Self->{InternalDependancy}{ServiceID}{PriorityID}                    = 1;
+        $Self->{InternalDependancy}{DynamicField_ITSMImpact}{PriorityID}      = 1;
+        $Self->{InternalDependancy}{DynamicField_ITSMCriticality}{PriorityID} = 1;
+    }
+# EO ITSMCore
+
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMServicePayloadReferenceResolve' ) {
+        my $ReferenceResult = $Self->_ZTSMServicePayloadReferenceResolve(
+            LayoutObject => $LayoutObject,
+            ParamObject  => $ParamObject,
+        );
+
+        return $LayoutObject->JSONReply(
+            Data => $ReferenceResult,
+        );
+    }
+
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMCustomerUserSearch' ) {
+        return $Self->_ZTSMCustomerUserSearchJSON(
+            LayoutObject => $LayoutObject,
+            ParamObject  => $ParamObject,
+        );
+    }
+
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMServiceExtensionDynamicFields' ) {
+        my %Visibility;
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => \%Visibility,
+        );
+
+        my $DynamicFieldHTML = $Self->_ServiceExtensionDynamicFieldHTMLBuild(
+            DynamicFieldValues => $GetParam{DynamicField},
+            LayoutObject       => $LayoutObject,
+            ParamObject        => $ParamObject,
+            ServiceID          => $GetParam{ServiceID},
+            Visibility         => \%Visibility,
+            ZTSMEffectiveCustomerID     => $EffectiveCustomer{CustomerID},
+            ZTSMEffectiveCustomerUserID => $EffectiveCustomer{UserID},
+            ZTSMRequesterDefaultsDebug  => $GetParam{ZTSMRequesterDefaultsDebug},
+        );
+
+        return $LayoutObject->Attachment(
+            ContentType => 'text/html; charset=utf-8',
+            Content     => $DynamicFieldHTML || '',
+            Type        => 'inline',
+            NoCache     => 1,
+        );
+    }
 
     if ( $GetParam{FromChatID} ) {
         if ( !$ConfigObject->Get('ChatEngine::Active') ) {
@@ -208,6 +309,22 @@ sub Run {
     }
 
     if ( !$Self->{Subaction} ) {
+
+# Rother OSS / ServiceCatalog
+        my %ServiceData;
+        if ( $GetParam{ServiceID} ) {
+            my %Service = $Kernel::OM->Get('Kernel::System::Service')->ServiceGet(
+                ServiceID => $GetParam{ServiceID},
+                UserID    => 1,
+            );
+
+            # check if we really should use ServiceCatalog functionality
+            if ( exists $Service{DestQueueID} ) {
+                $ServiceData{ServiceID} = $GetParam{ServiceID};
+                $ServiceData{TypeID}    = $GetParam{TypeID};
+            }
+        }
+# EO ServiceCatalog
 
         # Get default Queue ID if none is set
         my $QueueDefaultID;
@@ -284,6 +401,15 @@ sub Run {
         my %ChangedElementsDFStart;
         my %ChangedStdFields;
 
+# Rother OSS / ITSMCore - calculate Priority via CIP matrix
+        if ( $CIPCalculate && $GetParam{DynamicField}{DynamicField_ITSMImpact}
+            && ( $GetParam{DynamicField}{DynamicField_ITSMCriticality} || $GetParam{ServiceID} ) ) {
+
+            # if we have an initial criticality and impact, trigger priority calculation
+            $ChangedElements{DynamicField_ITSMImpact} = 1;
+        }
+# EO ITSMCore
+
         my $LoopProtection = 100;
         my %StdFieldValues;
         my %DynFieldStates = (
@@ -312,10 +438,6 @@ sub Run {
                     FIELD:
                     for my $FieldID ( sort keys %Check ) {
                         if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$FieldID not defined in TicketACL preselection rules!"
-                            );
                             next FIELD;
                         }
                         if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
@@ -330,10 +452,6 @@ sub Run {
                                 next FIELD;
                             }
                             if ( !$ACLPreselection->{Fields}{$Element} ) {
-                                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                    Priority => 'debug',
-                                    Message  => "$Element not defined in TicketACL preselection rules!"
-                                );
                                 next FIELD;
                             }
                         }
@@ -352,7 +470,7 @@ sub Run {
                     $StdFieldValues{ $Check{ $Field->{FieldID} } } = $Field->{Method}->(
                         $Self,
                         %GetParam,
-                        CustomerUserID => $Self->{UserID},
+                        CustomerUserID => $EffectiveCustomer{UserID},
                         QueueID        => $GetParam{QueueID},
                         Services       => $StdFieldValues{ServiceID} || undef,    # needed for SLAID
                     );
@@ -377,6 +495,47 @@ sub Run {
                             ) || '';
                         }
                     }
+
+# Rother OSS / ITSMCore - calculate Priority via CIP matrix
+                    elsif ( $Field->{FieldID} eq 'PriorityID' && $CIPCalculate && $GetParam{DynamicField}{DynamicField_ITSMImpact} ) {
+
+                        # get the criticality either from the manually set dynamic field, or the service
+                        my $Criticality = $GetParam{DynamicField_ITSMCriticality};
+
+                        if ( !$Criticality && $GetParam{ServiceID} ) {
+                            my %Service = $ServiceObject->ServiceGet(
+                                ServiceID => $GetParam{ServiceID},
+                                UserID    => 1,
+                            );
+
+                            $Criticality = $Service{Criticality};
+                        }
+
+                        if ( $Criticality ) {
+
+                            # recalculate the priority if any of the impacting elements changed
+                            if ( $ChangedElements{DynamicField_ITSMImpact} || $ChangedElements{ServiceID} || $ChangedElements{DynamicField_ITSMCriticality} ) {
+                                my $PriorityID = $CIPAllocateObject->PriorityAllocationGet(
+                                    Criticality => $Criticality,
+                                    Impact      => $GetParam{DynamicField}{DynamicField_ITSMImpact},
+                                );
+
+                                if ( $StdFieldValues{PriorityID}{ $PriorityID } && $PriorityID ne $GetParam{PriorityID} ) {
+                                    $GetParam{PriorityID}           = $PriorityID;
+                                    $NewChangedElements{PriorityID} = 1;
+                                    $ChangedStdFields{PriorityID}   = 1;
+                                }
+                            }
+
+                            # if we enforce CIPAllocation in any case delete all other priority options
+                            if ( $GetParam{PriorityID} && $CIPCalculate == 2 ) {
+                                $StdFieldValues{PriorityID} = {
+                                    $GetParam{PriorityID} => $StdFieldValues{PriorityID}{ $GetParam{PriorityID} },
+                                };
+                            }
+                        }
+                    }
+# EO ITSMCore
 
                     # check whether current selected value is still valid for the field
                     if (
@@ -441,7 +600,7 @@ sub Run {
                     ChangedElements           => \%ChangedElements,       # optional to reduce ACL evaluation
                     Action                    => $Self->{Action},
                     FormID                    => $Self->{FormID},
-                    CustomerUser              => $Self->{UserID},
+                    CustomerUser              => $EffectiveCustomer{UserID},
                     GetParam                  => {
                         %GetParam,
                     },
@@ -484,10 +643,14 @@ sub Run {
                 ? $DynFieldStates{Fields}{$_}{PossibleValues}
                 : undef
         } ( keys $Self->{DynamicField}->%* );
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => $DynFieldStates{Visibility},
+        );
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -518,7 +681,10 @@ sub Run {
             HideAutoselected => $HideAutoselectedJSON,
             Visibility       => $DynFieldStates{Visibility},
             VisibilityStd    => \%VisibilityStd,
-            DFPossibleValues => \%DynamicFieldPossibleValues
+            DFPossibleValues => \%DynamicFieldPossibleValues,
+# Rother OSS / ServiceCatalog
+            ServiceData      => \%ServiceData,
+# EO ServiceCatalog
         );
         $Output .= $LayoutObject->CustomerNavigationBar();
         $Output .= $LayoutObject->CustomerFooter();
@@ -557,12 +723,15 @@ sub Run {
 
         # use default if ticket type is not available in screen but activated on system
         if ( $ConfigObject->Get('Ticket::Type') && !$Config->{'TicketType'} ) {
-            my %TypeList = reverse $TicketObject->TicketTypeList(
+            my %TypeList = $TicketObject->TicketTypeList(
                 %Param,
                 Action         => $Self->{Action},
-                CustomerUserID => $Self->{UserID},
+                CustomerUserID => $EffectiveCustomer{UserID},
             );
-            $GetParam{TypeID} = $TypeList{ $Config->{'TicketTypeDefault'} };
+            $Self->_ZTSMRequestTypesFilter( Type => \%TypeList );
+
+            my %ReverseTypeList = reverse %TypeList;
+            $GetParam{TypeID} = $ReverseTypeList{ $Config->{'TicketTypeDefault'} };
             if ( !$GetParam{TypeID} ) {
                 $LayoutObject->CustomerFatalError(
                     Message =>
@@ -579,6 +748,41 @@ sub Run {
             FormID => $Self->{FormID},
         );
 
+# Rother OSS / ITSMCore - calculate Priority via CIP matrix
+        if ( $CIPCalculate && $CIPCalculate == 2 && $GetParam{DynamicField}{DynamicField_ITSMImpact} && $Config->{Priority} ) {
+
+            # get the criticality either from the manually set dynamic field, or the service
+            my $Criticality = $GetParam{DynamicField_ITSMCriticality};
+
+            if ( !$Criticality && $GetParam{ServiceID} ) {
+                my %Service = $ServiceObject->ServiceGet(
+                    ServiceID => $GetParam{ServiceID},
+                    UserID    => 1,
+                );
+
+                $Criticality = $Service{Criticality};
+            }
+
+            if ( $Criticality ) {
+                my $PriorityID = $CIPAllocateObject->PriorityAllocationGet(
+                    Criticality => $Criticality,
+                    Impact      => $GetParam{DynamicField}{DynamicField_ITSMImpact},
+                );
+
+                if ( $PriorityID ne $GetParam{PriorityID} ) {
+
+                    # this should never happen; we just enforce the prio and write an error to the log file here
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'error',
+                        Message  => "Got PriorityID '$GetParam{PriorityID}', but CIP enforces '$PriorityID' - overriding the frontend value.",
+                    );
+
+                    $GetParam{PriorityID} = $PriorityID;
+                }
+            }
+        }
+# EO ITSMCore
+
         # skip validation of hidden fields
         my %Visibility;
 
@@ -588,7 +792,7 @@ sub Run {
         # call ticket ACLs for DynamicFields to check field visibility
         my $ACLResult = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             TicketID       => $Self->{TicketID},
             ReturnType     => 'Form',
@@ -605,6 +809,13 @@ sub Run {
         else {
             %Visibility = map { 'DynamicField_' . $_ => 1 } keys $Self->{DynamicField}->%*;
         }
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => \%Visibility,
+        );
+        $Self->_ServiceExtensionMandatoryApply(
+            ServiceID => $GetParam{ServiceID},
+        );
 
         # remember dynamic field validation results if erroneous
         my %DynamicFieldValidationResult;
@@ -644,7 +855,7 @@ sub Run {
                         ReturnType     => 'Ticket',
                         ReturnSubType  => 'DynamicField_' . $DynamicFieldConfig->{Name},
                         Data           => \%AclData,
-                        CustomerUserID => $Self->{UserID},
+                        CustomerUserID => $EffectiveCustomer{UserID},
                     );
                     if ($ACL) {
                         my %Filter = $TicketObject->TicketAclData();
@@ -749,7 +960,7 @@ sub Run {
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -810,6 +1021,16 @@ sub Run {
         if ( $ConfigObject->Get('Ticket::Type') && !$GetParam{TypeID} ) {
             $Error{TypeIDInvalid} = 'ServerError';
         }
+        elsif ( $ConfigObject->Get('Ticket::Type') && $GetParam{TypeID} ) {
+            my $AllowedType = $Self->_GetTypes(
+                %GetParam,
+                QueueID => $NewQueueID || 1,
+            );
+
+            if ( !$AllowedType->{ $GetParam{TypeID} } ) {
+                $Error{TypeIDInvalid} = 'ServerError';
+            }
+        }
 
         if (%Error) {
 
@@ -849,6 +1070,19 @@ sub Run {
             $GetParam{Priority}   = $Config->{PriorityDefault};
         }
 
+# Rother OSS / ServiceCatalog Move ticket in queue based on service information
+        if ( $GetParam{ServiceID} ) {
+            my %ServiceData = $Kernel::OM->Get('Kernel::System::Service')->ServiceGet(
+                ServiceID => $GetParam{ServiceID},
+                UserID    => 1,
+            );
+
+            if ( $ServiceData{DestQueueID} ) {
+                $NewQueueID = $ServiceData{DestQueueID};
+            }
+        }
+# EO ServiceCatalog
+
         # create new ticket, do db insert
         my $TicketID = $TicketObject->TicketCreate(
             QueueID      => $NewQueueID,
@@ -860,8 +1094,8 @@ sub Run {
             Priority     => $GetParam{Priority},
             Lock         => 'unlock',
             State        => $Config->{StateDefault},
-            CustomerID   => $Self->{UserCustomerID},
-            CustomerUser => $Self->{UserLogin},
+            CustomerID   => $EffectiveCustomer{CustomerID},
+            CustomerUser => $EffectiveCustomer{UserLogin},
             OwnerID      => $ConfigObject->Get('CustomerPanelUserID'),
             UserID       => $ConfigObject->Get('CustomerPanelUserID'),
         );
@@ -884,6 +1118,12 @@ sub Run {
             );
         }
 
+        $Self->_ZTSMRequesterOwnerSnapshotSet(
+            TicketID        => $TicketID,
+            CustomerUserID  => $EffectiveCustomer{UserID},
+            UserID          => $ConfigObject->Get('CustomerPanelUserID'),
+        );
+
         # if no article has to be created clean up and return
         if ( !$VisibilityStd{Article} ) {
 
@@ -905,7 +1145,45 @@ sub Run {
         my $MimeType = 'text/plain';
         if ( $LayoutObject->{BrowserRichText} ) {
             $MimeType = 'text/html';
+        }
 
+        my $ServiceExtensionSnapshot = $Self->_ServiceExtensionArticleSnapshotBuild(
+            DynamicFieldValues => \%DynamicFieldValues,
+            HTMLOutput         => $LayoutObject->{BrowserRichText} ? 1 : 0,
+            LayoutObject       => $LayoutObject,
+            ServiceID          => $GetParam{ServiceID},
+            Visibility         => \%Visibility,
+        );
+
+        if ($ServiceExtensionSnapshot) {
+            if ( $LayoutObject->{BrowserRichText} ) {
+                $GetParam{Body} .= '<br/><br/>' . $ServiceExtensionSnapshot;
+            }
+            else {
+                $GetParam{Body} .= "\n\n" . $ServiceExtensionSnapshot;
+            }
+        }
+
+        if ( $EffectiveCustomer{OnBehalfCustomerUserID} ) {
+            my $AuditText = "Raised on behalf of: $EffectiveCustomer{OnBehalfCustomerUserLabel}\n"
+                . "Submitted by: $Self->{UserID}";
+
+            if ( $LayoutObject->{BrowserRichText} ) {
+                my $AuditHTML = $LayoutObject->Ascii2Html(
+                    Text           => $AuditText,
+                    HTMLResultMode => 1,
+                );
+                $GetParam{Body} = '<p><strong>Raise on behalf</strong></p><p>'
+                    . $AuditHTML
+                    . '</p><br/>'
+                    . $GetParam{Body};
+            }
+            else {
+                $GetParam{Body} = "Raise on behalf\n\n$AuditText\n\n" . $GetParam{Body};
+            }
+        }
+
+        if ( $LayoutObject->{BrowserRichText} ) {
             # verify html document
             $GetParam{Body} = $LayoutObject->RichTextDocumentComplete(
                 String => $GetParam{Body},
@@ -1092,9 +1370,6 @@ sub Run {
             }
         }
 
-        my $CustomerUser   = $Self->{UserID};
-        my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
-
         # get list type
         my $TreeView = 0;
         if ( $ConfigObject->Get('Ticket::Frontend::ListType') eq 'tree' ) {
@@ -1123,12 +1398,11 @@ sub Run {
             Fields    => 0,
         );
         my %ChangedElements = $ElementChanged ? ( $ElementChanged => 1 ) : ();
-        if ( $ChangedElements{ServiceID} ) {
+        if ( $ChangedElements{ServiceID} || $ChangedElements{ZTSMRaiseOnBehalfCustomerUserID} ) {
             $ChangedElements{CustomerUserID} = 1;
             $ChangedElements{CustomerID}     = 1;
-
-            $GetParam{CustomerUserID} = $Self->{UserID};
-            $GetParam{CustomerID}     = $Self->{UserCustomerID};
+            $GetParam{CustomerUserID} = $EffectiveCustomer{UserID};
+            $GetParam{CustomerID}     = $EffectiveCustomer{CustomerID};
         }
         my %ChangedElementsDFStart = %ChangedElements;
         my %ChangedStdFields       = $ElementChanged && $ElementChanged !~ /^DynamicField_/ ? %ChangedElements : ();
@@ -1160,10 +1434,6 @@ sub Run {
                     FIELD:
                     for my $FieldID ( sort keys %Check ) {
                         if ( !$ACLPreselection->{Fields}{$FieldID} ) {
-                            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                Priority => 'debug',
-                                Message  => "$FieldID not defined in TicketACL preselection rules!"
-                            );
                             next FIELD;
                         }
                         if ( $Autoselect && $Autoselect->{$FieldID} && $ChangedElements{$FieldID} ) {
@@ -1178,10 +1448,6 @@ sub Run {
                                 next FIELD;
                             }
                             if ( !$ACLPreselection->{Fields}{$Element} ) {
-                                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                                    Priority => 'debug',
-                                    Message  => "$Element not defined in TicketACL preselection rules!"
-                                );
                                 next FIELD;
                             }
                         }
@@ -1200,7 +1466,7 @@ sub Run {
                     $StdFieldValues{ $Check{ $Field->{FieldID} } } = $Field->{Method}->(
                         $Self,
                         %GetParam,
-                        CustomerUserID => $CustomerUser || '',
+                        CustomerUserID => $EffectiveCustomer{UserID},
                         QueueID        => $GetParam{QueueID},
                         Services       => $StdFieldValues{ServiceID} || undef,    # needed for SLAID
                     );
@@ -1225,6 +1491,47 @@ sub Run {
                             ) || '';
                         }
                     }
+
+# Rother OSS / ITSMCore - calculate Priority via CIP matrix
+                    elsif ( $Field->{FieldID} eq 'PriorityID' && $CIPCalculate && $GetParam{DynamicField}{DynamicField_ITSMImpact} ) {
+
+                        # get the criticality either from the manually set dynamic field, or the service
+                        my $Criticality = $GetParam{DynamicField_ITSMCriticality};
+
+                        if ( !$Criticality && $GetParam{ServiceID} ) {
+                            my %Service = $ServiceObject->ServiceGet(
+                                ServiceID => $GetParam{ServiceID},
+                                UserID    => 1,
+                            );
+
+                            $Criticality = $Service{Criticality};
+                        }
+
+                        if ( $Criticality ) {
+
+                            # recalculate the priority if any of the impacting elements changed
+                            if ( $ChangedElements{DynamicField_ITSMImpact} || $ChangedElements{ServiceID} || $ChangedElements{DynamicField_ITSMCriticality} ) {
+                                my $PriorityID = $CIPAllocateObject->PriorityAllocationGet(
+                                    Criticality => $Criticality,
+                                    Impact      => $GetParam{DynamicField}{DynamicField_ITSMImpact},
+                                );
+
+                                if ( $StdFieldValues{PriorityID}{ $PriorityID } && $PriorityID ne $GetParam{PriorityID} ) {
+                                    $GetParam{PriorityID}           = $PriorityID;
+                                    $NewChangedElements{PriorityID} = 1;
+                                    $ChangedStdFields{PriorityID}   = 1;
+                                }
+                            }
+
+                            # if we enforce CIPAllocation in any case delete all other priority options
+                            if ( $GetParam{PriorityID} && $CIPCalculate == 2 ) {
+                                $StdFieldValues{PriorityID} = {
+                                    $GetParam{PriorityID} => $StdFieldValues{PriorityID}{ $GetParam{PriorityID} },
+                                };
+                            }
+                        }
+                    }
+# EO ITSMCore
 
                     # check whether current selected value is still valid for the field
                     if (
@@ -1289,7 +1596,7 @@ sub Run {
                     ChangedElements           => \%ChangedElements,       # optional to reduce ACL evaluation
                     Action                    => $Self->{Action},
                     FormID                    => $Self->{FormID},
-                    CustomerUser              => $Self->{UserID},
+                    CustomerUser              => $EffectiveCustomer{UserID},
                     GetParam                  => {
                         %GetParam,
                     },
@@ -1486,6 +1793,28 @@ sub Run {
             }
         }
 
+        $Self->_ServiceExtensionVisibilityApply(
+            ServiceID  => $GetParam{ServiceID},
+            Visibility => $DynFieldStates{Visibility},
+        );
+        $Self->_ServiceExtensionMandatoryApply(
+            ServiceID => $GetParam{ServiceID},
+        );
+        my %DynamicFieldPossibleValues = map {
+            'DynamicField_' . $_ => defined $DynFieldStates{Fields}{$_}
+                ? $DynFieldStates{Fields}{$_}{PossibleValues}
+                : undef
+        } ( keys $Self->{DynamicField}->%* );
+        my $ServiceExtensionDynamicFieldHTML = $Self->_ServiceExtensionDynamicFieldHTMLBuild(
+            DynamicFieldValues   => $GetParam{DynamicField},
+            LayoutObject         => $LayoutObject,
+            ParamObject          => $ParamObject,
+            PossibleValuesFilter => \%DynamicFieldPossibleValues,
+            ServiceID            => $GetParam{ServiceID},
+            Visibility           => $DynFieldStates{Visibility},
+            ZTSMEffectiveCustomerID     => $EffectiveCustomer{CustomerID},
+            ZTSMEffectiveCustomerUserID => $EffectiveCustomer{UserID},
+        );
         if ( IsHashRefWithData( $DynFieldStates{Visibility} ) ) {
             push @DynamicFieldAJAX, {
                 Name => 'Restrictions_Visibility',
@@ -1495,7 +1824,7 @@ sub Run {
 
         my $ACLResultStd = $TicketObject->TicketAcl(
             %GetParam,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomer{UserID},
             Action         => $Self->{Action},
             ReturnType     => 'FormStd',
             ReturnSubType  => '-',
@@ -1523,6 +1852,10 @@ sub Run {
             Name => 'Restrictions_Visibility_Std',
             Data => \%VisibilityStd,
         };
+        push @DynamicFieldAJAX, {
+            Name => 'ZTSMServiceExtensionDynamicFieldHTML',
+            Data => $ServiceExtensionDynamicFieldHTML || '',
+        };
 
         # build AJAX return for the standard fields
         my @StdFieldAJAX;
@@ -1539,9 +1872,10 @@ sub Run {
             },
             ServiceID => {
                 PossibleNone => 1,
-                Translation  => $TreeView,
-                TreeView     => $TreeView,
-                Max          => 100,
+                Translation  => 0,
+                TreeView     => 1,
+                Sort         => 'TreeView',
+                Max          => 200,
             },
             SLAID => {
                 PossibleNone => 1,
@@ -1585,6 +1919,228 @@ sub Run {
     }
 }
 
+sub _ZTSMServicePayloadReferenceResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $Field        = $ParamObject->GetParam( Param => 'Field' ) || '';
+    my $Value        = $ParamObject->GetParam( Param => 'Value' ) // '';
+    my $FieldName;
+
+    if ( $Field =~ m{\A(?:Autocomplete(?:_Search)?_)?DynamicField_([A-Za-z0-9\-]*?)(?:_[0-9]+){0,2}\z}xms ) {
+        $FieldName = $1;
+    }
+
+    return {
+        Success => 0,
+        Message => 'Need reference field.',
+    } if !$FieldName;
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldConfig        = $DynamicFieldObject->DynamicFieldGet(
+        Name => $FieldName,
+    );
+
+    if (
+        !IsHashRefWithData($DynamicFieldConfig)
+        || !$DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Behavior           => 'IsReferenceField',
+        )
+        )
+    {
+        return {
+            Success => 0,
+            Message => "Dynamic field '$FieldName' is not a reference field.",
+        };
+    }
+
+    my $SearchValue = $Self->_ZTSMServicePayloadReferenceImportValue($Value);
+    return {
+        Success => 1,
+        Key     => '',
+        Value   => '',
+    } if !$SearchValue;
+
+    if ( $SearchValue =~ s{::\s*(\d+)\s*\z}{} ) {
+        my $ObjectID = $1;
+        return $Self->_ZTSMServicePayloadReferenceResult(
+            DynamicFieldBackendObject => $DynamicFieldBackendObject,
+            DynamicFieldConfig        => $DynamicFieldConfig,
+            LayoutObject              => $LayoutObject,
+            ObjectID                  => $ObjectID,
+            SearchValues              => [ $Value, $SearchValue ],
+        );
+    }
+
+    my @SearchTerms = ($SearchValue);
+    if ( $Value && $Value ne $SearchValue ) {
+        push @SearchTerms, $Value;
+    }
+
+    my %CandidateSeen;
+    TERM:
+    for my $Term (@SearchTerms) {
+        next TERM if !defined $Term || $Term eq '';
+
+        my @ObjectIDs = $DynamicFieldBackendObject->SearchObjects(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Term               => $Term,
+            MaxResults         => 50,
+            ExternalSource     => 1,
+            UserID             => 1,
+        );
+
+        OBJECTID:
+        for my $ObjectID (@ObjectIDs) {
+            next OBJECTID if !$ObjectID;
+            next OBJECTID if $CandidateSeen{$ObjectID}++;
+
+            my $Result = $Self->_ZTSMServicePayloadReferenceResult(
+                DynamicFieldBackendObject => $DynamicFieldBackendObject,
+                DynamicFieldConfig        => $DynamicFieldConfig,
+                LayoutObject              => $LayoutObject,
+                ObjectID                  => $ObjectID,
+                SearchValues              => [ $Value, $SearchValue, $Term ],
+            );
+            return $Result if $Result->{Success};
+        }
+    }
+
+    return {
+        Success => 0,
+        Message => "Could not resolve '$Value' for $FieldName.",
+    };
+}
+
+sub _ZTSMServicePayloadReferenceResult {
+    my ( $Self, %Param ) = @_;
+
+    return { Success => 0 } if !$Param{ObjectID};
+    return { Success => 0 } if !$Self->_ZTSMServicePayloadReferenceClassAllowed(%Param);
+
+    my $Description = $Param{DynamicFieldBackendObject}->ObjectDescriptionGet(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        LayoutObject       => $Param{LayoutObject},
+        ObjectID           => $Param{ObjectID},
+    ) || {};
+
+    my @Labels = grep { defined $_ && $_ ne '' } (
+        $Description->{Long},
+        $Description->{Normal},
+        $Description->{Short},
+    );
+
+    my $ObjectData = $Self->_ZTSMServicePayloadReferenceObjectGet(%Param);
+    if ( IsHashRefWithData($ObjectData) ) {
+        push @Labels, grep { defined $_ && $_ ne '' } (
+            $ObjectData->{Name},
+            $ObjectData->{Number},
+        );
+    }
+
+    my %Wanted;
+    for my $SearchValue ( @{ $Param{SearchValues} || [] } ) {
+        my $Normalized = $Self->_ZTSMServicePayloadReferenceNormalize($SearchValue);
+        $Wanted{$Normalized} = 1 if $Normalized;
+    }
+
+    LABEL:
+    for my $Label (@Labels) {
+        my $NormalizedLabel = $Self->_ZTSMServicePayloadReferenceNormalize($Label);
+        next LABEL if !$NormalizedLabel;
+        next LABEL if !$Wanted{$NormalizedLabel};
+
+        return {
+            Success => 1,
+            Key     => "$Param{ObjectID}",
+            Value   => $Description->{Long} || $Description->{Normal} || $Label,
+        };
+    }
+
+    return {
+        Success => 0,
+        Message => "Object '$Param{ObjectID}' does not match the requested value.",
+    };
+}
+
+sub _ZTSMServicePayloadReferenceClassAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig} || {};
+    return 1 if ( $DynamicFieldConfig->{FieldType} || '' ) ne 'GovernanceObject';
+
+    my $ClassValues = $DynamicFieldConfig->{Config}{ClassIDs};
+    return 1 if !IsArrayRefWithData($ClassValues);
+
+    my $ObjectData = $Self->_ZTSMServicePayloadReferenceObjectGet(%Param);
+    return if !IsHashRefWithData($ObjectData);
+
+    my $ClassList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {};
+    my %ClassName2ID = reverse %{$ClassList};
+    my %AllowedClassID;
+
+    VALUE:
+    for my $Value ( @{$ClassValues} ) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $ClassID = $Value =~ m{\A\d+\z} ? $Value : $ClassName2ID{$Value};
+        next VALUE if !$ClassID;
+
+        $AllowedClassID{$ClassID} = 1;
+    }
+
+    return 1 if !%AllowedClassID;
+    return $AllowedClassID{ $ObjectData->{ClassID} } ? 1 : 0;
+}
+
+sub _ZTSMServicePayloadReferenceObjectGet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ObjectID};
+    return if ( $Param{DynamicFieldConfig}{FieldType} || '' ) ne 'GovernanceObject';
+
+    return $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $Param{ObjectID},
+        DynamicFields      => 0,
+        UserID             => 1,
+        Silent             => 1,
+    );
+}
+
+sub _ZTSMServicePayloadReferenceImportValue {
+    my ( $Self, $Value ) = @_;
+
+    $Value //= '';
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return '' if $Value eq '-';
+
+    my $ExplicitID = '';
+    if ( $Value =~ s{::\s*(\d+)\s*\z}{} ) {
+        $ExplicitID = $1;
+    }
+
+    $Value =~ s{\A[A-Za-z][A-Za-z0-9 _-]{1,40}:\s*}{};
+    $Value =~ s{\A\s+|\s+\z}{}g;
+
+    return $ExplicitID ? "$Value::$ExplicitID" : $Value;
+}
+
+sub _ZTSMServicePayloadReferenceNormalize {
+    my ( $Self, $Value ) = @_;
+
+    $Value = $Self->_ZTSMServicePayloadReferenceImportValue($Value);
+    $Value =~ s{::\s*\d+\s*\z}{};
+    $Value =~ s{\s+}{ }g;
+    $Value =~ s{\A\s+|\s+\z}{}g;
+
+    return lc $Value;
+}
+
 sub _GetPriorities {
     my ( $Self, %Param ) = @_;
 
@@ -1597,7 +2153,7 @@ sub _GetPriorities {
         %Priorities = $Kernel::OM->Get('Kernel::System::Ticket')->TicketPriorityList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
 
@@ -1616,10 +2172,977 @@ sub _GetTypes {
         %Type = $Kernel::OM->Get('Kernel::System::Ticket')->TicketTypeList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
+
+    $Self->_ZTSMRequestTypesFilter( Type => \%Type );
+
     return \%Type;
+}
+
+sub _ZTSMRequestTypeNameAllowList {
+    my ($Self) = @_;
+
+    my $RequestType = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::RequestType',
+        Valid => 1,
+    );
+
+    return if !IsHashRefWithData($RequestType);
+
+    my %AllowedName = map { $_ => 1 } values %{$RequestType};
+
+    return \%AllowedName;
+}
+
+sub _ZTSMRequestTypesFilter {
+    my ( $Self, %Param ) = @_;
+
+    my $Type = $Param{Type};
+    return if !IsHashRefWithData($Type);
+
+    my $AllowedName = $Self->_ZTSMRequestTypeNameAllowList();
+    return if !IsHashRefWithData($AllowedName);
+
+    TYPEID:
+    for my $TypeID ( sort keys %{$Type} ) {
+        next TYPEID if $AllowedName->{ $Type->{$TypeID} };
+        delete $Type->{$TypeID};
+    }
+
+    return;
+}
+
+sub _ServiceExtensionDynamicFieldsLoad {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject        = $Param{DynamicFieldObject};
+    my $DynamicFieldBackendObject = $Param{DynamicFieldBackendObject};
+
+    return if !$DynamicFieldObject || !$DynamicFieldBackendObject;
+
+    my $ServiceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZService-Field',
+    );
+
+    return if !IsHashRefWithData($ServiceFieldConfig);
+    return if $ServiceFieldConfig->{ObjectType} ne 'Service';
+
+    my %ServiceList = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
+        Valid  => 1,
+        UserID => 1,
+    );
+
+    my %FieldNamesByService;
+    my %FieldSpecsByService;
+    my %FieldMandatoryByService;
+    my %FieldNameSeen;
+
+    SERVICEID:
+    for my $ServiceID ( sort keys %ServiceList ) {
+        my $Value = $DynamicFieldBackendObject->ValueGet(
+            DynamicFieldConfig => $ServiceFieldConfig,
+            ObjectID           => $ServiceID,
+            UserID             => 1,
+        );
+
+        my @FieldSpecs = $Self->_ServiceExtensionFieldSpecsParse( Value => $Value );
+        next SERVICEID if !@FieldSpecs;
+
+        my @FieldNames = map { $_->{Name} } @FieldSpecs;
+        $FieldNamesByService{$ServiceID} = \@FieldNames;
+        $FieldSpecsByService{$ServiceID} = \@FieldSpecs;
+        $FieldMandatoryByService{$ServiceID} = {
+            map { $_->{Name} => $_->{Mandatory} ? 1 : 0 } @FieldSpecs
+        };
+        @FieldNameSeen{@FieldNames} = (1) x @FieldNames;
+    }
+
+    return if !%FieldNameSeen;
+
+    my %DefinitionField;
+    my $DefinitionFieldCollect;
+    $DefinitionFieldCollect = sub {
+        my ($Element) = @_;
+
+        return if !IsHashRefWithData($Element);
+
+        if ( $Element->{DF} ) {
+            $DefinitionField{ $Element->{DF} } = 1;
+            return;
+        }
+
+        return if !IsHashRefWithData( $Element->{Grid} ) || !IsArrayRefWithData( $Element->{Grid}{Rows} );
+
+        for my $Row ( $Element->{Grid}{Rows}->@* ) {
+            next if ref $Row ne 'ARRAY';
+
+            for my $Field ( $Row->@* ) {
+                $DefinitionFieldCollect->($Field);
+            }
+        }
+
+        return;
+    };
+    $DefinitionFieldCollect->($_) for $Self->{MaskDefinition}->@*;
+
+    FIELDNAME:
+    for my $FieldName ( sort keys %FieldNameSeen ) {
+        my $DynamicField = $DynamicFieldObject->DynamicFieldGet(
+            Name => $FieldName,
+        );
+
+        if (
+            !IsHashRefWithData($DynamicField)
+            || ( $DynamicField->{ObjectType} ne 'Ticket' && $DynamicField->{ObjectType} ne 'Article' )
+            )
+        {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Service dynamic field ZService-Field references unknown or unsupported field '$FieldName'.",
+            );
+            next FIELDNAME;
+        }
+
+        my $IsCustomerInterfaceCapable = $DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicField,
+            Behavior           => 'IsCustomerInterfaceCapable',
+        );
+        next FIELDNAME if !$IsCustomerInterfaceCapable;
+
+        $Self->{DynamicField}{$FieldName} ||= $DynamicField;
+
+        if ( !$DefinitionField{$FieldName} ) {
+            push $Self->{MaskDefinition}->@*, {
+                DF        => $FieldName,
+                Mandatory => 0,
+            };
+            $DefinitionField{$FieldName} = 1;
+        }
+    }
+
+    $Self->{ZTSMServiceExtensionFields}              = \%FieldNameSeen;
+    $Self->{ZTSMServiceExtensionFieldsByService}     = \%FieldNamesByService;
+    $Self->{ZTSMServiceExtensionFieldSpecsByService} = \%FieldSpecsByService;
+    $Self->{ZTSMServiceExtensionMandatoryByService}  = \%FieldMandatoryByService;
+
+    return 1;
+}
+
+sub _ServiceExtensionFieldSpecsParse {
+    my ( $Self, %Param ) = @_;
+
+    my $Value  = $Param{Value};
+    my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+
+    my @FieldSpecs;
+    my %Seen;
+    VALUE:
+    for my $Item (@Values) {
+        next VALUE if !defined $Item;
+
+        PART:
+        for my $Part ( split m{\s*[|,;\r\n]\s*}, $Item ) {
+            next PART if !$Part;
+
+            $Part =~ s{\A\s+|\s+\z}{}g;
+
+            my ( $FieldName, $Mandatory, $RenderLayout ) = split m{\s*:\s*}, $Part, 3;
+            $FieldName //= '';
+            $FieldName =~ s{\A\s+|\s+\z}{}g;
+            $FieldName =~ s{\ADynamicField_}{};
+            $RenderLayout //= '';
+            $RenderLayout =~ s{\A\s+|\s+\z}{}g;
+
+            next PART if !$FieldName;
+            next PART if $Seen{$FieldName}++;
+
+            push @FieldSpecs, {
+                Name         => $FieldName,
+                Mandatory    => $Mandatory && $Mandatory =~ m{\A1\z} ? 1 : 0,
+                RenderLayout => $RenderLayout =~ m{\A(?:Horizontal|Vertical)\z}i ? ucfirst lc $RenderLayout : undef,
+            };
+        }
+    }
+
+    return @FieldSpecs;
+}
+
+sub _ServiceExtensionFieldNamesParse {
+    my ( $Self, %Param ) = @_;
+
+    return map { $_->{Name} } $Self->_ServiceExtensionFieldSpecsParse(%Param);
+}
+
+sub _ZTSMEffectiveCustomerUser {
+    my ( $Self, %Param ) = @_;
+
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my $TargetUserID       = $Param{CustomerUserID} || '';
+    my %TargetUser;
+
+    if ($TargetUserID) {
+        %TargetUser = $CustomerUserObject->CustomerUserDataGet(
+            User => $TargetUserID,
+        );
+    }
+
+    if ( !%TargetUser ) {
+        $TargetUserID = $Self->{UserID};
+        %TargetUser   = $CustomerUserObject->CustomerUserDataGet(
+            User => $TargetUserID,
+        );
+    }
+
+    my $CustomerName = $CustomerUserObject->CustomerName(
+        UserLogin => $TargetUserID,
+    ) || $TargetUser{UserFullname} || $TargetUserID;
+
+    my $Label = $CustomerName;
+    if ( $TargetUser{UserEmail} ) {
+        $Label .= " <$TargetUser{UserEmail}>";
+    }
+    if ( $TargetUser{UserCustomerID} ) {
+        $Label .= " ($TargetUser{UserCustomerID})";
+    }
+
+    my %Result = (
+        UserID    => $TargetUserID,
+        UserLogin => $TargetUserID,
+        CustomerID => $TargetUser{UserCustomerID}
+            || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserCustomerID} : '' ),
+        UserEmail => $TargetUser{UserEmail}
+            || ( $TargetUserID eq ( $Self->{UserID} || '' ) ? $Self->{UserEmail} : '' ),
+        CustomerName       => $CustomerName,
+        CustomerUserLabel  => $Label,
+    );
+
+    if ( $TargetUserID && lc $TargetUserID ne lc( $Self->{UserID} || '' ) ) {
+        $Result{OnBehalfCustomerUserID}    = $TargetUserID;
+        $Result{OnBehalfCustomerUserLabel} = $Label;
+    }
+
+    return %Result;
+}
+
+sub _ZTSMCustomerUserSearchJSON {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $SearchTerm   = $ParamObject->GetParam( Param => 'Term' ) || '';
+    my $MaxResults   = int( $ParamObject->GetParam( Param => 'MaxResults' ) || 0 ) || 20;
+
+    my %CustomerUserList = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerSearch(
+        Search => $SearchTerm,
+    );
+
+    my @Data;
+    CUSTOMERUSER:
+    for my $CustomerUserID ( sort keys %CustomerUserList ) {
+        my $Label = $CustomerUserList{$CustomerUserID} || $CustomerUserID;
+        $Label =~ s/[\r\n]+/ /g;
+
+        push @Data, {
+            Label => $Label,
+            Value => $CustomerUserID,
+        };
+
+        last CUSTOMERUSER if @Data >= $MaxResults;
+    }
+
+    return $LayoutObject->JSONReply(
+        Data => \@Data,
+    );
+}
+
+sub _ZTSMRequestDefaultsHydrate {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+    return if !IsHashRefWithData( $Param{GetParam} );
+    my $CustomerUserID = $Param{CustomerUserID} || $Self->{UserID};
+    return if !$CustomerUserID;
+
+    my %FieldMap = (
+        'ZUser-Application'  => 'ZTicket-Application',
+        'ZUser-Environment' => 'ZTicket-Env',
+        'ZUser-Location'    => 'ZTicket-Location',
+    );
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my %CustomerUser       = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+        User => $CustomerUserID,
+    );
+    my $Debug = IsHashRefWithData( $Param{Debug} ) ? $Param{Debug} : undef;
+
+    if ($Debug) {
+        $Debug->{HydrateCustomerUserID}    = $CustomerUserID;
+        $Debug->{CustomerUserFound}        = %CustomerUser ? 1 : 0;
+        $Debug->{CustomerUserLogin}        = $CustomerUser{UserLogin} || '';
+        $Debug->{CustomerUserCustomerID}   = $CustomerUser{UserCustomerID} || '';
+        $Debug->{ForceRequesterDefaults}   = $Param{Force} ? 1 : 0;
+        $Debug->{RequesterPreferenceFields} = {};
+    }
+
+    SOURCEFIELD:
+    for my $SourceField ( sort keys %FieldMap ) {
+        my $TargetField = $FieldMap{$SourceField};
+
+        if ( !$Param{Force} && $Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$TargetField} ) ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField    => $SourceField,
+                    Skipped        => 1,
+                    SkipReason     => 'target-already-has-value-and-force-disabled',
+                    ExistingTarget => $Param{DynamicFieldValues}->{$TargetField},
+                };
+            }
+            next SOURCEFIELD;
+        }
+
+        my $TargetFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $TargetField,
+        );
+        if ( !IsHashRefWithData($TargetFieldConfig) ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField => $SourceField,
+                    Skipped     => 1,
+                    SkipReason  => 'missing-target-field-config',
+                };
+            }
+            next SOURCEFIELD;
+        }
+        if ( $TargetFieldConfig->{ObjectType} ne 'Ticket' ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField      => $SourceField,
+                    Skipped          => 1,
+                    SkipReason       => 'target-is-not-ticket-field',
+                    TargetObjectType => $TargetFieldConfig->{ObjectType} || '',
+                };
+            }
+            next SOURCEFIELD;
+        }
+
+        my $MappedDynamicValue = $CustomerUser{"DynamicField_$SourceField"};
+        my $MappedUserValue    = $CustomerUser{"UserDynamicField_$SourceField"};
+        my $SourceValue = $Self->_ZTSMNormalizeValue(
+            defined $MappedDynamicValue
+            ? $MappedDynamicValue
+            : $MappedUserValue
+        );
+        my $SourceOrigin = defined $MappedDynamicValue ? "DynamicField_$SourceField" : "UserDynamicField_$SourceField";
+        if ( !$SourceValue ) {
+            my $SourceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+                Name => $SourceField,
+            );
+            if ( !IsHashRefWithData($SourceFieldConfig) ) {
+                if ($Debug) {
+                    $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                        SourceField        => $SourceField,
+                        Skipped            => 1,
+                        SkipReason         => 'missing-source-field-config',
+                        MappedDynamicValue => $MappedDynamicValue,
+                        MappedUserValue    => $MappedUserValue,
+                    };
+                }
+                next SOURCEFIELD;
+            }
+
+            $SourceValue = $Self->_ZTSMNormalizeValue(
+                $BackendObject->ValueGet(
+                    DynamicFieldConfig => $SourceFieldConfig,
+                    ObjectName         => $CustomerUserID,
+                )
+            );
+            $SourceOrigin = 'DynamicFieldBackend.ValueGet';
+        }
+        if ( !$SourceValue ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField        => $SourceField,
+                    Skipped            => 1,
+                    SkipReason         => 'empty-source-value',
+                    SourceOrigin       => $SourceOrigin,
+                    MappedDynamicValue => $MappedDynamicValue,
+                    MappedUserValue    => $MappedUserValue,
+                };
+            }
+            next SOURCEFIELD;
+        }
+
+        my $IsMultiValue = IsHashRefWithData( $TargetFieldConfig->{Config} )
+            && $TargetFieldConfig->{Config}->{MultiValue};
+        my $Value = $IsMultiValue ? [$SourceValue] : $SourceValue;
+
+        $Param{DynamicFieldValues}->{$TargetField} = $Value;
+        $Param{GetParam}->{DynamicField}{"DynamicField_$TargetField"} = $Value;
+        if ($Debug) {
+            $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                SourceField        => $SourceField,
+                SourceOrigin       => $SourceOrigin,
+                MappedDynamicValue => $MappedDynamicValue,
+                MappedUserValue    => $MappedUserValue,
+                SourceValue        => $SourceValue,
+                IsMultiValue       => $IsMultiValue ? 1 : 0,
+                AppliedValue       => $Value,
+            };
+        }
+    }
+
+    return 1;
+}
+
+sub _ZTSMValueHasData {
+    my ( $Self, $Value ) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        ITEM:
+        for my $Item ( @{$Value} ) {
+            next ITEM if !defined $Item;
+            return 1 if "$Item" ne '';
+        }
+        return;
+    }
+
+    return 1 if ref $Value;
+    return 1 if "$Value" ne '';
+
+    return;
+}
+
+sub _ZTSMNormalizeValue {
+    my ( $Self, $Value ) = @_;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        $Value = $Value->[0];
+    }
+
+    return if !defined $Value;
+    return if ref $Value;
+
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return $Value;
+}
+
+sub _ZTSMRequesterOwnerSnapshotSet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketID};
+    return if !$Param{CustomerUserID};
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZTicket-Owner',
+    );
+    return if !IsHashRefWithData($DynamicFieldConfig);
+    return if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
+
+    my $ExistingValue = $BackendObject->ValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+    );
+    return if $Self->_ZTSMValueHasData($ExistingValue);
+
+    return $BackendObject->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+        Value              => $Param{CustomerUserID},
+        UserID             => $Param{UserID} || 1,
+    );
+}
+
+sub _ServiceExtensionDynamicFieldValuesSync {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if !IsHashRefWithData( $Param{GetParam} );
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        next FIELDNAME if !exists $Param{GetParam}->{$FieldName};
+
+        $Param{GetParam}->{DynamicField}{"DynamicField_$FieldName"} = $Param{GetParam}->{$FieldName};
+    }
+
+    return 1;
+}
+
+sub _ServiceExtensionVisibilityApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if ref $Param{Visibility} ne 'HASH';
+
+    my %VisibleForService;
+    if ( $Param{ServiceID} && IsArrayRefWithData( $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} } ) ) {
+        %VisibleForService = map { $_ => 1 } $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} }->@*;
+    }
+
+    for my $FieldName ( sort keys $Self->{DynamicField}->%* ) {
+        $Param{Visibility}{"DynamicField_$FieldName"} = 1 if !exists $Param{Visibility}{"DynamicField_$FieldName"};
+    }
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        my $Key = "DynamicField_$FieldName";
+
+        if ( !$VisibleForService{$FieldName} ) {
+            $Param{Visibility}{$Key} = 0;
+            next FIELDNAME;
+        }
+
+        $Param{Visibility}{$Key} = 1 if !exists $Param{Visibility}{$Key};
+    }
+
+    return 1;
+}
+
+sub _ServiceExtensionMandatoryApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+
+    my $MandatoryForService = $Param{ServiceID}
+        ? $Self->{ZTSMServiceExtensionMandatoryByService}{ $Param{ServiceID} } || {}
+        : {};
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        next FIELDNAME if !IsHashRefWithData( $Self->{DynamicField}{$FieldName} );
+
+        $Self->{DynamicField}{$FieldName}{Mandatory} = $MandatoryForService->{$FieldName} ? 1 : 0;
+    }
+
+    return 1;
+}
+
+sub _ServiceExtensionMaskDefinitionBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $Content = $Param{Content} || [];
+    return $Content if !IsArrayRefWithData($Content);
+    return $Content if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+
+    my $StripExtensionFields;
+    $StripExtensionFields = sub {
+        my ($Element) = @_;
+        return if !IsHashRefWithData($Element);
+
+        if ( $Element->{DF} ) {
+            return if $Self->{ZTSMServiceExtensionFields}{ $Element->{DF} };
+            return { %{$Element} };
+        }
+
+        if ( IsHashRefWithData( $Element->{Grid} ) && IsArrayRefWithData( $Element->{Grid}{Rows} ) ) {
+            my @Rows;
+            ROW:
+            for my $Row ( $Element->{Grid}{Rows}->@* ) {
+                next ROW if ref $Row ne 'ARRAY';
+
+                my @Fields = grep { IsHashRefWithData($_) } map { $StripExtensionFields->($_) } $Row->@*;
+                push @Rows, \@Fields if @Fields;
+            }
+
+            return if !@Rows;
+
+            my %Grid = %{ $Element->{Grid} };
+            $Grid{Rows} = \@Rows;
+            return {
+                %{$Element},
+                Grid => \%Grid,
+            };
+        }
+
+        return { %{$Element} };
+    };
+
+    my @MaskDefinition = grep { IsHashRefWithData($_) } map { $StripExtensionFields->($_) } $Content->@*;
+
+    my $FieldSpecs = $Param{ServiceID}
+        ? $Self->{ZTSMServiceExtensionFieldSpecsByService}{ $Param{ServiceID} }
+        : undef;
+
+    if ( IsArrayRefWithData($FieldSpecs) ) {
+        FIELD:
+        for my $FieldSpec ( @{$FieldSpecs} ) {
+            next FIELD if !IsHashRefWithData($FieldSpec);
+            next FIELD if !$FieldSpec->{Name};
+
+            if (
+                $FieldSpec->{RenderLayout}
+                && IsHashRefWithData( $Self->{DynamicField}{ $FieldSpec->{Name} } )
+                && ( $Self->{DynamicField}{ $FieldSpec->{Name} }{FieldType} || '' ) eq 'Set'
+                )
+            {
+                $Self->{DynamicField}{ $FieldSpec->{Name} }{Config}{RenderLayout} = $FieldSpec->{RenderLayout};
+            }
+
+            push @MaskDefinition, {
+                DF        => $FieldSpec->{Name},
+                Mandatory => $FieldSpec->{Mandatory} ? 1 : 0,
+            };
+        }
+    }
+
+    return \@MaskDefinition;
+}
+
+sub _ServiceExtensionDynamicFieldHTMLBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject  = $Param{ParamObject}  || $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    $Self->_ServiceExtensionMandatoryApply(
+        ServiceID => $Param{ServiceID},
+    );
+    my $MaskDefinition = $Self->_ServiceExtensionMaskDefinitionBuild(
+        Content   => $Self->{MaskDefinition},
+        ServiceID => $Param{ServiceID},
+    );
+
+    my $HTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
+        Content              => $MaskDefinition,
+        DynamicFields        => $Self->{DynamicField},
+        LayoutObject         => $LayoutObject,
+        ParamObject          => $ParamObject,
+        DynamicFieldValues   => $Param{DynamicFieldValues} || {},
+        PossibleValuesFilter => $Param{PossibleValuesFilter},
+        Errors               => $Param{Errors},
+        Visibility           => $Param{Visibility},
+        CustomerInterface    => 1,
+        Object               => {
+            CustomerID     => $Param{ZTSMEffectiveCustomerID}     || $Self->{UserCustomerID},
+            CustomerUserID => $Param{ZTSMEffectiveCustomerUserID} || $Self->{UserID},
+            %{ $Param{DynamicFieldValues} || {} },
+        },
+    );
+
+    if ( IsHashRefWithData( $Param{ZTSMRequesterDefaultsDebug} ) ) {
+        my $JSON = $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+            Data => $Param{ZTSMRequesterDefaultsDebug},
+        ) || '{}';
+        $HTML =
+            '<script type="application/json" id="ZTSMRequesterDefaultsDebug">'
+            . $LayoutObject->Ascii2Html( Text => $JSON )
+            . '</script>'
+            . ( $HTML || '' );
+    }
+
+    return $HTML;
+}
+
+sub _ServiceExtensionArticleSnapshotBuild {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+    return if !$Param{ServiceID};
+
+    my $ServiceFieldNames = $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} };
+    return if !IsArrayRefWithData($ServiceFieldNames);
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+
+    my @Rows;
+    FIELDNAME:
+    for my $FieldName ( @{$ServiceFieldNames} ) {
+        my $DynamicFieldConfig = $Self->{DynamicField}{$FieldName};
+        next FIELDNAME if !IsHashRefWithData($DynamicFieldConfig);
+        next FIELDNAME if $Param{Visibility} && !$Param{Visibility}{"DynamicField_$FieldName"};
+
+        my $Value = $Param{DynamicFieldValues}->{ $DynamicFieldConfig->{Name} };
+        next FIELDNAME if !defined $Value;
+        next FIELDNAME if ref $Value eq 'ARRAY' && !@{$Value};
+        next FIELDNAME if !ref $Value && $Value eq '';
+
+        if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'Set' ) {
+            my $SetSnapshot = $Self->_ServiceExtensionSetSnapshotBuild(
+                DynamicFieldConfig  => $DynamicFieldConfig,
+                DynamicFieldObject  => $DynamicFieldObject,
+                BackendObject       => $BackendObject,
+                LayoutObject        => $LayoutObject,
+                HTMLOutput          => $Param{HTMLOutput} ? 1 : 0,
+                Value               => $Value,
+            );
+            next FIELDNAME if !$SetSnapshot;
+
+            push @Rows, {
+                Label => $DynamicFieldConfig->{Label} || $FieldName,
+                Value => $SetSnapshot,
+                IsSet => 1,
+            };
+            next FIELDNAME;
+        }
+
+        my $RenderedValue = $Self->_ServiceExtensionDisplayValueRender(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Value              => $Value,
+            BackendObject      => $BackendObject,
+            LayoutObject       => $LayoutObject,
+            HTMLOutput         => $Param{HTMLOutput} ? 1 : 0,
+        );
+        next FIELDNAME if !defined $RenderedValue || $RenderedValue eq '';
+
+        push @Rows, {
+            Label => $DynamicFieldConfig->{Label} || $FieldName,
+            Value => $RenderedValue,
+        };
+    }
+
+    return if !@Rows;
+
+    my $Title = $LayoutObject->{LanguageObject}->Translate('Submitted Details');
+
+    if ( $Param{HTMLOutput} ) {
+        my $TitleHTML = $LayoutObject->Ascii2Html( Text => $Title );
+        my $Snapshot  = '<div class="ZTSMSubmissionSnapshot"><h3>' . $TitleHTML . '</h3>';
+
+        ROW:
+        for my $Row (@Rows) {
+            if ( $Row->{IsSet} ) {
+                my $Label = $LayoutObject->Ascii2Html( Text => $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) );
+                $Snapshot .= '<h4>' . $Label . '</h4>' . $Row->{Value};
+                next ROW;
+            }
+
+            my $Label = $LayoutObject->Ascii2Html( Text => $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) );
+            $Snapshot .= '<table><tr><th style="text-align:left;vertical-align:top;padding-right:1em;">'
+                . $Label
+                . '</th><td>'
+                . $Row->{Value}
+                . '</td></tr></table>';
+        }
+
+        $Snapshot .= '</div>';
+        return $Snapshot;
+    }
+
+    my $Snapshot = $Title . "\n" . ( '-' x length $Title ) . "\n";
+    ROW:
+    for my $Row (@Rows) {
+        $Snapshot .= $LayoutObject->{LanguageObject}->Translate( $Row->{Label} ) . ': ' . $Row->{Value} . "\n";
+    }
+
+    return $Snapshot;
+}
+
+sub _ServiceExtensionDisplayValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+    my $LayoutObject       = $Param{LayoutObject};
+    my $HTMLOutput         = $Param{HTMLOutput} ? 1 : 0;
+
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject' )
+    {
+        my $ConfigItemValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
+            Value        => $Value,
+            LayoutObject => $LayoutObject,
+            HTMLOutput   => $HTMLOutput,
+        );
+        return $ConfigItemValue if defined $ConfigItemValue && $ConfigItemValue ne '';
+    }
+
+    my $Rendered = $Param{BackendObject}->DisplayValueRender(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+        LayoutObject       => $LayoutObject,
+        HTMLOutput         => $HTMLOutput,
+    );
+    return if !IsHashRefWithData($Rendered);
+    return if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
+
+    return $Rendered->{Value};
+}
+
+sub _ServiceExtensionGovernanceObjectValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my @Values = ref $Param{Value} eq 'ARRAY' ? @{ $Param{Value} } : ( $Param{Value} );
+    my @Display;
+
+    VALUE:
+    for my $Value (@Values) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $Display = $Self->_ServiceExtensionGovernanceObjectDisplayName(
+            Value => $Value,
+        );
+        next VALUE if !$Display;
+
+        if ( $Param{HTMLOutput} ) {
+            $Display = $Param{LayoutObject}->Ascii2Html( Text => $Display );
+        }
+
+        push @Display, $Display;
+    }
+
+    return if !@Display;
+    return join( $Param{HTMLOutput} ? '<br />' : "\n", @Display );
+}
+
+sub _ServiceExtensionGovernanceObjectDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    for my $GetParam (
+        { GovernanceObjectID => $Value },
+        { VersionID    => $Value },
+        )
+    {
+        my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($GovernanceObject);
+        next if !$GovernanceObject->{Name};
+
+        return $Value . ' - ' . $GovernanceObject->{Name};
+    }
+
+    return $Value;
+}
+
+sub _ServiceExtensionSetSnapshotBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+    return if ref $Value ne 'ARRAY' || !@{$Value};
+
+    my @FieldOrder = $Self->_ServiceExtensionSetFieldOrder(
+        Include => $DynamicFieldConfig->{Config}{Include},
+    );
+    return if !@FieldOrder;
+
+    my @FieldConfig;
+    FIELD:
+    for my $FieldName (@FieldOrder) {
+        my $IncludedFieldConfig = $Self->{DynamicField}{$FieldName}
+            || $Param{DynamicFieldObject}->DynamicFieldGet(
+                Name => $FieldName,
+            );
+        next FIELD if !IsHashRefWithData($IncludedFieldConfig);
+
+        push @FieldConfig, {
+            Name   => $FieldName,
+            Config => $IncludedFieldConfig,
+            Label  => $IncludedFieldConfig->{Label} || $FieldName,
+        };
+    }
+    return if !@FieldConfig;
+
+    my @Rows;
+    SETROW:
+    for my $SetRow ( @{$Value} ) {
+        next SETROW if ref $SetRow ne 'HASH';
+
+        my @Cells;
+        my $HasValue;
+        FIELD:
+        for my $Field (@FieldConfig) {
+            my $CellValue = $SetRow->{ $Field->{Name} };
+            my $RenderedValue = '';
+
+            if ( defined $CellValue && !( ref $CellValue eq 'ARRAY' && !@{$CellValue} ) && !( !ref $CellValue && $CellValue eq '' ) ) {
+                $RenderedValue = $Self->_ServiceExtensionDisplayValueRender(
+                    DynamicFieldConfig => $Field->{Config},
+                    Value              => $CellValue,
+                    BackendObject      => $Param{BackendObject},
+                    LayoutObject       => $Param{LayoutObject},
+                    HTMLOutput         => $Param{HTMLOutput} ? 1 : 0,
+                ) || '';
+            }
+
+            $HasValue ||= $RenderedValue ne '';
+            push @Cells, $RenderedValue;
+        }
+
+        next SETROW if !$HasValue;
+        push @Rows, \@Cells;
+    }
+    return if !@Rows;
+
+    if ( $Param{HTMLOutput} ) {
+        my $HTML = '<table style="border-collapse:collapse;width:100%;margin-bottom:1em;"><thead><tr>';
+        for my $Field (@FieldConfig) {
+            $HTML .= '<th style="text-align:left;vertical-align:top;border:1px solid #d9d9d9;padding:6px 8px;">'
+                . $Param{LayoutObject}->Ascii2Html( Text => $Param{LayoutObject}->{LanguageObject}->Translate( $Field->{Label} ) )
+                . '</th>';
+        }
+        $HTML .= '</tr></thead><tbody>';
+
+        for my $Row (@Rows) {
+            $HTML .= '<tr>';
+            for my $Cell (@{$Row}) {
+                $HTML .= '<td style="vertical-align:top;border:1px solid #d9d9d9;padding:6px 8px;">'
+                    . ( $Cell || '&nbsp;' )
+                    . '</td>';
+            }
+            $HTML .= '</tr>';
+        }
+
+        $HTML .= '</tbody></table>';
+        return $HTML;
+    }
+
+    my $Text = join( "\t", map { $Param{LayoutObject}->{LanguageObject}->Translate( $_->{Label} ) } @FieldConfig ) . "\n";
+    for my $Row (@Rows) {
+        $Text .= join( "\t", @{$Row} ) . "\n";
+    }
+
+    return $Text;
+}
+
+sub _ServiceExtensionSetFieldOrder {
+    my ( $Self, %Param ) = @_;
+
+    my $Include = $Param{Include};
+    return if ref $Include ne 'ARRAY';
+
+    my @FieldOrder;
+    ITEM:
+    for my $IncludeItem ( @{$Include} ) {
+        next ITEM if ref $IncludeItem ne 'HASH';
+
+        if ( IsHashRefWithData( $IncludeItem->{Grid} ) && IsArrayRefWithData( $IncludeItem->{Grid}{Rows} ) ) {
+            ROW:
+            for my $Row ( @{ $IncludeItem->{Grid}{Rows} } ) {
+                next ROW if ref $Row ne 'ARRAY';
+
+                FIELD:
+                for my $Field (@{$Row}) {
+                    next FIELD if ref $Field ne 'HASH' || !$Field->{DF};
+                    push @FieldOrder, $Field->{DF};
+                }
+            }
+        }
+        elsif ( $IncludeItem->{DF} ) {
+            push @FieldOrder, $IncludeItem->{DF};
+        }
+    }
+
+    return @FieldOrder;
 }
 
 sub _GetServices {
@@ -1642,7 +3165,7 @@ sub _GetServices {
         %Service = $Kernel::OM->Get('Kernel::System::Ticket')->TicketServiceList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
         );
     }
     return \%Service;
@@ -1666,7 +3189,7 @@ sub _GetSLAs {
             %SLA = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSLAList(
                 %Param,
                 Action         => $Self->{Action},
-                CustomerUserID => $Self->{UserID},
+                CustomerUserID => $Param{CustomerUserID} || $Self->{UserID},
             );
         }
     }
@@ -1727,6 +3250,8 @@ sub _MaskNew {
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $Config       = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}");
+    my $EffectiveCustomerUserID = $Param{ZTSMEffectiveCustomerUserID} || $Self->{UserID};
+    my $EffectiveCustomerID     = $Param{ZTSMEffectiveCustomerID}     || $Self->{UserCustomerID};
 
     if ( $Config->{Queue} ) {
 
@@ -1794,7 +3319,7 @@ sub _MaskNew {
     if ( $Config->{Priority} ) {
         my %Priorities = $TicketObject->TicketPriorityList(
             %Param,
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
             Action         => $Self->{Action},
         );
 
@@ -1823,13 +3348,30 @@ sub _MaskNew {
         my %Type = $TicketObject->TicketTypeList(
             %Param,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
         );
+
+        $Self->_ZTSMRequestTypesFilter( Type => \%Type );
 
         if ( $Config->{'TicketTypeDefault'} && !$Param{TypeID} ) {
             my %ReverseType = reverse %Type;
             $Param{TypeID} = $ReverseType{ $Config->{'TicketTypeDefault'} };
         }
+
+# Rother OSS / ServiceCatalog
+        elsif ( $Param{ServiceData}{TicketTypeIDs} && $Param{TypeID} && $Type{ $Param{TypeID} } ) {
+            my %ServiceTicketTypeID = map { $_ => 1 } @{ $Param{ServiceData}{TicketTypeIDs} || [] };
+            if ( !$ServiceTicketTypeID{ $Param{TypeID} } ) {
+                %ServiceTicketTypeID = ();
+            }
+
+            if (%ServiceTicketTypeID) {
+                %Type = (
+                    $Param{TypeID} => $Type{ $Param{TypeID} },
+                );
+            }
+        }
+# EO ServiceCatalog
 
         $Param{TypeStrg} = $LayoutObject->BuildSelection(
             Data         => \%Type,
@@ -1860,8 +3402,18 @@ sub _MaskNew {
             %Param,
             QueueID        => $TmpQueueID,
             Action         => $Self->{Action},
-            CustomerUserID => $Self->{UserID},
+            CustomerUserID => $EffectiveCustomerUserID,
         );
+
+# Rother OSS / ServiceCatalog
+        if ( $Param{ServiceData}{ServiceID} && $Param{ServiceID} && $Services{ $Param{ServiceID} }
+            && ( $Param{ServiceID} eq $Param{ServiceData}{ServiceID} ) ) {
+
+            %Services = (
+                $Param{ServiceID} => $Services{ $Param{ServiceID} },
+            );
+        }
+# EO ServiceCatalog
 
         $Param{ServiceStrg} = $LayoutObject->BuildSelection(
             Data       => \%Services,
@@ -1871,9 +3423,9 @@ sub _MaskNew {
                 . ( $Config->{ServiceMandatory} ? 'Validate_Required ' : '' )
                 . ( $Param{Errors}->{ServiceIDInvalid} || '' ),
             PossibleNone => 1,
-            TreeView     => $TreeView,
+            TreeView     => 1,
             Sort         => 'TreeView',
-            Translation  => $TreeView,
+            Translation  => 0,
             Max          => 200,
         );
         $LayoutObject->Block(
@@ -1895,7 +3447,7 @@ sub _MaskNew {
                     QueueID => 1,    # use default QueueID if none is provided in %Param
                     %Param,
                     Action         => $Self->{Action},
-                    CustomerUserID => $Self->{UserID},
+                    CustomerUserID => $EffectiveCustomerUserID,
                 );
             }
 
@@ -1929,21 +3481,16 @@ sub _MaskNew {
     }
 
     # render dynamic fields
-    $Param{DynamicFieldHTML} = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
-        Content              => $Self->{MaskDefinition},
-        DynamicFields        => $Self->{DynamicField},
+    $Param{DynamicFieldHTML} = $Self->_ServiceExtensionDynamicFieldHTMLBuild(
         LayoutObject         => $LayoutObject,
         ParamObject          => $Kernel::OM->Get('Kernel::System::Web::Request'),
         DynamicFieldValues   => $Param{DynamicField},
         PossibleValuesFilter => $Param{DFPossibleValues},
         Errors               => $Param{DFErrors},
         Visibility           => $Param{Visibility},
-        CustomerInterface    => 1,
-        Object               => {
-            CustomerID     => $Self->{UserCustomerID},
-            CustomerUserID => $Self->{UserID},
-            $Param{DynamicField}->%*,
-        },
+        ServiceID            => $Param{ServiceID},
+        ZTSMEffectiveCustomerID     => $EffectiveCustomerID,
+        ZTSMEffectiveCustomerUserID => $EffectiveCustomerUserID,
     );
 
     if ( !$Param{VisibilityStd}{Article} ) {
@@ -2022,6 +3569,10 @@ sub _MaskNew {
         $LayoutObject->Block(
             Name => 'AsteriskExplanation',
         );
+    }
+
+    if ( IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} ) ) {
+        $LayoutObject->{HasDatepicker} = 1;
     }
 
     # get output back

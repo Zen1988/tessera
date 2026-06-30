@@ -136,6 +136,8 @@ sub Run {
 # ---
             $GetParam{$_} = $ParamObject->GetParam( Param => $_ ) || '';
         }
+        my @TicketTypeIDs = $ParamObject->GetArray( Param => 'TicketTypeIDs' );
+        @TicketTypeIDs = grep { $_ } @TicketTypeIDs;
 
         my %Error;
         my %DynamicFieldValues;
@@ -242,6 +244,30 @@ sub Run {
                 }
 
                 if ( !$Error{Message} ) {
+                    my $TicketTypeIDs = join ',', @TicketTypeIDs;
+                    my $TicketTypeSuccess = $ServiceObject->ServicePreferencesSet(
+                        ServiceID => $GetParam{ServiceID},
+                        Key       => 'TicketTypeIDs',
+                        Value     => $TicketTypeIDs,
+                        UserID    => $Self->{UserID},
+                    );
+
+                    if ( !$TicketTypeSuccess ) {
+                        $Error{Message} = $LayoutObject->{LanguageObject}->Translate(
+                            'Unable to set ticket type restrictions for service!'
+                        );
+                    }
+
+                    if ( !$Error{Message} ) {
+                        my $ACLSuccess = $ServiceObject->UpdateTypServiceACLs(
+                            UserID => $Self->{UserID},
+                        );
+                        if ( !$ACLSuccess ) {
+                            $Error{Message} = $LayoutObject->{LanguageObject}->Translate(
+                                'Unable to update service ticket type ACLs!'
+                            );
+                        }
+                    }
 
                     # update preferences
                     my %ServiceData = $ServiceObject->ServiceGet(
@@ -489,6 +515,18 @@ sub _MaskNew {
         Name       => 'TypeID',
         SelectedID => $Param{TypeID} || $ServiceData{TypeID},
         Class      => 'Modernize Validate_Required ' . ( $Param{TypeIDInvalid} || '' ),
+    );
+
+    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
+        Valid => 0,
+    );
+    $ServiceData{TicketTypeOptionStrg} = $LayoutObject->BuildSelection(
+        Data       => \%TicketTypeList,
+        Name       => 'TicketTypeIDs',
+        SelectedID => $Param{TicketTypeIDs} || $ServiceData{TicketTypeIDs},
+        Multiple   => 1,
+        Size       => 5,
+        Class      => 'Modernize',
     );
 
     # build the criticality dropdown

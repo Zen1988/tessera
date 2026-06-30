@@ -157,6 +157,7 @@ sub Run {
     my $OnBehalfCustomerUserID = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserID' ) || '';
     my $OnBehalfCustomerSearch = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserSearch' ) || '';
     $OnBehalfCustomerUserID ||= $OnBehalfCustomerSearch;
+    my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
 
     # get Dynamic fields from ParamObject
     my %DynamicFieldValues;
@@ -202,11 +203,25 @@ sub Run {
     $GetParam{ZTSMEffectiveCustomerID}            = $EffectiveCustomer{CustomerID};
     $GetParam{ZTSMEffectiveCustomerUserLabel}     = $EffectiveCustomer{CustomerUserLabel};
 
+    my %ZTSMRequesterDefaultsDebug = (
+        RequestedCustomerUserID => $OnBehalfCustomerUserID || '',
+        EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
+        EffectiveCustomerID     => $EffectiveCustomer{CustomerID} || '',
+        LoginCustomerUserID     => $Self->{UserID} || '',
+        Subaction               => $Self->{Subaction} || '',
+        ElementChanged          => $ElementChanged || '',
+    );
+
     $Self->_ZTSMRequestDefaultsHydrate(
         DynamicFieldValues => \%DynamicFieldValues,
         GetParam           => \%GetParam,
         CustomerUserID     => $EffectiveCustomer{UserID},
+        Force              => $Self->{Subaction}
+            && ( $Self->{Subaction} eq 'AJAXUpdate' || $Self->{Subaction} eq 'ZTSMServiceExtensionDynamicFields' )
+            && $ElementChanged eq 'ZTSMRaiseOnBehalfCustomerUserID',
+        Debug              => \%ZTSMRequesterDefaultsDebug,
     );
+    $GetParam{ZTSMRequesterDefaultsDebug} = \%ZTSMRequesterDefaultsDebug;
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $QueueObject  = $Kernel::OM->Get('Kernel::System::Queue');
@@ -261,6 +276,7 @@ sub Run {
             Visibility         => \%Visibility,
             ZTSMEffectiveCustomerID     => $EffectiveCustomer{CustomerID},
             ZTSMEffectiveCustomerUserID => $EffectiveCustomer{UserID},
+            ZTSMRequesterDefaultsDebug  => $GetParam{ZTSMRequesterDefaultsDebug},
         );
 
         return $LayoutObject->Attachment(
@@ -1103,8 +1119,9 @@ sub Run {
         }
 
         $Self->_ZTSMRequesterOwnerSnapshotSet(
-            TicketID => $TicketID,
-            UserID   => $ConfigObject->Get('CustomerPanelUserID'),
+            TicketID        => $TicketID,
+            CustomerUserID  => $EffectiveCustomer{UserID},
+            UserID          => $ConfigObject->Get('CustomerPanelUserID'),
         );
 
         # if no article has to be created clean up and return
@@ -1352,8 +1369,6 @@ sub Run {
                 $GetParam{QueueID} = $QueueDefaultID;
             }
         }
-
-        my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
 
         # get list type
         my $TreeView = 0;
@@ -2461,25 +2476,82 @@ sub _ZTSMRequestDefaultsHydrate {
     my %CustomerUser       = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
         User => $CustomerUserID,
     );
+    my $Debug = IsHashRefWithData( $Param{Debug} ) ? $Param{Debug} : undef;
+
+    if ($Debug) {
+        $Debug->{HydrateCustomerUserID}    = $CustomerUserID;
+        $Debug->{CustomerUserFound}        = %CustomerUser ? 1 : 0;
+        $Debug->{CustomerUserLogin}        = $CustomerUser{UserLogin} || '';
+        $Debug->{CustomerUserCustomerID}   = $CustomerUser{UserCustomerID} || '';
+        $Debug->{ForceRequesterDefaults}   = $Param{Force} ? 1 : 0;
+        $Debug->{RequesterPreferenceFields} = {};
+    }
 
     SOURCEFIELD:
     for my $SourceField ( sort keys %FieldMap ) {
         my $TargetField = $FieldMap{$SourceField};
 
-        next SOURCEFIELD if $Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$TargetField} );
+        if ( !$Param{Force} && $Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$TargetField} ) ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField    => $SourceField,
+                    Skipped        => 1,
+                    SkipReason     => 'target-already-has-value-and-force-disabled',
+                    ExistingTarget => $Param{DynamicFieldValues}->{$TargetField},
+                };
+            }
+            next SOURCEFIELD;
+        }
 
         my $TargetFieldConfig = $DynamicFieldObject->DynamicFieldGet(
             Name => $TargetField,
         );
-        next SOURCEFIELD if !IsHashRefWithData($TargetFieldConfig);
-        next SOURCEFIELD if $TargetFieldConfig->{ObjectType} ne 'Ticket';
+        if ( !IsHashRefWithData($TargetFieldConfig) ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField => $SourceField,
+                    Skipped     => 1,
+                    SkipReason  => 'missing-target-field-config',
+                };
+            }
+            next SOURCEFIELD;
+        }
+        if ( $TargetFieldConfig->{ObjectType} ne 'Ticket' ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField      => $SourceField,
+                    Skipped          => 1,
+                    SkipReason       => 'target-is-not-ticket-field',
+                    TargetObjectType => $TargetFieldConfig->{ObjectType} || '',
+                };
+            }
+            next SOURCEFIELD;
+        }
 
-        my $SourceValue = $Self->_ZTSMNormalizeValue( $CustomerUser{"DynamicField_$SourceField"} );
+        my $MappedDynamicValue = $CustomerUser{"DynamicField_$SourceField"};
+        my $MappedUserValue    = $CustomerUser{"UserDynamicField_$SourceField"};
+        my $SourceValue = $Self->_ZTSMNormalizeValue(
+            defined $MappedDynamicValue
+            ? $MappedDynamicValue
+            : $MappedUserValue
+        );
+        my $SourceOrigin = defined $MappedDynamicValue ? "DynamicField_$SourceField" : "UserDynamicField_$SourceField";
         if ( !$SourceValue ) {
             my $SourceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
                 Name => $SourceField,
             );
-            next SOURCEFIELD if !IsHashRefWithData($SourceFieldConfig);
+            if ( !IsHashRefWithData($SourceFieldConfig) ) {
+                if ($Debug) {
+                    $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                        SourceField        => $SourceField,
+                        Skipped            => 1,
+                        SkipReason         => 'missing-source-field-config',
+                        MappedDynamicValue => $MappedDynamicValue,
+                        MappedUserValue    => $MappedUserValue,
+                    };
+                }
+                next SOURCEFIELD;
+            }
 
             $SourceValue = $Self->_ZTSMNormalizeValue(
                 $BackendObject->ValueGet(
@@ -2487,8 +2559,21 @@ sub _ZTSMRequestDefaultsHydrate {
                     ObjectName         => $CustomerUserID,
                 )
             );
+            $SourceOrigin = 'DynamicFieldBackend.ValueGet';
         }
-        next SOURCEFIELD if !$SourceValue;
+        if ( !$SourceValue ) {
+            if ($Debug) {
+                $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                    SourceField        => $SourceField,
+                    Skipped            => 1,
+                    SkipReason         => 'empty-source-value',
+                    SourceOrigin       => $SourceOrigin,
+                    MappedDynamicValue => $MappedDynamicValue,
+                    MappedUserValue    => $MappedUserValue,
+                };
+            }
+            next SOURCEFIELD;
+        }
 
         my $IsMultiValue = IsHashRefWithData( $TargetFieldConfig->{Config} )
             && $TargetFieldConfig->{Config}->{MultiValue};
@@ -2496,6 +2581,17 @@ sub _ZTSMRequestDefaultsHydrate {
 
         $Param{DynamicFieldValues}->{$TargetField} = $Value;
         $Param{GetParam}->{DynamicField}{"DynamicField_$TargetField"} = $Value;
+        if ($Debug) {
+            $Debug->{RequesterPreferenceFields}{$TargetField} = {
+                SourceField        => $SourceField,
+                SourceOrigin       => $SourceOrigin,
+                MappedDynamicValue => $MappedDynamicValue,
+                MappedUserValue    => $MappedUserValue,
+                SourceValue        => $SourceValue,
+                IsMultiValue       => $IsMultiValue ? 1 : 0,
+                AppliedValue       => $Value,
+            };
+        }
     }
 
     return 1;
@@ -2539,7 +2635,7 @@ sub _ZTSMRequesterOwnerSnapshotSet {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{TicketID};
-    return if !$Self->{UserID};
+    return if !$Param{CustomerUserID};
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
@@ -2558,7 +2654,7 @@ sub _ZTSMRequesterOwnerSnapshotSet {
     return $BackendObject->ValueSet(
         DynamicFieldConfig => $DynamicFieldConfig,
         ObjectID           => $Param{TicketID},
-        Value              => $Self->{UserID},
+        Value              => $Param{CustomerUserID},
         UserID             => $Param{UserID} || 1,
     );
 }
@@ -2713,7 +2809,7 @@ sub _ServiceExtensionDynamicFieldHTMLBuild {
         ServiceID => $Param{ServiceID},
     );
 
-    return $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
+    my $HTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
         Content              => $MaskDefinition,
         DynamicFields        => $Self->{DynamicField},
         LayoutObject         => $LayoutObject,
@@ -2729,6 +2825,19 @@ sub _ServiceExtensionDynamicFieldHTMLBuild {
             %{ $Param{DynamicFieldValues} || {} },
         },
     );
+
+    if ( IsHashRefWithData( $Param{ZTSMRequesterDefaultsDebug} ) ) {
+        my $JSON = $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+            Data => $Param{ZTSMRequesterDefaultsDebug},
+        ) || '{}';
+        $HTML =
+            '<script type="application/json" id="ZTSMRequesterDefaultsDebug">'
+            . $LayoutObject->Ascii2Html( Text => $JSON )
+            . '</script>'
+            . ( $HTML || '' );
+    }
+
+    return $HTML;
 }
 
 sub _ServiceExtensionArticleSnapshotBuild {
@@ -3250,12 +3359,17 @@ sub _MaskNew {
         }
 
 # Rother OSS / ServiceCatalog
-        elsif ( $Param{ServiceData}{TypeID} && $Param{TypeID} && $Type{ $Param{TypeID} }
-            && ( $Param{TypeID} eq $Param{ServiceData}{TypeID} ) ) {
+        elsif ( $Param{ServiceData}{TicketTypeIDs} && $Param{TypeID} && $Type{ $Param{TypeID} } ) {
+            my %ServiceTicketTypeID = map { $_ => 1 } @{ $Param{ServiceData}{TicketTypeIDs} || [] };
+            if ( !$ServiceTicketTypeID{ $Param{TypeID} } ) {
+                %ServiceTicketTypeID = ();
+            }
 
-            %Type = (
-                $Param{TypeID} => $Type{ $Param{TypeID} },
-            );
+            if (%ServiceTicketTypeID) {
+                %Type = (
+                    $Param{TypeID} => $Type{ $Param{TypeID} },
+                );
+            }
         }
 # EO ServiceCatalog
 

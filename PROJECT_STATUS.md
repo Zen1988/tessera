@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-29
+Last Updated: 2026-06-30
 
 ## Current Focus
 
@@ -17,6 +17,722 @@ Last Updated: 2026-06-29
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-06-30 GovernanceDB 0.0.190 Merged ServiceCatalog Package Payload
+
+### Completed work
+
+- Removed the temporary error-level `TESSERA ServiceCatalog ACL` diagnostics added in `0.0.188`.
+- Kept the actual service-layer generated ACL refresh path:
+  - `ServiceAdd()` still refreshes generated ticket-type/service ACLs.
+  - `ServiceUpdate()` still refreshes generated ticket-type/service ACLs.
+  - `ServicePreferencesSet()` still refreshes generated ACLs when `TicketTypeIDs` is written.
+- Kept the strict ticket-type service mapping from `0.0.189`:
+  - services with empty `TicketTypeIDs: []` are not included in any generated ticket-type ACL;
+  - explicit `TicketTypeIDs` is the only generated ACL inclusion rule.
+- Merged the remaining ServiceCatalog compatibility files from `Kernel/Package/ServiceCatalog/ServiceCatalog.sopm` into the GovernanceDB runtime overlay.
+- Skipped the two ServiceCatalog files already owned by GovernanceDB so TESSERA changes are preserved:
+  - `Kernel/Autoload/ServiceImportExport.pm`
+  - `Kernel/System/Console/Command/Admin/ServiceCatalog/AddBulkACL.pm`
+- Bumped `GovernanceDB.sopm` package version to `0.0.190`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.190.opm`.
+- `Kernel/Package/GovernanceDB-0.0.190.opm` SHA256: `68C08F6F42B8550B8803F1CC57FA379AD78B4C6FA6E58DA3D0AD93C8354A28B5`.
+- Supersedes `0.0.189`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.190.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/Service.pm`
+  - `otobo-11.0.16/Kernel/System/Service.pm`
+  - merged ServiceCatalog Perl modules in the GovernanceDB runtime overlay.
+- `GovernanceDB.sopm` file list parsed successfully: version `0.0.190`, file count `199`, missing files `0`.
+- `Kernel/Package/GovernanceDB-0.0.190.opm` parsed successfully as XML: file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - diagnostic marker `TESSERA ServiceCatalog ACL` is absent;
+  - ServiceRequest fallback marker `IsDefaultServiceRequest` is absent;
+  - strict empty-ticket-type skip is present;
+  - service ACL refresh function `_ZTSMServiceCatalogACLRefresh` remains present;
+  - merged ServiceCatalog assets such as `ServiceCatalog.xml`, `AdminServiceImportExport.pm`, and `Kernel/System/DynamicField/ObjectType/Service.pm` are included.
+
+### Runtime expectation
+
+- `GovernanceDB-0.0.190.opm` should be sufficient for the service import/export/catalog runtime payload; a separate ServiceCatalog OPM should not be required for these merged files.
+- Service save/update should continue to regenerate ticket-type/service ACLs without the temporary error-log noise.
+- To show a service for a ticket/request type, set its `Ticket Types` mapping explicitly.
+
+## 2026-06-30 GovernanceDB 0.0.189 Strict TicketType Service ACL Mapping
+
+Superseded by `0.0.190`: strict mapping remains, but temporary error-level diagnostics were removed and the separate ServiceCatalog package payload was merged into GovernanceDB.
+
+### Completed work
+
+- Confirmed `Application Management` appeared under `ServiceRequest` because of the fallback added in `0.0.186`.
+- The fallback treated any valid service with empty `TicketTypeIDs` as a `ServiceRequest` service.
+- Removed the ServiceRequest-specific fallback from `Kernel::System::Service::UpdateTypServiceACL()`.
+- Generated ticket-type/service ACLs are now strict again:
+  - service must have `TicketTypeIDs`;
+  - empty `TicketTypeIDs: []` means the service is not included in any generated ticket-type ACL;
+  - explicit `TicketTypeIDs` controls exactly which ticket/request type can see the service.
+- Kept the error-level diagnostics from `0.0.188` so runtime testing can still prove whether service save, ACL rebuild, ACL update/add, and ACL deploy execute.
+- Mirrored `Service.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.189`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.189.opm`.
+- `Kernel/Package/GovernanceDB-0.0.189.opm` SHA256: `5192BA21E0CED50E60FCC00F263B7E7EA27E34E30363E4C529FB26E00DDB481F`.
+- Supersedes `0.0.188`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.189.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/Service.pm`
+  - `otobo-11.0.16/Kernel/System/Service.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.189.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.189.opm` parsed successfully as XML: version `0.0.189`, `OpmFileCount=180`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - diagnostics marker `TESSERA ServiceCatalog ACL` remains present;
+  - ServiceRequest fallback marker `IsDefaultServiceRequest` is absent;
+  - strict empty-ticket-type skip is present.
+- Mirror hash for all `Service.pm` copies: `35E36CCF8A49EF9AB08A1162FA7A368693BA07FE8879A81C74BAE0969CDE498F`.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.189`, `Application Management` with `TicketTypeIDs: []` should no longer appear under `ServiceRequest`.
+- To show a service for `ServiceRequest`, set its `Ticket Types` field to `ServiceRequest`; do not rely on blank ticket type mapping.
+- Error-level logs with prefix `TESSERA ServiceCatalog ACL` remain available during service save/update.
+
+## 2026-06-30 GovernanceDB 0.0.188 Error-Level Service ACL Diagnostics
+
+Superseded by `0.0.189`: diagnostics remain, but the ServiceRequest fallback from `0.0.186` was removed because it leaked unmapped services into ServiceRequest.
+
+### Completed work
+
+- Added runtime-visible diagnostics because service save/update still did not visibly update generated ACLs in live testing.
+- All diagnostics use error priority so they appear in the runtime log view.
+- Added consistent log prefix: `TESSERA ServiceCatalog ACL`.
+- Diagnostic coverage now includes:
+  - `ServiceAdd` trigger with service ID/name/validity/user.
+  - `ServiceUpdate` trigger with old/new name/validity/user.
+  - `ServicePreferencesSet` trigger when `TicketTypeIDs` is written.
+  - skip reason when `ServiceCatalog::CreateTypeServiceRelatedAcls` is disabled.
+  - bulk rebuild start with source, service ID, request type count, service row count, and ticket type rebuild count.
+  - per-ticket-type ACL rebuild with service count and deploy flag.
+  - ACL add/update result.
+  - ACL dump/deploy success or failure.
+- Mirrored `Service.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.188`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.188.opm`.
+- `Kernel/Package/GovernanceDB-0.0.188.opm` SHA256: `C3DD746DA72AFDC216A2552A998F77B8EEB30C57E01D9C13275FA0750BDE801A`.
+- Supersedes `0.0.187`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.188.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/Service.pm`
+  - `otobo-11.0.16/Kernel/System/Service.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.188.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.188.opm` parsed successfully as XML: version `0.0.188`, `OpmFileCount=180`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms diagnostic markers:
+  - `TESSERA ServiceCatalog ACL`
+  - `ServiceUpdate trigger`
+  - `ServicePreferencesSet trigger`
+  - `UpdateTypServiceACLs started`
+  - `ACLUpdate Name`
+  - `deploy completed`
+- Mirror hash for all `Service.pm` copies: `D562138DA023FB1D23F6D2F72A90140552BC2D192221767C75FDA83A391F887F`.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.188` and restarting the runtime if needed, edit/save a service and search the OTOBO log for `TESSERA ServiceCatalog ACL`.
+- If no `ServiceUpdate trigger` or `ServicePreferencesSet trigger` appears, the active runtime is not using this overlaid `Kernel/System/Service.pm` or the UI save path is bypassing the service object.
+- If the trigger appears but no `ACLUpdate`/`ACLAdd` or `deploy completed` appears, the log line immediately before it should show the failing stage.
+
+## 2026-06-30 GovernanceDB 0.0.187 Service-Layer ACL Refresh Trigger
+
+Superseded by `0.0.188`: this entry restored service-layer refresh, but live debugging needed error-level diagnostics to prove whether the trigger path is actually executing.
+
+### Completed work
+
+- Rechecked the original ServiceCatalog behavior after runtime testing showed saving/updating a service still did not visibly update the generated ACL.
+- Confirmed original ServiceCatalog SysConfig describes automatic ACL generation when creating services; `AddBulkACL` is intended only for services that already existed before the automation.
+- Root cause in the current TESSERA overlay: ACL refresh was wired into `AdminService` and service import paths, but the service object itself still only cleared cache on `ServiceAdd`, `ServiceUpdate`, and `ServicePreferencesSet`.
+- Added service-layer generated ACL refresh so the automatic behavior cannot be bypassed by alternate service save/import paths:
+  - `ServiceAdd()` refreshes generated ticket-type/service ACLs after the service is created.
+  - `ServiceUpdate()` refreshes generated ticket-type/service ACLs after service name/validity/type updates.
+  - `ServicePreferencesSet()` refreshes generated ticket-type/service ACLs when `TicketTypeIDs` is written.
+- The service-layer refresh uses the existing `UpdateTypServiceACLs()` builder and logs an error if ACL generation fails.
+- Mirrored `Service.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.187`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.187.opm`.
+- `Kernel/Package/GovernanceDB-0.0.187.opm` SHA256: `40B3D37B109ACD708B6D3431F5049CF7A13A890A789DA7B54F122A89CF6793CF`.
+- Supersedes `0.0.186`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.187.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/Service.pm`
+  - `otobo-11.0.16/Kernel/System/Service.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.187.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.187.opm` parsed successfully as XML: version `0.0.187`, `OpmFileCount=180`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - `_ZTSMServiceCatalogACLRefresh`;
+  - `ServiceAdd`;
+  - `ServiceUpdate`;
+  - `ServicePreferencesSet`;
+  - `TicketTypeIDs`;
+  - `UpdateTypServiceACLs`.
+- Mirror hash for all `Service.pm` copies: `AA1A79D8D00166805227FB5B2BEE357777AFEF574B55B6F3ED008D6748AEC185`.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.187`, editing/creating a service should automatically refresh generated ticket-type/service ACLs from the service layer.
+- If the ACL screen still does not change after service save, verify the running runtime has the overlaid `Kernel/System/Service.pm` from `0.0.187` loaded and restart PSGI/web service cache if needed.
+
+## 2026-06-30 GovernanceDB 0.0.186 Generated Service ACL Fallback and Export Cleanup
+
+Superseded by `0.0.187`: this entry fixed generated ACL content and stale export data, but the automatic refresh still lived mostly in caller paths instead of the service layer.
+
+### Completed work
+
+- Followed up on live testing where the `ServiceRequest` ACL still showed only:
+  - `Network::Firewall Policy::New/Modify`
+  - `Network::Load Balancer::New/Modify`
+- Confirmed `Export/Export_Ticket_ACL.yml` still contained the stale generated `zzz - Show Service based on Ticket-Type: ServiceRequest` ACL with only those two services.
+- Confirmed the `0.0.185` generator still ignored legacy/imported valid services that had no `TicketTypeIDs` preference, so services such as `Access Management` could remain invisible even after rebuilding ACLs.
+- Updated `Kernel::System::Service::UpdateTypServiceACL()` so valid services with no explicit `TicketTypeIDs` are treated as `ServiceRequest` services by default.
+- Explicit `TicketTypeIDs` still remain authoritative: if a service is mapped to `Change`, `Incident`, or another request type, that explicit mapping controls the generated ACL.
+- Updated GovernanceDB bootstrap so package install/upgrade calls `UpdateTypServiceACLs()` automatically after runtime overlay and SysConfig deployment.
+- Removed stale generated `zza/zzz` ACL entries from `Export/Export_Ticket_ACL.yml`; generated ACLs should be rebuilt from service data, not re-imported from an old snapshot.
+- Mirrored `Service.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.186`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.186.opm`.
+- `Kernel/Package/GovernanceDB-0.0.186.opm` SHA256: `B707A3ED1642B2E9C978FD698A0C1F65008F7D96C0DC53E5F14CF540A280C241`.
+- Supersedes `0.0.185`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.186.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/Service.pm`
+  - `otobo-11.0.16/Kernel/System/Service.pm`
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.186.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.186.opm` parsed successfully as XML: version `0.0.186`, `OpmFileCount=180`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - Service ACL fallback marker `IsDefaultServiceRequest`;
+  - bootstrap hook `_ServiceTicketTypeACLsRebuild`;
+  - `UpdateTypServiceACLs()`;
+  - `ZTSM::RequestType`;
+  - packaged `AddBulkACL`.
+- `Export/Export_Ticket_ACL.yml` no longer contains the stale generated `zza/zzz` ACL entries.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.186`, package upgrade should rebuild generated ticket-type/service ACLs automatically.
+- If manual repair is needed after importing old ACL YAML, run `bin/otobo.Console.pl Admin::ServiceCatalog::AddBulkACL`.
+- For `ServiceRequest`, legacy valid services without explicit `TicketTypeIDs` should now be included in the generated ACL, so the service picker should not be limited to the old two `Network` services.
+
+## 2026-06-30 GovernanceDB 0.0.185 Request-Type Service ACL Rebuild
+
+Superseded by `0.0.186`: this entry rebuilt ACLs per `ZTSM::RequestType`, but still missed legacy/imported services without `TicketTypeIDs` and did not clean the stale generated ACL export.
+
+### Completed work
+
+- Followed up on live re-import testing where the generated `ServiceRequest` ACL still showed stale `Network` services.
+- Root cause: `0.0.184` added a single ticket-type ACL refresh, but the active customer ticket flow filters ticket types through GeneralCatalog class `ZTSM::RequestType`; the generated ACL set must therefore be rebuilt from active request types plus service `TicketTypeIDs`, not only from the just-edited service row.
+- Added `Kernel::System::Service::UpdateTypServiceACLs()` to rebuild the complete generated ticket-type/service ACL set.
+- The broader ACL builder:
+  - reads active request type names from `ZTSM::RequestType`;
+  - resolves matching ticket type IDs through `Kernel::System::Type`;
+  - also includes ticket type IDs currently referenced by service `TicketTypeIDs` preferences for backward compatibility;
+  - updates one generated ACL per ticket/request type;
+  - deploys `ZZZACL.pm` once after all generated ACLs are refreshed.
+- `AdminService` now calls the full ACL rebuild after service ticket type restrictions are saved.
+- `ServiceImportExport` now rebuilds generated ACLs once after a service import changes service records, so re-import updates the ACL whitelist from the final imported catalog state.
+- Updated `Admin::ServiceCatalog::AddBulkACL` so it performs the same full rebuild and shipped it in the GovernanceDB runtime overlay.
+- Mirrored `Service.pm`, `AdminService.pm`, and `ServiceImportExport.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.185`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.185.opm`.
+- `Kernel/Package/GovernanceDB-0.0.185.opm` SHA256: `F1C939711DFAC875FA706083D4EEA404FE481E354240CB817E14E3C178338A0F`.
+- Supersedes `0.0.184`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.185.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical, packaged runtime-overlay, and local `otobo-11.0.16` copies of:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Modules/AdminService.pm`
+  - `Kernel/Autoload/ServiceImportExport.pm`
+- Perl syntax check passed for canonical and packaged runtime-overlay copies of:
+  - `Kernel/System/Console/Command/Admin/ServiceCatalog/AddBulkACL.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.185.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.185.opm` parsed successfully as XML: version `0.0.185`, `OpmFileCount=180`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - `Service.pm` contains `UpdateTypServiceACLs()`, `ZTSM::RequestType`, `UpdateTypServiceACL()`, `TicketTypeIDs`, and `ITSM::Service::Type`.
+  - The packaged runtime overlay includes `Admin::ServiceCatalog::AddBulkACL`.
+- Mirror hashes match:
+  - `Service.pm`: `A67F2DFE3828079A23FB97D5105542DB13496D096DE769A896FD9677B9744155`
+  - `AdminService.pm`: `237AB08B48770CB1E76B2EAFA50483081D38559A7B07C04EB92F629F992BC1E1`
+  - `ServiceImportExport.pm`: `C379222532FAB49924AC347CFADF5ADCDEC6CB892F275DC62294389071049BC8`
+- `git diff --check` passed for the edited service runtime, admin service, import/export, console command, SOPM, and runtime overlay files.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.185`, re-importing services with overwrite or saving any service should rebuild the generated ACLs for active `ZTSM::RequestType` ticket types.
+- To repair an already-installed environment without changing a service, run `bin/otobo.Console.pl Admin::ServiceCatalog::AddBulkACL` so the deployed ACLs are regenerated from current service `TicketTypeIDs`.
+- For Whye Wong's screenshot, if `Access Management` is allocated to the customer user and has `TicketTypes: [ServiceRequest]`, the regenerated ServiceRequest ACL should whitelist it instead of the stale `Network` branch.
+
+## 2026-06-30 GovernanceDB 0.0.184 Automatic Service TicketTypes ACL Rebuild
+
+Superseded by `0.0.185`: this entry added single ticket-type ACL refresh, but live re-import testing showed the generated ACL set also needs to be rebuilt from active `ZTSM::RequestType` entries and deployed once as a whole.
+
+### Completed work
+
+- Diagnosed why a customer user with many allocated services could still see only the stale `Network` service branch on `CustomerTicketMessage`.
+- Service visibility on ticket creation is the intersection of:
+  - customer-user service allocation (`customer_user_service`);
+  - `Ticket::Service::KeepChildren` filtered service list;
+  - deployed ACLs from `Kernel/Config/Files/ZZZACL.pm`.
+- Current `ZZZACL.pm` only allowed the old `Network::Firewall Policy::New/Modify` and `Network::Load Balancer::New/Modify` services for `ServiceRequest`, so all other allocated services were removed by ACL filtering.
+- `ServiceCatalog::CreateTypeServiceRelatedAcls` was enabled, but the automatic path was incomplete because `Kernel::System::Service->UpdateTypServiceACL()` was missing.
+- Added `Kernel::System::Service::UpdateTypServiceACL()` to rebuild the generated ticket-type/service ACL for a ticket type from the service `TicketTypeIDs` preference.
+- The ACL builder:
+  - keeps service `Type` mapped to `ITSM::Service::Type`;
+  - uses `TicketTypeIDs` only for ticket-type service visibility;
+  - aggregates all valid services linked to the ticket type;
+  - updates the `zzz - Show Service based on Ticket-Type: <TicketType>` ACL;
+  - preserves the `zza - Disable all Services if no Ticket-Type is selected.` ACL when configured;
+  - deploys `ZZZACL.pm` and clears the ACL preselection cache when `ACLDeploy` is enabled.
+- `AdminService` now refreshes ACLs after ticket type restrictions are changed, including old ticket types when a restriction is removed.
+- `ServiceImportExport` now refreshes ACLs after importing `TicketTypes`, including old ticket types when overwrite changes the restriction.
+- Mirrored `Service.pm`, `AdminService.pm`, and `ServiceImportExport.pm` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.184`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.184.opm`.
+- `Kernel/Package/GovernanceDB-0.0.184.opm` SHA256: `45ACEFADE241BED435989168832171B436E938A5AF46B28E53B1F96FAEBD6E23`.
+- Supersedes `0.0.183`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.184.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical and packaged copies of:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Modules/AdminService.pm`
+  - `Kernel/Autoload/ServiceImportExport.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.184.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.184.opm` parsed successfully as XML: version `0.0.184`, `OpmFileCount=179`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - `Service.pm` contains `UpdateTypServiceACL()`, ACL deployment, `TicketTypeIDs`, and `ITSM::Service::Type`.
+  - `AdminService.pm` calls `UpdateTypServiceACL()` after saving ticket type restrictions.
+  - `ServiceImportExport.pm` calls `UpdateTypServiceACL()` after importing `TicketTypes`.
+- Mirror hashes match:
+  - `Service.pm`: `34ED6F6CE9898CA5C2DF753C0FD0BFACF3013B8DA66C9E2934D5033A176C822A`
+  - `AdminService.pm`: `159BB3DF7CAEF9CEF4E17298F654535E49DCBA926A466C4E7F7E9D7AE6EF0F64`
+  - `ServiceImportExport.pm`: `EB30B3DDA4C45B5F50FEA46FD505BA7C465B584113C5384733C7269BA2601647`
+- `git diff --check` passed for the edited service runtime, admin service, import/export, SOPM, and runtime overlay files.
+
+### Runtime expectation
+
+- After installing/upgrading to `0.0.184`, re-save an affected service or re-import services with `OverwriteExistingEntities` so the generated ACLs are rebuilt.
+- For Whye Wong's screenshot, once services such as `Access Management` are allocated to the customer user and have `TicketTypes: [ServiceRequest]`, the rebuilt ServiceRequest ACL should allow them in `CustomerTicketMessage`.
+
+## 2026-06-30 GovernanceDB 0.0.183 Separate Service Type From TicketTypes Limiter
+
+Superseded by `0.0.184`: this entry split service type from ticket type restrictions, but the automatic ACL rebuild path was still incomplete.
+
+### Completed work
+
+- Corrected the `0.0.182` model: service `Type` and ticket `TicketTypes` are separate concepts and must not share storage.
+- Restored Admin Service `TypeID` to use `ITSM::Service::Type` through GeneralCatalog.
+- Added a separate Admin Service `Ticket Types` multi-select backed by ticket types from `Kernel::System::Type`.
+- Stored ticket-type service visibility limits in service preference key `TicketTypeIDs` as a comma-separated scalar value, avoiding misuse of the service table `type_id` column.
+- `Kernel::System::Service` now expands the `TicketTypeIDs` preference into:
+  - `TicketTypeIDs => [ ... ]`
+  - `TicketTypes => [ ... ]`
+  - `TicketType => first ticket type name`
+  while leaving service `TypeID` and `Type` as service type data.
+- `ServiceImportExport` now:
+  - resolves YAML `Type` against `ITSM::Service::Type`;
+  - resolves YAML `TicketTypes`/`TicketType` against ticket types;
+  - writes ticket restrictions to the `TicketTypeIDs` service preference;
+  - preserves existing ticket restrictions when overwrite YAML omits `TicketTypes`.
+- `CustomerTicketMessage` now limits the ticket type selector using `ServiceData->{TicketTypeIDs}` instead of comparing ticket type against service `TypeID`.
+- Mirrored `ServiceImportExport.pm`, `Service.pm`, `AdminService.pm`, `AdminService.tt`, and `CustomerTicketMessage.pm` across source, GovernanceDB runtime overlay, local `otobo-11.0.16`, and `ZTSMOverlay` where applicable.
+- Bumped `GovernanceDB.sopm` package version to `0.0.183`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.183.opm`.
+- `Kernel/Package/GovernanceDB-0.0.183.opm` SHA256: `B23D220184F649CECCBF10BD6DAF7BE82D31FD601AB7B2CFB160FC7CA8C80EFC`.
+- Supersedes `0.0.182`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.183.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical and packaged copies of:
+  - `Kernel/Modules/AdminService.pm`
+  - `Kernel/Autoload/ServiceImportExport.pm`
+  - `Kernel/System/Service.pm`
+  - `Kernel/Modules/CustomerTicketMessage.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.183.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.183.opm` parsed successfully as XML: version `0.0.183`, `OpmFileCount=179`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - `ServiceImportExport.pm` contains both `ITSM::Service::Type` and `TicketTypes` handling.
+  - `Service.pm` exposes `TicketTypes`/`TicketTypeIDs` from the separate preference.
+  - `AdminService.pm` contains `TicketTypeOptionStrg`.
+  - `CustomerTicketMessage.pm` uses `TicketTypeIDs` and no longer uses `ServiceData->{TypeID}` for ticket-type limiting.
+- Mirror hashes match:
+  - `ServiceImportExport.pm`: `03222882A63CE655812A626A34FBCC01966C0AEF27A4105E38613CC1AA1C02D9`
+  - `Service.pm`: `00BF8663362A557FBB3B6C8C943E6655E6EC2C86910C9BFBD0E4243620AC75DE`
+  - `AdminService.pm`: `931A6A76C312E3AFEEDDE5B6C7403702A3C3AC6A4B7959ACDBA157CF53380B93`
+  - `AdminService.tt`: `5F1F99FA6CDF72D9E30FD7D07A6CB736D26FC33633185873639E179E2A4A47C4`
+  - `CustomerTicketMessage.pm`: `7BB6655B5421D2CAABC00E893F993C3D87D97E251050F0A1070CA95AF2702140`
+- `git diff --check` passed for the edited service import, service runtime, admin service, customer ticket message, template, SOPM, and runtime overlay files.
+
+### Runtime expectation
+
+- Service import YAML should now distinguish both fields, for example:
+  - `Type: Access Management`
+  - `TicketTypes: [ServiceRequest]`
+- `Type` controls the service's `ITSM::Service::Type`.
+- `TicketTypes` controls which ticket types can select or retain the service.
+
+## 2026-06-30 GovernanceDB 0.0.182 Service TicketTypes Import/Binding Restore
+
+Superseded by `0.0.183`: this entry captured an intermediate implementation that incorrectly combined service `Type` and ticket `TicketTypes` into the service `TypeID` column.
+
+### Completed work
+
+- Restored the service-to-ticket-type binding semantics after the latest service import path treated service `Type` as `ITSM::Service::Type`.
+- Admin Service edit now builds the `TypeID` dropdown from ticket types via `Kernel::System::Type`, not GeneralCatalog service types.
+- Admin Service template now labels the field and overview column as `Ticket Types` to match the import/export contract.
+- `Kernel::System::Service` now exposes the stored `type_id` as:
+  - `TicketTypeIDs => [ TypeID ]`
+  - `TicketTypes => [ TypeName ]`
+  - `TicketType => TypeName`
+  while preserving `TypeID` for existing runtime callers.
+- `ServiceImportExport` now exports the binding as `TicketTypes` and imports `TicketTypes`/`TicketType` as the authoritative ticket type binding.
+- Legacy YAML `Type` is accepted only as a backward-compatible alias for a ticket type; it is no longer resolved through `ITSM::Service::Type`.
+- When `TicketTypes` is imported for an existing service, the imported ticket type wins over the existing `TypeID` fallback.
+- Added `ServiceImportExport.pm` and `Service.pm` to the GovernanceDB runtime overlay package so fresh installs and upgrades deploy the restored behavior.
+- Mirrored `ServiceImportExport.pm`, `Service.pm`, `AdminService.pm`, and `AdminService.tt` across source, GovernanceDB runtime overlay, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.182`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.182.opm`.
+- `Kernel/Package/GovernanceDB-0.0.182.opm` SHA256: `34698D19352BC4FE6B850CC94353F17D8400602037AE89B61484D339F745F8DD`.
+- Supersedes `0.0.181`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.182.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical and packaged copies of:
+  - `Kernel/System/Service.pm`
+  - `Kernel/Autoload/ServiceImportExport.pm`
+  - `Kernel/Modules/AdminService.pm`
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.182.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.182.opm` parsed successfully as XML: version `0.0.182`, `OpmFileCount=179`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms:
+  - `ServiceImportExport.pm` includes `TicketTypes`/`TicketTypeIDs` and no `ITSM::Service::Type` resolution.
+  - `Service.pm` includes `TicketTypes`/`TicketTypeIDs` exposure.
+  - `AdminService.tt` includes the `Ticket Types` label.
+- Mirror hashes match:
+  - `ServiceImportExport.pm`: `3BC984452F0B7AFB4631948D617A50F2D3EE0E07BB02026E3E1423BF92FCF1E2`
+  - `Service.pm`: `4F8D41BBB32D4F03D3165C77823E7EC60C0D4C2EADB77A079855D2BF24807176`
+  - `AdminService.pm`: `44A02CA73940E0C741ADB45D4222734712944E369101F7D33E6A14766DA0C308`
+  - `AdminService.tt`: `B4FCB1783C70E634D1F64BAD1939001E140847356A41DB6ED46EC6A198DADA5E`
+- `git diff --check` passed for the edited service import, service runtime, admin service, template, SOPM, and runtime overlay files.
+
+### Runtime expectation
+
+- Service import YAML should use `TicketTypes`, for example:
+  - `TicketTypes: [ServiceRequest]`
+- Because the current service table stores one `type_id`, the runtime persists the first imported ticket type as the service binding.
+- Customer ticket creation and ACL generation continue to consume the existing service `TypeID`/`TicketTypeIDs` shape, but now those values resolve from ticket types consistently.
+
+## 2026-06-30 GovernanceDB 0.0.181 TESSERA Ticket Identity Number Generator
+
+### Completed work
+
+- Added a first-class TESSERA ticket number generator module: `Kernel::System::Ticket::Number::TESSERAIdentity`.
+- New generated ticket format is `SystemIdentity-TypeCode-YearSequence`, for example `ICAT-SE-20260000001` with the default package settings.
+- Added SysConfig setting `Ticket::NumberGenerator::TESSERAIdentity` in `ZTSMGovernanceRuntime.xml` with:
+  - `SystemIdentity`
+  - `TypeCodeLength`
+  - `SequencePadding`
+  - `SequenceScope`
+  - `ResetPolicy`
+  - editable `TypeCodes` for `ServiceRequest`, `Change`, `Incident`, `Problem`, `Assessment`, `Approval`, `Task`, `Verification`, `Endorsement`, `FollowUp`, and `Exception`.
+- Ticket type code resolution now uses the configured type-code mapping first.
+- If no mapping is found, the generator derives an uppercase fallback from the first configured number of alphanumeric characters in the ticket type name, so `Unknown` becomes `UN` when `TypeCodeLength = 2`.
+- Updated `TicketCreate()` to pass resolved `TypeID` and `Type` into ticket number generation.
+- Updated `Ticket::NumberBase` so hash-style ticket-number context is supported without breaking the old positional offset recursion used by stock generators.
+- Implemented yearly sequence numbering over `ticket_number_counter`, using `SequencePadding = 7` by default.
+- Mirrored `Ticket.pm`, `NumberBase.pm`, and `TESSERAIdentity.pm` across source, GovernanceDB package source/runtime overlay, local `otobo-11.0.16`, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.181`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.181.opm`.
+- `Kernel/Package/GovernanceDB-0.0.181.opm` SHA256: `FC3D9527D09BB225BD83CC1881B45802E2E2453DE1325EC928587C2F8547A7E4`.
+- Supersedes `0.0.180`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.181.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical and packaged copies of:
+  - `Kernel/System/Ticket.pm`
+  - `Kernel/System/Ticket/NumberBase.pm`
+  - `Kernel/System/Ticket/Number/TESSERAIdentity.pm`
+- `ZTSMGovernanceRuntime.xml` and `GovernanceDB.sopm` parsed successfully as XML.
+- `GovernanceDB.sopm` file list contains `177` files with no missing source files.
+- `Kernel/Package/GovernanceDB-0.0.181.opm` parsed successfully as XML: version `0.0.181`, `OpmFileCount=177`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload confirms embedded `TESSERAIdentity`, ticket identity SysConfig, `Ticket.pm` type-context passing, and `NumberBase.pm` hash-aware offset handling.
+- Mirror hashes match for `Ticket.pm`, `NumberBase.pm`, and `TESSERAIdentity.pm`.
+- Type-code sanity check returned `SE` for configured `Service Request`, `FU` for configured `Follow-up`, and `UN` for unmapped `Unknown`.
+- `git diff --check` reported only existing CRLF normalization warnings for prior dashboard files.
+
+### Runtime expectation
+
+- Set `Ticket::NumberGenerator` to `Kernel::System::Ticket::Number::TESSERAIdentity` to activate this generator.
+- Adjust `Ticket::NumberGenerator::TESSERAIdentity###SystemIdentity` to the environment identity required by the installation, for example `ICA` or `ICAT`.
+- With default package mapping, `ServiceRequest` uses `SE`; if `SR` is desired for Service Request, change the `TypeCodes` mapping in SysConfig.
+- Runtime install/upgrade verification should create tickets for mapped and unmapped ticket types and confirm the ticket numbers follow the configured identity, type code, current year, and padded sequence.
+
+## 2026-06-30 GovernanceDB 0.0.180 Raise-On-Behalf Workspace Owner Fix
+
+### Completed work
+
+- Corrected raise-on-behalf ownership semantics for customer-created requests.
+- Root cause: ticket creation already used the selected/effective customer user for OTOBO `CustomerUser`, but `_ZTSMRequesterOwnerSnapshotSet()` still stored the logged-in helper in `ZTicket-Owner`.
+- Updated the requester owner snapshot call so `ZTicket-Owner` is set to the effective selected requester (`$EffectiveCustomer{UserID}`), not `$Self->{UserID}`.
+- Updated `_ZTSMRequesterOwnerSnapshotSet()` to require and write the explicit `CustomerUserID` parameter.
+- Reverted the broad dashboard workspace merge from `0.0.179`; the dashboard remains a ZTSM-workspace/follow-up list rather than a duplicate of all visible/requested tickets.
+- Kept the dashboard workable-ticket permission tightening so `TileTicketList` filters ZTSM candidates through `ZTSMUserIDCheck`.
+- Mirrored `CustomerTicketMessage.pm` and `TileTicketList.pm` across source, GovernanceDB package source, runtime overlay, local OTOBO tree where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.180`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.180.opm`.
+- `Kernel/Package/GovernanceDB-0.0.180.opm` SHA256: `8ADBD51EB5EEEC94E1031847423C7E7B451C97801FAFED9B76530DE653EE0DD5`.
+- Supersedes `0.0.179`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.180.opm`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Output\HTML\CustomerDashboard\TileTicketList.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.180.opm` contain version `0.0.180`.
+- `Kernel/Package/GovernanceDB-0.0.180.opm` parsed successfully as XML with `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload confirms `CustomerUserID => $EffectiveCustomer{UserID}`, `Value => $Param{CustomerUserID}`, no `_CustomerVisibleTicketIDs` dashboard merge, and retained `return _PermissionFilter(` in `TileTicketList.pm`.
+- `CustomerTicketMessage.pm` mirrored copies have matching SHA256: `B2D9E237DE276C646D0368A6978CAFEE822EAE2332E58F4F6C64BD5CC12B0D43`.
+- `TileTicketList.pm` mirrored copies have matching SHA256: `81220CBC5CF86F0CCE3519B8E9744910021E3F7842E1F12301BA2447FB095815`.
+- `git diff --check` reported only existing CRLF normalization warnings for the touched `TileTicketList.pm` copies.
+
+### Runtime expectation
+
+- If Zen submits on behalf of Whye, the ticket/customer requester and `ZTicket-Owner` should both point at Whye.
+- Zen may still see the ticket in broader overview surfaces if permissions/company visibility allow it, but Zen's front-page workspace should not become responsible for the follow-up just because Zen helped create the first request.
+- The selected requester should see the follow-up/workspace item after logging in, because the ZTSM owner snapshot now belongs to that selected requester.
+
+## 2026-06-30 GovernanceDB 0.0.179 Customer Dashboard Workspace Visibility Fix
+
+### Completed work
+
+- Fixed the front-page `My workspace` dashboard tile showing `0 item(s)` even when the same customer user could see newly submitted tickets in `CustomerTicketOverview`.
+- Root cause: `CustomerTicketOverview` merged standard customer-visible ticket IDs with ZTSM workable ticket IDs, but `CustomerDashboard::TileTicketList` only queried ZTSM workable tickets.
+- Added standard customer-visible ticket lookup to `CustomerDashboard::TileTicketList`, using the same `CustomerUserLoginRaw` / `CustomerUserID` / `Permission => ro` shape as the overview.
+- Kept ZTSM execution-ticket protection in place by filtering protected child/work tickets through `ZTSMUserIDCheck`.
+- Dashboard workspace rows now merge standard customer-visible tickets with existing ZTSM workable tickets before sorting/rendering.
+- Mirrored `TileTicketList.pm` across source, GovernanceDB package source, runtime overlay, local OTOBO tree, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.179`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.179.opm`.
+- `Kernel/Package/GovernanceDB-0.0.179.opm` SHA256: `FBDF4EA2A816594083F62B38110019A2C479D77C1F3E31E95DA197B900DC7BF8`.
+- Superseded by `0.0.180`; do not use `0.0.179` for testing because it broadened dashboard workspace visibility instead of fixing raise-on-behalf `ZTicket-Owner`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Output\HTML\CustomerDashboard\TileTicketList.pm` passed.
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.179.opm` parsed successfully as XML: version `0.0.179`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Source, package source, runtime-overlay, local OTOBO, and `ZTSMOverlay` copies of `TileTicketList.pm` have matching SHA256: `A1902B230EC0FAE23C829F41B6C10E555F5ABA1985CCC17AF86934B3D930BD62`.
+- `git diff --check` reported only existing CRLF normalization warnings for the touched `TileTicketList.pm` copies.
+
+## 2026-06-30 GovernanceDB 0.0.178 Hidden RichText Submit Validation Fix
+
+### Completed work
+
+- Fixed the post-requester-refresh submit block where the browser validator reported hidden `Body` / `RichText` as `Validate_Required`.
+- Root cause: after dynamic requester/service refresh, the hidden rich-text textarea could still keep a required validation rule/class in the client validator, so submit was prevented even though the article/body section was hidden.
+- Added `ZTSMServicePayloadHiddenRichTextValidationSync()` to detect hidden `textarea.RichText[name="Body"]` / `#RichText[name="Body"]`.
+- Hidden rich-text fields now temporarily park `Validate_Required` / `Validate_Required_IfVisible`, add `ValidationIgnore`, and remove the jQuery validator `required` rule while hidden.
+- If the rich-text field becomes visible again, the parked required class is restored.
+- Wired the hidden-rich-text sync into the existing service payload validation state sync, field normalization, and submit reset path.
+- Mirrored the template change across GovernanceDB package/runtime-overlay and `ZTSMOverlay` template copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.178`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.178.opm`.
+- `Kernel/Package/GovernanceDB-0.0.178.opm` SHA256: `F786EBD270C7B60122D8FA6DDD31787B0F4B0D26D7B8563DBFCB311B877D0507`.
+- Supersedes `0.0.177`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.178.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.178.opm` parsed successfully as XML: version `0.0.178`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingBase64=0`.
+- Decoded OPM runtime-overlay payload contains `ZTSMServicePayloadHiddenRichTextValidationSync`, required-rule removal, `ZTSMRequiredClass`, and `ZTSMServicePayloadValidationStateSync`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain matching SHA256 hashes for the touched module/template files.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After requester preference refresh, clicking Submit should no longer be blocked by hidden `Body` / `RichText` validation.
+- If the console submit diagnostics are still enabled, validator details should not list hidden `Body` as a required error when the body section is hidden.
+
+## 2026-06-30 GovernanceDB 0.0.177 Requester Preference Render Precedence Fix
+
+### Completed work
+
+- Fixed the requester preference refresh after diagnostics showed `postedValues.Application = ["1"]` and final render still selected Integrated Clearance System.
+- Root cause: during requester-change service-extension refresh, the browser posted the old ticket preference values (`DynamicField_ZTicket-Application`, `DynamicField_ZTicket-Env`, `DynamicField_ZTicket-Location`). Even after backend hydration, the dynamic-field renderer can reread values from the original request `ParamObject`, so the stale posted value won over the requester-derived value.
+- Updated `ZTSMServiceExtensionRefresh()` so when `ElementChanged` is `ZTSMRaiseOnBehalfCustomerUserID`, it deletes the three stale ticket preference fields from `FormData` before POST. Normal service-change refreshes still preserve user-entered values.
+- Added backend requester-default diagnostics into the returned service-extension HTML and frontend `refresh-response.backendDefaults` parsing.
+- Backend diagnostics now show requested customer user, effective customer user, login customer user, whether requester defaults were forced, whether the customer-user record was found, each source `ZUser-*` field, source origin, source value, and applied `ZTicket-*` value.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` module/template copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.177`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.177.opm`.
+- `Kernel/Package/GovernanceDB-0.0.177.opm` SHA256: `320857F62B90BC2418A44ABCCAD453F23844B8072E8A5FFED8DB6F5355778E8E`.
+- Supersedes `0.0.176`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.177.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.177.opm` parsed successfully as XML: version `0.0.177`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingBase64=0`.
+- Decoded OPM runtime-overlay payloads contain the stale requester-preference `FormData` deletion, `backendDefaults` response parsing, and backend default debug markers including `SourceOrigin`, `EffectiveCustomerUserID`, and `RequesterPreferenceFields`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain matching SHA256 hashes for the touched module/template files.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- On requester change, `refresh-request-values.postedValues` should now show empty arrays for Application, Environment, and Location during the requester-triggered service-extension refresh.
+- `refresh-response.backendDefaults.data.EffectiveCustomerUserID` should show the selected requester, for example `zen.chan@ncs.com.sg`, while `LoginCustomerUserID` shows the logged-in customer user.
+- `refresh-response.backendDefaults.data.RequesterPreferenceFields.ZTicket-Application.SourceValue` should reveal the actual preference value read from Zen's customer-user record.
+- Final `refresh-applied-values-after-visible-refresh` should match the `AppliedValue` from `backendDefaults`, not the previously posted value `1`.
+
+## 2026-06-30 GovernanceDB 0.0.176 Requester Preference Value Diagnostics
+
+### Completed work
+
+- Added explicit requester preference value diagnostics so browser console verification shows values, not only event firing.
+- `form-update-callback` now logs `valuesAfterFormUpdate` when the shared snapshot helper is available.
+- `ZTSMServiceExtensionRefresh()` now logs:
+  - `currentValues` before the service-extension POST;
+  - `postedValues` from the actual `FormData` submitted to `Subaction=ZTSMServiceExtensionDynamicFields`;
+  - `responseValues` decoded from the returned HTML before replacement;
+  - `refresh-applied-values` after live DOM replacement;
+  - `refresh-applied-values-after-visible-refresh` after the delayed visible-selection repaint.
+- Each snapshot targets Application, Environment, and Location and includes native value, jQuery value, selected option text, rendered chip/text values, and compact field text.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` template copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.176`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.176.opm`.
+- `Kernel/Package/GovernanceDB-0.0.176.opm` SHA256: `39B2150C2F70E01EAC494BF915CF2ACC0D58053EB8AD35F8B3D38D04F814A0F4`.
+- Supersedes `0.0.175`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.176.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.176.opm` parsed successfully as XML: version `0.0.176`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingBase64=0`.
+- Decoded OPM runtime-overlay payloads contain `valuesAfterFormUpdate`, `currentValues`, `postedValues`, `responseValues`, `refresh-applied-values`, and target markers for `ZTicket-Application`, `ZTicket-Env`, and `ZTicket-Location`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain matching SHA256 hashes for the touched template files.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- On requester change, browser console should now show the selected values at each stage so the failed layer is visible:
+  - `valuesAfterFormUpdate`: OTOBO `AJAXUpdate` result;
+  - `postedValues`: exact values sent to service-extension refresh;
+  - `responseValues`: values returned by backend HTML;
+  - `refresh-applied-values-after-visible-refresh`: final live form and visible widget state.
+
+## 2026-06-30 GovernanceDB 0.0.175 Requester Service-Extension Force Refresh
+
+### Completed work
+
+- Fixed the requester-change service-extension refresh path after browser console logs showed events were firing but requester defaults still were not applied.
+- Root cause: `ZTSMServiceExtensionRefresh()` intentionally removed `ElementChanged` from the posted form data and did not add it back, so the backend service-extension render ran without the requester-change marker.
+- Updated requester callback calls to invoke `ZTSMServiceExtensionRefresh({ ElementChanged: 'ZTSMRaiseOnBehalfCustomerUserID' })`.
+- Updated the service-extension refresh function to post that `ElementChanged` marker only when explicitly supplied, preserving normal service-change behavior.
+- Updated backend default hydration so requester-forced defaults also apply during `Subaction=ZTSMServiceExtensionDynamicFields`, not only during `AJAXUpdate`.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.175`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.175.opm`.
+- `Kernel/Package/GovernanceDB-0.0.175.opm` SHA256: `1B0D6323BC8CFF2017E365F4ECCFDD619FEE1FF6236C67284544B0C9D7CA0DA5`.
+- Supersedes `0.0.174`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.175.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.175.opm` parsed successfully as XML: version `0.0.175`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingBase64=0`.
+- Decoded OPM runtime-overlay payloads contain the requester element marker `ZTSMRaiseOnBehalfCustomerUserID`, service-extension subaction `ZTSMServiceExtensionDynamicFields`, and the service-extension `elementChanged` diagnostic marker.
+- Decoded `CustomerTicketMessage.tt` payload contains `ZTSMServiceExtensionRefresh({ ElementChanged: 'ZTSMRaiseOnBehalfCustomerUserID' })`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain matching SHA256 hashes for the touched module/template files.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- On requester change, console should now show `[TESSERA service-extension] refresh-start` with `elementChanged: "ZTSMRaiseOnBehalfCustomerUserID"`.
+- The HTML refresh should be rendered with requester-derived defaults forced for Application, Environment, and Location.
+
+## 2026-06-30 GovernanceDB 0.0.174 Requester Refresh Diagnostics and Compact Set Layout
+
+### Completed work
+
+- Reduced the inline requester editor spacing and widened it so the requester search box is visible without the clipped/cluttered look after clicking `Change`.
+- Added browser console diagnostics with `[TESSERA requester]` markers for:
+  - requester editor open;
+  - customer-user search start/results/errors;
+  - requester selection commit/no-match/same-user;
+  - hidden `ZTSMRaiseOnBehalfCustomerUserID` change;
+  - `Core.AJAX.FormUpdate()` callback or fallback path.
+- Added `[TESSERA service-extension]` console diagnostics for missing refresh nodes, refresh start, HTTP failures, and response length.
+- Tightened service-extension Set layout by reducing horizontal gaps and field widths, widening the usable viewport, and reducing the calculated side margin so more fields fit before scrolling.
+- Fixed requester-derived defaults to read customer-user DynamicField values from either mapped `DynamicField_*` data or `UserDynamicField_*` data before falling back to direct DynamicField backend lookup.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.174`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.174.opm`.
+- `Kernel/Package/GovernanceDB-0.0.174.opm` SHA256: `A52A62258043CB5779271445F167C18C39A79C00A1A447748ACA1E7B80DCFE1C`.
+- Supersedes `0.0.173`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.174.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.174.opm` parsed successfully as XML: version `0.0.174`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingBase64=0`.
+- Decoded OPM payloads contain `[TESSERA requester]`, `[TESSERA service-extension]`, `UserDynamicField_$SourceField`, and the compact Set layout marker `max-width: 1120px`.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` and `ZTSMCustomerTicketMessageServiceFields.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain matching SHA256 hashes for the touched module/template files.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- Selecting `zen` as requester should now visibly log each frontend step in the browser console.
+- If the requester preference still does not switch Application/Environment/Location, the console should show whether the datalist selection, hidden field change, OTOBO `FormUpdate`, and service-extension reload are firing.
+
+## 2026-06-30 GovernanceDB 0.0.173 Requester Select Default Refresh
+
+### Completed work
+
+- Fixed the new-ticket requester selector so choosing a customer-user datalist result commits immediately on the actual selection/input path instead of waiting for a later blur/change.
+- Added a hidden-field change trigger when `ZTSMRaiseOnBehalfCustomerUserID` changes, then calls the normal `Core.AJAX.FormUpdate()` path with `ElementChanged=ZTSMRaiseOnBehalfCustomerUserID`.
+- Changed requester-change AJAX refresh to force requester-derived defaults to rehydrate:
+  - `ZUser-Application` -> `ZTicket-Application`
+  - `ZUser-Environment` -> `ZTicket-Env`
+  - `ZUser-Location` -> `ZTicket-Location`
+- Kept normal initial rendering conservative: requester defaults still do not overwrite existing values unless the AJAX refresh was explicitly caused by requester change.
+- Mirrored the runtime changes across GovernanceDB package/runtime-overlay and `ZTSMOverlay` copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.173`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.173.opm`.
+- `Kernel/Package/GovernanceDB-0.0.173.opm` SHA256: `F358581052EEB51E44B856E5A9D0C239B9D3B05093B3CE48E6D34B6603D87C4C`.
+- Supersedes `0.0.172`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.173.opm`.
+
+### Validation
+
+- `GovernanceDB.sopm` and `Kernel/Package/GovernanceDB-0.0.173.opm` parsed successfully as XML: version `0.0.173`, `SopmFileCount=173`, `OpmFileCount=173`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payloads contain the requester-change forced default hydration and immediate datalist selection/hidden-field change trigger.
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketMessage.pm` passed.
+- Inline JavaScript in `CustomerTicketMessage.tt` passed bundled Node `--check` after Template Toolkit tag stripping.
+- Source, package, runtime-overlay, and `ZTSMOverlay` mirrored copies contain the expected requester-refresh markers.
+- `git diff --check` passed.
+
+### Runtime expectation
+
+- After upgrading to `0.0.173`, selecting a customer user on `CustomerTicketMessage` should immediately refresh the effective requester context and replace requester-derived Application/Environment/Location defaults for the new ticket.
+- Retest by selecting a requester with different customer-user defaults and confirm both visible widgets and native submitted field values change.
 
 ## 2026-06-29 GovernanceDB 0.0.172 Requester Cosmetic Selection Refresh
 

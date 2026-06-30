@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -381,10 +381,23 @@ Returns:
 =cut
 
 sub TicketCreateNumber {
-    my ( $Self, $Offset ) = @_;    # Offset is an internal offset value for the new counter entry.
+    my ( $Self, @Param ) = @_;
+
+    my %Param;
+
+    # Backward compatible support for the historical positional offset argument.
+    if ( @Param == 1 && !ref $Param[0] ) {
+        $Param{Offset} = $Param[0];
+    }
+    else {
+        %Param = @Param;
+    }
 
     # Try to generate a new ticket number.
-    my $TicketNumber = $Self->TicketNumberBuild($Offset);
+    my $TicketNumber = $Self->TicketNumberBuild(
+        $Param{Offset},
+        %Param,
+    );
     return if !$TicketNumber;
 
     my $TicketNumberAlreadyUsed = $Kernel::OM->Get('Kernel::System::Ticket')->TicketIDLookup(
@@ -411,7 +424,9 @@ sub TicketCreateNumber {
         Message  => "TicketNumber ($TicketNumber) exists! Creating a new one.",
     );
 
-    return $Self->TicketCreateNumber( $Self->{LoopProtectionCounter} );
+    $Param{Offset} = $Self->{LoopProtectionCounter};
+
+    return $Self->TicketCreateNumber(%Param);
 }
 
 =head1 PRIVATE INTERFACE

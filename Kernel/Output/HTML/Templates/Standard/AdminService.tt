@@ -196,6 +196,12 @@
                         </div>
                         <div class="Clear"></div>
 
+                        <label for="TicketTypeIDs">[% Translate("Ticket Types") | html %]: </label>
+                        <div class="Field">
+                            [% Data.TicketTypeOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+
                         <label for="Criticality">[% Translate("Criticality") | html %]: </label>
                         <div class="Field">
                             [% Data.CriticalityOptionStrg %]

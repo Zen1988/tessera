@@ -27,6 +27,7 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
     'Kernel::System::CheckItem',
+    'Kernel::System::ACL::DB::ACL',
     'Kernel::System::DB',
 # ---
 # ITSMCore
@@ -38,6 +39,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::Translations',
+    'Kernel::System::Type',
     'Kernel::System::Valid',
 );
 
@@ -394,6 +396,9 @@ sub ServiceListGet {
         );
         $ServiceData = \%NewServiceData;
 # ---
+        $Self->_ZTSMTicketTypesInject(
+            ServiceData => $ServiceData,
+        );
     }
 
     if (@ServiceList) {
@@ -584,6 +589,9 @@ sub ServiceGet {
         );
     }
 # ---
+    $Self->_ZTSMTicketTypesInject(
+        ServiceData => \%ServiceData,
+    );
 
     # set cache
     $Kernel::OM->Get('Kernel::System::Cache')->Set(
@@ -838,6 +846,12 @@ sub ServiceAdd {
         Strings => [ values %Services ],
     );
 
+    $Self->_ZTSMServiceCatalogACLRefresh(
+        Source    => 'ServiceAdd',
+        ServiceID => $ServiceID,
+        UserID    => $Param{UserID},
+    );
+
     return $ServiceID;
 }
 
@@ -1024,6 +1038,12 @@ sub ServiceUpdate {
     # generate chained translations automatically
     $Kernel::OM->Get('Kernel::System::Translations')->TranslateParentChildElements(
         Strings => [ values %Services ],
+    );
+
+    $Self->_ZTSMServiceCatalogACLRefresh(
+        Source    => 'ServiceUpdate',
+        ServiceID => $Param{ServiceID},
+        UserID    => $Param{UserID},
     );
 
     return 1;
@@ -1378,6 +1398,15 @@ sub ServicePreferencesSet {
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
         Type => $Self->{CacheType},
     );
+
+    if ( ( $Param{Key} || '' ) eq 'TicketTypeIDs' ) {
+        $Self->_ZTSMServiceCatalogACLRefresh(
+            Source    => 'ServicePreferencesSet:TicketTypeIDs',
+            ServiceID => $Param{ServiceID},
+            UserID    => $Param{UserID} || 1,
+        );
+    }
+
     return 1;
 }
 
@@ -1396,6 +1425,306 @@ sub ServicePreferencesGet {
     my ( $Self, %Param ) = @_;
 
     return $Self->{PreferencesObject}->ServicePreferencesGet(%Param);
+}
+
+sub _ZTSMTicketTypesInject {
+    my ( $Self, %Param ) = @_;
+
+    my $ServiceData = $Param{ServiceData};
+    return if ref $ServiceData ne 'HASH';
+
+    my @TicketTypeIDs;
+    if ( ref $ServiceData->{TicketTypeIDs} eq 'ARRAY' ) {
+        @TicketTypeIDs = grep { $_ } $ServiceData->{TicketTypeIDs}->@*;
+    }
+    elsif ( defined $ServiceData->{TicketTypeIDs} && $ServiceData->{TicketTypeIDs} ne '' ) {
+        @TicketTypeIDs = grep { $_ } split m{\s*,\s*}, $ServiceData->{TicketTypeIDs};
+    }
+    return if !@TicketTypeIDs;
+
+    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
+        Valid => 0,
+    );
+    my @TicketTypes = map { $TicketTypeList{$_} } grep { $TicketTypeList{$_} } @TicketTypeIDs;
+    return if !@TicketTypes;
+
+    $ServiceData->{TicketTypeIDs} = \@TicketTypeIDs;
+    $ServiceData->{TicketTypes}   = \@TicketTypes;
+    $ServiceData->{TicketType}    = $TicketTypes[0];
+
+    return 1;
+}
+
+sub UpdateTypServiceACL {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
+        return 1;
+    }
+
+    for my $Needed (qw(TicketTypeID UserID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
+        Valid => 0,
+    );
+    my $TicketType = $TicketTypeList{ $Param{TicketTypeID} };
+    if ( !$TicketType ) {
+        return;
+    }
+
+    my $Options = $Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls::Options') || {};
+    my @FrontendAction = @{ $Options->{FrontendAction} || [] };
+    @FrontendAction = qw(CustomerTicketMessage AgentTicketPhone AgentTicketEmail AgentTicketFreeText) if !@FrontendAction;
+
+    my $ConfigChangeKey = ( $Options->{ConfigChange} || '' ) eq 'PossibleAdd' ? 'PossibleAdd' : 'Possible';
+    my $ACLValidID      = $Options->{ACLValidID} || 1;
+
+    my @ServiceNames;
+    my $ServiceList = $Self->ServiceListGet(
+        Valid  => 0,
+        UserID => $Param{UserID},
+    ) || [];
+
+    SERVICE:
+    for my $ServiceData ( $ServiceList->@* ) {
+        next SERVICE if ref $ServiceData ne 'HASH';
+        next SERVICE if !$ServiceData->{Name};
+        next SERVICE if ( $ServiceData->{ValidID} || 0 ) != 1;
+        next SERVICE if ref $ServiceData->{TicketTypeIDs} ne 'ARRAY';
+        next SERVICE if !@{ $ServiceData->{TicketTypeIDs} };
+
+        my %ServiceTicketTypeID = map { $_ => 1 } $ServiceData->{TicketTypeIDs}->@*;
+        next SERVICE if !$ServiceTicketTypeID{ $Param{TicketTypeID} };
+
+        push @ServiceNames, $ServiceData->{Name};
+    }
+
+    my $ACLName = 'zzz - Show Service based on Ticket-Type: ' . $TicketType;
+    my $Success = $Self->_ZTSMServiceCatalogACLUpsert(
+        Name           => $ACLName,
+        Comment        => 'This ACL was generated when a service was added or changed.',
+        ValidID        => $ACLValidID,
+        UserID         => $Param{UserID},
+        StopAfterMatch => 0,
+        ConfigMatch    => {
+            Properties => {
+                Frontend => {
+                    Action => \@FrontendAction,
+                },
+                Ticket => {
+                    Type => [$TicketType],
+                },
+            },
+        },
+        ConfigChange => {
+            $ConfigChangeKey => {
+                Ticket => {
+                    Service => \@ServiceNames,
+                },
+            },
+        },
+    );
+    if ( !$Success ) {
+        return;
+    }
+
+    if ( $Options->{GenerateInitalACLToDisableAllServices} ) {
+        $Success = $Self->_ZTSMServiceCatalogACLUpsert(
+            Name           => 'zza - Disable all Services if no Ticket-Type is selected.',
+            Comment        => 'This ACL was generated when a service was added or changed.',
+            ValidID        => $ACLValidID,
+            UserID         => $Param{UserID},
+            StopAfterMatch => 0,
+            ConfigMatch    => {
+                Properties => {
+                    Frontend => {
+                        Action => \@FrontendAction,
+                    },
+                },
+            },
+            ConfigChange => {
+                PossibleNot => {
+                    Ticket => {
+                        Service => ['[RegExp].*'],
+                    },
+                },
+            },
+        );
+        if ( !$Success ) {
+            return;
+        }
+    }
+
+    if ( $Options->{ACLDeploy} && ( !exists $Param{Deploy} || $Param{Deploy} ) ) {
+        return $Self->_ZTSMServiceCatalogACLDeploy(
+            UserID => $Param{UserID},
+        );
+    }
+
+    return 1;
+}
+
+sub UpdateTypServiceACLs {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
+        return 1;
+    }
+
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
+        Valid => 0,
+    );
+    my %TicketTypeNameToID = reverse %TicketTypeList;
+
+    my %TicketTypeID;
+    my $RequestTypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::RequestType',
+        Valid => 1,
+    ) || {};
+
+    if ( IsHashRefWithData($RequestTypeList) ) {
+        REQUESTTYPE:
+        for my $RequestType ( values $RequestTypeList->%* ) {
+            next REQUESTTYPE if !$RequestType;
+            my $TicketTypeID = $TicketTypeNameToID{$RequestType};
+            next REQUESTTYPE if !$TicketTypeID;
+            $TicketTypeID{$TicketTypeID} = 1;
+        }
+    }
+
+    my @RequestTypeNames = sort grep {$_} values $RequestTypeList->%*;
+    my $ServiceList = $Self->ServiceListGet(
+        Valid  => 0,
+        UserID => $Param{UserID},
+    ) || [];
+
+    SERVICE:
+    for my $ServiceData ( $ServiceList->@* ) {
+        next SERVICE if ref $ServiceData ne 'HASH';
+        next SERVICE if ref $ServiceData->{TicketTypeIDs} ne 'ARRAY';
+
+        TICKETTYPEID:
+        for my $TicketTypeID ( $ServiceData->{TicketTypeIDs}->@* ) {
+            next TICKETTYPEID if !$TicketTypeID;
+            next TICKETTYPEID if !$TicketTypeList{$TicketTypeID};
+            $TicketTypeID{$TicketTypeID} = 1;
+        }
+    }
+
+    TICKETTYPEID:
+    for my $TicketTypeID ( sort keys %TicketTypeID ) {
+        my $Success = $Self->UpdateTypServiceACL(
+            TicketTypeID => $TicketTypeID,
+            UserID       => $Param{UserID},
+            Deploy       => 0,
+        );
+        return if !$Success;
+    }
+
+    my $Options = $Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls::Options') || {};
+    if ( $Options->{ACLDeploy} ) {
+        return $Self->_ZTSMServiceCatalogACLDeploy(
+            UserID => $Param{UserID},
+        );
+    }
+
+    return 1;
+}
+
+sub _ZTSMServiceCatalogACLRefresh {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
+        return 1;
+    }
+
+    my $Success = $Self->UpdateTypServiceACLs(
+        Source    => $Param{Source},
+        ServiceID => $Param{ServiceID},
+        UserID    => $Param{UserID} || 1,
+    );
+    if ($Success) {
+        return 1;
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'Could not refresh generated service ticket type ACLs after service change.',
+    );
+
+    return;
+}
+
+sub _ZTSMServiceCatalogACLUpsert {
+    my ( $Self, %Param ) = @_;
+
+    my $ACLObject = $Kernel::OM->Get('Kernel::System::ACL::DB::ACL');
+    my $ExistingACL;
+    my $ACLList = $ACLObject->ACLListGet(
+        UserID => $Param{UserID},
+    ) || [];
+
+    ACL:
+    for my $ACLData ( $ACLList->@* ) {
+        next ACL if ref $ACLData ne 'HASH';
+        next ACL if ( $ACLData->{Name} || '' ) ne $Param{Name};
+
+        $ExistingACL = $ACLData;
+        last ACL;
+    }
+
+    if ($ExistingACL) {
+        return $ACLObject->ACLUpdate(
+            $ExistingACL->%*,
+            %Param,
+        );
+    }
+
+    return $ACLObject->ACLAdd(%Param);
+}
+
+sub _ZTSMServiceCatalogACLDeploy {
+    my ( $Self, %Param ) = @_;
+
+    my $ACLObject = $Kernel::OM->Get('Kernel::System::ACL::DB::ACL');
+    my $Location  = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/Kernel/Config/Files/ZZZACL.pm';
+
+    my $ACLDumpSuccess = $ACLObject->ACLDump(
+        ResultType => 'FILE',
+        Location   => $Location,
+        UserID     => $Param{UserID},
+    );
+    if ( !$ACLDumpSuccess ) {
+        return;
+    }
+
+    my $Success = $ACLObject->ACLsNeedSyncReset();
+    if ( !$Success ) {
+        return;
+    }
+
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => 'TicketACL',
+        Key  => 'Preselection',
+    );
+
+    return 1;
 }
 
 =head2 ServiceParentsGet()

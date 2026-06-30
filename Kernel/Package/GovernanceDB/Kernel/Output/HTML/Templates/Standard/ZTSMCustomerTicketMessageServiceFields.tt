@@ -7,7 +7,7 @@
 #NewCustomerTicket .ZTSMServiceExtensionField.MultiValue,
 #NewCustomerTicket .ZTSMServiceExtensionField .DFSetOuterField {
     width: 100% !important;
-    max-width: 1060px !important;
+    max-width: 1120px !important;
     min-width: 0 !important;
     overflow: visible !important;
     box-sizing: border-box;
@@ -17,7 +17,7 @@
 
 #NewCustomerTicket .ZTSMServiceExtensionField.MultiValue > .FieldCell {
     width: 100% !important;
-    max-width: 1060px !important;
+    max-width: 1120px !important;
     min-width: 0 !important;
     overflow-x: auto !important;
     overflow-y: visible !important;
@@ -28,8 +28,8 @@
 #NewCustomerTicket .ZTSMServiceExtensionField .DFSetOuterField > .DynamicFieldSet {
     width: 100% !important;
     inline-size: 100% !important;
-    max-width: 1060px !important;
-    max-inline-size: 1060px !important;
+    max-width: 1120px !important;
+    max-inline-size: 1120px !important;
     min-width: 0 !important;
     min-inline-size: 0 !important;
     overflow: visible !important;
@@ -40,8 +40,8 @@
 #NewCustomerTicket .ZTSMFieldSetScrollViewport {
     width: 100%;
     inline-size: 100%;
-    max-width: 1060px;
-    max-inline-size: 1060px;
+    max-width: 1120px;
+    max-inline-size: 1120px;
     min-width: 0;
     min-inline-size: 0;
     overflow-x: auto;
@@ -54,8 +54,8 @@
 #NewCustomerTicket .ZTSMFieldSetScrollViewport > .DynamicFieldSet {
     width: 100% !important;
     inline-size: 100% !important;
-    max-width: 1060px !important;
-    max-inline-size: 1060px !important;
+    max-width: 1120px !important;
+    max-inline-size: 1120px !important;
     min-width: 0 !important;
     min-inline-size: 0 !important;
     overflow: visible !important;
@@ -66,7 +66,7 @@
     display: flex !important;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 18px;
+    gap: 10px;
     width: 100% !important;
     inline-size: 100% !important;
     min-width: 0 !important;
@@ -81,19 +81,19 @@
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell {
-    flex: 0 0 260px !important;
-    width: 260px !important;
-    min-width: 260px !important;
-    max-width: 320px !important;
+    flex: 0 0 230px !important;
+    width: 230px !important;
+    min-width: 230px !important;
+    max-width: 300px !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell.DynamicFieldDate,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell.DynamicFieldDateTime,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDate,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDateTime {
-    flex-basis: 300px !important;
-    width: 300px !important;
-    min-width: 300px !important;
+    flex-basis: 270px !important;
+    width: 270px !important;
+    min-width: 270px !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell > .Field,
@@ -395,7 +395,163 @@
         return Service.value || '';
     }
 
-    function ZTSMServiceExtensionRefresh() {
+    function ZTSMServiceExtensionPreferenceTargets() {
+        return [
+            {
+                label: 'Application',
+                name: 'ZTicket-Application'
+            },
+            {
+                label: 'Environment',
+                name: 'ZTicket-Env'
+            },
+            {
+                label: 'Location',
+                name: 'ZTicket-Location'
+            }
+        ];
+    }
+
+    function ZTSMServiceExtensionPreferenceFieldFind(Root, FieldName) {
+        var Selectors = [
+                '[name="DynamicField_' + FieldName + '"]',
+                '[id="DynamicField_' + FieldName + '"]',
+                '[name="Autocomplete_DynamicField_' + FieldName + '"]',
+                '[id="Autocomplete_DynamicField_' + FieldName + '"]',
+                '[name="' + FieldName + '"]',
+                '[id="' + FieldName + '"]'
+            ],
+            Element = null;
+
+        Root = Root || document;
+
+        Selectors.some(function (Selector) {
+            try {
+                Element = Root.querySelector(Selector);
+            }
+            catch (Error) {
+                Element = null;
+            }
+            return !!Element;
+        });
+
+        return Element;
+    }
+
+    function ZTSMServiceExtensionPreferenceFieldSnapshot(Root, FieldName) {
+        var Element = ZTSMServiceExtensionPreferenceFieldFind(Root, FieldName),
+            SelectedOptions = [],
+            JQueryValue,
+            RenderedValues = [],
+            Container,
+            ContainerText = '';
+
+        if (!Element) {
+            return {
+                exists: false
+            };
+        }
+
+        if (Element.options) {
+            SelectedOptions = Array.prototype.filter.call(Element.options, function (Option) {
+                return Option.selected;
+            }).map(function (Option) {
+                return {
+                    value: Option.value,
+                    text: String(Option.text || '').trim()
+                };
+            });
+        }
+
+        if (window.jQuery) {
+            try {
+                JQueryValue = window.jQuery(Element).val();
+            }
+            catch (Error) {
+                JQueryValue = 'jQuery.val() failed: ' + Error.message;
+            }
+        }
+
+        RenderedValues = ZTSMServicePayloadRenderedSelectionValues(Element);
+        Container = Element.closest ? Element.closest('.ZTSMServiceExtensionField, .Row_DynamicField, .FieldCell') : null;
+        ContainerText = Container ? String(Container.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 300) : '';
+
+        return {
+            exists: true,
+            tagName: Element.tagName,
+            type: Element.type || '',
+            id: Element.id || '',
+            name: Element.name || '',
+            nativeValue: Element.value || '',
+            jqueryValue: JQueryValue,
+            selectedOptions: SelectedOptions,
+            renderedValues: RenderedValues,
+            containerText: ContainerText
+        };
+    }
+
+    function ZTSMServiceExtensionPreferenceSnapshot(Root) {
+        var Snapshot = {};
+
+        ZTSMServiceExtensionPreferenceTargets().forEach(function (Target) {
+            Snapshot[Target.label] = ZTSMServiceExtensionPreferenceFieldSnapshot(Root, Target.name);
+        });
+
+        return Snapshot;
+    }
+
+    function ZTSMServiceExtensionPreferenceFormDataSnapshot(Data) {
+        var Snapshot = {};
+
+        ZTSMServiceExtensionPreferenceTargets().forEach(function (Target) {
+            var Key = 'DynamicField_' + Target.name;
+
+            Snapshot[Target.label] = {
+                key: Key,
+                values: Data && typeof Data.getAll === 'function' ? Data.getAll(Key) : []
+            };
+        });
+
+        return Snapshot;
+    }
+
+    function ZTSMServiceExtensionPreferenceResponseSnapshot(HTML) {
+        var Container = document.createElement('div');
+
+        Container.innerHTML = HTML || '';
+
+        return ZTSMServiceExtensionPreferenceSnapshot(Container);
+    }
+
+    function ZTSMServiceExtensionRequesterDefaultsDebug(HTML) {
+        var Container = document.createElement('div'),
+            Node;
+
+        Container.innerHTML = HTML || '';
+        Node = Container.querySelector('#ZTSMRequesterDefaultsDebug');
+
+        if (!Node) {
+            return {
+                exists: false
+            };
+        }
+
+        try {
+            return {
+                exists: true,
+                data: JSON.parse(Node.textContent || '{}')
+            };
+        }
+        catch (Error) {
+            return {
+                exists: true,
+                parseError: Error.message,
+                raw: Node.textContent || ''
+            };
+        }
+    }
+
+    function ZTSMServiceExtensionRefresh(Options) {
         var Form = ZTSMFirst('#NewCustomerTicket'),
             Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
             End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
@@ -403,7 +559,23 @@
             Data;
 
         if (!Form || !Start || !End) {
+            if (window.console && typeof window.console.error === 'function') {
+                window.console.error('[TESSERA service-extension]', 'refresh-missing-node', {
+                    hasForm: !!Form,
+                    hasStart: !!Start,
+                    hasEnd: !!End
+                });
+            }
             return;
+        }
+
+        if (window.console && typeof window.console.log === 'function') {
+            window.console.log('[TESSERA service-extension]', 'refresh-start', {
+                serviceID: ZTSMServiceExtensionValue(),
+                requesterID: (Form.querySelector('[name="ZTSMRaiseOnBehalfCustomerUserID"]') || {}).value || '',
+                elementChanged: Options && Options.ElementChanged ? Options.ElementChanged : '',
+                currentValues: ZTSMServiceExtensionPreferenceSnapshot(document)
+            });
         }
 
         Data = new FormData(Form);
@@ -412,6 +584,22 @@
         Data.delete('ElementChanged');
         Data.append('Action', 'CustomerTicketMessage');
         Data.append('Subaction', 'ZTSMServiceExtensionDynamicFields');
+        if (Options && Options.ElementChanged) {
+            Data.append('ElementChanged', Options.ElementChanged);
+        }
+        if (Options && Options.ElementChanged === 'ZTSMRaiseOnBehalfCustomerUserID') {
+            ZTSMServiceExtensionPreferenceTargets().forEach(function (Target) {
+                Data.delete('DynamicField_' + Target.name);
+            });
+        }
+
+        if (window.console && typeof window.console.log === 'function') {
+            window.console.log('[TESSERA service-extension]', 'refresh-request-values', {
+                requesterID: Data.get('ZTSMRaiseOnBehalfCustomerUserID') || '',
+                elementChanged: Data.get('ElementChanged') || '',
+                postedValues: ZTSMServiceExtensionPreferenceFormDataSnapshot(Data)
+            });
+        }
 
         Request = new XMLHttpRequest();
         Request.open('POST', Form.getAttribute('action') || '[% Env("CGIHandle") %]', true);
@@ -420,15 +608,30 @@
                 return;
             }
             if (Request.status < 200 || Request.status >= 300) {
+                if (window.console && typeof window.console.error === 'function') {
+                    window.console.error('[TESSERA service-extension]', 'refresh-http-error', {
+                        status: Request.status,
+                        responseText: (Request.responseText || '').slice(0, 500)
+                    });
+                }
                 return;
             }
 
+            if (window.console && typeof window.console.log === 'function') {
+                window.console.log('[TESSERA service-extension]', 'refresh-response', {
+                    status: Request.status,
+                    length: (Request.responseText || '').length,
+                    responseValues: ZTSMServiceExtensionPreferenceResponseSnapshot(Request.responseText || ''),
+                    backendDefaults: ZTSMServiceExtensionRequesterDefaultsDebug(Request.responseText || '')
+                });
+            }
             ZTSMServiceExtensionReplace(Start, End, Request.responseText || '');
         };
         Request.send(Data);
     }
 
     window.ZTSMServiceExtensionRefresh = ZTSMServiceExtensionRefresh;
+    window.ZTSMServiceExtensionPreferenceSnapshot = ZTSMServiceExtensionPreferenceSnapshot;
 
     function ZTSMServiceExtensionReplace(Start, End, HTML) {
         var Node = Start.nextSibling,
@@ -486,7 +689,7 @@
 
             if (Outer) {
                 Outer.style.setProperty('width', '100%', 'important');
-                Outer.style.setProperty('max-width', '1060px', 'important');
+                Outer.style.setProperty('max-width', '1120px', 'important');
                 Outer.style.setProperty('margin-left', 'auto', 'important');
                 Outer.style.setProperty('margin-right', 'auto', 'important');
                 Outer.style.setProperty('overflow', 'visible', 'important');
@@ -495,7 +698,7 @@
 
             if (OuterField) {
                 OuterField.style.setProperty('width', '100%', 'important');
-                OuterField.style.setProperty('max-width', '1060px', 'important');
+                OuterField.style.setProperty('max-width', '1120px', 'important');
                 OuterField.style.setProperty('min-width', '0', 'important');
                 OuterField.style.setProperty('margin-left', 'auto', 'important');
                 OuterField.style.setProperty('margin-right', 'auto', 'important');
@@ -521,8 +724,8 @@
             Set.style.removeProperty('min-inline-size');
             Set.style.setProperty('width', '100%', 'important');
             Set.style.setProperty('inline-size', '100%', 'important');
-            Set.style.setProperty('max-width', '1060px', 'important');
-            Set.style.setProperty('max-inline-size', '1060px', 'important');
+            Set.style.setProperty('max-width', '1120px', 'important');
+            Set.style.setProperty('max-inline-size', '1120px', 'important');
             Set.style.setProperty('min-width', '0', 'important');
             Set.style.setProperty('min-inline-size', '0', 'important');
             Set.style.setProperty('overflow', 'visible', 'important');
@@ -543,7 +746,7 @@
             Row.style.setProperty('display', 'flex', 'important');
             Row.style.setProperty('flex-wrap', 'nowrap', 'important');
             Row.style.setProperty('align-items', 'stretch', 'important');
-            Row.style.setProperty('gap', '18px', 'important');
+            Row.style.setProperty('gap', '10px', 'important');
             Row.style.setProperty('width', '100%', 'important');
             Row.style.setProperty('inline-size', '100%', 'important');
             Row.style.setProperty('min-width', '0', 'important');
@@ -557,12 +760,12 @@
             Cells = Row.querySelectorAll(':scope > .FieldCell');
 
             Array.prototype.forEach.call(Cells, function (Cell) {
-                var Width = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '300px' : '260px';
+                var Width = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '270px' : '230px';
 
                 Cell.style.setProperty('flex', '0 0 ' + Width, 'important');
                 Cell.style.setProperty('width', Width, 'important');
                 Cell.style.setProperty('min-width', Width, 'important');
-                Cell.style.setProperty('max-width', Width === '300px' ? '340px' : '320px', 'important');
+                Cell.style.setProperty('max-width', Width === '270px' ? '320px' : '300px', 'important');
             });
         });
     }
@@ -578,15 +781,15 @@
 
         if (Form && Form.getBoundingClientRect) {
             FormRect = Form.getBoundingClientRect();
-            Width = Math.floor(FormRect.width - 96);
+            Width = Math.floor(FormRect.width - 24);
         }
 
         if (!Width || Width < 320) {
             Width = 960;
         }
 
-        if (Width > 1060) {
-            Width = 1060;
+        if (Width > 1120) {
+            Width = 1120;
         }
 
         Viewport.style.setProperty('width', Width + 'px', 'important');
@@ -665,6 +868,46 @@
                 delete Element.dataset.ZTSMServicePayloadValidationIgnore;
             }
         });
+    }
+
+    function ZTSMServicePayloadHiddenRichTextValidationSync(Root) {
+        Root = Root || document;
+
+        Array.prototype.forEach.call(Root.querySelectorAll('textarea.RichText[name="Body"], textarea#RichText[name="Body"]'), function (Element) {
+            var Holder = Element.closest ? Element.closest('.RichTextHolder, .RichTextField, .Field, .Row') : null,
+                IsHidden = ZTSMServiceExtensionElementHidden(Element) || (Holder && ZTSMServiceExtensionElementHidden(Holder));
+
+            if (IsHidden) {
+                if (Element.classList.contains('Validate_Required') || Element.classList.contains('Validate_Required_IfVisible')) {
+                    Element.dataset.ZTSMRequiredClass = Element.classList.contains('Validate_Required') ? 'Validate_Required' : 'Validate_Required_IfVisible';
+                    Element.classList.remove('Validate_Required');
+                    Element.classList.remove('Validate_Required_IfVisible');
+                }
+                Element.classList.add('ValidationIgnore');
+                Element.dataset.ZTSMHiddenRichTextValidationIgnore = '1';
+                if (window.jQuery) {
+                    try {
+                        window.jQuery(Element).rules('remove', 'required');
+                    }
+                    catch (Error) {
+                        // Ignore if the validator has not registered the field yet.
+                    }
+                }
+            }
+            else if (Element.dataset.ZTSMHiddenRichTextValidationIgnore === '1') {
+                Element.classList.remove('ValidationIgnore');
+                delete Element.dataset.ZTSMHiddenRichTextValidationIgnore;
+                if (Element.dataset.ZTSMRequiredClass) {
+                    Element.classList.add(Element.dataset.ZTSMRequiredClass);
+                    delete Element.dataset.ZTSMRequiredClass;
+                }
+            }
+        });
+    }
+
+    function ZTSMServicePayloadValidationStateSync(Root) {
+        ZTSMServicePayloadValidationIgnoreSync(Root);
+        ZTSMServicePayloadHiddenRichTextValidationSync(Root);
     }
 
     function ZTSMServiceExtensionSetRowGet(Input) {
@@ -767,7 +1010,7 @@
             }
         });
 
-        ZTSMServicePayloadValidationIgnoreSync(Root);
+        ZTSMServicePayloadValidationStateSync(Root);
     }
 
     function ZTSMServiceExtensionSafeInit(InitFunction) {
@@ -1493,7 +1736,7 @@
             return;
         }
 
-        ZTSMServicePayloadValidationIgnoreSync(Form);
+        ZTSMServicePayloadValidationStateSync(Form);
         Form.classList.remove('oooSubmitted');
         if (window.jQuery) {
             try {
@@ -2928,10 +3171,20 @@
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
         ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
+        if (window.console && typeof window.console.log === 'function') {
+            window.console.log('[TESSERA service-extension]', 'refresh-applied-values', {
+                values: ZTSMServiceExtensionPreferenceSnapshot(document)
+            });
+        }
         ZTSMServicePayloadToolsEnsure(Start, End);
         window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
         window.setTimeout(function () {
             ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
+            if (window.console && typeof window.console.log === 'function') {
+                window.console.log('[TESSERA service-extension]', 'refresh-applied-values-after-visible-refresh', {
+                    values: ZTSMServiceExtensionPreferenceSnapshot(document)
+                });
+            }
         }, 50);
     }
 

@@ -1,0 +1,45 @@
+---
+- ChangeBy: zen.chan@ncs.com.sg
+  ChangeTime: 2026-01-13 04:48:25
+  Comment: ''
+  ConfigChange: ''
+  ConfigMatch: ''
+  CreateBy: zen.chan@ncs.com.sg
+  CreateTime: 2026-01-13 04:48:25
+  Description: ''
+  ID: 1
+  Name: Tenant Seggregation
+  ObjectType: Ticket
+  StopAfterMatch: 0
+  ValidID: 3
+- ChangeBy: zen.chan@ncs.com.sg
+  ChangeTime: 2026-04-15 09:06:47
+  Comment: Allow Firewall Rule section only if service type is firewall rules
+  ConfigChange:
+    PossibleNot: {}
+  ConfigMatch:
+    Properties:
+      Ticket:
+        Service:
+        - Network::Firewall Policy::Create
+  CreateBy: zen.chan@ncs.com.sg
+  CreateTime: 2026-04-15 09:04:55
+  Description: ''
+  ID: 4
+  Name: AllowFirewallRule
+  ObjectType: Ticket
+  StopAfterMatch: 0
+  ValidID: 3
+- ChangeBy: zen.chan@ncs.com.sg
+  ChangeTime: 2026-05-14 05:46:02
+  Comment: ''
+  ConfigChange: ''
+  ConfigMatch: ''
+  CreateBy: zen.chan@ncs.com.sg
+  CreateTime: 2026-05-14 05:46:02
+  Description: ''
+  ID: 6
+  Name: Deploy Process
+  ObjectType: Ticket
+  StopAfterMatch: 0
+  ValidID: 3

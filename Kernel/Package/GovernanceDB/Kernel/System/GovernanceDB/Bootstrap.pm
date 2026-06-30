@@ -25,6 +25,7 @@ our @ObjectDependencies = (
     'Kernel::System::JSON',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::Service',
     'Kernel::System::State',
     'Kernel::System::SysConfig',
     'Kernel::System::Type',
@@ -145,6 +146,8 @@ sub InstallDefaults {
     $Self->_RuntimeOverlayInstall();
 
     $Self->_SysConfigDeploy();
+
+    $Self->_ServiceTicketTypeACLsRebuild();
 
     return 1;
 }
@@ -600,6 +603,24 @@ sub _RuntimePrerequisitesEnsure {
     $Self->_GovernanceRoleObjectsEnsure();
     $Self->_RuntimeProcessesEnsure();
     $Self->_GenericAgentJobsEnsure();
+
+    return 1;
+}
+
+sub _ServiceTicketTypeACLsRebuild {
+    my ( $Self, %Param ) = @_;
+
+    my $Success = $Kernel::OM->Get('Kernel::System::Service')->UpdateTypServiceACLs(
+        UserID => 1,
+    );
+
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB bootstrap could not rebuild generated service ticket type ACLs.',
+        );
+        return;
+    }
 
     return 1;
 }

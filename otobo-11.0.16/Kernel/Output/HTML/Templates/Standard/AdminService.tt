@@ -2,7 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/Output/HTML/Templates/Standard/AdminService.tt
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -65,7 +67,25 @@
                         <a href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=ServiceEdit;ServiceID=NEW" class="CallForAction Fullsize Center"><span><i class="fa fa-plus-square"></i>[% Translate("Add Service") | html %]</span></a>
                     </li>
 [% RenderBlockEnd("ActionAdd") %]
+[% RenderBlockStart("ActionImportExport") %]
+                    <li>
+                        <a href="[% Env("Baselink") %]Action=AdminServiceImportExport;Subaction=Export" class="CallForAction Fullsize Center"><span><i class="fa fa-download"></i>[% Translate("Export Services") | html %]</span></a>
+                    </li>
+[% RenderBlockEnd("ActionImportExport") %]
                 </ul>
+[% RenderBlockStart("ActionImportForm") %]
+                <form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" class="SpacingTop">
+                    <input type="hidden" name="Action" value="AdminServiceImportExport"/>
+                    <input type="hidden" name="Subaction" value="Import"/>
+                    <label for="ServiceImportFile">[% Translate("Import Services YAML") | html %]</label>
+                    <input type="file" id="ServiceImportFile" name="FileUpload" accept=".yml,.yaml,text/yaml,text/x-yaml"/>
+                    <div>
+                        <input type="checkbox" id="OverwriteExistingEntities" name="OverwriteExistingEntities" value="1"/>
+                        <label for="OverwriteExistingEntities">[% Translate("Update existing services") | html %]</label>
+                    </div>
+                    <button class="CallForAction Fullsize Center" type="submit"><span><i class="fa fa-upload"></i>[% Translate("Import Services") | html %]</span></button>
+                </form>
+[% RenderBlockEnd("ActionImportForm") %]
             </div>
 [% RenderBlockEnd("ActionList") %]
         </div>
@@ -94,6 +114,7 @@
                     <thead>
                         <tr>
                             <th>[% Translate("Service") | html %]</th>
+                            <th>[% Translate("Type") | html %]</th>
                             <th>[% Translate("Comment") | html %]</th>
                             <th>[% Translate("Validity") | html %]</th>
                             <th>[% Translate("Changed") | html %]</th>
@@ -103,7 +124,7 @@
                     <tbody>
 [% RenderBlockStart("NoDataFoundMsg") %]
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 [% Translate("No data found.") | html %]
                             </td>
                         </tr>
@@ -111,6 +132,7 @@
 [% RenderBlockStart("OverviewListRow") %]
                         <tr [% IF Data.ValidID != 1%]class="Invalid"[% END %]>
                             <td title="[% Data.Name | html %]">[% Data.LevelSpace | html %]<a class="AsBlock" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=ServiceEdit;ServiceID=[% Data.ServiceID | uri %]">[% Data.Name | truncate(80) | html %]</a></td>
+                            <td>[% Translate(Data.Type) | html %]</td>
                             <td title="[% Data.Comment | html %]">[% Data.Comment | truncate(20) | html %]</td>
                             <td>[% Translate(Data.Valid) | html %]</td>
                             <td>[% Data.ChangeTime | Localize("TimeShort") %]</td>
@@ -118,7 +140,7 @@
                         </tr>
 [% RenderBlockEnd("OverviewListRow") %]
                         <tr class="FilterMessage Hidden">
-                            <td colspan="5">[% Translate("No matches found.") | html %]</td>
+                            <td colspan="6">[% Translate("No matches found.") | html %]</td>
                         </tr>
                     </tbody>
                 </table>
@@ -163,6 +185,29 @@
                             [% Data.ParentOptionStrg %]
                         </div>
                         <div class="Clear"></div>
+# ---
+# ITSMCore
+# ---
+                        <label class="Mandatory" for="TypeID"><span class="Marker">*</span> [% Translate("Type") | html %]: </label>
+                        <div class="Field">
+                            [% Data.TypeOptionStrg %]
+                            <div id="TypeIDError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                            <div id="TypeIDServerError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="TicketTypeIDs">[% Translate("Ticket Types") | html %]: </label>
+                        <div class="Field">
+                            [% Data.TicketTypeOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Criticality">[% Translate("Criticality") | html %]: </label>
+                        <div class="Field">
+                            [% Data.CriticalityOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+# ---
 
                         <label class="Mandatory" for="ValidID"><span class="Marker">*</span> [% Translate("Validity") | html %]:</label>
                         <div class="Field">
@@ -175,6 +220,16 @@
                             <input type="text" name="Comment" id="Comment" value="[% Data.Comment | html %]" class="W50pc" maxlength="250"/>
                         </div>
                         <div class="Clear"></div>
+
+[% RenderBlockStart("AdminServiceDynamicField") %]
+                        <div class="Row Row_DynamicField_[% Data.Name | html %]">
+                            [% Data.Label %]
+                            <div class="Field">
+                                [% Data.Field %]
+                            </div>
+                            <div class="Clear"></div>
+                        </div>
+[% RenderBlockEnd("AdminServiceDynamicField") %]
 
 [% RenderBlockStart("Item") %]
 [% RenderBlockStart("InputKey") %]

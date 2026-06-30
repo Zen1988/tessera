@@ -279,8 +279,8 @@
 }
 
 .ZTSMRequesterEditor {
-    width: min(480px, calc(100vw - 48px));
-    margin: 12px auto 0;
+    width: min(600px, calc(100vw - 24px));
+    margin: 6px auto 0;
     text-align: left;
 }
 
@@ -290,10 +290,10 @@
 }
 
 .ZTSMRequesterEditor .FieldExplanation {
-    margin: 6px 0 0;
+    margin: 3px 0 0;
     color: #616486;
     font-size: 12px;
-    line-height: 18px;
+    line-height: 15px;
 }
 </style>
 <script>
@@ -306,9 +306,25 @@
     var RequesterValue = document.getElementById('ZTSMRequesterValue');
     var Timer;
     var Choices = {};
+    var SelectedUserID = Hidden ? Hidden.value : '';
 
     if (!Input || !Hidden || !List) {
         return;
+    }
+
+    function Debug(Stage, Data) {
+        if (!window.console || typeof window.console.log !== 'function') {
+            return;
+        }
+        window.console.log('[TESSERA requester]', Stage, Data || {});
+    }
+
+    function DebugError(Stage, Data) {
+        if (!window.console || typeof window.console.error !== 'function') {
+            Debug(Stage, Data);
+            return;
+        }
+        window.console.error('[TESSERA requester]', Stage, Data || {});
     }
 
     function BaseLink() {
@@ -320,14 +336,33 @@
     function RefreshForm() {
         var Form = document.getElementById('NewCustomerTicket');
 
+        Debug('refresh-form-start', {
+            hiddenValue: Hidden.value || '',
+            inputValue: Input.value || '',
+            hasFormUpdate: !!(window.Core && Core.AJAX && typeof Core.AJAX.FormUpdate === 'function'),
+            hasJQuery: !!window.jQuery,
+            hasForm: !!Form,
+            hasServiceRefresh: typeof window.ZTSMServiceExtensionRefresh === 'function',
+            hasVisibleRefresh: typeof window.ZTSMServicePayloadVisibleSelectionRefresh === 'function'
+        });
+
         if (window.Core && Core.AJAX && typeof Core.AJAX.FormUpdate === 'function' && window.jQuery && Form) {
             Core.AJAX.FormUpdate(
                 window.jQuery(Form),
                 'AJAXUpdate',
                 'ZTSMRaiseOnBehalfCustomerUserID',
                 function () {
+                    Debug('form-update-callback', {
+                        hiddenValue: Hidden.value || '',
+                        inputValue: Input.value || '',
+                        valuesAfterFormUpdate: typeof window.ZTSMServiceExtensionPreferenceSnapshot === 'function'
+                            ? window.ZTSMServiceExtensionPreferenceSnapshot(document)
+                            : 'snapshot-helper-unavailable'
+                    });
                     if (typeof window.ZTSMServiceExtensionRefresh === 'function') {
-                        window.ZTSMServiceExtensionRefresh();
+                        window.ZTSMServiceExtensionRefresh({
+                            ElementChanged: 'ZTSMRaiseOnBehalfCustomerUserID'
+                        });
                     }
                     if (typeof window.ZTSMServicePayloadVisibleSelectionRefresh === 'function') {
                         window.ZTSMServicePayloadVisibleSelectionRefresh();
@@ -337,18 +372,48 @@
             return;
         }
 
+        DebugError('form-update-unavailable-fallback', {
+            hasCore: !!window.Core,
+            hasAJAX: !!(window.Core && Core.AJAX),
+            hasFormUpdate: !!(window.Core && Core.AJAX && typeof Core.AJAX.FormUpdate === 'function'),
+            hasJQuery: !!window.jQuery,
+            hasForm: !!Form
+        });
+
         if (typeof window.ZTSMServiceExtensionRefresh === 'function') {
-            window.ZTSMServiceExtensionRefresh();
+            window.ZTSMServiceExtensionRefresh({
+                ElementChanged: 'ZTSMRaiseOnBehalfCustomerUserID'
+            });
         }
         if (typeof window.ZTSMServicePayloadVisibleSelectionRefresh === 'function') {
             window.ZTSMServicePayloadVisibleSelectionRefresh();
         }
     }
 
+    function TriggerHiddenChange() {
+        var Event;
+
+        Debug('hidden-change-trigger', {
+            hiddenValue: Hidden.value || '',
+            inputValue: Input.value || ''
+        });
+
+        if (window.jQuery) {
+            window.jQuery(Hidden).trigger('change');
+        }
+        Event = document.createEvent('Event');
+        Event.initEvent('change', true, true);
+        Hidden.dispatchEvent(Event);
+    }
+
     function ShowEditor() {
         if (Editor) {
             Editor.classList.remove('Hidden');
         }
+        Debug('editor-open', {
+            hiddenValue: Hidden.value || '',
+            inputValue: Input.value || ''
+        });
         window.setTimeout(function () {
             Input.focus();
             Input.select();
@@ -365,10 +430,30 @@
         var UserID = Choices[Input.value] || '';
 
         if (!UserID) {
+            DebugError('select-requester-no-match', {
+                inputValue: Input.value || '',
+                choices: Object.keys(Choices || {}).slice(0, 10)
+            });
             return;
         }
 
+        if (UserID === SelectedUserID) {
+            Debug('select-requester-same-user', {
+                userID: UserID,
+                inputValue: Input.value || ''
+            });
+            HideEditor();
+            return;
+        }
+
+        Debug('select-requester-commit', {
+            previousUserID: SelectedUserID || '',
+            userID: UserID,
+            inputValue: Input.value || ''
+        });
         Hidden.value = UserID;
+        SelectedUserID = UserID;
+        TriggerHiddenChange();
         if (RequesterValue) {
             RequesterValue.textContent = Input.value;
         }
@@ -379,13 +464,26 @@
     function Search() {
         var Term = Input.value || '';
         if (Term.length < 2) {
+            Debug('search-skip-short-term', {
+                term: Term
+            });
             return;
         }
 
         var Request = new XMLHttpRequest();
+        Debug('search-start', {
+            term: Term
+        });
         Request.open('GET', BaseLink() + 'Action=CustomerTicketMessage;Subaction=ZTSMCustomerUserSearch;Term=' + encodeURIComponent(Term), true);
         Request.onreadystatechange = function () {
-            if (Request.readyState !== 4 || Request.status < 200 || Request.status >= 300) {
+            if (Request.readyState !== 4) {
+                return;
+            }
+            if (Request.status < 200 || Request.status >= 300) {
+                DebugError('search-http-error', {
+                    status: Request.status,
+                    responseText: (Request.responseText || '').slice(0, 500)
+                });
                 return;
             }
 
@@ -394,6 +492,10 @@
                 Payload = JSON.parse(Request.responseText);
             }
             catch (Error) {
+                DebugError('search-json-error', {
+                    message: Error && Error.message ? Error.message : String(Error),
+                    responseText: (Request.responseText || '').slice(0, 500)
+                });
                 return;
             }
 
@@ -406,12 +508,29 @@
                 Choices[Item.Label] = Item.Value;
                 List.appendChild(Option);
             });
+            Debug('search-results', {
+                term: Term,
+                count: (Payload || []).length,
+                inputValue: Input.value || ''
+            });
+            if (Choices[Input.value]) {
+                SelectRequester();
+            }
         };
         Request.send();
     }
 
     Input.addEventListener('input', function () {
         Hidden.value = Choices[Input.value] || '';
+        Debug('input-event', {
+            inputValue: Input.value || '',
+            hiddenValue: Hidden.value || '',
+            hasChoice: !!Hidden.value
+        });
+        if (Hidden.value) {
+            SelectRequester();
+            return;
+        }
         window.clearTimeout(Timer);
         Timer = window.setTimeout(Search, 250);
     });

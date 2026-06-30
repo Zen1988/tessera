@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # Copyright (C) 2012-2020 Znuny GmbH, http://znuny.com/
 # --
 # This program is free software: you can redistribute it and/or modify it under
@@ -578,7 +578,10 @@ sub TicketCreate {
 
     # create ticket number if none is given
     if ( !$Param{TN} ) {
-        $Param{TN} = $Self->TicketCreateNumber();
+        $Param{TN} = $Self->TicketCreateNumber(
+            TypeID => $Param{TypeID},
+            Type   => $Param{Type},
+        );
     }
 
     # check ticket title

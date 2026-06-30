@@ -19,13 +19,10 @@ package Kernel::System::Console::Command::Admin::ServiceCatalog::AddBulkACL;
 use strict;
 use warnings;
 
-use Kernel::System::VariableCheck qw(:all);
-
 use parent qw(Kernel::System::Console::BaseCommand);
 
 our @ObjectDependencies = (
     'Kernel::System::Service',
-    'Kernel::System::Type',
 );
 
 sub Configure {
@@ -46,33 +43,17 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     $Self->Print("<yellow>Adding new ACLs...</yellow>\n");
-    my $TypeObject = $Kernel::OM->Get('Kernel::System::Type');
     my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
 
-    # Get all services.
-    my $ServiceList = $Kernel::OM->Get('Kernel::System::Service')->ServiceListGet(
-        Valid  => 1,
+    my $Success = $ServiceObject->UpdateTypServiceACLs(
         UserID => 1,
     );
 
-    SERVICEGET:
-    for my $ServiceGet ( @$ServiceList ) {
-        next SERVICEGET if !IsArrayRefWithData($ServiceGet->{TicketTypeIDs} );
-
-        my @TicketTypeIDs = $ServiceGet->{TicketTypeIDs}->@*;
-        for my $TID ( @TicketTypeIDs ) {
-
-            # Create Acl if config is enabled
-            # We create one Acl per Ticket-Type
-            my $Success = $ServiceObject->UpdateTypServiceACL(
-                TicketTypeID => $TID,
-                ServiceID   => $ServiceGet->{ServiceID},
-                ServiceValid => $ServiceGet->{ValidID},
-                UserID => 1,
-            );
-
-        }
+    if ( !$Success ) {
+        $Self->PrintError("Could not rebuild Ticket-Type Ticket-Service ACLs.");
+        return $Self->ExitCodeError();
     }
+
     $Self->Print("<green>Done.</green>\n");
     return $Self->ExitCodeOk();
 }

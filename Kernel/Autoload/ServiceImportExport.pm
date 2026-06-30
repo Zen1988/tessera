@@ -56,6 +56,7 @@ sub ExportServices {
     my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $GeneralCatalogObject      = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $ServiceObject             = $Kernel::OM->Get('Kernel::System::Service');
+    my $TypeObject                = $Kernel::OM->Get('Kernel::System::Type');
     my $ServiceDynamicFields      = $DynamicFieldObject->DynamicFieldListGet(
         Valid      => 1,
         ObjectType => ['Service'],
@@ -85,7 +86,6 @@ sub ExportServices {
 
         # translate IDs into names or name-like identifiers
         my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
-        my $TypeObject  = $Kernel::OM->Get('Kernel::System::Type');
         my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
 
         ATTRIBUTE:
@@ -193,6 +193,9 @@ sub ImportServices {
         UserID => $UserID,
     );
     my %ServiceLookup = reverse %ServiceList;
+    my %TicketTypeList = $TypeObject->TypeList(
+        Valid => 0,
+    );
     my $ServiceTypeList = $GeneralCatalogObject->ItemList(
         Class => 'ITSM::Service::Type',
         Valid => 0,
@@ -205,6 +208,15 @@ sub ImportServices {
 
         $ServiceTypeLookup{$ServiceType} = $ServiceTypeID;
         $ServiceTypeLookup{ _ServiceImportStringNormalize($ServiceType) } = $ServiceTypeID;
+    }
+    my %TicketTypeLookup;
+    TICKET_TYPE_ID:
+    for my $TicketTypeID ( sort keys %TicketTypeList ) {
+        my $TicketType = $TicketTypeList{$TicketTypeID};
+        next TICKET_TYPE_ID if !defined $TicketType;
+
+        $TicketTypeLookup{$TicketType} = $TicketTypeID;
+        $TicketTypeLookup{ _ServiceImportStringNormalize($TicketType) } = $TicketTypeID;
     }
     my $ServiceDynamicFields = $DynamicFieldObject->DynamicFieldListGet(
         Valid      => 1,
@@ -242,6 +254,8 @@ sub ImportServices {
             return 0;
         }
     } @ChildServices;
+
+    my $ACLRefreshNeeded;
 
     SERVICENAME:
     for my $ServiceName ( @FirstLevelServices, @ChildServicesSorted ) {
@@ -298,7 +312,7 @@ sub ImportServices {
         # skip if service with same name exists and overwrite is not set
         next SERVICENAME if ( !$Param{OverwriteExistingEntities} && $ServiceID );
 
-        # translate named data back to IDs
+        # translate named service type back to ID
         if ( defined $ServiceData->{Type} && $ServiceData->{Type} ne '' ) {
             my $Type = _ServiceImportStringNormalize( $ServiceData->{Type} );
             $ServiceData->{TypeID} = $ServiceTypeLookup{ $ServiceData->{Type} } || $ServiceTypeLookup{$Type};
@@ -310,6 +324,10 @@ sub ImportServices {
                 );
                 return;
             }
+        }
+
+        if ( !$ServiceData->{TicketTypes} && $ServiceData->{TicketType} ) {
+            $ServiceData->{TicketTypes} = [ $ServiceData->{TicketType} ];
         }
 
         if ( $ServiceID && ( !$ServiceData->{TypeID} || !$ServiceData->{Criticality} ) ) {
@@ -332,9 +350,18 @@ sub ImportServices {
         if ( IsArrayRefWithData( $ServiceData->{TicketTypes} ) ) {
             my @TicketTypeIDs;
             for my $TicketType ( $ServiceData->{TicketTypes}->@* ) {
-                push @TicketTypeIDs, $TypeObject->TypeLookup(
-                    Type => $TicketType,
-                );
+                my $TicketTypeID = $TicketTypeLookup{$TicketType}
+                    || $TicketTypeLookup{ _ServiceImportStringNormalize($TicketType) };
+
+                if ( !$TicketTypeID ) {
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'error',
+                        Message  => "Could not resolve service TicketTypes value '$TicketType' in ticket types.",
+                    );
+                    return;
+                }
+
+                push @TicketTypeIDs, $TicketTypeID;
             }
             $ServiceData->{TicketTypeIDs} = \@TicketTypeIDs;
         }
@@ -414,11 +441,22 @@ sub ImportServices {
             $ImportedServiceID = $ServiceID;
             $ServiceLookup{ $ServiceData->{Name} } = $ServiceID;
         }
+        $ACLRefreshNeeded = 1;
 
         $Self->_ServiceImportCorePreferencesDelete(
             DBObject  => $DBObject,
             ServiceID => $ImportedServiceID,
         );
+
+        if ( IsArrayRefWithData( $ServiceData->{TicketTypeIDs} ) ) {
+            my $Success = $ServiceObject->ServicePreferencesSet(
+                ServiceID => $ImportedServiceID,
+                Key       => 'TicketTypeIDs',
+                Value     => join( ',', $ServiceData->{TicketTypeIDs}->@* ),
+                UserID    => $UserID,
+            );
+            return if !$Success;
+        }
 
         DYNAMICFIELD:
         for my $DynamicFieldName ( sort keys %DynamicFieldValues ) {
@@ -446,6 +484,13 @@ sub ImportServices {
             );
             return if !$Success;
         }
+    }
+
+    if ($ACLRefreshNeeded) {
+        my $Success = $ServiceObject->UpdateTypServiceACLs(
+            UserID => $UserID,
+        );
+        return if !$Success;
     }
 
     return 1;
@@ -481,6 +526,9 @@ sub _ServiceImportCorePreferencesDelete {
     COREATTRIBUTE:
     for my $Attribute ( sort keys %CoreAttribute ) {
         next COREATTRIBUTE if !$Attribute;
+        next COREATTRIBUTE if $Attribute eq 'TicketType';
+        next COREATTRIBUTE if $Attribute eq 'TicketTypes';
+        next COREATTRIBUTE if $Attribute eq 'TicketTypeIDs';
 
         my $Success = $Param{DBObject}->Do(
             SQL  => 'DELETE FROM service_preferences WHERE service_id = ? AND preferences_key = ?',
@@ -506,7 +554,7 @@ sub _ServiceImportCoreAttributes {
         DestQueue DestQueueID
         Descriptions DynamicFields LongDescription Name NameShort Parent ParentID Service
         ServiceID ShortDescription Type TypeID Valid ValidID ZService-Field
-        TicketDestinationQueue TicketTypes TicketTypeIDs
+        TicketDestinationQueue TicketType TicketTypes TicketTypeIDs
     );
 }
 
