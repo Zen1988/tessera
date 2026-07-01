@@ -26,10 +26,12 @@ our @ObjectDependencies = (
     'Kernel::System::CustomerUser',
     'Kernel::System::GovernanceObject',
     'Kernel::System::CustomerGroup',
+    'Kernel::System::Group',
     'Kernel::System::Log',
     'Kernel::System::State',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck',
+    'Kernel::System::User',
     'Kernel::System::Web::Request',
 );
 
@@ -77,6 +79,32 @@ sub _NormalizeReferenceValue {
     }
 
     return $Value;
+}
+
+sub _IsIPCAgent {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Param{CustomerUserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
+
+    my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+        UserLogin => $Param{CustomerUserID},
+        Silent    => 1,
+    );
+
+    return if !$UserID;
+
+    return $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
+        UserID    => $UserID,
+        GroupName => 'IPC',
+        Type      => 'rw',
+    );
 }
 
 sub _DebugValue {
@@ -266,6 +294,20 @@ sub _ZTSMWorkableTicketIDs {
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my %Candidate;
     my @Candidate;
+
+    if ( _IsIPCAgent( CustomerUserID => $Param{CustomerUserID} ) ) {
+        my @TicketIDs = $TicketObject->TicketSearch(
+            Result  => 'ARRAY',
+            SortBy  => $Param{SortBy}  || 'Changed',
+            OrderBy => $Param{OrderBy} || 'Down',
+            UserID  => 1,
+        );
+
+        return _PermissionFilter(
+            CustomerUserID => $Param{CustomerUserID},
+            TicketIDs      => \@TicketIDs,
+        );
+    }
 
     PROFILE:
     for my $SupportProfile ( _SupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {

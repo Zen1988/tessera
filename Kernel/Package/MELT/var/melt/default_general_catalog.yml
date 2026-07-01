@@ -1,0 +1,862 @@
+﻿---
+classes:
+- class: ZRM::Impact
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Negligible
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Minor
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Moderate
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Major
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Severe
+    name: '5'
+    preferences: {}
+    valid: valid
+- class: ZRM::ImpactCategory
+  items:
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Governance
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: Technical
+    name: Technical
+    preferences: {}
+    valid: valid
+- class: ZRM::Likelihood
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Rare
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Unlikely
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Possible
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Likely
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Almost Certain
+    name: '5'
+    preferences: {}
+    valid: valid
+- class: ZRM::RiskCategory
+  items:
+  - comment: Business Continuity
+    name: Business Continuity
+    preferences: {}
+    valid: valid
+  - comment: Compliance
+    name: Compliance
+    preferences: {}
+    valid: valid
+  - comment: Cybersecurity
+    name: Cybersecurity
+    preferences: {}
+    valid: valid
+  - comment: Data
+    name: Data
+    preferences: {}
+    valid: valid
+  - comment: Financial
+    name: Financial
+    preferences: {}
+    valid: valid
+  - comment: Operational
+    name: Operational
+    preferences: {}
+    valid: valid
+  - comment: Resource
+    name: Resource
+    preferences: {}
+    valid: valid
+  - comment: Strategic
+    name: Strategic
+    preferences: {}
+    valid: valid
+  - comment: Technology
+    name: Technology
+    preferences: {}
+    valid: valid
+  - comment: Vendor
+    name: Vendor
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Class
+  items:
+  - comment: ''
+    name: Application
+    preferences:
+      Categories:
+      - Business
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+    valid: valid
+  - comment: ''
+    name: ApprovalModel
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - MELTID
+      Permission:
+      - '2'
+      - '17'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: BlueBook
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Book
+    preferences: {}
+    valid: valid
+  - comment: Catalog
+    name: Catalog
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: Control
+    name: Control
+    preferences: {}
+    valid: valid
+  - comment: ControlObjective
+    name: ControlObjective
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: ControlRecommendation
+    name: ControlRecommendation
+    preferences: {}
+    valid: valid
+  - comment: System Criticality
+    name: CriticalityProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Data Classification
+    name: DataClassification
+    preferences:
+      Categories:
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Environment
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Exposure Profile
+    name: ExposureProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Framework
+    name: Framework
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+    valid: valid
+  - comment: ''
+    name: FunctionProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: GovernanceConfigItem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: GovernanceRole
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Location
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Organization
+    preferences:
+      Categories:
+      - Business
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Platform
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Policy
+    name: Policy
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: RiskStatement
+    name: RiskStatement
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: ''
+    name: ServiceProfile
+    preferences:
+      Categories:
+      - Service
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: ServiceSupportMap
+    preferences:
+      Categories:
+      - Service
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Service Tiering
+    name: ServiceTier
+    preferences:
+      Categories:
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: StateBook
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: SupportAssignment
+    preferences:
+      Categories:
+      - Assignment
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: SupportProfile
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: TechnologyProfile
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Template
+    preferences:
+      Categories:
+      - Reference
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+- class: ZTSM::MELT::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Context
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: Profile
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: Reference
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: Service
+    name: Service
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Definition
+  items:
+  - comment: ''
+    name: ClassDefinition
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Role
+  items:
+  - comment: ''
+    name: CMDB Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CMDB Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Description
+    preferences: {}
+    valid: valid
+  - comment: ZRM Catalog
+    name: ZRM Catalog
+    preferences: {}
+    valid: valid
+  - comment: ZRM Control
+    name: ZRM Control
+    preferences: {}
+    valid: valid
+  - comment: ZRM Control Objective
+    name: ZRM ControlObjective
+    preferences: {}
+    valid: valid
+  - comment: Framework
+    name: ZRM Framework
+    preferences: {}
+    valid: valid
+  - comment: Risk Factor
+    name: ZRM Risk Factor
+    preferences: {}
+    valid: valid
+  - comment: Risk Profile
+    name: ZRM Risk Profile
+    preferences: {}
+    valid: valid
+  - comment: ZRM RiskStatement
+    name: ZRM RiskStatement
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Application
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Approval Model
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Blue Book
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Environment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM GovernanceRole
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Location
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Organization
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Platform
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM ServiceProfile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM ServiceSupportMap
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM State Book
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM SupportAssignment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM SupportProfile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM TechnologyProfile
+    preferences: {}
+    valid: valid
+  - comment: Ticket Template
+    name: ZTSM Template
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Status
+  items:
+  - comment: ''
+    name: Active
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Approved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Draft
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences: {}
+    valid: valid
+- class: ZTSM::Type
+  items:
+  - comment: ''
+    name: Approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assessment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Endorsement
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident::Major
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ServiceRequest
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Task
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Unclassified
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Verification
+    preferences: {}
+    valid: valid
+object_type: GeneralCatalog
+

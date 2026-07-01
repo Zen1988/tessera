@@ -90,6 +90,32 @@ sub _ZTSMNormalizeReferenceValue {
     return $Value;
 }
 
+sub _ZTSMIsIPCAgent {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Param{CustomerUserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
+
+    my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+        UserLogin => $Param{CustomerUserID},
+        Silent    => 1,
+    );
+
+    return if !$UserID;
+
+    return $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
+        UserID    => $UserID,
+        GroupName => 'IPC',
+        Type      => 'rw',
+    );
+}
+
 sub _ZTSMDebugValue {
     my ($Value) = @_;
 
@@ -450,6 +476,22 @@ sub _ZTSMWorkableTicketIDs {
 
     $SearchBase{StateType} = $Param{StateType}
         if $Param{StateType};
+
+    if ( defined $Param{Fulltext} && $Param{Fulltext} ne '' ) {
+        $SearchBase{Fulltext}            = $Param{Fulltext};
+        $SearchBase{FullTextIndex}       = 1;
+        $SearchBase{ContentSearchPrefix} = '*';
+        $SearchBase{ContentSearchSuffix} = '*';
+    }
+
+    if ( _ZTSMIsIPCAgent( CustomerUserID => $Param{CustomerUserID} ) ) {
+        my @TicketIDs = $TicketObject->TicketSearch(%SearchBase);
+
+        return _ZTSMPermissionFilter(
+            CustomerUserID => $Param{CustomerUserID},
+            TicketIDs      => \@TicketIDs,
+        );
+    }
 
     PROFILE:
     for my $SupportProfile ( _ZTSMSupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
@@ -1386,6 +1428,7 @@ sub Run {
             CustomerUserID    => $Self->{UserID},
             CustomerUserLogin => $Self->{UserLogin},
             StateType         => $Filters{ $Self->{Subaction} }->{$Filter}->{Search}->{StateType},
+            Fulltext          => $Fulltext,
             SortBy            => $SortBy,
             OrderBy           => $OrderByCurrent,
         );

@@ -8,6 +8,7 @@
                 <Item Key="SystemIdentity" ValueType="String">ICAT</Item>
                 <Item Key="TypeCodeLength" ValueType="String" ValueRegex="^[1-9][0-9]*$">2</Item>
                 <Item Key="SequencePadding" ValueType="String" ValueRegex="^[1-9][0-9]*$">7</Item>
+                <Item Key="ChildSequencePadding" ValueType="String" ValueRegex="^[1-9][0-9]*$">3</Item>
                 <Item Key="SequenceScope" ValueType="String">SystemYear</Item>
                 <Item Key="ResetPolicy" ValueType="String">Yearly</Item>
                 <Item Key="TypeCodes">

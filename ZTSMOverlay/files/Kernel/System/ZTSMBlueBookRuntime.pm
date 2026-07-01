@@ -777,6 +777,8 @@ sub LevelSpawn {
             ServiceID     => $ParentTicket->{ServiceID},
             SLAID         => $ParentTicket->{SLAID},
             ResponsibleID => 1,
+            ParentTicketID     => $Param{ParentTicketID},
+            ParentTicketNumber => $ParentTicket->{TicketNumber},
         );
 
         next RECORD if !$NewTicketID;

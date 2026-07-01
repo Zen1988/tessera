@@ -20,6 +20,7 @@ use warnings;
 our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Ticket',
+    'Kernel::System::CustomerGroup',
     'Kernel::System::CustomerUser',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
@@ -399,6 +400,13 @@ sub _IsIPCAgent {
 
     return if !$Param{CustomerUserID};
 
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Param{CustomerUserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
+
     my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
         UserLogin => $Param{CustomerUserID},
         Silent    => 1,
@@ -606,6 +614,25 @@ sub Run {
     );
 
     return if !%Ticket;
+
+    if (
+        $PermissionType eq 'ro'
+        && _IsIPCAgent(
+            CustomerUserID => $CustomerUserID,
+        )
+        )
+    {
+        $LogObject->Log(
+            Priority => 'info',
+            Message  =>
+                  'ZTSMUserIDCheck: '
+                . 'IPC global read access granted '
+                . "TicketID=$Param{TicketID} "
+                . "CustomerUserID=$CustomerUserID",
+        );
+
+        return 1;
+    }
 
     if ( $PermissionType eq 'ztsm_action' ) {
         my $Owner = _GetTicketDynamicField(

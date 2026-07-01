@@ -579,8 +579,11 @@ sub TicketCreate {
     # create ticket number if none is given
     if ( !$Param{TN} ) {
         $Param{TN} = $Self->TicketCreateNumber(
-            TypeID => $Param{TypeID},
-            Type   => $Param{Type},
+            TypeID             => $Param{TypeID},
+            Type               => $Param{Type},
+            ParentTicketID     => $Param{ParentTicketID},
+            ParentTicketNumber => $Param{ParentTicketNumber},
+            UserID             => $Param{UserID},
         );
     }
 

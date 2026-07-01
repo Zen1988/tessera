@@ -125,13 +125,22 @@
         text-transform: uppercase;
     }
 
+    .ztsmWorkspaceTable th + th {
+        border-left: 4px solid transparent;
+    }
+
     .ztsmWorkspaceTable td {
         background: #f8f8fb;
+        box-sizing: border-box;
         color: #000044;
         font-size: 14px;
         line-height: 1.3;
         padding: 13px 12px;
         vertical-align: middle;
+    }
+
+    .ztsmWorkspaceTable td + td {
+        border-left: 4px solid transparent;
     }
 
     .ztsmWorkspaceTable td:first-child {
@@ -150,6 +159,11 @@
 
     .ztsmWorkspaceTable a:hover {
         text-decoration: underline;
+    }
+
+    .ztsmWorkspaceTable td:nth-child(2) a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .ztsmTypeBadge {

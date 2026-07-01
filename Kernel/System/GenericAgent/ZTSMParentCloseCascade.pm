@@ -11,6 +11,7 @@ use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZT
 use Kernel::System::VariableCheck qw(IsHashRefWithData);
 
 our @ObjectDependencies = (
+    'Kernel::Config',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::Log',
     'Kernel::System::Ticket',
@@ -69,7 +70,12 @@ sub Run {
         UserID => 1,
     );
 
-    return 1 if !@ChildTicketIDs;
+    if ( !@ChildTicketIDs ) {
+        $Self->_ChildTicketNumberCounterCleanup(
+            ParentTicketNumber => $ParentTicket{TicketNumber},
+        );
+        return 1;
+    }
 
     my $CascadeState = $Param{New}->{CascadeState} || 'closed cascading';
     my $ParentLabel  = $ParentTicket{TicketNumber} || $ParentTicket{TicketID};
@@ -111,7 +117,28 @@ sub Run {
         );
     }
 
+    $Self->_ChildTicketNumberCounterCleanup(
+        ParentTicketNumber => $ParentTicket{TicketNumber},
+    );
+
     return 1;
+}
+
+sub _ChildTicketNumberCounterCleanup {
+    my ( $Self, %Param ) = @_;
+
+    my $ParentTicketNumber = $Param{ParentTicketNumber} || '';
+    return 1 if !$ParentTicketNumber;
+
+    my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::NumberGenerator') || '';
+    return 1 if $GeneratorModule ne 'Kernel::System::Ticket::Number::TESSERAIdentity';
+
+    my $GeneratorObject = $Kernel::OM->Get($GeneratorModule);
+    return 1 if !$GeneratorObject->can('ChildTicketNumberCounterCleanup');
+
+    return $GeneratorObject->ChildTicketNumberCounterCleanup(
+        ParentTicketNumber => $ParentTicketNumber,
+    );
 }
 
 sub _RequestTypeCanBeParent {

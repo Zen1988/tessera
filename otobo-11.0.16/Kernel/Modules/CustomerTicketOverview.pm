@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,6 +25,25 @@ our $ObjectManagerDisabled = 1;
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language              qw(Translatable);
 
+my @ZTSMReportHead = (
+    'Ticket Number',
+    'Ticket Type',
+    'Service',
+    'Title',
+    'Description',
+    'Location',
+    'Application',
+    'Environment',
+    'State',
+    'Created By',
+    'Created Date',
+    'Customer User',
+    'ZTicket-OwnerGroup',
+    'ZTicket-Owner',
+    'ServicePayload',
+    'ArticlesJSON',
+);
+
 sub new {
     my ( $Type, %Param ) = @_;
 
@@ -35,8 +54,1105 @@ sub new {
     return $Self;
 }
 
+sub _ZTSMNormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _ZTSMNormalizeValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Key}     if defined $Value->{Key};
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Content} if defined $Value->{Content};
+    }
+
+    return $Value;
+}
+
+sub _ZTSMNormalizeReferenceValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _ZTSMNormalizeReferenceValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Value->{Value}   if defined $Value->{Value};
+        return $Value->{Key}     if defined $Value->{Key};
+        return $Value->{Content} if defined $Value->{Content};
+    }
+
+    return $Value;
+}
+
+sub _ZTSMIsIPCAgent {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Param{CustomerUserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
+
+    my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+        UserLogin => $Param{CustomerUserID},
+        Silent    => 1,
+    );
+
+    return if !$UserID;
+
+    return $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
+        UserID    => $UserID,
+        GroupName => 'IPC',
+        Type      => 'rw',
+    );
+}
+
+sub _ZTSMDebugValue {
+    my ($Value) = @_;
+
+    return '<undef>' if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return '[' . join( ', ', map { _ZTSMDebugValue($_) } @{$Value} ) . ']';
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return '{'
+            . join(
+            ', ',
+            map {
+                $_ . '=' . _ZTSMDebugValue( $Value->{$_} )
+            } sort keys %{$Value}
+            )
+            . '}';
+    }
+
+    return $Value;
+}
+
+sub _ZTSMCustomerUserMatches {
+    my (%Param) = @_;
+
+    my $AssignmentUser = _ZTSMNormalizeReferenceValue( $Param{AssignmentUser} );
+    return if !defined $AssignmentUser || $AssignmentUser eq '';
+
+    my $CustomerUserID = _ZTSMNormalizeValue( $Param{CustomerUserID} ) || '<undef>';
+    my %CustomerUserID = map { lc $_ => 1 } _ZTSMCustomerUserReferenceIDs(%Param);
+
+    my $Match = $CustomerUserID{ lc $AssignmentUser };
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'debug',
+        Message  => 'ZTSM Overview support assignment user match: CustomerUserID='
+            . $CustomerUserID
+            . ' CandidateIDs='
+            . join( '|', sort keys %CustomerUserID )
+            . ' AssignmentRaw='
+            . _ZTSMDebugValue( $Param{AssignmentUser} )
+            . ' AssignmentValue='
+            . $AssignmentUser
+            . ' Match='
+            . ( $Match ? 1 : 0 ),
+    );
+
+    return $Match;
+}
+
+sub _ZTSMCustomerUserReferenceIDs {
+    my (%Param) = @_;
+
+    my $CustomerUserID = _ZTSMNormalizeValue( $Param{CustomerUserID} );
+
+    return if !defined $CustomerUserID || $CustomerUserID eq '';
+
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my %CustomerUserID = ( $CustomerUserID => 1 );
+
+    for my $CustomerID (
+        $CustomerUserObject->CustomerIDs(
+            User => $CustomerUserID,
+        )
+        )
+    {
+        my $Value = _ZTSMNormalizeValue($CustomerID);
+        $CustomerUserID{$Value} = 1 if defined $Value && $Value ne '';
+    }
+
+    return sort keys %CustomerUserID;
+}
+
+sub _ZTSMSupportProfileVariants {
+    my (%Param) = @_;
+
+    my $Value = _ZTSMNormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %Value;
+
+    my @SupportProfiles;
+    if ( $Value =~ m{\A\d+\z} ) {
+        for my $GetParam (
+            { GovernanceObjectID => $Value },
+            { VersionID    => $Value },
+            )
+        {
+            my $SupportProfile = $GovernanceObjectObject->GovernanceObjectGet(
+                %{$GetParam},
+                DynamicFields => 1,
+                Silent        => 1,
+            );
+
+            push @SupportProfiles, $SupportProfile
+                if $SupportProfile
+                && ( $SupportProfile->{Class} || '' ) eq 'SupportProfile';
+        }
+    }
+    else {
+        my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Result  => 'ARRAY',
+            Classes => ['SupportProfile'],
+            Name    => $Value,
+            Limit   => 10,
+        );
+
+        for my $SupportProfileID (@SupportProfileIDs) {
+            my $SupportProfile = $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $SupportProfileID,
+                DynamicFields => 1,
+                Silent        => 1,
+            );
+
+            push @SupportProfiles, $SupportProfile
+                if $SupportProfile;
+        }
+    }
+
+    for my $SupportProfile (@SupportProfiles) {
+        $Value{ $SupportProfile->{GovernanceObjectID} } = 1 if $SupportProfile->{GovernanceObjectID};
+        $Value{ $SupportProfile->{LastVersionID} } = 1 if $SupportProfile->{LastVersionID};
+        $Value{ $SupportProfile->{Name} }          = 1 if !$Param{ReferenceOnly} && $SupportProfile->{Name};
+    }
+
+    $Value{$Value} = 1
+        if !$Param{ReferenceOnly}
+        || $Value =~ m{\A\d+\z};
+
+    return sort keys %Value;
+}
+
+sub _ZTSMSupportProfileList {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'debug',
+        Message  => 'ZTSM Overview support profile list enter: CustomerUserID='
+            . $Param{CustomerUserID},
+    );
+
+    my @CustomerUserIDs = _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
+    my %AssignmentID;
+
+    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+        Classes => ['SupportAssignment'],
+        Result  => 'ARRAY',
+        Limit   => 1000,
+    );
+
+    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+
+    my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'debug',
+        Message  => 'ZTSM Overview support assignment search: CustomerUserID='
+            . $Param{CustomerUserID}
+            . ' CandidateIDs='
+            . join( '|', @CustomerUserIDs )
+            . ' Count='
+            . scalar @AssignmentIDs,
+    );
+
+    return if !@AssignmentIDs;
+
+    my %SupportProfile;
+
+    ASSIGNMENT:
+    for my $AssignmentID (@AssignmentIDs) {
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
+            DynamicFields => 1,
+        );
+
+        next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $AssignmentUser = $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'};
+
+        my $CustomerMatch;
+        CUSTOMERUSERID:
+        for my $CustomerUserID (@CustomerUserIDs) {
+            if (
+                _ZTSMCustomerUserMatches(
+                    AssignmentUser => $AssignmentUser,
+                    CustomerUserID => $CustomerUserID,
+                )
+                )
+            {
+                $CustomerMatch = 1;
+                last CUSTOMERUSERID;
+            }
+        }
+
+        next ASSIGNMENT if !$CustomerMatch;
+
+        my $AssignmentSupportProfile = $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'};
+        $AssignmentSupportProfile ||= $Assignment->{XMLData}
+            && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'info',
+            Message  => 'ZTSM Overview assignment accepted user: AssignmentID='
+                . $AssignmentID
+                . ' SupportProfileRaw='
+                . _ZTSMDebugValue($AssignmentSupportProfile),
+        );
+
+        for my $SupportProfile (
+            _ZTSMSupportProfileVariants(
+                Value => $AssignmentSupportProfile,
+                ReferenceOnly => 1,
+            )
+            )
+        {
+            next ASSIGNMENT if !defined $SupportProfile;
+            next ASSIGNMENT if $SupportProfile eq '';
+
+            $SupportProfile{$SupportProfile} = 1;
+        }
+    }
+
+    return sort keys %SupportProfile;
+}
+
+sub _ZTSMPermissionFilter {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $PermissionObject = $Kernel::OM->Get(
+        'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck'
+    );
+
+    my @TicketIDs;
+    my %Seen;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+        next TICKETID if !$TicketID;
+        next TICKETID if $Seen{$TicketID}++;
+
+        next TICKETID if !$PermissionObject->Run(
+            TicketID       => $TicketID,
+            CustomerUserID => $Param{CustomerUserID},
+            Type           => 'ro',
+        );
+
+        push @TicketIDs, $TicketID;
+    }
+
+    return @TicketIDs;
+}
+
+sub _ZTSMExecutionTicketProtected {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $Parent = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !defined $Parent || $Parent eq '';
+
+    my $OwnerGroup = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-OwnerGroup'} );
+    my $Owner      = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Owner'} );
+
+    return 1
+        if ( defined $OwnerGroup && $OwnerGroup ne '' )
+        || ( defined $Owner && $Owner ne '' );
+
+    return;
+}
+
+sub _ZTSMStandardTicketIDsFilter {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my @TicketIDs;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+        next TICKETID if !$TicketID;
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+        );
+
+        next TICKETID if !%Ticket;
+
+        if ( _ZTSMExecutionTicketProtected( Ticket => \%Ticket ) ) {
+            my @AllowedTicketIDs = _ZTSMPermissionFilter(
+                CustomerUserID => $Param{CustomerUserID},
+                TicketIDs      => [$TicketID],
+            );
+
+            next TICKETID if !@AllowedTicketIDs;
+        }
+
+        push @TicketIDs, $TicketID;
+    }
+
+    return @TicketIDs;
+}
+
+sub _ZTSMExportActionHTML {
+    my (%Param) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ExportLink   = $Param{ExportLink} || '';
+
+    return if !$ExportLink;
+
+    my $Href = $LayoutObject->{Baselink} . $ExportLink;
+    $Href = $LayoutObject->Ascii2Html( Text => $Href );
+
+    return ''
+        . '<style>'
+        . '.ZTSMExportActionBar{max-width:1608px;margin:0 auto 18px auto;padding:0 52px;display:flex;justify-content:flex-end;box-sizing:border-box;}'
+        . '.ZTSMExportActionButton{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 24px;border-radius:24px;background:#ffffff;color:#00023c;border:1px solid #dfe3f0;box-shadow:0 8px 18px rgba(0,0,0,.08);font-weight:600;text-decoration:none;}'
+        . '.ZTSMExportActionButton:hover,.ZTSMExportActionButton:focus{background:#f7f8ff;color:#001bff;text-decoration:none;}'
+        . '.ZTSMExportActionButton i{font-size:14px;}'
+        . '@media only screen and (max-width:767px){.ZTSMExportActionBar{padding:0 18px;margin-bottom:12px}.ZTSMExportActionButton{width:100%;justify-content:center;}}'
+        . '</style>'
+        . '<div class="ZTSMExportActionBar">'
+        . '<a id="ZTSMExportActionBarDownload" class="ZTSMExportActionButton" href="' . $Href . '" title="Download Report">'
+        . '<i class="fa fa-download" aria-hidden="true"></i><span>Download Report</span>'
+        . '</a>'
+        . '</div>';
+}
+
+sub _ZTSMWorkableTicketIDs {
+    my (%Param) = @_;
+
+    return if !$Param{CustomerUserID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %Candidate;
+    my @Candidate;
+
+    my %SearchBase = (
+        Result  => 'ARRAY',
+        SortBy  => $Param{SortBy}  || 'Age',
+        OrderBy => $Param{OrderBy} || 'Down',
+        UserID  => 1,
+    );
+
+    $SearchBase{StateType} = $Param{StateType}
+        if $Param{StateType};
+
+    if ( defined $Param{Fulltext} && $Param{Fulltext} ne '' ) {
+        $SearchBase{Fulltext}            = $Param{Fulltext};
+        $SearchBase{FullTextIndex}       = 1;
+        $SearchBase{ContentSearchPrefix} = '*';
+        $SearchBase{ContentSearchSuffix} = '*';
+    }
+
+    if ( _ZTSMIsIPCAgent( CustomerUserID => $Param{CustomerUserID} ) ) {
+        my @TicketIDs = $TicketObject->TicketSearch(%SearchBase);
+
+        return _ZTSMPermissionFilter(
+            CustomerUserID => $Param{CustomerUserID},
+            TicketIDs      => \@TicketIDs,
+        );
+    }
+
+    PROFILE:
+    for my $SupportProfile ( _ZTSMSupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
+        next PROFILE if !$SupportProfile;
+
+        my @ProfileTicketIDs = $TicketObject->TicketSearch(
+            %SearchBase,
+            'DynamicField_ZTicket-OwnerGroup' => {
+                Equals => $SupportProfile,
+            },
+        );
+
+        for my $TicketID (@ProfileTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    for my $CustomerUserID ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
+        next if !$CustomerUserID;
+
+        my @OwnerTicketIDs = $TicketObject->TicketSearch(
+            %SearchBase,
+            'DynamicField_ZTicket-Owner' => {
+                Equals => $CustomerUserID,
+            },
+        );
+
+        for my $TicketID (@OwnerTicketIDs) {
+            next if !$TicketID;
+            next if $Candidate{$TicketID}++;
+            push @Candidate, $TicketID;
+        }
+    }
+
+    if ( $Param{CustomerUserLogin} && $Param{CustomerUserLogin} ne $Param{CustomerUserID} ) {
+        for my $CustomerUserLogin ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserLogin} ) ) {
+            next if !$CustomerUserLogin;
+
+            my @OwnerTicketIDs = $TicketObject->TicketSearch(
+                %SearchBase,
+                'DynamicField_ZTicket-Owner' => {
+                    Equals => $CustomerUserLogin,
+                },
+            );
+
+            for my $TicketID (@OwnerTicketIDs) {
+                next if !$TicketID;
+                next if $Candidate{$TicketID}++;
+                push @Candidate, $TicketID;
+            }
+        }
+    }
+
+    return _ZTSMPermissionFilter(
+        CustomerUserID => $Param{CustomerUserID},
+        TicketIDs      => \@Candidate,
+    );
+}
+
+sub _ZTSMServiceExtensionFieldSpecsParse {
+    my (%Param) = @_;
+
+    my $Value  = $Param{Value};
+    my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+
+    my @FieldSpecs;
+    my %Seen;
+    VALUE:
+    for my $Item (@Values) {
+        next VALUE if !defined $Item;
+
+        PART:
+        for my $Part ( split m{\s*[|,;\r\n]\s*}, $Item ) {
+            next PART if !$Part;
+
+            $Part =~ s{\A\s+|\s+\z}{}g;
+
+            my ( $FieldName, $Mandatory, $RenderLayout ) = split m{\s*:\s*}, $Part, 3;
+            $FieldName //= '';
+            $FieldName =~ s{\A\s+|\s+\z}{}g;
+            $FieldName =~ s{\ADynamicField_}{};
+            $RenderLayout //= '';
+            $RenderLayout =~ s{\A\s+|\s+\z}{}g;
+
+            next PART if !$FieldName;
+            next PART if $Seen{$FieldName}++;
+
+            push @FieldSpecs, {
+                Name         => $FieldName,
+                Mandatory    => $Mandatory && $Mandatory =~ m{\A1\z} ? 1 : 0,
+                RenderLayout => $RenderLayout =~ m{\A(?:Horizontal|Vertical)\z}i ? ucfirst lc $RenderLayout : undef,
+            };
+        }
+    }
+
+    return @FieldSpecs;
+}
+
+sub _ZTSMServiceExtensionFieldsByService {
+    my (%Param) = @_;
+
+    my $DynamicFieldObject = $Param{DynamicFieldObject} || $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Param{BackendObject}      || $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $ServiceFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZService-Field',
+    );
+
+    return {} if !IsHashRefWithData($ServiceFieldConfig);
+    return {} if $ServiceFieldConfig->{ObjectType} ne 'Service';
+
+    my %ServiceList = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
+        Valid  => 1,
+        UserID => 1,
+    );
+
+    my %FieldSpecsByService;
+    SERVICEID:
+    for my $ServiceID ( sort keys %ServiceList ) {
+        my $Value = $BackendObject->ValueGet(
+            DynamicFieldConfig => $ServiceFieldConfig,
+            ObjectID           => $ServiceID,
+            UserID             => 1,
+        );
+
+        my @FieldSpecs = _ZTSMServiceExtensionFieldSpecsParse( Value => $Value );
+        next SERVICEID if !@FieldSpecs;
+
+        $FieldSpecsByService{$ServiceID} = \@FieldSpecs;
+    }
+
+    return \%FieldSpecsByService;
+}
+
+sub _ZTSMSetFieldOrder {
+    my (%Param) = @_;
+
+    my $Include = $Param{Include};
+    return if ref $Include ne 'ARRAY';
+
+    my @FieldOrder;
+    ITEM:
+    for my $IncludeItem ( @{$Include} ) {
+        next ITEM if ref $IncludeItem ne 'HASH';
+
+        if ( IsHashRefWithData( $IncludeItem->{Grid} ) && IsArrayRefWithData( $IncludeItem->{Grid}{Rows} ) ) {
+            ROW:
+            for my $Row ( @{ $IncludeItem->{Grid}{Rows} } ) {
+                next ROW if ref $Row ne 'ARRAY';
+
+                FIELD:
+                for my $Field ( @{$Row} ) {
+                    next FIELD if ref $Field ne 'HASH' || !$Field->{DF};
+                    push @FieldOrder, $Field->{DF};
+                }
+            }
+        }
+        elsif ( $IncludeItem->{DF} ) {
+            push @FieldOrder, $IncludeItem->{DF};
+        }
+    }
+
+    return @FieldOrder;
+}
+
+sub _ZTSMExportDisplayValue {
+    my (%Param) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+
+    return '' if !IsHashRefWithData($DynamicFieldConfig);
+    return '' if !defined $Value;
+    return '' if ref $Value eq 'ARRAY' && !@{$Value};
+    return '' if !ref $Value && $Value eq '';
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject'
+        )
+    {
+        my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+        my @Display;
+
+        VALUE:
+        for my $Item (@Values) {
+            next VALUE if !defined $Item || $Item eq '';
+            push @Display, _ZTSMExportGovernanceObjectDisplayName( Value => $Item );
+        }
+
+        return join "\n", @Display;
+    }
+
+    my $Rendered = $Param{BackendObject}->DisplayValueRender(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+        LayoutObject       => $Param{LayoutObject},
+        HTMLOutput         => 0,
+    );
+
+    return '' if !IsHashRefWithData($Rendered);
+    return $Rendered->{Value} // '';
+}
+
+sub _ZTSMExportGovernanceObjectDisplayName {
+    my (%Param) = @_;
+
+    my $Value = $Param{Value};
+    return '' if !defined $Value || $Value eq '';
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    for my $GetParam (
+        { GovernanceObjectID => $Value },
+        { VersionID          => $Value },
+        )
+    {
+        my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($GovernanceObject);
+        next if !$GovernanceObject->{Name};
+
+        return $Value . ' - ' . $GovernanceObject->{Name};
+    }
+
+    return $Value;
+}
+
+sub _ZTSMExportDynamicFieldValue {
+    my (%Param) = @_;
+
+    my $FieldName = $Param{FieldName} || return '';
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig}
+        || $Param{DynamicFieldObject}->DynamicFieldGet( Name => $FieldName );
+
+    return '' if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $Value;
+    if ( exists $Param{Ticket}->{"DynamicField_$FieldName"} ) {
+        $Value = $Param{Ticket}->{"DynamicField_$FieldName"};
+    }
+    else {
+        $Value = $Param{BackendObject}->ValueGet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{Ticket}->{TicketID},
+        );
+    }
+
+    return _ZTSMExportDisplayValue(
+        %Param,
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+    );
+}
+
+sub _ZTSMExportServicePayload {
+    my (%Param) = @_;
+
+    my $ServiceID = $Param{Ticket}->{ServiceID} || return '';
+    my $FieldSpecs = $Param{ServiceFieldSpecsByService}->{$ServiceID};
+    return '' if !IsArrayRefWithData($FieldSpecs);
+
+    my %Payload;
+    my $HasPayload;
+
+    FIELD:
+    for my $FieldSpec ( @{$FieldSpecs} ) {
+        next FIELD if !IsHashRefWithData($FieldSpec);
+        my $FieldName = $FieldSpec->{Name} || next FIELD;
+
+        my $DynamicFieldConfig = $Param{DynamicFieldByName}->{$FieldName}
+            ||= $Param{DynamicFieldObject}->DynamicFieldGet( Name => $FieldName );
+        next FIELD if !IsHashRefWithData($DynamicFieldConfig);
+        next FIELD if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
+
+        my $Value = exists $Param{Ticket}->{"DynamicField_$FieldName"}
+            ? $Param{Ticket}->{"DynamicField_$FieldName"}
+            : $Param{BackendObject}->ValueGet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{Ticket}->{TicketID},
+            );
+
+        next FIELD if !defined $Value;
+        next FIELD if ref $Value eq 'ARRAY' && !@{$Value};
+        next FIELD if !ref $Value && $Value eq '';
+
+        if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'Set' ) {
+            my @Rows = _ZTSMExportServicePayloadSetRows(
+                %Param,
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Value              => $Value,
+            );
+            next FIELD if !@Rows;
+
+            $Payload{$FieldName} = \@Rows;
+            $HasPayload = 1;
+            next FIELD;
+        }
+
+        my $RenderedValue = _ZTSMExportDisplayValue(
+            %Param,
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Value              => $Value,
+        );
+        next FIELD if !defined $RenderedValue || $RenderedValue eq '';
+
+        $Payload{$FieldName} = $RenderedValue;
+        $HasPayload = 1;
+    }
+
+    return '' if !$HasPayload;
+
+    return $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+        Data     => \%Payload,
+        SortKeys => 1,
+        Pretty   => 1,
+    ) || '';
+}
+
+sub _ZTSMExportServicePayloadSetRows {
+    my (%Param) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Value              = $Param{Value};
+    return if ref $Value ne 'ARRAY' || !@{$Value};
+
+    my @FieldOrder = _ZTSMSetFieldOrder(
+        Include => $DynamicFieldConfig->{Config}{Include},
+    );
+    return if !@FieldOrder;
+
+    my @Rows;
+    SETROW:
+    for my $SetRow ( @{$Value} ) {
+        next SETROW if ref $SetRow ne 'HASH';
+
+        my %Row;
+        my $HasValue;
+
+        FIELD:
+        for my $FieldName (@FieldOrder) {
+            my $IncludedFieldConfig = $Param{DynamicFieldByName}->{$FieldName}
+                ||= $Param{DynamicFieldObject}->DynamicFieldGet( Name => $FieldName );
+            next FIELD if !IsHashRefWithData($IncludedFieldConfig);
+
+            my $CellValue = $SetRow->{$FieldName};
+            next FIELD if !defined $CellValue;
+            next FIELD if ref $CellValue eq 'ARRAY' && !@{$CellValue};
+            next FIELD if !ref $CellValue && $CellValue eq '';
+
+            my $RenderedValue = _ZTSMExportDisplayValue(
+                %Param,
+                DynamicFieldConfig => $IncludedFieldConfig,
+                Value              => $CellValue,
+            );
+            next FIELD if !defined $RenderedValue || $RenderedValue eq '';
+
+            $Row{$FieldName} = $RenderedValue;
+            $HasValue = 1;
+        }
+
+        push @Rows, \%Row if $HasValue;
+    }
+
+    return @Rows;
+}
+
+sub _ZTSMExportFirstArticle {
+    my (%Param) = @_;
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my @ArticleList   = $ArticleObject->ArticleList(
+        TicketID             => $Param{TicketID},
+        IsVisibleForCustomer => 1,
+        OnlyFirst            => 1,
+    );
+
+    return if !IsHashRefWithData( $ArticleList[0] );
+
+    my $ArticleBackendObject = $ArticleObject->BackendForArticle( %{ $ArticleList[0] } );
+    return $ArticleBackendObject->ArticleGet(
+        TicketID  => $Param{TicketID},
+        ArticleID => $ArticleList[0]->{ArticleID},
+    );
+}
+
+sub _ZTSMExportArticleActor {
+    my (%Param) = @_;
+
+    my $Article = $Param{Article} || {};
+    my $Ticket  = $Param{Ticket}  || {};
+
+    if ( $Article->{CustomerUserID} ) {
+        return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+            UserLogin => $Article->{CustomerUserID},
+        ) || $Article->{CustomerUserID};
+    }
+
+    if ( $Article->{From} ) {
+        my $From = $Article->{From};
+        $From =~ s{\A\s+|\s+\z}{}g;
+        return $From if $From ne '';
+    }
+
+    if ( $Ticket->{CustomerUserID} ) {
+        return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+            UserLogin => $Ticket->{CustomerUserID},
+        ) || $Ticket->{CustomerUserID};
+    }
+
+    if ( $Article->{CreateBy} ) {
+        return $Kernel::OM->Get('Kernel::System::User')->UserName(
+            UserID => $Article->{CreateBy},
+        ) || $Article->{CreateBy};
+    }
+
+    return '';
+}
+
+sub _ZTSMExportArticleBodyText {
+    my (%Param) = @_;
+
+    my $Body = $Param{Article}->{Body} // '';
+    return '' if $Body eq '';
+
+    my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
+    my $Text            = $HTMLUtilsObject->ToAscii( String => $Body ) // '';
+
+    $Text =~ s{\r\n?}{\n}g;
+    $Text =~ s{[ \t]+\n}{\n}g;
+    $Text =~ s{\n{3,}}{\n\n}g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+
+    return $Text;
+}
+
+sub _ZTSMExportCreatedBy {
+    my (%Param) = @_;
+
+    my $Actor = _ZTSMExportArticleActor(%Param);
+    return $Actor if $Actor;
+
+    if ( $Param{Ticket}->{CustomerUserID} ) {
+        return $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerName(
+            UserLogin => $Param{Ticket}->{CustomerUserID},
+        ) || $Param{Ticket}->{CustomerUserID};
+    }
+
+    if ( $Param{Ticket}->{CreateBy} ) {
+        return $Kernel::OM->Get('Kernel::System::User')->UserName(
+            UserID => $Param{Ticket}->{CreateBy},
+        ) || $Param{Ticket}->{CreateBy};
+    }
+
+    return '';
+}
+
+sub _ZTSMExportArticlesJSON {
+    my (%Param) = @_;
+
+    my $TicketID = $Param{TicketID} || return '';
+    my $Ticket   = $Param{Ticket}   || {};
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my @ArticleList   = $ArticleObject->ArticleList(
+        TicketID             => $TicketID,
+        IsVisibleForCustomer => 1,
+    );
+
+    return '' if !@ArticleList;
+
+    my %SenderTypeByID = $ArticleObject->ArticleSenderTypeList();
+    my @Articles;
+
+    METAARTICLE:
+    for my $MetaArticle (
+        sort {
+            ( $b->{CreateTime} || '' ) cmp ( $a->{CreateTime} || '' )
+                || ( $b->{ArticleID} || 0 ) <=> ( $a->{ArticleID} || 0 )
+        } @ArticleList
+        )
+    {
+        next METAARTICLE if !IsHashRefWithData($MetaArticle);
+
+        my $ArticleBackendObject = $ArticleObject->BackendForArticle( %{$MetaArticle} );
+        my %Article              = $ArticleBackendObject->ArticleGet(
+            TicketID  => $TicketID,
+            ArticleID => $MetaArticle->{ArticleID},
+        );
+
+        my $Body = _ZTSMExportArticleBodyText(
+            Article => \%Article,
+        );
+
+        push @Articles, {
+            ArticleID            => $MetaArticle->{ArticleID} || '',
+            ArticleNumber        => $MetaArticle->{ArticleNumber} || '',
+            Created              => $MetaArticle->{CreateTime} || $Article{CreateTime} || '',
+            SenderType           => $SenderTypeByID{ $MetaArticle->{SenderTypeID} || 0 } || '',
+            IsVisibleForCustomer => $MetaArticle->{IsVisibleForCustomer} ? 1 : 0,
+            From                 => $Article{From} || '',
+            To                   => $Article{To} || '',
+            Cc                   => $Article{Cc} || '',
+            Subject              => $Article{Subject} || '',
+            CreatedBy            => _ZTSMExportArticleActor(
+                Ticket  => $Ticket,
+                Article => {
+                    %{$MetaArticle},
+                    %Article,
+                },
+            ),
+            Body => $Body,
+        };
+    }
+
+    return '' if !@Articles;
+
+    return $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+        Data     => \@Articles,
+        SortKeys => 1,
+        Pretty   => 1,
+    ) || '';
+}
+
+sub _ZTSMTicketReportExport {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject       = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $TicketObject       = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $CSVObject          = $Kernel::OM->Get('Kernel::System::CSV');
+
+    my $ServiceFieldSpecsByService = _ZTSMServiceExtensionFieldsByService(
+        DynamicFieldObject => $DynamicFieldObject,
+        BackendObject      => $BackendObject,
+    );
+    my %DynamicFieldByName;
+    my @Rows;
+
+    TICKETID:
+    for my $TicketID ( @{ $Param{TicketIDs} || [] } ) {
+        next TICKETID if !$TicketID;
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => 1,
+            Extended      => 1,
+            UserID        => $Self->{UserID},
+        );
+        next TICKETID if !%Ticket;
+
+        my %Article = _ZTSMExportFirstArticle( TicketID => $TicketID );
+
+        my $Description = _ZTSMExportArticleBodyText(
+            Article => \%Article,
+        );
+        my $CreatedBy = _ZTSMExportCreatedBy(
+            Ticket  => \%Ticket,
+            Article => \%Article,
+        );
+        my $ArticlesJSON = _ZTSMExportArticlesJSON(
+            TicketID => $TicketID,
+            Ticket   => \%Ticket,
+        );
+
+        push @Rows, [
+            $Ticket{TicketNumber} || '',
+            $Ticket{Type}         || '',
+            $Ticket{Service}      || '',
+            $Ticket{Title}        || '',
+            $Description,
+            _ZTSMExportDynamicFieldValue(
+                FieldName          => 'ZTicket-Location',
+                Ticket             => \%Ticket,
+                DynamicFieldObject => $DynamicFieldObject,
+                BackendObject      => $BackendObject,
+                LayoutObject       => $LayoutObject,
+            ),
+            _ZTSMExportDynamicFieldValue(
+                FieldName          => 'ZTicket-Application',
+                Ticket             => \%Ticket,
+                DynamicFieldObject => $DynamicFieldObject,
+                BackendObject      => $BackendObject,
+                LayoutObject       => $LayoutObject,
+            ),
+            _ZTSMExportDynamicFieldValue(
+                FieldName          => 'ZTicket-Env',
+                Ticket             => \%Ticket,
+                DynamicFieldObject => $DynamicFieldObject,
+                BackendObject      => $BackendObject,
+                LayoutObject       => $LayoutObject,
+            ),
+            $Ticket{State}  || '',
+            $CreatedBy      || '',
+            $Ticket{Created} || $Ticket{CreateTime} || '',
+            $Ticket{CustomerUserID} || '',
+            _ZTSMExportDynamicFieldValue(
+                FieldName          => 'ZTicket-OwnerGroup',
+                Ticket             => \%Ticket,
+                DynamicFieldObject => $DynamicFieldObject,
+                BackendObject      => $BackendObject,
+                LayoutObject       => $LayoutObject,
+            ),
+            _ZTSMExportDynamicFieldValue(
+                FieldName          => 'ZTicket-Owner',
+                Ticket             => \%Ticket,
+                DynamicFieldObject => $DynamicFieldObject,
+                BackendObject      => $BackendObject,
+                LayoutObject       => $LayoutObject,
+            ),
+            _ZTSMExportServicePayload(
+                Ticket                     => \%Ticket,
+                ServiceFieldSpecsByService => $ServiceFieldSpecsByService,
+                DynamicFieldByName         => \%DynamicFieldByName,
+                DynamicFieldObject         => $DynamicFieldObject,
+                BackendObject              => $BackendObject,
+                LayoutObject               => $LayoutObject,
+            ),
+            $ArticlesJSON,
+        ];
+    }
+
+    my $Excel = $CSVObject->Array2CSV(
+        Head   => \@ZTSMReportHead,
+        Data   => \@Rows,
+        Format => 'Excel',
+    );
+
+    my $CurSystemDateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $FileName                = sprintf(
+        'ticket_report_%s_%s',
+        lc( $Param{Filter} || 'tickets' ),
+        $CurSystemDateTimeObject->Format(
+            Format => '%Y-%m-%d_%H-%M',
+        ),
+    );
+    $FileName =~ s{[^A-Za-z0-9_.-]+}{_}g;
+
+    return $LayoutObject->Attachment(
+        Filename    => $FileName . '.xlsx',
+        ContentType => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        Content     => $Excel,
+    );
+}
+
 sub Run {
     my ( $Self, %Param ) = @_;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'debug',
+        Message  => 'ZTSM CustomerTicketOverview Run enter: UserID='
+            . ( $Self->{UserID} // '<undef>' )
+            . ' Subaction='
+            . ( $Self->{Subaction} // '<undef>' ),
+    );
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -291,15 +1407,35 @@ sub Run {
     my $AllTickets      = 0;
     my $AllTicketsTotal = 0;
     my $TicketObject    = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %ZTSMFilterTicketIDs;
+    my %StandardFilterTicketIDs;
 
     for my $Filter ( sort keys %{ $Filters{ $Self->{Subaction} } } ) {
         $Counter++;
 
-        my $Count = $TicketObject->TicketSearch(
+        my @StandardTicketIDs = $TicketObject->TicketSearch(
             %{ $Filters{ $Self->{Subaction} }->{$Filter}->{Search} },
             %SearchInArchive,
-            Result => 'COUNT',
-        ) || 0;
+            Result => 'ARRAY',
+        );
+        @StandardTicketIDs = _ZTSMStandardTicketIDsFilter(
+            CustomerUserID => $Self->{UserID},
+            TicketIDs      => \@StandardTicketIDs,
+        );
+        $StandardFilterTicketIDs{$Filter} = \@StandardTicketIDs;
+
+        my @ZTSMWorkableTicketIDs = _ZTSMWorkableTicketIDs(
+            CustomerUserID    => $Self->{UserID},
+            CustomerUserLogin => $Self->{UserLogin},
+            StateType         => $Filters{ $Self->{Subaction} }->{$Filter}->{Search}->{StateType},
+            Fulltext          => $Fulltext,
+            SortBy            => $SortBy,
+            OrderBy           => $OrderByCurrent,
+        );
+        $ZTSMFilterTicketIDs{$Filter} = \@ZTSMWorkableTicketIDs;
+
+        my %Counted;
+        my $Count = grep { !$Counted{$_}++ } ( @StandardTicketIDs, @ZTSMWorkableTicketIDs );
 
         my $ClassA = '';
         if ( $Filter eq $FilterCurrent ) {
@@ -315,6 +1451,38 @@ sub Run {
             Filter => $Filter,
             ClassA => $ClassA,
         };
+    }
+
+    my @CurrentViewableTickets = @{ $StandardFilterTicketIDs{$FilterCurrent} || [] };
+    if ( $ZTSMFilterTicketIDs{$FilterCurrent} && @{ $ZTSMFilterTicketIDs{$FilterCurrent} } ) {
+        my %Seen;
+        @CurrentViewableTickets = grep { !$Seen{$_}++ } (
+            @CurrentViewableTickets,
+            @{ $ZTSMFilterTicketIDs{$FilterCurrent} },
+        );
+    }
+
+    if ( ( $ParamObject->GetParam( Param => 'ExportTickets' ) || '' ) eq 'Excel' ) {
+        return $Self->_ZTSMTicketReportExport(
+            TicketIDs => \@CurrentViewableTickets,
+            Filter    => $FilterCurrent,
+        );
+    }
+
+    my $ExportLink = 'Action=CustomerTicketOverview'
+        . ';Subaction=' . $LayoutObject->LinkEncode( $Self->{Subaction} )
+        . ';Filter=' . $LayoutObject->LinkEncode($FilterCurrent)
+        . ';SortBy=' . $LayoutObject->LinkEncode($SortBy)
+        . ';OrderBy=' . $LayoutObject->LinkEncode($OrderByCurrent)
+        . ';ExportTickets=Excel';
+
+    if ( defined $Fulltext ) {
+        $ExportLink .= ';Fulltext=' . $LayoutObject->LinkEncode($Fulltext);
+    }
+    if ( IsArrayRefWithData( \@CustomerIDs ) ) {
+        for my $CustomerID (@CustomerIDs) {
+            $ExportLink .= ';CustomerIDs=' . $LayoutObject->LinkEncode($CustomerID);
+        }
     }
 
     my $StartHit  = int( $ParamObject->GetParam( Param => 'StartHit' ) || 1 );
@@ -582,15 +1750,9 @@ sub Run {
             }
         }
 
-        my @ViewableTickets = $TicketObject->TicketSearch(
-            %{ $Filters{ $Self->{Subaction} }->{$FilterCurrent}->{Search} },
-            %SearchInArchive,
-            Result => 'ARRAY',
-        );
-
         # show tickets
         #       $Counter = 0;
-        #       for my $TicketID (@ViewableTickets) {
+        #       for my $TicketID (@CurrentViewableTickets) {
         #           $Counter++;
         #           if (
         #               $Counter >= $StartHit
@@ -605,10 +1767,14 @@ sub Run {
         $TicketListHTML = $TicketListObject->Run(
             StartHit  => $StartHit,
             PageShown => $PageShown,
-            TicketIDs => \@ViewableTickets,
+            TicketIDs => \@CurrentViewableTickets,
         );
 
     }
+
+    $TicketListHTML = _ZTSMExportActionHTML(
+        ExportLink => $ExportLink,
+    ) . ( $TicketListHTML || '' );
 
     # create & return output
     my $Title = $Self->{Subaction};
@@ -646,6 +1812,7 @@ sub Run {
             AccessKey      => $NewTicketAccessKey,
             TicketListHTML => $TicketListHTML,
             Fulltext       => $ParamObject->GetParam( Param => 'Fulltext' ),
+            ExportLink     => $ExportLink,
         },
     );
 

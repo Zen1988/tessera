@@ -9,6 +9,7 @@ use warnings;
 
 use parent qw(Kernel::System::Ticket::NumberBase);
 
+use Digest::MD5 qw(md5_hex);
 use Time::HiRes();
 
 our @ObjectDependencies = (
@@ -16,6 +17,7 @@ our @ObjectDependencies = (
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::Ticket',
     'Kernel::System::Type',
 );
 
@@ -34,6 +36,37 @@ sub TicketNumberBuild {
     my $SystemIdentity = $Self->_SystemIdentityGet($Config);
     my $TypeCode       = $Self->_TypeCodeGet( Config => $Config, %Param );
     my $Year           = $Self->_CurrentYearGet();
+    my $ParentTicketNumber = $Self->_ParentTicketNumberGet(%Param);
+
+    if (
+        $ParentTicketNumber
+        && $Self->_TicketNumberLooksLikeTESSERA(
+            TicketNumber => $ParentTicketNumber,
+            Config       => $Config,
+        )
+        )
+    {
+        my $ChildPadding = $Self->_PositiveIntegerGet(
+            Value   => $Config->{ChildSequencePadding},
+            Default => 3,
+        );
+        my $ScopePrefix = $Self->_ChildCounterScopePrefixGet(
+            ParentTicketNumber => $ParentTicketNumber,
+            TypeCode           => $TypeCode,
+        );
+        my $Counter = $Self->_ScopedTicketNumberCounterAdd(
+            Offset      => 1 + $Offset,
+            Year        => $Year,
+            ScopePrefix => $ScopePrefix,
+        );
+
+        return if !$Counter;
+
+        $Counter = sprintf "%0*u", $ChildPadding, $Counter;
+
+        return join '-', $ParentTicketNumber, $TypeCode, $Counter;
+    }
+
     my $Padding        = $Self->_PositiveIntegerGet(
         Value   => $Config->{SequencePadding},
         Default => 7,
@@ -72,25 +105,61 @@ sub GetTNByString {
         Value   => $Config->{SequencePadding},
         Default => 7,
     );
+    my $ChildPadding = $Self->_PositiveIntegerGet(
+        Value   => $Config->{ChildSequencePadding},
+        Default => 3,
+    );
 
     my $TicketHook        = $ConfigObject->Get('Ticket::Hook');
     my $TicketHookDivider = $ConfigObject->Get('Ticket::HookDivider');
 
-    my $Pattern = qr{\Q$SystemIdentity\E-[A-Z0-9]{$TypeCodeLength}-\d{4}\d{$Padding,40}}xms;
+    my $RootPattern  = qr{\Q$SystemIdentity\E-[A-Z0-9]{$TypeCodeLength}-\d{4}\d{$Padding,40}}xms;
+    my $ChildPattern = qr{$RootPattern-[A-Z0-9]{$TypeCodeLength}-\d{$ChildPadding,40}}xms;
 
-    if ( $String =~ /\Q$TicketHook$TicketHookDivider\E($Pattern)/i ) {
+    if ( $String =~ /\Q$TicketHook$TicketHookDivider\E($ChildPattern)/i ) {
         return $1;
     }
 
-    if ( $String =~ /\Q$TicketHook\E:\s{0,2}($Pattern)/i ) {
+    if ( $String =~ /\Q$TicketHook\E:\s{0,2}($ChildPattern)/i ) {
         return $1;
     }
 
-    if ( $String =~ /\b($Pattern)\b/i ) {
+    if ( $String =~ /\b($ChildPattern)\b/i ) {
+        return $1;
+    }
+
+    if ( $String =~ /\Q$TicketHook$TicketHookDivider\E($RootPattern)/i ) {
+        return $1;
+    }
+
+    if ( $String =~ /\Q$TicketHook\E:\s{0,2}($RootPattern)/i ) {
+        return $1;
+    }
+
+    if ( $String =~ /\b($RootPattern)\b/i ) {
         return $1;
     }
 
     return;
+}
+
+sub ChildTicketNumberCounterCleanup {
+    my ( $Self, %Param ) = @_;
+
+    my $ParentTicketNumber = $Param{ParentTicketNumber} || '';
+    return 1 if !$ParentTicketNumber;
+
+    my $ParentPrefix = $Self->_ChildCounterParentPrefixGet(
+        ParentTicketNumber => $ParentTicketNumber,
+    );
+    return 1 if !$ParentPrefix;
+
+    my $LikePrefix = $ParentPrefix . '%';
+
+    return $Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => 'DELETE FROM ticket_number_counter WHERE counter_uid LIKE ?',
+        Bind => [ \$LikePrefix ],
+    );
 }
 
 sub _SystemIdentityGet {
@@ -157,6 +226,63 @@ sub _TypeCodeGet {
     return $Code;
 }
 
+sub _ParentTicketNumberGet {
+    my ( $Self, %Param ) = @_;
+
+    return $Param{ParentTicketNumber} if $Param{ParentTicketNumber};
+
+    return if !$Param{ParentTicketID};
+
+    my %ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $Param{ParentTicketID},
+        DynamicFields => 0,
+        UserID        => $Param{UserID} || 1,
+        Silent        => 1,
+    );
+
+    return $ParentTicket{TicketNumber};
+}
+
+sub _TicketNumberLooksLikeTESSERA {
+    my ( $Self, %Param ) = @_;
+
+    my $TicketNumber = $Param{TicketNumber} || '';
+    return if !$TicketNumber;
+
+    my $Config         = $Param{Config} || {};
+    my $SystemIdentity = $Self->_SystemIdentityGet($Config);
+    my $TypeCodeLength = $Self->_PositiveIntegerGet(
+        Value   => $Config->{TypeCodeLength},
+        Default => 2,
+    );
+    my $Padding = $Self->_PositiveIntegerGet(
+        Value   => $Config->{SequencePadding},
+        Default => 7,
+    );
+
+    return $TicketNumber =~ m{\A\Q$SystemIdentity\E-[A-Z0-9]{$TypeCodeLength}-\d{4}\d{$Padding,40}\z}xms;
+}
+
+sub _ChildCounterParentPrefixGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParentTicketNumber = $Param{ParentTicketNumber} || '';
+    return if !$ParentTicketNumber;
+
+    return 'ZT' . substr( md5_hex("ChildParent:$ParentTicketNumber"), 0, 10 );
+}
+
+sub _ChildCounterScopePrefixGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParentPrefix = $Self->_ChildCounterParentPrefixGet(%Param);
+    return if !$ParentPrefix;
+
+    my $TypeCode = $Param{TypeCode} || 'XX';
+
+    return $ParentPrefix . substr( md5_hex("ChildType:$TypeCode"), 0, 6 );
+}
+
 sub _CurrentYearGet {
     my ( $Self, %Param ) = @_;
 
@@ -180,7 +306,8 @@ sub _ScopedTicketNumberCounterAdd {
 
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-    my $CounterUID = $Self->_CounterUIDGet();
+    my $ScopePrefix = $Param{ScopePrefix} || '';
+    my $CounterUID  = $Self->_CounterUIDGet( ScopePrefix => $ScopePrefix );
     return if !$CounterUID;
 
     my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
@@ -216,6 +343,14 @@ sub _ScopedTicketNumberCounterAdd {
     my $YearStart = $Param{Year} . '-01-01 00:00:00';
     my $ScopeSQL  = 'AND create_time >= ?';
     my @ScopeBind = ( \$YearStart );
+    my $CounterScopeSQL = '';
+    my @CounterScopeBind;
+
+    if ($ScopePrefix) {
+        my $LikePrefix = $ScopePrefix . '%';
+        $CounterScopeSQL = 'AND counter_uid LIKE ?';
+        @CounterScopeBind = ( \$LikePrefix );
+    }
 
     my @UnsetCounterIDs;
     return if !$DBObject->Prepare(
@@ -223,10 +358,11 @@ sub _ScopedTicketNumberCounterAdd {
             SELECT id
             FROM ticket_number_counter
             WHERE counter = 0
+                $CounterScopeSQL
                 AND id <= ?
                 $ScopeSQL
             ORDER BY id ASC",
-        Bind => [ \$CounterID, @ScopeBind ],
+        Bind => [ @CounterScopeBind, \$CounterID, @ScopeBind ],
     );
 
     while ( my @Row = $DBObject->FetchrowArray() ) {
@@ -242,9 +378,10 @@ sub _ScopedTicketNumberCounterAdd {
                 SELECT counter
                 FROM ticket_number_counter
                 WHERE id < ?
+                    $CounterScopeSQL
                     $ScopeSQL
                 ORDER BY id DESC",
-            Bind  => [ \$UnsetCounterID, @ScopeBind ],
+            Bind  => [ \$UnsetCounterID, @CounterScopeBind, @ScopeBind ],
             Limit => 1,
         );
 
@@ -288,6 +425,10 @@ sub _ScopedTicketNumberCounterAdd {
 sub _CounterUIDGet {
     my ( $Self, %Param ) = @_;
 
+    my $ScopePrefix = $Param{ScopePrefix} || '';
+    $ScopePrefix =~ s{[^A-Za-z0-9]}{}xmsg;
+    $ScopePrefix = substr $ScopePrefix, 0, 24;
+
     my $NodeID = $Kernel::OM->Get('Kernel::Config')->Get('NodeID') || 1;
     my ( $Seconds, $Microseconds ) = Time::HiRes::gettimeofday();
     my $ProcessID = $$;
@@ -300,6 +441,13 @@ sub _CounterUIDGet {
             Length     => $Length,
             Dictionary => [ 0 .. 9, 'a' .. 'f' ],
         );
+    }
+
+    if ($ScopePrefix) {
+        my $SuffixLength = 32 - length $ScopePrefix;
+        return if $SuffixLength < 8;
+
+        return $ScopePrefix . substr $CounterUID, 0, $SuffixLength;
     }
 
     return substr $CounterUID, 0, 32;

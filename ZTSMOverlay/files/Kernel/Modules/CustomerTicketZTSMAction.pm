@@ -35,6 +35,8 @@ sub Run {
     my $RuntimeAction = $ParamObject->GetParam( Param => 'RuntimeAction' ) || '';
     my $Subaction     = $ParamObject->GetParam( Param => 'Subaction' ) || '';
     my $Remarks       = $ParamObject->GetParam( Param => 'Remarks' ) || '';
+    my $SubmittedBody = $ParamObject->GetParam( Param => 'Body' ) || '';
+    $Remarks ||= $SubmittedBody;
     my $OwnerTarget   = $ParamObject->GetParam( Param => 'OwnerTarget' ) || '';
     my $SupportProfile             = $ParamObject->GetParam( Param => 'SupportProfile' ) || '';
     my $TargetServiceSupportMapID  = $ParamObject->GetParam( Param => 'TargetServiceSupportMapID' ) || '';
@@ -60,7 +62,14 @@ sub Run {
     );
 
     if ( !$Access ) {
-        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        $Access = $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
+            TicketID       => $TicketID,
+            CustomerUserID => $Self->{UserID},
+            Type           => 'ro',
+        );
+
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
+            if !$Access;
     }
 
     my %Ticket = $TicketObject->TicketGet(
@@ -89,6 +98,7 @@ sub Run {
 
     my $Config              = $ConfigObject->Get('Ticket::Frontend::CustomerTicketZTSMAction') || {};
     my $CustomerPanelUserID = $ConfigObject->Get('CustomerPanelUserID') || 1;
+    my $IPCOverrideAccess   = $Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} );
 
     if ( $RuntimeAction eq 'Delegate' ) {
         if ( !$Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} ) ) {
@@ -117,6 +127,20 @@ sub Run {
             );
         }
 
+        if (
+            !$Self->_IPCOverrideStateSet(
+                Ticket              => \%Ticket,
+                TicketID            => $TicketID,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                RuntimeAction       => $RuntimeAction,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not move ticket to override state.',
+            );
+        }
+
         my @Attachments = $Self->_RuntimeUploadAttachments();
         my $Success     = $Self->_DelegateOverrideApply(
             Ticket              => \%Ticket,
@@ -140,6 +164,42 @@ sub Run {
     }
 
     if ( ( $Ticket{StateType} || '' ) eq 'closed' ) {
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
+    }
+
+    if ( $RuntimeAction eq 'Override' ) {
+        if ( !$IPCOverrideAccess || ( $Ticket{Type} || '' ) ne 'Approval' ) {
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if (
+            !$Self->_IPCOverrideStateSet(
+                Ticket              => \%Ticket,
+                TicketID            => $TicketID,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                RuntimeAction       => $RuntimeAction,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not move ticket to override state.',
+            );
+        }
+
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $TicketID,
+            RuntimeAction       => $RuntimeAction,
+            Label               => 'Override',
+            Subject             => '[VVIP Override] Override mode started',
+            Body                => "** Note: This is a system-generated approval override message.\n\n"
+                . "IPC customer user '$Self->{UserID}' moved this approval ticket into override handling.\n\n"
+                . "Approval or rejection must be submitted separately after the ticket is in override state.",
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+
         return $LayoutObject->Redirect(
             OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
         );
@@ -311,7 +371,11 @@ sub Run {
         );
 
         if ( !$Access ) {
-            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
+                if !$Self->_IPCApprovalOverrideAllowed(
+                Ticket        => \%Ticket,
+                RuntimeAction => $RuntimeAction,
+                );
         }
     }
 
@@ -391,6 +455,9 @@ sub Run {
     }
 
     if ( $RuntimeAction eq 'TakeOwnership' ) {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
+            if $IPCOverrideAccess;
+
         my $ActionableTicketType = _ActionableTicketType(
             Config => $Config,
             Type   => $Ticket{Type},
@@ -493,7 +560,13 @@ sub Run {
     }
 
     my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
-    if ( !$Owner || lc $Owner ne lc $Self->{UserID} ) {
+    my $IPCApprovalOverride = $IPCOverrideAccess
+        && $Self->_IPCApprovalOverrideAllowed(
+        Ticket        => \%Ticket,
+        RuntimeAction => $RuntimeAction,
+        );
+
+    if ( !$IPCApprovalOverride && ( !$Owner || lc $Owner ne lc $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -816,6 +889,28 @@ sub Run {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
+    if ($IPCApprovalOverride) {
+        $ActionConfig->{Label} = ( $ActionConfig->{Label} || $RuntimeAction ) . ' Override';
+        $ActionConfig->{Subject} ||= '[VVIP Override] Approval action performed on behalf';
+        $ActionConfig->{Body} ||= "** Note: This is a system-generated approval override message.\n\n"
+            . "Runtime action '$RuntimeAction' was performed by IPC customer user '$Self->{UserID}' on behalf of the unavailable approver.\n\n"
+            . "This exceptional measure is intended for urgent out-of-band approval evidence.";
+
+        if (
+            !$Self->_IPCOverrideStateSet(
+                Ticket              => \%Ticket,
+                TicketID            => $TicketID,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                RuntimeAction       => $RuntimeAction,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not move ticket to override state.',
+            );
+        }
+    }
+
     if ( $Ticket{Type} eq 'Assessment' && $RuntimeAction eq 'Assess' ) {
         if ( $Subaction eq 'RiskAssessmentInline' ) {
             my $HTML = $Self->_RiskAssessmentWorkspaceInlineHTML(
@@ -993,6 +1088,80 @@ sub _PlainTextValue {
     $Value =~ s{\A\s+|\s+\z}{}g;
 
     return $Value;
+}
+
+sub _ContentTypeIsHTML {
+    my ($ContentType) = @_;
+
+    return if !$ContentType;
+    return $ContentType =~ m{\A\s*text/html\b}i ? 1 : 0;
+}
+
+sub _ValueHasHTML {
+    my ($Value) = @_;
+
+    $Value = _NormalizeValue($Value);
+    return if !defined $Value || $Value eq '';
+
+    return $Value =~ m{</?(?:html|body|p|div|br|table|thead|tbody|tr|td|th|ul|ol|li|img|figure|blockquote|h[1-6]|strong|b|em|i|span|a)\b}is
+        ? 1
+        : 0;
+}
+
+sub _PlainTextHTML {
+    my ($Value) = @_;
+
+    $Value = _PlainTextValue($Value);
+    return '' if !defined $Value || $Value eq '';
+
+    $Value = _HTML($Value);
+    $Value =~ s{\r?\n}{<br />}g;
+
+    return $Value;
+}
+
+sub _HTMLBodyFragment {
+    my ($Value) = @_;
+
+    $Value = _NormalizeValue($Value);
+    return '' if !defined $Value || $Value eq '';
+
+    if ( $Value =~ m{<body[^>]*>(.*?)</body>}is ) {
+        $Value = $1;
+    }
+
+    $Value =~ s{<script\b[^>]*>.*?</script>}{}gis;
+
+    return $Value;
+}
+
+sub _ArticleBodyWithRemarks {
+    my (%Param) = @_;
+
+    my $Body        = defined $Param{Body}        ? $Param{Body}        : '';
+    my $Remarks     = defined $Param{Remarks}     ? $Param{Remarks}     : '';
+    my $ContentType = defined $Param{ContentType} ? $Param{ContentType} : 'text/plain; charset=utf-8';
+
+    my $BodyIsHTML    = _ContentTypeIsHTML($ContentType) || _ValueHasHTML($Body);
+    my $RemarksIsHTML = _ValueHasHTML($Remarks);
+
+    if ( !$BodyIsHTML && !$RemarksIsHTML ) {
+        return (
+            Body        => $Body . "\n\nRemarks:\n" . ( _PlainTextValue($Remarks) || '' ),
+            ContentType => $ContentType,
+        );
+    }
+
+    my $BodyHTML = $BodyIsHTML ? _HTMLBodyFragment($Body) : _PlainTextHTML($Body);
+    my $RemarksHTML = $RemarksIsHTML ? _HTMLBodyFragment($Remarks) : _PlainTextHTML($Remarks);
+
+    my $HTML = $BodyHTML;
+    $HTML .= '<div style="margin-top:16px;"><strong>Remarks:</strong><br />' . $RemarksHTML . '</div>';
+
+    return (
+        Body        => $HTML,
+        ContentType => 'text/html; charset=utf-8',
+    );
 }
 
 sub _ChapterDirectorRun {
@@ -2056,6 +2225,8 @@ sub _RequiredSupportProfileTicketCreate {
         ServiceID     => $ParentTicket->{ServiceID} || $SourceTicket->{ServiceID},
         SLAID         => $ParentTicket->{SLAID} || $SourceTicket->{SLAID},
         ResponsibleID => 1,
+        ParentTicketID     => $Param{ParentTicketID},
+        ParentTicketNumber => $ParentTicket->{TicketNumber},
     );
 
     return if !$NewTicketID;
@@ -2611,6 +2782,13 @@ sub _IsIPCAgent {
 
     return if !$Param{CustomerUserID};
 
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Param{CustomerUserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
+
     my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
         UserLogin => $Param{CustomerUserID},
         Silent    => 1,
@@ -2623,6 +2801,56 @@ sub _IsIPCAgent {
         GroupName => 'IPC',
         Type      => 'rw',
     );
+}
+
+sub _IPCApprovalOverrideAllowed {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{Ticket} );
+    return if ( $Param{Ticket}->{Type} || '' ) ne 'Approval';
+    return if lc( _NormalizeValue( $Param{Ticket}->{State} ) || '' ) ne 'override';
+
+    my %AllowedAction = map { $_ => 1 } qw(Approve Reject);
+    return $AllowedAction{ $Param{RuntimeAction} || '' };
+}
+
+sub _IPCOverrideStateSet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketID};
+    return if !$Param{CustomerPanelUserID};
+
+    my $CurrentState = _NormalizeValue( $Param{Ticket}->{State} );
+    return 1 if defined $CurrentState && lc $CurrentState eq 'override';
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $StateObject  = $Kernel::OM->Get('Kernel::System::State');
+
+    my $OverrideStateID = $StateObject->StateLookup(
+        State => 'override',
+    );
+
+    if ( !$OverrideStateID ) {
+        $Self->_ZTSMActionLog(
+            Message => "IPC override failed: ticket state 'override' is not configured.",
+        );
+        return;
+    }
+
+    my $StateSet = $TicketObject->TicketStateSet(
+        StateID  => $OverrideStateID,
+        TicketID => $Param{TicketID},
+        UserID   => $Param{CustomerPanelUserID},
+    );
+
+    if ( !$StateSet ) {
+        $Self->_ZTSMActionLog(
+            Message => "IPC override failed: could not move TicketID='$Param{TicketID}' to override state for RuntimeAction='$Param{RuntimeAction}'.",
+        );
+        return;
+    }
+
+    return 1;
 }
 
 sub _DelegateOverrideApply {
@@ -3032,20 +3260,36 @@ sub _RuntimeArticleCreate {
     return 1 if !( $Config->{Article} // 1 );
 
     my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article::Backend::Internal');
+    my $LayoutObject         = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     my $Label = $Param{Label} || $Param{RuntimeAction};
     my $From  = "\"$Self->{UserFullname}\" <$Self->{UserEmail}>";
     my $Body  = $Param{Body}
         || "** Note: This is a system-generated orchestration update message.\n\n"
         . "Runtime action '$Label' was submitted by customer user '$Self->{UserID}'.";
+    my $ContentType = $Config->{ContentType} || 'text/plain; charset=utf-8';
 
     if ( $Param{Remarks} ) {
-        $Body .= "\n\nRemarks:\n" . ( _PlainTextValue( $Param{Remarks} ) || '' );
+        my %ArticleBody = _ArticleBodyWithRemarks(
+            Body        => $Body,
+            Remarks     => $Param{Remarks},
+            ContentType => $ContentType,
+        );
+
+        $Body        = $ArticleBody{Body};
+        $ContentType = $ArticleBody{ContentType};
     }
 
-    $Body = ZTSMArticleBodyConfigItemReferencesExpand(
-        Body => $Body,
-    );
+    if ( _ContentTypeIsHTML($ContentType) ) {
+        $Body = $LayoutObject->RichTextDocumentComplete(
+            String => $Body,
+        );
+    }
+    else {
+        $Body = ZTSMArticleBodyConfigItemReferencesExpand(
+            Body => $Body,
+        );
+    }
 
     my $ArticleID = $ArticleBackendObject->ArticleCreate(
         TicketID             => $Param{TicketID},
@@ -3054,7 +3298,7 @@ sub _RuntimeArticleCreate {
         From                 => $From,
         Subject              => $Param{Subject} || "Runtime action: $Label",
         Body                 => $Body,
-        ContentType          => $Config->{ContentType} || 'text/plain; charset=utf-8',
+        ContentType          => $ContentType,
         HistoryType          => $Config->{HistoryType} || 'AddNote',
         HistoryComment       => $Config->{HistoryComment} || '%%',
         UserID               => $Param{CustomerPanelUserID},
@@ -3816,8 +4060,9 @@ sub _RiskAssessmentSummaryArticleBody {
     $Body .= '</table>';
 
     if ( defined $Param{Remarks} && $Param{Remarks} ne '' ) {
-        my $RemarksHTML = _HTML( _PlainTextValue( $Param{Remarks} ) || '' );
-        $RemarksHTML =~ s{\r?\n}{<br />}g;
+        my $RemarksHTML = _ValueHasHTML( $Param{Remarks} )
+            ? _HTMLBodyFragment( $Param{Remarks} )
+            : _PlainTextHTML( $Param{Remarks} );
 
         $Body .= '<div style="margin-top:16px;"><strong>Remarks:</strong><br />'
             . $RemarksHTML

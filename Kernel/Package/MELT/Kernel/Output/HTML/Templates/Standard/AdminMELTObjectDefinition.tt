@@ -1,0 +1,82 @@
+﻿# --
+# Copyright (C) 2026 TESSERA
+# --
+
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1>[% Translate("MELT Object Definitions") | html %]</h1>
+
+    [% INCLUDE "Breadcrumb.tt" Path = [
+        {
+            Name => Translate('MELT Object Definitions'),
+            Link => 'AdminMELTObjectDefinition',
+        },
+    ] %]
+
+    <div class="SidebarColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Translate("Actions") | html %]</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+                    <li>
+                        <form action="[% Env("CGIHandle") %]" method="get">
+                            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+                            <div>[% Data.ScopeOptionStrg %]</div>
+                            <div>[% Data.TargetOptionStrg %]</div>
+                            <button class="CallForAction Fullsize Center" type="submit">
+                                <span>[% Translate("Change target") | html %]</span>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Translate("Versions") | html %]</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+[% RenderBlockStart("DefinitionRow") %]
+                    <li>
+                        <span>[% Translate("Version") | html %] [% Data.Version | html %]</span><br/>
+                        <span class="FieldExplanation">[% Data.CreateTime | html %] [% Translate("by") | html %] [% Data.CreateByUser | html %]</span>
+                    </li>
+[% RenderBlockEnd("DefinitionRow") %]
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="ContentColumn">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Data.Target | html %] [% Translate("Definition") | html %]</h2>
+            </div>
+            <div class="Content">
+                <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+                    <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+                    <input type="hidden" name="Subaction" value="DefinitionSave"/>
+                    <input type="hidden" name="Scope" value="[% Data.Scope | html %]"/>
+                    <input type="hidden" name="[% Data.TargetIDParam | html %]" value="[% Data.TargetID | html %]"/>
+
+                    <fieldset class="TableLike">
+                        <label for="Definition">[% Translate("Definition") | html %]</label>
+                        <div class="Field">
+                            <textarea id="Definition" name="Definition" class="Validate_Required" rows="[% Data.Rows | html %]">[% Data.Definition | html %]</textarea>
+                            <div id="DefinitionError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+                        </div>
+                    </fieldset>
+
+                    <div class="Clear"></div>
+                    <button class="Primary CallForAction" type="submit">
+                        <span>[% Translate("Save definition version") | html %]</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

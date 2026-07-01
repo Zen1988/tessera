@@ -1,9 +1,10 @@
 # TESSERA Project Status
 
-Last Updated: 2026-06-30
+Last Updated: 2026-07-01
 
 ## Current Focus
 
+- Standalone MELT package development outside GovernanceDB.
 - Customer runtime execution actions on `CustomerTicketZoom`.
 - Runtime stakeholder injection for active execution child tickets.
 - Runtime duplication of a parent governance request for an additional external party.
@@ -17,6 +18,365 @@ Last Updated: 2026-06-30
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-07-01 GovernanceDB 0.0.199 IPC Override State Gate
+
+### Completed work
+
+- Split IPC approval override into two explicit steps:
+  - first click `Override`, which moves the ticket state to `override`;
+  - only after the ticket is in `override` can IPC submit `Approve Override` or `Reject Override`.
+- Hid normal `Take Ownership` from IPC users on `CustomerTicketZoom`.
+- Added a backend guard so IPC cannot invoke `TakeOwnership` directly by URL.
+- Delegate override also moves the ticket into `override` before changing `ZTicket-Owner`.
+- Approval override submission now requires the ticket state already be `override`; see-all visibility does not grant immediate approve/reject.
+- Synced `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.199`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.199.opm`.
+- `Kernel/Package/GovernanceDB-0.0.199.opm` SHA256: `10D3461B7ECAA300FCE69C59179B7B642F652FB6493AD045D8AC667750EA05E1`.
+- Supersedes `0.0.198`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.199.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `F2F4F88C199E23DCF166263CA3C5747102534D021684A4798FEFC696FEA2CB9C`;
+  - `CustomerTicketZTSMAction.pm` family SHA256 `09C9B550F89A57B037AFE6B6449FFCDCAF4B4C8323DC877E8450F0EAD83A9001`.
+- `GovernanceDB-0.0.199.opm` parsed successfully as XML: version `0.0.199`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM runtime-overlay payloads confirm the `Override` action, `_IPCOverrideStateSet`, `State => 'override'`, and `TakeOwnership` guard are present.
+- `git diff --check` passed for the touched runtime module mirrors, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- IPC override is a visible ticket-state phase, not just a button label.
+- Normal ownership takeover remains separate from IPC override handling and is not shown to IPC.
+- Approval outcomes are only available to IPC after the ticket has entered `override`.
+
+## 2026-07-01 GovernanceDB 0.0.198 IPC Zoom Access and Approval Override
+
+### Completed work
+
+- Corrected `CustomerTicketZoom` so standard customer `ro` denial falls through to the ZTSM customer permission engine before showing `No Permission`.
+- IPC customer group members can now open ticket zoom pages for tickets found through the IPC all-ticket candidate path.
+- Updated the zoom IPC helper and `CustomerTicketZTSMAction` IPC helper to use customer user-group membership (`IPC` with `rw`) before the legacy agent-group fallback.
+- Preserved normal action ownership rules for non-IPC and non-override actions.
+- Added narrow IPC approval override behavior:
+  - IPC can see `Approve Override` and `Reject Override` on `Approval` tickets;
+  - IPC can submit those approval actions even when not `ZTicket-Owner`;
+  - other runtime actions still require normal owner/support participation;
+  - delegate override remains a separate IPC action;
+  - escalation override remains a later action.
+- Synced `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.198`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.198.opm`.
+- `Kernel/Package/GovernanceDB-0.0.198.opm` SHA256: `55852E13E0B043062F4AB9C76238DD2FCD4A37231AD7FE68BD4C602E11F6F76F`.
+- Supersedes `0.0.197`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.198.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `7449276620CA6AE6D7ED0D676E689A67C4551C061EA2C9A834B8D9A2C8B59CD1`;
+  - `CustomerTicketZTSMAction.pm` family SHA256 `2901050F8442C3BF1E14D1D550235DD0BA6467B75014D4CA938A3F13BCF989EB`.
+- `GovernanceDB-0.0.198.opm` parsed successfully as XML: version `0.0.198`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM runtime-overlay payloads confirm `ZTSMUserIDCheck`, `CustomerGroup->PermissionCheck`, and `_IPCApprovalOverrideAllowed` are present.
+- `git diff --check` passed for the touched runtime module mirrors, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- IPC visibility and override authority are separate concerns:
+  - `ro` visibility uses the ZTSM customer permission engine;
+  - normal execution actions still use owner/support participation;
+  - only explicit IPC override actions bypass owner participation.
+- Approval override is limited to approval tickets and approval outcomes; it does not grant blanket access to assessment, task, follow-up, amend, clone, or completion actions.
+
+## 2026-07-01 GovernanceDB 0.0.197 IPC Customer Group Visibility Correction
+
+### Completed work
+
+- Corrected the IPC helpdesk visibility detector to check `Kernel::System::CustomerGroup` membership first, matching the Admin customer user-group relation screen.
+- `IPC` customer group membership with `rw` now enables the all-ticket candidate path for customer dashboard workspace and customer ticket overview/search.
+- Kept the previous agent-group lookup only as a compatibility fallback; the intended operational setup is the customer user group named `IPC`.
+- Synced the changed permission, dashboard, and overview modules across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.197`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.197.opm`.
+- `Kernel/Package/GovernanceDB-0.0.197.opm` SHA256: `9DACD7632C04F866D1064D14EC462DA978D55EAD72D4F790D0D3BA9A7F11A8AF`.
+- Supersedes `0.0.196`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.197.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm`;
+  - `Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm`;
+  - `Kernel/Modules/CustomerTicketOverview.pm`.
+- Mirror hash checks passed:
+  - `ZTSMUserIDCheck.pm` family SHA256 `0B277A70730606FA11E15EA9F037AB4ED061EC04E6416C754B4339EFE259584C`;
+  - `TileTicketList.pm` family SHA256 `1234AE126A27E3B1B367B27319AF83F32EA6586994DA09C223195078EEDE235F`;
+  - `CustomerTicketOverview.pm` family SHA256 `8713C1B1BE79462C74A2C544813949678F3249B3A383376FF24FEAD60131E2E5`.
+- `GovernanceDB-0.0.197.opm` parsed successfully as XML: version `0.0.197`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM runtime-overlay payloads confirm `CustomerGroup->PermissionCheck` and `GroupName => 'IPC'` are present in the permission, dashboard, and overview modules.
+- `git diff --check` passed for the touched runtime module mirrors, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- IPC visibility is driven by customer user-group assignment: group name `IPC`, permission `rw`.
+- Support Profile and Support Assignment remain execution-scope data, not prerequisites for IPC see-all ticket visibility.
+
+## 2026-07-01 GovernanceDB 0.0.196 IPC Global Customer Helpdesk Visibility
+
+### Completed work
+
+- Corrected customer IPC visibility so membership in the `IPC` agent group grants global customer-portal read visibility without requiring Support Profile or Support Assignment records.
+- Updated `ZTSMUserIDCheck` so `Type => ro` grants read access immediately for IPC users while leaving `ztsm_action` execution permission tied to direct owner/support assignment logic.
+- Updated customer dashboard `My workspace` discovery so IPC users search the all-ticket candidate set before applying the existing ZTSM read permission filter.
+- Updated `CustomerTicketOverview` so IPC users receive all-ticket candidates, including state-filtered and full-text overview searches, before the same read permission filter is applied.
+- Synced the changed permission, dashboard, and overview modules across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.196`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.196.opm`.
+- `Kernel/Package/GovernanceDB-0.0.196.opm` SHA256: `68F40D23EF529F064E3F9E7EEB2E1618FC4459065C63364346B1D318EF6234B0`.
+- Supersedes `0.0.195`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.196.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/System/Ticket/CustomerPermission/ZTSMUserIDCheck.pm`;
+  - `Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm`;
+  - `Kernel/Modules/CustomerTicketOverview.pm`.
+- Mirror hash checks passed:
+  - `ZTSMUserIDCheck.pm` family SHA256 `985D0AB0BF95020B508B84607BA291B6DD8EF32AD3E4418C85BDBC05EC0383EE`;
+  - `TileTicketList.pm` family SHA256 `28265A2B799585748458B40C42B4F2BD2AFE4ABA7401DB2E50B247B3E08AC97A`;
+  - `CustomerTicketOverview.pm` family SHA256 `0FF71767D5827876F82F08EB8E34CF9C6FCFC092101AB2FB6CC2321A1CB31557`.
+- `GovernanceDB-0.0.196.opm` parsed successfully as XML: version `0.0.196`, file count `199`, `MissingEncodeBase64=0`.
+
+### Architectural Decisions
+
+- IPC is a customer-portal read visibility override for ultimate helpdesk behavior.
+- IPC does not replace Support Assignment, `ZTicket-OwnerGroup`, or `ZTicket-Owner`; execution actions still require the normal owner/support participation checks.
+
+## 2026-07-01 GovernanceDB 0.0.195 Rich Runtime Article Preservation
+
+### Completed work
+
+- Updated `CustomerTicketZTSMAction.pm` runtime article creation so submitted `Body`/`Remarks` HTML is preserved in the article instead of always being flattened through `_PlainTextValue()`.
+- Runtime action articles now switch to `text/html; charset=utf-8` when submitted content contains rich HTML, complete the rich-text document before article creation, and keep simple system notes as `text/plain`.
+- Risk assessment summary remarks now preserve submitted HTML fragments inside the generated HTML article instead of stripping tables/images/formatting.
+- Kept `ZTicket-Remarks` DynamicField storage plain text; rich preservation applies to article evidence, not governance/runtime field storage.
+- Synced `CustomerTicketZTSMAction.pm` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.195.opm`.
+- `Kernel/Package/GovernanceDB-0.0.195.opm` SHA256: `A91841E65FDD3B5E3C134A7C9B5E2799A09EDAD2AC7044118EF4724A498AC4AC`.
+
+### Validation
+
+- `perl -I. -IKernel\cpan-lib -c Kernel\Modules\CustomerTicketZTSMAction.pm` passed.
+- Mirrored `CustomerTicketZTSMAction.pm` copies share SHA256 `628D5C1DC8A6D2148AB9A3E81C43AC9E9F0DB3BB4FB3A750A98EBEFECF5A726F`.
+- `GovernanceDB-0.0.195.opm` parsed successfully as XML: version `0.0.195`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM runtime-overlay `CustomerTicketZTSMAction.pm` contains `SubmittedBody`, `_ArticleBodyWithRemarks`, `RichTextDocumentComplete`, and `text/html; charset=utf-8`.
+- `git diff --check` passed for the touched runtime module mirrors and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Article evidence should preserve the user's submitted rich content, including tables and inline-image markup, when the browser sends rich HTML.
+- Plain execution state and governance snapshot fields remain separate from article presentation; no StateBook, BlueBook, lifecycle, or orchestration behavior was changed.
+
+## 2026-07-01 MELT 0.0.1 Standalone Object Package Scaffold
+
+### Completed work
+
+- Created a new standalone MELT package source tree under `Kernel/Package/MELT`.
+- Duplicated the ITSMConfigItem-style object engine from the existing TESSERA package-source port into a separate MELT namespace:
+  - package/bootstrap namespace: `Kernel::System::MELT`;
+  - object engine namespace: `Kernel::System::MELTObject`;
+  - object UI/actions: `AdminMELTObject`, `AgentMELTObject*`;
+  - DynamicField object/drivers: `MELTObject` and `MELTObjectVersion`;
+  - import/export, link object, stats, permissions, history, definition, versioning, and transition action modules.
+- Added MELT-owned GeneralCatalog classes using the requested namespace family:
+  - `ZTSM::MELT::Category`;
+  - `ZTSM::MELT::Class`;
+  - `ZTSM::MELT::Class::Category`;
+  - `ZTSM::MELT::Role`;
+  - `ZTSM::MELT::Status`.
+- Added MELT-owned database table families in `Kernel/Package/MELT/MELT.sopm`, including:
+  - `melt_object*` package/bootstrap tables;
+  - `melt_object_item*` ITSMConfigItem-style object engine tables.
+- Added a MELT number module using `MELTID` as the business number generator.
+- Renamed package-owned shared helpers to MELT-owned paths so MELT can install beside `GovernanceDB-0.0.195` without OTOBO package file ownership collisions:
+  - `AgentMELTGeneralCatalogDocument`;
+  - `Kernel::System::GeneralCatalog::MELTDocument`;
+  - `Kernel::System::DynamicField::Driver::MELTAgent`;
+  - `Core.Agent.Admin.MELTGeneralCatalogDocument.js`.
+- Removed shared GovernanceDB-owned files from the MELT file list, including generic `AgentGeneralCatalogDocument`, generic DynamicField driver helpers, root `README.md`, and SheetJS.
+- Built `Kernel/Package/MELT-0.0.1.opm`.
+- `Kernel/Package/MELT-0.0.1.opm` SHA256: `68D142AC3BAB71EC63CD1411629FCFC6AAF2631771879FE185E112D99EA2BBDD`.
+
+### Validation
+
+- `Kernel/Package/MELT/MELT.sopm` parsed successfully as XML: version `0.0.1`, file count `96`.
+- `Kernel/Package/MELT-0.0.1.opm` parsed successfully as XML: version `0.0.1`, file count `96`, `MissingEncodeBase64=0`.
+- MELT package file list check passed: missing files `0`.
+- MELT `MELT-0.0.1.opm` file ownership overlap check against `GovernanceDB-0.0.195.opm` passed: overlap count `0`.
+- MELT SysConfig XML parsed successfully.
+- MELT default class seed parsed successfully as JSON:
+  - `ClassNamespace=ZTSM::MELT::Class`;
+  - `CategoryNamespace=ZTSM::MELT::Category`;
+  - `RoleNamespace=ZTSM::MELT::Role`;
+  - `Classes=21`.
+- Perl syntax sweep passed for all 73 MELT package Perl files under `Kernel/Package/MELT/Kernel`.
+
+### Architectural Decisions
+
+- MELT is not packaged inside GovernanceDB and does not touch GovernanceDB tables.
+- MELT must not declare package ownership for files already shipped by GovernanceDB; any shared helper copied from GovernanceDB must be renamed to a MELT-owned module/action/asset path or intentionally omitted.
+- MELT uses `MELTObject` for the object engine to avoid collision between package namespace `MELT` and business number `MELTID`.
+- MELT keeps GeneralCatalog truth in `ZTSM::MELT::*` namespaces rather than reusing `ITSM::ConfigItem::*` or `ZTSM::GovernanceObject::*`.
+- The first package keeps the inherited ITSM ConfigItem bootstrap bridge for runtime migration/copy verification, including references to `ITSM::ConfigItem::Class`.
+
+### Known Issues / Follow-Up
+
+- Runtime install/upgrade verification is required using the rebuilt `Kernel/Package/MELT-0.0.1.opm` with SHA256 `68D142AC3BAB71EC63CD1411629FCFC6AAF2631771879FE185E112D99EA2BBDD`.
+- Decide after runtime testing whether the inherited ITSM ConfigItem copy/repair bridge should remain, be disabled by SysConfig, or be removed from MELT bootstrap.
+- Review UI labels after install because the mechanical clone preserves some ITSM/Governance wording where it describes migrated source concepts rather than MELT-native concepts.
+
+## 2026-07-01 GovernanceDB 0.0.195 Transparent Workspace Dividers
+
+### Completed work
+
+- Refined the customer dashboard `My workspace` table divider after the themed divider still appeared as a visible colored stripe.
+- Kept the 4px structural divider width but changed the divider border to `transparent`.
+- Left the row/cell background unchanged so the divider area takes the surrounding rendered color instead of painting a new one.
+- Preserved long-ticket-number wrapping.
+- Mirrored `TileTicketList.tt` across canonical source, GovernanceDB package source, runtime overlay, local OTOBO runtime, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.195`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.195.opm`.
+- `Kernel/Package/GovernanceDB-0.0.195.opm` SHA256: `6B77EB8964A0C022FCE724B4012A7047405C55F27B8B290768509FB4465C0578`.
+- Supersedes `0.0.194`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.195.opm`.
+
+### Validation
+
+- Mirror hash checks passed for the `TileTicketList.tt` file family.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.195.opm` parsed successfully as XML: version `0.0.195`, file count `199`, `MissingEncodeBase64=0`.
+- OPM payload check confirmed transparent 4px dividers are present, white and themed divider colors are absent, and ticket-number wrapping is preserved.
+- `git diff --check` passed.
+
+## 2026-07-01 GovernanceDB 0.0.194 Workspace Themed Dividers
+
+### Completed work
+
+- Refined the customer dashboard `My workspace` divider styling after the white gutters made each table cell look like a separate block.
+- Removed the horizontal white gutter while keeping row spacing unchanged.
+- Kept the 4px divider thickness, but changed the divider color to the existing soft theme border `#ececf4`.
+- Preserved long-ticket-number wrapping from `0.0.193`.
+- Mirrored `TileTicketList.tt` across canonical source, GovernanceDB package source, runtime overlay, local OTOBO runtime, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.194`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.194.opm`.
+- `Kernel/Package/GovernanceDB-0.0.194.opm` SHA256: `03CCF109D04F4BAF479CFF47041A262452D50564F79B6DB2B55BBB875FA3DD45`.
+- Supersedes `0.0.193`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.194.opm`.
+
+### Validation
+
+- Mirror hash checks passed for the `TileTicketList.tt` file family.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.194.opm` parsed successfully as XML: version `0.0.194`, file count `199`, `MissingEncodeBase64=0`.
+- OPM payload check confirmed the horizontal white gutter was removed, themed 4px dividers are present, white separators are absent, and ticket-number wrapping is preserved.
+- `git diff --check` passed.
+
+## 2026-07-01 GovernanceDB 0.0.193 Workspace Column Spacing
+
+### Completed work
+
+- Improved the customer dashboard `My workspace` table readability after long ticket numbers crowded into the title column.
+- Added a 4px horizontal table gutter and explicit white column separators for the workspace table.
+- Added long-ticket-number wrapping so generated parent-scoped child ticket numbers do not visually collide with the next column.
+- Mirrored `TileTicketList.tt` across canonical source, GovernanceDB package source, runtime overlay, local OTOBO runtime, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.193`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.193.opm`.
+- `Kernel/Package/GovernanceDB-0.0.193.opm` SHA256: `D1969768C1E50D0B926A5D9B935E82821A1396EB26D2F323EB8A703C9CDA2BCB`.
+- Supersedes `0.0.192`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.193.opm`.
+
+### Validation
+
+- Mirror hash checks passed for the `TileTicketList.tt` file family.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.193.opm` parsed successfully as XML: version `0.0.193`, file count `199`, `MissingEncodeBase64=0`.
+- OPM payload check confirmed the workspace column gutter, white separators, and ticket-number wrapping CSS are present.
+- `git diff --check` passed.
+
+## 2026-07-01 GovernanceDB 0.0.192 Parent Context Wins for Child Ticket Numbers
+
+### Completed work
+
+- Corrected the `0.0.191` child numbering rule after runtime output showed a ChapterPlay Assessment ticket still receiving root-style number `ICAT-AS-20260000008`.
+- Root cause: the generator still considered child ticket type classification before using the parent-aware number format.
+- Updated `Kernel::System::Ticket::Number::TESSERAIdentity` so a valid TESSERA `ParentTicketNumber` is sufficient to generate child format:
+  - `ParentTicketNumber-ChildTypeCode-ChildSequence`;
+  - for example `ICAT-SE-20260000007-AS-001`.
+- Removed the unused GeneralCatalog request-type check from the generator; root/request tickets remain root-style because they are created without `ParentTicketNumber`.
+- Mirrored the generator across package source, runtime overlay, local OTOBO runtime, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.192`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.192.opm`.
+- `Kernel/Package/GovernanceDB-0.0.192.opm` SHA256: `B260ACD9642DF70F8AEBFDBFCAEC3F4B3F17ADD430079590882CE60EF063999B`.
+- Supersedes `0.0.191`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.192.opm`.
+
+### Validation
+
+- Perl syntax check passed for `Kernel/System/Ticket/Number/TESSERAIdentity.pm`.
+- Mirror hash checks passed for the `TESSERAIdentity.pm` file family.
+- `Kernel/Package/GovernanceDB-0.0.192.opm` parsed successfully as XML: version `0.0.192`, file count `199`, `MissingEncodeBase64=0`.
+
+## 2026-07-01 GovernanceDB 0.0.191 Parent-Scoped Child Ticket Numbers
+
+### Completed work
+
+- Extended `Kernel::System::Ticket::Number::TESSERAIdentity` with parent-aware child ticket numbering.
+- Root/request tickets whose type is in GeneralCatalog class `ZTSM::RequestType` continue to use the existing format:
+  - `SystemIdentity-TypeCode-YearSequence`, for example `ICA-SE-20260000001`.
+- Child/execution tickets created with parent context and a non-request ticket type now inherit the parent request number and append child type plus scoped sequence:
+  - `ICA-SE-20260000001-AS-001`;
+  - `ICA-SE-20260000001-AS-002`;
+  - `ICA-SE-20260000001-AP-001`.
+- Added `Ticket::NumberGenerator::TESSERAIdentity###ChildSequencePadding` with default `3`.
+- Reused `ticket_number_counter` without adding a schema migration:
+  - root numbers keep the existing yearly counter behavior;
+  - child numbers use a hashed `counter_uid` prefix scoped by parent ticket number and child type code.
+- Added `ChildTicketNumberCounterCleanup()` to delete child counter rows by parent-ticket scope.
+- Wired parent context into child ticket creation paths:
+  - `Kernel::System::Ticket::TicketCreate()`;
+  - `ZTSMBlueBookRuntime`;
+  - `ZTSMBlueBookReader`;
+  - `ZTSMChapterDirector`;
+  - customer required support profile child creation in `CustomerTicketZTSMAction`.
+- Wired parent-scope counter cleanup into `ZTSMParentCloseCascade` after a root request parent is closed.
+- Mirrored updated files across canonical source, GovernanceDB package/runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.191`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.191.opm`.
+- `Kernel/Package/GovernanceDB-0.0.191.opm` SHA256: `3FDEA556E3AD6B7AB2BD116550DC824EAB4DA962F8958FFC2E92A6F9C155E59B`.
+- Supersedes `0.0.190`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.191.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/System/Ticket.pm`;
+  - `Kernel/System/Ticket/Number/TESSERAIdentity.pm`;
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`;
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`;
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`;
+  - `Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm`.
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- Mirror hash checks passed for all touched runtime file families.
+- `Kernel/Package/GovernanceDB-0.0.191.opm` parsed successfully as XML: version `0.0.191`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload confirms embedded child sequence padding SysConfig, parent context forwarding, child-number generator logic, and parent-close counter cleanup hook.
+
+### Runtime expectation
+
+- Root request tickets continue to use the absolute request counter.
+- Child/execution tickets spawned below a request parent should receive parent-scoped numbers when the child type is not listed in `ZTSM::RequestType`.
+- If a parent is closed through the parent-close cascade, child counter rows for that parent are removed from `ticket_number_counter`.
+- If a closed parent is later reopened and a child number repeats, the existing duplicate ticket-number retry path should advance to another suffix before ticket insert.
 
 ## 2026-06-30 GovernanceDB 0.0.190 Merged ServiceCatalog Package Payload
 

@@ -702,6 +702,10 @@ sub Run {
             SLAID => $Ticket->{SLAID},
 
             ResponsibleID => 1,
+
+            ParentTicketID => $ParentTicketID,
+
+            ParentTicketNumber => $ParentTicket{TicketNumber},
         );
 
         if ($NewTicketID) {

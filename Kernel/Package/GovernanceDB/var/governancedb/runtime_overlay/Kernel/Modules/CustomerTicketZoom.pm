@@ -176,7 +176,14 @@ sub Run {
 
     # error screen, don't show ticket
     if ( !$Access ) {
-        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        $Access = $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
+            TicketID       => $Self->{TicketID},
+            CustomerUserID => $Self->{UserID},
+            Type           => 'ro',
+        );
+
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
+            if !$Access;
     }
 
     my %ZTSMAccessTicket = $TicketObject->TicketGet(
@@ -2291,6 +2298,7 @@ sub _ZTSMRuntimeActions {
     my $IPCDelegateAccess = $Self->_ZTSMCurrentCustomerIsIPC();
     my $TicketClosed      = ( $Ticket->{StateType} || '' ) eq 'closed';
     my $FollowUpState     = lc( $Ticket->{State} || '' ) eq 'follow-up';
+    my $OverrideState     = lc( $Ticket->{State} || '' ) eq 'override';
 
     return if $TicketClosed && !$IPCDelegateAccess;
     return if $FollowUpState && !$IPCDelegateAccess;
@@ -2397,6 +2405,17 @@ sub _ZTSMRuntimeActions {
     my @RuntimeActions;
 
     if ($IPCDelegateAccess) {
+        if ( ( $Ticket->{Type} || '' ) eq 'Approval' && !$OverrideState ) {
+            push @RuntimeActions, {
+                Action          => 'Override',
+                Label           => 'Override',
+                DirectURL       => 1,
+                RiskFieldsHTML  => '',
+                RemarksRequired => 0,
+                InActionMenu    => 1,
+            };
+        }
+
         push @RuntimeActions, {
             Action          => 'Delegate',
             Label           => 'Delegate',
@@ -2421,6 +2440,23 @@ sub _ZTSMRuntimeActions {
             && ( $Action eq 'CloseDuplicate' || $Action eq 'CloseNoAction' );
 
         $ActionableType = 1;
+
+        if (
+            $IPCDelegateAccess
+            && $OverrideState
+            && ( $Ticket->{Type} || '' ) eq 'Approval'
+            && ( $Action eq 'Approve' || $Action eq 'Reject' )
+            )
+        {
+            push @RuntimeActions, {
+                Action         => $Action,
+                Label          => ( $ActionConfig->{Label} || $Action ) . ' Override',
+                DirectURL      => '',
+                RiskFieldsHTML => '',
+                InActionMenu   => 1,
+            };
+            next ACTION;
+        }
 
         next ACTION if !$TicketOwner;
         next ACTION if lc $TicketOwner ne lc $Self->{UserID};
@@ -2528,6 +2564,7 @@ sub _ZTSMRuntimeActions {
     if (
         !$TicketOwner
         && $ActionableType
+        && !$IPCDelegateAccess
         && $Self->_ZTSMCurrentUserCanTakeOwnership(
             Ticket => $Ticket,
         )
@@ -2586,6 +2623,13 @@ sub _ZTSMCurrentCustomerIsIPC {
     my ( $Self, %Param ) = @_;
 
     return if !$Self->{UserID};
+
+    return 1
+        if $Kernel::OM->Get('Kernel::System::CustomerGroup')->PermissionCheck(
+        UserID    => $Self->{UserID},
+        GroupName => 'IPC',
+        Type      => 'rw',
+        );
 
     my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
         UserLogin => $Self->{UserID},

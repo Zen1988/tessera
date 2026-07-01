@@ -583,6 +583,8 @@ sub Run {
             ServiceID    => $Ticket->{ServiceID},
             SLAID        => $Ticket->{SLAID},
             ResponsibleID => 1,
+            ParentTicketID     => $TicketID,
+            ParentTicketNumber => $Ticket->{TicketNumber},
         );
 
         if ( !$NewTicketID ) {
