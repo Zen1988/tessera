@@ -2237,10 +2237,16 @@ sub _ZTSMRequestInfoHTML {
         }
     }
 
+    my $RiskBadgeHTML = $Self->_ZTSMRequestRiskBadgeHTML(
+        Ticket => $RootTicket,
+    );
+
     my $HTML = '<section class="ZTSMRequestInfoPanel">'
-        . '<div class="ZTSMSectionHead"><span>Request context</span><strong>'
+        . '<div class="ZTSMSectionHead"><span>Request context</span><div class="ZTSMSectionStatus">'
+        . $RiskBadgeHTML
+        . '<strong>'
         . $LayoutObject->Ascii2Html( Text => $RootTicket->{State} || '' )
-        . '</strong></div>'
+        . '</strong></div></div>'
         . '<dl class="ZTSMRequestSummary">';
 
     for my $Field (@SummaryFields) {
@@ -2287,6 +2293,118 @@ sub _ZTSMRequestInfoHTML {
     $HTML .= '</section>';
 
     return $HTML;
+}
+
+sub _ZTSMRequestRiskBadgeHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return '' if !IsHashRefWithData($Ticket);
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my @Badges = (
+        {
+            Key   => 'T',
+            Label => 'Technical risk',
+            Field => 'ZTicket-TechnicalRisk',
+        },
+        {
+            Key   => 'B',
+            Label => 'Business risk',
+            Field => 'ZTicket-BusinessRisk',
+        },
+        {
+            Key   => 'G',
+            Label => 'Governance risk',
+            Field => 'ZTicket-GovernanceRisk',
+        },
+    );
+
+    my @HTML;
+    BADGE:
+    for my $Badge (@Badges) {
+        my $Risk = _ZTSMValueNormalize( $Ticket->{ 'DynamicField_' . $Badge->{Field} } );
+        my $Level = _ZTSMRequestRiskLevel($Risk);
+        my $Tooltip = ( $Badge->{Label} || '' ) . ': ' . ( $Level->{Summary} || 'N/A' );
+
+        push @HTML, '<span class="ZTSMRiskBadge" title="'
+            . $LayoutObject->Ascii2Html( Text => $Tooltip )
+            . '" style="background-color:'
+            . $LayoutObject->Ascii2Html( Text => $Level->{Color} )
+            . ';color:'
+            . $LayoutObject->Ascii2Html( Text => $Level->{TextColor} )
+            . ';">'
+            . $LayoutObject->Ascii2Html( Text => $Badge->{Key} )
+            . '</span>';
+    }
+
+    return '<div class="ZTSMRiskBadges" aria-label="Risk summary">' . join( '', @HTML ) . '</div>';
+}
+
+sub _ZTSMRequestRiskLevel {
+    my ($Risk) = @_;
+
+    my $Score = _ZTSMRequestRiskRank($Risk);
+    return {
+        Score     => '',
+        Summary   => 'N/A',
+        Color     => '#8a8ea8',
+        TextColor => '#ffffff',
+    } if !$Score;
+
+    return {
+        Score     => $Score,
+        Summary   => "$Score - Low",
+        Color     => '#2f855a',
+        TextColor => '#ffffff',
+    } if $Score <= 5;
+
+    return {
+        Score     => $Score,
+        Summary   => "$Score - Medium",
+        Color     => '#d6b500',
+        TextColor => '#161616',
+    } if $Score <= 9;
+
+    return {
+        Score     => $Score,
+        Summary   => "$Score - High",
+        Color     => '#f59e0b',
+        TextColor => '#ffffff',
+    } if $Score <= 16;
+
+    return {
+        Score     => $Score,
+        Summary   => "$Score - Critical",
+        Color     => '#991b1b',
+        TextColor => '#ffffff',
+    };
+}
+
+sub _ZTSMRequestRiskRank {
+    my ($Risk) = @_;
+
+    return 0 if !defined $Risk;
+
+    my $Text = lc $Risk;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+
+    if ( $Text =~ m{(-?\d+(?:\.\d+)?) }xms ) {
+        return $1 + 0;
+    }
+
+    $Text =~ s{[^a-z]+}{ }g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+
+    return 6 if $Text =~ m{\b(?:extreme|critical)\b};
+    return 5 if $Text =~ m{\bvery\s+high\b};
+    return 1 if $Text =~ m{\b(?:very\s+low|informational|info)\b};
+    return 4 if $Text =~ m{\bhigh\b};
+    return 3 if $Text =~ m{\b(?:medium|moderate)\b};
+    return 2 if $Text =~ m{\blow\b};
+
+    return 0;
 }
 
 sub _ZTSMRuntimeActions {
@@ -2405,13 +2523,14 @@ sub _ZTSMRuntimeActions {
     my @RuntimeActions;
 
     if ($IPCDelegateAccess) {
-        if ( ( $Ticket->{Type} || '' ) eq 'Approval' && !$OverrideState ) {
+        if ( _ZTSMIPCOverrideTicketType( Type => $Ticket->{Type} ) && !$OverrideState ) {
             push @RuntimeActions, {
                 Action          => 'Override',
                 Label           => 'Override',
-                DirectURL       => 1,
-                RiskFieldsHTML  => '',
-                RemarksRequired => 0,
+                DirectURL       => '',
+                RiskFieldsHTML  => $Self->_ZTSMOverrideAcknowledgementHTML()
+                    . $Self->_ZTSMOverrideAttachmentHTML( Action => 'Override' ),
+                RemarksRequired => 1,
                 InActionMenu    => 1,
             };
         }
@@ -2444,16 +2563,20 @@ sub _ZTSMRuntimeActions {
         if (
             $IPCDelegateAccess
             && $OverrideState
-            && ( $Ticket->{Type} || '' ) eq 'Approval'
-            && ( $Action eq 'Approve' || $Action eq 'Reject' )
+            && _ZTSMIPCOverrideTicketType( Type => $Ticket->{Type} )
+            && _ZTSMIPCOverrideRuntimeAction(
+                Type          => $Ticket->{Type},
+                RuntimeAction => $Action,
+            )
             )
         {
             push @RuntimeActions, {
-                Action         => $Action,
-                Label          => ( $ActionConfig->{Label} || $Action ) . ' Override',
-                DirectURL      => '',
-                RiskFieldsHTML => '',
-                InActionMenu   => 1,
+                Action          => $Action,
+                Label           => ( $ActionConfig->{Label} || $Action ) . ' Override',
+                DirectURL       => '',
+                RiskFieldsHTML  => $Self->_ZTSMOverrideAttachmentHTML( Action => $Action ),
+                RemarksRequired => 1,
+                InActionMenu    => 1,
             };
             next ACTION;
         }
@@ -2655,9 +2778,15 @@ sub _ZTSMDelegateOverrideHTML {
         . '<div class="Field">'
         . '<p>This measure must only be used for critical or time-sensitive activities.</p>'
         . '<p>Use requires written approval from the user, original assignee, or VVIP approver. Upload the approval now or attach it later if the situation is critical.</p>'
-        . '<label><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> I acknowledge the delegation override conditions.</label>'
         . '</div>'
         . '<label class="Mandatory">Override conditions: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField ZTSMDelegateAckRow">'
+        . '<div class="Field">'
+        . '<label class="ZTSMDelegateAck"><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge the delegation override conditions.</span></label>'
+        . '</div>'
+        . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
         . '</div>'
         . '<div class="Row ZTSMRiskField">'
@@ -2682,6 +2811,66 @@ sub _ZTSMDelegateOverrideHTML {
         . 'Input.addEventListener("input",function(){Hidden.value=Choices[Input.value]||"";window.clearTimeout(Timer);Timer=window.setTimeout(Search,250);});'
         . 'Input.addEventListener("change",function(){Hidden.value=Choices[Input.value]||Hidden.value||"";});'
         . '}());</script>';
+}
+
+sub _ZTSMIPCOverrideTicketType {
+    my (%Param) = @_;
+
+    my %AllowedType = map { $_ => 1 } qw(Approval Endorsement);
+    return $AllowedType{ $Param{Type} || '' };
+}
+
+sub _ZTSMIPCOverrideRuntimeAction {
+    my (%Param) = @_;
+
+    my $Type          = $Param{Type} || '';
+    my $RuntimeAction = $Param{RuntimeAction} || '';
+
+    return 1 if $Type eq 'Approval'    && ( $RuntimeAction eq 'Approve' || $RuntimeAction eq 'Reject' );
+    return 1 if $Type eq 'Endorsement' && ( $RuntimeAction eq 'Endorse' || $RuntimeAction eq 'Reject' );
+    return;
+}
+
+sub _ZTSMOverrideAcknowledgementHTML {
+    my ($Self) = @_;
+
+    return '<div class="Row ZTSMRiskField ZTSMOverrideWarning">'
+        . '<div class="Field">'
+        . '<p><strong>You are about to perform an override action.</strong></p>'
+        . '<p>This action bypasses the normal governed workflow path and should only be used when governance intervention is required to prevent operational delay, process blockage, SLA risk, or control breakdown.</p>'
+        . '<p>By continuing, you confirm that:</p>'
+        . '<ul>'
+        . '<li>You understand this action may affect the normal workflow path.</li>'
+        . '<li>You have reviewed the ticket status, process context, and available governance information.</li>'
+        . '<li>You are not approving the technical validity, risk, or execution details of the request.</li>'
+        . '<li>You are applying a governance exception based on the current process condition.</li>'
+        . '<li>You accept responsibility for recording a clear and auditable justification.</li>'
+        . '<li>This action must not be used for convenience, shortcut, or routine processing.</li>'
+        . '</ul>'
+        . '<p>Proceed only if the override is necessary and can be justified during governance review or audit.</p>'
+        . '</div>'
+        . '<label class="Mandatory">Override acknowledgement: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
+        . '<div class="Field">'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMOverrideAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge this override condition and will record a clear, auditable justification.</span></label>'
+        . '</div>'
+        . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
+sub _ZTSMOverrideAttachmentHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Action = $Param{Action} || 'Action';
+
+    return '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><input type="file" id="ZTSMOverrideFileUpload_' . $Action . '" name="file_upload" /></div>'
+        . '<label for="ZTSMOverrideFileUpload_' . $Action . '">Governance evidence:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
 }
 
 sub _ZTSMAddRequiredSupportProfileAllowed {
@@ -4161,6 +4350,10 @@ sub _Mask {
 
         if ( ( $Article{Subject} || '' ) =~ m{\[VVIP Delegate\]} ) {
             $Article{Class} = join ' ', grep {$_} $Article{Class}, 'ZTSMDelegateAudit';
+        }
+
+        if ( ( $Article{Subject} || '' ) =~ m{\[VVIP Override\]} ) {
+            $Article{Class} = join ' ', grep {$_} $Article{Class}, 'ZTSMOverrideAudit';
         }
 
         $LastSenderType = $Article{SenderType};

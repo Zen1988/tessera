@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-01
+Last Updated: 2026-07-03
 
 ## Current Focus
 
@@ -18,6 +18,910 @@ Last Updated: 2026-07-01
 - Keep governance truth separate from execution evidence.
 
 ## Completed Work
+
+## 2026-07-03 GovernanceDB 0.0.224 Service RichText Tooltip Baseline Back to 205/206
+
+### Completed work
+
+- Rechecked `GovernanceDB-0.0.205.opm` through `GovernanceDB-0.0.209.opm` after the user identified `0.0.205` onward as the first good tooltip behavior.
+- Found the actual baseline:
+  - `0.0.205` and `0.0.206` did not package `DynamicField/CustomerEditField.tt`;
+  - stock OTOBO tooltip markup and placement were preserved;
+  - `0.0.206` only adjusted RichText label placement through `ZTSMCustomerTicketMessageServiceFields.tt`;
+  - RichText wrapper/caption/header work began after that and caused the visual drift.
+- Removed the GovernanceDB package entry for `var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/DynamicField/CustomerEditField.tt`.
+- Deleted the package overlay copy of `CustomerEditField.tt` so new package builds do not embed it.
+- Restored canonical and local OTOBO `CustomerEditField.tt` to the stock repo version.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` back toward the `0.0.206` RichText behavior:
+  - no `.ZTSMServiceExtensionRichTextCaption`;
+  - no `.ZTSMServiceExtensionRichTextWrap`;
+  - no tooltip relocation into caption or holder;
+  - label gets `.ZTSMServiceExtensionRichTextLabel` and is placed before the RichText field;
+  - tooltip remains the normal OTOBO field tooltip.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.224`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.224.opm`.
+- `Kernel/Package/GovernanceDB-0.0.224.opm` SHA256: `9851616502F25435751AD8517AD7B501F4621FBB24950532CD86C16F81F07F83`.
+- Supersedes `0.0.223`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.224.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` canonical/local runtime SHA256 `336E7F4A995C2B8B442CC98EF7F0FDFCB86367B06E92C8265B08ED14A796819D`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `BD4B287364628D2038EDC5519A67C5FE96E6A3FD1B77D319286619178936A534`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.224.opm` parsed successfully as XML: version `0.0.224`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - package no longer contains any `CustomerEditField.tt` file entry;
+  - service template contains `ZTSMServiceExtensionRichTextLabel`;
+  - service template does not contain `ZTSMServiceExtensionRichTextCaption`;
+  - service template does not contain `ZTSMServiceExtensionRichTextWrap`;
+  - service template does not contain `Caption.appendChild(Tooltip)`, `Holder.insertBefore(Caption...)`, or `Holder.insertBefore(Tooltip...)`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- RichText tooltip repair should preserve stock OTOBO `CustomerEditField.tt` and avoid packaging a dynamic-field template override.
+- Future RichText label adjustments should stay in `ZTSMCustomerTicketMessageServiceFields.tt`, unless a broader DynamicField rendering change is explicitly required.
+
+## 2026-07-03 GovernanceDB 0.0.223 Service RichText Holder Caption Stabilization
+
+### Completed work
+
+- Stopped trying to restore the old static DOM as-is, because the current CKEditor/service layout no longer renders that static relationship like the earlier screenshots.
+- Fixed the visible regression where:
+  - the RichText label sat outside the editor holder;
+  - the original `Tooltip oooTooltip` icon remained orphaned on the left side.
+- Kept `DynamicField/CustomerEditField.tt` emitting the normal platform tooltip markup; no custom blue help button or custom tooltip implementation was added.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so `ZTSMServiceExtensionRichTextPrepare()` performs the final runtime placement:
+  - moves `.ZTSMServiceExtensionRichTextCaption` into `.RichTextHolder` as the first row;
+  - appends the existing original `Tooltip oooTooltip` node into that caption row;
+  - leaves tooltip text hidden inside the standard `.Content` block until hover/focus.
+- Scoped CSS now hides the caption while it is outside the holder, then shows it only as:
+  - `.RichTextHolder > .ZTSMServiceExtensionRichTextCaption`;
+  - compact flex row with label on the left and the original tooltip icon on the right.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.223`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.223.opm`.
+- `Kernel/Package/GovernanceDB-0.0.223.opm` SHA256: `A17AE7548B036DA39FA04D74D163F7344E3FAF9BA9E7B794FC77743635C4C2EB`.
+- Supersedes `0.0.222`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.223.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family remained SHA256 `5435D49538B9361E91C9C7340069247A0A35BA18234A73268B0EFFC173F86A86`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `A6459A7D0D616F6433A1BD2B62ABB68A3B9097A32A621DA259B114E371F4B402`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.223.opm` parsed successfully as XML: version `0.0.223`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` contains original `Tooltip oooTooltip` markup;
+  - service CSS contains `.RichTextHolder > .ZTSMServiceExtensionRichTextCaption`;
+  - service JS contains `Holder.insertBefore(Caption, Holder.firstChild)`;
+  - service JS contains `Caption.appendChild(Tooltip)`;
+  - failed direct tooltip-holder path `Holder.insertBefore(Tooltip...)` is absent.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- The durable RichText layout target is the rendered browser structure: label and original tooltip belong inside the RichText holder as editor chrome.
+- Preserve OTOBO tooltip markup and behavior, but allow service JS to relocate the existing node into the holder after CKEditor/service markup is present.
+
+## 2026-07-03 GovernanceDB 0.0.222 Service RichText 207/208 Tooltip Relationship Restore
+
+### Completed work
+
+- Rechecked `GovernanceDB-0.0.207.opm` and `GovernanceDB-0.0.208.opm` against `0.0.221`.
+- Found why `0.0.221` looked different:
+  - `0.0.221` nested `Tooltip oooTooltip` inside `.ZTSMServiceExtensionRichTextCaption`;
+  - `0.0.221` added flex/right-alignment CSS for that nested tooltip;
+  - `0.0.221` kept JS that could move a sibling tooltip into the caption;
+  - `0.0.207`/`0.0.208` did not do that.
+- Restored the `0.0.207`/`0.0.208` DOM relationship:
+  - RichText wrapper contains `.ZTSMServiceExtensionRichTextCaption` with the label only;
+  - the original OTOBO `Tooltip oooTooltip` remains the normal field tooltip sibling after the wrapper;
+  - non-RichText label/tooltip behavior remains unchanged.
+- Restored the old caption CSS shape:
+  - `display: block`;
+  - reset positional offsets on the caption itself;
+  - no flex caption row;
+  - no `.ZTSMServiceExtensionRichTextCaption > .Tooltip.oooTooltip` selector.
+- Removed tooltip-moving JS from the RichText preparation path.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.222`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.222.opm`.
+- `Kernel/Package/GovernanceDB-0.0.222.opm` SHA256: `8DC76BD2E5C875C04A5BE19206D02E0444C4FA8521822EBC1743F982060B7FAE`.
+- Supersedes `0.0.221`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.222.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `5435D49538B9361E91C9C7340069247A0A35BA18234A73268B0EFFC173F86A86`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `71AD76339B919EC2BC8D83E0C7B69172A63E2DE9BD00B02708AD7AAA2E7FA15D`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.222.opm` parsed successfully as XML: version `0.0.222`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` contains `.ZTSMServiceExtensionRichTextCaption` and original `Tooltip oooTooltip` markup;
+  - service CSS does not contain `.ZTSMServiceExtensionRichTextCaption > .Tooltip.oooTooltip`;
+  - service JS does not contain `Caption.appendChild(Tooltip)`;
+  - `.RichTextHolder > .Tooltip.oooTooltip` and `Holder.insertBefore(Tooltip...)` remain absent.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- The known-good `207/208` look depends on preserving the standard OTOBO tooltip as a field-level sibling, not nesting or moving it into RichText-specific containers.
+- Future tooltip fixes should first preserve this DOM relationship and only adjust scoped CSS if browser rendering proves an offset issue remains.
+
+## 2026-07-03 GovernanceDB 0.0.221 Service RichText 0.0.208-Style Tooltip Caption Restore
+
+### Completed work
+
+- Rechecked `GovernanceDB-0.0.208.opm` and restored the RichText wrapper/caption placement pattern instead of continuing the `0.0.220` `.RichTextHolder` tooltip relocation.
+- Updated `DynamicField/CustomerEditField.tt` so RichText fields render:
+  - `.ZTSMServiceExtensionRichTextWrap`;
+  - `.ZTSMServiceExtensionRichTextCaption`;
+  - the normal field label;
+  - the original OTOBO `Tooltip oooTooltip` markup inside that caption row;
+  - the RichText field/editor below it.
+- Kept non-RichText tooltip rendering unchanged.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so the caption row is the RichText editor-window header:
+  - label stays left;
+  - original tooltip icon stays right;
+  - tooltip text remains hidden by the standard OTOBO tooltip behavior until hover/focus.
+- Removed the failed `0.0.220` behavior that moved the tooltip into `.RichTextHolder`.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.221`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.221.opm`.
+- `Kernel/Package/GovernanceDB-0.0.221.opm` SHA256: `4472E17E6A67A565033B05037EED163C569AD223DE103A0EA08A5E08CB27D7F7`.
+- Supersedes `0.0.220`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.221.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `4AD3880CAAEF066C25902BD4A251506EE3D0952F06E260D2DA747B3D0A2BB63E`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `6744E1C1857574635EC6D82708423AA5FF6327CDE090C71564D46FA0538044CF`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.221.opm` parsed successfully as XML: version `0.0.221`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` contains `.ZTSMServiceExtensionRichTextCaption` and original `Tooltip oooTooltip` markup;
+  - service CSS targets `.ZTSMServiceExtensionRichTextCaption > .Tooltip.oooTooltip`;
+  - service JS can move a legacy sibling tooltip into the caption with `Caption.appendChild(Tooltip)`;
+  - `.RichTextHolder > .Tooltip.oooTooltip` and `Holder.insertBefore(Tooltip...)` are absent.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- The RichText tooltip belongs in the RichText wrapper caption row, matching the known-good `0.0.208` editor-window structure.
+- Do not place the tooltip inside CKEditor `.RichTextHolder`; that path can still render the icon outside the intended editor header.
+
+## 2026-07-03 GovernanceDB 0.0.220 Service RichText Original Tooltip Holder Placement
+
+### Completed work
+
+- Kept the original OTOBO `Tooltip oooTooltip` markup emitted by `DynamicField/CustomerEditField.tt`.
+- Did not restore the removed RichText-specific label/header/caption/help UI.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so `ZTSMServiceExtensionRichTextPrepare()` moves the existing tooltip node into `.RichTextHolder`.
+- Added only scoped RichText holder positioning:
+  - `.RichTextHolder` is `position: relative`;
+  - the original tooltip node is pinned inside the holder with cleared inherited offsets and `top: 10px`, `right: 12px`.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.220`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.220.opm`.
+- `Kernel/Package/GovernanceDB-0.0.220.opm` SHA256: `E8DA0479BA80AAC76CE44E89FAEDF442A59CD4F92F82F417CD14982F9BBDE8B6`.
+- Supersedes `0.0.219`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.220.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `12DB217B7AEE148F3C545CAB5A78BDFFDAB4AC3EBE08320777DC823E1366C69C`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.220.opm` parsed successfully as XML: version `0.0.220`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - original `Tooltip oooTooltip` placement is moved into `.RichTextHolder`;
+  - RichText holder tooltip positioning is embedded;
+  - removed custom RichText header/caption/help markers remain absent;
+  - `ZTSMServiceExtensionRichTextInitLabel` remains embedded for CKEditor initialization.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- RichText help should continue using the platform tooltip implementation and classes.
+- The service template may relocate the existing tooltip into the holder for layout, but must not create a separate RichText help control.
+
+## 2026-07-03 GovernanceDB 0.0.219 Service RichText Header Rollback to Original Tooltip
+
+### Completed work
+
+- Rolled back the RichText label/header placement experiments from `0.0.214` through `0.0.218`.
+- Removed RichText-specific header markup from `DynamicField/CustomerEditField.tt`.
+- Restored the original OTOBO tooltip block for RichText by rendering `Tooltip oooTooltip` whenever `Data.Tooltip` exists, without excluding RichText fields.
+- Kept RichText labels suppressed outside the editor, matching the requested reset away from the added label/header row.
+- Removed service-template support for the custom/moved RichText header:
+  - no `.ZTSMServiceExtensionRichTextHeader`;
+  - no `.ZTSMServiceExtensionRichTextCaption`;
+  - no `Holder.insertBefore(Header, ...)` relocation.
+- Preserved CKEditor compatibility behavior:
+  - `.ZTSMServiceExtensionRichTextWrap` remains;
+  - `.ZTSMServiceExtensionRichTextInitLabel` remains inside `.RichTextHolder`;
+  - CKEditor placeholder/title behavior remains intact.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.219`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.219.opm`.
+- `Kernel/Package/GovernanceDB-0.0.219.opm` SHA256: `ADA8026A8422872A2548D93B9CA54BF2619DA4C21718D29951822A3EEED4BA46`.
+- Supersedes `0.0.218`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.219.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `EB44ECC5F77DA7FDEEEE3FB6C8FBD084F930C597C4FA60E486EF61B9EFCA5970`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `08C91F74066EB6BB36549D01BB47E4B75D644A0B3FF87D9B795158EB3A330007`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.219.opm` parsed successfully as XML: version `0.0.219`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - generic `Tooltip oooTooltip` is present in `CustomerEditField.tt`;
+  - tooltip rendering uses `IF Data.Tooltip` for all dynamic fields, including RichText;
+  - no RichText header/caption/move markers remain;
+  - `ZTSMServiceExtensionRichTextInitLabel` remains embedded.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- RichText should return to the original editor presentation first; tooltip behavior should remain the platform default.
+- Do not reintroduce a custom RichText header/label placement unless the browser rendering is verified against the actual CKEditor holder layout.
+
+## 2026-07-03 GovernanceDB 0.0.218 Service RichText Holder Tooltip Offset and Header Height
+
+### Completed work
+
+- Fixed the standard `Tooltip oooTooltip` icon still being pulled outside the RichText holder by inherited tooltip offset styles.
+- Kept the `0.0.217` architecture:
+  - label and tooltip header is moved into `.RichTextHolder`;
+  - generic OTOBO tooltip markup remains;
+  - no custom `.ZTSMServiceExtensionRichTextHelpContent` path is used.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` to clear inherited tooltip positioning only for the RichText holder header:
+  - `top/right/bottom/left: auto`;
+  - `float: none`;
+  - `transform: none`.
+- Reduced the RichText holder header footprint:
+  - min-height changed to `26px`;
+  - padding changed to `3px 10px 2px 10px`;
+  - gap reduced to `8px`.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.218`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.218.opm`.
+- `Kernel/Package/GovernanceDB-0.0.218.opm` SHA256: `79B39A37DFD6EF636A0EBA26DA789AFDDCAD966EC561AF393F2AC24F9AE3FFEF`.
+- Supersedes `0.0.217`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.218.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `F19C3D46A56034364288F2A3ED6EE444AB04D5488A823AE3592886F41FF0032D`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.218.opm` parsed successfully as XML: version `0.0.218`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - compact header height and padding are embedded;
+  - tooltip `left/top` offsets are cleared;
+  - tooltip `float` and `transform` are cleared;
+  - the header move into `.RichTextHolder` remains embedded;
+  - custom RichText help content remains absent.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- The generic tooltip remains the source of tooltip behavior; service CSS only neutralizes inherited positioning that conflicts with the RichText holder placement.
+- The RichText holder label row should be compact, so it reads like editor chrome rather than a large extra grey panel.
+
+## 2026-07-03 GovernanceDB 0.0.217 Service RichText Holder Header Placement
+
+### Completed work
+
+- Fixed the RichText label/tooltip header still sitting outside the editor holder after `0.0.216`.
+- Kept the normal OTOBO tooltip markup from `CustomerEditField.tt`:
+  - `.Tooltip.oooTooltip`;
+  - nested `.Content`;
+  - no custom `.ZTSMServiceExtensionRichTextHelpContent` path.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so `ZTSMServiceExtensionRichTextPrepare()` moves `.ZTSMServiceExtensionRichTextHeader` into `.RichTextHolder`.
+- Added scoped CSS so the server-rendered header is hidden while it is still outside `.RichTextHolder`, then shown as the first visible row inside the grey RichText holder area.
+- Preserved CKEditor initialization behavior:
+  - `.ZTSMServiceExtensionRichTextInitLabel` remains inside `.RichTextHolder`;
+  - the editor placeholder/title behavior remains intact;
+  - the CKEditor toolbar/editor remains the original RichText design.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.217`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.217.opm`.
+- `Kernel/Package/GovernanceDB-0.0.217.opm` SHA256: `88864E6FAC843E27B1BCEF118276177B1AC7006153706945B4E80DEA32662CF5`.
+- Supersedes `0.0.216`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.217.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `3A6623F97EC1184BC4FEA9B911EB66345873EFE83330F67B8C1D3B50831D202D`;
+  - `CustomerEditField.tt` family remained SHA256 `43684DCF4CBEC9D02DEF8D4118395AD4851581A100E02A0CD495830187108246`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.217.opm` parsed successfully as XML: version `0.0.217`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - RichText still uses generic `Tooltip oooTooltip`;
+  - custom RichText help content remains absent;
+  - `Holder.insertBefore(Header, InitLabel.nextSibling)` is embedded;
+  - the outside-wrapper header hiding CSS is embedded;
+  - `ZTSMServiceExtensionRichTextInitLabel` remains embedded.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- The RichText label and tooltip belong inside the CKEditor/RichText holder chrome, not in a separate external service header.
+- The tooltip implementation remains the platform tooltip; the service code only relocates and aligns the existing header within the holder.
+
+## 2026-07-03 GovernanceDB 0.0.216 Service RichText Generic Tooltip Restore
+
+### Completed work
+
+- Removed the custom RichText tooltip control introduced in `0.0.214` and revised in `0.0.215`.
+- Restored RichText tooltip content to the normal OTOBO customer tooltip markup:
+  - `.Tooltip.oooTooltip`;
+  - nested `.Content`;
+  - translated tooltip text inside `.Content`, so the long help text follows the normal hidden-until-hover behavior.
+- Kept only the layout adjustment needed for the requested visual shape:
+  - field label and small `?` tooltip stay together above CKEditor;
+  - CKEditor editor/toolbar remains the original RichText editor design;
+  - CKEditor placeholder/init compatibility remains unchanged.
+- Removed `.ZTSMServiceExtensionRichTextHelp` and `.ZTSMServiceExtensionRichTextHelpContent` from the rendered RichText path.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.216`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.216.opm`.
+- `Kernel/Package/GovernanceDB-0.0.216.opm` SHA256: `74159901C987D8D9FC4A3F4BFFB12725FC6196D8699D67555C4D82B12F262E99`.
+- Supersedes `0.0.215`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.216.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `43684DCF4CBEC9D02DEF8D4118395AD4851581A100E02A0CD495830187108246`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `250C8A82A40A5A5BAA1165CAFB83C6399EAB84D761E7C4C3F6B9C8062B5742E6`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.216.opm` parsed successfully as XML: version `0.0.216`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - no `.ZTSMServiceExtensionRichTextHelp` marker remains;
+  - no `.ZTSMServiceExtensionRichTextHelpContent` marker remains;
+  - RichText uses generic `Tooltip oooTooltip` and nested `Content`;
+  - `ZTSMServiceExtensionRichTextInitLabel` remains embedded for CKEditor initialization.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- RichText help must use the platform tooltip mechanism; the service template should not create a custom RichText tooltip implementation.
+- The only RichText-specific presentation adjustment retained is aligning the existing label and standard tooltip in the same header row above the editor.
+
+## 2026-07-03 GovernanceDB 0.0.215 Service RichText Native Tip Icon Correction
+
+### Completed work
+
+- Corrected the `0.0.214` RichText help control, which could render as a large portal-styled blue button instead of a small tooltip icon.
+- Replaced the RichText help `button` markup in `DynamicField/CustomerEditField.tt` with a neutral inline `.ZTSMServiceExtensionRichTextHelp` span.
+- Changed the RichText header/help CSS in `ZTSMCustomerTicketMessageServiceFields.tt` so it applies immediately by class name, not only after JavaScript adds `.ZTSMServiceExtensionField`.
+- Kept the desired RichText editor structure:
+  - label on the left above CKEditor;
+  - a tiny `?` help icon on the right;
+  - tooltip text hidden until hover/focus;
+  - CKEditor placeholder/init compatibility preserved.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.215`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.215.opm`.
+- `Kernel/Package/GovernanceDB-0.0.215.opm` SHA256: `B3FDC2FFD32962936CF94B1785AF46042D1BF1B2377B9E0F608A63F90DC95E5D`.
+- Supersedes `0.0.214`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.215.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `B549B972BA376107A0FCF5E203C13D438DC5138DC99FC6A408944A82A2EEA536`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `51E28A8417C1C616F05FC222859B6414BDDCA567316761C3A42E1C413C6AF247`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.215.opm` parsed successfully as XML: version `0.0.215`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - RichText help no longer uses a `button`;
+  - RichText help uses `.ZTSMServiceExtensionRichTextHelp` span markup;
+  - tooltip content is hidden by unscoped RichText CSS;
+  - `ZTSMServiceExtensionRichTextInitLabel` remains embedded.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+
+### Architectural Decisions
+
+- RichText help must look like the original editor-adjacent tooltip affordance, not a customer portal action button.
+- RichText help visibility CSS must not depend on JavaScript row marking; hidden-by-default tooltip content needs to be safe at first paint.
+
+## 2026-07-03 GovernanceDB 0.0.214 Service RichText Tip Slot Restore
+
+### Completed work
+
+- Restored the service RichText label/help row after the `0.0.213` placeholder-only repair removed the visible tip slot.
+- Added a RichText-only `.ZTSMServiceExtensionRichTextHeader` in `DynamicField/CustomerEditField.tt`:
+  - field label renders on the left above CKEditor;
+  - `.ZTSMServiceExtensionRichTextHelp` renders as a small help icon on the right;
+  - `.ZTSMServiceExtensionRichTextHelpContent` carries the translated tooltip text.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so the help text is hidden by default and appears only on hover/focus of the RichText help icon.
+- Preserved the working CKEditor compatibility behavior from `0.0.213`, including `.ZTSMServiceExtensionRichTextInitLabel` inside `.RichTextHolder`.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.214`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.214.opm`.
+- `Kernel/Package/GovernanceDB-0.0.214.opm` SHA256: `4F3C6E58706509870CD1C8FB62D110526932DE271D86FEF7B970099012EADED3`.
+- Supersedes `0.0.213`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.214.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `D715E2E5E7ABD07DD1098E30CD95EEBB3FC15CEB88175157A8C2A16C5B0A5FF2`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `F8F882C938931813D9F160BFC6D438BC16FFBFC6D08B7FBC63627579E957A838`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.214.opm` parsed successfully as XML: version `0.0.214`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed the RichText header/help markup is embedded, the help content CSS is hidden by default, and `ZTSMServiceExtensionRichTextInitLabel` remains embedded.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, and package definition.
+
+### Architectural Decisions
+
+- Service RichText should show a compact header row with label-left and tip-right, matching the requested field shape.
+- The tip text must not render as visible page content; it belongs in the service-owned hover/focus popup.
+- Rejected returning to the generic `Tooltip oooTooltip` placement for RichText because earlier package versions showed it could inherit portal positioning and drift outside the editor row.
+
+## 2026-07-02 GovernanceDB 0.0.213 Service RichText Placeholder-Only Repair
+
+### Completed work
+
+- Reverted the broken `0.0.212` RichText visual help/header approach, which rendered tooltip/help text as visible page content above CKEditor.
+- Kept the working CKEditor compatibility behavior:
+  - service RichText fields still render through `.ZTSMServiceExtensionRichTextWrap`;
+  - the hidden `.ZTSMServiceExtensionRichTextInitLabel` remains inside `.RichTextHolder`;
+  - CKEditor can continue using the field title, such as `Observed Behavior`, as the editor placeholder.
+- Removed service RichText caption/header/help creation from the customer dynamic-field template and service-field preparation script.
+- Expanded service RichText width handling so the wrapper, holder, CKEditor shell, main area, and editable surface use `width: 100%` and `max-width: none` within the service field container.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.213`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.213.opm`.
+- `Kernel/Package/GovernanceDB-0.0.213.opm` SHA256: `F0689C965D044EABFC2ACCE0E2C62872AAD3D913F15FEFD9966A68C5F38976C8`.
+- Supersedes `0.0.212`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.213.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `039D658045EC9E54DF452B8D4823A1354555ABE7B0DD414CF9DF7F883593B4E1`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `B6EAA72A30184D6DBEF7DA99DDFAF9BC1F6E7B96202C3A181673A2917946F9F7`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.213.opm` parsed successfully as XML: version `0.0.213`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed the RichText custom help/header markup is absent, the wrapper and `Data.FieldClasses.match('RichText')` branch remain, `ZTSMServiceExtensionRichTextInitLabel` remains, and RichText max-width is no longer capped at `1120px`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Service RichText fields should not show an extra visible label/header above CKEditor until a stable in-editor or toolbar-safe placement is available.
+- The user-facing field cue is the CKEditor placeholder text, backed by the hidden init label required by OTOBO's customer CKEditor initializer.
+- The service RichText wrapper owns sizing only; it must not introduce visible tooltip/help content outside the editor.
+
+## 2026-07-02 GovernanceDB 0.0.212 Service RichText Custom Help Icon
+
+### Completed work
+
+- Fixed service RichText tooltip placement after `0.0.211`, where the label was visible but the `?` still appeared outside/left because the generic `Tooltip oooTooltip` class retained portal positioning behavior.
+- Replaced generic tooltip markup inside the RichText header with service-owned markup:
+  - `.ZTSMServiceExtensionRichTextHelp`;
+  - `.ZTSMServiceExtensionRichTextHelpContent`.
+- Added scoped CSS for the service-owned help icon and hover/focus popup, avoiding the generic tooltip layout rules while keeping the same tooltip text content.
+- Non-RichText dynamic fields continue to use the default `Tooltip oooTooltip` rendering.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.212`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.212.opm`.
+- `Kernel/Package/GovernanceDB-0.0.212.opm` SHA256: `42F16B03FDC9874A7781DD598F4840AED2F4480E61BC659F5DC5F6C31D15D45F`.
+- Supersedes `0.0.211`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.212.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `D6052902066726399F2DD52A50F512E92E4DC3B41654C48A5551DB6D2E4E8523`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `15DBBE311DCC439B31EBF97348D11A3A34FD187F42217B91E1E132F3CAA66CBB`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.212.opm` parsed successfully as XML: version `0.0.212`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed `ZTSMServiceExtensionRichTextHelp`, `ZTSMServiceExtensionRichTextHelpContent`, and scoped help CSS are embedded.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- RichText header help uses a service-owned help element instead of the platform's generic tooltip class, because this header requires stable inline positioning beside the label.
+- The tooltip content remains visible via hover/focus popup, but its layout no longer depends on generic form-tooltip CSS.
+
+## 2026-07-02 GovernanceDB 0.0.211 Service RichText Tooltip Slot Layout
+
+### Completed work
+
+- Fixed service RichText header layout after `0.0.210`, where the caption rendered but the `?` tooltip inherited generic tooltip sizing/positioning and appeared outside/left of the editor.
+- Kept the design as a dedicated header row above the CKEditor toolbar because CKEditor toolbar content is third-party/reflowing UI and should not carry business field labels.
+- Tightened `ZTSMCustomerTicketMessageServiceFields.tt` CSS:
+  - caption no longer claims `width: 100%`;
+  - caption margin is reset to `0`;
+  - header tooltip is forced into a 24px flex icon slot;
+  - tooltip padding/background/border/shadow are neutralized inside the header;
+  - tooltip icon line-height is normalized.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.211`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.211.opm`.
+- `Kernel/Package/GovernanceDB-0.0.211.opm` SHA256: `5334FC9F417671A75FD3B0C4063BA80838728AFD040E8952D00CB49CEF27AA4D`.
+- Supersedes `0.0.210`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.211.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `63DBF6ADB3C12C5C3D031271C3BD6349AF322FF4A2D8BEABEF11FE6028B4EE41`;
+  - `CustomerEditField.tt` family remains SHA256 `50EA4FAF6BA855A7CEDA610D9D53078B6FDC07783A9C1EC96199E173F4D0BD9D`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.211.opm` parsed successfully as XML: version `0.0.211`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed tooltip-slot CSS markers: `width: auto !important`, `min-width: 24px !important`, `box-shadow: none !important`, and `ZTSMServiceExtensionRichTextHeader .Tooltip > i`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched template, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- The field label and tooltip remain in a dedicated service RichText header above the editor. They are not injected into the CKEditor toolbar because toolbar width and item wrapping are controlled by CKEditor.
+- The header tooltip is visually reduced to an icon slot while preserving the existing tooltip content popover.
+
+## 2026-07-02 GovernanceDB 0.0.210 Service RichText Class Match Repair
+
+### Completed work
+
+- Fixed the reason `0.0.209` still did not show the caption wrapper in browser source: the runtime customer dynamic-field class is `Field RichText`, while the previous patches matched only `RichTextField`.
+- Updated `DynamicField/CustomerEditField.tt` RichText branching to use `Data.FieldClasses.match('RichText')`, so the server-side header/caption wrapper renders for the actual runtime class.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` selectors and service-preparation logic to match both:
+  - `.Field.RichText`;
+  - `.Field.RichTextField`.
+- Service preparation now normalizes matched fields by adding `RichTextField`, keeping the later CSS and CKEditor compatibility logic stable.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.210`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.210.opm`.
+- `Kernel/Package/GovernanceDB-0.0.210.opm` SHA256: `BC69785E8ACF8D5A6484FA7B9EC93287F708F3EECEEAF6DB3C8A2128DA6C0060`.
+- Supersedes `0.0.209`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.210.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `50EA4FAF6BA855A7CEDA610D9D53078B6FDC07783A9C1EC96199E173F4D0BD9D`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `5B0D484F1BFB698B664C045879138C04F59AA2E90EDE390E8E8666A6BF8E73F2`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.210.opm` parsed successfully as XML: version `0.0.210`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` uses `Data.FieldClasses.match('RichText')` and contains the RichText header wrapper;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` matches `.Field.RichText`, matches `.Field.RichTextField`, and normalizes matched fields with `Field.classList.add('RichTextField')`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Service RichText handling now accepts the actual dynamic-field renderer class (`RichText`) and the normalized helper class (`RichTextField`) to avoid depending on one renderer variant.
+- This keeps the service-field behavior tied to rendered dynamic-field semantics rather than ticket type or hardcoded field names.
+
+## 2026-07-02 GovernanceDB 0.0.209 Service RichText Header Row Alignment
+
+### Completed work
+
+- Fixed service RichText caption alignment after `0.0.208`, where the label still appeared too high/left while the tooltip icon was correctly on the right of the same field row.
+- Updated `DynamicField/CustomerEditField.tt` so RichText dynamic fields render a dedicated `.ZTSMServiceExtensionRichTextHeader` above CKEditor.
+- Moved the RichText tooltip into that same header row for RichText fields, so the caption is on the left and the `?` tooltip stays on the right.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` CSS so:
+  - `.ZTSMServiceExtensionRichTextWrap` is a vertical flex container;
+  - `.ZTSMServiceExtensionRichTextHeader` reserves a real row above the editor;
+  - `.ZTSMServiceExtensionRichTextCaption` owns the left side;
+  - `.ZTSMServiceExtensionRichTextHeader .Tooltip` owns the right side;
+  - generic floating label styles are neutralized inside the RichText caption.
+- Preserved the CKEditor hidden-label compatibility shim from `0.0.208`.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.209`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.209.opm`.
+- `Kernel/Package/GovernanceDB-0.0.209.opm` SHA256: `581670A818C579CB504470550A96CE87EF38BA795D026A533ABB421BDF9B8D23`.
+- Supersedes `0.0.208`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.209.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `11835CDA6F674037978EEC80C4B17AD0D68623C5BEA47E4DF62FB67BDAF6EB73`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `AD880FB4C5906417B8437890CD81A3F0FA86D10354E0C3D4BA5AADEA8DD9079A`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.209.opm` parsed successfully as XML: version `0.0.209`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` contains `ZTSMServiceExtensionRichTextHeader`, `ZTSMServiceExtensionRichTextCaption`, and embedded `Tooltip oooTooltip` inside the RichText branch;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` contains the header-row CSS, `justify-content: space-between`, and caption-label reset rules.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- For service RichText fields, the visible label and tooltip are now part of one explicit header row above CKEditor, matching the user's requested layout cue from the existing tooltip position.
+- Non-RichText dynamic fields keep the existing customer dynamic-field label/tooltip rendering path.
+
+## 2026-07-02 GovernanceDB 0.0.208 Service RichText Server Caption and CKEditor Label Shim
+
+### Completed work
+
+- Fixed the remaining service RichText caption issue where the visible editor rendered but the dynamic-field label still stayed behind/after the CKEditor box.
+- Root cause confirmed from browser source and console:
+  - customer dynamic-field RichText markup renders the label after `.Field.RichTextField`;
+  - OTOBO customer CKEditor initialization expects a label inside the textarea parent with `for` beginning `RichText`;
+  - dynamic-field RichText labels use `for="DynamicField_..."`, causing `innerText`/placeholder errors during `Core.UI.RichTextEditor.InitAllEditors()`.
+- Updated `Kernel/Output/HTML/Templates/Standard/DynamicField/CustomerEditField.tt` so customer RichText dynamic fields render a server-side `.ZTSMServiceExtensionRichTextWrap` and `.ZTSMServiceExtensionRichTextCaption` before the editor field.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so service RichText preparation creates a hidden initializer-compatible `.ZTSMServiceExtensionRichTextInitLabel` inside `.RichTextHolder` with `for="RichText..."`, preventing CKEditor placeholder lookup errors.
+- Added `var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/DynamicField/CustomerEditField.tt` to `GovernanceDB.sopm` so package upgrades deploy the template wrapper.
+- Synced:
+  - `CustomerEditField.tt` across canonical source, GovernanceDB runtime overlay, and local OTOBO runtime copy;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.208`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.208.opm`.
+- `Kernel/Package/GovernanceDB-0.0.208.opm` SHA256: `CEA55D306D260365D345018F17E67EE37E6DBF9111A2BEA74C06C0566CCE6921`.
+- Supersedes `0.0.207`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.208.opm`.
+
+### Validation
+
+- Mirror hash checks passed:
+  - `CustomerEditField.tt` family SHA256 `320A7DD90B1B51E14B32C22CEE75D9DB44DCEE0842A20F70746DA5ACC8D2AE62`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` family SHA256 `A4C741224B18D50EAB4566F4958B3371AD6003D3A4259F046AC5008A4AB412C3`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.208.opm` parsed successfully as XML: version `0.0.208`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed:
+  - `CustomerEditField.tt` overlay is present and contains `ZTSMServiceExtensionRichTextWrap`, `ZTSMServiceExtensionRichTextCaption`, and the RichTextField conditional;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` contains `ZTSMServiceExtensionRichTextInitLabel` and `InitLabel.setAttribute`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched templates, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- The visible caption is now rendered server-side in the customer dynamic-field template for RichText dynamic fields, rather than relying only on post-render service JavaScript.
+- The package now overlays `DynamicField/CustomerEditField.tt` because the fix must be deployable by GovernanceDB package upgrade, not only by local source edits.
+- The hidden `RichText...` label is a compatibility shim for OTOBO's customer CKEditor initializer; the user-facing caption remains the dedicated wrapper caption.
+
+## 2026-07-02 GovernanceDB 0.0.207 Service RichText Caption Wrapper Repair
+
+### Completed work
+
+- Replaced the previous service RichText label-promotion approach because the default customer dynamic-field label remained affected by existing portal label positioning and could still appear behind the CKEditor box.
+- Added a dedicated wrapper/caption structure for service RichText fields in `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - creates `.ZTSMServiceExtensionRichTextWrap` around the editor field;
+  - creates `.ZTSMServiceExtensionRichTextCaption` above the editor;
+  - copies caption text from the generated dynamic-field label, falling back to textarea title/ARIA label;
+  - hides the original generated dynamic-field label with `.ZTSMServiceExtensionOriginalRichTextLabel`.
+- Preserved the working CKEditor initialization from `0.0.205`, the visible editor sizing from `0.0.204`, and the service RichText cell detection from `0.0.206`.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.207`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.207.opm`.
+- `Kernel/Package/GovernanceDB-0.0.207.opm` SHA256: `33F7583C4E5D2C6047E8F2B4DB8AF4ECB0F2BC7DE9EC0CD84A536AC8F70B93A9`.
+- Supersedes `0.0.206`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.207.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `80483EDFAABAFAAABF21DD61978FDB03D33BCD70B7F49642A4004EB504714D55`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.207.opm` parsed successfully as XML: version `0.0.207`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed `ZTSMServiceExtensionRichTextWrap`, `ZTSMServiceExtensionRichTextCaption`, `Caption.textContent = CaptionText`, and `ZTSMServiceExtensionOriginalRichTextLabel` are embedded.
+- Stripped template JavaScript passed `node --check` using the bundled Node runtime.
+- `git diff --check` passed for the touched service template, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- The visible service RichText caption is now an explicit service-extension presentation element instead of relying on the default customer dynamic-field `label`, because that label is governed by generic portal positioning rules.
+- The original generated label remains in the field cell for compatibility, but it is hidden from the visual layout to avoid duplicate or behind-editor text.
+
+## 2026-07-02 GovernanceDB 0.0.206 Service RichText Label Caption Repair
+
+### Completed work
+
+- Fixed the service RichText label visibility issue after `0.0.205`, where the editors rendered correctly but users could not tell which box was `Expected Behavior`, `Observed Behavior`, or another service RichText field.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so service RichText preparation finds the generated label from the surrounding `.FieldCell`, not from inside `.Field.RichTextField`.
+- Promoted the generated label above the CKEditor field and styled it as a visible caption with normal positioning.
+- Preserved the `0.0.205` initial RichText editor initialization behavior and the `0.0.204` horizontal Set width behavior.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.206`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.206.opm`.
+- `Kernel/Package/GovernanceDB-0.0.206.opm` SHA256: `DE079484B33C6C8F8D1012B5473C31DDCA8980F7EEA1288E94D2342535DB87BF`.
+- Supersedes `0.0.205`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.206.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `EF390997A43A62001A9CD08D2573282CA6049252768419AD1B17C006A35EAC34`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.206.opm` parsed successfully as XML: version `0.0.206`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed `ZTSMServiceExtensionRichTextCell`, `ZTSMServiceExtensionRichTextLabel`, `Cell.insertBefore(Label, Field)`, and `Core.UI.RichTextEditor.InitAllEditors()` are embedded.
+- `git diff --check` passed for the touched service template, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Service RichText labels stay generated from the existing dynamic-field label metadata; no new field naming or ticket-type branching was introduced.
+- The customer service-extension layer owns this caption promotion because the issue comes from how customer dynamic-field rows wrap RichText fields inside the portal form.
+
+## 2026-07-02 GovernanceDB 0.0.205 Service RichText Initializer Repair
+
+### Completed work
+
+- Fixed the remaining customer service-extension RichText rendering issue where `ZIN-Expected` and `ZIN-Observed` could still appear as raw textareas after `0.0.204`.
+- Added service RichText row preparation before editor initialization:
+  - marks service RichText fields with `DynamicFieldRichText`;
+  - moves the generated dynamic-field label into the `RichTextHolder`, matching the main Description editor structure more closely;
+  - hides stale direct labels outside the holder.
+- Extended initial page load handling so `ZTSMServiceExtensionInitialize()` runs for the first rendered service fields, not only for AJAX-refreshed service fields.
+- Service initialization now explicitly calls `Core.UI.RichTextEditor.InitAllEditors()` after preparing service RichText rows; the OTOBO initializer skips editors that already have a CKEditor instance.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.205`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.205.opm`.
+- `Kernel/Package/GovernanceDB-0.0.205.opm` SHA256: `69237DD40BAFE886CECEEF90DE7345A353D428078DE53FA761307A501896792C`.
+- Supersedes `0.0.204`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.205.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `7B134C5DC2776C9130CE5D7EABB631979CFD48CBE652ED1551D339DC42BF98EB`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.205.opm` parsed successfully as XML: version `0.0.205`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed `ZTSMServiceExtensionRichTextPrepare`, `DynamicFieldRichText`, `Core.UI.RichTextEditor.InitAllEditors()`, and initial-load `ZTSMServiceExtensionInitialize(Start, End)` calls are embedded.
+- `git diff --check` passed for the touched service template, mirrored copies, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Service RichText repair stays in the service-extension customer template because it is a presentation/initialization issue in the portal runtime surface, not a governance or ticket-type rule.
+- `0.0.204` remains useful context for the width/layout work, but `0.0.205` is the first package that also forces service RichText initialization on initial render.
+
+## 2026-07-02 GovernanceDB 0.0.204 Service Extension RichText and Horizontal Field Layout
+
+### Completed work
+
+- Fixed customer ticket service-extension rendering for dynamic fields declared through `ZService-Field`, including incident/service-request style fields.
+- Service extension RichText dynamic fields such as `ZIN-Expected` and `ZIN-Observed` now get an explicit service RichText row class and are sized like the main description editor instead of being boxed as ordinary dynamic fields.
+- Reworked horizontal Set layout sizing so fields such as `ZIN-Connection` distribute evenly across the full service form width, with date/datetime cells given a slightly wider proportional share.
+- Removed the previous hardcoded `230px`/`270px` horizontal cell widths and aligned the service extension viewport to the existing `1120px` customer form width.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.204`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.204.opm`.
+- `Kernel/Package/GovernanceDB-0.0.204.opm` SHA256: `C621C1752B3FA70FF1FA14AF4B1E9DBB444F7DB99280B3E760140448895C5494`.
+- Supersedes `0.0.203`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.204.opm`.
+
+### Validation
+
+- Mirror hash check passed for `ZTSMCustomerTicketMessageServiceFields.tt` family: SHA256 `99BC653355A78C4981C0BBE747D5BBF24523E9252EF59F0DCDF8B60A707CE9FA`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.204.opm` parsed successfully as XML: version `0.0.204`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM payload spot-check confirmed the service RichText row marker, `260px` RichText editing height, `1120px` viewport alignment, and removal of old fixed `230px`/`270px` horizontal cell widths.
+
+### Architectural Decisions
+
+- `ZService-Field` controls the service-extension field list and layout; this fix does not gate rendering by ticket type.
+- RichText and horizontal Set behavior is handled in the customer service-extension template so the existing dynamic-field definitions and orchestration data remain the source of truth.
+
+## 2026-07-02 GovernanceDB 0.0.203 Override Outcome Weightage and Delegate Acknowledgement
+
+### Completed work
+
+- Fixed IPC approval/endorsement override outcomes so the child ticket records normal runtime decision evidence before closing:
+  - `ZTicket-Outcome` is derived from the submitted override action state;
+  - `ZTicket-Result` is recorded from the override remarks;
+  - `ZTicket-OwnerWeightage` is set to the ticket's required weightage when no usable owner weightage exists.
+- This allows `Approve Override` and `Endorse Override` to satisfy the original chapter-play weightage instead of closing with effective weightage `0`.
+- Fixed the `Delegate` dialog acknowledgement control by moving it out of the yellow warning text block into a separate required confirmation row.
+- Applied normal checkbox sizing to both override and delegate acknowledgement rows so the checkbox is clickable and submitted.
+- Broadened yellow VVIP audit article styling so `[VVIP Override]` and `[VVIP Delegate]` article cards remain visibly warning-colored wherever the customer article renderer places the audit class.
+- Synced `CustomerTicketZoom.pm`, `CustomerTicketZTSMAction.pm`, and `CustomerTicketZoom.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.203`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.203.opm`.
+- `Kernel/Package/GovernanceDB-0.0.203.opm` SHA256: `E2F1059A4CAE941975674910CF9F1D26CEBAE7F98264689592E2D83BF68A34D3`.
+- Supersedes `0.0.202`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.203.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay copies of:
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `20DF6E235C48E13037D229402487F3A1B4296C99EE8D6675B527235E064155BA`;
+  - `CustomerTicketZTSMAction.pm` family SHA256 `513CDDE2134D88C0E34B9A50522325D303F54CF00D562AE4A36513B925E08509`;
+  - `CustomerTicketZoom.tt` family SHA256 `266D2D5DED33CF4537B2D1306143F8E660CAD91D27CED6214AEB3592722D1381`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.203.opm` parsed successfully as XML: version `0.0.203`, file count `199`, `MissingEncodeBase64=0`.
+- OPM payload spot-check confirmed the override outcome evidence helper, owner-weightage repair, delegate acknowledgement row, and broader yellow audit styling are embedded.
+- `git diff --check` passed for the touched runtime, package, overlay, local OTOBO, package definition, and `PROJECT_STATUS.md` files.
+
+### Architectural Decisions
+
+- IPC override outcomes are still governance exceptions, but they must write the same decision evidence fields used by chapter roll-up so the parent governance ledger remains consistent.
+- Override outcome weightage uses the child ticket's required weightage only when owner weightage is missing or non-positive; existing valid owner weightage is preserved.
+
+## 2026-07-02 GovernanceDB 0.0.202 Override Dialog Layout and Evidence Upload
+
+### Completed work
+
+- Fixed the IPC `Override` acknowledgement dialog so the yellow governance warning text wraps inside the panel instead of overflowing horizontally.
+- Moved the override acknowledgement checkbox into its own required confirmation row below the warning block so it is visually clear and no longer squeezed by the warning text.
+- Added the governance evidence upload row to the initial `Override` entry dialog, not only the later approve/reject/endorse override outcome dialogs.
+- Attached uploaded override-entry evidence to the `[VVIP Override] Override mode started` article so the parent ticket audit trail keeps the supporting file with the override justification.
+- Synced `CustomerTicketZoom.pm`, `CustomerTicketZTSMAction.pm`, and `CustomerTicketZoom.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.202`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.202.opm`.
+- `Kernel/Package/GovernanceDB-0.0.202.opm` SHA256: `39A2F2FC410F733AF2C882ACA398E1A5156F4FB6200F314D0968C88E2E951714`.
+- Supersedes `0.0.201`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.202.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `CD16380683043573DDA6CE8292A0B734B7FCF4731639C9515A130A06BFEF2C86`;
+  - `CustomerTicketZTSMAction.pm` family SHA256 `1B2699D1A485E3B371B11B6C015A902C6B57161AE6AEE787812B3A5AC88E7228`;
+  - `CustomerTicketZoom.tt` family SHA256 `A7EA5D0889B00A4927470A1F1BC9BAA6D58FFA124DB3745A538E325C2ED73FD8`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.202.opm` parsed successfully as XML: version `0.0.202`, file count `199`, `MissingEncodeBase64=0`.
+- OPM payload spot-check confirmed the override acknowledgement row, override entry attachment wiring, backend article attachment handling, and CSS wrapping rules are embedded.
+- `git diff --check` passed for the touched runtime, package, overlay, local OTOBO, package definition, and `PROJECT_STATUS.md` files.
+
+### Architectural Decisions
+
+- Override entry evidence is stored on the override-start article because the override justification and supporting evidence are part of the same governance exception event.
+- The yellow warning remains a governance intervention signal, while the acknowledgement confirmation and evidence upload are separate form rows to avoid visual crowding.
+
+## 2026-07-02 GovernanceDB 0.0.201 Customer Risk Badge Visibility
+
+### Completed work
+
+- Added parent/root-ticket residual risk visibility to the dark `CustomerTicketZoom` request-context panel.
+- Rendered compact circular `T`, `B`, and `G` badges for `ZTicket-TechnicalRisk`, `ZTicket-BusinessRisk`, and `ZTicket-GovernanceRisk`.
+- Used the same 5x5-style risk score bands as the assessment article rendering:
+  - grey for `N/A`;
+  - green for low;
+  - yellow for medium with black text;
+  - orange for high with white text;
+  - red for critical with white text.
+- Placed the badges directly to the left of the current ticket state/action pill so approvers and endorsers see the decision-driving risk state before acting.
+- Synced `CustomerTicketZoom.pm` and `CustomerTicketZoom.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.201`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.201.opm`.
+- `Kernel/Package/GovernanceDB-0.0.201.opm` SHA256: `22AF8E8DA76ED6365524C653543A07876104A314F64947293F391E0357FDD2E6`.
+- Supersedes `0.0.200`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.201.opm`.
+
+### Validation
+
+- Perl syntax check passed for canonical `Kernel/Modules/CustomerTicketZoom.pm` using repo include path.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `BDEA5575D88183F2F56E54F10D4739D107520E688DDAA67234A02E8902D3E323`;
+  - `CustomerTicketZoom.tt` family SHA256 `FAA1B18FD08850B46A40F2A9A974FB46517111B0E30004A50E683FBBAB886B4B`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.201.opm` parsed successfully as XML: version `0.0.201`, file count `199`, `MissingEncodeBase64=0`.
+- `git diff --check` passed for the touched zoom mirrors, package definition, and `PROJECT_STATUS.md`.
+
+### Architectural Decisions
+
+- Risk assessment roll-up remains stored in the existing parent ticket risk fields; the UI now exposes those governance decision values instead of creating a parallel risk store.
+- Approval and endorsement users should see the technical, business, and governance residual risk indicators in the request context before taking workflow action.
+
+## 2026-07-02 GovernanceDB 0.0.200 Controlled IPC Override Acknowledgement
+
+### Completed work
+
+- Changed IPC `Override` from a direct menu action into an explicit customer runtime dialog.
+- Added a light-yellow override warning block requiring IPC acknowledgement before the ticket can be moved into `override`.
+- Made override entry require remarks so the first override article records a clear auditable justification.
+- Extended override entry and override outcome availability from `Approval` tickets to both `Approval` and `Endorsement` tickets.
+- Kept override outcomes ticket-type constrained:
+  - `Approval` tickets allow `Approve Override` and `Reject Override` only after state `override`;
+  - `Endorsement` tickets allow `Endorse Override` and `Reject Override` only after state `override`.
+- Added an optional governance evidence upload field to override outcome dialogs so uploaded evidence is attached to the override outcome article.
+- Styled `[VVIP Override]` articles with the same light-yellow audit treatment used for delegation audit articles.
+- Synced `CustomerTicketZoom.pm`, `CustomerTicketZTSMAction.pm`, and `CustomerTicketZoom.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, local OTOBO runtime copies where applicable, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.200`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.200.opm`.
+- `Kernel/Package/GovernanceDB-0.0.200.opm` SHA256: `A05B31C3FB7C8669715787D5453862F6780783BF68E5D3EC7DFBD648A79A8098`.
+- Supersedes `0.0.199`; install/upgrade testing should use `Kernel/Package/GovernanceDB-0.0.200.opm`.
+
+### Validation
+
+- Perl syntax checks passed for canonical copies of:
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/Modules/CustomerTicketZTSMAction.pm`.
+- Mirror hash checks passed:
+  - `CustomerTicketZoom.pm` family SHA256 `E50A020F380340C8035D5DF21B2B357C96D099E517523E43FD624D13E07AE70F`;
+  - `CustomerTicketZTSMAction.pm` family SHA256 `C23DEB23F8D24DAFCC58DA5E6F6ABB78558DC7F1D2A8A15F3268580666FAFC92`;
+  - `CustomerTicketZoom.tt` family SHA256 `902EE57E66CB5DA8757EFD4BB65741A43B8EC21B30E45505D9442C7F1F3629DA`.
+- `GovernanceDB-0.0.200.opm` parsed successfully as XML: version `0.0.200`, file count `199`, `MissingEncodeBase64=0`.
+- Decoded OPM runtime-overlay payloads confirm the override acknowledgement parameter, endorsement override handling, override attachment field, and yellow override audit class are present.
+
+### Architectural Decisions
+
+- IPC override must be an explicit governance exception, not an easy direct-submit shortcut.
+- Override entry records governance acknowledgement and justification, but still does not approve technical validity, risk, or execution detail.
+- Override outcome authority remains constrained by ticket type and ticket state; IPC visibility does not become blanket runtime approval authority.
 
 ## 2026-07-01 GovernanceDB 0.0.199 IPC Override State Gate
 

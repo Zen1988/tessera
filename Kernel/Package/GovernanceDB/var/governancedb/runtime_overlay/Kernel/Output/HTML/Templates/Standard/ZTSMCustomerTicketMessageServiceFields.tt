@@ -1,5 +1,5 @@
 <style>
-/* ZTSM service extension layout v20260605-add-row-renumber */
+/* ZTSM service extension layout v20260702-richtext-service-fields */
 #NewCustomerTicket #ZTSMServiceExtensionDynamicFieldsStart ~ .Row_DynamicField {
     width: 100%;
 }
@@ -81,19 +81,20 @@
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell {
-    flex: 0 0 230px !important;
-    width: 230px !important;
-    min-width: 230px !important;
-    max-width: 300px !important;
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 190px !important;
+    max-width: none !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell.DynamicFieldDate,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell.DynamicFieldDateTime,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDate,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDateTime {
-    flex-basis: 270px !important;
-    width: 270px !important;
-    min-width: 270px !important;
+    flex: 1.05 1 0 !important;
+    width: auto !important;
+    min-width: 210px !important;
+    max-width: none !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell > .Field,
@@ -110,6 +111,76 @@
     display: grid;
     grid-template-columns: 1fr !important;
     gap: 14px;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField.ZTSMServiceExtensionRichTextRow .FieldCell,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .RichTextHolder,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .RichTextHolder,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField textarea.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText textarea.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__main,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor__main,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__editable,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor__editable {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .FieldCell.ZTSMServiceExtensionRichTextCell > label.ZTSMServiceExtensionRichTextLabel {
+    display: block !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-width: 1120px !important;
+    margin: 0 auto 8px auto !important;
+    padding: 0 2px !important;
+    color: #7f809d !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    text-align: left !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField > label,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText > label {
+    display: none !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .RichTextHolder,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .RichTextHolder {
+    display: block;
+    overflow: visible;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField textarea.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText textarea.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__editable,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor__editable {
+    min-height: 260px !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__editable_inline,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor__editable_inline {
+    padding: 18px 20px !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldDate .oooDateContainer,
@@ -656,9 +727,48 @@
         while (Node && Node !== End) {
             if (Node.nodeType === 1 && Node.classList && Node.classList.contains('Row_DynamicField')) {
                 Node.classList.add('ZTSMServiceExtensionField');
+                if (Node.querySelector && Node.querySelector('.Field.RichTextField, .Field.RichText')) {
+                    Node.classList.add('ZTSMServiceExtensionRichTextRow');
+                }
             }
             Node = Node.nextSibling;
         }
+    }
+
+    function ZTSMServiceExtensionRichTextPrepare(Start, End) {
+        var Root = Start && End ? Start.parentNode : document,
+            Fields;
+
+        if (!Root) {
+            return;
+        }
+
+        Fields = Root.querySelectorAll('.ZTSMServiceExtensionField .Field.RichTextField, .ZTSMServiceExtensionField .Field.RichText');
+
+        Array.prototype.forEach.call(Fields, function (Field) {
+            var Cell = Field.closest ? Field.closest('.FieldCell') : null,
+                Holder = Field.querySelector('.RichTextHolder'),
+                Textarea = Field.querySelector('textarea.RichText'),
+                Label = Cell ? Array.prototype.filter.call(Cell.children, function (Child) {
+                    return Child.tagName && Child.tagName.toLowerCase() === 'label';
+                })[0] : null;
+
+            if (!Cell || !Holder || !Textarea) {
+                return;
+            }
+
+            Cell.classList.add('ZTSMServiceExtensionRichTextCell');
+            Field.classList.add('ZTSMServiceExtensionRichTextField');
+            Field.classList.add('RichTextField');
+            Textarea.classList.add('DynamicFieldRichText');
+
+            if (Label) {
+                Label.classList.add('ZTSMServiceExtensionRichTextLabel');
+                if (Label.parentNode !== Cell || Label.nextSibling !== Field) {
+                    Cell.insertBefore(Label, Field);
+                }
+            }
+        });
     }
 
     function ZTSMServiceExtensionLayoutFix(Start, End) {
@@ -678,7 +788,7 @@
                 Viewport = Set.closest('.ZTSMFieldSetScrollViewport'),
                 Cells;
 
-            Set.dataset.ZTSMLayoutVersion = '20260605-add-row-renumber';
+            Set.dataset.ZTSMLayoutVersion = '20260702-richtext-service-fields';
 
             if (!Viewport && OuterField) {
                 Viewport = document.createElement('div');
@@ -736,7 +846,7 @@
                 return;
             }
 
-            Row.dataset.ZTSMLayoutVersion = '20260605-add-row-renumber';
+            Row.dataset.ZTSMLayoutVersion = '20260702-richtext-service-fields';
 
             Row.style.removeProperty('width');
             Row.style.removeProperty('max-width');
@@ -760,12 +870,13 @@
             Cells = Row.querySelectorAll(':scope > .FieldCell');
 
             Array.prototype.forEach.call(Cells, function (Cell) {
-                var Width = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '270px' : '230px';
+                var MinWidth = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '210px' : '190px',
+                    Flex = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '1.05 1 0' : '1 1 0';
 
-                Cell.style.setProperty('flex', '0 0 ' + Width, 'important');
-                Cell.style.setProperty('width', Width, 'important');
-                Cell.style.setProperty('min-width', Width, 'important');
-                Cell.style.setProperty('max-width', Width === '270px' ? '320px' : '300px', 'important');
+                Cell.style.setProperty('flex', Flex, 'important');
+                Cell.style.setProperty('width', 'auto', 'important');
+                Cell.style.setProperty('min-width', MinWidth, 'important');
+                Cell.style.setProperty('max-width', 'none', 'important');
             });
         });
     }
@@ -794,8 +905,8 @@
 
         Viewport.style.setProperty('width', Width + 'px', 'important');
         Viewport.style.setProperty('inline-size', Width + 'px', 'important');
-        Viewport.style.setProperty('max-width', '1060px', 'important');
-        Viewport.style.setProperty('max-inline-size', '1060px', 'important');
+        Viewport.style.setProperty('max-width', '1120px', 'important');
+        Viewport.style.setProperty('max-inline-size', '1120px', 'important');
     }
 
     function ZTSMServiceExtensionIndexedAttributeSet(Node, Attribute, Index) {
@@ -3153,6 +3264,12 @@
                 Core.Agent.DynamicFieldReferenceSearch.Init();
             });
         }
+        ZTSMServiceExtensionRichTextPrepare(Start, End);
+        if (window.Core && Core.UI && Core.UI.RichTextEditor && typeof Core.UI.RichTextEditor.InitAllEditors === 'function') {
+            ZTSMServiceExtensionSafeInit(function () {
+                Core.UI.RichTextEditor.InitAllEditors();
+            });
+        }
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionDatepickerInit(Start, End);
 
@@ -3405,6 +3522,7 @@
                     ZTSMServiceExtensionMark(Start, End);
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
                     ZTSMServiceExtensionLayoutFix(Start, End);
+                    ZTSMServiceExtensionInitialize(Start, End);
                     ZTSMServicePayloadToolsEnsure(Start, End);
                 }
                 ZTSMServiceExtensionWatch();
@@ -3419,6 +3537,7 @@
                 ZTSMServiceExtensionMark(Start, End);
                 ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
+                ZTSMServiceExtensionInitialize(Start, End);
                 ZTSMServicePayloadToolsEnsure(Start, End);
             }
             ZTSMServiceExtensionWatch();

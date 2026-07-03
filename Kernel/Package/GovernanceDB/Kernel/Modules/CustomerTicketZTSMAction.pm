@@ -44,6 +44,7 @@ sub Run {
     my $DelegateTarget             = $ParamObject->GetParam( Param => 'ZTSMDelegateTarget' ) || '';
     my $DelegateTargetSearch       = $ParamObject->GetParam( Param => 'ZTSMDelegateTargetSearch' ) || '';
     my $DelegateAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMDelegateAcknowledge' ) || '';
+    my $OverrideAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMOverrideAcknowledge' ) || '';
     $DelegateTarget ||= $DelegateTargetSearch;
     my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' );
     $ZTicketOutcome = '' if !defined $ZTicketOutcome;
@@ -170,8 +171,25 @@ sub Run {
     }
 
     if ( $RuntimeAction eq 'Override' ) {
-        if ( !$IPCOverrideAccess || ( $Ticket{Type} || '' ) ne 'Approval' ) {
+        if (
+            !$IPCOverrideAccess
+            || !_IPCOverrideTicketType( Type => $Ticket{Type} )
+            || ( $Ticket{StateType} || '' ) eq 'closed'
+            )
+        {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( !$OverrideAcknowledge ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please acknowledge the override conditions.',
+            );
+        }
+
+        if ( !_NormalizeValue($Remarks) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please record a clear override justification.',
+            );
         }
 
         if (
@@ -188,16 +206,21 @@ sub Run {
             );
         }
 
+        my @Attachments = $Self->_RuntimeUploadAttachments();
+
         $Self->_RuntimeArticleCreate(
             TicketID            => $TicketID,
             RuntimeAction       => $RuntimeAction,
             Label               => 'Override',
             Subject             => '[VVIP Override] Override mode started',
-            Body                => "** Note: This is a system-generated approval override message.\n\n"
-                . "IPC customer user '$Self->{UserID}' moved this approval ticket into override handling.\n\n"
-                . "Approval or rejection must be submitted separately after the ticket is in override state.",
+            Body                => "** Note: This is a system-generated governance override message.\n\n"
+                . "IPC customer user '$Self->{UserID}' moved this $Ticket{Type} ticket into override handling.\n\n"
+                . "Override entry confirms a governance exception based on the current process condition. It does not approve the technical validity, risk, or execution details of the request.\n\n"
+                . "Approval, endorsement, or rejection must be submitted separately after the ticket is in override state.",
+            Remarks             => $Remarks,
             Config              => $Config,
             CustomerPanelUserID => $CustomerPanelUserID,
+            Attachments         => \@Attachments,
         );
 
         return $LayoutObject->Redirect(
@@ -891,10 +914,16 @@ sub Run {
 
     if ($IPCApprovalOverride) {
         $ActionConfig->{Label} = ( $ActionConfig->{Label} || $RuntimeAction ) . ' Override';
-        $ActionConfig->{Subject} ||= '[VVIP Override] Approval action performed on behalf';
-        $ActionConfig->{Body} ||= "** Note: This is a system-generated approval override message.\n\n"
-            . "Runtime action '$RuntimeAction' was performed by IPC customer user '$Self->{UserID}' on behalf of the unavailable approver.\n\n"
-            . "This exceptional measure is intended for urgent out-of-band approval evidence.";
+        $ActionConfig->{Subject} ||= '[VVIP Override] Governance override action performed on behalf';
+        $ActionConfig->{Body} ||= "** Note: This is a system-generated governance override message.\n\n"
+            . "Runtime action '$RuntimeAction' was performed by IPC customer user '$Self->{UserID}' on behalf of the unavailable approver or endorser.\n\n"
+            . "This governance exception is intended only for urgent process blockage, SLA risk, operational delay, or control breakdown conditions.";
+
+        if ( !_NormalizeValue($Remarks) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please record a clear override justification.',
+            );
+        }
 
         if (
             !$Self->_IPCOverrideStateSet(
@@ -907,6 +936,21 @@ sub Run {
         {
             return $LayoutObject->CustomerErrorScreen(
                 Message => 'Could not move ticket to override state.',
+            );
+        }
+
+        if (
+            !$Self->_IPCApprovalOverrideEvidenceApply(
+                Ticket              => \%Ticket,
+                TicketID            => $TicketID,
+                State               => $ActionConfig->{State},
+                Remarks             => $Remarks,
+                CustomerPanelUserID => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not record override outcome evidence.',
             );
         }
     }
@@ -1017,6 +1061,8 @@ sub Run {
         );
     }
     else {
+        my @Attachments = $IPCApprovalOverride ? $Self->_RuntimeUploadAttachments() : ();
+
         $Self->_RuntimeArticleCreate(
             TicketID             => $TicketID,
             RuntimeAction        => $RuntimeAction,
@@ -1026,6 +1072,7 @@ sub Run {
             Subject              => $ActionConfig->{Subject},
             Config               => $Config,
             CustomerPanelUserID  => $CustomerPanelUserID,
+            Attachments          => \@Attachments,
         );
     }
 
@@ -2807,11 +2854,31 @@ sub _IPCApprovalOverrideAllowed {
     my ( $Self, %Param ) = @_;
 
     return if !IsHashRefWithData( $Param{Ticket} );
-    return if ( $Param{Ticket}->{Type} || '' ) ne 'Approval';
+    return if !_IPCOverrideTicketType( Type => $Param{Ticket}->{Type} );
     return if lc( _NormalizeValue( $Param{Ticket}->{State} ) || '' ) ne 'override';
 
-    my %AllowedAction = map { $_ => 1 } qw(Approve Reject);
-    return $AllowedAction{ $Param{RuntimeAction} || '' };
+    return _IPCOverrideRuntimeAction(
+        Type          => $Param{Ticket}->{Type},
+        RuntimeAction => $Param{RuntimeAction},
+    );
+}
+
+sub _IPCOverrideTicketType {
+    my (%Param) = @_;
+
+    my %AllowedType = map { $_ => 1 } qw(Approval Endorsement);
+    return $AllowedType{ $Param{Type} || '' };
+}
+
+sub _IPCOverrideRuntimeAction {
+    my (%Param) = @_;
+
+    my $Type          = $Param{Type} || '';
+    my $RuntimeAction = $Param{RuntimeAction} || '';
+
+    return 1 if $Type eq 'Approval'    && ( $RuntimeAction eq 'Approve' || $RuntimeAction eq 'Reject' );
+    return 1 if $Type eq 'Endorsement' && ( $RuntimeAction eq 'Endorse' || $RuntimeAction eq 'Reject' );
+    return;
 }
 
 sub _IPCOverrideStateSet {
@@ -2851,6 +2918,78 @@ sub _IPCOverrideStateSet {
     }
 
     return 1;
+}
+
+sub _IPCApprovalOverrideEvidenceApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{Ticket} );
+    return if !$Param{TicketID};
+    return if !$Param{CustomerPanelUserID};
+
+    my $Outcome = _OutcomeForState( State => $Param{State} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my $Result = _PlainTextValue( $Param{Remarks} )
+        || 'Governance override action submitted by IPC.';
+
+    for my $Field (
+        [ 'ZTicket-Outcome', $Outcome ],
+        [ 'ZTicket-Result',  $Result ],
+        )
+    {
+        return if !$Self->_TicketDynamicFieldSet(
+            FieldName => $Field->[0],
+            TicketID  => $Param{TicketID},
+            Value     => $Field->[1],
+            UserID    => $Param{CustomerPanelUserID},
+        );
+    }
+
+    my $OwnerWeightage = _NormalizeValue(
+        $Param{Ticket}->{'DynamicField_ZTicket-OwnerWeightage'}
+    );
+
+    if (
+        !defined $OwnerWeightage
+        || $OwnerWeightage eq ''
+        || $OwnerWeightage !~ m{\A-?\d+(?:\.\d+)?\z}
+        || $OwnerWeightage <= 0
+        )
+    {
+        my $RequiredWeightage = _NormalizeValue(
+            $Param{Ticket}->{'DynamicField_ZTicket-RequiredWeightage'}
+        );
+
+        $OwnerWeightage = defined $RequiredWeightage && $RequiredWeightage ne ''
+            ? $RequiredWeightage
+            : 1;
+
+        return if !$Self->_TicketDynamicFieldSet(
+            FieldName => 'ZTicket-OwnerWeightage',
+            TicketID  => $Param{TicketID},
+            Value     => $OwnerWeightage,
+            UserID    => $Param{CustomerPanelUserID},
+        );
+    }
+
+    return 1;
+}
+
+sub _OutcomeForState {
+    my (%Param) = @_;
+
+    my $State = _NormalizeValue( $Param{State} );
+    return if !defined $State || $State eq '';
+
+    return '0'  if $State eq 'closed successful';
+    return '1'  if $State eq 'closed no action';
+    return '1'  if $State eq 'closed duplicate';
+    return '-1' if $State eq 'closed rejected';
+    return '-1' if $State eq 'closed unsuccessful';
+    return '-2' if $State eq 'closed rollback';
+
+    return;
 }
 
 sub _DelegateOverrideApply {
