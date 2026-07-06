@@ -1,5 +1,5 @@
 <style>
-/* ZTSM service extension layout v20260702-richtext-service-fields */
+/* ZTSM service extension layout v20260706-richtext-label-wrap */
 #NewCustomerTicket #ZTSMServiceExtensionDynamicFieldsStart ~ .Row_DynamicField {
     width: 100%;
 }
@@ -140,17 +140,67 @@
     margin-right: 0 !important;
 }
 
-#NewCustomerTicket .ZTSMServiceExtensionField .FieldCell.ZTSMServiceExtensionRichTextCell > label.ZTSMServiceExtensionRichTextLabel {
-    display: block !important;
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"],
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp {
+    order: -1 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .ck-sticky-panel {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    min-height: 32px;
+    padding: 4px 10px;
+    background: #f4f4f7;
+    border: 0;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    box-sizing: border-box;
+    transform: none !important;
+    float: none !important;
+    overflow: visible !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > label.ZTSMServiceExtensionRichTextLabel,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-sticky-panel > label.ZTSMServiceExtensionRichTextLabel,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > label.ZTSMServiceExtensionRichTextLabel {
+    display: inline-flex !important;
+    align-items: center;
+    flex: 1 1 auto;
     position: relative !important;
     top: auto !important;
     left: auto !important;
     right: auto !important;
     bottom: auto !important;
     width: auto !important;
-    max-width: 1120px !important;
-    margin: 0 auto 8px auto !important;
-    padding: 0 2px !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     color: #7f809d !important;
     font-size: 14px !important;
     font-weight: 600 !important;
@@ -160,15 +210,50 @@
     pointer-events: auto !important;
 }
 
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > i {
+    flex: 0 0 auto;
+    margin: 0 0 0 auto !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > .Content {
+    display: none !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 10px !important;
+    right: auto !important;
+    z-index: 9999 !important;
+    width: 520px !important;
+    max-width: calc(100vw - 48px) !important;
+    margin: 6px 0 0 0 !important;
+    padding: 12px 14px !important;
+    color: #00063d !important;
+    background: #fff !important;
+    border: 1px solid #c9ccd7 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    line-height: 1.4 !important;
+    box-sizing: border-box !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp:hover > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp:focus-within > .Content {
+    display: block !important;
+}
+
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField > label,
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText > label {
     display: none !important;
 }
 
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.RichTextHolder,
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .RichTextHolder,
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .RichTextHolder {
     display: block;
     overflow: visible;
+    padding-top: 0 !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField textarea.RichText,
@@ -433,6 +518,164 @@
     transform: translateY(-50%) translateX(0);
 }
 
+
+
+/* ZTSM richtext CKEditor header final cleanup
+ * Final DOM target:
+ * .ck-editor__top[role="presentation"]
+ *   > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp
+ *       > label + i + .Content
+ *   > .ck-sticky-panel
+ */
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"],
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    background: #fff !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp {
+    order: -1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    margin: 0 !important;
+    padding: 6px 10px !important;
+    background: #fff !important;
+    border: 1px solid #c9ccd7 !important;
+    border-bottom: 0 !important;
+    border-radius: 8px 8px 0 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    float: none !important;
+    overflow: visible !important;
+    z-index: 3 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > label,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > label {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #7f809d !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    color: #00063d !important;
+    cursor: help !important;
+    position: relative !important;
+    z-index: 4 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > .Content {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    right: auto !important;
+    width: min(720px, 100%) !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    color: #00063d !important;
+    background: #fff !important;
+    border: 1px solid #c9ccd7 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 28px rgba(10, 16, 48, 0.18) !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    line-height: 1.45 !important;
+    box-sizing: border-box !important;
+    z-index: 9999 !important;
+}
+
+/* Override legacy OTOBO tooltip rule; do not show help when hovering the whole header row. */
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp:hover > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp:hover > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp:hover > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp:focus-within > .Content {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Show only when the help icon is intentionally hovered/focused. Works because JS keeps order: label, i, .Content. */
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i:hover + .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i:focus + .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i:hover + .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > i:focus + .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top[role="presentation"] > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > .Content:hover,
+#NewCustomerTicket .ZTSMServiceExtensionField .ck-editor__top > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp > .Content:hover {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > label .Marker {
+    display: inline !important;
+    margin-left: 2px !important;
+    color: #7f809d !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > .Content,
+#NewCustomerTicket .ZTSMServiceExtensionField .ZTSMServiceExtensionRichTextInlineHelp > .Content * {
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    box-sizing: border-box !important;
+}
+
 @media (max-width: 720px) {
     .ZTSMServicePayloadTools {
         right: 10px;
@@ -640,7 +883,7 @@
             return;
         }
 
-        if (window.console && typeof window.console.log === 'function') {
+        if (ZTSMServicePayloadDebugEnabled()) {
             window.console.log('[TESSERA service-extension]', 'refresh-start', {
                 serviceID: ZTSMServiceExtensionValue(),
                 requesterID: (Form.querySelector('[name="ZTSMRaiseOnBehalfCustomerUserID"]') || {}).value || '',
@@ -664,7 +907,7 @@
             });
         }
 
-        if (window.console && typeof window.console.log === 'function') {
+        if (ZTSMServicePayloadDebugEnabled()) {
             window.console.log('[TESSERA service-extension]', 'refresh-request-values', {
                 requesterID: Data.get('ZTSMRaiseOnBehalfCustomerUserID') || '',
                 elementChanged: Data.get('ElementChanged') || '',
@@ -688,7 +931,7 @@
                 return;
             }
 
-            if (window.console && typeof window.console.log === 'function') {
+            if (ZTSMServicePayloadDebugEnabled()) {
                 window.console.log('[TESSERA service-extension]', 'refresh-response', {
                     status: Request.status,
                     length: (Request.responseText || '').length,
@@ -703,6 +946,16 @@
 
     window.ZTSMServiceExtensionRefresh = ZTSMServiceExtensionRefresh;
     window.ZTSMServiceExtensionPreferenceSnapshot = ZTSMServiceExtensionPreferenceSnapshot;
+
+    window.ZTSMRichTextMoveNow = function () {
+        var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+            End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
+
+        if (Start && End) {
+            ZTSMServiceExtensionRichTextPrepare(Start, End);
+        }
+    };
+
 
     function ZTSMServiceExtensionReplace(Start, End, HTML) {
         var Node = Start.nextSibling,
@@ -735,6 +988,289 @@
         }
     }
 
+    function ZTSMServiceExtensionRichTextChromeTarget(Holder) {
+        var Editor = Holder ? Holder.querySelector('.ck.ck-editor, .ck-editor') : null;
+
+        if (!Editor) {
+            return null;
+        }
+
+        /* Strict target: only CKEditor top chrome.
+         * Never return RichTextHolder and never return ck-sticky-panel.
+         */
+        return Editor.querySelector('.ck-editor__top[role="presentation"], .ck-editor__top');
+    }
+
+    function ZTSMServiceExtensionRichTextLabelFind(Cell, Textarea) {
+        var TextareaID = Textarea ? Textarea.id : '',
+            Labels = Cell ? Cell.querySelectorAll('label') : [],
+            Match = null;
+
+        Array.prototype.some.call(Labels, function (Candidate) {
+            var ForValue = Candidate.getAttribute('for') || '',
+                IDValue = Candidate.id || '';
+
+            if (Candidate.classList && Candidate.classList.contains('ck-voice-label')) {
+                return false;
+            }
+
+            if (TextareaID && ForValue === TextareaID) {
+                Match = Candidate;
+                return true;
+            }
+
+            if (IDValue.indexOf('LabelDynamicField_') === 0) {
+                Match = Candidate;
+                return true;
+            }
+
+            return false;
+        });
+
+        return Match;
+    }
+
+    function ZTSMServiceExtensionRichTextTooltipFind(Cell, Holder) {
+        var Tooltip = null;
+
+        if (Holder) {
+            Tooltip = Holder.querySelector(':scope > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp')
+                || Holder.querySelector(':scope > .Tooltip.oooTooltip')
+                || Holder.querySelector('.Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp')
+                || Holder.querySelector('.Tooltip.oooTooltip');
+        }
+
+        if (!Tooltip && Cell) {
+            Tooltip = Cell.querySelector(':scope > .Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp')
+                || Cell.querySelector(':scope > .Tooltip.oooTooltip')
+                || Cell.querySelector('.Tooltip.oooTooltip.ZTSMServiceExtensionRichTextInlineHelp')
+                || Cell.querySelector('.Tooltip.oooTooltip');
+        }
+
+        return Tooltip;
+    }
+
+
+    function ZTSMServiceExtensionRichTextTopInsert(Target, Node) {
+        var StickyPanel;
+
+        if (!Target || !Node) {
+            return;
+        }
+
+        StickyPanel = Target.querySelector(':scope > .ck-sticky-panel');
+
+        if (StickyPanel && StickyPanel !== Node) {
+            Target.insertBefore(Node, StickyPanel);
+            return;
+        }
+
+        if (Target.firstElementChild !== Node) {
+            Target.insertBefore(Node, Target.firstElementChild || null);
+        }
+    }
+
+    function ZTSMServiceExtensionRichTextTooltipNormalize(Tooltip) {
+        var Icon,
+            Content;
+
+        if (!Tooltip) {
+            return;
+        }
+
+        Tooltip.classList.add('ZTSMServiceExtensionRichTextInlineHelp');
+
+        Icon = Tooltip.querySelector(':scope > i') || Tooltip.querySelector('i');
+        Content = Tooltip.querySelector(':scope > .Content') || Tooltip.querySelector('.Content');
+
+        if (Icon) {
+            Icon.setAttribute('role', 'button');
+            Icon.setAttribute('tabindex', '0');
+            Icon.setAttribute('aria-label', 'Show field help');
+            if (Icon.parentNode !== Tooltip) {
+                Tooltip.appendChild(Icon);
+            }
+        }
+
+        if (Content && Content.parentNode !== Tooltip) {
+            Tooltip.appendChild(Content);
+        }
+        else if (Content && Icon && Content.previousElementSibling !== Icon) {
+            Tooltip.insertBefore(Content, Icon.nextSibling);
+        }
+    }
+
+    function ZTSMServiceExtensionStyleSet(Node, Name, Value) {
+        if (Node && Node.style) {
+            Node.style.setProperty(Name, Value, 'important');
+        }
+    }
+
+
+    function ZTSMServiceExtensionRichTextContentWrapApply(Content) {
+        if (!Content || !Content.querySelectorAll) {
+            return;
+        }
+
+        ZTSMServiceExtensionStyleSet(Content, 'overflow', 'hidden');
+        ZTSMServiceExtensionStyleSet(Content, 'overflow-x', 'hidden');
+        ZTSMServiceExtensionStyleSet(Content, 'max-inline-size', '100%');
+        ZTSMServiceExtensionStyleSet(Content, 'contain', 'layout paint');
+
+        Array.prototype.forEach.call(Content.querySelectorAll('*'), function (Node) {
+            ZTSMServiceExtensionStyleSet(Node, 'max-width', '100%');
+            ZTSMServiceExtensionStyleSet(Node, 'white-space', 'normal');
+            ZTSMServiceExtensionStyleSet(Node, 'overflow-wrap', 'anywhere');
+            ZTSMServiceExtensionStyleSet(Node, 'word-break', 'break-word');
+            ZTSMServiceExtensionStyleSet(Node, 'box-sizing', 'border-box');
+        });
+
+        Array.prototype.forEach.call(Content.querySelectorAll('p, div, li'), function (Node) {
+            ZTSMServiceExtensionStyleSet(Node, 'margin-left', '0');
+            ZTSMServiceExtensionStyleSet(Node, 'margin-right', '0');
+        });
+    }
+
+    function ZTSMServiceExtensionRichTextTooltipStyleApply(Tooltip) {
+        var Label = Tooltip ? Tooltip.querySelector(':scope > label') : null,
+            Icon = Tooltip ? Tooltip.querySelector(':scope > i') : null,
+            Content = Tooltip ? Tooltip.querySelector(':scope > .Content') : null,
+            MandatoryStar = null,
+            Show,
+            Hide;
+
+        if (!Tooltip) {
+            return;
+        }
+
+        ZTSMServiceExtensionStyleSet(Tooltip, 'display', 'flex');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'flex-direction', 'row');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'align-items', 'center');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'justify-content', 'space-between');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'gap', '12px');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'position', 'relative');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'top', 'auto');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'left', 'auto');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'right', 'auto');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'bottom', 'auto');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'width', '100%');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'max-width', 'none');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'min-width', '0');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'min-height', '34px');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'margin', '0');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'padding', '6px 10px');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'background', '#fff');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'border', '1px solid #c9ccd7');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'border-bottom', '0');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'border-radius', '8px 8px 0 0');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'box-sizing', 'border-box');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'transform', 'none');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'float', 'none');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'overflow', 'visible');
+        ZTSMServiceExtensionStyleSet(Tooltip, 'z-index', '3');
+
+        if (Label) {
+            ZTSMServiceExtensionStyleSet(Label, 'display', 'inline-flex');
+            ZTSMServiceExtensionStyleSet(Label, 'align-items', 'center');
+            ZTSMServiceExtensionStyleSet(Label, 'flex', '1 1 auto');
+            ZTSMServiceExtensionStyleSet(Label, 'min-width', '0');
+            ZTSMServiceExtensionStyleSet(Label, 'width', 'auto');
+            ZTSMServiceExtensionStyleSet(Label, 'margin', '0');
+            ZTSMServiceExtensionStyleSet(Label, 'padding', '0');
+            ZTSMServiceExtensionStyleSet(Label, 'color', '#7f809d');
+            ZTSMServiceExtensionStyleSet(Label, 'font-size', '10px');
+            ZTSMServiceExtensionStyleSet(Label, 'font-weight', '600');
+            ZTSMServiceExtensionStyleSet(Label, 'line-height', '1.3');
+            ZTSMServiceExtensionStyleSet(Label, 'letter-spacing', '0.5px');
+            ZTSMServiceExtensionStyleSet(Label, 'white-space', 'normal');
+            ZTSMServiceExtensionStyleSet(Label, 'overflow-wrap', 'anywhere');
+            ZTSMServiceExtensionStyleSet(Label, 'position', 'relative');
+            ZTSMServiceExtensionStyleSet(Label, 'transform', 'none');
+            MandatoryStar = Label.querySelector(':scope > .Marker');
+            if (MandatoryStar) {
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'display', 'inline');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'margin-left', '2px');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'color', '#7f809d');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'font-size', '10px');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'font-weight', '600');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'line-height', '1.3');
+                ZTSMServiceExtensionStyleSet(MandatoryStar, 'letter-spacing', '0.5px');
+            }
+        }
+
+        if (Icon) {
+            ZTSMServiceExtensionStyleSet(Icon, 'display', 'inline-flex');
+            ZTSMServiceExtensionStyleSet(Icon, 'align-items', 'center');
+            ZTSMServiceExtensionStyleSet(Icon, 'justify-content', 'center');
+            ZTSMServiceExtensionStyleSet(Icon, 'flex', '0 0 auto');
+            ZTSMServiceExtensionStyleSet(Icon, 'margin', '0 0 0 auto');
+            ZTSMServiceExtensionStyleSet(Icon, 'padding', '0');
+            ZTSMServiceExtensionStyleSet(Icon, 'color', '#00063d');
+            ZTSMServiceExtensionStyleSet(Icon, 'cursor', 'help');
+            ZTSMServiceExtensionStyleSet(Icon, 'position', 'relative');
+            ZTSMServiceExtensionStyleSet(Icon, 'z-index', '4');
+        }
+
+        if (Content) {
+            Hide = function () {
+                ZTSMServiceExtensionStyleSet(Content, 'display', 'none');
+                ZTSMServiceExtensionStyleSet(Content, 'visibility', 'hidden');
+                ZTSMServiceExtensionStyleSet(Content, 'opacity', '0');
+            };
+            Show = function () {
+                ZTSMServiceExtensionStyleSet(Content, 'display', 'block');
+                ZTSMServiceExtensionStyleSet(Content, 'visibility', 'visible');
+                ZTSMServiceExtensionStyleSet(Content, 'opacity', '1');
+            };
+
+            ZTSMServiceExtensionStyleSet(Content, 'position', 'absolute');
+            ZTSMServiceExtensionStyleSet(Content, 'top', 'calc(100% + 6px)');
+            ZTSMServiceExtensionStyleSet(Content, 'left', '0');
+            ZTSMServiceExtensionStyleSet(Content, 'right', 'auto');
+            ZTSMServiceExtensionStyleSet(Content, 'width', 'calc(100% - 20px)');
+            ZTSMServiceExtensionStyleSet(Content, 'max-width', 'calc(100% - 20px)');
+            ZTSMServiceExtensionStyleSet(Content, 'margin', '0');
+            ZTSMServiceExtensionStyleSet(Content, 'padding', '14px 18px');
+            ZTSMServiceExtensionStyleSet(Content, 'color', '#00063d');
+            ZTSMServiceExtensionStyleSet(Content, 'background', '#fff');
+            ZTSMServiceExtensionStyleSet(Content, 'border', '1px solid #c9ccd7');
+            ZTSMServiceExtensionStyleSet(Content, 'border-radius', '8px');
+            ZTSMServiceExtensionStyleSet(Content, 'box-shadow', '0 10px 28px rgba(10, 16, 48, 0.18)');
+            ZTSMServiceExtensionStyleSet(Content, 'white-space', 'normal');
+            ZTSMServiceExtensionStyleSet(Content, 'overflow-wrap', 'anywhere');
+            ZTSMServiceExtensionStyleSet(Content, 'word-break', 'break-word');
+            ZTSMServiceExtensionStyleSet(Content, 'line-height', '1.45');
+            ZTSMServiceExtensionStyleSet(Content, 'box-sizing', 'border-box');
+            ZTSMServiceExtensionStyleSet(Content, 'z-index', '9999');
+            ZTSMServiceExtensionRichTextContentWrapApply(Content);
+            Hide();
+
+            if (!Tooltip.dataset.ZTSMRichTextHelpBound) {
+                Tooltip.dataset.ZTSMRichTextHelpBound = '1';
+                if (Icon) {
+                    Icon.addEventListener('mouseenter', Show);
+                    Icon.addEventListener('focus', Show);
+                    Icon.addEventListener('mouseleave', function () {
+                        window.setTimeout(function () {
+                            if (!Content.matches(':hover')) {
+                                Hide();
+                            }
+                        }, 120);
+                    });
+                    Icon.addEventListener('blur', function () {
+                        window.setTimeout(function () {
+                            if (!Content.matches(':hover')) {
+                                Hide();
+                            }
+                        }, 120);
+                    });
+                }
+                Content.addEventListener('mouseenter', Show);
+                Content.addEventListener('mouseleave', Hide);
+            }
+        }
+    }
+
     function ZTSMServiceExtensionRichTextPrepare(Start, End) {
         var Root = Start && End ? Start.parentNode : document,
             Fields;
@@ -749,9 +1285,10 @@
             var Cell = Field.closest ? Field.closest('.FieldCell') : null,
                 Holder = Field.querySelector('.RichTextHolder'),
                 Textarea = Field.querySelector('textarea.RichText'),
-                Label = Cell ? Array.prototype.filter.call(Cell.children, function (Child) {
-                    return Child.tagName && Child.tagName.toLowerCase() === 'label';
-                })[0] : null;
+                Target = Holder ? ZTSMServiceExtensionRichTextChromeTarget(Holder) : null,
+                Tooltip = null,
+                Label = null,
+                Captions = null;
 
             if (!Cell || !Holder || !Textarea) {
                 return;
@@ -761,13 +1298,43 @@
             Field.classList.add('ZTSMServiceExtensionRichTextField');
             Field.classList.add('RichTextField');
             Textarea.classList.add('DynamicFieldRichText');
+            Holder.style.setProperty('padding-top', '0', 'important');
+
+            /* CKEditor creates .ck-editor__top after init.
+             * If it is not ready yet, do nothing now; delayed calls will retry.
+             */
+            if (!Target) {
+                return;
+            }
+
+            Label = ZTSMServiceExtensionRichTextLabelFind(Cell, Textarea);
+            Tooltip = ZTSMServiceExtensionRichTextTooltipFind(Cell, Holder);
 
             if (Label) {
                 Label.classList.add('ZTSMServiceExtensionRichTextLabel');
-                if (Label.parentNode !== Cell || Label.nextSibling !== Field) {
-                    Cell.insertBefore(Label, Field);
-                }
             }
+
+            if (Tooltip) {
+                ZTSMServiceExtensionRichTextTooltipNormalize(Tooltip);
+
+                if (Label && Label.parentNode !== Tooltip) {
+                    Tooltip.insertBefore(Label, Tooltip.firstChild);
+                }
+
+                ZTSMServiceExtensionRichTextTooltipNormalize(Tooltip);
+                ZTSMServiceExtensionRichTextTopInsert(Target, Tooltip);
+                ZTSMServiceExtensionRichTextTooltipStyleApply(Tooltip);
+            }
+            else if (Label) {
+                ZTSMServiceExtensionRichTextTopInsert(Target, Label);
+            }
+
+            Captions = Cell.querySelectorAll('.ZTSMServiceExtensionRichTextCaption');
+            Array.prototype.forEach.call(Captions, function (Caption) {
+                if (!Caption.querySelector('label')) {
+                    Caption.parentNode.removeChild(Caption);
+                }
+            });
         });
     }
 
@@ -788,7 +1355,7 @@
                 Viewport = Set.closest('.ZTSMFieldSetScrollViewport'),
                 Cells;
 
-            Set.dataset.ZTSMLayoutVersion = '20260702-richtext-service-fields';
+            Set.dataset.ZTSMLayoutVersion = '20260706-richtext-label-wrap';
 
             if (!Viewport && OuterField) {
                 Viewport = document.createElement('div');
@@ -846,7 +1413,7 @@
                 return;
             }
 
-            Row.dataset.ZTSMLayoutVersion = '20260702-richtext-service-fields';
+            Row.dataset.ZTSMLayoutVersion = '20260706-richtext-label-wrap';
 
             Row.style.removeProperty('width');
             Row.style.removeProperty('max-width');
@@ -1038,6 +1605,7 @@
             if (Start && End) {
                 ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
+                ZTSMServiceExtensionRichTextPrepare(Start, End);
                 ZTSMServiceExtensionDatepickerInit(Start, End);
                 ZTSMServicePayloadToolsEnsure(Start, End);
             }
@@ -1190,9 +1758,8 @@
             window.console
             && typeof window.console.log === 'function'
             && (
-                window.ZTSMServicePayloadDebug
-                || !window.localStorage
-                || window.localStorage.getItem('ZTSMServicePayloadDebug') !== '0'
+                window.ZTSMServicePayloadDebug === true
+                || (window.localStorage && window.localStorage.getItem('ZTSMServicePayloadDebug') === '1')
             )
         );
     }
@@ -3269,6 +3836,14 @@
             ZTSMServiceExtensionSafeInit(function () {
                 Core.UI.RichTextEditor.InitAllEditors();
             });
+            window.setTimeout(function () {
+                ZTSMServiceExtensionRichTextPrepare(Start, End);
+            }, 0);
+            [100, 300, 800, 1500].forEach(function (Delay) {
+                window.setTimeout(function () {
+                    ZTSMServiceExtensionRichTextPrepare(Start, End);
+                }, Delay);
+            });
         }
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionDatepickerInit(Start, End);
@@ -3288,7 +3863,7 @@
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionLayoutFix(Start, End);
         ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
-        if (window.console && typeof window.console.log === 'function') {
+        if (ZTSMServicePayloadDebugEnabled()) {
             window.console.log('[TESSERA service-extension]', 'refresh-applied-values', {
                 values: ZTSMServiceExtensionPreferenceSnapshot(document)
             });
@@ -3297,7 +3872,7 @@
         window.setTimeout(ZTSMServiceSelectedFullPathRefresh, 0);
         window.setTimeout(function () {
             ZTSMServicePayloadVisibleSelectionRefresh(Start.parentNode || document);
-            if (window.console && typeof window.console.log === 'function') {
+            if (ZTSMServicePayloadDebugEnabled()) {
                 window.console.log('[TESSERA service-extension]', 'refresh-applied-values-after-visible-refresh', {
                     values: ZTSMServiceExtensionPreferenceSnapshot(document)
                 });
