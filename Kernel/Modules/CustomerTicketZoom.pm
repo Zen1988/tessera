@@ -1643,6 +1643,7 @@ sub _ZTSMStoryLinks {
     my ( $Self, %Param ) = @_;
 
     my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
     return if !IsHashRefWithData($Ticket);
 
     my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
@@ -2493,12 +2494,55 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
     );
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess;
-
     my $HoldState = $Ticket->{'DynamicField_ZTicket-HoldState'};
     if ( ref $HoldState eq 'ARRAY' ) {
         $HoldState = $HoldState->[0];
     }
+
+    my $TicketOwner = $Ticket->{'DynamicField_ZTicket-Owner'};
+    if ( ref $TicketOwner eq 'ARRAY' ) {
+        $TicketOwner = $TicketOwner->[0];
+    }
+    my $OwnerMatchesCurrentUser = $TicketOwner && lc $TicketOwner eq lc $Self->{UserID};
+
+    my $TaskLikeTicket = $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
+    my $TakeOwnershipType;
+    TAKEOWNERSHIPACTION:
+    for my $Action ( sort keys %{$Actions} ) {
+        my $ActionConfig = $Actions->{$Action};
+        next TAKEOWNERSHIPACTION if !$ActionConfig->{State};
+
+        my %AllowedTypes = map { $_ => 1 } @{ $ActionConfig->{Types} || [] };
+        next TAKEOWNERSHIPACTION if !$AllowedTypes{ $Ticket->{Type} };
+
+        $TakeOwnershipType = 1;
+        last TAKEOWNERSHIPACTION;
+    }
+    $TakeOwnershipType ||= $Self->_ZTSMTakeOwnershipTicket( Ticket => $Ticket );
+
+    my $TakeOwnershipAccess = !$HoldState
+        && !$TicketOwner
+        && $TakeOwnershipType
+        && !$IPCDelegateAccess
+        && $Self->_ZTSMCurrentUserCanTakeOwnership(
+        Ticket => $Ticket,
+        );
+
+    my $AddRequiredSupportProfileAllowed = $OwnerMatchesCurrentUser
+        && $Self->_ZTSMAddRequiredSupportProfileAllowed(
+        Ticket => $Ticket,
+        Config => $Config,
+        );
+
+    my $FollowUpAllowed = $OwnerMatchesCurrentUser
+        && $Self->_ZTSMFollowUpAllowed(
+        Ticket => $Ticket,
+        Config => $Config,
+        );
+
+    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed;
+
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess;
 
     if ( $HoldState && $RequesterPauseAccess ) {
         return [
@@ -2514,11 +2558,6 @@ sub _ZTSMRuntimeActions {
     }
 
     return if $HoldState;
-
-    my $TicketOwner = $Ticket->{'DynamicField_ZTicket-Owner'};
-    if ( ref $TicketOwner eq 'ARRAY' ) {
-        $TicketOwner = $TicketOwner->[0];
-    }
 
     my @RuntimeActions;
 
@@ -2547,7 +2586,6 @@ sub _ZTSMRuntimeActions {
     }
 
     my $ActionableType;
-    my $TaskLikeTicket = $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
     ACTION:
     for my $Action ( sort keys %{$Actions} ) {
         my $ActionConfig = $Actions->{$Action};
@@ -2601,14 +2639,7 @@ sub _ZTSMRuntimeActions {
     $ActionableType ||= $TaskLikeTicket;
 
     if (
-        $ActionAccess
-        && $ActionableType
-        && $TicketOwner
-        && lc $TicketOwner eq lc $Self->{UserID}
-        && $Self->_ZTSMAddRequiredSupportProfileAllowed(
-            Ticket => $Ticket,
-            Config => $Config,
-        )
+        $AddRequiredSupportProfileAllowed
         )
     {
         push @RuntimeActions, {
@@ -2623,8 +2654,7 @@ sub _ZTSMRuntimeActions {
     if (
         $ActionAccess
         && $TaskLikeTicket
-        && $TicketOwner
-        && lc $TicketOwner eq lc $Self->{UserID}
+        && $OwnerMatchesCurrentUser
         )
     {
         push @RuntimeActions, {
@@ -2640,8 +2670,7 @@ sub _ZTSMRuntimeActions {
     if (
         $ActionAccess
         && ( $Ticket->{Type} || '' ) eq 'Verification'
-        && $TicketOwner
-        && lc $TicketOwner eq lc $Self->{UserID}
+        && $OwnerMatchesCurrentUser
         )
     {
         push @RuntimeActions, {
@@ -2654,13 +2683,7 @@ sub _ZTSMRuntimeActions {
     }
 
     if (
-        $ActionAccess
-        && $TicketOwner
-        && lc $TicketOwner eq lc $Self->{UserID}
-        && $Self->_ZTSMFollowUpAllowed(
-            Ticket => $Ticket,
-            Config => $Config,
-        )
+        $FollowUpAllowed
         )
     {
         push @RuntimeActions, {
@@ -2685,19 +2708,14 @@ sub _ZTSMRuntimeActions {
     }
 
     if (
-        !$TicketOwner
-        && $ActionableType
-        && !$IPCDelegateAccess
-        && $Self->_ZTSMCurrentUserCanTakeOwnership(
-            Ticket => $Ticket,
-        )
+        $TakeOwnershipAccess
         )
     {
         push @RuntimeActions, {
             Action         => 'TakeOwnership',
             Label          => 'Take Ownership',
             RiskFieldsHTML => '',
-        } if $ActionAccess;
+        };
     }
 
     if ( $FailbackAccess && $ActionableType ) {
@@ -2900,10 +2918,11 @@ sub _ZTSMAddRequiredSupportProfileAllowed {
         'Assessment',
         'Endorsement',
         'Approval',
+        'Diagnosis',
     ];
     my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
 
-    return $AllowedType{ $Ticket->{Type} };
+    return $AllowedType{ $Ticket->{Type} || '' };
 }
 
 sub _ZTSMTaskCompletionHTML {
@@ -2994,20 +3013,9 @@ sub _ZTSMFollowUpAllowed {
     my ( $Self, %Param ) = @_;
 
     my $Ticket = $Param{Ticket};
-    my $Config = $Param{Config} || {};
 
     return if !IsHashRefWithData($Ticket);
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
-
-    my $AllowedTypes = $Config->{FollowUpTypes} || [
-        'Assessment',
-        'Endorsement',
-        'Approval',
-        'Implementation',
-        'Verification',
-    ];
-    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
-    return if !$AllowedType{ $Ticket->{Type} || '' };
 
     for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
         my $Value = $Ticket->{ 'DynamicField_' . $FieldName };
@@ -3029,8 +3037,9 @@ sub _ZTSMFollowUpPurpleBookID {
     my $BlueBookID = $Ticket->{'DynamicField_ZTicket-BlueBook'};
     my $BlueLevel  = $Ticket->{'DynamicField_ZTicket-BlueLevel'};
     my $Chapter    = $Ticket->{'DynamicField_ZTicket-Chapter'};
+    my $Profile    = $Ticket->{'DynamicField_ZTicket-Profile'};
 
-    for my $Value ( \$BlueBookID, \$BlueLevel, \$Chapter ) {
+    for my $Value ( \$BlueBookID, \$BlueLevel, \$Chapter, \$Profile ) {
         if ( ref ${$Value} eq 'ARRAY' ) {
             ${$Value} = ${$Value}->[0];
         }
@@ -3045,6 +3054,7 @@ sub _ZTSMFollowUpPurpleBookID {
         BlueBook => $BlueBook,
     );
 
+    my @FallbackPurpleBookIDs;
     RECORD:
     for my $Record (@Records) {
         next RECORD if !$Record || ref $Record ne 'HASH';
@@ -3052,7 +3062,6 @@ sub _ZTSMFollowUpPurpleBookID {
             BlueLevel => $BlueLevel,
             Record    => $Record,
         );
-        next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
         my $PurpleBookID = $Record->{PurpleBook};
@@ -3060,9 +3069,17 @@ sub _ZTSMFollowUpPurpleBookID {
             $PurpleBookID = $PurpleBookID->[0];
         }
 
-        return $PurpleBookID if $PurpleBookID;
+        next RECORD if !$PurpleBookID;
+        return $PurpleBookID if defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter;
+
+        my $RecordProfile = $Record->{Profile};
+        if ( ref $RecordProfile eq 'ARRAY' ) {
+            $RecordProfile = $RecordProfile->[0];
+        }
+        push @FallbackPurpleBookIDs, $PurpleBookID if $Profile && $RecordProfile && $RecordProfile eq $Profile;
     }
 
+    return $FallbackPurpleBookIDs[0] if @FallbackPurpleBookIDs == 1;
     return;
 }
 
@@ -3125,6 +3142,19 @@ sub _ZTSMTaskLikeTicket {
 
     return 1 if ( $Ticket->{Type} || '' ) eq 'Task';
     return 1 if ( $Ticket->{Title} || '' ) =~ m{\ATask\s+-\s+}i;
+
+    return;
+}
+
+sub _ZTSMTakeOwnershipTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    return 1 if $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
+    return 1 if ( $Ticket->{Type} || '' ) eq 'Diagnosis';
+    return 1 if ( $Ticket->{Title} || '' ) =~ m{\ADiagnosis\s+-\s+}i;
 
     return;
 }

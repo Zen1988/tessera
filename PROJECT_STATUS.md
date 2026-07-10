@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-10
 
 ## Current Focus
 
@@ -16,8 +16,1088 @@ Last Updated: 2026-07-06
 - Template-driven child ticket hydration from BlueBook records.
 - ZTSM first-class Template and RiskStatement governance concepts.
 - Keep governance truth separate from execution evidence.
+- Incident Diagnosis loop-capable runtime with iteration-aware child orchestration.
 
 ## Completed Work
+
+## 2026-07-10 GovernanceDB 0.0.258 BlueBook Snapshot and Reference Value Normalization
+
+### Completed work
+
+- Verified child ticket spawning already writes the required orchestration snapshot:
+  - `ZTicket-BlueBook`;
+  - `ZTicket-BlueLevel`;
+  - `ZTicket-Chapter`;
+  - `ZIN-Iteration` when the parent ticket has an incident iteration.
+- Confirmed the canonical child-spawn writer is `ZTSMBlueBookReader.pm` and the runtime child writer in `ZTSMBlueBookRuntime.pm` carries the same snapshot fields.
+- Fixed BlueBook record value normalization so GovernanceObject reference fields such as `ZBlue-PurpleBook` can be read when stored in reference-shaped hashes:
+  - `GovernanceObjectID`;
+  - `ObjectID`;
+  - `ID`;
+  - `ItemID`;
+  - `SelectedID`;
+  - `SelectedValue`.
+- Applied the same reference normalization to the customer action module so submit-side Follow-up resolution reads the same value forms as Zoom visibility.
+- This addresses the case where the BlueBook row visibly has `Follow-up: BlueBook: RequesterClarification`, but runtime parsing sees an empty PurpleBook because the reference ID is not under `Value` or `Content`.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.258`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.258.opm`.
+- `Kernel/Package/GovernanceDB-0.0.258.opm` SHA256: `5424B21AAF01054EA0C52821A934D51AA4AE964DA4D89FA993C2A96464D5608B`.
+- Supersedes `0.0.257`; use `0.0.258` for the next owned Diagnosis Follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical `ZTSMBlueBookRuntime.pm`.
+- Perl syntax checks passed for canonical `ZTSMBlueBookReader.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for runtime-overlay `ZTSMBlueBookRuntime.pm`.
+- Perl syntax checks passed for runtime-overlay `ZTSMBlueBookReader.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256 hash `AFDCA6D76322FC7C1AAA00021ECA4878966938157105BD81D8E50D2DC9E3B48E`.
+- `GovernanceDB-0.0.258.opm` parsed successfully as XML: version `0.0.258`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - runtime-overlay `ZTSMBlueBookReader.pm` writes `ZTicket-BlueBook`, `ZTicket-BlueLevel`, `ZTicket-Chapter`, and `ZIN-Iteration`;
+  - runtime-overlay `ZTSMBlueBookRuntime.pm` writes the same snapshot fields;
+  - runtime-overlay parser code recognizes reference ID keys including `GovernanceObjectID`, `ObjectID`, `ID`, `ItemID`, `SelectedID`, and `SelectedValue`.
+
+### Known Issues / Follow-Up
+
+- Retest should show `Follow-up` on the owned Network Diagnosis child if its BlueBook row has a defined `ZBlue-PurpleBook`.
+- If it still does not show, inspect the actual child dynamic field values for `ZTicket-BlueBook`, `ZTicket-BlueLevel`, `ZTicket-Chapter`, `ZTicket-Profile`, and `ZIN-Iteration` to confirm the deployed child carries the snapshot.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-10 GovernanceDB 0.0.257 Profile-Aware PurpleBook Follow-Up Resolver
+
+### Completed work
+
+- Fixed the remaining owned `Diagnosis` child menu issue where `Amend` appeared but `Follow-up` did not.
+- Root cause addressed: Follow-up availability depended on resolving the current child ticket back to the exact BlueBook record with `ZBlue-PurpleBook` defined. Existing children can miss the strict `ZTicket-Chapter == Record.Chapter` match even when their BlueBook level/type/profile identify the configured record.
+- Updated the PurpleBook resolver in both customer runtime modules:
+  - exact `ZTicket-Chapter` to BlueBook record chapter match remains the first choice;
+  - if exact chapter does not match, the resolver falls back to a unique `ZTicket-BlueLevel` + ticket type + `ZTicket-Profile` record with a defined `ZBlue-PurpleBook`.
+- This keeps Follow-up based on whether the BlueBook record has a defined PurpleBook/Follow-up book, not on ticket type.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.257`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.257.opm`.
+- `Kernel/Package/GovernanceDB-0.0.257.opm` SHA256: `BC8C3D340674E66F45B19A9E397968EA9011406EAD0468C4BA857E0EE2F19506`.
+- Supersedes `0.0.256`; use `0.0.257` for the next owned Diagnosis Follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZoom.pm` copies have matching SHA256 hash `ED7DB843FFEB58AF39789EEDBAA27E5DC3F634CDDF7BEE0342A5C475E2602D6C`.
+- Mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256 hash `82C30CC4217D9BE842C261D360C12A44429377DC58E95438CCC13490034E6E62`.
+- `GovernanceDB-0.0.257.opm` parsed successfully as XML: version `0.0.257`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - runtime-overlay `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` include the profile-aware PurpleBook fallback;
+  - both runtime-overlay modules preserve exact chapter match first;
+  - neither runtime-overlay module contains the old `FollowUpTypes` gate.
+
+### Known Issues / Follow-Up
+
+- Retest should show `Follow-up` on the owned Network Diagnosis child when its BlueBook row BR-002 has `Follow-up: BlueBook: RequesterClarification`.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-10 GovernanceDB 0.0.256 Diagnosis Amend and PurpleBook Follow-Up Gate
+
+### Completed work
+
+- Corrected the `0.0.255` runtime action patch after retest showed an owned `Diagnosis` child still only showed `Clone`.
+- Kept Amend controlled by `AddRequiredSupportProfileTypes`, and added `Diagnosis` to that default allowed type list instead of making Amend open-ended.
+- Kept Follow-up controlled by the resolved BlueBook chapter Follow-up/PurpleBook value:
+  - `ZBlue-PurpleBook` is the stored field;
+  - the UI label is `Follow-up`;
+  - runtime availability is based on whether the current child ticket's BlueBook record resolves a PurpleBook ID.
+- Added configured-owner action access for Amend/Follow-up menu visibility so an owned child with the required runtime configuration does not depend only on the generic `ztsm_action` gate.
+- Added the same owner-action fallback to `CustomerTicketZTSMAction` submit permission for `AddRequiredSupportProfile` and `FollowUp`.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.256`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.256.opm`.
+- `Kernel/Package/GovernanceDB-0.0.256.opm` SHA256: `7A86D5A04008FA003ECC6D304D374DCAD812515D6594A0D8D6E9044474AACEED`.
+- Supersedes `0.0.255`; use `0.0.256` for the next owned Diagnosis action-menu retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZoom.pm` copies have matching SHA256 hash `0F61D464627CDB165BC3A530769DE835D274E47F4C00D84AC0523833F36A8D22`.
+- Mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256 hash `143A43E27A0F01B4599988288D2FA6630561D0DC16378DBD7F9B5544F5243D21`.
+- `GovernanceDB-0.0.256.opm` parsed successfully as XML: version `0.0.256`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - runtime-overlay `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` include `Diagnosis` in the Amend type list;
+  - neither runtime-overlay module contains the old `FollowUpTypes` gate;
+  - both runtime-overlay modules still use the PurpleBook resolver for Follow-up;
+  - both runtime-overlay modules include configured owner action access.
+
+### Known Issues / Follow-Up
+
+- Retest should show `Amend` on an owned Diagnosis child because `Diagnosis` is now in the Amend allowed type list.
+- Retest should show `Follow-up` when the current Diagnosis child's matching BlueBook record has a defined `ZBlue-PurpleBook` / Follow-up value.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-10 GovernanceDB 0.0.255 Follow-Up Availability From BlueBook Record
+
+### Completed work
+
+- Fixed customer `CustomerTicketZoom` Follow-up runtime action availability for child tickets whose BlueBook chapter has a configured Follow-up/PurpleBook record.
+- Runtime symptom: after `Take Ownership` worked on a `Diagnosis` child, the Follow-up action was still hidden even though the BlueBook chapter `Follow-up` field was configured with `BlueBook: RequesterClarification`.
+- Root cause addressed: both the Zoom button gate and the `CustomerTicketZTSMAction` execution gate still used an old hardcoded `FollowUpTypes` allowlist. `Diagnosis` was not in that list, so the configured Follow-up book was ignored.
+- Removed the stale type allowlist from:
+  - `CustomerTicketZoom.pm::_ZTSMFollowUpAllowed`
+  - `CustomerTicketZTSMAction.pm::_FollowUpAllowed`
+- Follow-up availability is now driven by the actual child execution context and configured Follow-up book:
+  - ticket is not closed;
+  - ticket is not already in `follow-up` state on submit;
+  - `ZTicket-Parent`, `ZTicket-BlueBook`, `ZTicket-BlueLevel`, and `ZTicket-Chapter` are present;
+  - the matching BlueBook chapter resolves a Follow-up/PurpleBook ID.
+- Existing owner, owner-match, and customer `ztsm_action` permission checks remain intact.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.255`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.255.opm`.
+- `Kernel/Package/GovernanceDB-0.0.255.opm` SHA256: `C7E76A2E35327B0CDB5D47F51154E65BF8774C2A7C95F2AD79CE024AF6B7C053`.
+- Supersedes `0.0.254`; use `0.0.255` for the next Diagnosis Follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for runtime-overlay `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZoom.pm` copies have matching SHA256 hash `80ACEDCCBE4D5E10729424F6F0A1B89D5EADB295BEE8968F684DC3CE90673B56`.
+- Mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256 hash `81AFECE597ED96AE049C26043076344A099345BFFDBDE06625DD33A4E73D25DB`.
+- `GovernanceDB-0.0.255.opm` parsed successfully as XML: version `0.0.255`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed runtime-overlay `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` no longer contain the old `FollowUpTypes` gate and still contain the configured Follow-up resolver paths.
+
+### Known Issues / Follow-Up
+
+- Retest should show `Follow-up` on an owned Diagnosis child when its BlueBook chapter resolves `BlueBook: RequesterClarification` from the Follow-up field.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-10 GovernanceDB 0.0.254 Diagnosis Take Ownership Visibility
+
+### Completed work
+
+- Fixed customer `CustomerTicketZoom` runtime action visibility for `Diagnosis` child tickets.
+- Runtime symptom: a customer user who belongs to the child ticket `ZTicket-OwnerGroup` could see actions on Assessment/Implementation children but saw only generic menu items on Diagnosis children.
+- Root cause addressed: Diagnosis was seeded as a first-class ticket type, but the customer runtime action gate still only treated configured action types and generic Task-like tickets as ownership-actionable. Diagnosis did not have its own submit action yet, so the Take Ownership path was never exposed.
+- Added Diagnosis to a dedicated Take Ownership classifier instead of the generic Task classifier:
+  - `CustomerTicketZoom.pm` now allows `Diagnosis` / `Diagnosis - ...` tickets to expose `Take Ownership` when the support-assignment owner-group check passes.
+  - `CustomerTicketZTSMAction.pm` now accepts the same Diagnosis ownership path when `RuntimeAction=TakeOwnership` is submitted.
+- Deliberately kept Diagnosis out of generic `CompleteTask` handling so it does not write generic `ZTicket-*` task outcome fields instead of the intended `ZIN-*` diagnosis fields.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.254`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.254.opm`.
+- `Kernel/Package/GovernanceDB-0.0.254.opm` SHA256: `90AECF1B142197A230C6E540E4270E7AC87038D48F57FBFBC004D9E59427D2FA`.
+- Supersedes `0.0.253`; use `0.0.254` for the next Diagnosis child action visibility retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical `CustomerTicketZoom.pm`.
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZoom.pm` copies have matching SHA256 hash `85974E948F5CA1B01147F9DC1B512A8ED04490F3CEB0D62D7230424FBC4A187A`.
+- Mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256 hash `2FBF25B53BD2DCBBC6BE92B8B204C6179B95EF335C0471C97AF63EC8782F31BD`.
+- `GovernanceDB-0.0.254.opm` parsed successfully as XML: version `0.0.254`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - runtime-overlay `CustomerTicketZoom.pm` includes `_ZTSMTakeOwnershipTicket`;
+  - runtime-overlay `CustomerTicketZTSMAction.pm` includes `_TakeOwnershipTicket`;
+  - both runtime-overlay modules recognize `Diagnosis` and `Diagnosis - ...` for Take Ownership.
+
+### Known Issues / Follow-Up
+
+- Retest should show `Take Ownership` on an unowned Diagnosis child when the logged-in customer user belongs to `ZTicket-OwnerGroup` through SupportAssignment.
+- This package does not implement the dedicated Diagnosis completion form yet. That remains part of the `PROJECT_NEXT.md` Incident Diagnosis form/workspace work.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-10 GovernanceDB 0.0.253 BlueBook Child Ticket Number Collision Fix
+
+### Completed work
+
+- Fixed the Incident Diagnosis same-level BlueBook spawn failure where Cloud child creation succeeded but Network child creation failed during `TicketCreate`.
+- Runtime evidence showed BlueBook parsed and evaluated both records, then the second Diagnosis ticket failed with:
+  - duplicate `ticket_number_counter_uid`;
+  - null `tn` insert;
+  - `ZTSMBlueBookReader: TicketCreate failed ... Chapter=BR-002 Type=Diagnosis`.
+- Root cause addressed in `Kernel/System/Ticket/Number/TESSERAIdentity.pm`:
+  - scoped child counter UIDs for same parent/type could collide because the scoped prefix left a short deterministic suffix;
+  - a counter insert collision caused ticket number generation to return no ticket number, so `TicketCreate` tried to insert a null `tn`.
+- `TESSERAIdentity.pm` now:
+  - generates a random suffix for scoped child counter UIDs;
+  - retries scoped counter insertion up to five times before failing.
+- Fixed list-context argument collapse in `ZTSMBlueBookReader.pm` by making `_TicketIteration()` scalar-safe before it is used inside hash argument/hash value construction.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.253`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.253.opm`.
+- `Kernel/Package/GovernanceDB-0.0.253.opm` SHA256: `3DCECCAA742E55190E658517FC87357DDFF6900A7C2128B94DC09997DFAD41F9`.
+- Supersedes `0.0.252`; use `0.0.253` for the next Incident Diagnosis Cloud + Network child spawn retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package/runtime-overlay `TESSERAIdentity.pm`.
+- Perl syntax checks passed for canonical and package/runtime-overlay `ZTSMBlueBookReader.pm`.
+- Mirrored `TESSERAIdentity.pm` copies have matching SHA256 hash `C7219F8E6465C97D48B9CD50F3EA470C2BE5A192C0B08EA56C9931F70F920DA8`.
+- Mirrored `ZTSMBlueBookReader.pm` copies have matching SHA256 hash `14EB9FD6CD473F807A6E2E7F303881D5CE6EA828922E8C49D6DE455237B95074`.
+- `GovernanceDB-0.0.253.opm` parsed successfully as XML: version `0.0.253`, file count `200`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - `TESSERAIdentity.pm` includes scoped counter retry label `COUNTERUID:`;
+  - `TESSERAIdentity.pm` retries `for my $Attempt ( 1 .. 5 )`;
+  - `TESSERAIdentity.pm` uses `my $RandomSuffix` for scoped child counter UIDs;
+  - runtime-overlay `ZTSMBlueBookReader.pm` includes scalar-safe `_TicketIteration()`.
+
+### Known Issues / Follow-Up
+
+- Retest should show both Cloud and Network Diagnosis children created under the same parent/BlueLevel.
+- The Network record should no longer fail with duplicate `ticket_number_counter_uid` or null `tn`.
+- If child creation still fails, inspect the next log for the exact `TicketCreate failed` reason after ticket-number generation.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.252 BlueBook Same-Level Profile Fan-Out Guard
+
+### Completed work
+
+- Fixed same-level BlueBook child fan-out after Incident Diagnosis created only one child when two records existed at the same `BlueLevel`.
+- Root cause addressed: duplicate suppression treated `ZTicket-Chapter` alone as a stable record identity. If two same-level records shared the same chapter, the first created child could suppress the second record.
+- Updated duplicate detection in both:
+  - `ZTSMBlueBookReader.pm`;
+  - `ZTSMBlueBookRuntime.pm`.
+- Duplicate suppression now requires record `Profile` as the stable per-record identity. `Chapter` alone can no longer suppress sibling records on the same `BlueLevel`.
+- Added error-level BlueBook reader diagnostics for retest:
+  - `ZTSMBlueBookReader: Parsed records ... Count=... FirstBlueLevel=...`
+  - `ZTSMBlueBookReader: Evaluate record spawn ... Chapter=... Profile=... Role=... Type=... Activity=...`
+  - `ZTSMBlueBookReader: Existing ChapterPlay for record, skip record spawn ...`
+  - `ZTSMBlueBookReader: BlueBook orchestration started ... Created=...`
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.252`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.252.opm`.
+- `Kernel/Package/GovernanceDB-0.0.252.opm` SHA256: `5C9524D3AC0352DB07BA82FDDFAF0817CE8DC1E5273640FB21E6D442453CF1E3`.
+- Supersedes `0.0.251`; use `0.0.252` for the next Incident Diagnosis same-level child spawn retest.
+
+### Validation
+
+- Perl syntax checks passed for GovernanceDB runtime-overlay `ZTSMBlueBookReader.pm`.
+- Perl syntax checks passed for GovernanceDB runtime-overlay `ZTSMBlueBookRuntime.pm`.
+- `GovernanceDB-0.0.252.opm` parsed successfully as XML: version `0.0.252`.
+- Decoded OPM payload check confirmed:
+  - reader includes `Evaluate record spawn`;
+  - reader includes `Existing ChapterPlay for record`;
+  - reader duplicate guard uses `RecordHasStableIdentity = _NormalizeValue( $Param{Record}->{Profile} ) ? 1 : 0`;
+  - runtime includes `ChildTicketIDsForRecordGet`;
+  - runtime duplicate guard uses the same profile-required identity check.
+
+### Known Issues / Follow-Up
+
+- Retest should show two `Evaluate record spawn` log lines for Cloud and Network records at `BlueLevel=1`.
+- Retest should create two Diagnosis children when both records have different `ZBlue-Profile` values.
+- If only one child is still created, inspect the `Evaluate record spawn` lines to confirm whether the Network record is parsed and whether its `Profile` is present.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.251 DateTime UTC Submit Guard
+
+### Completed work
+
+- Confirmed from runtime trace that selected `ZTicket-ActualStart` submits browser-local raw parts such as `15:53`, while `EditFieldValueGet()` extracts/stores the correct UTC value such as `07:53`.
+- Clarified behavior: the UTC extracted value is correct; backend validation must compare UTC epoch to UTC epoch and must not treat browser-local time as server UTC.
+- Added a submit-side Date/DateTime restriction guard in `CustomerTicketMessage.pm`:
+  - when the DynamicField DateTime backend returns `ServerError`;
+  - and the field has a DateRestriction;
+  - and the field was actually selected with `Used=1`;
+  - recompute epoch from raw browser-local parts plus `ZTSMServiceBrowserTimezoneOffset`;
+  - compare that epoch to server `time()`;
+  - clear the backend validation error when the UTC epoch comparison proves the submitted value satisfies the restriction.
+- Added error-level override diagnostics:
+  - `backend-datetime-validation-override-pass`
+  - `backend-datetime-validation-override-fail`
+- Reduced noisy DateTime pre-validation trace so unselected fields like `ZTicket-ActualFinish` no longer log just because their hidden/default date select parts are present.
+- Kept `BaseDateTime.pm` packaged inside the GovernanceDB runtime overlay; no separate install is required.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.251`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.251.opm`.
+- `Kernel/Package/GovernanceDB-0.0.251.opm` SHA256: `62414D94A93F396AF3E67D32FF0DD05042982BD73F594BD17AB547133C1E4D7C`.
+- Supersedes `0.0.250`; use `0.0.251` for the next Incident DateTime submit retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical, GovernanceDB runtime-overlay, and `ZTSMOverlay` `CustomerTicketMessage.pm`.
+- `GovernanceDB-0.0.251.opm` parsed successfully as XML: version `0.0.251`.
+- Decoded OPM payload check confirmed:
+  - `CustomerTicketMessage.pm` includes `use Time::Local qw(timegm);`;
+  - `backend-datetime-validation-override-pass`;
+  - `backend-datetime-validation-override-fail`;
+  - selected-field-only DateTime trace condition using `$RawDateTimeParam{Used}`;
+  - error clearing via `delete $ValidationResult->{ServerError}`;
+  - `BaseDateTime.pm` is still included in the runtime overlay payload.
+
+### Known Issues / Follow-Up
+
+- Retest should show `backend-datetime-validation-override-pass` for a valid local-past `ZTicket-ActualStart` if the old/backend DateTime validator still reports `ServerError`.
+- Retest should no longer show `backend-before-datetime-validation` for unselected `ZTicket-ActualFinish` unless it has `Used=1` or a real extracted value.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.250 Error-Level DateTime Trace
+
+### Completed work
+
+- Updated Date/DateTime diagnostics so useful trace entries appear in the same Apache/OTOBO error log stream as the existing validation errors.
+- `CustomerTicketMessage.pm` submit trace now defaults to `Priority => 'error'`.
+- Date/DateTime-specific checkpoints are now error-priority, including:
+  - `backend-store-enter`
+  - `backend-validation-enter`
+  - `backend-before-datetime-validation`
+  - `backend-before-ticket-create`
+  - `backend-ticket-created`
+  - `backend-before-dynamicfield-valueset`
+- `BaseDateTime.pm` restriction comparison logs are now error-priority:
+  - `TESSERA DateTime restriction check ...`
+  - `TESSERA DateTime restriction validation failed ...`
+- Kept `BaseDateTime.pm` packaged inside the GovernanceDB runtime overlay; no separate install is required.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.250`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.250.opm`.
+- `Kernel/Package/GovernanceDB-0.0.250.opm` SHA256: `A3D82110FB4CCB443E8F7B7E222484ECCC9B58AE50ABD59664165390F50C10C8`.
+- Supersedes `0.0.249`; use `0.0.250` for the next Date/DateTime trace retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `CustomerTicketMessage.pm`.
+- Perl syntax checks passed for canonical and runtime-overlay `BaseDateTime.pm`.
+- `GovernanceDB-0.0.250.opm` parsed successfully as XML: version `0.0.250`.
+- Decoded OPM payload check confirmed:
+  - `BaseDateTime.pm` includes `TESSERA DateTime restriction check`, `Priority => 'error'`, and `TESSERA DateTime restriction validation failed`;
+  - `CustomerTicketMessage.pm` includes `RawDateTime`, `ExtractedValue`, `backend-before-datetime-validation`, and error-priority trace markers.
+
+### Known Issues / Follow-Up
+
+- Next retest should show `backend-before-datetime-validation` as `ERROR:` with `RawDateTime` and `ExtractedValue` before `backend-validation-error`.
+- Next retest should also show `TESSERA DateTime restriction check` as `ERROR:` if the packaged runtime overlay is active.
+- If only `backend-validation-error` and `backend-return-with-errors` appear after installing `0.0.250`, the live system is not using the updated trace points or the application cache/runtime overlay still needs refresh.
+
+## 2026-07-08 GovernanceDB 0.0.249 DateTime Raw Submit Value Trace
+
+### Completed work
+
+- Confirmed from runtime logs that Incident submit reaches backend `CustomerTicketMessage.pm` and is blocked during backend DateTime validation before ticket creation.
+- Kept the DateTime fix package-contained: `BaseDateTime.pm` is shipped inside the GovernanceDB runtime overlay at `var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm`; no separate install is required.
+- Added generic raw Date/DateTime value logging in `CustomerTicketMessage.pm` before validation:
+  - `RawDateTime=Day=...,Hour=...,Minute=...,Month=...,Second=...,Used=...,Year=...`
+  - `ExtractedValue=...`
+- Enhanced `BaseDateTime.pm` with a generic pre-decision comparison log:
+  - `TESSERA DateTime restriction check field=... restriction=... raw=... browserOffsetMinutes=... valueEpoch=... systemEpoch=... deltaSeconds=... source=browser-offset`
+- The new logs apply to all Date/DateTime dynamic fields, not only `ZTicket-ActualStart`.
+- Synced changed files across canonical source, GovernanceDB package runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.249`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.249.opm`.
+- `Kernel/Package/GovernanceDB-0.0.249.opm` SHA256: `188F9A4006957FB64251B4114865AAF126AA9BBF305F9B85A3B1B61308DE401E`.
+- Supersedes `0.0.248`; use `0.0.249` for the next Date/DateTime retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `CustomerTicketMessage.pm`.
+- Perl syntax checks passed for canonical and runtime-overlay `BaseDateTime.pm`.
+- `GovernanceDB-0.0.249.opm` parsed successfully as XML: version `0.0.249`.
+- Decoded OPM payload check confirmed:
+  - `BaseDateTime.pm` includes `TESSERA DateTime restriction check`, `browser-offset`, `TESSERA DateTime restriction validation failed`, and `timegm`;
+  - `CustomerTicketMessage.pm` includes `RawDateTime`, `ExtractedValue`, `backend-before-datetime-validation`, and `ZTSMServiceSubmitTraceID`.
+
+### Known Issues / Follow-Up
+
+- Next retest should check whether the OTOBO log contains `TESSERA DateTime restriction check` for `ZTicket-ActualStart`.
+- If `backend-before-datetime-validation` appears but `TESSERA DateTime restriction check` does not, the runtime overlay did not replace the live DateTime driver despite the package containing it.
+- If `TESSERA DateTime restriction check` appears with `deltaSeconds` negative and validation still fails, inspect whether a later value item or mandatory check sets `ServerError`.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.247 Submit Trace Logging For Date/DateTime Validation
+
+### Completed work
+
+- Added a submit trace ID (`ZTSMServiceSubmitTraceID`) to the customer service form so one browser submit attempt can be matched against OTOBO backend log entries.
+- Added browser-side submit diagnostics for invalid events, submit-button clicks, submit capture, and after-submit handlers. Each log includes trace ID, browser timezone offset, browser current ISO time, validator details, and HTML validity state where available.
+- Added backend trace checkpoints in `CustomerTicketMessage.pm`:
+  - `backend-store-enter`
+  - `backend-validation-enter`
+  - `backend-before-datetime-validation`
+  - `backend-validation-error`
+  - `backend-return-with-errors`
+  - `backend-before-ticket-create`
+  - `backend-ticket-created`
+  - `backend-before-dynamicfield-valueset`
+- Date/DateTime logging is generic: `backend-before-datetime-validation` and Date/DateTime `ValueSet` logging apply to every DynamicField whose field type contains `Date`, not only `ZTicket-ActualStart`.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.247`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.247.opm`.
+- `Kernel/Package/GovernanceDB-0.0.247.opm` SHA256: `623844363838B940FD96DB7B606E55C54B8F3E87A52E549ACC5C4AD84A067674`.
+- Supersedes `0.0.246`; use `0.0.247` for the next Date/DateTime submit trace retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `CustomerTicketMessage.pm`.
+- Service template inline JavaScript passed syntax check with bundled Node after extracting the script body.
+- `GovernanceDB-0.0.247.opm` parsed successfully as XML: version `0.0.247`.
+- Decoded OPM payload check confirmed:
+  - `ZTSMServiceSubmitTraceID` and browser submit trace helpers are present in the service template;
+  - browser logs include `ZTSM submit invalid`, `ZTSM submit click`, `ZTSM submit event`, and `ZTSM submit after handlers`;
+  - backend logs include `backend-store-enter`, `backend-before-datetime-validation`, `backend-validation-error`, `backend-before-ticket-create`, and `backend-before-dynamicfield-valueset`.
+
+### Known Issues / Follow-Up
+
+- Retest by comparing one browser `traceID` with the OTOBO application log.
+- If browser logs show click/submit trace but no `backend-store-enter`, the submit was blocked client-side before reaching `CustomerTicketMessage.pm`.
+- If backend logs show `backend-validation-error` and `backend-return-with-errors` but no `backend-before-ticket-create`, the server validation blocked before ticket creation/write.
+- If backend logs show `backend-before-ticket-create`, `backend-ticket-created`, and `backend-before-dynamicfield-valueset`, the submit reached backend write flow.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.246 Service DateTime Browser Offset Submit Hardening
+
+### Completed work
+
+- Hardened the customer service DateTime submit path after browser testing still showed server-side "need a past date" errors while the browser calculated the submitted value as a valid local past time.
+- Added a direct hidden `ZTSMServiceBrowserTimezoneOffset` input to `ZTSMCustomerTicketMessageServiceFields.tt` so the offset field exists in the customer ticket form markup before submit handlers run.
+- Updated the timezone-offset sync helper to target `#NewCustomerTicket` explicitly before scanning other forms.
+- Updated the Date/DateTime server-error console warning to include `browserOffsetMinutes`, so browser logs now show whether the request-side offset should be `-480` for Singapore.
+- Updated `CustomerTicketMessage.pm` to pass the logged-in customer user ID to DynamicField validation before falling back to the effective/on-behalf customer user ID. This matches the browser/session timezone preference used by the actual submitter.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.246`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.246.opm`.
+- `Kernel/Package/GovernanceDB-0.0.246.opm` SHA256: `B08A3D2978A1708E0F72269DC8B6F1C5881A3B5B15C2AB3B68BB32CE72DA997B`.
+- Supersedes `0.0.245`; use `0.0.246` for the next Incident DateTime retest.
+
+### Validation
+
+- Perl syntax check passed for `Kernel/Modules/CustomerTicketMessage.pm`.
+- Service template inline JavaScript passed syntax check with bundled Node after extracting the script body.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.246.opm` parsed successfully as XML: version `0.0.246`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - direct hidden `name="ZTSMServiceBrowserTimezoneOffset"` exists in the service template;
+  - console diagnostics include `browserOffsetMinutes`;
+  - the offset sync helper targets `document.getElementById('NewCustomerTicket')`;
+  - `CustomerTicketMessage.pm` passes `$Self->{UserID} || $EffectiveCustomer{UserID}` to DynamicField validation;
+  - `BaseDateTime.pm` still contains `customerUserTimeZone` and `browserOffsetMinutes` server validation support.
+
+### Known Issues / Follow-Up
+
+- Browser retest should verify the console warning, if it appears, includes `browserOffsetMinutes=-480` for Singapore.
+- If the server still rejects a local-past DateTime after `0.0.246`, check the OTOBO application log for the `TESSERA DateTime restriction validation failed` line and compare `customerUserTimeZone`, `browserOffsetMinutes`, `valueEpoch`, and `systemEpoch`.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.245 DateTime Epoch Comparison, Ownership Gate, And BlueLevel Fan-Out Guard
+
+### Completed work
+
+- Fixed customer DateTime validation so the server compares epoch values, not a requester-visible local DateTime as though it were UTC/OTOBO time.
+- `CustomerTicketMessage.pm` now passes the effective customer user ID into DynamicField validation.
+- `BaseDateTime.pm` now reads the customer `UserTimeZone` preference, validates it, and uses it ahead of the generic layout timezone.
+- Service ticket submit now includes `ZTSMServiceBrowserTimezoneOffset`; `BaseDateTime.pm` can use this offset to convert submitted local date parts into the correct epoch before comparing with current epoch.
+- The DateTime diagnostic now logs `customerUserTimeZone` and `browserOffsetMinutes` so timezone comparison failures can be confirmed directly.
+- Fixed CustomerTicketZoom runtime action gating so `Take Ownership` can appear for an unowned child task when the current customer user belongs to the ticket `ZTicket-OwnerGroup` through `SupportAssignment`.
+- Preserved the submit-side `TakeOwnership` guard in `CustomerTicketZTSMAction.pm`; the actual ownership update still requires `ZTicket-OwnerGroup -> SupportAssignment -> UserAccount == logged-in customer user`.
+- Tightened BlueBook duplicate prevention so weak record identity cannot let one existing child suppress other records on the same `BlueLevel`.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.245`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.245.opm`.
+- `Kernel/Package/GovernanceDB-0.0.245.opm` SHA256: `8F53C9CF09A778629C52DF81C39737EF2DDC08656447435E2C81E6438550128A`.
+- Supersedes `0.0.244`; use `0.0.245` for Incident DateTime, Diagnosis same-level fan-out, and Take Ownership retesting.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `Kernel/Modules/CustomerTicketMessage.pm`;
+  - `Kernel/Modules/CustomerTicketZoom.pm`;
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`;
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`.
+- Service template inline JavaScript passed syntax check with bundled Node after extracting the script body.
+- Mirror hash checks passed:
+  - `BaseDateTime.pm`: `66D90B86322C8DEF0F305BA9728242AE7027393AF13105C3207A67CCFB97E6EC`;
+  - `CustomerTicketMessage.pm`: `607B2037C618519F4A90DF33C537626D91E773718BE422BF372476C64EB987C9`;
+  - `CustomerTicketZoom.pm`: `93A8548854149ABDBD79E9204F57851219590CD620899E1854D6F82CB3CEA315`;
+  - `ZTSMBlueBookReader.pm`: `4F1E01256F40415480152D2D27AA044E4EDE31BFF7B30E944B5307FBA5674353`;
+  - `ZTSMBlueBookRuntime.pm`: `4787BA52EC52DDC9D7DF76ED475644A9EF3A90A41097792EA47FC4E9AEB5B120`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `2C288F277CB5094CF6C98979A83D27E9E1E42E83F134BD0AF3858D537B0D1B66`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.245.opm` parsed successfully as XML: version `0.0.245`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - `BaseDateTime.pm` contains customer timezone and browser offset validation;
+  - `CustomerTicketMessage.pm` passes `CustomerUserID` to validation;
+  - `CustomerTicketZoom.pm` contains the `TakeOwnership` pre-action gate;
+  - `ZTSMBlueBookReader.pm` and `ZTSMBlueBookRuntime.pm` contain stable record identity guards;
+  - service template contains `ZTSMServiceBrowserTimezoneOffset` submission support.
+
+### Known Issues / Follow-Up
+
+- Browser retest should verify `ZTicket-ActualStart` at same-day local past times such as 11:00 Singapore time submits, while future local times still fail.
+- If DateTime still fails, check the OTOBO log for `customerUserTimeZone=Asia/Singapore` and `browserOffsetMinutes=-480`.
+- Diagnosis retest should verify all records sharing the same `BlueLevel` create child tickets together.
+- Take Ownership retest should verify a customer user with a `SupportAssignment` under the child ticket `ZTicket-OwnerGroup` sees and can use `Take Ownership` before being the ticket owner.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.244 Service DateTime Client Guard And Same-Level BlueBook Spawn Fix
+
+### Completed work
+
+- Fixed the customer service DateTime client-side restriction path so service Date/DateTime fields no longer use OTOBO's generic `Validate_DateInFuture` / `Validate_DateNotInFuture` browser classes.
+- Service Date/DateTime fields now store the restriction in `data-ZTSMDateRestriction` for diagnostics, then remove the generic future/past validation class.
+- Date validity still uses the normal Date/DateTime validators; future/past restriction remains enforced by the server-side `BaseDateTime.pm` validation from `0.0.243`.
+- This avoids the browser comparing requester-visible Singapore time against a UTC/ISO-style current time and blocking same-day valid past values.
+- Fixed BlueBook same-level child spawning:
+  - `ZTSMBlueBookReader.pm` no longer skips the entire level when any child already exists;
+  - it now checks for an existing child per BlueBook record using parent, BlueBook, level, iteration, chapter, profile, and role;
+  - missing same-level records continue to spawn.
+- Applied the same record-specific duplicate prevention to `ZTSMBlueBookRuntime::LevelSpawn()`.
+- Synced changed files across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.244`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.244.opm`.
+- `Kernel/Package/GovernanceDB-0.0.244.opm` SHA256: `5354FB2C75E4E1EE6F6794252BD3A73A03636B8BEEF84298C765617D9869CC2F`.
+- Supersedes `0.0.243`; use `0.0.244` for Incident DateTime submit and same-level Diagnosis child spawning retests.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`;
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`;
+  - GovernanceDB runtime overlay copies;
+  - `ZTSMOverlay` copies.
+- Service template inline JavaScript passed syntax check with bundled Node after extracting the script body.
+- Mirror hash checks passed:
+  - `ZTSMBlueBookReader.pm`: `B0904A589BEEB51356039D2E4370862AEA3956581E73AC8903807A417F4FE71E`;
+  - `ZTSMBlueBookRuntime.pm`: `A81AD4F6F384E6458AE5B9156F3BE9C7EE20BBCE10C9AFFBABD484386E4B3330`;
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `5EF64FC2ACAA6D2F79C57355BF4006CF12E7553082EDBD5F24DE299D1E6F8DA1`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.244.opm` parsed successfully as XML: version `0.0.244`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - service DateTime fields store `dataset.ZTSMDateRestriction`;
+  - service DateTime fields remove `Validate_DateNotInFuture`;
+  - `ZTSMBlueBookReader.pm` contains `_ExistingChapterPlayForRecord`;
+  - `ZTSMBlueBookRuntime.pm` contains `ChildTicketIDsForRecordGet`.
+
+### Known Issues / Follow-Up
+
+- Browser retest should verify a same-day or previous-day `ZTicket-ActualStart` submits, while a future DateTime still fails at server validation.
+- BlueBook retest should verify two level-1 Diagnosis records such as `BR-001` and `BR-002` create two child Diagnosis tickets for the same parent/iteration.
+- If only one child still appears after installing `0.0.244`, check the OTOBO log for `Existing ChapterPlay for record` to see whether duplicate detection is matching both records to the same chapter/profile/role.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.243 DateTime Raw User-Timezone Validation Fix
+
+### Completed work
+
+- Fixed the DateTime restriction validation path that could still reject same-day or previous-day customer values while accepting a much older value such as 2025.
+- Updated `Kernel/System/DynamicField/Driver/BaseDateTime.pm` so `EditFieldValueValidate()` validates the raw submitted DateTime parts in the active layout user timezone.
+- Removed validation-time `TransformDates => 1`; DateTime transformation remains part of the normal value/save path, but the not-in-future / future-only restriction check now compares the requester-visible time directly.
+- The validation comparison now creates a `Kernel::System::DateTime` object with:
+  - raw submitted Year, Month, Day, Hour, Minute, Second;
+  - `LayoutObject->{UserTimeZone}` when available;
+  - OTOBO timezone as fallback.
+- Kept the failure diagnostic and changed its marker to `transformDates=0` so runtime logs show the fixed validation path is active.
+- Synced `BaseDateTime.pm` across canonical source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.243`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.243.opm`.
+- Supersedes `0.0.242`; use `0.0.243` for the customer Incident `ZTicket-ActualStart` submit retest.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `ZTSMOverlay/files/Kernel/System/DynamicField/Driver/BaseDateTime.pm`.
+- Mirror hash check passed for the `BaseDateTime.pm` family: `D28978B7FC64E94E6768C7F5F7B22D488861EA4120D9296DC6D30A50B213103B`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.243.opm` parsed successfully as XML: version `0.0.243`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - validation no longer calls `EditFieldValueGet()` with `TransformDates => 1`;
+  - validation compares using `TimeZone => $UserTimeZone`;
+  - the failure diagnostic logs `transformDates=0`;
+  - the `LayoutObject` timezone access is guarded.
+
+### Known Issues / Follow-Up
+
+- Browser retest should verify a previous-day or same-day-past `ZTicket-ActualStart` submits, while a future time on July 8, 2026 still blocks.
+- If the old console warning still shows after installing `0.0.243`, restart/clear runtime cache because the active runtime is not executing the new overlaid `BaseDateTime.pm`.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.242 DateTime Server Comparison Diagnostic
+
+### Completed work
+
+- Added a server-side DateTime restriction diagnostic to `Kernel/System/DynamicField/Driver/BaseDateTime.pm`.
+- The diagnostic logs only when the DateTime restriction validation actually fails.
+- The OTOBO log message starts with `TESSERA DateTime restriction validation failed` and includes:
+  - DynamicField name;
+  - Date restriction;
+  - raw submitted DateTime parts;
+  - transformed timestamp used for server comparison;
+  - value epoch, server epoch, and delta seconds;
+  - whether `LayoutObject` was present;
+  - the final validation message.
+- Guarded the restriction comparison so it does not compare an undefined parsed timestamp numerically.
+- Synced `BaseDateTime.pm` across canonical source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.242`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.242.opm`.
+- `Kernel/Package/GovernanceDB-0.0.242.opm` SHA256: `E27D5382089B55F6686DFEB7F2EA99CA1E7B696506FEF071B28331F300EEF12D`.
+- Supersedes `0.0.241`; use `0.0.242` when diagnosing the remaining customer Incident `ZTicket-ActualStart` submit block.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `ZTSMOverlay/files/Kernel/System/DynamicField/Driver/BaseDateTime.pm`.
+- Mirror hash check passed for the `BaseDateTime.pm` family: `A44FD4FF9197A7A36FEDB2927CE14E6F738DD0F5638D63A7A2C2FDB8C9B0E409`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.242.opm` parsed successfully as XML: version `0.0.242`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - the `TESSERA DateTime restriction validation failed` diagnostic is present;
+  - packaged `BaseDateTime.pm` receives `LayoutObject`;
+  - packaged `BaseDateTime.pm` uses `TransformDates => 1`;
+  - packaged `BaseDateTime.pm` guards numeric comparison with `defined $ValueItemSystemTime`.
+
+### Known Issues / Follow-Up
+
+- Browser `customer.pl:4950` points to rendered JavaScript from `ZTSMCustomerTicketMessageServiceFields.tt`, not a physical `customer.pl` source file.
+- The browser warning logs a server-returned `ServerError`; it does not perform the server DateTime comparison.
+- If the OTOBO log does not show `TESSERA DateTime restriction validation failed` after installing `0.0.242`, the running runtime is still using an older `BaseDateTime.pm` overlay/cache.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.241 Customer DateTime Validation Caller Fix
+
+### Completed work
+
+- Fixed the missing caller-side piece for customer DateTime validation on `CustomerTicketMessage.pm`.
+- Updated the DynamicField validation call so `EditFieldValueValidate()` receives `LayoutObject`.
+- This allows the `0.0.240` `BaseDateTime.pm` validation transform to actually run in the customer ticket submit path.
+- Confirmed the client-side future-date block is expected for `DisableFutureDates`: browser validation should reject values after the current browser time.
+- Synced `CustomerTicketMessage.pm` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.241`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.241.opm`.
+- `Kernel/Package/GovernanceDB-0.0.241.opm` SHA256: `FD84770064501E24C3C44524C2CC6653AC1FFBC93AB2C6C821EE6FA56E7E9BF0`.
+- Supersedes `0.0.240`; use `0.0.241` for customer Incident DateTime testing.
+
+### Validation
+
+- Perl syntax checks passed with repo include path for all mirrored `CustomerTicketMessage.pm` copies.
+- Mirror hash check passed for the `CustomerTicketMessage.pm` family: `104524CEEE7E4292D51CAD4038DEA7DA5D88F0E528287E64863FEB9D41A201E9`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.241.opm` parsed successfully as XML: version `0.0.241`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - packaged customer overlay passes `LayoutObject => $LayoutObject`;
+  - packaged `BaseDateTime.pm` overlay receives `LayoutObject`;
+  - packaged `BaseDateTime.pm` overlay uses `TransformDates => 1`.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify a past local `ZTicket-ActualStart` submits without returning the server "need a past date" error.
+- A future local `ZTicket-ActualStart` should still be blocked by client validation because the field is configured as not-in-future.
+- The remaining RichText `reading 'on'` console error is separate and should be handled by replacing the service RichText path with a TESSERA service-specific renderer/initializer.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.240 DateTime Server Validation Timezone Fix
+
+### Completed work
+
+- Fixed the server-side DateTime restriction validation path that could reject a user-local past DateTime as future.
+- Updated `Kernel/System/DynamicField/Driver/BaseDateTime.pm` so `EditFieldValueValidate()` calls `EditFieldValueGet()` with `LayoutObject` and `TransformDates => 1`.
+- The validation comparison now uses the same transformed OTOBO-timezone value that render/save paths use, instead of comparing raw browser/user-timezone DateTime parts as OTOBO/server timezone.
+- Added `BaseDateTime.pm` to the GovernanceDB runtime overlay so the fix is delivered by package install/upgrade.
+- Mirrored `BaseDateTime.pm` into `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.240`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.240.opm`.
+- `Kernel/Package/GovernanceDB-0.0.240.opm` SHA256: `C71989E5183AD3F7D70925A29E4EBB9F25B4AA151E3702AFE6E7A0F063CF38FF`.
+- Supersedes `0.0.239`; use `0.0.240` for Incident DateTime fields such as `ZTicket-ActualStart`.
+
+### Validation
+
+- Perl syntax checks passed with repo include path for:
+  - `Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm`;
+  - `ZTSMOverlay/files/Kernel/System/DynamicField/Driver/BaseDateTime.pm`.
+- Mirror hash check passed for the `BaseDateTime.pm` family: `1539C6498538C6B50737F0EEBF548DAE2B6746B1DE79795586E8DD913F128479`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.240.opm` parsed successfully as XML: version `0.0.240`, file count `200`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the runtime overlay contains `BaseDateTime.pm` and that validation uses both `LayoutObject` and `TransformDates => 1`.
+
+### Architectural Decisions
+
+- DateTime widgets render in user/browser-visible time, but stored values and restriction validation must compare after conversion to OTOBO timezone.
+- Dynamic service DateTime fixes should not depend on client-side comparison alone; server validation must use the same transformed value that will be saved.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify `ZTicket-ActualStart = 2026-07-08 10:31` passes when browser current local time is later than 10:31.
+- Longer-term service-renderer work should move service DynamicFields toward predictable TESSERA service DOM and away from generic post-AJAX repair.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.239 DateTime Diagnostic Prefix Fix
+
+### Completed work
+
+- Fixed the Date/DateTime server validation diagnostic added in `0.0.238` so it no longer treats the `Used` checkbox as the DateTime field prefix.
+- Date/DateTime logging now resolves the field group from the `.DynamicFieldDate` container and uses the `Year` field as the primary prefix anchor.
+- Added `ZTSMServiceExtensionDateTimePartFind()` to locate Year, Month, Day, Hour, Minute, and Used inside the same DateTime container without relying on the errored child element.
+- Kept the plain warning line with submitted local value, submitted ISO, browser current ISO, delta seconds, restriction, used state, and prefix.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.239`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.239.opm`.
+- `Kernel/Package/GovernanceDB-0.0.239.opm` SHA256: `19DCB844D85C7D4F6C217625C1804CC2768A125A4F29AE9206EB9789CBB08D7F`.
+- Supersedes `0.0.238`; use `0.0.239` when checking whether `ZTicket-ActualStart` returned blank date parts or a future timestamp.
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `7E1ECDFD180A91A7C52A2472A43F533191886B47DC10CC781FBFCC66193AA732`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.239.opm` parsed successfully as XML: version `0.0.239`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - `ZTSMServiceExtensionDateTimePartFind()` is present;
+  - the fallback prefix strips `Used`;
+  - the DateTime container `Year` field is used as the primary anchor;
+  - unsafe `InitAllEditors()` refresh is absent;
+  - unsafe `DynamicFieldReferenceSearch.Init()` refresh is absent.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify the Date/DateTime warning now reports `field=ZTicket-ActualStart`, not `field=ZTicket-ActualStartUsed`.
+- If the corrected log still shows blank submitted date parts, inspect server-returned DateTime HTML/field naming before changing validation rules.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.238 DateTime Diagnostic Logging And RichText Language Guard
+
+### Completed work
+
+- Replaced the collapsed Date/DateTime server-validation warning object with a plain console warning line that includes:
+  - field name and server validation message;
+  - submitted local date/time parts;
+  - submitted ISO timestamp as interpreted by the browser;
+  - browser current ISO timestamp at log time;
+  - `deltaSeconds` between submitted time and browser current time;
+  - active date restriction class (`not-in-future`, `future-only`, or `unknown`);
+  - DateTime `Used` checkbox state and field prefix.
+- Reduced duplicate Date/DateTime validation warnings by logging once per `.DynamicFieldDate` container instead of once per errored select/input part.
+- Added `ZTSMServiceExtensionRichTextConfigEnsure()` so scoped RichText initialization supplies a fallback `UserLanguage` before calling OTOBO's `Core.UI.RichTextEditor.InitEditor()`.
+- Kept the scoped RichText init path and did not restore global `Core.UI.RichTextEditor.InitAllEditors()`.
+- Kept `Core.Agent.DynamicFieldReferenceSearch.Init()` out of the customer service refresh path.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.238`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.238.opm`.
+- `Kernel/Package/GovernanceDB-0.0.238.opm` SHA256: `9CC46A50734940B604A698B2CEF87EC70AD072C81AB908A65C0090FC46BE4FD0`.
+- Supersedes `0.0.237`; use `0.0.238` when diagnosing `ZTicket-ActualStart` past-date server errors.
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `114BA971A5CFEB655DFF40257829DCAFCA1D669AE519A53C62CD35906982F0D0`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.238.opm` parsed successfully as XML: version `0.0.238`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - plain Date/DateTime diagnostic warning fields are present;
+  - submitted/browser comparison timestamps are present;
+  - RichText `UserLanguage` guard is present;
+  - unsafe `InitAllEditors()` refresh is absent;
+  - unsafe `DynamicFieldReferenceSearch.Init()` refresh is absent.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should inspect the new single-line `[TESSERA service-extension] Date/DateTime server validation error` warning for the actual submitted timestamp and browser comparison time.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.237 Scoped Dynamic RichText Restore
+
+### Completed work
+
+- Fixed the `0.0.236` regression where dynamic service RichText fields rendered as raw textareas after service selection.
+- Restored RichText editor initialization for customer service extension fields without returning to the unsafe global `Core.UI.RichTextEditor.InitAllEditors()` refresh.
+- Added a scoped `ZTSMServiceExtensionRichTextEditorsInit()` path that initializes only `textarea.RichText` fields inside `.ZTSMServiceExtensionField`.
+- Added `ZTSMServiceExtensionRichTextEditorLabelEnsure()` so OTOBO's customer CKEditor initializer has the RichText-style label it expects and does not fail on missing `innerText`.
+- Kept `Core.Agent.DynamicFieldReferenceSearch.Init()` out of the customer service refresh path.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.237`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.237.opm`.
+- `Kernel/Package/GovernanceDB-0.0.237.opm` SHA256: `3375ED47FE867F2E8F866F243AF9110AAFD22E1FBC8E334824B77733F77C9427`.
+- Supersedes `0.0.236`; use `0.0.237` for service forms with dynamic RichText fields.
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `777B4304DBAA20FFF20C1F2ADD6FAE04B5145A8217E74163BE9693E8E5F34984`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.237.opm` parsed successfully as XML: version `0.0.237`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - scoped RichText init is present;
+  - RichText label preparation is present;
+  - single-editor `Core.UI.RichTextEditor.InitEditor()` is used;
+  - unsafe `InitAllEditors()` refresh is absent;
+  - unsafe `DynamicFieldReferenceSearch.Init()` refresh is absent.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify dynamic RichText fields render as CKEditor widgets again after Incident service selection.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.236 Customer Service Init Error Logging And Safe Refresh
+
+### Completed work
+
+- Removed unsafe dynamic refresh calls from `ZTSMCustomerTicketMessageServiceFields.tt`:
+  - no longer calls `Core.Agent.DynamicFieldReferenceSearch.Init()` from the customer service extension refresh path;
+  - no longer calls `Core.UI.RichTextEditor.InitAllEditors()` from the customer service extension refresh path.
+- Kept the lightweight local RichText layout preparation, but stopped reinitializing all RichText editors during service dynamic-field refresh.
+- Added always-on `console.warn` logging for returned Date/DateTime server validation errors in service extension fields.
+- The warning logs field id/name/class, tooltip message, date parts, time parts, and `Used` checkbox state, so server-side date failures are visible without enabling `ZTSMServicePayloadDebug`.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.236`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.236.opm`.
+- `Kernel/Package/GovernanceDB-0.0.236.opm` SHA256: `1DED85670E5A1C9876E889A6D65FDE332FF99FD0D2C04E48A611F54A9F9342CF`.
+- Supersedes `0.0.235`; use `0.0.236` when checking returned `ZTicket-ActualStart` server validation errors and customer-page init console errors.
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `7D4BCFB6E980DD0B7D210801FFA8BB49627ECEFA83454B0031B344AF835F884E`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.236.opm` parsed successfully as XML: version `0.0.236`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - Date/DateTime server warning logging is present;
+  - unsafe DynamicFieldReferenceSearch init is removed;
+  - unsafe RichText `InitAllEditors()` refresh is removed.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify the console no longer shows `DynamicFieldReference` or RichText `replace` / `innerText` init errors during service refresh.
+- If `ZTicket-ActualStart` still returns with `ServerError`, inspect the new `[TESSERA service-extension] Date/DateTime server validation error` warning payload.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.235 DynamicField Set Mandatory Performance Fix
+
+### Completed work
+
+- Reduced the mandatory DynamicField Set validation overhead introduced in `0.0.232`.
+- Removed the Set-level frontend `Validate_Required` / `Validate_Required_IfVisible` classes so the customer form validator does not keep treating the Set container as a live client-side required field.
+- Replaced the recursive `_ValueHasData()` value-object walk with a cheap raw submitted-parameter check in `_SubmittedSetHasData()`.
+- Kept the mandatory Set rule: if a mandatory Set submits no meaningful value, the server still returns a Set-level `This field is required.` error.
+- Date/DateTime fields inside a Set now count as filled only when their `Used` flag is submitted, so untouched date widgets do not satisfy mandatory Set validation just because default date parts exist.
+- Synced `Kernel/System/DynamicField/Driver/Set.pm` into the GovernanceDB runtime overlay.
+- Bumped `GovernanceDB.sopm` package version to `0.0.235`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.235.opm`.
+- `Kernel/Package/GovernanceDB-0.0.235.opm` SHA256: `FCD96C3C7C5E2D1FC5E5CADFDFC599F000FB56EDB62D5B5E2AC3D8DC06CB83DE`.
+- Supersedes `0.0.234`; use `0.0.235` for ServiceRequest and Incident service forms after the mandatory Set performance regression.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/Set.pm`;
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`.
+- Mirror hash check passed for the Set driver family: `9596BE1FB5F73905062A70D9102504285FE80C60FBBAD8CDCA103390D6517FC3`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.235.opm` parsed successfully as XML: version `0.0.235`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - `_SubmittedSetHasData` is present;
+  - recursive `_ValueHasData` is removed;
+  - Set-level client `Validate_Required` classes are removed;
+  - the cheap check reads raw submitted params.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify ServiceRequest and Incident forms no longer slow down after service selection while a blank mandatory Set still blocks final submit.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.234 Dynamic DateTime Submit Guard Follow-Up
+
+### Completed work
+
+- Fixed the remaining dynamic DateTime validation path where an already-initialized Datepicker icon caused the DateTime validator repair to return early.
+- Moved row-specific DateTime validator repair before Datepicker icon detection so cloned/suffixed rows always point at their own Year, Month, Day, Hour, and Minute inputs.
+- Added focused DateTime debug logging behind the existing `ZTSMServicePayloadDebug` switch:
+  - set `localStorage.ZTSMServicePayloadDebug = '1'` in the browser console and reload to log the field suffix, displayed DateTime parts, browser `now`, epoch comparison, restriction flags, and day-field classes.
+- Reduced service-extension refresh noise by skipping synthetic `change` dispatch for RichText/editor fields and Date/DateTime component inputs.
+- Kept the existing service-field guards, payload tools, and mutation narrowing intact.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.234`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.234.opm`.
+- `Kernel/Package/GovernanceDB-0.0.234.opm` SHA256: `20549788C5A33A65841C9CB05017155D007EC9AF4D0801975864EA2E5A6316CE`.
+- Supersedes `0.0.233`; use `0.0.234` for Incident/service forms where `ZTicket-ActualStart` still blocked submit as "need a past date".
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `D9DA90EA56473AF97C13C2E71F04BF49FF7D2313BEC755985E368B3177B327A4`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.234.opm` parsed successfully as XML: version `0.0.234`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the runtime overlay contains DateTime debug logging, row-specific DateTime repair, and RichText/date synthetic-change skipping.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should enable `localStorage.ZTSMServicePayloadDebug = '1'` if the field still blocks submit, then inspect the `datetime-validation-link` console log for the compared value and `now`.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.233 Dynamic Service DateTime Past Validation Fix
+
+### Completed work
+
+- Fixed dynamic customer service DateTime validation where cloned/suffixed DateTime rows could compare against the wrong date/time input IDs.
+- Updated `ZTSMCustomerTicketMessageServiceFields.tt` so dynamically initialized service DateTime rows add row-specific `Validate_DateYear_*`, `Validate_DateMonth_*`, `Validate_DateHour_*`, and `Validate_DateMinute_*` links when a suffix is present.
+- Passed `DateInFuture` / `DateNotInFuture` flags into the dynamic Datepicker initializer so the browser-side DateTime widget keeps the same restriction semantics as the server-side `BaseDateTime.pm` validator.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.233`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.233.opm`.
+- `Kernel/Package/GovernanceDB-0.0.233.opm` SHA256: `65CB4DAC14D1F086FC3FAC5550D821DA79B07825143574B213610B1BC91E54DE`.
+- Supersedes `0.0.232`; use `0.0.233` for Incident/service forms that include DateTime fields such as `ZTicket-ActualStart`.
+
+### Validation
+
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `225F05A55BE89ACAC17B2027C360D1733F5F1EE93C95168B583AAFF018651B7B`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.233.opm` parsed successfully as XML: version `0.0.233`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the runtime overlay contains row-specific DateTime validator linkage and the dynamic `DateNotInFuture` Datepicker option.
+
+### Architectural Decisions
+
+- `DisableFutureDates` on a DateTime field means the submitted timestamp must not be later than the current timestamp; it does not require yesterday or an earlier calendar day.
+- Dynamic Set/service rows must preserve validator links to the row's own DateTime inputs; otherwise browser validation can disagree with the server-side timestamp comparison.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify `ZTicket-ActualStart = 07/08/2026 - 08:45` passes when the current time is July 8, 2026 after 08:45 in the active user locale.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.232 Required DynamicField Set Inner-Value Validation
+
+### Completed work
+
+- Fixed the required DynamicField Set behavior so a mandatory Set cannot submit with only an empty structural row.
+- Updated `Kernel/System/DynamicField/Driver/Set.pm` so Set validation now checks whether any submitted inner field contains meaningful data.
+- Required Set fields now return a server validation error when every included field value is empty, instead of allowing ticket creation or falling into invalid-info closure.
+- Added Set-level customer template error rendering in `DynamicField/Customer/Set.tt` so the form asks the requester to provide a value.
+- Synced Set runtime changes into the GovernanceDB runtime overlay.
+- Bumped `GovernanceDB.sopm` package version to `0.0.232`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.232.opm`.
+- `Kernel/Package/GovernanceDB-0.0.232.opm` SHA256: `21D015E5696D274BE0E0A8E06F8821BD8F44A8F433F256CF59467DE3F43DE3CC`.
+- Supersedes `0.0.231`; use `0.0.232` for service forms that include mandatory DynamicField Set fields.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/Set.pm`;
+  - `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm`.
+- Mirror hash checks passed:
+  - Set driver family: `49C028822DEFF85261C6D4B266DA4A941B32283A662628F6A6217E9485F809DD`;
+  - customer Set template family: `3AACC80C749C0BF441EED628DAACC72AFA6B3931AD7C1DA34AD12C5E087722EE`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.232.opm` parsed successfully as XML: version `0.0.232`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - packaged Set driver contains `_ValueHasData`;
+  - packaged customer Set template contains `TooltipErrorMessage`;
+  - packaged customer ticket message overlay still contains `_ServiceExtensionSubmittedValuesEnforce`.
+
+### Architectural Decisions
+
+- A mandatory Set means the Set must contain at least one real inner value; the hidden `SetIndex_*` row marker is not evidence of submitted information.
+- Blank mandatory Set fields are customer-correctable validation errors and should ask for a value, not create `closed invalid-info` evidence tickets.
+- The invalid-info closure path remains for non-Set mandatory service payload holes after default resolution.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify a mandatory service Set with a blank row blocks submit and displays the Set-level error.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.231 Service Field Submit/Import Contract Guard
+
+### Completed work
+
+- Added backend submit/import hardening for customer service dynamic fields in `CustomerTicketMessage.pm`.
+- Enforced the selected service's `ZService-Field` contract at submission time, not only in the rendered form:
+  - service extension fields not listed for the selected service are removed from submitted dynamic-field values and marked invisible before validation/save;
+  - service extension fields listed for the selected service but submitted empty are filled from the dynamic-field `DefaultValue` when one exists;
+  - listed mandatory service fields that remain empty after default resolution no longer persist forged/empty service data.
+- Added invalid-info handling for the mandatory-empty case:
+  - the ticket is created with `closed invalid-info` when that state exists;
+  - the article records which mandatory service field(s) were missing;
+  - validation for those specific missing fields is bypassed only so the invalid-info evidence ticket can be created instead of silently accepting bad data.
+- Added idempotent package bootstrap seeding for ticket state `closed invalid-info`.
+- Synced `CustomerTicketMessage.pm` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.231`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.231.opm`.
+- `Kernel/Package/GovernanceDB-0.0.231.opm` SHA256: `AC2A2C20B5E3B14069C14E958D23649B0298DF6EF0F3D5652DE6CAE20856E503`.
+- Supersedes `0.0.230`; use `0.0.231` for Incident/service payload testing that includes JSON/YAML/import-style payload attempts.
+
+### Validation
+
+- Perl syntax checks passed for all mirrored `CustomerTicketMessage.pm` copies and `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm`.
+- Mirror hash check passed for the `CustomerTicketMessage.pm` family: `31BA28B990D68D0F1E011F90A63DE50D6A5F5D7108E36E26FE9DCCF7F3D5E1F7`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.231.opm` parsed successfully as XML: version `0.0.231`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the runtime overlay contains `_ServiceExtensionSubmittedValuesEnforce()` and the bootstrap contains `closed invalid-info`.
+
+### Architectural Decisions
+
+- The selected service's `ZService-Field` is the backend save whitelist for service extension fields.
+- UI rendering, JSON drawer state, YAML/import payloads, and crafted form submissions must all converge through the same backend whitelist/default/invalid-info guard.
+- `closed invalid-info` is seeded by package bootstrap so the mandatory-empty path works on fresh installs and upgrades.
+
+### Known Issues / Follow-Up
+
+- Browser/runtime retest should verify that an import payload containing fields outside the selected service does not persist those values.
+- Browser/runtime retest should verify that an allowed mandatory field with no submitted value uses its configured default if present, or creates a `closed invalid-info` ticket if no default exists.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.230 Service RichText Performance Narrowing
+
+### Completed work
+
+- Fixed the customer service dynamic-field performance regression where RichText editors could become slow after incident dynamic fields were added.
+- Narrowed `ZTSMCustomerTicketMessageServiceFields.tt` so generic service-field row normalization no longer re-runs `ZTSMServiceExtensionRichTextPrepare()`.
+- Tightened the service-field `MutationObserver` so it reacts only to row/set-index structural changes (`AddValueRow`, `RemoveValueRow`, `SetIndex_*`) and ignores CKEditor/CKE DOM mutations.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.230`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.230.opm`.
+- `Kernel/Package/GovernanceDB-0.0.230.opm` SHA256: `A0CF7BFE3D5C12F86D7D026B7B764BB3BA3557029CC2B3337FDD4477564D8088`.
+- Supersedes `0.0.229`; use `0.0.230` for Incident Diagnosis testing with RichText-heavy customer forms.
+
+### Validation
+
+- Mirror hash check passed for the `ZTSMCustomerTicketMessageServiceFields.tt` family: `3BB8C932EF464F4293B49D68FF15862FBC4A9B7501F5144954295F0A3C76B219`.
+- Stripped service template JavaScript passed `node --check` using the bundled Node runtime.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.230.opm` parsed successfully as XML: version `0.0.230`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+
+### Architectural Decisions
+
+- RichText preparation should be tied to service dynamic-field initialization/replacement, not to every generic mutation or row-normalization pass.
+- Mutation watching must stay scoped to structural Set-row changes so CKEditor internal DOM churn does not trigger repeated expensive layout/RichText work.
+
+### Known Issues / Follow-Up
+
+- Browser retest on the Incident form should confirm scrolling and RichText typing remain responsive after dynamic incident fields render.
+- `git diff --check` still reports trailing whitespace in the user-updated `AGENTS.md`; this package pass did not alter that file.
+
+## 2026-07-08 GovernanceDB 0.0.229 Incident Diagnosis Data Model and Iteration Runtime Foundation
+
+### Completed work
+
+- Started the `PROJECT_NEXT.md` Incident Diagnosis focus without treating older chat history as authoritative.
+- Added package bootstrap seeding for the first Incident Diagnosis data model:
+  - ticket type `Diagnosis`;
+  - governance role `DIAGNOSE`;
+  - parent intake fields `ZIN-Observed`, `ZIN-ErrorMessage`, `ZIN-AffectedCI`, `ZIN-Iteration`;
+  - diagnosis child fields `ZIN-Diagnosis`, `ZIN-Outcome`, `ZIN-Plan`, `ZIN-Summary`, `ZIN-Iteration`;
+  - downstream diagnosis linkage fields `ZIN-SourceDiagnosisTicketID`, `ZIN-SourceDiagnosisIteration`, `ZIN-SourceDiagnosisOutcome`.
+- Added `Diagnosis` to packaged `default_general_catalog.yml` under `ZTSM::Type`.
+- Made BlueBook child lookup, duplicate detection, child creation, and chapter-level completion iteration-aware when `ZIN-Iteration` exists.
+- Propagated iteration runtime changes across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.229`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.229.opm`.
+- `Kernel/Package/GovernanceDB-0.0.229.opm` SHA256: `50FE99CED6497520F0E196536F59D1E18BB14B038F359B1BFEB5A966465D2BD5`.
+- Supersedes `0.0.228`; install/upgrade testing for the Incident Diagnosis foundation should use `Kernel/Package/GovernanceDB-0.0.229.opm`.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/ZTSMBlueBookRuntime.pm`;
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm`;
+  - `Kernel/System/ProcessManagement/TransitionAction/ZTSMChapterDirector.pm`;
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm`.
+- Mirror hash checks passed for the `ZTSMBlueBookRuntime.pm`, `ZTSMBlueBookReader.pm`, and `ZTSMChapterDirector.pm` families.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.229.opm` parsed successfully as XML: version `0.0.229`, file count `199`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+
+### Architectural Decisions
+
+- `ZIN-Iteration` is an optional identity dimension: existing Service Request / Change behavior remains unchanged when the field is absent, but Incident BlueBook child lookup and duplicate prevention include it when present.
+- `ZIN-Observed`, `ZIN-ErrorMessage`, and `ZIN-AffectedCI` remain parent intake fields; this package pass only seeds them and does not make them diagnoser-editable.
+- Diagnosis is separated from Assessment at the package vocabulary level by adding `Diagnosis` ticket type and `DIAGNOSE` governance role.
+
+### Known Issues / Follow-Up
+
+- Build the dedicated `Diagnosis` customer child form from `release/next/ideal.jpg`.
+- Add parent Incident initialization/runtime enforcement for `ZIN-Iteration = 1` where dynamic-field defaults are not enough.
+- Add Diagnosis result aggregation and downstream task expansion from each actionable source Diagnosis child.
+- Add Incident verification failure loopback to increment `ZIN-Iteration` and return the parent to `diagnose`.
+- `git diff --check` currently reports trailing whitespace in the newly updated `AGENTS.md`; that file was user-authored for this focus and was not altered by this package pass.
 
 ## 2026-07-06 GovernanceDB 0.0.228 Service RichText Manual Alignment Package
 

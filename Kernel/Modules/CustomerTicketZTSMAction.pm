@@ -394,8 +394,15 @@ sub Run {
         );
 
         if ( !$Access ) {
+            my $ConfiguredOwnerActionAccess;
+            if ( $RuntimeAction eq 'AddRequiredSupportProfile' || $RuntimeAction eq 'FollowUp' ) {
+                my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
+                $ConfiguredOwnerActionAccess = $Owner && lc $Owner eq lc $Self->{UserID};
+            }
+
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
-                if !$Self->_IPCApprovalOverrideAllowed(
+                if !$ConfiguredOwnerActionAccess
+                && !$Self->_IPCApprovalOverrideAllowed(
                 Ticket        => \%Ticket,
                 RuntimeAction => $RuntimeAction,
                 );
@@ -484,7 +491,7 @@ sub Run {
         my $ActionableTicketType = _ActionableTicketType(
             Config => $Config,
             Type   => $Ticket{Type},
-        ) || $Self->_TaskLikeTicket( Ticket => \%Ticket );
+        ) || $Self->_TakeOwnershipTicket( Ticket => \%Ticket );
 
         if ( !$ActionableTicketType ) {
             return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
@@ -1096,6 +1103,13 @@ sub _NormalizeValue {
         return $Value->[0];
     }
 
+    if ( ref $Value eq 'HASH' ) {
+        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID SelectedID SelectedValue)) {
+            return $Value->{$Key} if defined $Value->{$Key} && $Value->{$Key} ne '';
+        }
+        return;
+    }
+
     return $Value;
 }
 
@@ -1241,10 +1255,24 @@ sub _TaskLikeTicket {
     my ( $Self, %Param ) = @_;
 
     my $Ticket = $Param{Ticket};
+    my $Config = $Param{Config} || {};
     return if !IsHashRefWithData($Ticket);
 
     return 1 if ( $Ticket->{Type} || '' ) eq 'Task';
     return 1 if ( $Ticket->{Title} || '' ) =~ m{\ATask\s+-\s+}i;
+
+    return;
+}
+
+sub _TakeOwnershipTicket {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    return 1 if $Self->_TaskLikeTicket( Ticket => $Ticket );
+    return 1 if ( $Ticket->{Type} || '' ) eq 'Diagnosis';
+    return 1 if ( $Ticket->{Title} || '' ) =~ m{\ADiagnosis\s+-\s+}i;
 
     return;
 }
@@ -1576,7 +1604,6 @@ sub _ServiceSupportMapTicketApply {
         }
     }
 
-    return 1;
 }
 
 sub _ExternalPartyCloneSkipFields {
@@ -1813,17 +1840,17 @@ sub _AddRequiredSupportProfileAllowed {
         'Assessment',
         'Endorsement',
         'Approval',
+        'Diagnosis',
     ];
     my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
 
-    return $AllowedType{ $Ticket->{Type} };
+    return $AllowedType{ $Ticket->{Type} || '' };
 }
 
 sub _FollowUpAllowed {
     my ( $Self, %Param ) = @_;
 
     my $Ticket = $Param{Ticket};
-    my $Config = $Param{Config} || {};
 
     return if !IsHashRefWithData($Ticket);
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
@@ -1832,16 +1859,6 @@ sub _FollowUpAllowed {
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
     return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
-
-    my $AllowedTypes = $Config->{FollowUpTypes} || [
-        'Assessment',
-        'Endorsement',
-        'Approval',
-        'Implementation',
-        'Verification',
-    ];
-    my %AllowedType = map { $_ => 1 } @{$AllowedTypes};
-    return if !$AllowedType{ $Ticket->{Type} || '' };
 
     return $Self->_FollowUpPurpleBookID( Ticket => $Ticket );
 }
@@ -1855,6 +1872,7 @@ sub _FollowUpPurpleBookID {
     my $BlueBookID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
     my $BlueLevel  = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
     my $Chapter    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    my $Profile    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Profile'} );
 
     return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
 
@@ -1865,6 +1883,7 @@ sub _FollowUpPurpleBookID {
         BlueBook => $BlueBook,
     );
 
+    my @FallbackPurpleBookIDs;
     RECORD:
     for my $Record (@Records) {
         next RECORD if !$Record || ref $Record ne 'HASH';
@@ -1872,13 +1891,17 @@ sub _FollowUpPurpleBookID {
             BlueLevel => $BlueLevel,
             Record    => $Record,
         );
-        next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
         my $PurpleBookID = _NormalizeValue( $Record->{PurpleBook} );
-        return $PurpleBookID if $PurpleBookID;
+        next RECORD if !$PurpleBookID;
+        return $PurpleBookID if defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter;
+
+        my $RecordProfile = _NormalizeValue( $Record->{Profile} );
+        push @FallbackPurpleBookIDs, $PurpleBookID if $Profile && $RecordProfile && $RecordProfile eq $Profile;
     }
 
+    return $FallbackPurpleBookIDs[0] if @FallbackPurpleBookIDs == 1;
     return;
 }
 

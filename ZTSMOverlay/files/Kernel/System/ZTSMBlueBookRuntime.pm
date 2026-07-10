@@ -20,9 +20,9 @@ sub _NormalizeValue {
     }
 
     if ( ref $Value eq 'HASH' ) {
-        return $Value->{Key}     if defined $Value->{Key};
-        return $Value->{Value}   if defined $Value->{Value};
-        return $Value->{Content} if defined $Value->{Content};
+        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID)) {
+            return $Value->{$Key} if defined $Value->{$Key} && $Value->{$Key} ne '';
+        }
         return;
     }
 
@@ -152,7 +152,13 @@ sub _RecordStructuredFieldValue {
     return if !$Field;
 
     if ( ( $Record->{DF} || '' ) eq $Field ) {
-        my $Value = exists $Record->{Value} ? $Record->{Value} : $Record->{Content};
+        my $Value;
+        FIELDVALUE:
+        for my $Key (qw(Value Content Key GovernanceObjectID ObjectID ID ItemID SelectedID SelectedValue)) {
+            next FIELDVALUE if !exists $Record->{$Key};
+            $Value = $Record->{$Key};
+            last FIELDVALUE;
+        }
         $Value = _NormalizeValue($Value);
         return $Value if defined $Value && $Value ne '';
     }
@@ -551,11 +557,79 @@ sub ChildTicketIDsGet {
         UserID => $Param{UserID} || 1,
     );
 
+    my $Iteration = _NormalizeValue( $Param{Iteration} );
+    for my $TicketKey (qw(Ticket Data ParentTicket)) {
+        next if defined $Iteration;
+        next if !$Param{$TicketKey} || ref $Param{$TicketKey} ne 'HASH';
+        $Iteration = _NormalizeValue( $Param{$TicketKey}->{'DynamicField_ZIN-Iteration'} );
+    }
+    if ( defined $Iteration && $Iteration ne '' ) {
+        $Search{'DynamicField_ZIN-Iteration'} = {
+            Equals => $Iteration,
+        };
+    }
+
     if ( defined $Param{BlueLevel} && $Param{BlueLevel} ne '' ) {
         $Search{'DynamicField_ZTicket-BlueLevel'} = {
             Equals => $Param{BlueLevel},
         };
     }
+
+    return $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
+}
+
+sub ChildTicketIDsForRecordGet {
+    my (%Param) = @_;
+
+    return if !$Param{ParentTicketID};
+    return if !$Param{BlueBookID};
+    return if !defined $Param{BlueLevel};
+    return if !$Param{Record} || ref $Param{Record} ne 'HASH';
+
+    my %Search = (
+        Result => 'ARRAY',
+        'DynamicField_ZTicket-Parent' => {
+            Equals => $Param{ParentTicketID},
+        },
+        'DynamicField_ZTicket-BlueBook' => {
+            Equals => $Param{BlueBookID},
+        },
+        'DynamicField_ZTicket-BlueLevel' => {
+            Equals => $Param{BlueLevel},
+        },
+        UserID => $Param{UserID} || 1,
+    );
+
+    my $Iteration = _NormalizeValue( $Param{Iteration} );
+    for my $TicketKey (qw(Ticket Data ParentTicket)) {
+        next if defined $Iteration;
+        next if !$Param{$TicketKey} || ref $Param{$TicketKey} ne 'HASH';
+        $Iteration = _NormalizeValue( $Param{$TicketKey}->{'DynamicField_ZIN-Iteration'} );
+    }
+    if ( defined $Iteration && $Iteration ne '' ) {
+        $Search{'DynamicField_ZIN-Iteration'} = {
+            Equals => $Iteration,
+        };
+    }
+
+    my %RecordFieldMap = (
+        'DynamicField_ZTicket-Chapter' => $Param{Record}->{Chapter},
+        'DynamicField_ZTicket-Profile' => $Param{Record}->{Profile},
+        'DynamicField_ZTicket-Role'    => $Param{Record}->{Role},
+    );
+    my $RecordHasStableIdentity = _NormalizeValue( $Param{Record}->{Profile} ) ? 1 : 0;
+
+    FIELD:
+    for my $SearchField ( sort keys %RecordFieldMap ) {
+        my $Value = _NormalizeValue( $RecordFieldMap{$SearchField} );
+        next FIELD if !defined $Value || $Value eq '';
+
+        $Search{$SearchField} = {
+            Equals => $Value,
+        };
+    }
+
+    return if !$RecordHasStableIdentity;
 
     return $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
 }
@@ -710,40 +784,16 @@ sub LevelSpawn {
     return if !defined $Param{BlueLevel};
 
     my @Records = @{ $Param{Records} || [] };
-
-    my @ExistingTicketIDs = ChildTicketIDsGet(
-        ParentTicketID => $Param{ParentTicketID},
-        BlueBookID     => $Param{BlueBookID},
-        BlueLevel      => $Param{BlueLevel},
-        UserID         => $Param{UserID} || 1,
-    );
+    my $Iteration = _NormalizeValue( $Param{Iteration} );
+    if ( !defined $Iteration || $Iteration eq '' ) {
+        $Iteration = _NormalizeValue( $Param{ParentTicket}->{'DynamicField_ZIN-Iteration'} );
+    }
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
     my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
 
-    if (@ExistingTicketIDs) {
-        return @ExistingTicketIDs if !$Param{AllowRepeatClosed};
-
-        my @OpenExistingTicketIDs;
-        EXISTINGTICKETID:
-        for my $ExistingTicketID (@ExistingTicketIDs) {
-            my %ExistingTicket = $TicketObject->TicketGet(
-                TicketID      => $ExistingTicketID,
-                DynamicFields => 0,
-                UserID        => $Param{UserID} || 1,
-                Silent        => 1,
-            );
-
-            next EXISTINGTICKETID if !%ExistingTicket;
-            next EXISTINGTICKETID if ( $ExistingTicket{StateType} || '' ) eq 'closed';
-
-            push @OpenExistingTicketIDs, $ExistingTicketID;
-        }
-
-        return @OpenExistingTicketIDs if @OpenExistingTicketIDs;
-    }
-
     my @CreatedTicketIDs;
+    my @ExistingTicketIDs;
 
     RECORD:
     for my $Record (@Records) {
@@ -751,6 +801,44 @@ sub LevelSpawn {
         next RECORD if !$Record;
         next RECORD if ref $Record ne 'HASH';
         next RECORD if $Record->{BlueLevel} ne $Param{BlueLevel};
+
+        my @RecordExistingTicketIDs = ChildTicketIDsForRecordGet(
+            ParentTicketID => $Param{ParentTicketID},
+            BlueBookID     => $Param{BlueBookID},
+            BlueLevel      => $Param{BlueLevel},
+            Record         => $Record,
+            ParentTicket   => $Param{ParentTicket},
+            Iteration      => $Iteration,
+            UserID         => $Param{UserID} || 1,
+        );
+
+        if (@RecordExistingTicketIDs) {
+            if ( !$Param{AllowRepeatClosed} ) {
+                push @ExistingTicketIDs, @RecordExistingTicketIDs;
+                next RECORD;
+            }
+
+            my @OpenExistingTicketIDs;
+            EXISTINGTICKETID:
+            for my $ExistingTicketID (@RecordExistingTicketIDs) {
+                my %ExistingTicket = $TicketObject->TicketGet(
+                    TicketID      => $ExistingTicketID,
+                    DynamicFields => 0,
+                    UserID        => $Param{UserID} || 1,
+                    Silent        => 1,
+                );
+
+                next EXISTINGTICKETID if !%ExistingTicket;
+                next EXISTINGTICKETID if ( $ExistingTicket{StateType} || '' ) eq 'closed';
+
+                push @OpenExistingTicketIDs, $ExistingTicketID;
+            }
+
+            if (@OpenExistingTicketIDs) {
+                push @ExistingTicketIDs, @OpenExistingTicketIDs;
+                next RECORD;
+            }
+        }
 
         my $ParentTicket = $Param{ParentTicket};
         my $ChildType  = $Record->{Type} || $ParentTicket->{Type} || '';
@@ -814,6 +902,7 @@ sub LevelSpawn {
             'ZTicket-Strict'            => $Record->{Strict},
             'ZTicket-Duration'          => $Record->{Duration},
             'ZTicket-RequiredWeightage' => $Record->{RequiredWeightage} || 1,
+            'ZIN-Iteration'             => $Iteration,
         );
 
         FIELD:
@@ -885,7 +974,7 @@ sub LevelSpawn {
         );
     }
 
-    return @CreatedTicketIDs;
+    return @CreatedTicketIDs ? @CreatedTicketIDs : @ExistingTicketIDs;
 }
 
 sub ChildTemplateApply {
