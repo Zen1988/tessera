@@ -818,6 +818,76 @@
                     }
                 }());
                 </script>
+[% ELSIF Data.IsDiagnosis %]
+                <div id="ZTSMDiagnosisLazy_[% Data.Action | uri %]" class="ZTSMDiagnosisLazy" data-loaded="0">
+                    <div class="Messenger">
+                        <fieldset class="DontPrint">
+                            <div class="MessageHeader">
+                                <h2>[% Translate(Data.Label) | html %]</h2>
+                            </div>
+                            <div class="ZTSMDiagnosisLazyBody">[% Translate("Loading...") | html %]</div>
+                        </fieldset>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var Container = document.getElementById('ZTSMDiagnosisLazy_[% Data.Action | uri %]');
+                    var Button = document.getElementById('Button_ZTSM_[% Data.Action | uri %]');
+
+                    function ExecuteScripts(Scope) {
+                        var Scripts = Scope.querySelectorAll('script');
+                        Array.prototype.forEach.call(Scripts, function (Script) {
+                            var NewScript = document.createElement('script');
+                            if (Script.src) {
+                                NewScript.src = Script.src;
+                            }
+                            else {
+                                NewScript.text = Script.text || Script.textContent || Script.innerHTML || '';
+                            }
+                            Script.parentNode.replaceChild(NewScript, Script);
+                        });
+                    }
+
+                    function LoadDiagnosis() {
+                        if (!Container || Container.getAttribute('data-loaded') === '1') {
+                            return;
+                        }
+
+                        Container.setAttribute('data-loaded', '1');
+                        var Body = Container.querySelector('.ZTSMDiagnosisLazyBody');
+                        var BaseLink = window.Core && Core.Config && typeof Core.Config.Get === 'function'
+                            ? Core.Config.Get('Baselink')
+                            : '[% Env("CGIHandle") | html %]?';
+                        var URL = BaseLink
+                            + 'Action=CustomerTicketZTSMAction'
+                            + ';TicketID=[% Data.TicketID | uri %]'
+                            + ';RuntimeAction=[% Data.Action | uri %]'
+                            + ';Subaction=DiagnosisInline';
+
+                        var Request = new XMLHttpRequest();
+                        Request.open('GET', URL, true);
+                        Request.onreadystatechange = function () {
+                            if (Request.readyState !== 4 || !Body) {
+                                return;
+                            }
+                            if (Request.status >= 200 && Request.status < 300) {
+                                Body.innerHTML = Request.responseText;
+                                ExecuteScripts(Body);
+                                return;
+                            }
+                            Container.setAttribute('data-loaded', '0');
+                            Body.innerHTML = '[% Translate("Could not load diagnosis form.") | html %]';
+                        };
+                        Request.send();
+                    }
+
+                    if (Button) {
+                        Button.addEventListener('click', function () {
+                            window.setTimeout(LoadDiagnosis, 0);
+                        });
+                    }
+                }());
+                </script>
 [% ELSIF Data.InlineHTML %]
                 [% Data.InlineHTML %]
 [% ELSE %]

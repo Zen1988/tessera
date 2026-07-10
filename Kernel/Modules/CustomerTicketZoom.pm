@@ -2442,6 +2442,11 @@ sub _ZTSMRuntimeActions {
             State => 'closed successful',
             Types => ['Assessment'],
         },
+        Diagnose => {
+            Label => 'diagnose',
+            State => 'diagnosed',
+            Types => ['Diagnosis'],
+        },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -2540,7 +2545,10 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
         );
 
-    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed;
+    my $DiagnosisRuntimeActionAllowed = $OwnerMatchesCurrentUser
+        && ( $Ticket->{Type} || '' ) eq 'Diagnosis';
+
+    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed;
 
     return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess;
 
@@ -2631,6 +2639,9 @@ sub _ZTSMRuntimeActions {
 
         if ( $Ticket->{Type} eq 'Assessment' && $Action eq 'Assess' ) {
             $RuntimeAction{IsRiskAssessment} = 1;
+        }
+        elsif ( $Ticket->{Type} eq 'Diagnosis' && $Action eq 'Diagnose' ) {
+            $RuntimeAction{IsDiagnosis} = 1;
         }
 
         push @RuntimeActions, \%RuntimeAction;
@@ -3014,12 +3025,27 @@ sub _ZTSMFollowUpAllowed {
 
     my $Ticket = $Param{Ticket};
 
-    return if !IsHashRefWithData($Ticket);
-    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    if ( !IsHashRefWithData($Ticket) ) {
+        $Self->_ZTSMFollowUpLog( Message => 'Follow-up visibility rejected: no ticket data.' );
+        return;
+    }
+    if ( ( $Ticket->{StateType} || '' ) eq 'closed' ) {
+        $Self->_ZTSMFollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up visibility rejected: ticket is closed. State='$Ticket->{State}' StateType='$Ticket->{StateType}'.",
+        );
+        return;
+    }
 
     for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
         my $Value = _ZTSMNormalizeValue( $Ticket->{ 'DynamicField_' . $FieldName } );
-        return if !defined $Value || $Value eq '';
+        if ( !defined $Value || $Value eq '' ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up visibility rejected: required ticket field '$FieldName' is empty.",
+            );
+            return;
+        }
     }
 
     return $Self->_ZTSMFollowUpPurpleBookID( Ticket => $Ticket );
@@ -3036,36 +3062,128 @@ sub _ZTSMFollowUpPurpleBookID {
     my $Chapter    = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
     my $Profile    = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Profile'} );
 
-    return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+    if ( !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter ) {
+        $Self->_ZTSMFollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook lookup rejected: incomplete context. BlueBook='$BlueBookID' BlueLevel='$BlueLevel' Chapter='$Chapter'.",
+        );
+        return;
+    }
 
     my $BlueBook = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
         BlueBookID => $BlueBookID,
     );
+    if ( !IsHashRefWithData($BlueBook) ) {
+        $Self->_ZTSMFollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook lookup rejected: BlueBook '$BlueBookID' could not be resolved.",
+        );
+        return;
+    }
+
     my @Records = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
         BlueBook => $BlueBook,
+    );
+    $Self->_ZTSMFollowUpLog(
+        Ticket  => $Ticket,
+        Message => "Follow-up PurpleBook lookup started. BlueBook='$BlueBookID' BlueLevel='$BlueLevel' Chapter='$Chapter' Profile='$Profile' Type='$Ticket->{Type}' RecordCount='"
+            . scalar(@Records) . "'.",
     );
 
     my @FallbackPurpleBookIDs;
     RECORD:
     for my $Record (@Records) {
-        next RECORD if !$Record || ref $Record ne 'HASH';
-        next RECORD if !$Self->_ZTSMBlueLevelMatch(
+        if ( !$Record || ref $Record ne 'HASH' ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => 'Follow-up PurpleBook record skipped: record is not a hash.',
+            );
+            next RECORD;
+        }
+
+        my $RecordChapter    = _ZTSMNormalizeValue( $Record->{Chapter} );
+        my $RecordProfile    = _ZTSMNormalizeValue( $Record->{Profile} );
+        my $RecordType       = _ZTSMNormalizeValue( $Record->{Type} );
+        my $RecordPurpleBook = _ZTSMNormalizeValue( $Record->{PurpleBook} );
+        my $LevelMatches     = $Self->_ZTSMBlueLevelMatch(
             BlueLevel => $BlueLevel,
             Record    => $Record,
         );
-        next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
+        if ( !$LevelMatches ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook record skipped: level mismatch. RecordChapter='$RecordChapter' RecordType='$RecordType' RecordProfile='$RecordProfile' RecordBlueLevel='"
+                    . _ZTSMNormalizeValue( $Record->{BlueLevel} )
+                    . "' RecordRawBlueLevel='"
+                    . _ZTSMNormalizeValue( $Record->{RawBlueLevel} ) . "'.",
+            );
+            next RECORD;
+        }
+        if ( $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type} ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook record skipped: type mismatch. TicketType='$Ticket->{Type}' RecordType='$RecordType' RecordChapter='$RecordChapter'.",
+            );
+            next RECORD;
+        }
 
-        my $PurpleBookID = _ZTSMNormalizeValue( $Record->{PurpleBook} );
+        my $PurpleBookID = $RecordPurpleBook;
 
-        next RECORD if !$PurpleBookID;
-        return $PurpleBookID if defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter;
+        if ( !$PurpleBookID ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook record skipped: no PurpleBook configured. RecordChapter='$RecordChapter' RecordType='$RecordType' RecordProfile='$RecordProfile'.",
+            );
+            next RECORD;
+        }
+        if ( defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter ) {
+            $Self->_ZTSMFollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook exact match resolved. PurpleBook='$PurpleBookID' Chapter='$Chapter'.",
+            );
+            return $PurpleBookID;
+        }
 
-        my $RecordProfile = _ZTSMNormalizeValue( $Record->{Profile} );
         push @FallbackPurpleBookIDs, $PurpleBookID if $Profile && $RecordProfile && $RecordProfile eq $Profile;
     }
 
-    return $FallbackPurpleBookIDs[0] if @FallbackPurpleBookIDs == 1;
+    if ( @FallbackPurpleBookIDs == 1 ) {
+        $Self->_ZTSMFollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook fallback profile match resolved. PurpleBook='$FallbackPurpleBookIDs[0]' Profile='$Profile'.",
+        );
+        return $FallbackPurpleBookIDs[0];
+    }
+
+    $Self->_ZTSMFollowUpLog(
+        Ticket  => $Ticket,
+        Message => "Follow-up PurpleBook lookup rejected: no exact match and fallback count='"
+            . scalar(@FallbackPurpleBookIDs) . "'.",
+    );
     return;
+}
+
+sub _ZTSMFollowUpLog {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{Message};
+
+    my $Ticket = $Param{Ticket} || {};
+    my $Prefix = 'CustomerTicketZoom follow-up diagnostics';
+    if ( IsHashRefWithData($Ticket) ) {
+        $Prefix .= " TicketID='"
+            . ( $Ticket->{TicketID} || '' )
+            . "' TicketNumber='"
+            . ( $Ticket->{TicketNumber} || '' )
+            . "'";
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => "$Prefix: $Param{Message}",
+    );
+
+    return 1;
 }
 
 sub _ZTSMBlueLevelMatch {
@@ -3329,8 +3447,6 @@ sub _ZTSMRequesterExecutionPauseAllowed {
     my $Ticket = $Param{Ticket};
 
     return if !IsHashRefWithData($Ticket);
-    return if !$Ticket->{CustomerUserID};
-    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
 
     my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
@@ -3338,6 +3454,17 @@ sub _ZTSMRequesterExecutionPauseAllowed {
         $ParentTicketID = $ParentTicketID->[0];
     }
 
+    if ($ParentTicketID) {
+        my $Owner = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Owner'} );
+        return 1
+            if ( $Ticket->{Type} || '' ) eq 'Diagnosis'
+            && $Owner
+            && lc $Owner eq lc $Self->{UserID};
+        return;
+    }
+
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
     return if $ParentTicketID;
     return 1;
 }

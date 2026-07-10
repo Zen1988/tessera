@@ -637,12 +637,14 @@ sub _TicketStatesEnsure {
         { Name => 'closed cascaded',         Type => 'closed',           Comment => 'Closed cascaded from parent.' },
         { Name => 'closed cascading',        Type => 'closed',           Comment => 'Closed because parent execution closed.' },
         { Name => 'closed duplicate',        Type => 'closed',           Comment => 'Duplicate Request' },
+        { Name => 'closed invalid-info',     Type => 'closed',           Comment => 'Closed because mandatory service information is missing.' },
         { Name => 'closed no action',        Type => 'closed',           Comment => 'No Action Required' },
         { Name => 'closed rejected',         Type => 'closed',           Comment => 'Rejected during approval or assessment.' },
         { Name => 'closed rollback',         Type => 'closed',           Comment => 'Roll back' },
         { Name => 'closed successful',       Type => 'closed',           Comment => 'Ticket is closed successfully.' },
         { Name => 'closed unsuccessful',     Type => 'closed',           Comment => 'Ticket is closed unsuccessfully.' },
         { Name => 'closed with workaround',  Type => 'closed',           Comment => 'Ticket is closed with workaround.' },
+        { Name => 'diagnosed',               Type => 'closed',           Comment => 'Diagnosis completed with observed incident evidence.' },
         { Name => 'endorse',                 Type => 'open',             Comment => 'Endorsement' },
         { Name => 'follow-up',               Type => 'open',             Comment => 'Follow Up' },
         { Name => 'in-progress',             Type => 'open',             Comment => 'In Progress' },
@@ -720,6 +722,7 @@ sub _TicketTypesEnsure {
         Assessment
         Change
         Change::Major
+        Diagnosis
         Endorsement
         Implementation
         Incident
@@ -770,6 +773,7 @@ sub _GovernanceRoleObjectsEnsure {
         REQUESTER
         REQUESTER-DEFAULT
         REQUESTER-SUPPORT-GROUP
+        DIAGNOSE
         ASSESSOR
         ENDORSER
         APPROVER
@@ -1416,36 +1420,208 @@ sub _TicketRuntimeDynamicFieldsEnsure {
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
-    my $Existing = $DynamicFieldObject->DynamicFieldGet(
-        Name => 'ZTicket-HoldState',
-    );
-    return 1 if $Existing && $Existing->{ID};
-
-    my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
-        Name       => 'ZTicket-HoldState',
-        Label      => 'Requester Hold State',
-        FieldOrder => 10100,
-        FieldType  => 'Text',
-        ObjectType => 'Ticket',
-        Config     => {
-            DefaultValue => '',
-            Link         => '',
-            LinkPreview  => '',
-            MultiValue   => 0,
-            RegExList    => [],
-            Tooltip      => 'Stores the previous ticket state while requester hold is active.',
+    my @Fields = (
+        {
+            Name       => 'ZTicket-HoldState',
+            Label      => 'Requester Hold State',
+            FieldOrder => 10100,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Stores the previous ticket state while requester hold is active.',
+            },
         },
-        ValidID => 1,
-        UserID  => 1,
-        Reorder => 0,
+        {
+            Name       => 'ZIN-Observed',
+            Label      => 'Observed Behavior',
+            FieldOrder => 10110,
+            FieldType  => 'RichText',
+            Config     => {
+                DefaultValue => '',
+                RegExList    => [],
+                Tooltip      => 'Requester-provided observed incident behavior.',
+            },
+        },
+        {
+            Name       => 'ZIN-ErrorMessage',
+            Label      => 'Error Message / System Log / Alert',
+            FieldOrder => 10120,
+            FieldType  => 'RichText',
+            Config     => {
+                DefaultValue => '',
+                RegExList    => [],
+                Tooltip      => 'Requester-provided error message, alert, log snippet, or symptom evidence.',
+            },
+        },
+        {
+            Name       => 'ZIN-AffectedCI',
+            Label      => 'Affected Component',
+            FieldOrder => 10130,
+            FieldType  => 'ConfigItem',
+            Config     => {
+                ClassIDs              => [],
+                DeplStateIDs          => [],
+                DisplayType           => '',
+                EditFieldMode         => 'AutoComplete',
+                ImportSearchAttribute => '',
+                LinkDirection         => 'ReferencingIsSource',
+                LinkType              => '',
+                MultiValue            => 1,
+                Multiselect           => 0,
+                PossibleNone          => 1,
+                ReferenceFilterList   => [],
+                ReferencedObjectType  => 'ITSMConfigItem',
+                SearchAttribute       => 'Name',
+                Tooltip               => 'Requester-provided affected component.',
+            },
+        },
+        {
+            Name       => 'ZIN-Diagnosis',
+            Label      => 'Diagnosis',
+            FieldOrder => 10140,
+            FieldType  => 'RichText',
+            Config     => {
+                DefaultValue => '',
+                RegExList    => [],
+                Tooltip      => 'Diagnoser investigation notes, reasoning, findings, and ruled-out causes.',
+            },
+        },
+        {
+            Name       => 'ZIN-Outcome',
+            Label      => 'Diagnosis Outcome',
+            FieldOrder => 10150,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => 'Symptom Observed',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                PossibleNone => 0,
+                PossibleValues => {
+                    'Symptom Observed'    => 'Symptom Observed',
+                    'Cause Observed'      => 'Cause Observed',
+                    'Root Cause Observed' => 'Root Cause Observed',
+                    'Severity Confirmed'  => 'Severity Confirmed',
+                    'Not Applicable'      => 'Not Applicable',
+                    Recovered             => 'Recovered',
+                },
+                Tooltip            => 'Structured diagnosis outcome.',
+                TranslatableValues => 0,
+                TreeView           => 0,
+            },
+        },
+        {
+            Name       => 'ZIN-Plan',
+            Label      => 'Resolution Plan',
+            FieldOrder => 10160,
+            FieldType  => 'RichText',
+            Config     => {
+                DefaultValue => '',
+                RegExList    => [],
+                Tooltip      => 'Proposed recovery, workaround, or next action plan.',
+            },
+        },
+        {
+            Name       => 'ZIN-Summary',
+            Label      => 'Summary',
+            FieldOrder => 10170,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Short diagnosis summary.',
+            },
+        },
+        {
+            Name       => 'ZIN-Iteration',
+            Label      => 'Iteration',
+            FieldOrder => 10180,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '1',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Current incident investigation iteration.',
+            },
+        },
+        {
+            Name       => 'ZIN-SourceDiagnosisTicketID',
+            Label      => 'Source Diagnosis Ticket ID',
+            FieldOrder => 10190,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Diagnosis child ticket that produced this downstream task.',
+            },
+        },
+        {
+            Name       => 'ZIN-SourceDiagnosisIteration',
+            Label      => 'Source Diagnosis Iteration',
+            FieldOrder => 10200,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Incident iteration of the source diagnosis child.',
+            },
+        },
+        {
+            Name       => 'ZIN-SourceDiagnosisOutcome',
+            Label      => 'Source Diagnosis Outcome',
+            FieldOrder => 10210,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Actionable outcome copied from the source diagnosis child.',
+            },
+        },
     );
 
-    if ( !$FieldID ) {
+    FIELD:
+    for my $Field (@Fields) {
+        my $Existing = $DynamicFieldObject->DynamicFieldGet(
+            Name => $Field->{Name},
+        );
+        next FIELD if $Existing && $Existing->{ID};
+
+        my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
+            Name       => $Field->{Name},
+            Label      => $Field->{Label},
+            FieldOrder => $Field->{FieldOrder},
+            FieldType  => $Field->{FieldType},
+            ObjectType => 'Ticket',
+            Config     => $Field->{Config},
+            ValidID    => 1,
+            UserID     => 1,
+            Reorder    => 0,
+        );
+
+        next FIELD if $FieldID;
+
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'GovernanceDB bootstrap could not create dynamic field ZTicket-HoldState.',
+            Message  => "GovernanceDB bootstrap could not create dynamic field $Field->{Name}.",
         );
-        return;
     }
 
     $DynamicFieldObject->EventHandlerTransaction();

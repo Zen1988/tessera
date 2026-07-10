@@ -20,6 +20,53 @@ Last Updated: 2026-07-10
 
 ## Completed Work
 
+## 2026-07-10 GovernanceDB 0.0.260 Diagnosis Submit Workspace and Follow-Up Diagnostics
+
+### Completed work
+
+- Added first-class owned Diagnosis execution on customer Zoom:
+  - owned `Diagnosis` child tickets can show the blue `diagnose` action;
+  - the action opens a dedicated Diagnosis workspace instead of reusing Assessment;
+  - the workspace captures `ZIN-Outcome`, `ZIN-Diagnosis`, `ZIN-Severity`, `ZIN-KB`, and `ZIN-Plan`.
+- Diagnosis submission now writes the `ZIN-*` result fields, creates an HTML evidence article, and closes the child based on outcome:
+  - `Severity Confirmed`, `Cause Observed`, `Symptom Observed`, and `Root Cause Observed` close as `diagnosed`;
+  - `Recovered` and `Not Applicable` close as `closed no action`;
+  - `diagnosed` is treated as an actionable outcome for ChapterDirector roll-up.
+- Added the closed `diagnosed` state to GovernanceDB bootstrap state seeding.
+- Added error-priority Follow-up/PurpleBook diagnostics on both Zoom visibility and runtime submit paths so missing Follow-up can be distinguished between:
+  - missing child snapshot fields;
+  - BlueBook resolution failure;
+  - BlueBook record mismatch;
+  - missing `ZBlue-PurpleBook`;
+  - no qualifying PurpleBook record.
+- Allowed requester Hold/Resume for owned Diagnosis child tickets so investigation can pause when the reporter is unavailable without moving lifecycle/book state.
+- Changed Date and DateTime drivers to enforce a minimum 10-year past/future year range even when a field explicitly configures a shorter range, preventing one-year limits on Contract and other Date/DateTime fields.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.260`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.260.opm`.
+- `Kernel/Package/GovernanceDB-0.0.260.opm` SHA256: `40468CF051B039B783768B9A3F202A77626212D0A0C3E6FBB79B01CCECFA9F16`.
+- Supersedes `0.0.259`; use `0.0.260` for the next owned Diagnosis submit, Follow-up diagnostic, and global Date/DateTime range retest.
+
+### Validation
+
+- Perl syntax checks passed with repo include path for canonical and mirrored copies of:
+  - `CustomerTicketZTSMAction.pm`;
+  - `CustomerTicketZoom.pm`;
+  - `Date.pm`;
+  - `BaseDateTime.pm`;
+  - `ZTSMChapterDirector.pm`.
+- `GovernanceDB-0.0.260.opm` parsed successfully as XML: version `0.0.260`, SOPM file count `202`, OPM file count `202`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed the runtime-overlay Diagnosis workspace, Zoom, action module, Date/DateTime drivers, and ChapterDirector payloads match their package source files.
+
+### Known Issues / Follow-Up
+
+- Runtime retest owned Diagnosis child:
+  - `diagnose` should show as the primary blue action for `ZTicket-Owner`;
+  - submitting actionable outcomes should close the child as `diagnosed` and continue book orchestration;
+  - submitting `Recovered` or `Not Applicable` should close the child as `closed no action`.
+- Runtime retest Follow-up visibility and inspect OTOBO error log when it is absent; the new diagnostics should identify whether the failure is snapshot, BlueBook, match, or PurpleBook configuration.
+- Runtime retest Contract and other Date/DateTime fields: year dropdowns should no longer be constrained to a one-year window.
+
 ## 2026-07-10 GovernanceDB 0.0.259 Follow-Up Zoom Resolver and Global Date Range
 
 ### Completed work

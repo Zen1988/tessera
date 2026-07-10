@@ -395,7 +395,7 @@ sub Run {
 
         if ( !$Access ) {
             my $ConfiguredOwnerActionAccess;
-            if ( $RuntimeAction eq 'AddRequiredSupportProfile' || $RuntimeAction eq 'FollowUp' ) {
+            if ( $RuntimeAction eq 'AddRequiredSupportProfile' || $RuntimeAction eq 'FollowUp' || $RuntimeAction eq 'Diagnose' ) {
                 my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
                 $ConfiguredOwnerActionAccess = $Owner && lc $Owner eq lc $Self->{UserID};
             }
@@ -1040,6 +1040,87 @@ sub Run {
         $ActionConfig->{Subject} ||= 'Risk assessment submitted';
     }
 
+    if ( $Ticket{Type} eq 'Diagnosis' && $RuntimeAction eq 'Diagnose' ) {
+        if ( $Subaction eq 'DiagnosisInline' ) {
+            my $HTML = $Self->_DiagnosisWorkspaceInlineHTML(
+                Ticket   => \%Ticket,
+                Config   => $Config,
+                TicketID => $TicketID,
+            );
+
+            return $LayoutObject->Attachment(
+                ContentType => 'text/html; charset=utf-8',
+                Content     => $HTML,
+                Type        => 'inline',
+                NoCache     => 1,
+            );
+        }
+
+        if ( $Subaction ne 'SubmitDiagnosis' ) {
+            return $Self->_DiagnosisWorkspaceShow(
+                Ticket   => \%Ticket,
+                Config   => $Config,
+                TicketID => $TicketID,
+            );
+        }
+
+        my %Diagnosis = $Self->_DiagnosisFieldsSet(
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        );
+
+        if ( !$Diagnosis{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $Diagnosis{Message} || 'Could not update diagnosis fields.',
+            );
+        }
+
+        my $DiagnosisState = $Self->_DiagnosisOutcomeState(
+            Outcome => $Diagnosis{Outcome},
+        );
+
+        if ( !$DiagnosisState ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select a valid diagnosis outcome.',
+            );
+        }
+
+        my $ZTicketOutcome = $DiagnosisState eq 'closed no action' ? '1' : '0';
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Outcome',
+                TicketID  => $TicketID,
+                Value     => $ZTicketOutcome,
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update diagnosis outcome roll-up.',
+            );
+        }
+
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Result',
+                TicketID  => $TicketID,
+                Value     => _PlainTextValue( $Diagnosis{Diagnosis} || '' ),
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update diagnosis result.',
+            );
+        }
+
+        $ActionConfig->{State}             = $DiagnosisState;
+        $ActionConfig->{DiagnosisSnapshot} = \%Diagnosis;
+        $ActionConfig->{Subject}         ||= 'Diagnosis submitted';
+        $ActionConfig->{Body}            ||= $Self->_DiagnosisArticleBody( Diagnosis => \%Diagnosis );
+        $ActionConfig->{ContentType}       = 'text/html; charset=utf-8';
+    }
+
     my $StateSet = $TicketObject->TicketStateSet(
         State    => $ActionConfig->{State},
         TicketID => $TicketID,
@@ -1077,7 +1158,12 @@ sub Run {
             Remarks              => $Remarks,
             Body                 => $ActionConfig->{Body},
             Subject              => $ActionConfig->{Subject},
-            Config               => $Config,
+            Config               => $ActionConfig->{ContentType}
+                ? {
+                %{$Config},
+                ContentType => $ActionConfig->{ContentType},
+                }
+                : $Config,
             CustomerPanelUserID  => $CustomerPanelUserID,
             Attachments          => \@Attachments,
         );
@@ -1852,13 +1938,34 @@ sub _FollowUpAllowed {
 
     my $Ticket = $Param{Ticket};
 
-    return if !IsHashRefWithData($Ticket);
-    return if ( $Ticket->{StateType} || '' ) eq 'closed';
-    return if lc( $Ticket->{State} || '' ) eq 'follow-up';
-    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
-    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
-    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
-    return if !_NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    if ( !IsHashRefWithData($Ticket) ) {
+        $Self->_FollowUpLog( Message => 'Follow-up submit rejected: no ticket data.' );
+        return;
+    }
+    if ( ( $Ticket->{StateType} || '' ) eq 'closed' ) {
+        $Self->_FollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up submit rejected: ticket is closed. State='$Ticket->{State}' StateType='$Ticket->{StateType}'.",
+        );
+        return;
+    }
+    if ( lc( $Ticket->{State} || '' ) eq 'follow-up' ) {
+        $Self->_FollowUpLog(
+            Ticket  => $Ticket,
+            Message => 'Follow-up submit rejected: ticket is already in follow-up state.',
+        );
+        return;
+    }
+    for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
+        my $Value = _NormalizeValue( $Ticket->{ 'DynamicField_' . $FieldName } );
+        if ( !defined $Value || $Value eq '' ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up submit rejected: required ticket field '$FieldName' is empty.",
+            );
+            return;
+        }
+    }
 
     return $Self->_FollowUpPurpleBookID( Ticket => $Ticket );
 }
@@ -1874,35 +1981,126 @@ sub _FollowUpPurpleBookID {
     my $Chapter    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
     my $Profile    = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Profile'} );
 
-    return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
+    if ( !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter ) {
+        $Self->_FollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook submit lookup rejected: incomplete context. BlueBook='$BlueBookID' BlueLevel='$BlueLevel' Chapter='$Chapter'.",
+        );
+        return;
+    }
 
     my $BlueBook = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
         BlueBookID => $BlueBookID,
     );
+    if ( !IsHashRefWithData($BlueBook) ) {
+        $Self->_FollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook submit lookup rejected: BlueBook '$BlueBookID' could not be resolved.",
+        );
+        return;
+    }
+
     my @Records = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
         BlueBook => $BlueBook,
+    );
+    $Self->_FollowUpLog(
+        Ticket  => $Ticket,
+        Message => "Follow-up PurpleBook submit lookup started. BlueBook='$BlueBookID' BlueLevel='$BlueLevel' Chapter='$Chapter' Profile='$Profile' Type='$Ticket->{Type}' RecordCount='"
+            . scalar(@Records) . "'.",
     );
 
     my @FallbackPurpleBookIDs;
     RECORD:
     for my $Record (@Records) {
-        next RECORD if !$Record || ref $Record ne 'HASH';
-        next RECORD if !_BlueLevelMatch(
+        if ( !$Record || ref $Record ne 'HASH' ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => 'Follow-up PurpleBook submit record skipped: record is not a hash.',
+            );
+            next RECORD;
+        }
+
+        my $RecordChapter    = _NormalizeValue( $Record->{Chapter} );
+        my $RecordProfile    = _NormalizeValue( $Record->{Profile} );
+        my $RecordType       = _NormalizeValue( $Record->{Type} );
+        my $RecordPurpleBook = _NormalizeValue( $Record->{PurpleBook} );
+        my $LevelMatches     = _BlueLevelMatch(
             BlueLevel => $BlueLevel,
             Record    => $Record,
         );
-        next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
+        if ( !$LevelMatches ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook submit record skipped: level mismatch. RecordChapter='$RecordChapter' RecordType='$RecordType' RecordProfile='$RecordProfile' RecordBlueLevel='"
+                    . _NormalizeValue( $Record->{BlueLevel} )
+                    . "' RecordRawBlueLevel='"
+                    . _NormalizeValue( $Record->{RawBlueLevel} ) . "'.",
+            );
+            next RECORD;
+        }
+        if ( $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type} ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook submit record skipped: type mismatch. TicketType='$Ticket->{Type}' RecordType='$RecordType' RecordChapter='$RecordChapter'.",
+            );
+            next RECORD;
+        }
 
-        my $PurpleBookID = _NormalizeValue( $Record->{PurpleBook} );
-        next RECORD if !$PurpleBookID;
-        return $PurpleBookID if defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter;
+        my $PurpleBookID = $RecordPurpleBook;
+        if ( !$PurpleBookID ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook submit record skipped: no PurpleBook configured. RecordChapter='$RecordChapter' RecordType='$RecordType' RecordProfile='$RecordProfile'.",
+            );
+            next RECORD;
+        }
+        if ( defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up PurpleBook submit exact match resolved. PurpleBook='$PurpleBookID' Chapter='$Chapter'.",
+            );
+            return $PurpleBookID;
+        }
 
-        my $RecordProfile = _NormalizeValue( $Record->{Profile} );
         push @FallbackPurpleBookIDs, $PurpleBookID if $Profile && $RecordProfile && $RecordProfile eq $Profile;
     }
 
-    return $FallbackPurpleBookIDs[0] if @FallbackPurpleBookIDs == 1;
+    if ( @FallbackPurpleBookIDs == 1 ) {
+        $Self->_FollowUpLog(
+            Ticket  => $Ticket,
+            Message => "Follow-up PurpleBook submit fallback profile match resolved. PurpleBook='$FallbackPurpleBookIDs[0]' Profile='$Profile'.",
+        );
+        return $FallbackPurpleBookIDs[0];
+    }
+
+    $Self->_FollowUpLog(
+        Ticket  => $Ticket,
+        Message => "Follow-up PurpleBook submit lookup rejected: no exact match and fallback count='"
+            . scalar(@FallbackPurpleBookIDs) . "'.",
+    );
     return;
+}
+
+sub _FollowUpLog {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{Message};
+
+    my $Ticket = $Param{Ticket} || {};
+    my $Prefix = 'CustomerTicketZTSMAction follow-up diagnostics';
+    if ( IsHashRefWithData($Ticket) ) {
+        $Prefix .= " TicketID='"
+            . ( $Ticket->{TicketID} || '' )
+            . "' TicketNumber='"
+            . ( $Ticket->{TicketNumber} || '' )
+            . "'";
+    }
+
+    $Self->_ZTSMActionLog(
+        Message => "$Prefix: $Param{Message}",
+    );
+
+    return 1;
 }
 
 sub _BlueLevelMatch {
@@ -2364,13 +2562,20 @@ sub _RequesterExecutionPauseAllowed {
     my $Ticket = $Param{Ticket};
 
     return if !IsHashRefWithData($Ticket);
-    return if !$Ticket->{CustomerUserID};
-    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
 
-    # Child tickets are execution ledgers; only the requester of the governance/root ticket may pause or resume.
-    return if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    if ($ParentTicketID) {
+        my $Owner = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Owner'} );
+        return 1
+            if ( $Ticket->{Type} || '' ) eq 'Diagnosis'
+            && $Owner
+            && lc $Owner eq lc $Self->{UserID};
+        return;
+    }
 
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
     return 1;
 }
 
@@ -2386,17 +2591,25 @@ sub _RequesterHoldApply {
     return if !$HoldState;
 
     my $ParentTicketNumber = $Ticket->{TicketNumber} || $Ticket->{TicketID};
+    my $ParentTicketID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $IsChildHold        = $ParentTicketID ? 1 : 0;
 
     return if !$Self->_RequesterHoldTicketApply(
         Ticket              => $Ticket,
         HoldState           => $HoldState,
         CustomerPanelUserID => $Param{CustomerPanelUserID},
-        Subject             => 'Requester placed ticket on hold',
-        Body                => "Requester has placed this ticket On Hold.\n\n"
-            . "Execution has been paused pending requester instruction.\n\n"
-            . "No lifecycle transition has occurred.",
+        Subject             => $IsChildHold ? 'Diagnosis investigation placed on hold' : 'Requester placed ticket on hold',
+        Body                => $IsChildHold
+            ? "Diagnosis investigation has been placed On Hold.\n\n"
+                . "Execution has been paused while investigation waits for requester response or evidence.\n\n"
+                . "No lifecycle transition has occurred."
+            : "Requester has placed this ticket On Hold.\n\n"
+                . "Execution has been paused pending requester instruction.\n\n"
+                . "No lifecycle transition has occurred.",
         Remarks             => $Param{Remarks},
     );
+
+    return 1 if $IsChildHold;
 
     for my $ChildTicketID ( $Self->_RequesterChildTicketIDs( ParentTicketID => $Ticket->{TicketID} ) ) {
         my %ChildTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
@@ -2465,16 +2678,24 @@ sub _RequesterResumeApply {
     return if !IsHashRefWithData($Ticket);
 
     my $ParentTicketNumber = $Ticket->{TicketNumber} || $Ticket->{TicketID};
+    my $ParentTicketID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $IsChildResume      = $ParentTicketID ? 1 : 0;
 
     return if !$Self->_RequesterResumeTicketApply(
         Ticket              => $Ticket,
         CustomerPanelUserID => $Param{CustomerPanelUserID},
-        Subject             => 'Requester resumed ticket execution',
-        Body                => "Requester has resumed ticket execution.\n\n"
-            . "Execution continues from the existing lifecycle position.\n\n"
-            . "No lifecycle transition has occurred.",
+        Subject             => $IsChildResume ? 'Diagnosis investigation resumed' : 'Requester resumed ticket execution',
+        Body                => $IsChildResume
+            ? "Diagnosis investigation has been resumed.\n\n"
+                . "Execution continues from the existing lifecycle position.\n\n"
+                . "No lifecycle transition has occurred."
+            : "Requester has resumed ticket execution.\n\n"
+                . "Execution continues from the existing lifecycle position.\n\n"
+                . "No lifecycle transition has occurred.",
         Remarks             => $Param{Remarks},
     );
+
+    return 1 if $IsChildResume;
 
     for my $ChildTicketID ( $Self->_RequesterChildTicketIDs( ParentTicketID => $Ticket->{TicketID} ) ) {
         my %ChildTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
@@ -3006,6 +3227,7 @@ sub _OutcomeForState {
     return if !defined $State || $State eq '';
 
     return '0'  if $State eq 'closed successful';
+    return '0'  if $State eq 'diagnosed';
     return '1'  if $State eq 'closed no action';
     return '1'  if $State eq 'closed duplicate';
     return '-1' if $State eq 'closed rejected';
@@ -3529,6 +3751,276 @@ sub _RiskAssessmentWorkspaceShow {
     $Output .= $LayoutObject->CustomerFooter();
 
     return $Output;
+}
+
+sub _DiagnosisWorkspaceShow {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    $LayoutObject->CustomerSetRichTextParameters( Data => {} );
+
+    my %Data = $Self->_DiagnosisWorkspaceData(
+        Ticket   => $Param{Ticket},
+        TicketID => $Param{TicketID},
+    );
+
+    my $Output = $LayoutObject->CustomerHeader( Value => $Param{Ticket}->{TicketNumber} );
+    $Output .= $LayoutObject->CustomerNavigationBar();
+    $Output .= $LayoutObject->Output(
+        TemplateFile => 'CustomerTicketZTSMDiagnosis',
+        Data         => \%Data,
+    );
+    $Output .= $LayoutObject->CustomerFooter();
+
+    return $Output;
+}
+
+sub _DiagnosisWorkspaceInlineHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    $LayoutObject->CustomerSetRichTextParameters( Data => {} );
+
+    my %Data = $Self->_DiagnosisWorkspaceData(
+        Ticket   => $Param{Ticket},
+        TicketID => $Param{TicketID},
+        Inline   => 1,
+    );
+
+    return $LayoutObject->Output(
+        TemplateFile => 'CustomerTicketZTSMDiagnosis',
+        Data         => \%Data,
+    );
+}
+
+sub _DiagnosisWorkspaceData {
+    my ( $Self, %Param ) = @_;
+
+    return (
+        TicketID     => $Param{TicketID},
+        TicketNumber => $Param{Ticket}->{TicketNumber},
+        TicketTitle  => $Param{Ticket}->{Title},
+        FieldsHTML   => $Self->_DiagnosisFieldsHTML( Ticket => $Param{Ticket} ),
+        Inline       => $Param{Inline} ? 1 : 0,
+    );
+}
+
+sub _DiagnosisFieldsHTML {
+    my ( $Self, %Param ) = @_;
+
+    my @Fields = (
+        {
+            Name      => 'ZIN-Outcome',
+            Label     => 'Diagnosis Outcome',
+            Mandatory => 1,
+        },
+        {
+            Name      => 'ZIN-Diagnosis',
+            Label     => 'Diagnosis',
+            Mandatory => 1,
+            Large     => 1,
+        },
+        {
+            Name      => 'ZIN-Severity',
+            Label     => 'Severity',
+            Mandatory => 0,
+        },
+        {
+            Name      => 'ZIN-KB',
+            Label     => 'KB',
+            Mandatory => 0,
+        },
+        {
+            Name      => 'ZIN-Plan',
+            Label     => 'Resolution Plan',
+            Mandatory => 0,
+            Large     => 1,
+        },
+    );
+
+    my $HTML = '<div class="ZTSMDiagnosisFields">';
+    FIELD:
+    for my $Field (@Fields) {
+        my $FieldHTML = $Self->_DiagnosisFieldHTML(
+            Ticket    => $Param{Ticket},
+            FieldName => $Field->{Name},
+            Mandatory => $Field->{Mandatory},
+        );
+        next FIELD if !$FieldHTML;
+
+        my $Class = 'ZTSMDiagnosisField ZTSMDiagnosisField_' . _HTML( $Field->{Name} );
+        $Class .= ' ZTSMDiagnosisFieldLarge' if $Field->{Large};
+        $HTML .= '<div class="' . $Class . '">'
+            . '<label>' . _HTML( $Field->{Label} ) . ( $Field->{Mandatory} ? ' <span class="Marker">*</span>' : '' ) . '</label>'
+            . '<div class="Field">' . $FieldHTML . '</div>'
+            . '</div>';
+    }
+    $HTML .= '</div>';
+
+    return $HTML;
+}
+
+sub _DiagnosisFieldHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => $Param{FieldName},
+    );
+    if ( !IsHashRefWithData($DynamicFieldConfig) ) {
+        $Self->_ZTSMActionLog( Message => "Diagnosis field render skipped: dynamic field '$Param{FieldName}' does not exist." );
+        return;
+    }
+
+    my $Value = $DynamicFieldBackendObject->ValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{Ticket}->{TicketID},
+    );
+
+    my $DynamicFieldHTML = $DynamicFieldBackendObject->EditFieldRender(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Value,
+        LayoutObject       => $LayoutObject,
+        ParamObject        => $ParamObject,
+        Mandatory          => $Param{Mandatory} ? 1 : 0,
+        CustomerInterface  => 1,
+        Object             => {},
+    );
+
+    return if !IsHashRefWithData($DynamicFieldHTML);
+    return $DynamicFieldHTML->{Field} if $DynamicFieldHTML->{Field};
+    return join "\n", @{ $DynamicFieldHTML->{MultiValue} } if IsArrayRefWithData( $DynamicFieldHTML->{MultiValue} );
+    return;
+}
+
+sub _DiagnosisFieldsSet {
+    my ( $Self, %Param ) = @_;
+
+    my @Fields = qw(ZIN-Outcome ZIN-Diagnosis ZIN-Severity ZIN-KB ZIN-Plan);
+    my %Mandatory = map { $_ => 1 } qw(ZIN-Outcome ZIN-Diagnosis);
+    my %Result = (
+        Success => 0,
+    );
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    FIELD:
+    for my $FieldName (@Fields) {
+        my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+            Name => $FieldName,
+        );
+        if ( !IsHashRefWithData($DynamicFieldConfig) || $DynamicFieldConfig->{ObjectType} ne 'Ticket' ) {
+            $Self->_ZTSMActionLog( Message => "Diagnosis submit failed: dynamic field '$FieldName' is missing or not a Ticket field." );
+            return (
+                %Result,
+                Message => "Diagnosis field '$FieldName' is not available.",
+            );
+        }
+
+        my $ValidationResult = $DynamicFieldBackendObject->EditFieldValueValidate(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ParamObject        => $ParamObject,
+            Mandatory          => $Mandatory{$FieldName} ? 1 : 0,
+        );
+        if ( !IsHashRefWithData($ValidationResult) || $ValidationResult->{ServerError} ) {
+            return (
+                %Result,
+                Message => "Please complete the required diagnosis field '$DynamicFieldConfig->{Label}'.",
+            );
+        }
+
+        my $Value = $DynamicFieldBackendObject->EditFieldValueGet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ParamObject        => $ParamObject,
+            LayoutObject       => $LayoutObject,
+        );
+
+        my $Success = $DynamicFieldBackendObject->ValueSet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{TicketID},
+            Value              => $Value,
+            UserID             => $Param{UserID},
+        );
+        if ( !$Success ) {
+            $Self->_ZTSMActionLog(
+                Message => "Diagnosis submit failed: could not set dynamic field '$FieldName' for TicketID='$Param{TicketID}'.",
+            );
+            return (
+                %Result,
+                Message => "Could not update diagnosis field '$DynamicFieldConfig->{Label}'.",
+            );
+        }
+
+        my $ShortName = $FieldName;
+        $ShortName =~ s{\AZIN-}{};
+        $Result{$ShortName} = $Value;
+    }
+
+    $Result{Success} = 1;
+    return %Result;
+}
+
+sub _DiagnosisOutcomeState {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my %Actionable = map { $_ => 1 } (
+        'Severity Confirmed',
+        'Cause Observed',
+        'Caused Observed',
+        'Symptom Observed',
+        'Root Cause Observed',
+    );
+    my %NoAction = map { $_ => 1 } (
+        'Recovered',
+        'Not Applicable',
+    );
+
+    return 'diagnosed'        if $Actionable{$Outcome};
+    return 'closed no action' if $NoAction{$Outcome};
+    return;
+}
+
+sub _DiagnosisArticleBody {
+    my ( $Self, %Param ) = @_;
+
+    my $Diagnosis = $Param{Diagnosis} || {};
+    my $Outcome   = _HTML( _NormalizeValue( $Diagnosis->{Outcome} ) || '' );
+    my $Severity  = _HTML(
+        $Self->_RiskAssessmentDisplayValue(
+            Field => 'ZIN-Severity',
+            Type  => 'GovernanceObject',
+            Value => $Diagnosis->{Severity},
+        ) || _NormalizeValue( $Diagnosis->{Severity} ) || ''
+    );
+    my $KB = _HTML( _NormalizeValue( $Diagnosis->{KB} ) || '' );
+    my $DiagnosisHTML = _ValueHasHTML( $Diagnosis->{Diagnosis} )
+        ? _HTMLBodyFragment( $Diagnosis->{Diagnosis} )
+        : _PlainTextHTML( $Diagnosis->{Diagnosis} || '' );
+    my $PlanHTML = _ValueHasHTML( $Diagnosis->{Plan} )
+        ? _HTMLBodyFragment( $Diagnosis->{Plan} )
+        : _PlainTextHTML( $Diagnosis->{Plan} || '' );
+
+    return ''
+        . '<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1340;">'
+        . '<p><strong>Note:</strong> This is a system-generated diagnosis result message.</p>'
+        . '<table style="width:100%;border-collapse:collapse;">'
+        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;width:180px;">Diagnosis Outcome</th><td style="border:1px solid #d9deea;padding:8px;">' . $Outcome . '</td></tr>'
+        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Diagnosis</th><td style="border:1px solid #d9deea;padding:8px;">' . $DiagnosisHTML . '</td></tr>'
+        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Severity</th><td style="border:1px solid #d9deea;padding:8px;">' . $Severity . '</td></tr>'
+        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">KB</th><td style="border:1px solid #d9deea;padding:8px;">' . $KB . '</td></tr>'
+        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Resolution Plan</th><td style="border:1px solid #d9deea;padding:8px;">' . $PlanHTML . '</td></tr>'
+        . '</table>'
+        . '</div>';
 }
 
 sub _RiskAssessmentWorkspaceInlineHTML {
@@ -4885,6 +5377,11 @@ sub _ActionConfig {
             State => 'closed successful',
             Types => ['Assessment'],
         },
+        Diagnose => {
+            Label => 'diagnose',
+            State => 'diagnosed',
+            Types => ['Diagnosis'],
+        },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -4932,6 +5429,11 @@ sub _ActionableTicketType {
             Label => 'Submit Assessment',
             State => 'closed successful',
             Types => ['Assessment'],
+        },
+        Diagnose => {
+            Label => 'diagnose',
+            State => 'diagnosed',
+            Types => ['Diagnosis'],
         },
         CloseDuplicate => {
             Label => 'Duplicate',

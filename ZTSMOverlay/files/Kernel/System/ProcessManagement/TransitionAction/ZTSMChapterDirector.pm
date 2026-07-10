@@ -91,6 +91,7 @@ sub _OutcomeValue {
 
     my $State = $Ticket->{State} || '';
     return '0'  if $State eq 'closed successful';
+    return '0'  if $State eq 'diagnosed';
     return '1'  if $State eq 'closed no action';
     return '1'  if $State eq 'closed duplicate';
     return '-1' if $State eq 'closed rejected';
@@ -467,6 +468,7 @@ sub Run {
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBook,
         BlueLevel      => $BlueLevel,
+        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
         UserID         => 1,
     );
 
@@ -857,6 +859,7 @@ sub Run {
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBook,
         BlueLevel      => $BlueLevel,
+        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
         UserID         => 1,
     );
 

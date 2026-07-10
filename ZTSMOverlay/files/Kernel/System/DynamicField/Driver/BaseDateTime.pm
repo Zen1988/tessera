@@ -295,6 +295,9 @@ sub EditFieldRender {
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
         );
     }
+    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
+        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
+    }
 
     # date restrictions
     if ( $FieldConfig->{DateRestriction} ) {
@@ -1023,6 +1026,9 @@ EOF
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
         );
+    }
+    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
+        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
     }
 
     # build HTML for start value set
