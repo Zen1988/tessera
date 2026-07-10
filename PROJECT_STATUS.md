@@ -20,6 +20,52 @@ Last Updated: 2026-07-10
 
 ## Completed Work
 
+## 2026-07-10 GovernanceDB 0.0.259 Follow-Up Zoom Resolver and Global Date Range
+
+### Completed work
+
+- Fixed the customer Zoom Follow-up visibility resolver to normalize the same reference-shaped values as the submit action:
+  - `ZTicket-BlueBook`;
+  - `ZTicket-BlueLevel`;
+  - `ZTicket-Chapter`;
+  - `ZTicket-Profile`;
+  - BlueBook record `ZBlue-PurpleBook`.
+- Follow-up visibility now uses the child execution snapshot directly:
+  - load the ticket's `ZTicket-BlueBook`;
+  - parse the BlueBook records;
+  - match the ticket `ZTicket-Chapter` / chapter id;
+  - show Follow-up when that record has a PurpleBook / Follow-up book.
+- Kept existing exact chapter matching first, with profile fallback only as a compatibility fallback for older children.
+- Fixed Date and DateTime year dropdown behavior globally at the dynamic-field driver layer:
+  - `Date.pm` now supplies a 10-year past/future range when a field has no active custom year period;
+  - `BaseDateTime.pm` now supplies the same default for DateTime fields;
+  - configured `YearsPeriod=1` ranges still take precedence.
+- Added `Date.pm` to the GovernanceDB runtime overlay package list because Contract period fields use the Date driver, not BaseDateTime.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.259`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.259.opm`.
+- `Kernel/Package/GovernanceDB-0.0.259.opm` SHA256: `CD754887AF88F4A20ADEAF58167E999C103DB6FEFADE5C0E9DE5EC554FBAE730`.
+- Supersedes `0.0.258`; use `0.0.259` for the next Diagnosis Follow-up and Contract date range retest.
+
+### Validation
+
+- Perl syntax checks passed with repo include path for:
+  - canonical `CustomerTicketZoom.pm`;
+  - canonical `BaseDateTime.pm`;
+  - canonical `Date.pm`;
+  - runtime-overlay `BaseDateTime.pm`;
+  - runtime-overlay `Date.pm`.
+- `GovernanceDB-0.0.259.opm` parsed successfully as XML: version `0.0.259`, file count `201`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - runtime-overlay `CustomerTicketZoom.pm` includes `_ZTSMNormalizeValue` and reference keys including `GovernanceObjectID`;
+  - runtime-overlay `BaseDateTime.pm` includes the 10-year default range;
+  - runtime-overlay `Date.pm` includes the 10-year default range.
+
+### Known Issues / Follow-Up
+
+- Retest owned Diagnosis child `BR-002`: Follow-up should appear when the BlueBook record has `ZBlue-PurpleBook` configured.
+- Retest Contract `PeriodFrom` / `PeriodUntil`: year dropdown should no longer stop at current year + 1.
+
 ## 2026-07-10 GovernanceDB 0.0.258 BlueBook Snapshot and Reference Value Normalization
 
 ### Completed work

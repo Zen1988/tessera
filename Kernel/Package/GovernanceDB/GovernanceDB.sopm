@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.258</Version>
+    <Version>0.0.259</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -178,6 +178,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogDetailed.html.tmpl" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogModal.html.tmpl" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Date.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/ObjectType/Service.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicFieldDB.pm" Permission="660"/>

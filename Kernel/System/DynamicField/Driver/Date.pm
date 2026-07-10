@@ -393,6 +393,12 @@ sub EditFieldRender {
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
         );
     }
+    else {
+        %YearsPeriodRange = (
+            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
+            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
+        );
+    }
 
     # date restrictions
     if ( $FieldConfig->{DateRestriction} ) {
@@ -1032,6 +1038,12 @@ EOF
         %YearsPeriodRange = (
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 0,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
+        );
+    }
+    else {
+        %YearsPeriodRange = (
+            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
+            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
         );
     }
 

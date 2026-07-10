@@ -27,6 +27,7 @@ use utf8;
 use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 # core modules
+use Time::Local qw(timegm);
 
 # CPAN modules
 
@@ -36,6 +37,7 @@ use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
+    'Kernel::System::CustomerUser',
     'Kernel::System::DB',
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Log',
@@ -285,6 +287,12 @@ sub EditFieldRender {
         %YearsPeriodRange = (
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 0,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
+        );
+    }
+    else {
+        %YearsPeriodRange = (
+            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
+            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
         );
     }
 
@@ -640,8 +648,35 @@ sub EditFieldValueValidate {
     my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
 
     # get time object
-    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-    my $SystemTime     = $DateTimeObject->ToEpoch();
+    my $DateTimeObject       = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $SystemTime           = $DateTimeObject->ToEpoch();
+    my $BrowserOffsetMinutes = $Param{ParamObject}
+        ? $Param{ParamObject}->GetParam( Param => 'ZTSMServiceBrowserTimezoneOffset' )
+        : undef;
+    if ( defined $BrowserOffsetMinutes && $BrowserOffsetMinutes !~ m{\A-?\d+\z} ) {
+        $BrowserOffsetMinutes = undef;
+    }
+    if ( defined $BrowserOffsetMinutes && ( $BrowserOffsetMinutes < -840 || $BrowserOffsetMinutes > 840 ) ) {
+        $BrowserOffsetMinutes = undef;
+    }
+    my $CustomerUserTimeZone;
+    if ( $Param{CustomerUserID} ) {
+        my %CustomerUserPreferences = $Kernel::OM->Get('Kernel::System::CustomerUser')->GetPreferences(
+            UserID => $Param{CustomerUserID},
+        );
+        $CustomerUserTimeZone = $CustomerUserPreferences{UserTimeZone};
+    }
+    if (
+        $CustomerUserTimeZone
+        && !Kernel::System::DateTime->IsTimeZoneValid( TimeZone => $CustomerUserTimeZone )
+        )
+    {
+        $CustomerUserTimeZone = undef;
+    }
+
+    my $UserTimeZone = $CustomerUserTimeZone
+        || ( $Param{LayoutObject} && $Param{LayoutObject}->{UserTimeZone} )
+        || $DateTimeObject->OTOBOTimeZoneGet();
     my $HasValue;
     for my $ValueItem ( $Value->@* ) {
         $HasValue ||= $ValueItem->{ $Prefix . 'Used' };
@@ -658,18 +693,98 @@ sub EditFieldValueValidate {
                 $Year . '-' . $Month . '-' . $Day . ' '
                 . $Hour . ':' . $Minute . ':' . $Second;
 
-            my $ValueItemSystemTime = $DateTimeObject->Set(
-                String => $ManualTimeStamp,
-            );
-            $ValueItemSystemTime = $ValueItemSystemTime ? $DateTimeObject->ToEpoch() : undef;
+            my $ValueDateTimeObject;
+            my $ValueItemSystemTime;
+            if ( defined $BrowserOffsetMinutes ) {
+                $ValueItemSystemTime = eval {
+                    timegm( $Second, $Minute, $Hour, $Day, $Month - 1, $Year ) + ( $BrowserOffsetMinutes * 60 );
+                };
+                if ($@) {
+                    $ValueItemSystemTime = undef;
+                }
+            }
+            else {
+                $ValueDateTimeObject = $Kernel::OM->Create(
+                    'Kernel::System::DateTime',
+                    ObjectParams => {
+                        Year     => $Year,
+                        Month    => $Month,
+                        Day      => $Day,
+                        Hour     => $Hour,
+                        Minute   => $Minute,
+                        Second   => $Second,
+                        TimeZone => $UserTimeZone,
+                    },
+                );
+                $ValueItemSystemTime = $ValueDateTimeObject ? $ValueDateTimeObject->ToEpoch() : undef;
+            }
 
-            if ( $DateRestriction eq 'DisableFutureDates' && $ValueItemSystemTime > $SystemTime ) {
+            my $DeltaSeconds = defined $ValueItemSystemTime ? $ValueItemSystemTime - $SystemTime : undef;
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => sprintf(
+                    'TESSERA DateTime restriction check field=%s restriction=%s raw="%s" comparedAs="%s" userTimeZone=%s customerUserTimeZone=%s browserOffsetMinutes=%s valueEpoch=%s systemEpoch=%s deltaSeconds=%s source=%s layoutObject=%s',
+                    $Param{DynamicFieldConfig}->{Name} || '',
+                    $DateRestriction || '',
+                    $ManualTimeStamp || '',
+                    $ManualTimeStamp || '',
+                    $UserTimeZone || '',
+                    $CustomerUserTimeZone || '',
+                    defined $BrowserOffsetMinutes ? $BrowserOffsetMinutes : 'undef',
+                    defined $ValueItemSystemTime ? $ValueItemSystemTime : 'undef',
+                    defined $SystemTime          ? $SystemTime          : 'undef',
+                    defined $DeltaSeconds        ? $DeltaSeconds        : 'undef',
+                    defined $BrowserOffsetMinutes ? 'browser-offset' : 'user-timezone',
+                    $Param{LayoutObject} ? 1 : 0,
+                ),
+            );
+
+            if ( defined $ValueItemSystemTime && $DateRestriction eq 'DisableFutureDates' && $DeltaSeconds > 0 ) {
                 $ServerError  = 1;
                 $ErrorMessage = "Invalid date (need a past date)!";
             }
-            elsif ( $DateRestriction eq 'DisablePastDates' && $ValueItemSystemTime < $SystemTime ) {
+            elsif ( defined $ValueItemSystemTime && $DateRestriction eq 'DisablePastDates' && $DeltaSeconds < 0 ) {
                 $ServerError  = 1;
                 $ErrorMessage = "Invalid date (need a future date)!";
+            }
+
+            if ($ServerError) {
+                my %RawSubmitted;
+                if ( $Param{ParamObject} ) {
+                    PART:
+                    for my $Part (qw(Used Year Month Day Hour Minute Second)) {
+                        my $ParamValue = $Param{ParamObject}->GetParam(
+                            Param => $Prefix . $Part,
+                        );
+                        next PART if !defined $ParamValue;
+                        $RawSubmitted{$Part} = $ParamValue;
+                    }
+                }
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => sprintf(
+                        'TESSERA DateTime restriction validation failed field=%s restriction=%s raw="%s-%s-%s %s:%s:%s" comparedAs="%s" userTimeZone=%s customerUserTimeZone=%s browserOffsetMinutes=%s valueEpoch=%s systemEpoch=%s deltaSeconds=%s layoutObject=%s transformDates=0 message="%s"',
+                        $Param{DynamicFieldConfig}->{Name} || '',
+                        $DateRestriction || '',
+                        ( $RawSubmitted{Year}   // '' ),
+                        ( $RawSubmitted{Month}  // '' ),
+                        ( $RawSubmitted{Day}    // '' ),
+                        ( $RawSubmitted{Hour}   // '00' ),
+                        ( $RawSubmitted{Minute} // '00' ),
+                        ( $RawSubmitted{Second} // '00' ),
+                        ( $ManualTimeStamp || '' ),
+                        ( $UserTimeZone || '' ),
+                        ( $CustomerUserTimeZone || '' ),
+                        defined $BrowserOffsetMinutes ? $BrowserOffsetMinutes : 'undef',
+                        defined $ValueItemSystemTime ? $ValueItemSystemTime : 'undef',
+                        defined $SystemTime          ? $SystemTime          : 'undef',
+                        defined $DeltaSeconds ? $DeltaSeconds : 'undef',
+                        $Param{LayoutObject} ? 1 : 0,
+                        $ErrorMessage || '',
+                    ),
+                );
             }
         }
     }
@@ -901,6 +1016,12 @@ EOF
         %YearsPeriodRange = (
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 0,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
+        );
+    }
+    else {
+        %YearsPeriodRange = (
+            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
+            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
         );
     }
 

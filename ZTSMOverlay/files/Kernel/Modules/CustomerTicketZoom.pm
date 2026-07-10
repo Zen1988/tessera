@@ -3018,10 +3018,7 @@ sub _ZTSMFollowUpAllowed {
     return if ( $Ticket->{StateType} || '' ) eq 'closed';
 
     for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
-        my $Value = $Ticket->{ 'DynamicField_' . $FieldName };
-        if ( ref $Value eq 'ARRAY' ) {
-            $Value = $Value->[0];
-        }
+        my $Value = _ZTSMNormalizeValue( $Ticket->{ 'DynamicField_' . $FieldName } );
         return if !defined $Value || $Value eq '';
     }
 
@@ -3034,16 +3031,10 @@ sub _ZTSMFollowUpPurpleBookID {
     my $Ticket = $Param{Ticket};
     return if !IsHashRefWithData($Ticket);
 
-    my $BlueBookID = $Ticket->{'DynamicField_ZTicket-BlueBook'};
-    my $BlueLevel  = $Ticket->{'DynamicField_ZTicket-BlueLevel'};
-    my $Chapter    = $Ticket->{'DynamicField_ZTicket-Chapter'};
-    my $Profile    = $Ticket->{'DynamicField_ZTicket-Profile'};
-
-    for my $Value ( \$BlueBookID, \$BlueLevel, \$Chapter, \$Profile ) {
-        if ( ref ${$Value} eq 'ARRAY' ) {
-            ${$Value} = ${$Value}->[0];
-        }
-    }
+    my $BlueBookID = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    my $BlueLevel  = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    my $Chapter    = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    my $Profile    = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Profile'} );
 
     return if !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter;
 
@@ -3064,18 +3055,12 @@ sub _ZTSMFollowUpPurpleBookID {
         );
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
-        my $PurpleBookID = $Record->{PurpleBook};
-        if ( ref $PurpleBookID eq 'ARRAY' ) {
-            $PurpleBookID = $PurpleBookID->[0];
-        }
+        my $PurpleBookID = _ZTSMNormalizeValue( $Record->{PurpleBook} );
 
         next RECORD if !$PurpleBookID;
         return $PurpleBookID if defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter;
 
-        my $RecordProfile = $Record->{Profile};
-        if ( ref $RecordProfile eq 'ARRAY' ) {
-            $RecordProfile = $RecordProfile->[0];
-        }
+        my $RecordProfile = _ZTSMNormalizeValue( $Record->{Profile} );
         push @FallbackPurpleBookIDs, $PurpleBookID if $Profile && $RecordProfile && $RecordProfile eq $Profile;
     }
 
@@ -3086,23 +3071,37 @@ sub _ZTSMFollowUpPurpleBookID {
 sub _ZTSMBlueLevelMatch {
     my ( $Self, %Param ) = @_;
 
-    my $BlueLevel = $Param{BlueLevel};
-    if ( ref $BlueLevel eq 'ARRAY' ) {
-        $BlueLevel = $BlueLevel->[0];
-    }
+    my $BlueLevel = _ZTSMNormalizeValue( $Param{BlueLevel} );
 
     return if !defined $BlueLevel || $BlueLevel eq '';
     return if !$Param{Record} || ref $Param{Record} ne 'HASH';
 
     for my $RecordBlueLevel ( $Param{Record}->{BlueLevel}, $Param{Record}->{RawBlueLevel} ) {
-        if ( ref $RecordBlueLevel eq 'ARRAY' ) {
-            $RecordBlueLevel = $RecordBlueLevel->[0];
-        }
+        $RecordBlueLevel = _ZTSMNormalizeValue($RecordBlueLevel);
         next if !defined $RecordBlueLevel || $RecordBlueLevel eq '';
         return 1 if $RecordBlueLevel eq $BlueLevel;
     }
 
     return;
+}
+
+sub _ZTSMNormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return _ZTSMNormalizeValue( $Value->[0] );
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID SelectedID SelectedValue)) {
+            return $Value->{$Key} if defined $Value->{$Key} && $Value->{$Key} ne '';
+        }
+        return;
+    }
+
+    return $Value;
 }
 
 sub _ZTSMExternalPartyRequestAllowed {
