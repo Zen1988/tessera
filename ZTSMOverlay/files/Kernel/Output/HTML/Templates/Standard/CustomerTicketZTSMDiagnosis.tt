@@ -79,6 +79,42 @@
         .ZTSMDiagnosisField_ZIN-Plan textarea {
             min-height: 156px;
         }
+        .ZTSMDiagnosisField .RichTextHolder {
+            width: 100%;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisField .RichTextHolder textarea.RichText {
+            display: block;
+            min-height: 112px;
+            background: #fff;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan .RichTextHolder textarea.RichText {
+            min-height: 172px;
+        }
+        .ZTSMDiagnosisField .ck.ck-editor,
+        .ZTSMDiagnosisField .ck.ck-editor__main,
+        .ZTSMDiagnosisField .ck.ck-editor__editable {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisField .ck.ck-editor {
+            color: #07104a;
+        }
+        .ZTSMDiagnosisField .ck.ck-editor__editable_inline {
+            min-height: 112px;
+            padding: 10px 12px;
+            background: #fff;
+            border-color: #d9dfef;
+            box-shadow: none;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan .ck.ck-editor__editable_inline {
+            min-height: 172px;
+        }
         .ZTSMDiagnosisActions {
             margin-top: 12px;
             text-align: right;
@@ -135,9 +171,13 @@
             if (!window.jQuery || !window.Core || !Core.UI || !Core.UI.RichTextEditor || typeof Core.UI.RichTextEditor.InitEditor !== 'function') {
                 return;
             }
-            window.jQuery(root || document).find('textarea.DynamicFieldRichText').each(function () {
+            window.jQuery(root || document).find('textarea.RichText, textarea.DynamicFieldRichText').each(function () {
                 var field = window.jQuery(this);
                 if (field.data('ZTSMDiagnosisRichTextReady')) {
+                    return;
+                }
+                if (this.closest && this.closest('.RichTextHolder') && this.closest('.RichTextHolder').querySelector('.ck.ck-editor, .ck-editor, .cke_chrome')) {
+                    field.data('ZTSMDiagnosisRichTextReady', true);
                     return;
                 }
                 Core.UI.RichTextEditor.InitEditor(field);

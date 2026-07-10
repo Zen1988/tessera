@@ -20,6 +20,36 @@ Last Updated: 2026-07-10
 
 ## Completed Work
 
+## 2026-07-10 GovernanceDB 0.0.261 Diagnosis RichText Display and PurpleBook Name Resolution
+
+### Completed work
+
+- Fixed the Diagnosis workspace RichText display:
+  - `CustomerTicketZoom` now loads the stock customer RichText editor assets whenever an inline Diagnosis action is present;
+  - the Diagnosis template now sizes `RichTextHolder` / CKEditor containers cleanly so the raw textarea does not appear as a large grey block.
+- Fixed BlueBook PurpleBook resolution when exported Set rows store the displayed GovernanceObject name:
+  - `ZBlue-PurpleBook: RequesterClarification` is now resolved through the `ZBlue-PurpleBook` GovernanceObject dynamic field back to the BlueBook GovernanceObjectID;
+  - both `ZTSMBlueBookReader.pm` and `ZTSMBlueBookRuntime.pm` use the same resolver so child spawning, Zoom Follow-up visibility, and submit-side Follow-up agree.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.261`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.261.opm`.
+- `Kernel/Package/GovernanceDB-0.0.261.opm` SHA256: `305B12A214E55E642E30449AADA4935816DFD031DDE1BCEF150508A071A38E9C`.
+- Supersedes `0.0.260`; use `0.0.261` for the next Diagnosis RichText and Follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay copies of:
+  - `CustomerTicketZoom.pm`;
+  - `ZTSMBlueBookReader.pm`;
+  - `ZTSMBlueBookRuntime.pm`.
+- `GovernanceDB-0.0.261.opm` parsed successfully as XML: version `0.0.261`, SOPM file count `202`, OPM file count `202`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed the runtime-overlay Diagnosis template, Zoom, BlueBook reader, and BlueBook runtime payloads match their package source files.
+
+### Known Issues / Follow-Up
+
+- Runtime retest Diagnosis form: `ZIN-Diagnosis` and `ZIN-Plan` should initialize as the normal customer RichText editor instead of a raw textarea.
+- Runtime retest owned Diagnosis child `BR-002`: Follow-up should now resolve `RequesterClarification` from `ZBlue-PurpleBook` and show when the child owner opens Zoom.
+
 ## 2026-07-10 GovernanceDB 0.0.260 Diagnosis Submit Workspace and Follow-Up Diagnostics
 
 ### Completed work

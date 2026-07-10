@@ -252,6 +252,56 @@ sub _GeneralCatalogDynamicFieldValueResolve {
     return $Value;
 }
 
+sub _GovernanceObjectDynamicFieldValueResolve {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value;
+    return if $Value eq '';
+    return $Value if $Value =~ m{\A\d+\z};
+
+    FIELDNAME:
+    for my $FieldName ( @{ $Param{FieldNames} || [] } ) {
+        my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => $FieldName,
+        );
+        next FIELDNAME if !$DynamicFieldConfig;
+        next FIELDNAME if ( $DynamicFieldConfig->{FieldType} || '' ) ne 'GovernanceObject';
+
+        my %Search = (
+            Result => 'ARRAY',
+            Name   => $Value,
+            Limit  => 2,
+            UserID => 1,
+        );
+
+        my @ClassIDs;
+        my @Classes;
+        for my $Class ( @{ $DynamicFieldConfig->{Config}->{ClassIDs} || [] } ) {
+            next if !defined $Class || $Class eq '';
+            if ( $Class =~ m{\A\d+\z} ) {
+                push @ClassIDs, $Class;
+            }
+            else {
+                push @Classes, $Class;
+            }
+        }
+
+        $Search{ClassIDs} = \@ClassIDs if @ClassIDs;
+        $Search{Classes}  = \@Classes  if @Classes;
+
+        my @GovernanceObjectIDs = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectSearch(%Search);
+        return $GovernanceObjectIDs[0] if @GovernanceObjectIDs == 1;
+
+        delete $Search{Name};
+        $Search{Number} = $Value;
+        @GovernanceObjectIDs = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectSearch(%Search);
+        return $GovernanceObjectIDs[0] if @GovernanceObjectIDs == 1;
+    }
+
+    return $Value;
+}
+
 sub _TicketFieldSet {
     my (%Param) = @_;
 
@@ -557,6 +607,8 @@ sub Run {
             Value => $RawType,
         );
 
+        my $RawPurpleBook = _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] );
+
         push @ParsedRecords, {
             BlueLevel        => $BlueLevel,
             RawBlueLevel     => $RawBlueLevel,
@@ -567,7 +619,10 @@ sub Run {
             Profile          => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role             => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
             Template         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
-            PurpleBook       => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PurpleBook'] ),
+            PurpleBook       => _GovernanceObjectDynamicFieldValueResolve(
+                Value      => $RawPurpleBook,
+                FieldNames => ['ZBlue-PurpleBook'],
+            ) || $RawPurpleBook,
             Mandatory        => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Mandatory'] ),
             Strict           => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Strict'] ),
             Duration         => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Duration'] ),

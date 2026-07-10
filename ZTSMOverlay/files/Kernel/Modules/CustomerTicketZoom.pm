@@ -262,6 +262,16 @@ sub Run {
         : $Self->_ZTSMRuntimeActions(
             Ticket => \%Ticket,
         );
+    if ( IsArrayRefWithData($ZTSMRuntimeActions) ) {
+        RUNTIMEACTION:
+        for my $RuntimeAction ( @{$ZTSMRuntimeActions} ) {
+            next RUNTIMEACTION if !$RuntimeAction->{IsDiagnosis};
+            if ( $LayoutObject->{BrowserRichText} ) {
+                $LayoutObject->CustomerSetRichTextParameters( Data => {} );
+            }
+            last RUNTIMEACTION;
+        }
+    }
     my $ZTSMStoryLinks = $Self->_ZTSMStoryLinks(
         Ticket => \%Ticket,
     );
