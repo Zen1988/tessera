@@ -81,6 +81,17 @@ sub _NeutralClosureState {
     return;
 }
 
+sub _FulfilledClosureState {
+    my ($State) = @_;
+
+    return if !defined $State;
+    return 1 if $State eq 'closed successful';
+    return 1 if $State eq 'diagnosed';
+    return 1 if _NeutralClosureState($State);
+
+    return;
+}
+
 sub _OutcomeValue {
     my ($Ticket) = @_;
 
@@ -284,7 +295,7 @@ sub Run {
             $PlayTicket{
                 'DynamicField_ZTicket-OwnerWeightage'
             }
-        ) || 0;
+        );
 
         
         #
@@ -302,6 +313,11 @@ sub Run {
 		}
 
 		my $State = $PlayTicket{State};
+
+        if ( ( !defined $OwnerWeightage || $OwnerWeightage eq '' ) && _FulfilledClosureState($State) ) {
+            $OwnerWeightage = $RequiredWeightage || 1;
+        }
+        $OwnerWeightage ||= 0;
 		
         #
         # Failure detection
@@ -561,7 +577,13 @@ sub Run {
             }
         }
 
-        if ($ParentHardStopState) {
+        my $ParentInFollowUp = %ParentTicket && ( $ParentTicket{State} || '' ) eq 'follow-up';
+
+        if (
+            $ParentHardStopState
+            && !( $ParentInFollowUp && _NeutralClosureState($ParentHardStopState) )
+            )
+        {
             my $NeutralStop = _NeutralClosureState($ParentHardStopState);
 
             $TicketObject->TicketStateSet(
@@ -598,7 +620,7 @@ sub Run {
                 UserID => 1,
             );
 
-            if ( %ParentTicket && ( $ParentTicket{State} || '' ) eq 'follow-up' ) {
+            if ($ParentInFollowUp) {
                 $Self->Run(
                     %Param,
                     Ticket => \%ParentTicket,
@@ -618,6 +640,7 @@ sub Run {
         $Mandatory
         && _NeutralClosureState( $Ticket->{State} )
         && $ParentTicketID
+        && !( %ParentTicket && ( $ParentTicket{State} || '' ) eq 'follow-up' )
     ) {
         if ( @BlueLevelPlays == 1 && $BlueLevelPlays[0] == $TicketID ) {
             $TicketObject->TicketStateSet(
@@ -942,11 +965,23 @@ sub Run {
             return 1;
         }
 
-        $TicketObject->TicketStateSet(
+        my $StateSet = $TicketObject->TicketStateSet(
             TicketID => $ParentTicketID,
             State    => 'in-progress',
             UserID   => 1,
         );
+        if ( !$StateSet ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  =>
+                      'ZTSMChapterDirector: '
+                    . 'Follow-up BlueBook complete but original ticket state restore failed '
+                    . "ParentTicketID=$ParentTicketID "
+                    . "PurpleBook=$BlueBook",
+            );
+
+            return 1;
+        }
 
         ZTSMArticleCreate(
             %Param,

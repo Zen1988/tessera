@@ -28,6 +28,7 @@ use List::Util  qw(any);
 
 # OTOBO modules
 use Kernel::Language              qw(Translatable);
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
 use Kernel::System::ZTSMBlueBookRuntime ();
 use Kernel::System::VariableCheck qw(:all);
 
@@ -254,6 +255,15 @@ sub Run {
         TicketID      => $Self->{TicketID},
         DynamicFields => 1,
     );
+
+    if ( lc( $Ticket{State} || '' ) eq 'follow-up' ) {
+        if ( $Self->_ZTSMFollowUpClosedChildrenReconcile( Ticket => \%Ticket ) ) {
+            %Ticket = $TicketObject->TicketGet(
+                TicketID      => $Self->{TicketID},
+                DynamicFields => 1,
+            );
+        }
+    }
 
     my $ZTSMReadOnlyView = $ParamObject->GetParam( Param => 'ZTSMReadOnlyView' ) ? 1 : 0;
 
@@ -2555,12 +2565,16 @@ sub _ZTSMRuntimeActions {
         Config => $Config,
         );
 
+    my $RequesterFollowUpTaskAccess = $Self->_ZTSMRequesterFollowUpTaskAllowed(
+        Ticket => $Ticket,
+    );
+
     my $DiagnosisRuntimeActionAllowed = $OwnerMatchesCurrentUser
         && ( $Ticket->{Type} || '' ) eq 'Diagnosis';
 
     my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed;
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess;
+    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess && !$RequesterFollowUpTaskAccess;
 
     if ( $HoldState && $RequesterPauseAccess ) {
         return [
@@ -2597,6 +2611,16 @@ sub _ZTSMRuntimeActions {
             Label           => 'Delegate',
             RiskFieldsHTML  => $Self->_ZTSMDelegateOverrideHTML( TicketID => $Ticket->{TicketID} ),
             RemarksRequired => 0,
+            InActionMenu    => 1,
+        };
+
+        push @RuntimeActions, {
+            Action          => 'Patch',
+            Label           => 'Patch',
+            RiskFieldsHTML  => $Self->_ZTSMRecoveryStateHTML(
+                Ticket => $Ticket,
+            ),
+            RemarksRequired => 1,
             InActionMenu    => 1,
         };
 
@@ -2673,9 +2697,9 @@ sub _ZTSMRuntimeActions {
     }
 
     if (
-        $ActionAccess
+        ( $ActionAccess || $RequesterFollowUpTaskAccess )
         && $TaskLikeTicket
-        && $OwnerMatchesCurrentUser
+        && ( $OwnerMatchesCurrentUser || $RequesterFollowUpTaskAccess )
         )
     {
         push @RuntimeActions, {
@@ -2912,6 +2936,62 @@ sub _ZTSMOverrideAttachmentHTML {
         . '</div>';
 }
 
+sub _ZTSMRecoveryStateHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket       = $Param{Ticket} || {};
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $StateObject  = $Kernel::OM->Get('Kernel::System::State');
+
+    my %StateList = $StateObject->StateGetStatesByType(
+        StateType => [ 'new', 'open', 'pending reminder', 'pending auto', 'closed' ],
+        Result    => 'HASH',
+    );
+
+    my %Selection;
+    STATEID:
+    for my $StateID ( sort { lc( $StateList{$a} || '' ) cmp lc( $StateList{$b} || '' ) } keys %StateList ) {
+        my $State = $StateList{$StateID};
+        next STATEID if !defined $State || $State eq '';
+        next STATEID if lc($State) eq lc( $Ticket->{State} || '' );
+        $Selection{$State} = $State;
+    }
+
+    my $StateSelection = $LayoutObject->BuildSelection(
+        Data         => \%Selection,
+        Name         => 'ZTSMRecoveryState',
+        ID           => 'ZTSMRecoveryState',
+        PossibleNone => 1,
+        Class        => 'Modernize Validate_Required',
+    );
+
+    return '<div class="Row ZTSMRiskField ZTSMOverrideWarning">'
+        . '<div class="Field">'
+        . '<p>You are attempting to patch a record which is out of normal workflow.</p>'
+        . '<p>This action should only be performed due to a process or workflow bug. It manually changes only the ticket state and does not run StateBook, BlueBook, TransitionAction modules, chapter evaluation, or governance recalculation.</p>'
+        . '</div>'
+        . '<label class="Mandatory">Recovery scope: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
+        . '<div class="Field">'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMRecoveryAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge this patch is outside normal workflow and is required due to a process or workflow bug.</span></label>'
+        . '</div>'
+        . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field">' . $StateSelection . '</div>'
+        . '<label for="ZTSMRecoveryState" class="Mandatory">Target state: <span class="Marker">*</span></label>'
+        . '<div class="Clear"></div>'
+        . '</div>'
+        . '<div class="Row ZTSMRiskField">'
+        . '<div class="Field"><input type="file" id="ZTSMRecoveryFileUpload" name="file_upload" /></div>'
+        . '<label for="ZTSMRecoveryFileUpload">Recovery evidence:</label>'
+        . '<div class="Clear"></div>'
+        . '</div>';
+}
+
 sub _ZTSMAddRequiredSupportProfileAllowed {
     my ( $Self, %Param ) = @_;
 
@@ -3129,7 +3209,7 @@ sub _ZTSMFollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type} ) {
+        if ( $RecordType && ( $Ticket->{Type} || '' ) && $RecordType ne $Ticket->{Type} ) {
             $Self->_ZTSMFollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook record skipped: type mismatch. TicketType='$Ticket->{Type}' RecordType='$RecordType' RecordChapter='$RecordChapter'.",
@@ -3146,7 +3226,7 @@ sub _ZTSMFollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter ) {
+        if ( defined $RecordChapter && $RecordChapter eq $Chapter ) {
             $Self->_ZTSMFollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook exact match resolved. PurpleBook='$PurpleBookID' Chapter='$Chapter'.",
@@ -3284,6 +3364,78 @@ sub _ZTSMTakeOwnershipTicket {
     return 1 if ( $Ticket->{Title} || '' ) =~ m{\ADiagnosis\s+-\s+}i;
 
     return;
+}
+
+sub _ZTSMRequesterFollowUpTaskAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if !$Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
+
+    my $ParentTicketID = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !$ParentTicketID;
+
+    my %ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => 1,
+        Silent        => 1,
+    );
+
+    return if !IsHashRefWithData( \%ParentTicket );
+    return 1 if lc( $ParentTicket{State} || '' ) eq 'follow-up';
+
+    return;
+}
+
+sub _ZTSMFollowUpClosedChildrenReconcile {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if lc( $Ticket->{State} || '' ) ne 'follow-up';
+    return if !$Ticket->{TicketID};
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my @ChildTicketIDs = $TicketObject->TicketSearch(
+        Result => 'ARRAY',
+        'DynamicField_ZTicket-Parent' => {
+            Equals => $Ticket->{TicketID},
+        },
+        UserID => 1,
+    );
+
+    return if !@ChildTicketIDs;
+
+    my $ChapterDirector = Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector->new();
+    my $Ran;
+
+    CHILDTICKETID:
+    for my $ChildTicketID (@ChildTicketIDs) {
+        my %ChildTicket = $TicketObject->TicketGet(
+            TicketID      => $ChildTicketID,
+            DynamicFields => 1,
+            UserID        => 1,
+            Silent        => 1,
+        );
+
+        next CHILDTICKETID if !%ChildTicket;
+        next CHILDTICKETID if ( $ChildTicket{StateType} || '' ) ne 'closed';
+        next CHILDTICKETID if !_ZTSMNormalizeValue( $ChildTicket{'DynamicField_ZTicket-BlueBook'} );
+        next CHILDTICKETID if !_ZTSMNormalizeValue( $ChildTicket{'DynamicField_ZTicket-BlueLevel'} );
+
+        $ChapterDirector->Run(
+            Ticket => \%ChildTicket,
+            UserID => 1,
+        );
+        $Ran = 1;
+    }
+
+    return $Ran;
 }
 
 sub _ZTSMServiceSupportMapSelectionHTML {

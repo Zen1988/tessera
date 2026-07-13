@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-10
+Last Updated: 2026-07-13
 
 ## Current Focus
 
@@ -19,6 +19,543 @@ Last Updated: 2026-07-10
 - Incident Diagnosis loop-capable runtime with iteration-aware child orchestration.
 
 ## Completed Work
+
+## 2026-07-13 GovernanceDB 0.0.277 IPC Patch Follow-Up Guard Bypass
+
+### Completed work
+
+- Fixed the remaining `Insufficient Rights / No Permission!` result after `0.0.276` confirmed `Patch` submit reached `CustomerTicketZTSMAction` with `IPCAccess='1'`.
+- Root cause: the generic `follow-up` ticket-state guard returned `CustomerNoPermission` before the `Patch` branch executed, and that older guard did not log the denial.
+- `Patch` now bypasses that generic `follow-up` guard because IPC recovery is specifically intended to repair stuck workflow states such as parent tickets left in `follow-up`.
+- Non-`Patch` actions blocked by the same guard now log an explicit error:
+  - `Permission denied at follow-up state guard`.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.277`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.277.opm`.
+- `Kernel/Package/GovernanceDB-0.0.277.opm` SHA256: `B453C49282BDFDC32D65FDEF7BE42F9283719269FFE2360B980A81C6A392AE1B`.
+- Supersedes `0.0.276`; use `0.0.277` for the next IPC Patch retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies using `perl -I. -IKernel\cpan-lib -c`.
+- All four mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256: `F205EFBE12587D1B3D288C48883ED30F02584C270840D7B4A64C6575CEF7BE35`.
+- `GovernanceDB-0.0.277.opm` parsed successfully as XML: version `0.0.277`, file count `203`.
+- Decoded OPM payload check confirmed the packaged runtime overlay includes:
+  - `lc( $Ticket{State} || '' ) eq 'follow-up' && $RuntimeAction ne 'Patch'`;
+  - `Permission denied at follow-up state guard`;
+  - the existing IPC Patch submit and runtime action gate diagnostics.
+
+## 2026-07-13 GovernanceDB 0.0.276 IPC Patch Error-Level Diagnostics
+
+### Completed work
+
+- Promoted the IPC `Patch` submit diagnostic marker from `notice` to explicit `error` priority so it is captured in deployments where notice-level logging is filtered.
+- Made the three relevant `CustomerNoPermission` diagnostics explicit `error` priority as well:
+  - initial customer `ro` gate;
+  - runtime action permission gate;
+  - final IPC Patch guard.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.276`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.276.opm`.
+- `Kernel/Package/GovernanceDB-0.0.276.opm` SHA256: `F84828E8081B1C36120631F189B00D97B1F7F3AF724096213FB46D0096F35C96`.
+- Supersedes `0.0.275`; use `0.0.276` for the next IPC Patch retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies using `perl -I. -IKernel\cpan-lib -c`.
+- All four mirrored `CustomerTicketZTSMAction.pm` copies have matching SHA256: `14EC055B8046997619E4F8C5ADC293287844310359B7415DC6BC95914C64B5FE`.
+- `GovernanceDB-0.0.276.opm` parsed successfully as XML: version `0.0.276`, file count `203`.
+- Decoded OPM payload check confirmed the packaged runtime overlay includes the Patch submit marker and all three Patch permission denial diagnostics with explicit `Priority => 'error'`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.276`, retry Patch once and search the OTOBO log for `CustomerTicketZTSMAction: IPC Patch submit entered`.
+- If that error-level log line does not appear, the live runtime is not executing the upgraded `CustomerTicketZTSMAction.pm`, or the browser request is not reaching `CustomerTicketZTSMAction`.
+
+## 2026-07-13 GovernanceDB 0.0.275 IPC Patch Submit Diagnostics
+
+### Completed work
+
+- Added targeted server-side diagnostics for the remaining `Insufficient Rights / No Permission!` result when submitting IPC `Patch`.
+- `CustomerTicketZTSMAction` now logs a notice when a `Patch` submit actually enters the endpoint:
+  - ticket ID;
+  - customer user ID;
+  - resolved IPC access flag;
+  - subaction.
+- Added explicit log messages before each `CustomerNoPermission` return relevant to `Patch`:
+  - initial customer `ro` gate;
+  - runtime action permission gate;
+  - final IPC Patch guard.
+- This is intended to distinguish the three likely live causes:
+  - the live runtime is still not executing the upgraded `CustomerTicketZTSMAction.pm`;
+  - the submit arrives without `RuntimeAction=Patch`;
+  - the submit arrives but IPC group resolution returns false;
+  - the submit arrives and IPC resolves true, but another permission gate still blocks it.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.275`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.275.opm`.
+- `Kernel/Package/GovernanceDB-0.0.275.opm` SHA256: `7160D5AC85647EADD499308BAF0957F8AEAE24E1B31FB9AD52261809961589E3`.
+- Supersedes `0.0.274`; use `0.0.275` for the next IPC Patch retest and capture the new `CustomerTicketZTSMAction` log line.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies using `perl -I. -IKernel\cpan-lib -c`.
+- `GovernanceDB-0.0.275.opm` parsed successfully as XML: version `0.0.275`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the packaged runtime overlay includes:
+  - `IPC Patch submit entered`;
+  - `Permission denied at initial customer ro gate`;
+  - `Permission denied at runtime action gate`;
+  - `Permission denied at IPC Patch guard`;
+  - `IPCEmergencyAction`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.275`, retry Patch once and search the OTOBO log for `IPC Patch submit entered`.
+- If that log line does not appear, the live `/opt/otobo/Kernel/Modules/CustomerTicketZTSMAction.pm` is not the upgraded overlay, or the browser is not submitting to `CustomerTicketZTSMAction`.
+- If the log line appears with `IPCAccess='0'`, the remaining issue is IPC group resolution for the submitting customer user.
+- If the log line appears with `IPCAccess='1'`, the following denial log will identify the exact remaining gate.
+
+## 2026-07-13 GovernanceDB 0.0.274 IPC Patch Permission Gate Fix
+
+### Completed work
+
+- Fixed the `Insufficient Rights / No Permission!` error when an IPC user submits the customer `Patch` recovery action.
+- Root cause: `CustomerTicketZTSMAction` performed the normal customer `ro` permission check before the `Patch` branch could enforce IPC permission, so an IPC recovery user could see the menu action but be rejected on submit for tickets outside normal customer access.
+- `CustomerTicketZTSMAction` now resolves IPC identity before the first ticket read gate.
+- Emergency IPC actions `Patch`, `Delegate`, and `Override` can pass the first `ro` gate only when the user is IPC.
+- The later action-specific checks remain in place:
+  - `Patch` still requires IPC access;
+  - acknowledgement, target state, remarks, state-type allowlist, and audit article remain mandatory;
+  - the action still changes only ticket state and does not run StateBook, BlueBook, TransitionAction modules, chapter evaluation, orchestration, or governance recalculation.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.274`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.274.opm`.
+- `Kernel/Package/GovernanceDB-0.0.274.opm` SHA256: `C81B14B6DC825C1AD6AB1EAB6E93487366824B17113E3F7CB08672702E36AE72`.
+- Supersedes `0.0.273`; use `0.0.274` for IPC Patch recovery retesting.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies using `perl -I. -IKernel\cpan-lib -c`.
+- All four `CustomerTicketZTSMAction.pm` copies match SHA256 `3BE1607DF39572E52436F65EFDAC9418D7224897404D10DCA8C0C2AC9201F563`.
+- `GovernanceDB-0.0.274.opm` parsed successfully as XML: version `0.0.274`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - packaged `CustomerTicketZTSMAction.pm` includes `IPCEmergencyAction`;
+  - packaged `CustomerTicketZTSMAction.pm` includes `ZTSMRecoveryAcknowledge`;
+  - packaged `CustomerTicketZTSMAction.pm` still handles `RuntimeAction eq 'Patch'`;
+  - packaged `CustomerTicketZTSMAction.pm` writes `[IPC Patch] Ticket state manually corrected`.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439, plus the existing `PROJECT_STATUS.md` CRLF normalization warning.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.274`, restart/refresh the OTOBO PSGI/web process if the runtime log still shows repeated `Subroutine ... redefined` warnings. Those warnings point to duplicate module loading or stale process/cache state, not to the `Patch` permission gate itself.
+
+## 2026-07-13 GovernanceDB 0.0.273 IPC Patch Ticket State Recovery
+
+### Completed work
+
+- Added an IPC-only `Patch` recovery action on `CustomerTicketZoom`.
+- Purpose: allow IPC to manually correct a ticket state when a process/workflow bug leaves a ticket stranded outside the intended condition, for example an execution ticket stuck in `follow-up`.
+- `Patch` is shown in the action menu for IPC users, including tickets currently in `follow-up`.
+- The `Patch` dialog includes an explicit warning:
+  - the record is being patched outside normal workflow;
+  - the action should only be used due to a process or workflow bug;
+  - the action changes only ticket state;
+  - it does not run StateBook, BlueBook, TransitionAction modules, chapter evaluation, orchestration, or governance recalculation.
+- `Patch` requires:
+  - acknowledgement checkbox;
+  - target state selection;
+  - remarks/reason;
+  - optional evidence attachment.
+- `CustomerTicketZTSMAction` handles `RuntimeAction=Patch` by:
+  - enforcing IPC permission;
+  - validating the target state via `Kernel::System::State`;
+  - allowing only `new`, `open`, `pending reminder`, `pending auto`, or `closed` state types;
+  - calling `TicketStateSet()` only;
+  - writing an audit article with subject `[IPC Patch] Ticket state manually corrected`.
+- The audit article records previous state, target state, IPC customer user, and the submitted remarks.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, `ZTSMOverlay`, and the local `otobo-11.0.16` CustomerTicketZoom copy.
+- Bumped `GovernanceDB.sopm` package version to `0.0.273`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.273.opm`.
+- `Kernel/Package/GovernanceDB-0.0.273.opm` SHA256: `40BDA7A2B1170BA3BD0C68A4278C6DC9D7D81E439444BDBA9EC85D23BC7F87AD`.
+- Supersedes `0.0.272`; use `0.0.273` for IPC Patch recovery testing.
+
+### Validation
+
+- Perl syntax checks passed for all five `CustomerTicketZoom.pm` copies and all four `CustomerTicketZTSMAction.pm` copies using `perl -I. -c`.
+- `GovernanceDB-0.0.273.opm` parsed successfully as XML: version `0.0.273`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - packaged `CustomerTicketZoom.pm` includes `Action => 'Patch'`;
+  - packaged warning text says the patch is outside normal workflow and only for process/workflow bug recovery;
+  - packaged `CustomerTicketZTSMAction.pm` handles `RuntimeAction=Patch`;
+  - packaged `CustomerTicketZTSMAction.pm` writes `[IPC Patch] Ticket state manually corrected`.
+
+## 2026-07-13 GovernanceDB 0.0.272 Follow-up Completion State Handoff Guard
+
+### Completed work
+
+- Fixed the remaining Follow-up completion handoff gap where the child completion article could be posted back to the Diagnosis ticket but the original execution ticket still displayed `follow-up`.
+- Root cause: the parent state restore was only performed inside `ZTSMChapterDirector`; if that path did not finish cleanly after customer task completion, the article existed but the parent state could remain stuck.
+- `CustomerTicketZTSMAction::CompleteTask` now runs a direct follow-up parent completion guard after ChapterDirector:
+  - reloads the closed child task;
+  - confirms the parent is still in `follow-up`;
+  - verifies the BlueLevel is complete;
+  - verifies the PurpleBook has no next BlueLevel;
+  - moves the original parent ticket back to `in-progress`;
+  - writes a `ZTSM Follow-up Completed` article for the state handoff.
+- `ZTSMChapterDirector` now checks the `TicketStateSet()` result when restoring the original ticket to `in-progress` and logs an error if the restore fails.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.272`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.272.opm`.
+- `Kernel/Package/GovernanceDB-0.0.272.opm` SHA256: `8B49CB2A0C69A07D9DC8A51FEC870EA28D5FE4D34CAE081ED81A8C8B7A14E39D`.
+- Supersedes `0.0.271`; use `0.0.272` for follow-up completion retesting.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies and all four active `ZTSMChapterDirector.pm` copies using `perl -I. -c`.
+- `GovernanceDB-0.0.272.opm` parsed successfully as XML: version `0.0.272`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - packaged `CustomerTicketZTSMAction.pm` includes `_FollowUpParentCompleteIfReady`;
+  - packaged `CustomerTicketZTSMAction.pm` includes the follow-up handoff success log and `Original ticket returned to in-progress` article text;
+  - packaged `ZTSMChapterDirector.pm` checks parent restore `TicketStateSet()` and logs restore failure.
+
+## 2026-07-13 GovernanceDB 0.0.271 Follow-up Task Owner Weightage Backfill
+
+### Completed work
+
+- Fixed the broader follow-up/task completion weightage issue where a task closed as successful could still contribute `0 / 1`.
+- Root cause: follow-up tasks created before the latest fixes could be missing `ZTicket-OwnerWeightage`, so closing them as Successful or No Action still left `CurrentWeightage=0`.
+- `ZTSMBlueBookRuntime::LevelComplete()` now treats fulfilled closed states as default/required weightage when `ZTicket-OwnerWeightage` is missing:
+  - `closed successful`;
+  - `diagnosed`;
+  - `closed no action`;
+  - `closed duplicate`.
+- `ZTSMChapterDirector` uses the same fulfilled-closure fallback before deciding whether to generate an additional ChapterPlay.
+- `CustomerTicketZTSMAction::CompleteTask` now writes `ZTicket-OwnerWeightage` from `ZTicket-RequiredWeightage` when the task is missing owner weightage at completion time.
+- This preserves the intended rule: if the level is genuinely under-filled, spawn another play; if the completed task should fulfill the level, count it correctly.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.271`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.271.opm`.
+- `Kernel/Package/GovernanceDB-0.0.271.opm` SHA256: `01635CD53CD6CC3AD908065C09B34A6675C11B352B79861D8BF56C9CA4C0654B`.
+- Supersedes `0.0.270`; use `0.0.271` for follow-up task weightage retesting.
+
+### Validation
+
+- Perl syntax checks passed for all four `ZTSMBlueBookRuntime.pm`, all four `ZTSMChapterDirector.pm`, and all four `CustomerTicketZTSMAction.pm` copies.
+- Mirrored `ZTSMBlueBookRuntime.pm` copies match SHA256 `BE6DCD113BB2AE0DBA0BE8EE8A5AB700D306897A03D45F5AB11344E7DFAF5CF2`.
+- Mirrored `ZTSMChapterDirector.pm` copies match SHA256 `E1BC69DDBC08D089C176D334F96BC1EC01819C8538132FD73ABC04FEBB244927`.
+- `GovernanceDB-0.0.271.opm` parsed successfully as XML: version `0.0.271`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - fulfilled-closure weightage fallback for successful, diagnosed, and neutral closures;
+  - runtime and director both use the fulfilled fallback;
+  - `CompleteTask` writes missing `ZTicket-OwnerWeightage`.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+## 2026-07-13 GovernanceDB 0.0.270 ChapterDirector Weightage Decision Alignment
+
+### Completed work
+
+- Aligned `ZTSMChapterDirector`'s local chapter weightage calculation with `ZTSMBlueBookRuntime::LevelComplete()`.
+- The `CurrentWeightage < RequiredWeightage && AllCompleted` branch still generates an additional ChapterPlay when the level is genuinely under-filled.
+- Closed neutral tasks with missing `ZTicket-OwnerWeightage` are normalized before the duplicate-spawn decision, so the director no longer disagrees with `LevelComplete()`.
+- This preserves the weightage invariant:
+  - if the level is genuinely not fulfilled, generate another play;
+  - if the closed task is accepted as fulfilled, complete/reconcile;
+  - do not leave the parent stuck waiting with no open child task.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.270`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.270.opm`.
+- `Kernel/Package/GovernanceDB-0.0.270.opm` SHA256: `2E0DE3772D3924F324A4F5B8882AB65B1D2099A320B0174C75E369B2530CB145`.
+- Supersedes `0.0.269`; use `0.0.270` for the next stuck-follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `ZTSMChapterDirector.pm` copies.
+- Mirrored `ZTSMChapterDirector.pm` copies match SHA256 `CF9AA857C374576A436DE4F0EC4A900E8811713819C808305EC5EC786F149086`.
+- `GovernanceDB-0.0.270.opm` parsed successfully as XML: version `0.0.270`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - neutral weightage normalization before duplicate-spawn decision;
+  - existing additional ChapterPlay generation branch remains present;
+  - follow-up neutral hard-stop bypass remains present.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+## 2026-07-13 GovernanceDB 0.0.269 Follow-up No Action Completes And Reconciles Parent
+
+### Completed work
+
+- Fixed PurpleBook Follow-up completion where a requester task closed as `No Action` could leave the original execution ticket stuck in `follow-up`.
+- `ZTSMBlueBookRuntime::LevelComplete()` now treats neutral closed states, `closed no action` and `closed duplicate`, as completed contribution when old follow-up tasks are missing `ZTicket-OwnerWeightage`.
+- `ZTSMChapterDirector` now keeps neutral follow-up completion inside the PurpleBook return path:
+  - normal BlueBook mandatory neutral closure still works outside follow-up;
+  - PurpleBook follow-up neutral closure no longer hard-stops/closes the original Diagnosis ticket;
+  - the original child ticket can return from `follow-up` to `in-progress` after the follow-up layer completes.
+- `CustomerTicketZoom` now reconciles a stuck `follow-up` ticket on page open by re-running chapter director against already-closed child follow-up tasks.
+- This is the compatibility fix for the already-closed `ICA-TS-2026000003` task where `No Action` was submitted before the weightage/owner fixes existed.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.269`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.269.opm`.
+- `Kernel/Package/GovernanceDB-0.0.269.opm` SHA256: `04596D89AFF87714D10E59B082765901A89D47AD840AD9B5972367817D50F9C8`.
+- Supersedes `0.0.268`; use `0.0.269` for the current stuck Diagnosis retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `ZTSMBlueBookRuntime.pm`, all four `ZTSMChapterDirector.pm`, and all four `CustomerTicketZoom.pm` copies.
+- Mirrored `ZTSMBlueBookRuntime.pm` copies match SHA256 `E80F5D229F558A21DF5AAC5EF31528084CC84B2D2E7BC8C512271F3FE76B0FC0`.
+- Mirrored `ZTSMChapterDirector.pm` copies match SHA256 `7966715E82796EE5E358EE9CBC024A97BCD03F1094E09679BFB7253E1088BC1C`.
+- `GovernanceDB-0.0.269.opm` parsed successfully as XML: version `0.0.269`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - neutral closure helper and weightage fallback in `ZTSMBlueBookRuntime`;
+  - follow-up closed-child reconciliation in `CustomerTicketZoom`;
+  - follow-up neutral hard-stop bypass in `ZTSMChapterDirector`.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest after installing/upgrading to `0.0.269`: reopen `ICA-IN-2026000022-DG-002`; the closed `No Action` follow-up task should reconcile and the Diagnosis ticket should leave `follow-up`.
+- `No Action` remains a neutral completion for follow-up: it means no further clarification/action is needed from the requester, so the follow-up requirement is fulfilled.
+
+## 2026-07-13 GovernanceDB 0.0.268 Existing Follow-up Requester Completion Access
+
+### Completed work
+
+- Fixed existing requester-clarification Follow-up tasks that were already created with the wrong `ZTicket-Owner`.
+- `CustomerTicketZoom` now renders `Complete` for a requester-owned `Task` when:
+  - the logged-in customer is the task `CustomerUserID`;
+  - the task is not closed;
+  - the task's `ZTicket-Parent` points to a parent execution ticket currently in `follow-up`.
+- `CustomerTicketZTSMAction` now accepts `CompleteTask` for the same requester-follow-up condition, even if `ZTicket-Owner` still contains the earlier wrong owner.
+- The exception is intentionally scoped to requester follow-up tasks and does not broaden general task completion.
+- Retains the `0.0.267` forward fix where newly spawned Follow-up tasks get root requester ownership and `ZTicket-OwnerWeightage = 1`.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.268`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.268.opm`.
+- `Kernel/Package/GovernanceDB-0.0.268.opm` SHA256: `ADA43B18615F58F801DDFE71BCB2BF3229019E17FB0D04D4CDAF3ECC280AB845`.
+- Supersedes `0.0.267`; use `0.0.268` for the current `ICA-TS-2026000003` retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZoom.pm` copies and all four `CustomerTicketZTSMAction.pm` copies.
+- `GovernanceDB-0.0.268.opm` parsed successfully as XML: version `0.0.268`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - requester follow-up task access helper in `CustomerTicketZoom`;
+  - requester follow-up task access helper in `CustomerTicketZTSMAction`;
+  - parent `follow-up` state guard;
+  - `CompleteTask` submit exception;
+  - retained `OwnerOverride` and `OwnerWeightageOverride` follow-up spawn markers.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest after installing/upgrading to `0.0.268`: reopen `ICA-TS-2026000003` as the requester; `Complete` should appear even though the old article says `Take Ownership` was submitted by `th.chua@...`.
+- If the linked parent execution ticket is no longer in `follow-up`, the exception will intentionally not apply.
+
+## 2026-07-13 GovernanceDB 0.0.267 Follow-up Direct Requester Ownership
+
+### Completed work
+
+- Fixed PurpleBook Follow-up child creation so requester-clarification follow-up tasks are assigned directly to the resolved root parent requester.
+- `_FollowUpApply()` now passes `OwnerOverride => $FollowUpParentTicket->{CustomerUserID}` into `ZTSMBlueBookRuntime::LevelSpawn()`.
+- `ZTSMBlueBookRuntime::LevelSpawn()` now accepts `OwnerWeightageOverride` and writes it to `ZTicket-OwnerWeightage` during child creation.
+- Follow-up children created from a Diagnosis child should now have:
+  - `ZTicket-Parent` pointing to the root Incident parent;
+  - `ZTicket-Owner` set to the root Incident requester;
+  - `ZTicket-OwnerWeightage` set to `1`.
+- This should allow the requester to see and use `Complete` directly, instead of first needing `Take Ownership`.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.267`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.267.opm`.
+- `Kernel/Package/GovernanceDB-0.0.267.opm` SHA256: `928BAC99D0E1C6BEE7B92D23BD13D09C15BB402DBED7DC3740C9F009BA01F657`.
+- Supersedes `0.0.266`; use `0.0.267` for the next Follow-up ownership/completion retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies and all four `ZTSMBlueBookRuntime.pm` copies.
+- Mirrored `ZTSMBlueBookRuntime.pm` copies match SHA256 `618DCA468C92FC249B74B198FEB9602351505347706E06E1F704EB45E9588760`.
+- `GovernanceDB-0.0.267.opm` parsed successfully as XML: version `0.0.267`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - `OwnerOverride => $FollowUpParentTicket->{CustomerUserID}` in the Follow-up action;
+  - `OwnerWeightageOverride => 1` in the Follow-up action;
+  - `OwnerWeightageOverride` support in `ZTSMBlueBookRuntime`;
+  - `ZTicket-OwnerWeightage` package payload write.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest after installing/upgrading to `0.0.267`: trigger Follow-up from `ICA-IN-2026000022-DG-002`; the created task should be `ICA-IN-2026000022-TS-001`, assigned to the root requester, and show `Complete` without requiring Take Ownership first.
+- Existing already-created Follow-up tasks may still need manual owner correction or recreation because this patch affects newly spawned Follow-up children.
+
+## 2026-07-13 GovernanceDB 0.0.266 Follow-up Root Parent Numbering
+
+### Completed work
+
+- Fixed PurpleBook Follow-up spawning from child execution tickets so the created follow-up task uses the original root parent ticket as the spawn and numbering parent.
+- `_FollowUpApply()` now resolves `ZTicket-Parent` from the source child ticket, loads that parent ticket, and passes it to `ZTSMBlueBookRuntime::LevelSpawn()`.
+- Follow-up tasks created from a child such as `ICA-IN-2026000022-DG-002` should now number under `ICA-IN-2026000022`, for example `ICA-IN-2026000022-TS-001`, instead of falling back to root task format such as `ICA-TS-...`.
+- The source child remains the action target and receives the Follow-up article; the article now records both the original child ticket and the resolved follow-up parent ticket.
+- Synced the focused change across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.266`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.266.opm`.
+- `Kernel/Package/GovernanceDB-0.0.266.opm` SHA256: `7E53AE0FDE3486328B53B67C8164BABCFB2EEEA850C57BE9BB8BC737E50B0A3A`.
+- Supersedes `0.0.265`; use `0.0.266` for the next Follow-up numbering retest.
+
+### Validation
+
+- Perl syntax checks passed for all four `CustomerTicketZTSMAction.pm` copies.
+- `GovernanceDB-0.0.266.opm` parsed successfully as XML: version `0.0.266`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed the root-parent follow-up markers:
+  - `FollowUpParentTicket`;
+  - `RootParentTicketID`;
+  - `ParentTicket   => $FollowUpParentTicket`;
+  - `ParentTicketID => $FollowUpParentTicketID`.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest after installing/upgrading to `0.0.266`: trigger Follow-up from `ICA-IN-2026000022-DG-002`; the created task should be `ICA-IN-2026000022-TS-001`.
+- Confirm `ZTicket-Parent` on the new follow-up task points to the root Incident ticket, while the original DG ticket keeps the Follow-up article/evidence.
+
+## 2026-07-13 GovernanceDB 0.0.265 Customer New Ticket CKEditor Plugin Registry Guard
+
+### Completed work
+
+- Fixed the customer new-ticket RichText initialization crash seen after upgrading to `0.0.264`:
+  - `Core.UI.RichTextEditor.js` no longer directly references the undeclared global `CKEditor5Plugins`;
+  - plugin lookup now uses `window.CKEditor5Plugins` when present and falls back to `window.CKEditor5Wrapper` for upgraded bundles where the wrapper is loaded but the plugin dictionary global is missing;
+  - preserved the `0.0.264` global dynamic RichText image paste behavior, including the FormID upload guard and the removal of the dynamic-field-specific upload disablement.
+- Synced `Core.UI.RichTextEditor.js` across runtime source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.265`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.265.opm`.
+- `Kernel/Package/GovernanceDB-0.0.265.opm` SHA256: `F9E4629064B6858F65BCE528B8A798F417B122EE761C5D46B02C43C3E66C1F54`.
+- Supersedes `0.0.264`; use `0.0.265` for the next customer new-ticket retest.
+
+### Validation
+
+- Mirrored `Core.UI.RichTextEditor.js` copies match SHA256 `159BACA0728BED33B6FC6A40A24C94A3B6FFFD246108506FECD7732938AF9919`.
+- Bundled Node syntax check passed for the GovernanceDB runtime-overlay `Core.UI.RichTextEditor.js`.
+- `GovernanceDB-0.0.265.opm` parsed successfully as XML: version `0.0.265`, file count `203`, `MissingEncodeBase64=0`, `MissingPayload=0`.
+- Decoded OPM payload check confirmed:
+  - the `PluginRegistry = window.CKEditor5Plugins || window.CKEditor5Wrapper || {}` guard is present;
+  - the direct `CKEditor5Plugins[pluginName]` access is absent;
+  - the dynamic-field-specific upload disablement remains absent.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest after installing/upgrading to `0.0.265`:
+  - open customer `New Ticket`;
+  - confirm the console no longer reports `CKEditor5Plugins is not defined`;
+  - confirm normal article RichText and dynamic RichText editors still initialize and image paste/upload works when a valid `FormID` is present.
+
+## 2026-07-13 GovernanceDB 0.0.264 Global Dynamic RichText Image Paste Upload
+
+### Completed work
+
+- Enabled image paste/upload for all RichText editors, including dynamic-field RichText editors:
+  - removed the shared `Core.UI.RichTextEditor.js` rule that disabled `SimpleUploadAdapter` whenever a textarea had `DynamicFieldRichText`;
+  - preserved the existing `FormID` guard, so image upload is still available only when the surrounding form exposes a valid `FormID`;
+  - removed the Diagnosis-only RichText class workaround because Diagnosis now uses the same global editor behavior as other dynamic RichText fields.
+- Added `Core.UI.RichTextEditor.js` to the GovernanceDB runtime overlay package file list so install/upgrade deploys the shared editor fix.
+- Synced changed files across runtime source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.264`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.264.opm`.
+- `Kernel/Package/GovernanceDB-0.0.264.opm` SHA256: `5D3C788691F7E5C862CA7DACB04DE6C09A3E22307A5B6089B00B9EBB5EB98896`.
+- Supersedes `0.0.263`; use `0.0.264` for the next global dynamic RichText image paste retest.
+
+### Validation
+
+- Mirrored file hashes match for:
+  - `Core.UI.RichTextEditor.js`: `A64518F9A542B0E037CC82F737C4530E9400CC09F4413D6075DC0B3EA701163C`;
+  - `CustomerTicketZTSMDiagnosis.tt`: `4E22CF210FD64E7A7EDD7B41E69043A5FB9F7640B974CF4F91A65E89F025CCFA`.
+- `GovernanceDB-0.0.264.opm` parsed successfully as XML: version `0.0.264`, file count `203`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - `Core.UI.RichTextEditor.js` is included in the runtime overlay;
+  - the dynamic-field-specific upload disablement is absent;
+  - the existing `FormID` upload guard remains present;
+  - `SimpleUploadAdapter` remains present.
+- `rg` confirmed no remaining `ZTSMDiagnosisRichTextUpload`, `removeClass('DynamicFieldRichText')`, or `hasClass('DynamicFieldRichText')` markers in the patched editor/template files.
+- `node --check` could not run because Node.js is not available in this shell.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest:
+  - paste an image into Diagnosis dynamic RichText;
+  - paste an image into another customer dynamic RichText field;
+  - confirm non-dynamic article RichText image paste remains unchanged.
+
+## 2026-07-13 GovernanceDB 0.0.263 Diagnosis RichText Image Paste Upload
+
+### Completed work
+
+- Fixed the Diagnosis workspace RichText image paste gap:
+  - Diagnosis now prepares its `FormID` through `Kernel::System::Web::FormCache->PrepareFormID`, matching stock customer forms and keeping the form/upload cache tied to the current session;
+  - the Diagnosis template now initializes only its scoped diagnosis RichText fields as upload-capable editors, bypassing OTOBO's generic `DynamicFieldRichText` image-upload block without changing the global customer RichText behavior.
+  - Diagnosis submit now reads `FormID` upload-cache files so CKEditor pasted images are written as inline attachments on the generated evidence article.
+- Synced changed files across canonical source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.263`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.263.opm`.
+- `Kernel/Package/GovernanceDB-0.0.263.opm` SHA256: `EE06F73B3946D4264DEA8E9A6F7880EF974877826DCAF7C220F2A2F9B81EB4A1`.
+- Supersedes `0.0.262`; use `0.0.263` for the next Diagnosis image paste retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical, GovernanceDB runtime-overlay, and `ZTSMOverlay` copies of `CustomerTicketZTSMAction.pm`.
+- Mirrored file hashes match for:
+  - `CustomerTicketZTSMDiagnosis.tt`: `7E5F25A7AD581BE37DAA829E8D51CFD24137844763BACDBC9387D1AB517CA3E2`;
+  - `CustomerTicketZTSMAction.pm`: `96B97E2F4150DB1ACF7FFA366420A226DBCDDC28E1661435651379DA268F1BEC`.
+- `GovernanceDB-0.0.263.opm` parsed successfully as XML: version `0.0.263`, file count `202`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - Diagnosis template contains the scoped `ZTSMDiagnosisRichTextUpload` / `DynamicFieldRichText` class bypass;
+  - Diagnosis action module contains `FormCache->PrepareFormID`.
+  - Diagnosis action module contains `FormIDGetAllFilesData` upload-cache attachment handling.
+- `git diff --check` still reports only pre-existing `AGENTS.md` trailing whitespace on lines 437 and 439.
+
+### Known Issues / Follow-Up
+
+- Runtime retest owned Diagnosis child:
+  - paste an image directly into `ZIN-Diagnosis`;
+  - submit the Diagnosis form and confirm the image persists as an inline uploaded attachment in the created article/evidence.
+
+## 2026-07-13 GovernanceDB 0.0.262 Diagnosis Customer Theme, Inline FormID, and Follow-Up Parser Fix
+
+### Completed work
+
+- Corrected the `0.0.261` Diagnosis workspace regression:
+  - removed the custom dark/black field theme from `CustomerTicketZTSMDiagnosis.tt`;
+  - kept only layout/sizing rules so the editor follows the normal customer default theme while preserving the inline placement.
+- Fixed the Follow-up blocker shown in the runtime log:
+  - `ZTSMBlueBookRuntime.pm` and `ZTSMBlueBookReader.pm` now return explicit scalar `undef` from BlueBook value helpers so missing optional record fields do not corrupt parsed record hashes in list context;
+  - both helpers now normalize `SelectedID` / `SelectedValue` when resolving reference-shaped values;
+  - `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm` compare normalized BlueBook chapter/type values during PurpleBook exact matching.
+- Fixed inline Diagnosis dynamic field rendering:
+  - `CustomerTicketZTSMAction.pm` now creates a `FormID` before rendering Diagnosis fields;
+  - `CustomerTicketZTSMDiagnosis.tt` submits that `FormID` with the Diagnosis form.
+- Synced changed files across canonical source, GovernanceDB package source/runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.262`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.262.opm`.
+- `Kernel/Package/GovernanceDB-0.0.262.opm` SHA256: `2799C7CC5874C2BACB455CDE03A7906C28C6B3B6CCC873B719C52D145485BDED`.
+- Supersedes `0.0.261`; use `0.0.262` for the next Diagnosis workspace and Follow-up retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical:
+  - `CustomerTicketZoom.pm`;
+  - `CustomerTicketZTSMAction.pm`;
+  - `ZTSMBlueBookRuntime.pm`;
+  - `ZTSMBlueBookReader.pm`.
+- Mirrored file hashes match for the Diagnosis template, Zoom module, ZTSM action module, BlueBook runtime, and BlueBook reader.
+- `GovernanceDB-0.0.262.opm` parsed successfully as XML: version `0.0.262`, SOPM/OPM file count `202`, `MissingEncodeBase64=0`.
+- Decoded OPM payload check confirmed:
+  - normalized Follow-up chapter matching is present;
+  - BlueBook parser explicit `undef` guards are present;
+  - Diagnosis `FormID` handling is present;
+  - the hard black Diagnosis field border from `0.0.261` is absent.
+
+### Known Issues / Follow-Up
+
+- Runtime retest owned Diagnosis child `ICA-IN-2026000022-DG-002` after upgrading to `0.0.262`:
+  - Diagnosis inline form should follow the customer default theme;
+  - the `Need FormID and SessionID in the LayoutObject!` error should stop;
+  - Follow-up should appear when BlueBook row `BR-002` has `ZBlue-PurpleBook` configured.
 
 ## 2026-07-10 GovernanceDB 0.0.261 Diagnosis RichText Display and PurpleBook Name Resolution
 

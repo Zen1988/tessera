@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.261</Version>
+    <Version>0.0.277</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -216,6 +216,7 @@
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/favicon.ico" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/common/img/icons/product.ico" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/js/Core.UI.RichTextEditor.js" Permission="660"/>
         <File Location="var/httpd/htdocs/js/Core.Agent.Admin.GeneralCatalogDocument.js" Permission="660"/>
         <File Location="var/httpd/htdocs/js/thirdparty/sheetjs-0.20.3/xlsx.full.min.js" Permission="660"/>
     </Filelist>

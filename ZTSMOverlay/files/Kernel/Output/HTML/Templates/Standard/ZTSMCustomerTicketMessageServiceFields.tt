@@ -690,6 +690,8 @@
 
 }
 </style>
+<input type="hidden" name="ZTSMServiceBrowserTimezoneOffset" value="" />
+<input type="hidden" name="ZTSMServiceSubmitTraceID" value="" />
 <script type="text/javascript" src="[% Config("Frontend::JavaScriptPath") %]thirdparty/sheetjs-0.20.3/xlsx.full.min.js"></script>
 <script>
 (function () {
@@ -1338,6 +1340,87 @@
         });
     }
 
+    function ZTSMServiceExtensionRichTextEditorLabelEnsure(Cell, Holder, Textarea) {
+        var ExistingLabel,
+            SourceLabel,
+            Label;
+
+        if (!Cell || !Holder || !Textarea || !Textarea.id) {
+            return;
+        }
+
+        ExistingLabel = Holder.querySelector('label[for^="RichText"]');
+        if (ExistingLabel) {
+            return;
+        }
+
+        SourceLabel = ZTSMServiceExtensionRichTextLabelFind(Cell, Textarea);
+        Label = document.createElement('label');
+        Label.setAttribute('for', 'RichText' + Textarea.id);
+        Label.className = 'Hidden ZTSMServiceExtensionRichTextEditorLabel';
+        Label.textContent = SourceLabel ? SourceLabel.textContent : (Textarea.getAttribute('title') || Textarea.name || Textarea.id);
+        Holder.insertBefore(Label, Holder.firstChild || null);
+    }
+
+    function ZTSMServiceExtensionRichTextEditorsInit(Start, End) {
+        var Root = Start && End ? Start.parentNode : document,
+            Textareas;
+
+        if (
+            !Root
+            || !window.Core
+            || !Core.UI
+            || !Core.UI.RichTextEditor
+            || typeof Core.UI.RichTextEditor.InitEditor !== 'function'
+            || !window.CKEditor5Wrapper
+            || !window.jQuery
+        ) {
+            return;
+        }
+
+        Textareas = Root.querySelectorAll('.ZTSMServiceExtensionField textarea.RichText');
+        Array.prototype.forEach.call(Textareas, function (Textarea) {
+            var Holder = Textarea.closest ? Textarea.closest('.RichTextHolder') : null,
+                Cell = Textarea.closest ? Textarea.closest('.FieldCell') : null;
+
+            if (
+                !Textarea.id
+                || Textarea.classList.contains('HasCKEInstance')
+                || Textarea.dataset.ZTSMRichTextInit === '1'
+                || (Holder && Holder.querySelector('.ck.ck-editor, .ck-editor, .cke_chrome'))
+            ) {
+                return;
+            }
+
+            ZTSMServiceExtensionRichTextEditorLabelEnsure(Cell, Holder, Textarea);
+            Textarea.classList.add('DynamicFieldRichText');
+            Textarea.dataset.ZTSMRichTextInit = '1';
+
+            ZTSMServiceExtensionSafeInit(function () {
+                ZTSMServiceExtensionRichTextConfigEnsure();
+                Core.UI.RichTextEditor.InitEditor(window.jQuery(Textarea));
+            });
+        });
+    }
+
+    function ZTSMServiceExtensionRichTextConfigEnsure() {
+        var UserLanguage;
+
+        if (!window.Core || !Core.Config || typeof Core.Config.Get !== 'function' || typeof Core.Config.Set !== 'function') {
+            return;
+        }
+
+        UserLanguage = Core.Config.Get('UserLanguage');
+        if (typeof UserLanguage === 'string' && UserLanguage) {
+            return;
+        }
+
+        UserLanguage = (document.documentElement && document.documentElement.lang)
+            || (window.navigator && (window.navigator.language || window.navigator.userLanguage))
+            || 'en';
+        Core.Config.Set('UserLanguage', UserLanguage);
+    }
+
     function ZTSMServiceExtensionLayoutFix(Start, End) {
         var Root = Start && End ? Start.parentNode : document,
             Sets;
@@ -1605,12 +1688,24 @@
             if (Start && End) {
                 ZTSMServiceExtensionSetIndexNormalize(Start, End);
                 ZTSMServiceExtensionLayoutFix(Start, End);
-                ZTSMServiceExtensionRichTextPrepare(Start, End);
                 ZTSMServiceExtensionDatepickerInit(Start, End);
                 ZTSMServicePayloadToolsEnsure(Start, End);
             }
         }, Delay);
         });
+    }
+
+    function ZTSMServiceExtensionMutationNeedsNormalize(Node) {
+        if (!Node || Node.nodeType !== 1 || !Node.matches || !Node.querySelector) {
+            return false;
+        }
+
+        if (Node.closest && Node.closest('.ck, .ck-editor, .cke, .cke_chrome')) {
+            return false;
+        }
+
+        return Node.matches('.AddValueRow, .RemoveValueRow, input[type="hidden"][name^="SetIndex_"]')
+            || !!Node.querySelector('.AddValueRow, .RemoveValueRow, input[type="hidden"][name^="SetIndex_"]');
     }
 
     function ZTSMServiceExtensionSetIndexNormalize(Start, End) {
@@ -3643,6 +3738,152 @@
         return DatepickerConfig;
     }
 
+    function ZTSMServiceExtensionDateTimeDebug(Prefix, Suffix, DayField, MonthField, YearField, HourField, MinuteField, DatepickerOptions) {
+        var DateObject,
+            NowObject;
+
+        if (!ZTSMServicePayloadDebugEnabled() || !window.console || !window.console.log) {
+            return;
+        }
+
+        DateObject = new Date(
+            YearField && YearField.value,
+            MonthField && MonthField.value ? MonthField.value - 1 : 0,
+            DayField && DayField.value,
+            HourField && HourField.value ? HourField.value : 0,
+            MinuteField && MinuteField.value ? MinuteField.value : 0,
+            0,
+            0
+        );
+        NowObject = new Date();
+
+        window.console.log('[TESSERA service-extension]', 'datetime-validation-link', {
+            prefix: Prefix,
+            suffix: Suffix,
+            value: {
+                year: YearField && YearField.value,
+                month: MonthField && MonthField.value,
+                day: DayField && DayField.value,
+                hour: HourField && HourField.value,
+                minute: MinuteField && MinuteField.value
+            },
+            dateISO: isNaN(DateObject.getTime()) ? null : DateObject.toISOString(),
+            nowISO: NowObject.toISOString(),
+            dateEpoch: isNaN(DateObject.getTime()) ? null : DateObject.getTime(),
+            nowEpoch: NowObject.getTime(),
+            dateNotInFuture: !!(DatepickerOptions && DatepickerOptions.DateNotInFuture),
+            dateInFuture: !!(DatepickerOptions && DatepickerOptions.DateInFuture),
+            dayClass: DayField && DayField.className
+        });
+    }
+
+    function ZTSMServiceExtensionDateTimeServerErrorsLog(Root) {
+        Root = Root || document;
+
+        if (!window.console || typeof window.console.warn !== 'function') {
+            return;
+        }
+
+        Array.prototype.forEach.call(Root.querySelectorAll('.ZTSMServiceExtensionField .DynamicFieldDate select.ServerError, .ZTSMServiceExtensionField .DynamicFieldDate input.ServerError'), function (Element) {
+            var Container = Element.closest('.DynamicFieldDate'),
+                Prefix,
+                YearField,
+                MonthField,
+                DayField,
+                HourField,
+                MinuteField,
+                UsedField,
+                SubmittedDate,
+                BrowserNow,
+                DeltaSeconds,
+                MessageNode,
+                Message,
+                Restriction,
+                BrowserOffset,
+                FieldName;
+
+            if (!Container || Container.dataset.ZTSMDateTimeServerErrorLogged === '1') {
+                return;
+            }
+
+            YearField = ZTSMServiceExtensionDateTimePartFind(Container, '', 'Year')
+                || Container.querySelector('.Validate_DateYear');
+            Prefix = YearField && YearField.name
+                ? YearField.name.replace(/Year$/, '')
+                : (Element.name || Element.id || '').replace(/(?:Year|Month|Day|Hour|Minute|Second|Used)$/, '');
+            YearField = YearField || ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Year');
+            MonthField = ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Month');
+            DayField = ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Day');
+            HourField = ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Hour');
+            MinuteField = ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Minute');
+            UsedField = ZTSMServiceExtensionDateTimePartFind(Container, Prefix, 'Used');
+            BrowserNow = new Date();
+            BrowserOffset = BrowserNow.getTimezoneOffset();
+            FieldName = Prefix.replace(/^DynamicField_/, '').replace(/-$/, '');
+            MessageNode = Container.querySelector('.TooltipErrorMessage[id$="ServerError"] p, .TooltipErrorMessage p');
+            Message = MessageNode ? String(MessageNode.textContent || '').replace(/\s+/g, ' ').trim() : '';
+            Restriction = DayField && (
+                DayField.classList.contains('Validate_DateNotInFuture')
+                || DayField.dataset.ZTSMDateRestriction === 'not-in-future'
+            ) ? 'not-in-future'
+                : DayField && (
+                    DayField.classList.contains('Validate_DateInFuture')
+                    || DayField.dataset.ZTSMDateRestriction === 'future-only'
+                ) ? 'future-only'
+                : 'unknown';
+
+            if (YearField && MonthField && DayField) {
+                SubmittedDate = new Date(
+                    YearField.value,
+                    MonthField.value ? MonthField.value - 1 : 0,
+                    DayField.value,
+                    HourField && HourField.value ? HourField.value : 0,
+                    MinuteField && MinuteField.value ? MinuteField.value : 0,
+                    0,
+                    0
+                );
+            }
+
+            DeltaSeconds = SubmittedDate && !isNaN(SubmittedDate.getTime())
+                ? Math.round((SubmittedDate.getTime() - BrowserNow.getTime()) / 1000)
+                : null;
+
+            Container.dataset.ZTSMDateTimeServerErrorLogged = '1';
+            window.console.warn(
+                '[TESSERA service-extension] Date/DateTime server validation error:'
+                + ' field=' + FieldName
+                + ' message="' + Message + '"'
+                + ' submittedLocal="' + (YearField ? YearField.value : '') + '-' + (MonthField ? MonthField.value : '') + '-' + (DayField ? DayField.value : '')
+                + ' ' + (HourField ? HourField.value : '00') + ':' + (MinuteField ? MinuteField.value : '00') + '"'
+                + ' submittedISO=' + (SubmittedDate && !isNaN(SubmittedDate.getTime()) ? SubmittedDate.toISOString() : 'invalid')
+                + ' browserNowISO=' + BrowserNow.toISOString()
+                + ' deltaSeconds=' + DeltaSeconds
+                + ' browserOffsetMinutes=' + BrowserOffset
+                + ' restriction=' + Restriction
+                + ' used=' + (UsedField ? UsedField.checked : 'n/a')
+                + ' prefix=' + Prefix
+            );
+        });
+    }
+
+    function ZTSMServiceExtensionDateTimePartFind(Container, Prefix, Part) {
+        var Fields;
+
+        if (!Container) {
+            return null;
+        }
+
+        Fields = Container.querySelectorAll('select, input');
+        return Array.prototype.filter.call(Fields, function (Field) {
+            if (Prefix) {
+                return Field.name === Prefix + Part
+                    || Field.id === Prefix + Part
+                    || (Field.id && Field.id.indexOf(Prefix + Part) === 0);
+            }
+            return Field.name && Field.name.slice(-Part.length) === Part;
+        })[0] || null;
+    }
+
     function ZTSMServiceExtensionDatepickerInit(Start, End) {
         var Root = Start && End ? Start.parentNode : document,
             DatepickerConfig;
@@ -3661,6 +3902,11 @@
                 Suffix,
                 DayID,
                 Container = YearField.closest('.DynamicFieldDate'),
+                DayField,
+                MonthField,
+                HourField,
+                MinuteField,
+                DatepickerOptions,
                 $Container;
 
             if (!Container || !YearField.name || YearField.name.slice(-4) !== 'Year') {
@@ -3670,23 +3916,49 @@
             Prefix = YearField.name.slice(0, -4);
             Suffix = YearField.id && YearField.id.length > Prefix.length ? YearField.id.slice(Prefix.length + 4) : '';
             DayID = Prefix + 'Day' + Suffix;
+            DayField = document.getElementById(DayID);
+            MonthField = document.getElementById(Prefix + 'Month' + Suffix);
+            HourField = document.getElementById(Prefix + 'Hour' + Suffix);
+            MinuteField = document.getElementById(Prefix + 'Minute' + Suffix);
+
+            if (DayField && Suffix) {
+                DayField.classList.add('Validate_DateYear_' + Prefix + 'Year' + Suffix);
+                DayField.classList.add('Validate_DateMonth_' + Prefix + 'Month' + Suffix);
+
+                if (HourField && MinuteField) {
+                    DayField.classList.add('Validate_DateHour_' + Prefix + 'Hour' + Suffix);
+                    DayField.classList.add('Validate_DateMinute_' + Prefix + 'Minute' + Suffix);
+                }
+            }
+
+            $Container = jQuery(Container);
+            DatepickerOptions = {
+                Day: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Day' + Suffix), $Container),
+                Month: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Month' + Suffix), $Container),
+                Year: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Year' + Suffix), $Container),
+                Hour: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Hour' + Suffix), $Container),
+                Minute: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Minute' + Suffix), $Container),
+                VacationDays: DatepickerConfig,
+                WeekDayStart: Core.Config.Get('CalendarWeekDayStart') || 1
+            };
+
+            if (DayField && DayField.classList.contains('Validate_DateInFuture')) {
+                DayField.dataset.ZTSMDateRestriction = 'future-only';
+                DayField.classList.remove('Validate_DateInFuture');
+            }
+            if (DayField && DayField.classList.contains('Validate_DateNotInFuture')) {
+                DayField.dataset.ZTSMDateRestriction = 'not-in-future';
+                DayField.classList.remove('Validate_DateNotInFuture');
+            }
+
+            ZTSMServiceExtensionDateTimeDebug(Prefix, Suffix, DayField, MonthField, YearField, HourField, MinuteField, DatepickerOptions);
 
             if (document.getElementById(DayID + 'DatepickerIcon')) {
                 return;
             }
 
-            $Container = jQuery(Container);
-
             ZTSMServiceExtensionSafeInit(function () {
-                Core.UI.Datepicker.Init({
-                    Day: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Day' + Suffix), $Container),
-                    Month: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Month' + Suffix), $Container),
-                    Year: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Year' + Suffix), $Container),
-                    Hour: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Hour' + Suffix), $Container),
-                    Minute: jQuery('#' + Core.App.EscapeSelector(Prefix + 'Minute' + Suffix), $Container),
-                    VacationDays: DatepickerConfig,
-                    WeekDayStart: Core.Config.Get('CalendarWeekDayStart') || 1
-                });
+                Core.UI.Datepicker.Init(DatepickerOptions);
             });
         });
     }
@@ -3826,27 +4098,17 @@
                 Core.Customer.InputFields.Init();
             });
         }
-        if (window.Core && Core.Agent && Core.Agent.DynamicFieldReferenceSearch && typeof Core.Agent.DynamicFieldReferenceSearch.Init === 'function') {
-            ZTSMServiceExtensionSafeInit(function () {
-                Core.Agent.DynamicFieldReferenceSearch.Init();
-            });
-        }
+        ZTSMServiceExtensionRichTextEditorsInit(Start, End);
         ZTSMServiceExtensionRichTextPrepare(Start, End);
-        if (window.Core && Core.UI && Core.UI.RichTextEditor && typeof Core.UI.RichTextEditor.InitAllEditors === 'function') {
-            ZTSMServiceExtensionSafeInit(function () {
-                Core.UI.RichTextEditor.InitAllEditors();
-            });
-            window.setTimeout(function () {
-                ZTSMServiceExtensionRichTextPrepare(Start, End);
-            }, 0);
-            [100, 300, 800, 1500].forEach(function (Delay) {
-                window.setTimeout(function () {
-                    ZTSMServiceExtensionRichTextPrepare(Start, End);
-                }, Delay);
-            });
-        }
+        window.setTimeout(function () {
+            ZTSMServiceExtensionRichTextPrepare(Start, End);
+        }, 100);
+        window.setTimeout(function () {
+            ZTSMServiceExtensionRichTextPrepare(Start, End);
+        }, 300);
         ZTSMServiceExtensionSetIndexNormalize(Start, End);
         ZTSMServiceExtensionDatepickerInit(Start, End);
+        ZTSMServiceExtensionDateTimeServerErrorsLog(Start.parentNode || document);
 
         while (Node && Node !== End) {
             if (Node.nodeType === 1) {
@@ -3854,6 +4116,16 @@
                 Event.initEvent('change', true, true);
 
                 Array.prototype.forEach.call(Node.querySelectorAll('select, input, textarea'), function (Field) {
+                    if (
+                        Field.closest('.RichTextHolder, .RichTextField, .ck, .ck-editor, .cke, .cke_chrome')
+                        || Field.classList.contains('Validate_DateDay')
+                        || Field.classList.contains('Validate_DateMonth')
+                        || Field.classList.contains('Validate_DateYear')
+                        || Field.classList.contains('Validate_DateHour')
+                        || Field.classList.contains('Validate_DateMinute')
+                    ) {
+                        return;
+                    }
                     Field.dispatchEvent(Event);
                 });
             }
@@ -3910,15 +4182,7 @@
                         return;
                     }
                     Array.prototype.forEach.call(Mutation.addedNodes || [], function (Node) {
-                        if (
-                            Node
-                            && Node.nodeType === 1
-                            && Node.closest
-                            && (
-                                Node.closest('.ZTSMServiceExtensionField')
-                                || (Node.querySelector && Node.querySelector('.ZTSMServiceExtensionField, input[type="hidden"][name^="SetIndex_"]'))
-                            )
-                        ) {
+                        if (ZTSMServiceExtensionMutationNeedsNormalize(Node)) {
                             NeedsNormalize = true;
                         }
                     });
@@ -3933,6 +4197,66 @@
             });
         }
 
+        function ZTSMServiceSubmitTraceSync(Form, Stage) {
+            var TicketForm = document.getElementById('NewCustomerTicket'),
+                TargetForms = Form ? [Form] : Array.prototype.slice.call(document.querySelectorAll('form')),
+                TraceID = '';
+
+            if (TicketForm && TargetForms.indexOf(TicketForm) === -1) {
+                TargetForms.unshift(TicketForm);
+            }
+
+            TargetForms.forEach(function (TargetForm) {
+                var OffsetField,
+                    TraceField;
+
+                if (!TargetForm || !TargetForm.querySelector) {
+                    return;
+                }
+
+                OffsetField = TargetForm.querySelector('input[name="ZTSMServiceBrowserTimezoneOffset"]');
+                if (!OffsetField) {
+                    OffsetField = document.createElement('input');
+                    OffsetField.type = 'hidden';
+                    OffsetField.name = 'ZTSMServiceBrowserTimezoneOffset';
+                    TargetForm.appendChild(OffsetField);
+                }
+                OffsetField.value = String((new Date()).getTimezoneOffset());
+
+                TraceField = TargetForm.querySelector('input[name="ZTSMServiceSubmitTraceID"]');
+                if (!TraceField) {
+                    TraceField = document.createElement('input');
+                    TraceField.type = 'hidden';
+                    TraceField.name = 'ZTSMServiceSubmitTraceID';
+                    TargetForm.appendChild(TraceField);
+                }
+                if (!TraceField.value || Stage === 'click') {
+                    TraceField.value = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10);
+                }
+                TraceID = TraceField.value;
+            });
+
+            return TraceID;
+        }
+
+        function ZTSMServiceBrowserTimezoneOffsetSync(Form) {
+            return ZTSMServiceSubmitTraceSync(Form, 'offset-sync');
+        }
+
+        function ZTSMServiceSubmitTraceContext(Form, Stage) {
+            var TraceID = ZTSMServiceSubmitTraceSync(Form, Stage),
+                OffsetField = Form && Form.querySelector ? Form.querySelector('input[name="ZTSMServiceBrowserTimezoneOffset"]') : null,
+                TraceField = Form && Form.querySelector ? Form.querySelector('input[name="ZTSMServiceSubmitTraceID"]') : null;
+
+            return {
+                traceID: TraceID || (TraceField ? TraceField.value : ''),
+                browserOffsetMinutes: OffsetField ? OffsetField.value : '',
+                browserNowISO: (new Date()).toISOString()
+            };
+        }
+
+        ZTSMServiceBrowserTimezoneOffsetSync();
+
         if (!document.body.dataset.ZTSMServiceExtensionSubmitWatch) {
             document.body.dataset.ZTSMServiceExtensionSubmitWatch = '1';
             document.body.addEventListener('invalid', function (Event) {
@@ -3942,7 +4266,7 @@
                     return;
                 }
 
-                ZTSMServicePayloadConsole('warn', '[ZTSM submit invalid]', {
+                ZTSMServicePayloadConsole('warn', '[ZTSM submit invalid]', Object.assign(ZTSMServiceSubmitTraceContext(Element.closest('form'), 'invalid'), {
                     name: Element.name || '',
                     id: Element.id || '',
                     className: Element.className || '',
@@ -3951,7 +4275,7 @@
                     fieldText: Element.closest('.FieldCell, .Row_DynamicField, .ZTSMServiceExtensionField')
                         ? String(Element.closest('.FieldCell, .Row_DynamicField, .ZTSMServiceExtensionField').textContent || '').replace(/\s+/g, ' ').trim().slice(0, 500)
                         : ''
-                });
+                }));
             }, true);
             document.body.addEventListener('click', function (Event) {
                 var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
@@ -3959,11 +4283,13 @@
                     Control = Event.target && Event.target.closest ? Event.target.closest('#NewCustomerTicket button[type="submit"], #NewCustomerTicket input[type="submit"]') : null,
                     Form,
                     Invalid,
-                    Validator;
+                    Validator,
+                    TraceContext;
 
                 if (Start && End && Control) {
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
                     Form = Control.closest('form');
+                    TraceContext = ZTSMServiceSubmitTraceContext(Form, 'click');
                     ZTSMServicePayloadFormSubmitReset();
                     if (Form && Form.querySelector) {
                         Invalid = Form.querySelector(':invalid');
@@ -3971,9 +4297,10 @@
                     if (Form && window.jQuery) {
                         Validator = window.jQuery(Form).data('validator');
                     }
-                    ZTSMServicePayloadConsole('log', '[ZTSM submit click]', {
+                    ZTSMServicePayloadConsole('log', '[ZTSM submit click]', Object.assign(TraceContext, {
                         buttonText: String(Control.textContent || Control.value || '').replace(/\s+/g, ' ').trim(),
                         formClassName: Form ? (Form.className || '') : '',
+                        formCheckValidity: Form && Form.checkValidity ? Form.checkValidity() : '',
                         disabledSubmits: Form && Form.querySelectorAll ? Form.querySelectorAll('button[type="submit"]:disabled, input[type="submit"]:disabled').length : 0,
                         validatorErrors: Validator && Validator.errorList ? Validator.errorList.length : '',
                         validatorErrorDetails: ZTSMServicePayloadValidatorErrorDetailsLog('[ZTSM submit click validator]', Validator),
@@ -3982,28 +4309,30 @@
                         invalidId: Invalid ? (Invalid.id || '') : '',
                         invalidValue: Invalid ? (Invalid.value || '') : '',
                         invalidMessage: Invalid ? (Invalid.validationMessage || '') : ''
-                    });
+                    }));
                 }
             }, true);
             document.body.addEventListener('submit', function (Event) {
                 var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
-                    End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
+                    End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
+                    TraceContext;
 
                 if (Start && End && Event.target && Event.target.closest && Event.target.closest('#NewCustomerTicket')) {
                     ZTSMServiceExtensionSetIndexNormalize(Start, End);
-                    ZTSMServicePayloadConsole('log', '[ZTSM submit event]', {
+                    TraceContext = ZTSMServiceSubmitTraceContext(Event.target, 'submit');
+                    ZTSMServicePayloadConsole('log', '[ZTSM submit event]', Object.assign(TraceContext, {
                         defaultPrevented: !!Event.defaultPrevented,
                         className: Event.target.className || '',
                         validatorErrorDetails: window.jQuery ? ZTSMServicePayloadValidatorErrorDetailsLog('[ZTSM submit event validator]', window.jQuery(Event.target).data('validator')) : [],
                         action: Event.target.action || '',
                         method: Event.target.method || ''
-                    });
+                    }));
                     window.setTimeout(function () {
-                        ZTSMServicePayloadConsole('log', '[ZTSM submit after handlers]', {
+                        ZTSMServicePayloadConsole('log', '[ZTSM submit after handlers]', Object.assign(ZTSMServiceSubmitTraceContext(Event.target, 'submit-after'), {
                             defaultPrevented: !!Event.defaultPrevented,
                             className: Event.target.className || '',
                             validatorErrorDetails: window.jQuery ? ZTSMServicePayloadValidatorErrorDetailsLog('[ZTSM submit after handlers validator]', window.jQuery(Event.target).data('validator')) : []
-                        });
+                        }));
                     }, 0);
                 }
             }, true);

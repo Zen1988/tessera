@@ -306,21 +306,31 @@ sub _ScopedTicketNumberCounterAdd {
 
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-    my $ScopePrefix = $Param{ScopePrefix} || '';
-    my $CounterUID  = $Self->_CounterUIDGet( ScopePrefix => $ScopePrefix );
-    return if !$CounterUID;
-
     my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
     my $CurrentTime    = $DateTimeObject->ToString();
 
-    return if !$DBObject->Do(
-        SQL => '
-            INSERT INTO ticket_number_counter
-                (counter, counter_uid, create_time)
-            VALUES
-                (0, ?, ?)',
-        Bind => [ \$CounterUID, \$CurrentTime ],
-    );
+    my $ScopePrefix = $Param{ScopePrefix} || '';
+    my $CounterUID;
+
+    COUNTERUID:
+    for my $Attempt ( 1 .. 5 ) {
+        $CounterUID = $Self->_CounterUIDGet( ScopePrefix => $ScopePrefix );
+        return if !$CounterUID;
+
+        last COUNTERUID if $DBObject->Do(
+            SQL => '
+                INSERT INTO ticket_number_counter
+                    (counter, counter_uid, create_time)
+                VALUES
+                    (0, ?, ?)',
+            Bind => [ \$CounterUID, \$CurrentTime ],
+        );
+
+        $CounterUID = undef;
+        Time::HiRes::sleep(0.01);
+    }
+
+    return if !$CounterUID;
 
     Time::HiRes::sleep(0.05);
 
@@ -434,7 +444,16 @@ sub _CounterUIDGet {
     my $ProcessID = $$;
 
     my $CounterUID = $ProcessID . $Seconds . $Microseconds . $NodeID;
-    my $Length     = 32 - length $CounterUID;
+    my $RandomLength = 32;
+
+    if ($ScopePrefix) {
+        my $SuffixLength = 32 - length $ScopePrefix;
+        return if $SuffixLength < 8;
+
+        $RandomLength = $SuffixLength;
+    }
+
+    my $Length = $RandomLength - length $CounterUID;
 
     if ( $Length > 0 ) {
         $CounterUID .= $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
@@ -444,10 +463,12 @@ sub _CounterUIDGet {
     }
 
     if ($ScopePrefix) {
-        my $SuffixLength = 32 - length $ScopePrefix;
-        return if $SuffixLength < 8;
+        my $RandomSuffix = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
+            Length     => $RandomLength,
+            Dictionary => [ 0 .. 9, 'a' .. 'f' ],
+        );
 
-        return $ScopePrefix . substr $CounterUID, 0, $SuffixLength;
+        return $ScopePrefix . $RandomSuffix;
     }
 
     return substr $CounterUID, 0, 32;

@@ -23,6 +23,8 @@ use warnings;
 
 our $ObjectManagerDisabled = 1;
 
+use Time::Local qw(timegm);
+
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language              qw(Translatable);
 
@@ -158,6 +160,9 @@ sub Run {
     my $OnBehalfCustomerSearch = $ParamObject->GetParam( Param => 'ZTSMRaiseOnBehalfCustomerUserSearch' ) || '';
     $OnBehalfCustomerUserID ||= $OnBehalfCustomerSearch;
     my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
+    my $ZTSMServiceSubmitTraceID = $ParamObject->GetParam( Param => 'ZTSMServiceSubmitTraceID' ) || '';
+    my $ZTSMServiceBrowserTimezoneOffset = $ParamObject->GetParam( Param => 'ZTSMServiceBrowserTimezoneOffset' );
+    $ZTSMServiceBrowserTimezoneOffset = '' if !defined $ZTSMServiceBrowserTimezoneOffset;
 
     # get Dynamic fields from ParamObject
     my %DynamicFieldValues;
@@ -165,6 +170,136 @@ sub Run {
     my $LayoutObject            = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $BackendObject           = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $FieldRestrictionsObject = $Kernel::OM->Get('Kernel::System::Ticket::FieldRestrictions');
+    my $LogObject               = $Kernel::OM->Get('Kernel::System::Log');
+
+    my $ZTSMSubmitTraceLog = sub {
+        my (%Data) = @_;
+
+        return if !$ZTSMServiceSubmitTraceID && !$Data{Force};
+
+        my @Parts = (
+            'stage=' . ( $Data{Stage} || '' ),
+            'trace=' . ( $ZTSMServiceSubmitTraceID || '' ),
+            'subaction=' . ( $Self->{Subaction} || '' ),
+            'browserOffsetMinutes=' . $ZTSMServiceBrowserTimezoneOffset,
+        );
+
+        KEY:
+        for my $Key ( sort keys %Data ) {
+            next KEY if $Key eq 'Stage';
+            next KEY if $Key eq 'Priority';
+            next KEY if $Key eq 'Force';
+
+            my $Value = defined $Data{$Key} ? $Data{$Key} : '';
+            if ( ref $Value ) {
+                if ( ref $Value eq 'HASH' ) {
+                    $Value = join(
+                        ',',
+                        map {
+                            my $InnerValue = defined $Value->{$_} ? $Value->{$_} : '';
+                            $InnerValue =~ s/[\r\n\t]+/ /g;
+                            "$_=$InnerValue";
+                        } sort keys $Value->%*
+                    );
+                }
+                elsif ( ref $Value eq 'ARRAY' ) {
+                    my @Parts;
+                    ITEM:
+                    for my $Item ( $Value->@* ) {
+                        if ( ref $Item eq 'HASH' ) {
+                            push @Parts, '{' . join(
+                                ',',
+                                map {
+                                    my $InnerValue = defined $Item->{$_} ? $Item->{$_} : '';
+                                    $InnerValue =~ s/[\r\n\t]+/ /g;
+                                    "$_=$InnerValue";
+                                } sort keys $Item->%*
+                            ) . '}';
+                            next ITEM;
+                        }
+                        push @Parts, defined $Item ? $Item : '';
+                    }
+                    $Value = join( '|', @Parts );
+                }
+                else {
+                    $Value = ref $Value;
+                }
+            }
+            $Value =~ s/[\r\n\t]+/ /g;
+            $Value = substr( $Value, 0, 300 );
+            push @Parts, "$Key=$Value";
+        }
+
+        $LogObject->Log(
+            Priority => $Data{Priority} || 'error',
+            Message  => 'TESSERA CustomerTicketMessage submit trace ' . join( ' ', @Parts ),
+        );
+    };
+
+    my $ZTSMDateTimeRestrictionOverride = sub {
+        my (%Data) = @_;
+
+        my $DynamicFieldConfig = $Data{DynamicFieldConfig};
+        return if !IsHashRefWithData($DynamicFieldConfig);
+
+        my $DateRestriction = $DynamicFieldConfig->{Config}->{DateRestriction} || '';
+        return if !$DateRestriction;
+        return if ( $DynamicFieldConfig->{FieldType} || '' ) !~ m{Date}i;
+        return if !defined $ZTSMServiceBrowserTimezoneOffset || $ZTSMServiceBrowserTimezoneOffset eq '';
+
+        my $Prefix = 'DynamicField_' . ( $DynamicFieldConfig->{Name} || '' );
+        return if !$ParamObject->GetParam( Param => $Prefix . 'Used' );
+
+        my %RawDateTime;
+        PART:
+        for my $Part (qw(Year Month Day Hour Minute Second)) {
+            my $Value = $ParamObject->GetParam( Param => $Prefix . $Part );
+            next PART if !defined $Value;
+            $RawDateTime{$Part} = $Value;
+        }
+
+        my $Year   = $RawDateTime{Year};
+        my $Month  = $RawDateTime{Month};
+        my $Day    = $RawDateTime{Day};
+        my $Hour   = $RawDateTime{Hour}   || 0;
+        my $Minute = $RawDateTime{Minute} || 0;
+        my $Second = $RawDateTime{Second} || 0;
+
+        return if !$Year || !$Month || !$Day;
+
+        my $ValueEpoch = eval {
+            timegm( $Second, $Minute, $Hour, $Day, $Month - 1, $Year ) + ( $ZTSMServiceBrowserTimezoneOffset * 60 );
+        };
+        return if $@ || !defined $ValueEpoch;
+
+        my $SystemEpoch  = time();
+        my $DeltaSeconds = $ValueEpoch - $SystemEpoch;
+        my $Valid;
+
+        if ( $DateRestriction eq 'DisableFutureDates' ) {
+            $Valid = $DeltaSeconds <= 0 ? 1 : 0;
+        }
+        elsif ( $DateRestriction eq 'DisablePastDates' ) {
+            $Valid = $DeltaSeconds >= 0 ? 1 : 0;
+        }
+        else {
+            return;
+        }
+
+        $ZTSMSubmitTraceLog->(
+            Stage           => $Valid ? 'backend-datetime-validation-override-pass' : 'backend-datetime-validation-override-fail',
+            Priority        => 'error',
+            Field           => $DynamicFieldConfig->{Name} || '',
+            FieldType       => $DynamicFieldConfig->{FieldType} || '',
+            DateRestriction => $DateRestriction,
+            RawDateTime     => \%RawDateTime,
+            ValueEpoch      => $ValueEpoch,
+            SystemEpoch     => $SystemEpoch,
+            DeltaSeconds    => $DeltaSeconds,
+        );
+
+        return $Valid;
+    };
 
     # cycle trough the activated Dynamic Fields for this screen
     DYNAMICFIELD:
@@ -699,6 +834,16 @@ sub Run {
         my $NextScreen = $Config->{NextScreenAfterNewTicket};
         my %Error;
 
+        $ZTSMSubmitTraceLog->(
+            Force                   => 1,
+            Stage                   => 'backend-store-enter',
+            Priority                => 'error',
+            CustomerUserID          => $Self->{UserID} || '',
+            EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
+            ServiceID               => $GetParam{ServiceID} || '',
+            TypeID                  => $GetParam{TypeID} || '',
+        );
+
         # get destination queue
         my $Dest = $ParamObject->GetParam( Param => 'Dest' ) || '';
         my ( $NewQueueID, $To ) = split( /\|\|/, $Dest );
@@ -816,6 +961,22 @@ sub Run {
         $Self->_ServiceExtensionMandatoryApply(
             ServiceID => $GetParam{ServiceID},
         );
+        my $ServiceExtensionGuard = $Self->_ServiceExtensionSubmittedValuesEnforce(
+            DynamicFieldValues => \%DynamicFieldValues,
+            GetParam           => \%GetParam,
+            ServiceID          => $GetParam{ServiceID},
+            Visibility         => \%Visibility,
+        ) || {};
+
+        $ZTSMSubmitTraceLog->(
+            Stage                   => 'backend-validation-enter',
+            Priority                => 'error',
+            CustomerUserID          => $Self->{UserID} || '',
+            EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
+            ServiceID               => $GetParam{ServiceID} || '',
+            VisibleDynamicFields    => scalar grep { $Visibility{"DynamicField_$_"} } keys $Self->{DynamicField}->%*,
+            CloseInvalidInfo        => $ServiceExtensionGuard->{CloseInvalidInfo} || '',
+        );
 
         # remember dynamic field validation results if erroneous
         my %DynamicFieldValidationResult;
@@ -827,6 +988,8 @@ sub Run {
             next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
 
             my $PossibleValuesFilter;
+            my $ServiceExtensionInvalidInfo = $ServiceExtensionGuard->{InvalidInfoField}
+                && $ServiceExtensionGuard->{InvalidInfoField}{ $DynamicFieldConfig->{Name} };
 
             my $IsACLReducible = $BackendObject->HasBehavior(
                 DynamicFieldConfig => $DynamicFieldConfig,
@@ -872,13 +1035,38 @@ sub Run {
             # do not validate on insisible fields
             if ( $Visibility{ 'DynamicField_' . $DynamicFieldConfig->{Name} } ) {
 
+                if ( ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{Date}i ) {
+                    my %RawDateTimeParam;
+                    PART:
+                    for my $Part (qw(Used Year Month Day Hour Minute Second)) {
+                        my $ParamValue = $ParamObject->GetParam(
+                            Param => 'DynamicField_' . $DynamicFieldConfig->{Name} . $Part,
+                        );
+                        next PART if !defined $ParamValue;
+                        $RawDateTimeParam{$Part} = $ParamValue;
+                    }
+
+                    if ( $RawDateTimeParam{Used} || $DynamicFieldValues{ $DynamicFieldConfig->{Name} } ) {
+                        $ZTSMSubmitTraceLog->(
+                            Stage          => 'backend-before-datetime-validation',
+                            Priority       => 'error',
+                            Field          => $DynamicFieldConfig->{Name} || '',
+                            FieldType      => $DynamicFieldConfig->{FieldType} || '',
+                            RawDateTime    => \%RawDateTimeParam,
+                            ExtractedValue => $DynamicFieldValues{ $DynamicFieldConfig->{Name} },
+                        );
+                    }
+                }
+
                 my $ValidationResult = $BackendObject->EditFieldValueValidate(
                     DynamicFieldConfig   => $DynamicFieldConfig,
                     PossibleValuesFilter => $PossibleValuesFilter,
                     ParamObject          => $ParamObject,
+                    LayoutObject         => $LayoutObject,
+                    CustomerUserID       => $Self->{UserID} || $EffectiveCustomer{UserID},
 
                     # Mandatory is added to the configs by $Self->new
-                    Mandatory => $DynamicFieldConfig->{Mandatory},
+                    Mandatory => $ServiceExtensionInvalidInfo ? 0 : $DynamicFieldConfig->{Mandatory},
                 );
 
                 if ( !IsHashRefWithData($ValidationResult) ) {
@@ -897,8 +1085,28 @@ sub Run {
 
                 # propagate validation error to the Error variable to be detected by the frontend
                 if ( $ValidationResult->{ServerError} ) {
+                    if (
+                        $ZTSMDateTimeRestrictionOverride->(
+                            DynamicFieldConfig => $DynamicFieldConfig,
+                        )
+                        )
+                    {
+                        delete $ValidationResult->{ServerError};
+                        delete $ValidationResult->{ErrorMessage};
+                    }
+                }
+
+                if ( $ValidationResult->{ServerError} ) {
                     $Error{ $DynamicFieldConfig->{Name} }                        = ' ServerError';
                     $DynamicFieldValidationResult{ $DynamicFieldConfig->{Name} } = $ValidationResult;
+
+                    $ZTSMSubmitTraceLog->(
+                        Stage     => 'backend-validation-error',
+                        Priority  => 'error',
+                        Field     => $DynamicFieldConfig->{Name} || '',
+                        FieldType => $DynamicFieldConfig->{FieldType} || '',
+                        Message   => $ValidationResult->{ServerError} || '',
+                    );
                 }
             }
         }
@@ -1034,6 +1242,12 @@ sub Run {
 
         if (%Error) {
 
+            $ZTSMSubmitTraceLog->(
+                Stage    => 'backend-return-with-errors',
+                Priority => 'error',
+                Errors   => join( ',', sort keys %Error ),
+            );
+
             # html output
             my $Output = $LayoutObject->CustomerHeader();
 
@@ -1084,6 +1298,22 @@ sub Run {
 # EO ServiceCatalog
 
         # create new ticket, do db insert
+        my $CreateState = $Config->{StateDefault};
+        if ( $ServiceExtensionGuard->{CloseInvalidInfo} ) {
+            $CreateState = $Self->_ServiceExtensionInvalidInfoCloseStateGet() || $CreateState;
+        }
+
+        $ZTSMSubmitTraceLog->(
+            Stage       => 'backend-before-ticket-create',
+            Priority    => 'error',
+            QueueID     => $NewQueueID || '',
+            State       => $CreateState || '',
+            CustomerID  => $EffectiveCustomer{CustomerID} || '',
+            CustomerUser => $EffectiveCustomer{UserLogin} || '',
+            ServiceID   => $GetParam{ServiceID} || '',
+            TypeID      => $GetParam{TypeID} || '',
+        );
+
         my $TicketID = $TicketObject->TicketCreate(
             QueueID      => $NewQueueID,
             TypeID       => $GetParam{TypeID},
@@ -1093,11 +1323,17 @@ sub Run {
             PriorityID   => $GetParam{PriorityID},
             Priority     => $GetParam{Priority},
             Lock         => 'unlock',
-            State        => $Config->{StateDefault},
+            State        => $CreateState,
             CustomerID   => $EffectiveCustomer{CustomerID},
             CustomerUser => $EffectiveCustomer{UserLogin},
             OwnerID      => $ConfigObject->Get('CustomerPanelUserID'),
             UserID       => $ConfigObject->Get('CustomerPanelUserID'),
+        );
+
+        $ZTSMSubmitTraceLog->(
+            Stage    => 'backend-ticket-created',
+            Priority => 'error',
+            TicketID => $TicketID || '',
         );
 
         # set ticket dynamic fields
@@ -1108,6 +1344,17 @@ sub Run {
             next DYNAMICFIELD if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
             next DYNAMICFIELD if !$Visibility{"DynamicField_$DynamicFieldConfig->{Name}"};
             next DYNAMICFIELD if $DynamicFieldConfig->{Readonly};
+
+            if ( ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{Date}i || ( $DynamicFieldConfig->{Name} || '' ) eq 'ZTicket-ActualStart' ) {
+                $ZTSMSubmitTraceLog->(
+                    Stage     => 'backend-before-dynamicfield-valueset',
+                    Priority  => 'error',
+                    TicketID  => $TicketID || '',
+                    Field     => $DynamicFieldConfig->{Name} || '',
+                    FieldType => $DynamicFieldConfig->{FieldType} || '',
+                    Value     => $DynamicFieldValues{ $DynamicFieldConfig->{Name} },
+                );
+            }
 
             # set the value
             my $Success = $BackendObject->ValueSet(
@@ -1161,6 +1408,26 @@ sub Run {
             }
             else {
                 $GetParam{Body} .= "\n\n" . $ServiceExtensionSnapshot;
+            }
+        }
+
+        if ( $ServiceExtensionGuard->{CloseInvalidInfo} ) {
+            my $InvalidInfoText = 'Submission closed invalid-info because mandatory service-defined information was missing after default resolution.';
+            if ( IsArrayRefWithData( $ServiceExtensionGuard->{MissingMandatory} ) ) {
+                $InvalidInfoText .= "\nMissing service field(s): " . join ', ', $ServiceExtensionGuard->{MissingMandatory}->@*;
+            }
+
+            if ( $LayoutObject->{BrowserRichText} ) {
+                my $InvalidInfoHTML = $LayoutObject->Ascii2Html(
+                    Text           => $InvalidInfoText,
+                    HTMLResultMode => 1,
+                );
+                $GetParam{Body} .= '<br/><br/><p><strong>Invalid service information</strong></p><p>'
+                    . $InvalidInfoHTML
+                    . '</p>';
+            }
+            else {
+                $GetParam{Body} .= "\n\nInvalid service information\n\n" . $InvalidInfoText;
             }
         }
 
@@ -2673,6 +2940,108 @@ sub _ServiceExtensionDynamicFieldValuesSync {
     }
 
     return 1;
+}
+
+sub _ServiceExtensionSubmittedValuesEnforce {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Self->{ZTSMServiceExtensionFields} );
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+    return if !IsHashRefWithData( $Param{GetParam} );
+
+    my %AllowedForService;
+    if ( $Param{ServiceID} && IsArrayRefWithData( $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} } ) ) {
+        %AllowedForService = map { $_ => 1 } $Self->{ZTSMServiceExtensionFieldsByService}{ $Param{ServiceID} }->@*;
+    }
+
+    my $MandatoryForService = $Param{ServiceID}
+        ? $Self->{ZTSMServiceExtensionMandatoryByService}{ $Param{ServiceID} } || {}
+        : {};
+
+    my @MissingMandatory;
+    my %InvalidInfoField;
+
+    FIELDNAME:
+    for my $FieldName ( sort keys $Self->{ZTSMServiceExtensionFields}->%* ) {
+        my $DynamicFieldKey = "DynamicField_$FieldName";
+
+        if ( !$AllowedForService{$FieldName} ) {
+            delete $Param{DynamicFieldValues}->{$FieldName};
+            delete $Param{GetParam}->{DynamicField}{$DynamicFieldKey}
+                if IsHashRefWithData( $Param{GetParam}->{DynamicField} );
+            $Param{Visibility}{$DynamicFieldKey} = 0
+                if ref $Param{Visibility} eq 'HASH';
+            next FIELDNAME;
+        }
+
+        if ( !$Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$FieldName} ) ) {
+            my $DefaultValue = $Self->_ServiceExtensionDynamicFieldDefaultValueGet(
+                DynamicFieldConfig => $Self->{DynamicField}{$FieldName},
+            );
+
+            if ( $Self->_ZTSMValueHasData($DefaultValue) ) {
+                $Param{DynamicFieldValues}->{$FieldName} = $DefaultValue;
+                $Param{GetParam}->{DynamicField}{$DynamicFieldKey} = $DefaultValue;
+            }
+        }
+
+        next FIELDNAME if !$MandatoryForService->{$FieldName};
+        next FIELDNAME if $Self->_ZTSMValueHasData( $Param{DynamicFieldValues}->{$FieldName} );
+
+        push @MissingMandatory, $FieldName;
+        $InvalidInfoField{$FieldName} = 1;
+    }
+
+    return {
+        CloseInvalidInfo => @MissingMandatory ? 1 : 0,
+        MissingMandatory => \@MissingMandatory,
+        InvalidInfoField => \%InvalidInfoField,
+    };
+}
+
+sub _ServiceExtensionDynamicFieldDefaultValueGet {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    return if !IsHashRefWithData($DynamicFieldConfig);
+    return if !IsHashRefWithData( $DynamicFieldConfig->{Config} );
+    return if !exists $DynamicFieldConfig->{Config}{DefaultValue};
+
+    my $DefaultValue = $DynamicFieldConfig->{Config}{DefaultValue};
+    return if !defined $DefaultValue;
+
+    if (
+        IsHashRefWithData( $DynamicFieldConfig->{Config} )
+        && $DynamicFieldConfig->{Config}{MultiValue}
+        && ref $DefaultValue ne 'ARRAY'
+        )
+    {
+        my @DefaultValue = grep { defined $_ && $_ ne '' } split m{\s*;\s*}, $DefaultValue;
+        return \@DefaultValue if @DefaultValue;
+        return;
+    }
+
+    return $DefaultValue;
+}
+
+sub _ServiceExtensionInvalidInfoCloseStateGet {
+    my ($Self) = @_;
+
+    my $StateName = 'closed invalid-info';
+    my $StateID = $Kernel::OM->Get('Kernel::System::State')->StateLookup(
+        State => $StateName,
+    );
+
+    if ($StateID) {
+        return $StateName;
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => "Service dynamic field submission requires state '$StateName', but it is not configured.",
+    );
+
+    return;
 }
 
 sub _ServiceExtensionVisibilityApply {

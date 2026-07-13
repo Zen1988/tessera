@@ -215,31 +215,20 @@ sub EditFieldRender {
         $FieldClass .= ' ' . $Param{Class};
     }
 
-    # TODO: maybe set all mandatory? necessary?
-    #    # set classes according to mandatory and acl hidden params
-    #    if ( $Param{ACLHidden} && $Param{Mandatory} ) {
-    #        $FieldClass .= ' Validate_Required_IfVisible';
-    #    }
-    #    elsif ( $Param{Mandatory} ) {
-    #        $FieldClass .= ' Validate_Required';
-    #    }
-
-    # TODO:
-    #    # set error css class
-    #    if ( $Param{ServerError} ) {
-    #        $FieldClass .= ' ServerError';
-    #    }
+    if ( $Param{ServerError} ) {
+        $FieldClass .= ' ServerError';
+    }
 
     my %FieldTemplateData = (
         'FieldClass' => $FieldClass,
         'FieldName'  => $FieldName,
     );
 
-    #    if ( $Param{ServerError} ) {
-    #
-    #        $FieldTemplateData{ServerError}  = $Param{ServerError};
-    #        $FieldTemplateData{ErrorMessage} = Translatable( $Param{ErrorMessage} || 'This field is required.' );
-    #    }
+    if ( $Param{ServerError} ) {
+        $FieldTemplateData{ServerError}      = $Param{ServerError};
+        $FieldTemplateData{ErrorMessage}     = $Param{ErrorMessage} || 'This field is required.';
+        $FieldTemplateData{DivIDServerError} = $FieldName . 'ServerError';
+    }
 
     my $FieldTemplateFile = $Param{CustomerInterface}
         ? 'DynamicField/Customer/Set'
@@ -531,10 +520,70 @@ sub EditFieldValueValidate {
         }
     }
 
+    if (
+        $Param{Mandatory}
+        && !$Self->_SubmittedSetHasData(
+            DynamicFieldConfig => $SetDFConfig,
+            DynamicField       => $DynamicField,
+            SetIndex           => \@SetIndex,
+            ParamObject        => $Param{ParamObject},
+        )
+        )
+    {
+        return {
+            ServerError  => 1,
+            ErrorMessage => 'This field is required.',
+        };
+    }
+
     return $Result || {
         ServerError  => undef,
         ErrorMessage => undef,
     };
+}
+
+sub _SubmittedSetHasData {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ParamObject};
+    return if !IsHashRefWithData( $Param{DynamicField} );
+
+    my $ProcessSuffix = $Param{DynamicFieldConfig}->{ProcessSuffix} // '';
+
+    SETINDEX:
+    for my $SetIndex ( @{ $Param{SetIndex} || [] } ) {
+        NAME:
+        for my $Name ( sort keys $Param{DynamicField}->%* ) {
+            my $Prefix    = 'DynamicField_' . $Name . $ProcessSuffix . '_' . $SetIndex;
+            my $FieldType = $Param{DynamicField}->{$Name}->{FieldType} || '';
+
+            if ( $FieldType eq 'Date' || $FieldType eq 'DateTime' ) {
+                my $Used = $Param{ParamObject}->GetParam( Param => $Prefix . 'Used' );
+                return 1 if defined $Used && "$Used" =~ m{\S};
+
+                next NAME;
+            }
+
+            for my $ParamName (
+                $Prefix,
+                )
+            {
+                my @Value = $Param{ParamObject}->GetArray( Param => $ParamName );
+                if (!@Value) {
+                    my $Value = $Param{ParamObject}->GetParam( Param => $ParamName );
+                    @Value = defined $Value ? ($Value) : ();
+                }
+
+                VALUE:
+                for my $Value (@Value) {
+                    next VALUE if !defined $Value;
+                    return 1 if "$Value" =~ m{\S};
+                }
+            }
+        }
+    }
+
+    return;
 }
 
 sub _SubmittedSetIndexListGet {

@@ -40,10 +40,10 @@ sub _NormalizeValue {
     }
 
     if ( ref $Value eq 'HASH' ) {
-        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID)) {
+        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID SelectedID SelectedValue)) {
             return $Value->{$Key} if defined $Value->{$Key} && $Value->{$Key} ne '';
         }
-        return;
+        return undef;
     }
 
     return $Value;
@@ -93,7 +93,7 @@ sub _RecordValueGet {
 
     my $Record = $Param{Record};
 
-    return if !$Record || ref $Record ne 'HASH';
+    return undef if !$Record || ref $Record ne 'HASH';
 
     FIELD:
     for my $Field ( @{ $Param{Fields} || [] } ) {
@@ -112,7 +112,7 @@ sub _RecordValueGet {
         return $Value if defined $Value && $Value ne '';
     }
 
-    return;
+    return undef;
 }
 
 sub _RecordStructuredFieldValue {
@@ -120,8 +120,8 @@ sub _RecordStructuredFieldValue {
 
     my $Record = $Param{Record};
     my $Field  = $Param{Field};
-    return if !$Record || ref $Record ne 'HASH';
-    return if !$Field;
+    return undef if !$Record || ref $Record ne 'HASH';
+    return undef if !$Field;
 
     if ( ( $Record->{DF} || '' ) eq $Field ) {
         my $Value;
@@ -151,7 +151,7 @@ sub _RecordStructuredFieldValue {
         }
     }
 
-    return;
+    return undef;
 }
 
 sub _TicketTypeResolve {

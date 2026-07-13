@@ -20,10 +20,10 @@ sub _NormalizeValue {
     }
 
     if ( ref $Value eq 'HASH' ) {
-        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID)) {
+        for my $Key (qw(Key Value Content GovernanceObjectID ObjectID ID ItemID SelectedID SelectedValue)) {
             return $Value->{$Key} if defined $Value->{$Key} && $Value->{$Key} ne '';
         }
-        return;
+        return undef;
     }
 
     return $Value;
@@ -65,6 +65,27 @@ sub _PlainTextValue {
     $Value =~ s{\A\s+|\s+\z}{}g;
 
     return $Value;
+}
+
+sub _NeutralClosureState {
+    my ($State) = @_;
+
+    return if !defined $State;
+    return 1 if $State eq 'closed no action';
+    return 1 if $State eq 'closed duplicate';
+
+    return;
+}
+
+sub _FulfilledClosureState {
+    my ($State) = @_;
+
+    return if !defined $State;
+    return 1 if $State eq 'closed successful';
+    return 1 if $State eq 'diagnosed';
+    return 1 if _NeutralClosureState($State);
+
+    return;
 }
 
 sub _SetEntityValueNormalize {
@@ -121,7 +142,7 @@ sub _RecordValueGet {
 
     my $Record = $Param{Record};
 
-    return if !$Record || ref $Record ne 'HASH';
+    return undef if !$Record || ref $Record ne 'HASH';
 
     FIELD:
     for my $Field ( @{ $Param{Fields} || [] } ) {
@@ -140,7 +161,7 @@ sub _RecordValueGet {
         return $Value if defined $Value && $Value ne '';
     }
 
-    return;
+    return undef;
 }
 
 sub _RecordStructuredFieldValue {
@@ -148,8 +169,8 @@ sub _RecordStructuredFieldValue {
 
     my $Record = $Param{Record};
     my $Field  = $Param{Field};
-    return if !$Record || ref $Record ne 'HASH';
-    return if !$Field;
+    return undef if !$Record || ref $Record ne 'HASH';
+    return undef if !$Field;
 
     if ( ( $Record->{DF} || '' ) eq $Field ) {
         my $Value;
@@ -179,7 +200,7 @@ sub _RecordStructuredFieldValue {
         }
     }
 
-    return;
+    return undef;
 }
 
 sub _TicketTypeResolve {
@@ -812,9 +833,14 @@ sub LevelComplete {
             $Chapter{$Chapter}->{Failure} = 1;
         }
 
-        $Chapter{$Chapter}->{Weightage} += _NormalizeValue(
+        my $OwnerWeightage = _NormalizeValue(
             $ChildTicket{'DynamicField_ZTicket-OwnerWeightage'}
-        ) || 0;
+        );
+        if ( ( !defined $OwnerWeightage || $OwnerWeightage eq '' ) && _FulfilledClosureState($State) ) {
+            $OwnerWeightage = $RequiredWeightage || 1;
+        }
+
+        $Chapter{$Chapter}->{Weightage} += $OwnerWeightage || 0;
     }
 
     return if !%Chapter;
@@ -942,6 +968,7 @@ sub LevelSpawn {
         }
 
         my $Owner = $Param{OwnerOverride};
+        my $OwnerWeightage = $Param{OwnerWeightageOverride};
 
         my %FieldMap = (
             'ZTicket-Parent'            => $Param{ParentTicketID},
@@ -952,6 +979,7 @@ sub LevelSpawn {
             'ZTicket-Profile'           => $Record->{Profile},
             'ZTicket-OwnerGroup'        => $OwnerGroup,
             'ZTicket-Owner'             => $Owner,
+            'ZTicket-OwnerWeightage'    => $OwnerWeightage,
             'ZTicket-Role'              => $Record->{Role},
             'ZTicket-Mandatory'         => $Record->{Mandatory},
             'ZTicket-Strict'            => $Record->{Strict},

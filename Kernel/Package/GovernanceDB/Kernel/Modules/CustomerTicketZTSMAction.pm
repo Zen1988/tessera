@@ -45,6 +45,8 @@ sub Run {
     my $DelegateTargetSearch       = $ParamObject->GetParam( Param => 'ZTSMDelegateTargetSearch' ) || '';
     my $DelegateAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMDelegateAcknowledge' ) || '';
     my $OverrideAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMOverrideAcknowledge' ) || '';
+    my $RecoveryAcknowledge        = $ParamObject->GetParam( Param => 'ZTSMRecoveryAcknowledge' ) || '';
+    my $RecoveryState              = $ParamObject->GetParam( Param => 'ZTSMRecoveryState' ) || '';
     $DelegateTarget ||= $DelegateTargetSearch;
     my $ZTicketOutcome = $ParamObject->GetParam( Param => 'ZTicketOutcome' );
     $ZTicketOutcome = '' if !defined $ZTicketOutcome;
@@ -53,6 +55,18 @@ sub Run {
     if ( !$TicketID ) {
         return $LayoutObject->CustomerErrorScreen(
             Message => 'Need TicketID!',
+        );
+    }
+
+    my $IPCOverrideAccess = $Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} );
+    my %IPCEmergencyAction = map { $_ => 1 } qw(Patch Delegate Override);
+
+    if ( $RuntimeAction eq 'Patch' ) {
+        $Self->_ZTSMActionLog(
+            Priority => 'error',
+            Message  => "IPC Patch submit entered: TicketID='$TicketID' CustomerUserID='$Self->{UserID}' IPCAccess='"
+                . ( $IPCOverrideAccess ? 1 : 0 )
+                . "' Subaction='$Subaction'.",
         );
     }
 
@@ -69,8 +83,17 @@ sub Run {
             Type           => 'ro',
         );
 
-        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
-            if !$Access;
+        $Access = 1 if !$Access && $IPCOverrideAccess && $IPCEmergencyAction{$RuntimeAction};
+
+        if ( !$Access ) {
+            $Self->_ZTSMActionLog(
+                Priority => 'error',
+                Message => "Permission denied at initial customer ro gate: TicketID='$TicketID' RuntimeAction='$RuntimeAction' CustomerUserID='$Self->{UserID}' IPCAccess='"
+                    . ( $IPCOverrideAccess ? 1 : 0 )
+                    . "'.",
+            );
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
     }
 
     my %Ticket = $TicketObject->TicketGet(
@@ -99,7 +122,6 @@ sub Run {
 
     my $Config              = $ConfigObject->Get('Ticket::Frontend::CustomerTicketZTSMAction') || {};
     my $CustomerPanelUserID = $ConfigObject->Get('CustomerPanelUserID') || 1;
-    my $IPCOverrideAccess   = $Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} );
 
     if ( $RuntimeAction eq 'Delegate' ) {
         if ( !$Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} ) ) {
@@ -347,7 +369,13 @@ sub Run {
         );
     }
 
-    if ( lc( $Ticket{State} || '' ) eq 'follow-up' ) {
+    if ( lc( $Ticket{State} || '' ) eq 'follow-up' && $RuntimeAction ne 'Patch' ) {
+        $Self->_ZTSMActionLog(
+            Priority => 'error',
+            Message  => "Permission denied at follow-up state guard: TicketID='$TicketID' RuntimeAction='$RuntimeAction' CustomerUserID='$Self->{UserID}' IPCAccess='"
+                . ( $IPCOverrideAccess ? 1 : 0 )
+                . "'.",
+        );
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -385,6 +413,11 @@ sub Run {
         );
     }
 
+    my $RequesterFollowUpTaskAccess = $RuntimeAction eq 'CompleteTask'
+        && $Self->_RequesterFollowUpTaskAllowed(
+        Ticket => \%Ticket,
+        );
+
     if ( $RuntimeAction ne 'Unlock' ) {
         my $Permission = $Config->{Permission} || 'ztsm_action';
         $Access = $TicketObject->TicketCustomerPermission(
@@ -399,14 +432,124 @@ sub Run {
                 my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
                 $ConfiguredOwnerActionAccess = $Owner && lc $Owner eq lc $Self->{UserID};
             }
+            elsif ( $RuntimeAction eq 'CompleteTask' ) {
+                $ConfiguredOwnerActionAccess = $RequesterFollowUpTaskAccess;
+            }
+            elsif ( $RuntimeAction eq 'Patch' ) {
+                $ConfiguredOwnerActionAccess = $IPCOverrideAccess;
+            }
 
-            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
-                if !$ConfiguredOwnerActionAccess
+            if (
+                !$ConfiguredOwnerActionAccess
                 && !$Self->_IPCApprovalOverrideAllowed(
                 Ticket        => \%Ticket,
                 RuntimeAction => $RuntimeAction,
+                )
+                )
+            {
+                $Self->_ZTSMActionLog(
+                    Priority => 'error',
+                    Message => "Permission denied at runtime action gate: TicketID='$TicketID' RuntimeAction='$RuntimeAction' CustomerUserID='$Self->{UserID}' IPCAccess='"
+                        . ( $IPCOverrideAccess ? 1 : 0 )
+                        . "' ConfiguredOwnerActionAccess='"
+                        . ( $ConfiguredOwnerActionAccess ? 1 : 0 )
+                        . "'.",
                 );
+                return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+            }
         }
+    }
+
+    if ( $RuntimeAction eq 'Patch' ) {
+        if ( !$IPCOverrideAccess ) {
+            $Self->_ZTSMActionLog(
+                Priority => 'error',
+                Message => "Permission denied at IPC Patch guard: TicketID='$TicketID' CustomerUserID='$Self->{UserID}'.",
+            );
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
+
+        if ( !$RecoveryAcknowledge ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please acknowledge the recovery conditions.',
+            );
+        }
+
+        if ( !_NormalizeValue($RecoveryState) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select the target ticket state.',
+            );
+        }
+
+        if ( !_NormalizeValue($Remarks) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please record a clear recovery reason.',
+            );
+        }
+
+        my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+        my $StateID = $StateObject->StateLookup(
+            State  => $RecoveryState,
+            Silent => 1,
+        );
+        if ( !$StateID ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Selected target state is not configured.',
+            );
+        }
+
+        my %TargetState = $StateObject->StateGet(
+            ID => $StateID,
+        );
+        my %AllowedStateType = map { $_ => 1 } ( 'new', 'open', 'pending reminder', 'pending auto', 'closed' );
+        if ( !$AllowedStateType{ $TargetState{TypeName} || '' } ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Selected target state is not allowed for IPC recovery.',
+            );
+        }
+
+        my $PreviousState = $Ticket{State} || '';
+        if ( lc($PreviousState) eq lc($RecoveryState) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Target state is already the current ticket state.',
+            );
+        }
+
+        my $StateSet = $TicketObject->TicketStateSet(
+            StateID  => $StateID,
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        );
+        if ( !$StateSet ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update ticket state.',
+            );
+        }
+
+        my @Attachments = $Self->_RuntimeUploadAttachments();
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $TicketID,
+            RuntimeAction       => $RuntimeAction,
+            Label               => 'Patch',
+            Subject             => '[IPC Patch] Ticket state manually corrected',
+            Body                => "** Note: This is a system-generated IPC patch message.\n\n"
+                . "IPC customer user '$Self->{UserID}' patched this ticket outside the normal workflow due to a process or workflow bug.\n\n"
+                . "Previous State:\n"
+                . ( $PreviousState || 'N/A' )
+                . "\n\n"
+                . "Target State:\n"
+                . $RecoveryState
+                . "\n\n"
+                . "This patch changes only the ticket state. It does not run StateBook, BlueBook, TransitionAction modules, chapter evaluation, orchestration, or governance recalculation.",
+            Remarks             => $Remarks,
+            Config              => $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+            Attachments         => \@Attachments,
+        );
+
+        return $LayoutObject->Redirect(
+            OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
+        );
     }
 
     if ( $RuntimeAction eq 'Unlock' ) {
@@ -596,7 +739,7 @@ sub Run {
         RuntimeAction => $RuntimeAction,
         );
 
-    if ( !$IPCApprovalOverride && ( !$Owner || lc $Owner ne lc $Self->{UserID} ) ) {
+    if ( !$IPCApprovalOverride && !$RequesterFollowUpTaskAccess && ( !$Owner || lc $Owner ne lc $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -804,6 +947,17 @@ sub Run {
             );
         }
 
+        my $ExistingOwnerWeightage = _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerWeightage'} );
+        if ( !defined $ExistingOwnerWeightage || $ExistingOwnerWeightage eq '' ) {
+            my $RequiredWeightage = _NormalizeValue( $Ticket{'DynamicField_ZTicket-RequiredWeightage'} ) || 1;
+            $Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-OwnerWeightage',
+                TicketID  => $TicketID,
+                Value     => $RequiredWeightage,
+                UserID    => $CustomerPanelUserID,
+            );
+        }
+
         if (
             !$Self->_TicketDynamicFieldSet(
                 FieldName => 'ZTicket-Outcome',
@@ -900,6 +1054,11 @@ sub Run {
 
         $Self->_ChapterDirectorRun(
             TicketID            => $TicketID,
+            TicketObject        => $TicketObject,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        );
+        $Self->_FollowUpParentCompleteIfReady(
+            Ticket              => \%Ticket,
             TicketObject        => $TicketObject,
             CustomerPanelUserID => $CustomerPanelUserID,
         );
@@ -1337,6 +1496,96 @@ sub _ChapterDirectorRun {
     );
 }
 
+sub _FollowUpParentCompleteIfReady {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketObject};
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $BlueBookID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
+    my $BlueLevel      = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+
+    return if !$ParentTicketID;
+    return if !$BlueBookID;
+    return if !defined $BlueLevel || $BlueLevel eq '';
+
+    my %ChildTicket = $Param{TicketObject}->TicketGet(
+        TicketID      => $Ticket->{TicketID},
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID} || 1,
+        Silent        => 1,
+    );
+    return if !IsHashRefWithData( \%ChildTicket );
+    return if ( $ChildTicket{StateType} || '' ) ne 'closed';
+
+    my %ParentTicket = $Param{TicketObject}->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID} || 1,
+        Silent        => 1,
+    );
+    return if !IsHashRefWithData( \%ParentTicket );
+    return if lc( $ParentTicket{State} || '' ) ne 'follow-up';
+
+    my $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
+        ParentTicketID => $ParentTicketID,
+        BlueBookID     => $BlueBookID,
+        BlueLevel      => $BlueLevel,
+        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+        UserID         => 1,
+    );
+    return if !$BlueLevelComplete;
+
+    my $BlueBookObject = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
+        BlueBookID => $BlueBookID,
+    );
+    my @BlueBookRecords = Kernel::System::ZTSMBlueBookRuntime::RecordsParse(
+        BlueBook => $BlueBookObject,
+    );
+    my $NextBlueLevel = Kernel::System::ZTSMBlueBookRuntime::NextBlueLevelGet(
+        CurrentBlueLevel => $BlueLevel,
+        Records          => \@BlueBookRecords,
+    );
+    return if defined $NextBlueLevel && $NextBlueLevel ne '';
+
+    my $StateSet = $Param{TicketObject}->TicketStateSet(
+        TicketID => $ParentTicketID,
+        State    => 'in-progress',
+        UserID   => 1,
+    );
+    if ( !$StateSet ) {
+        $Self->_ZTSMActionLog(
+            Message => "Follow-up completion handoff failed: could not move ParentTicketID='$ParentTicketID' to in-progress.",
+        );
+        return;
+    }
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $ParentTicketID,
+        RuntimeAction       => 'CompleteTask',
+        Label               => 'Complete',
+        Subject             => 'ZTSM Follow-up Completed',
+        Body                =>
+              "** Note: This is a system-generated follow-up orchestration update message.\n\n"
+            . "Follow-up BlueBook completed successfully.\n\n"
+            . "PurpleBook:\n"
+            . $BlueBookID
+            . "\n\n"
+            . "Original ticket returned to in-progress.",
+        Config              => {},
+        CustomerPanelUserID => $Param{CustomerPanelUserID} || 1,
+    );
+
+    $Self->_ZTSMActionLog(
+        Priority => 'notice',
+        Message  => "Follow-up completion handoff moved ParentTicketID='$ParentTicketID' to in-progress.",
+    );
+
+    return 1;
+}
+
 sub _TaskLikeTicket {
     my ( $Self, %Param ) = @_;
 
@@ -1359,6 +1608,32 @@ sub _TakeOwnershipTicket {
     return 1 if $Self->_TaskLikeTicket( Ticket => $Ticket );
     return 1 if ( $Ticket->{Type} || '' ) eq 'Diagnosis';
     return 1 if ( $Ticket->{Title} || '' ) =~ m{\ADiagnosis\s+-\s+}i;
+
+    return;
+}
+
+sub _RequesterFollowUpTaskAllowed {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !IsHashRefWithData($Ticket);
+    return if ( $Ticket->{StateType} || '' ) eq 'closed';
+    return if !$Self->_TaskLikeTicket( Ticket => $Ticket );
+    return if !$Ticket->{CustomerUserID};
+    return if lc $Ticket->{CustomerUserID} ne lc $Self->{UserID};
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return if !$ParentTicketID;
+
+    my %ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => 1,
+        Silent        => 1,
+    );
+
+    return if !IsHashRefWithData( \%ParentTicket );
+    return 1 if lc( $ParentTicket{State} || '' ) eq 'follow-up';
 
     return;
 }
@@ -2038,7 +2313,7 @@ sub _FollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type} ) {
+        if ( $RecordType && ( $Ticket->{Type} || '' ) && $RecordType ne $Ticket->{Type} ) {
             $Self->_FollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook submit record skipped: type mismatch. TicketType='$Ticket->{Type}' RecordType='$RecordType' RecordChapter='$RecordChapter'.",
@@ -2054,7 +2329,7 @@ sub _FollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter ) {
+        if ( defined $RecordChapter && $RecordChapter eq $Chapter ) {
             $Self->_FollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook submit exact match resolved. PurpleBook='$PurpleBookID' Chapter='$Chapter'.",
@@ -2158,9 +2433,32 @@ sub _FollowUpApply {
         );
     }
 
+    my $FollowUpParentTicket   = $Ticket;
+    my $FollowUpParentTicketID = $TicketID;
+    my $RootParentTicketID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    if ($RootParentTicketID) {
+        my %RootParentTicket = $TicketObject->TicketGet(
+            TicketID      => $RootParentTicketID,
+            DynamicFields => 1,
+            UserID        => $UserID,
+            Silent        => 1,
+        );
+
+        if ( !IsHashRefWithData( \%RootParentTicket ) ) {
+            $Self->_FollowUpLog(
+                Ticket  => $Ticket,
+                Message => "Follow-up parent resolution failed: root parent ticket '$RootParentTicketID' could not be loaded.",
+            );
+            return;
+        }
+
+        $FollowUpParentTicket   = \%RootParentTicket;
+        $FollowUpParentTicketID = $RootParentTicketID;
+    }
+
     my @CreatedTicketIDs = Kernel::System::ZTSMBlueBookRuntime::LevelSpawn(
-        ParentTicket   => $Ticket,
-        ParentTicketID => $TicketID,
+        ParentTicket   => $FollowUpParentTicket,
+        ParentTicketID => $FollowUpParentTicketID,
         BlueBookID     => $PurpleBookID,
         BlueLevel      => $FirstBlueLevel,
         Records        => \@Records,
@@ -2169,6 +2467,8 @@ sub _FollowUpApply {
         },
         PreserveParentBlueLevel => 1,
         AllowRepeatClosed       => 1,
+        OwnerOverride           => $FollowUpParentTicket->{CustomerUserID},
+        OwnerWeightageOverride  => 1,
         UserID                  => $UserID,
     );
 
@@ -2194,6 +2494,9 @@ sub _FollowUpApply {
         . "Follow-up was started by customer user '$Self->{UserID}'.\n\n"
         . "Original Child Ticket:\n"
         . $Self->_TicketSummary( Ticket => $Ticket )
+        . "\n\n"
+        . "Follow-up Parent Ticket:\n"
+        . $Self->_TicketSummary( Ticket => $FollowUpParentTicket )
         . "\n\n"
         . "PurpleBook:\n$PurpleBookID\n\n"
         . "Follow-up Tickets Created:\n"
@@ -3029,12 +3332,23 @@ sub _ZTSMActionLog {
 sub _RuntimeUploadAttachments {
     my ( $Self, %Param ) = @_;
 
-    my %UploadStuff = $Kernel::OM->Get('Kernel::System::Web::Request')->GetUploadAll(
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my @Attachments;
+
+    my %UploadStuff = $ParamObject->GetUploadAll(
         Param => 'file_upload',
     );
+    push @Attachments, \%UploadStuff if %UploadStuff;
 
-    return if !%UploadStuff;
-    return \%UploadStuff;
+    my $FormID = $ParamObject->GetParam( Param => 'FormID' ) || '';
+    if ($FormID) {
+        push @Attachments, $Kernel::OM->Get('Kernel::System::Web::UploadCache')->FormIDGetAllFilesData(
+            FormID => $FormID,
+        );
+    }
+
+    return @Attachments;
 }
 
 sub _CustomerUserSearchJSON {
@@ -3757,6 +4071,7 @@ sub _DiagnosisWorkspaceShow {
     my ( $Self, %Param ) = @_;
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    $Self->_DiagnosisFormIDPrepare( LayoutObject => $LayoutObject );
     $LayoutObject->CustomerSetRichTextParameters( Data => {} );
 
     my %Data = $Self->_DiagnosisWorkspaceData(
@@ -3779,6 +4094,7 @@ sub _DiagnosisWorkspaceInlineHTML {
     my ( $Self, %Param ) = @_;
 
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    $Self->_DiagnosisFormIDPrepare( LayoutObject => $LayoutObject );
     $LayoutObject->CustomerSetRichTextParameters( Data => {} );
 
     my %Data = $Self->_DiagnosisWorkspaceData(
@@ -3793,6 +4109,19 @@ sub _DiagnosisWorkspaceInlineHTML {
     );
 }
 
+sub _DiagnosisFormIDPrepare {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Param{LayoutObject} || $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    return $LayoutObject->{FormID} if $LayoutObject->{FormID};
+
+    return $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
+        ParamObject  => $Kernel::OM->Get('Kernel::System::Web::Request'),
+        LayoutObject => $LayoutObject,
+    );
+}
+
 sub _DiagnosisWorkspaceData {
     my ( $Self, %Param ) = @_;
 
@@ -3802,6 +4131,7 @@ sub _DiagnosisWorkspaceData {
         TicketTitle  => $Param{Ticket}->{Title},
         FieldsHTML   => $Self->_DiagnosisFieldsHTML( Ticket => $Param{Ticket} ),
         Inline       => $Param{Inline} ? 1 : 0,
+        FormID       => $Kernel::OM->Get('Kernel::Output::HTML::Layout')->{FormID} || '',
     );
 }
 

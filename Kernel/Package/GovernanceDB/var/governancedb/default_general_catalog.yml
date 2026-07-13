@@ -827,6 +827,10 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
+    name: Diagnosis
+    preferences: {}
+    valid: valid
+  - comment: ''
     name: Endorsement
     preferences: {}
     valid: valid
