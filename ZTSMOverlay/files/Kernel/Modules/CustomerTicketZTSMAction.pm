@@ -251,6 +251,9 @@ sub Run {
     }
 
     if ( $RuntimeAction eq 'RequesterHold' || $RuntimeAction eq 'RequesterResume' ) {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
+            if lc( $Ticket{State} || '' ) eq 'follow-up';
+
         if (
             !$Self->_RequesterExecutionPauseAllowed(
                 Ticket => \%Ticket,
@@ -288,7 +291,11 @@ sub Run {
         );
     }
 
-    if ( _NormalizeValue( $Ticket{'DynamicField_ZTicket-HoldState'} ) ) {
+    if (
+        _NormalizeValue( $Ticket{'DynamicField_ZTicket-HoldState'} )
+        && lc( $Ticket{State} || '' ) ne 'follow-up'
+        )
+    {
         return $LayoutObject->CustomerErrorScreen(
             Message => 'Ticket is on hold. Please resume before continuing execution actions.',
         );
@@ -369,7 +376,22 @@ sub Run {
         );
     }
 
-    if ( lc( $Ticket{State} || '' ) eq 'follow-up' && $RuntimeAction ne 'Patch' ) {
+    my $RequesterFollowUpTaskAccess = $RuntimeAction eq 'CompleteTask'
+        && $Self->_RequesterFollowUpTaskAllowed(
+        Ticket => \%Ticket,
+        );
+    my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
+    my $CompleteTaskAccess = $RuntimeAction eq 'CompleteTask'
+        && (
+        $RequesterFollowUpTaskAccess
+        || (
+            $Self->_TaskLikeTicket( Ticket => \%Ticket )
+            && $Owner
+            && lc $Owner eq lc $Self->{UserID}
+        )
+        );
+
+    if ( lc( $Ticket{State} || '' ) eq 'follow-up' && $RuntimeAction ne 'Patch' && !$CompleteTaskAccess ) {
         $Self->_ZTSMActionLog(
             Priority => 'error',
             Message  => "Permission denied at follow-up state guard: TicketID='$TicketID' RuntimeAction='$RuntimeAction' CustomerUserID='$Self->{UserID}' IPCAccess='"
@@ -413,11 +435,6 @@ sub Run {
         );
     }
 
-    my $RequesterFollowUpTaskAccess = $RuntimeAction eq 'CompleteTask'
-        && $Self->_RequesterFollowUpTaskAllowed(
-        Ticket => \%Ticket,
-        );
-
     if ( $RuntimeAction ne 'Unlock' ) {
         my $Permission = $Config->{Permission} || 'ztsm_action';
         $Access = $TicketObject->TicketCustomerPermission(
@@ -433,7 +450,7 @@ sub Run {
                 $ConfiguredOwnerActionAccess = $Owner && lc $Owner eq lc $Self->{UserID};
             }
             elsif ( $RuntimeAction eq 'CompleteTask' ) {
-                $ConfiguredOwnerActionAccess = $RequesterFollowUpTaskAccess;
+                $ConfiguredOwnerActionAccess = $CompleteTaskAccess;
             }
             elsif ( $RuntimeAction eq 'Patch' ) {
                 $ConfiguredOwnerActionAccess = $IPCOverrideAccess;
@@ -628,9 +645,6 @@ sub Run {
     }
 
     if ( $RuntimeAction eq 'TakeOwnership' ) {
-        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
-            if $IPCOverrideAccess;
-
         my $ActionableTicketType = _ActionableTicketType(
             Config => $Config,
             Type   => $Ticket{Type},
@@ -732,14 +746,13 @@ sub Run {
         );
     }
 
-    my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
     my $IPCApprovalOverride = $IPCOverrideAccess
         && $Self->_IPCApprovalOverrideAllowed(
         Ticket        => \%Ticket,
         RuntimeAction => $RuntimeAction,
         );
 
-    if ( !$IPCApprovalOverride && !$RequesterFollowUpTaskAccess && ( !$Owner || lc $Owner ne lc $Self->{UserID} ) ) {
+    if ( !$IPCApprovalOverride && !$CompleteTaskAccess && ( !$Owner || lc $Owner ne lc $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -1506,6 +1519,7 @@ sub _FollowUpParentCompleteIfReady {
     my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
     my $BlueBookID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueBook'} );
     my $BlueLevel      = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-BlueLevel'} );
+    my $LegacyChildParentTicketID;
 
     return if !$ParentTicketID;
     return if !$BlueBookID;
@@ -1527,7 +1541,20 @@ sub _FollowUpParentCompleteIfReady {
         Silent        => 1,
     );
     return if !IsHashRefWithData( \%ParentTicket );
-    return if lc( $ParentTicket{State} || '' ) ne 'follow-up';
+    if ( lc( $ParentTicket{State} || '' ) ne 'follow-up' ) {
+        my %FollowUpParentTicket = $Self->_FollowUpHandoffParentTicketGet(
+            ParentTicketID => $ParentTicketID,
+            PurpleBookID   => $BlueBookID,
+            TicketObject   => $Param{TicketObject},
+            UserID         => $Param{CustomerPanelUserID} || 1,
+        );
+
+        return if !IsHashRefWithData( \%FollowUpParentTicket );
+
+        $LegacyChildParentTicketID = $ParentTicketID;
+        %ParentTicket              = %FollowUpParentTicket;
+        $ParentTicketID            = $ParentTicket{TicketID};
+    }
 
     my $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
         ParentTicketID => $ParentTicketID,
@@ -1536,6 +1563,15 @@ sub _FollowUpParentCompleteIfReady {
         Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
         UserID         => 1,
     );
+    if ( !$BlueLevelComplete && $LegacyChildParentTicketID ) {
+        $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
+            ParentTicketID => $LegacyChildParentTicketID,
+            BlueBookID     => $BlueBookID,
+            BlueLevel      => $BlueLevel,
+            Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+            UserID         => 1,
+        );
+    }
     return if !$BlueLevelComplete;
 
     my $BlueBookObject = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
@@ -1550,17 +1586,27 @@ sub _FollowUpParentCompleteIfReady {
     );
     return if defined $NextBlueLevel && $NextBlueLevel ne '';
 
+    my $RestoreState = _NormalizeValue( $ParentTicket{'DynamicField_ZTicket-HoldState'} )
+        || 'in-progress';
+
     my $StateSet = $Param{TicketObject}->TicketStateSet(
         TicketID => $ParentTicketID,
-        State    => 'in-progress',
+        State    => $RestoreState,
         UserID   => 1,
     );
     if ( !$StateSet ) {
         $Self->_ZTSMActionLog(
-            Message => "Follow-up completion handoff failed: could not move ParentTicketID='$ParentTicketID' to in-progress.",
+            Message => "Follow-up completion handoff failed: could not move ParentTicketID='$ParentTicketID' to restore state '$RestoreState'.",
         );
         return;
     }
+
+    $Self->_TicketDynamicFieldSet(
+        FieldName => 'ZTicket-HoldState',
+        TicketID  => $ParentTicketID,
+        Value     => '',
+        UserID    => 1,
+    );
 
     $Self->_RuntimeArticleCreate(
         TicketID            => $ParentTicketID,
@@ -1573,17 +1619,66 @@ sub _FollowUpParentCompleteIfReady {
             . "PurpleBook:\n"
             . $BlueBookID
             . "\n\n"
-            . "Original ticket returned to in-progress.",
+            . "Original ticket restored to state:\n"
+            . $RestoreState,
         Config              => {},
         CustomerPanelUserID => $Param{CustomerPanelUserID} || 1,
     );
 
     $Self->_ZTSMActionLog(
         Priority => 'notice',
-        Message  => "Follow-up completion handoff moved ParentTicketID='$ParentTicketID' to in-progress.",
+        Message  => "Follow-up completion handoff moved ParentTicketID='$ParentTicketID' to restore state '$RestoreState'.",
     );
 
     return 1;
+}
+
+sub _FollowUpHandoffParentTicketGet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ParentTicketID};
+    return if !$Param{PurpleBookID};
+    return if !$Param{TicketObject};
+
+    my @CandidateTicketIDs = $Param{TicketObject}->TicketSearch(
+        Result => 'ARRAY',
+        'DynamicField_ZTicket-Parent' => {
+            Equals => $Param{ParentTicketID},
+        },
+        UserID => 1,
+    );
+
+    my @FollowUpParents;
+    CANDIDATE:
+    for my $CandidateTicketID (@CandidateTicketIDs) {
+        my %CandidateTicket = $Param{TicketObject}->TicketGet(
+            TicketID      => $CandidateTicketID,
+            DynamicFields => 1,
+            UserID        => $Param{UserID} || 1,
+            Silent        => 1,
+        );
+
+        next CANDIDATE if !IsHashRefWithData( \%CandidateTicket );
+        next CANDIDATE if lc( $CandidateTicket{State} || '' ) ne 'follow-up';
+
+        my $CandidatePurpleBookID = $Self->_FollowUpPurpleBookID(
+            Ticket => \%CandidateTicket,
+        );
+        next CANDIDATE if !$CandidatePurpleBookID;
+        next CANDIDATE if $CandidatePurpleBookID ne $Param{PurpleBookID};
+
+        push @FollowUpParents, \%CandidateTicket;
+    }
+
+    if ( @FollowUpParents > 1 ) {
+        $Self->_ZTSMActionLog(
+            Message => "Follow-up completion handoff skipped: multiple follow-up parent candidates found for ParentTicketID='$Param{ParentTicketID}' PurpleBookID='$Param{PurpleBookID}'.",
+        );
+        return;
+    }
+
+    return if !@FollowUpParents;
+    return %{ $FollowUpParents[0] };
 }
 
 sub _TaskLikeTicket {
@@ -2417,6 +2512,16 @@ sub _FollowUpApply {
     my $FirstBlueLevel = $Records[0]->{BlueLevel};
     return if !defined $FirstBlueLevel || $FirstBlueLevel eq '';
 
+    my $OriginalState = $Ticket->{State} || '';
+    if ($OriginalState) {
+        $Self->_TicketDynamicFieldSet(
+            FieldName => 'ZTicket-HoldState',
+            TicketID  => $TicketID,
+            Value     => $OriginalState,
+            UserID    => $UserID,
+        );
+    }
+
     my $StateSet = $TicketObject->TicketStateSet(
         State    => 'follow-up',
         TicketID => $TicketID,
@@ -2435,26 +2540,6 @@ sub _FollowUpApply {
 
     my $FollowUpParentTicket   = $Ticket;
     my $FollowUpParentTicketID = $TicketID;
-    my $RootParentTicketID     = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
-    if ($RootParentTicketID) {
-        my %RootParentTicket = $TicketObject->TicketGet(
-            TicketID      => $RootParentTicketID,
-            DynamicFields => 1,
-            UserID        => $UserID,
-            Silent        => 1,
-        );
-
-        if ( !IsHashRefWithData( \%RootParentTicket ) ) {
-            $Self->_FollowUpLog(
-                Ticket  => $Ticket,
-                Message => "Follow-up parent resolution failed: root parent ticket '$RootParentTicketID' could not be loaded.",
-            );
-            return;
-        }
-
-        $FollowUpParentTicket   = \%RootParentTicket;
-        $FollowUpParentTicketID = $RootParentTicketID;
-    }
 
     my @CreatedTicketIDs = Kernel::System::ZTSMBlueBookRuntime::LevelSpawn(
         ParentTicket   => $FollowUpParentTicket,

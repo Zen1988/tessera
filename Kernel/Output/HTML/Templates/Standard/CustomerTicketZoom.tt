@@ -994,28 +994,66 @@
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAckRow,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAckRow {
-                        min-height: 56px;
+                        min-height: 0;
+                        padding: 14px 24px;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck {
+                        position: relative;
                         display: flex;
-                        align-items: flex-start;
-                        gap: 10px;
+                        align-items: center;
+                        gap: 12px;
                         max-width: 100%;
+                        margin: 0;
+                        cursor: pointer;
                         white-space: normal;
                         overflow-wrap: anywhere;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input {
-                        flex: 0 0 auto;
-                        width: auto;
-                        min-height: 0;
-                        margin-top: 4px;
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"],
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"] {
+                        position: absolute;
+                        left: 0;
+                        top: 50%;
+                        width: 20px !important;
+                        height: 20px;
+                        min-height: 20px;
+                        margin: -10px 0 0 0;
+                        opacity: 0;
+                        cursor: pointer;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span {
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMCheckboxVisual {
+                        position: relative;
+                        display: inline-block;
+                        flex: 0 0 auto;
+                        width: 18px;
+                        height: 18px;
+                        border: 2px solid #161b66;
+                        border-radius: 4px;
+                        background: #fff;
+                        box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual {
+                        background: #1028ff;
+                        border-color: #1028ff;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after {
+                        content: "";
+                        position: absolute;
+                        left: 5px;
+                        top: 1px;
+                        width: 5px;
+                        height: 10px;
+                        border: solid #fff;
+                        border-width: 0 2px 2px 0;
+                        transform: rotate(45deg);
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span:not(.ZTSMCheckboxVisual),
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span:not(.ZTSMCheckboxVisual) {
                         display: block;
                         min-width: 0;
+                        line-height: 1.35;
                     }
                 </style>
                 <form action="[% Env("CGIHandle") | html %]" method="post" enctype="multipart/form-data" name="ZTSMRuntimeAction[% Data.Action | html %]" class="Validate PreventMultipleSubmits">

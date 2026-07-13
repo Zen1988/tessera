@@ -304,6 +304,13 @@ sub Run {
 
         my $StateType = $PlayTicket{StateType};
 
+		my $State = $PlayTicket{State};
+
+        if ( ( !defined $OwnerWeightage || $OwnerWeightage eq '' ) && _FulfilledClosureState($State) ) {
+            $OwnerWeightage = $RequiredWeightage || 1;
+        }
+        $OwnerWeightage ||= 0;
+
         if (
             $StateType ne 'closed'
         ) {
@@ -311,13 +318,6 @@ sub Run {
         }else{
 			$CurrentWeightage += $OwnerWeightage;
 		}
-
-		my $State = $PlayTicket{State};
-
-        if ( ( !defined $OwnerWeightage || $OwnerWeightage eq '' ) && _FulfilledClosureState($State) ) {
-            $OwnerWeightage = $RequiredWeightage || 1;
-        }
-        $OwnerWeightage ||= 0;
 		
         #
         # Failure detection

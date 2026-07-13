@@ -703,9 +703,7 @@ sub Run {
         );
 
         $ResolvedSupportProfile = $ResolutionCandidate;
-        if ( !$ResolvedSupportProfile ) {
-            $RequesterOwnerUserID = $CustomerUserID;
-        }
+        $RequesterOwnerUserID = $CustomerUserID;
     }
 
     # -------------------------------------------------------- #
@@ -803,7 +801,7 @@ sub Run {
     # RESOLUTION FAILED
     # -------------------------------------------------------- #
 
-    if ($RequesterOwnerUserID) {
+    if ( $RequesterOwnerUserID && !$ResolvedSupportProfile ) {
 
         _UpdateTicketField(
 
@@ -900,7 +898,7 @@ sub Run {
 
             FieldName => 'ZTicket-Owner',
 
-            Value => '',
+            Value => $RequesterOwnerUserID || $CustomerUserID || '',
         );
     }
 
@@ -917,6 +915,13 @@ sub Run {
         . "Resolved Support Profile:\n"
         . $ResolvedSupportProfile
         . "\n\n"
+        . (
+        _IsRequesterDefaultProfile($Profile)
+        ? "Assigned Owner:\n"
+            . ( $RequesterOwnerUserID || $CustomerUserID || 'N/A' )
+            . "\n\n"
+        : ''
+        )
         . "Runtime Role:\n"
         . ( $Role || 'N/A' );
 
@@ -943,7 +948,13 @@ sub Run {
             . "Profile=$Profile "
             . "ProfileDisplay=$ProfileDisplay "
             . "Role=$Role "
-            . "SupportProfile=$ResolvedSupportProfile",
+            . "SupportProfile=$ResolvedSupportProfile "
+            . "Owner="
+            . (
+            _IsRequesterDefaultProfile($Profile)
+            ? ( $RequesterOwnerUserID || $CustomerUserID || '' )
+            : ''
+            ),
     );
 
     return 1;

@@ -266,12 +266,22 @@ sub Run {
     }
 
     my $ZTSMReadOnlyView = $ParamObject->GetParam( Param => 'ZTSMReadOnlyView' ) ? 1 : 0;
+    if ($ZTSMReadOnlyView) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => \%Ticket,
+            Message => "Runtime actions skipped: ZTSMReadOnlyView active. UserID='$Self->{UserID}'.",
+        );
+    }
 
     my $ZTSMRuntimeActions = $ZTSMReadOnlyView
         ? undef
         : $Self->_ZTSMRuntimeActions(
             Ticket => \%Ticket,
         );
+    $ZTSMRuntimeActions = $Self->_ZTSMRuntimeActionsFollowUpFilter(
+        Ticket   => \%Ticket,
+        Actions  => $ZTSMRuntimeActions,
+    );
     if ( IsArrayRefWithData($ZTSMRuntimeActions) ) {
         RUNTIMEACTION:
         for my $RuntimeAction ( @{$ZTSMRuntimeActions} ) {
@@ -2439,8 +2449,14 @@ sub _ZTSMRuntimeActions {
     my $FollowUpState     = lc( $Ticket->{State} || '' ) eq 'follow-up';
     my $OverrideState     = lc( $Ticket->{State} || '' ) eq 'override';
 
-    return if $TicketClosed && !$IPCDelegateAccess;
-    return if $FollowUpState && !$IPCDelegateAccess;
+    if ( $TicketClosed && !$IPCDelegateAccess ) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Runtime actions skipped: ticket is closed and user is not IPC. UserID='$Self->{UserID}' StateType='"
+                . ( $Ticket->{StateType} || '' ) . "'.",
+        );
+        return;
+    }
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -2513,6 +2529,7 @@ sub _ZTSMRuntimeActions {
         Ticket => $Ticket,
         Config => $Config,
     );
+    $RequesterPauseAccess = 0 if $FollowUpState;
 
     my $ExternalPartyRequestAccess = $Self->_ZTSMExternalPartyRequestAllowed(
         Ticket => $Ticket,
@@ -2523,12 +2540,15 @@ sub _ZTSMRuntimeActions {
     if ( ref $HoldState eq 'ARRAY' ) {
         $HoldState = $HoldState->[0];
     }
+    my $RequesterHoldState = $HoldState && !$FollowUpState;
 
     my $TicketOwner = $Ticket->{'DynamicField_ZTicket-Owner'};
     if ( ref $TicketOwner eq 'ARRAY' ) {
         $TicketOwner = $TicketOwner->[0];
     }
     my $OwnerMatchesCurrentUser = $TicketOwner && lc $TicketOwner eq lc $Self->{UserID};
+    my $CustomerUserMatchesCurrentUser = $Ticket->{CustomerUserID}
+        && lc $Ticket->{CustomerUserID} eq lc $Self->{UserID};
 
     my $TaskLikeTicket = $Self->_ZTSMTaskLikeTicket( Ticket => $Ticket );
     my $TakeOwnershipType;
@@ -2545,10 +2565,9 @@ sub _ZTSMRuntimeActions {
     }
     $TakeOwnershipType ||= $Self->_ZTSMTakeOwnershipTicket( Ticket => $Ticket );
 
-    my $TakeOwnershipAccess = !$HoldState
+    my $TakeOwnershipAccess = !$RequesterHoldState
         && !$TicketOwner
         && $TakeOwnershipType
-        && !$IPCDelegateAccess
         && $Self->_ZTSMCurrentUserCanTakeOwnership(
         Ticket => $Ticket,
         );
@@ -2568,15 +2587,85 @@ sub _ZTSMRuntimeActions {
     my $RequesterFollowUpTaskAccess = $Self->_ZTSMRequesterFollowUpTaskAllowed(
         Ticket => $Ticket,
     );
+    my $CompleteTaskAccess = $TaskLikeTicket
+        && (
+        $OwnerMatchesCurrentUser
+        || $RequesterFollowUpTaskAccess
+        );
+
+    if ( $TaskLikeTicket || $FollowUpState || $TicketOwner || $IPCDelegateAccess ) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Complete action visibility diagnostics: UserID='$Self->{UserID}' Type='"
+                . ( $Ticket->{Type} || '' )
+                . "' State='"
+                . ( $Ticket->{State} || '' )
+                . "' StateType='"
+                . ( $Ticket->{StateType} || '' )
+                . "' Owner='"
+                . ( defined $TicketOwner ? $TicketOwner : '' )
+                . "' CustomerUserID='"
+                . ( $Ticket->{CustomerUserID} || '' )
+                . "' IPCDelegateAccess='"
+                . ( $IPCDelegateAccess ? 1 : 0 )
+                . "' ActionAccess='"
+                . ( $ActionAccess ? 1 : 0 )
+                . "' FailbackAccess='"
+                . ( $FailbackAccess ? 1 : 0 )
+                . "' FollowUpState='"
+                . ( $FollowUpState ? 1 : 0 )
+                . "' TicketClosed='"
+                . ( $TicketClosed ? 1 : 0 )
+                . "' HoldState='"
+                . ( defined $HoldState ? $HoldState : '' )
+                . "' TaskLikeTicket='"
+                . ( $TaskLikeTicket ? 1 : 0 )
+                . "' OwnerMatchesCurrentUser='"
+                . ( $OwnerMatchesCurrentUser ? 1 : 0 )
+                . "' CustomerUserMatchesCurrentUser='"
+                . ( $CustomerUserMatchesCurrentUser ? 1 : 0 )
+                . "' RequesterFollowUpTaskAccess='"
+                . ( $RequesterFollowUpTaskAccess ? 1 : 0 )
+                . "' CompleteTaskAccess='"
+                . ( $CompleteTaskAccess ? 1 : 0 )
+                . "'.",
+        );
+    }
+
+    if ( $FollowUpState && !$IPCDelegateAccess && !$CompleteTaskAccess ) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Runtime actions skipped: follow-up state without IPC or CompleteTaskAccess. UserID='$Self->{UserID}'.",
+        );
+        return;
+    }
 
     my $DiagnosisRuntimeActionAllowed = $OwnerMatchesCurrentUser
         && ( $Ticket->{Type} || '' ) eq 'Diagnosis';
 
     my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed;
 
-    return if !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess && !$RequesterFollowUpTaskAccess;
+    if ( !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess && !$CompleteTaskAccess ) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Runtime actions skipped: no action access matched. UserID='$Self->{UserID}' RequesterCancelAccess='"
+                . ( $RequesterCancelAccess ? 1 : 0 )
+                . "' RequesterPauseAccess='"
+                . ( $RequesterPauseAccess ? 1 : 0 )
+                . "' ExternalPartyRequestAccess='"
+                . ( $ExternalPartyRequestAccess ? 1 : 0 )
+                . "' TakeOwnershipAccess='"
+                . ( $TakeOwnershipAccess ? 1 : 0 )
+                . "' ConfiguredRuntimeActionAccess='"
+                . ( $ConfiguredRuntimeActionAccess ? 1 : 0 )
+                . "' CompleteTaskAccess='"
+                . ( $CompleteTaskAccess ? 1 : 0 )
+                . "'.",
+        );
+        return;
+    }
 
-    if ( $HoldState && $RequesterPauseAccess ) {
+    if ( $RequesterHoldState && $RequesterPauseAccess ) {
         return [
             {
                 Action          => 'RequesterResume',
@@ -2589,7 +2678,13 @@ sub _ZTSMRuntimeActions {
         ];
     }
 
-    return if $HoldState;
+    if ($RequesterHoldState) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Runtime actions skipped: ticket is on requester hold. UserID='$Self->{UserID}' HoldState='$HoldState'.",
+        );
+        return;
+    }
 
     my @RuntimeActions;
 
@@ -2624,7 +2719,19 @@ sub _ZTSMRuntimeActions {
             InActionMenu    => 1,
         };
 
-        return \@RuntimeActions if $TicketClosed || $FollowUpState;
+        if ( $TicketClosed || ( $FollowUpState && !$CompleteTaskAccess ) ) {
+            $Self->_ZTSMRuntimeActionDiagnosticsLog(
+                Ticket  => $Ticket,
+                Message => "Runtime action list returned early with IPC emergency actions only. UserID='$Self->{UserID}' TicketClosed='"
+                    . ( $TicketClosed ? 1 : 0 )
+                    . "' FollowUpState='"
+                    . ( $FollowUpState ? 1 : 0 )
+                    . "' CompleteTaskAccess='"
+                    . ( $CompleteTaskAccess ? 1 : 0 )
+                    . "'.",
+            );
+            return \@RuntimeActions;
+        }
     }
 
     my $ActionableType;
@@ -2697,9 +2804,7 @@ sub _ZTSMRuntimeActions {
     }
 
     if (
-        ( $ActionAccess || $RequesterFollowUpTaskAccess )
-        && $TaskLikeTicket
-        && ( $OwnerMatchesCurrentUser || $RequesterFollowUpTaskAccess )
+        $CompleteTaskAccess
         )
     {
         push @RuntimeActions, {
@@ -2710,6 +2815,24 @@ sub _ZTSMRuntimeActions {
             ),
             RemarksRequired => 0,
         };
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Complete action added. UserID='$Self->{UserID}' CompleteTaskAccess='"
+                . ( $CompleteTaskAccess ? 1 : 0 )
+                . "'.",
+        );
+    }
+    elsif ($TaskLikeTicket) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Complete action not added: CompleteTaskAccess is false. UserID='$Self->{UserID}' OwnerMatchesCurrentUser='"
+                . ( $OwnerMatchesCurrentUser ? 1 : 0 )
+                . "' CustomerUserMatchesCurrentUser='"
+                . ( $CustomerUserMatchesCurrentUser ? 1 : 0 )
+                . "' RequesterFollowUpTaskAccess='"
+                . ( $RequesterFollowUpTaskAccess ? 1 : 0 )
+                . "'.",
+        );
     }
 
     if (
@@ -2801,8 +2924,73 @@ sub _ZTSMRuntimeActions {
         }
     }
 
-    return \@RuntimeActions if @RuntimeActions;
+    if (@RuntimeActions) {
+        $Self->_ZTSMRuntimeActionDiagnosticsLog(
+            Ticket  => $Ticket,
+            Message => "Runtime actions returned. UserID='$Self->{UserID}' Actions='"
+                . join( ',', map { $_->{Action} || '' } @RuntimeActions )
+                . "'.",
+        );
+        return \@RuntimeActions;
+    }
+    $Self->_ZTSMRuntimeActionDiagnosticsLog(
+        Ticket  => $Ticket,
+        Message => "Runtime actions empty after evaluation. UserID='$Self->{UserID}'.",
+    );
     return;
+}
+
+sub _ZTSMRuntimeActionDiagnosticsLog {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{Message};
+
+    my $Ticket = $Param{Ticket} || {};
+    my $Prefix = 'CustomerTicketZoom runtime action diagnostics';
+    if ( IsHashRefWithData($Ticket) ) {
+        $Prefix .= " TicketID='"
+            . ( $Ticket->{TicketID} || '' )
+            . "' TicketNumber='"
+            . ( $Ticket->{TicketNumber} || '' )
+            . "'";
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => "$Prefix: $Param{Message}",
+    );
+
+    return;
+}
+
+sub _ZTSMRuntimeActionsFollowUpFilter {
+    my ( $Self, %Param ) = @_;
+
+    my $Actions = $Param{Actions};
+    return $Actions if !IsArrayRefWithData($Actions);
+
+    my @FilteredActions = grep {
+        !$Self->_ZTSMRuntimeActionFollowUpBlocked(
+            Ticket => $Param{Ticket},
+            Action => $_,
+        )
+    } @{$Actions};
+
+    return \@FilteredActions if @FilteredActions;
+    return;
+}
+
+sub _ZTSMRuntimeActionFollowUpBlocked {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    my $Action = $Param{Action};
+    return if !IsHashRefWithData($Ticket);
+    return if !IsHashRefWithData($Action);
+    return if lc( $Ticket->{State} || '' ) ne 'follow-up';
+
+    my %BlockedAction = map { $_ => 1 } qw(RequesterHold RequesterResume);
+    return $BlockedAction{ $Action->{Action} || '' };
 }
 
 sub _ZTSMCurrentCustomerIsIPC {
@@ -2847,7 +3035,7 @@ sub _ZTSMDelegateOverrideHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMDelegateAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMDelegateAck"><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge the delegation override conditions.</span></label>'
+        . '<label class="ZTSMDelegateAck"><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge the delegation override conditions.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -2917,7 +3105,7 @@ sub _ZTSMOverrideAcknowledgementHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMOverrideAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge this override condition and will record a clear, auditable justification.</span></label>'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMOverrideAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge this override condition and will record a clear, auditable justification.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -2975,7 +3163,7 @@ sub _ZTSMRecoveryStateHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMRecoveryAcknowledge" value="1" class="Validate_Required" /> <span>I acknowledge this patch is outside normal workflow and is required due to a process or workflow bug.</span></label>'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMRecoveryAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge this patch is outside normal workflow and is required due to a process or workflow bug.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -3209,7 +3397,7 @@ sub _ZTSMFollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type} ) {
+        if ( $RecordType && ( $Ticket->{Type} || '' ) && $RecordType ne $Ticket->{Type} ) {
             $Self->_ZTSMFollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook record skipped: type mismatch. TicketType='$Ticket->{Type}' RecordType='$RecordType' RecordChapter='$RecordChapter'.",
@@ -3226,7 +3414,7 @@ sub _ZTSMFollowUpPurpleBookID {
             );
             next RECORD;
         }
-        if ( defined $Record->{Chapter} && $Record->{Chapter} eq $Chapter ) {
+        if ( defined $RecordChapter && $RecordChapter eq $Chapter ) {
             $Self->_ZTSMFollowUpLog(
                 Ticket  => $Ticket,
                 Message => "Follow-up PurpleBook exact match resolved. PurpleBook='$PurpleBookID' Chapter='$Chapter'.",
@@ -3925,6 +4113,10 @@ sub _Mask {
 
     if ( IsArrayRefWithData( $Param{ZTSMRuntimeActions} ) ) {
         for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
+            next if $Self->_ZTSMRuntimeActionFollowUpBlocked(
+                Ticket => \%Param,
+                Action => $RuntimeAction,
+            );
             next if $RuntimeAction->{DirectURL};
 
             $LayoutObject->Block(
@@ -4345,6 +4537,10 @@ sub _Mask {
         }
 
         for my $RuntimeAction ( @{ $Param{ZTSMRuntimeActions} } ) {
+            next if $Self->_ZTSMRuntimeActionFollowUpBlocked(
+                Ticket => \%Param,
+                Action => $RuntimeAction,
+            );
             if ( $RuntimeAction->{InActionMenu} ) {
                 $LayoutObject->Block(
                     Name => 'ZTSMRuntimeActionMenuItem',

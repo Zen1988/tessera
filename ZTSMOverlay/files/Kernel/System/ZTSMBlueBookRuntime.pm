@@ -617,7 +617,13 @@ sub RecordsParse {
 }
 
 sub ChildTicketIDsGet {
-    my (%Param) = @_;
+    my %Param;
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
+        %Param = %{ $_[0] };
+    }
+    else {
+        %Param = @_;
+    }
 
     return if !$Param{ParentTicketID};
     return if !$Param{BlueBookID};
@@ -655,7 +661,13 @@ sub ChildTicketIDsGet {
 }
 
 sub ChildTicketIDsForRecordGet {
-    my (%Param) = @_;
+    my %Param;
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
+        %Param = %{ $_[0] };
+    }
+    else {
+        %Param = @_;
+    }
 
     return if !$Param{ParentTicketID};
     return if !$Param{BlueBookID};
@@ -723,7 +735,7 @@ sub CurrentBlueLevelGet {
     return if !$Param{ParentTicketID};
     return if !$Param{BlueBookID};
 
-    my @TicketIDs = ChildTicketIDsGet(%Param);
+    my @TicketIDs = ChildTicketIDsGet( \%Param );
 
     my $CurrentBlueLevel;
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -775,13 +787,19 @@ sub NextBlueLevelGet {
 }
 
 sub LevelComplete {
-    my (%Param) = @_;
+    my %Param;
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
+        %Param = %{ $_[0] };
+    }
+    else {
+        %Param = @_;
+    }
 
     return if !$Param{ParentTicketID};
     return if !$Param{BlueBookID};
     return if !defined $Param{BlueLevel};
 
-    my @TicketIDs = ChildTicketIDsGet(%Param);
+    my @TicketIDs = ChildTicketIDsGet( \%Param );
 
     return if !@TicketIDs;
 
