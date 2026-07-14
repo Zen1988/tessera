@@ -480,11 +480,13 @@ sub Run {
     # MANDATORY OUTCOME ROLL-UP
     # -------------------------------------------------------- #
 
+    my $ParentIteration = _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} );
+
     my @BlueLevelPlays = Kernel::System::ZTSMBlueBookRuntime::ChildTicketIDsGet(
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBook,
         BlueLevel      => $BlueLevel,
-        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+        Iteration      => $ParentIteration,
         UserID         => 1,
     );
 
@@ -882,7 +884,7 @@ sub Run {
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBook,
         BlueLevel      => $BlueLevel,
-        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+        Iteration      => $ParentIteration,
         UserID         => 1,
     );
 
@@ -965,9 +967,12 @@ sub Run {
             return 1;
         }
 
+        my $RestoreState = _NormalizeValue( $ParentTicket{'DynamicField_ZTicket-HoldState'} )
+            || 'in-progress';
+
         my $StateSet = $TicketObject->TicketStateSet(
             TicketID => $ParentTicketID,
-            State    => 'in-progress',
+            State    => $RestoreState,
             UserID   => 1,
         );
         if ( !$StateSet ) {
@@ -977,10 +982,23 @@ sub Run {
                       'ZTSMChapterDirector: '
                     . 'Follow-up BlueBook complete but original ticket state restore failed '
                     . "ParentTicketID=$ParentTicketID "
-                    . "PurpleBook=$BlueBook",
+                    . "PurpleBook=$BlueBook "
+                    . "RestoreState=$RestoreState",
             );
 
             return 1;
+        }
+
+        my $HoldStateField = $DynamicFieldObject->DynamicFieldGet(
+            Name => 'ZTicket-HoldState',
+        );
+        if ($HoldStateField) {
+            $DynamicFieldBackendObject->ValueSet(
+                DynamicFieldConfig => $HoldStateField,
+                ObjectID           => $ParentTicketID,
+                Value              => '',
+                UserID             => 1,
+            );
         }
 
         ZTSMArticleCreate(
@@ -993,7 +1011,8 @@ sub Run {
                 . "PurpleBook:\n"
                 . ( $BlueBook || 'N/A' )
                 . "\n\n"
-                . "Original ticket returned to in-progress.",
+                . "Original ticket restored to state:\n"
+                . $RestoreState,
             HistoryComment => 'ZTSM: Follow-up completed',
             UserID         => 1,
         );
@@ -1002,9 +1021,10 @@ sub Run {
             Priority => 'notice',
             Message  =>
                   'ZTSMChapterDirector: '
-                . 'Follow-up BlueBook complete, original ticket returned to in-progress '
+                . 'Follow-up BlueBook complete, original ticket restored '
                 . "ParentTicketID=$ParentTicketID "
-                . "PurpleBook=$BlueBook",
+                . "PurpleBook=$BlueBook "
+                . "RestoreState=$RestoreState",
         );
 
         return 1;

@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-13
+Last Updated: 2026-07-14
 
 ## Current Focus
 
@@ -19,6 +19,263 @@ Last Updated: 2026-07-13
 - Incident Diagnosis loop-capable runtime with iteration-aware child orchestration.
 
 ## Completed Work
+
+## 2026-07-14 GovernanceDB 0.0.296 DIAGNOSE Iteration Lookup and Role Ownership
+
+### Completed work
+
+- Updated `ZTSMBlueBookReader.pm` and `ZTSMBlueBookRuntime.pm` so BlueBook child creation can resolve a `ZBlue-Role` such as `DIAGNOSE` into the owning support profile through existing `SupportAssignment` governance objects.
+- Kept the existing `ZBlue-Profile` resolution first; role-based support profile lookup is only a fallback when the profile is empty or unresolved.
+- Added DIAGNOSE-specific existing child lookup:
+  - current `ZIN-Iteration` diagnosis task is reused first;
+  - if none exists, the previous numeric iteration is checked;
+  - previous-iteration matches are ignored when the diagnosis ticket is `closed no action`, or when `ZIN-Outcome` is exactly `Not Applicable` or `Recovered`.
+- Synced `ZTSMBlueBookReader.pm` and `ZTSMBlueBookRuntime.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.296`.
+
+### Validation
+
+- Perl syntax checks passed with repo/package `@INC` for canonical and runtime-overlay copies of:
+  - `ZTSMBlueBookReader.pm`;
+  - `ZTSMBlueBookRuntime.pm`.
+- Mirrored file hashes match:
+  - `ZTSMBlueBookReader.pm`: `F91E92BDAAE469CF73064F90DBB9A55CCD1B3AA96F8AA8FF4A9C298AB35CF83D`;
+  - `ZTSMBlueBookRuntime.pm`: `B4CF42630DBAFE961030DA9D86EE0B46B9BB55B6B80AAFBD8EA956B2F3D11797`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.296.opm` parsed successfully as XML with version `0.0.296` and file count `204`.
+- Decoded OPM payload check confirmed:
+  - `_SupportProfileByRoleResolve`;
+  - `_ExistingDiagnosisChapterPlayForRecord`;
+  - `_DiagnosisNoActionTicket`;
+  - `DynamicField_ZTSMSupportAssignment-Role`;
+  - exact `Not Applicable` and `Recovered` previous-iteration skip markers.
+- `Kernel/Package/GovernanceDB-0.0.296.opm` SHA256: `B16A2E7BBB8DDD4C38820250A20F39C50EA0A89ED9FF2A58E5F358F70D25E83F`.
+
+## 2026-07-14 GovernanceDB 0.0.295 Diagnosis Parent Severity Roll-Up
+
+### Completed work
+
+- Added Diagnosis-to-parent Incident severity roll-up in `CustomerTicketZTSMAction.pm`.
+- On every Diagnosis submit, the runtime now:
+  - reads the Diagnosis child ticket `ZTicket-Parent`;
+  - loads the parent ticket with dynamic fields;
+  - compares submitted child `ZIN-Severity` against parent `ZIN-Severity`;
+  - treats smaller severity numbers as higher severity, for example `S1` higher than `S2`, `S2` higher than `S3`;
+  - writes parent `ZIN-Severity` only when the child severity is higher than the current parent severity;
+  - preserves the parent severity when the child severity is equal, lower, blank, or cannot be ranked.
+- Blank parent severity is treated as updatable when the child submits a rankable severity.
+- Added notice logging when Diagnosis severity roll-up updates the parent ticket.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.295`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.295.opm`.
+- `Kernel/Package/GovernanceDB-0.0.295.opm` SHA256: `D1414A923E022DFD33D6A50565623428DC48B137E995471FE2C8AF4D4182F766`.
+- Supersedes `0.0.294`; use `0.0.295` for the next Diagnosis parent severity retest.
+
+### Validation
+
+- Perl syntax checks passed with repo/package `@INC` for all four mirrored copies of `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZTSMAction.pm` hashes match: `0F4E554C3E218ED2A0C045EF30D835CD6503A6544534CB9B0CDC5917C8EDFB93`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.295.opm` parsed successfully as XML with version `0.0.295` and file count `204`.
+- Decoded OPM payload check confirmed:
+  - `_DiagnosisParentSeverityRollupApply`;
+  - `_DiagnosisSeverityHigher`;
+  - `_DiagnosisSeverityRank`;
+  - `ZIN-Severity`;
+  - `ChildSeverity`;
+  - `ParentSeverity`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.295`, retest multiple Diagnosis children on the same parent Incident:
+  - parent blank + child `S3` should set parent to `S3`;
+  - parent `S3` + child `S2` should update parent to `S2`;
+  - parent `S2` + child `S3` should keep parent at `S2`;
+  - parent `S2` + child `S1` should update parent to `S1`.
+
+## 2026-07-14 GovernanceDB 0.0.294 Diagnosis Article Inline Image and Layout Fix
+
+### Completed work
+
+- Investigated the post-submit Diagnosis article rendering where:
+  - the diagnosis snapshot label column collapsed and rendered labels vertically;
+  - pasted rich-text images appeared as broken image icons in the article.
+- Updated Diagnosis submit article creation in `CustomerTicketZTSMAction.pm` so Diagnosis snapshots collect and pass the form upload-cache attachments into `_RuntimeArticleCreate()`.
+- This allows uploaded/pasted rich-text inline images referenced by `ContentID` to be written onto the created ticket article.
+- Replaced the Diagnosis snapshot `<table>` with fixed-width block rows:
+  - 180px label column;
+  - content column offset with `margin-left:180px`;
+  - row borders drawn independently so OTOBO article CSS cannot collapse the label column.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.294`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.294.opm`.
+- `Kernel/Package/GovernanceDB-0.0.294.opm` SHA256: `9D7E8C7F43E73FEB972E0AFE1D8FEF23C8B4B44AA65E9F9B03287CF6F87EEF27`.
+- Supersedes `0.0.293`; use `0.0.294` for the next Diagnosis article rendering retest.
+
+### Validation
+
+- Perl syntax checks passed with repo/package `@INC` for all four mirrored copies of `CustomerTicketZTSMAction.pm`.
+- Mirrored `CustomerTicketZTSMAction.pm` hashes match: `56CB49CD7CD12EB07512CDA291073B7E01C97157041D7C4F4C8F5FE15DAFA175`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.294.opm` parsed successfully as XML with version `0.0.294` and file count `204`.
+- Decoded OPM payload check confirmed:
+  - `$ActionConfig->{DiagnosisSnapshot}`;
+  - `_RuntimeUploadAttachments()`;
+  - `_DiagnosisArticleRow`;
+  - `width:180px`;
+  - `margin-left:180px`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.294`, retest Diagnosis submit with a pasted image in the Diagnosis rich-text field.
+- Expected result:
+  - article labels render horizontally with a stable left column;
+  - pasted inline image renders in the article instead of showing a broken image icon.
+
+## 2026-07-14 GovernanceDB 0.0.293 Diagnosis Severity Submit Fallback
+
+### Completed work
+
+- Investigated the Diagnosis submit error where the portal showed `Severity: S2` but submission failed with `Please complete the required diagnosis field 'Severity'.`
+- Confirmed `ZIN-Severity` is rendered in the Diagnosis workspace and exported as a `GovernanceObject` field for `IncidentSeverity`, but it was not present in the current package bootstrap runtime-field list.
+- Updated `CustomerTicketZTSMAction.pm` Diagnosis submit handling so optional Diagnosis fields no longer run backend required validation before submit.
+- Added Diagnosis-specific value normalization:
+  - if an optional field is not posted by the inline form, keep the existing ticket dynamic-field value;
+  - if a `GovernanceObject` value is posted as a visible label/number like `S2`, resolve it back to the configured GovernanceObject ID before saving;
+  - mandatory Diagnosis fields are still checked after normalization.
+- Added `ZIN-Severity` to the package bootstrap runtime ticket fields with symbolic `IncidentSeverity` class and `Active` status restrictions.
+- Added `_TicketRuntimeDynamicFieldConfigPrepare()` so package bootstrap resolves symbolic GovernanceObject class/status names to local GeneralCatalog IDs during fresh install.
+- Synced `CustomerTicketZTSMAction.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.293`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.293.opm`.
+- `Kernel/Package/GovernanceDB-0.0.293.opm` SHA256: `6213300AECADD3850461F2E39AC1AE9F7B18EF7B2CFBD3B691C338B779B78C4A`.
+- Supersedes `0.0.292`; use `0.0.293` for the next Diagnosis submit retest.
+
+### Validation
+
+- Perl syntax checks passed with repo/package `@INC` for:
+  - all four mirrored copies of `CustomerTicketZTSMAction.pm`;
+  - `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm`.
+- Mirrored `CustomerTicketZTSMAction.pm` hashes match: `FAD3C754BDFB006B3888728A4A8AB8D18BDB7DBA5EA0A96AC42935368B7E8025`.
+- `Bootstrap.pm` SHA256: `6BF4373B4BEBAE531A84959507E5702D262C576BB32B5243E319ABF50DE7D61C`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.293.opm` parsed successfully as XML with version `0.0.293` and file count `204`.
+- Decoded OPM payload check confirmed:
+  - `_DiagnosisSubmittedValueNormalize`;
+  - `_DiagnosisGovernanceObjectValueResolve`;
+  - `ZIN-Severity`;
+  - `IncidentSeverity`;
+  - `_TicketRuntimeDynamicFieldConfigPrepare`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.293`, retest Diagnosis submit with `Severity: S2` already selected.
+- Expected result:
+  - submit no longer fails on required `Severity`;
+  - existing selected Severity is preserved when the inline form does not post a hidden value;
+  - visible labels/numbers resolve back to GovernanceObject IDs before saving.
+
+## 2026-07-14 GovernanceDB 0.0.292 PurpleBook Completion Logging and Runtime Argument Guard
+
+### Completed work
+
+- Investigated the live close/update log for parent ticket `218` and PurpleBook follow-up child ticket `229`.
+- Found no `ZTSMPurpleBookReader` trace in the live log, so expanded the reader to log at `error` level for:
+  - run entry;
+  - missing `TicketID`;
+  - ticket not found;
+  - ticket not closed;
+  - missing PurpleBook child fields;
+  - parent ticket not found;
+  - parent in `follow-up`;
+  - parent type outside `ZTSM::RequestType`;
+  - empty child process/activity context;
+  - delegation result from `ZTSMChapterDirector`.
+- Found live `Odd number of elements in hash assignment` warnings in `ZTSMBlueBookRuntime::ChildTicketIDsGet()` and `ZTSMBlueBookRuntime::LevelComplete()` during the close of child ticket `229`.
+- Fixed the direct call sites in `CustomerTicketZTSMAction.pm` and `ZTSMChapterDirector.pm` so `ZIN-Iteration` is normalized into scalar `$ParentIteration` before being passed in named-parameter lists.
+- Hardened `ZTSMBlueBookRuntime.pm` parameter parsing with `_ParamHash()` so any future odd named-parameter list is logged at `error` level and common missing-value shapes are recovered instead of shifting `UserID` into `Iteration`.
+- Expanded `TESSERA-PURPLEBOOK-READER` event coverage with explicit dynamic-field update events for `ZTicket-Outcome`, `ZIN-Outcome`, `ZTicket-Parent`, `ZTicket-BlueBook`, `ZTicket-BlueLevel`, and `ZTicket-Chapter`.
+- Synced `CustomerTicketZTSMAction.pm`, `ZTSMChapterDirector.pm`, `ZTSMBlueBookRuntime.pm`, and `ZTSMPurpleBookReader.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.292`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.292.opm`.
+- `Kernel/Package/GovernanceDB-0.0.292.opm` SHA256: `C97B3CD0D5D74201805455AC7E88BEF4A631CDA746B6585C8A37746B381C6310`.
+- Supersedes `0.0.291`; use `0.0.292` for the next PurpleBook detached follow-up completion retest.
+
+### Validation
+
+- Perl syntax checks passed with repo `@INC` for all four mirrored copies of:
+  - `CustomerTicketZTSMAction.pm`;
+  - `ZTSMChapterDirector.pm`;
+  - `ZTSMBlueBookRuntime.pm`;
+  - `ZTSMPurpleBookReader.pm`.
+- Mirrored file hashes match:
+  - `ZTSMPurpleBookReader.pm`: `5B382F02F1B26697F490444BA53EA685D29772B495A5CA14B9ACB2D65BA4B30A`;
+  - `ZTSMBlueBookRuntime.pm`: `5D769F9F3ABBC7678221EB582C0B9B3F362CC34AA4FED5F1E015FDB3A80967BB`;
+  - `CustomerTicketZTSMAction.pm`: `94AACD82EC9EDEF074C8FC8A7257F85D327C88CE7BFB645FCD412006905FC036`;
+  - `ZTSMChapterDirector.pm`: `D363BF773001CE70779B64AEC0E678023F72DADF941A284BC3A70A0A6C742658`.
+- `GovernanceDB.sopm` and `GovernanceDB-0.0.292.opm` parsed successfully as XML with version `0.0.292` and file count `204`.
+- `generic_agents.yml` contains `TESSERA-PURPLEBOOK-READER`, `TicketDynamicFieldUpdate_ZTicket-Outcome`, and `TicketDynamicFieldUpdate_ZIN-Outcome`.
+- Decoded OPM payload check confirmed:
+  - `ZTSMPurpleBookReader: enter`;
+  - `odd argument list received`;
+  - `my $ParentIteration`;
+  - `TicketDynamicFieldUpdate_ZTicket-Outcome`;
+  - `Original ticket restored to state`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.292`, retest by closing PurpleBook child ticket `229` or a fresh equivalent through the normal close path.
+- Expected log sequence:
+  - `ZTSMPurpleBookReader: enter`;
+  - one decision log showing why it is treated as PurpleBook;
+  - `ZTSMPurpleBookReader: delegated closed PurpleBook child to ChapterDirector`;
+  - no new `Odd number of elements in hash assignment` warnings from `ZTSMBlueBookRuntime`.
+- Expected ticket result:
+  - the parent follow-up ticket restores to the state stored in `ZTicket-HoldState`;
+  - `ZTicket-HoldState` is cleared;
+  - lifecycle fields remain unchanged.
+
+## 2026-07-14 GovernanceDB 0.0.291 PurpleBook Reader GenericAgent
+
+### Completed work
+
+- Added `Kernel::System::GenericAgent::ZTSMPurpleBookReader` as the event-time PurpleBook continuation reader.
+- The reader runs from GenericAgent events and only delegates to `ZTSMChapterDirector` when the event ticket is a closed BlueBook/PurpleBook child with:
+  - `ZTicket-Parent`;
+  - `ZTicket-BlueBook`;
+  - `ZTicket-BlueLevel`;
+  - `ZTicket-Chapter`;
+  - a follow-up parent, a parent type outside `ZTSM::RequestType`, or empty process/activity context.
+- Seeded `TESSERA-PURPLEBOOK-READER` in `var/governancedb/runtime_seed/generic_agents.yml` for `TicketChange`, `TicketClose`, `TicketDynamicFieldUpdate`, and `TicketStateUpdate`.
+- Kept PurpleBook progression owned by `ZTSMChapterDirector` instead of duplicating orchestration logic in the GenericAgent module.
+- Fixed final PurpleBook completion in `ZTSMChapterDirector` to restore the original ticket from `ZTicket-HoldState` and clear `ZTicket-HoldState` after restore, instead of always returning to `in-progress`.
+- Synced `ZTSMPurpleBookReader.pm` and `ZTSMChapterDirector.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.291`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.291.opm`.
+- `Kernel/Package/GovernanceDB-0.0.291.opm` SHA256: `6B778BAC79B562279EFE9CCC33E37BCEDB01739F37ADBB94883A3C35D3196230`.
+- Supersedes `0.0.290`; use `0.0.291` for the next PurpleBook detached follow-up completion retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `ZTSMPurpleBookReader.pm`.
+- Perl syntax checks passed for canonical and runtime-overlay `ZTSMChapterDirector.pm`.
+- Mirrored file hashes match:
+  - `ZTSMPurpleBookReader.pm`: `5F03AAD20433DA901AC5A0C70523A99755F6832B64D78F9FD4BF4DB348CA9BD9`;
+  - `ZTSMChapterDirector.pm`: `0B6976F9903C4F0E0511C1DFB9A7D4B2B9CC7BD39A83800BF211A42828173A76`.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- `generic_agents.yml` parsed successfully and contains `TESSERA-PURPLEBOOK-READER`.
+- `GovernanceDB-0.0.291.opm` parsed successfully as XML with file count `204`, `MissingEncode=0`, and `BadBase64=0`.
+- Decoded OPM payload check confirmed:
+  - `ZTSMPurpleBookReader` is embedded;
+  - `TESSERA-PURPLEBOOK-READER` is embedded;
+  - `RestoreState=$RestoreState` is embedded;
+  - `ZTicket-HoldState` clearing path is embedded;
+  - process/activity empty-context detection is embedded.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.291`, retest by closing a PurpleBook follow-up child through the normal update/close path, not only through `CustomerTicketZTSMAction`.
+- Expected result:
+  - the GenericAgent job logs `ZTSMPurpleBookReader: delegated closed PurpleBook child to ChapterDirector`;
+  - intermediate PurpleBook levels spawn normally;
+  - the final PurpleBook level restores the held original child to the stored `ZTicket-HoldState`;
+  - `ZState-CurrentStage`, `ZState-CurrentState`, and `ZBlue-CurrentChapter` remain unchanged.
 
 ## 2026-07-13 GovernanceDB 0.0.290 Follow-up Render Filter and BlueBook Param Parse Fix
 

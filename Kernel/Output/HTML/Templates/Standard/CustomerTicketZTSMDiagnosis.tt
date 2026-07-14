@@ -14,7 +14,6 @@
             max-width: 980px;
             min-height: 100vh;
             padding: 18px 18px 32px calc(var(--ZTSMNavigationOffset) + 28px);
-            background: #f4f6fb;
             box-sizing: border-box;
         }
         .ZTSMDiagnosisInline .ZTSMDiagnosisLayout {
@@ -40,8 +39,6 @@
             display: grid;
             gap: 4px;
             padding: 10px;
-            border: 2px solid #111;
-            background: #fff;
             box-sizing: border-box;
         }
         .ZTSMDiagnosisFieldLarge {
@@ -52,7 +49,6 @@
         }
         .ZTSMDiagnosisField label {
             margin: 0;
-            color: #555b82;
             font-size: 12px;
             font-weight: 700;
             line-height: 1.2;
@@ -91,7 +87,6 @@
         .ZTSMDiagnosisField .RichTextHolder textarea.RichText {
             display: block;
             min-height: 112px;
-            background: #fff;
         }
         .ZTSMDiagnosisField_ZIN-Plan .RichTextHolder textarea.RichText {
             min-height: 172px;
@@ -102,15 +97,8 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .ZTSMDiagnosisField .ck.ck-editor {
-            color: #07104a;
-        }
         .ZTSMDiagnosisField .ck.ck-editor__editable_inline {
             min-height: 112px;
-            padding: 10px 12px;
-            background: #fff;
-            border-color: #d9dfef;
-            box-shadow: none;
         }
         .ZTSMDiagnosisField_ZIN-Plan .ck.ck-editor__editable_inline {
             min-height: 172px;
@@ -138,6 +126,7 @@
                 <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
                 <input type="hidden" name="RuntimeAction" value="Diagnose"/>
                 <input type="hidden" name="Subaction" value="SubmitDiagnosis"/>
+                <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
 
                 [% Data.FieldsHTML %]
 

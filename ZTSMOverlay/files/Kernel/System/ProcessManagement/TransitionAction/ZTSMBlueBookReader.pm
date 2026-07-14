@@ -365,6 +365,282 @@ sub _SupportProfileResolve {
     return $SupportProfileIDs[0];
 }
 
+sub _GovernanceObjectReferenceValues {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+
+    return if !defined $Value;
+    return if $Value eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+
+    my %Reference = ( $Value => 1 );
+    my @GovernanceObjects;
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        for my $Lookup (
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
+            )
+        {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    %{$Lookup},
+                    DynamicFields => 0,
+                    Silent        => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+    elsif ( $Param{Class} ) {
+        my @GovernanceObjectIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Result  => 'ARRAY',
+            Classes => [ $Param{Class} ],
+            Name    => $Value,
+            Limit   => 10,
+            UserID  => $Param{UserID} || 1,
+        );
+
+        for my $GovernanceObjectID (@GovernanceObjectIDs) {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    GovernanceObjectID => $GovernanceObjectID,
+                    DynamicFields      => 0,
+                    Silent             => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+
+    for my $GovernanceObject (@GovernanceObjects) {
+        if ( $Param{Class} && ( $GovernanceObject->{Class} || '' ) ne $Param{Class} ) {
+            next;
+        }
+
+        $Reference{ $GovernanceObject->{GovernanceObjectID} } = 1 if $GovernanceObject->{GovernanceObjectID};
+        $Reference{ $GovernanceObject->{LastVersionID} }      = 1 if $GovernanceObject->{LastVersionID};
+        $Reference{ $GovernanceObject->{VersionID} }          = 1 if $GovernanceObject->{VersionID};
+        $Reference{ $GovernanceObject->{Name} }               = 1 if $GovernanceObject->{Name};
+    }
+
+    return sort grep { defined $_ && $_ ne '' } keys %Reference;
+}
+
+sub _SupportProfileByRoleResolve {
+    my (%Param) = @_;
+
+    my @RoleReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{Role},
+        Class  => 'GovernanceRole',
+        UserID => $Param{UserID},
+    );
+
+    return if !@RoleReferences;
+
+    my @ApplicationReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{ApplicationID},
+        UserID => $Param{UserID},
+    );
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %AssignmentID;
+
+    ROLE:
+    for my $RoleReference (@RoleReferences) {
+        next ROLE if !defined $RoleReference || $RoleReference eq '';
+
+        my %BaseSearch = (
+            Classes => ['SupportAssignment'],
+            'DynamicField_ZTSMSupportAssignment-Role' => {
+                Equals => $RoleReference,
+            },
+            Result => 'ARRAY',
+            Limit  => 1000,
+            UserID => $Param{UserID} || 1,
+        );
+
+        for my $ApplicationReference (@ApplicationReferences) {
+            next if !defined $ApplicationReference || $ApplicationReference eq '';
+
+            my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                %BaseSearch,
+                'DynamicField_ZTSMSupportAssignment-Application' => {
+                    Equals => $ApplicationReference,
+                },
+            );
+            $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+        }
+
+        if ( !%AssignmentID ) {
+            my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(%BaseSearch);
+            $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+        }
+    }
+
+    ASSIGNMENT:
+    for my $AssignmentID ( sort { $a <=> $b } keys %AssignmentID ) {
+        my $Assignment = eval {
+            $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $AssignmentID,
+                DynamicFields      => 1,
+                Silent             => 1,
+            );
+        };
+
+        next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $SupportProfile = _NormalizeValue(
+            $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'}
+                || $Assignment->{XMLData}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'}
+                && $Assignment->{XMLData}->{'ZTSMSupportAssignment-SupportProfile'}->{Content}
+        );
+
+        next ASSIGNMENT if !defined $SupportProfile || $SupportProfile eq '';
+
+        return _SupportProfileResolve(
+            Value  => $SupportProfile,
+            UserID => $Param{UserID},
+        ) || $SupportProfile;
+    }
+
+    return;
+}
+
+sub _RecordIsDiagnosis {
+    my (%Param) = @_;
+
+    my $Record = $Param{Record};
+    return if !$Record || ref $Record ne 'HASH';
+
+    my $Type = _NormalizeValue( $Record->{Type} );
+    return 1 if defined $Type && lc $Type eq 'diagnosis';
+
+    for my $RoleReference (
+        _GovernanceObjectReferenceValues(
+            Value  => $Record->{Role},
+            Class  => 'GovernanceRole',
+            UserID => $Param{UserID},
+        )
+        )
+    {
+        return 1 if defined $RoleReference && lc $RoleReference eq 'diagnose';
+    }
+
+    return;
+}
+
+sub _DiagnosisNoActionTicket {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $StateValue = _NormalizeValue( $Ticket->{State} );
+    my $State      = defined $StateValue ? lc $StateValue : '';
+    return 1 if $State eq 'closed no action';
+
+    my $TicketOutcomeValue = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Outcome'} );
+    my $TicketOutcome      = defined $TicketOutcomeValue ? lc $TicketOutcomeValue : '';
+    return 1 if $TicketOutcome eq '1';
+
+    my $DiagnosisOutcomeValue = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Outcome'} );
+    my $DiagnosisOutcome      = defined $DiagnosisOutcomeValue ? lc $DiagnosisOutcomeValue : '';
+    return 1 if $DiagnosisOutcome =~ m{\A(?:recovered|not applicable)\z};
+
+    return;
+}
+
+sub _ExistingDiagnosisChapterPlayForRecord {
+    my (%Param) = @_;
+
+    return if !_RecordIsDiagnosis( Record => $Param{Record}, UserID => $Param{UserID} );
+
+    my $Iteration = _NormalizeValue( $Param{Iteration} );
+    my @Iterations;
+
+    if ( defined $Iteration && $Iteration ne '' ) {
+        push @Iterations, $Iteration;
+        push @Iterations, $Iteration - 1 if $Iteration =~ m{\A\d+\z} && $Iteration > 0;
+    }
+
+    push @Iterations, undef if !@Iterations;
+
+    my @RoleReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{Record}->{Role},
+        Class  => 'GovernanceRole',
+        UserID => $Param{UserID},
+    );
+
+    @RoleReferences = ( _NormalizeValue( $Param{Record}->{Role} ) ) if !@RoleReferences;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    ITERATION:
+    for my $CandidateIteration (@Iterations) {
+        my %TicketID;
+
+        ROLE:
+        for my $RoleReference (@RoleReferences) {
+            next ROLE if !defined $RoleReference || $RoleReference eq '';
+
+            my %Search = (
+                Result => 'ARRAY',
+                'DynamicField_ZTicket-Parent' => {
+                    Equals => $Param{ParentTicketID},
+                },
+                'DynamicField_ZTicket-BlueBook' => {
+                    Equals => $Param{BlueBookID},
+                },
+                'DynamicField_ZTicket-BlueLevel' => {
+                    Equals => $Param{BlueLevel},
+                },
+                'DynamicField_ZTicket-Role' => {
+                    Equals => $RoleReference,
+                },
+                UserID => $Param{UserID} || 1,
+            );
+
+            if ( defined $CandidateIteration && $CandidateIteration ne '' ) {
+                $Search{'DynamicField_ZIN-Iteration'} = {
+                    Equals => $CandidateIteration,
+                };
+            }
+
+            my @FoundTicketIDs = $TicketObject->TicketSearch(%Search);
+            $TicketID{$_} = 1 for @FoundTicketIDs;
+        }
+
+        my @TicketIDs = sort { $b <=> $a } keys %TicketID;
+        next ITERATION if !@TicketIDs;
+
+        return @TicketIDs if defined $CandidateIteration && defined $Iteration && $CandidateIteration eq $Iteration;
+
+        my @ActionableTicketIDs;
+        TICKETID:
+        for my $TicketID (@TicketIDs) {
+            my %Ticket = $TicketObject->TicketGet(
+                TicketID      => $TicketID,
+                DynamicFields => 1,
+                UserID        => $Param{UserID} || 1,
+                Silent        => 1,
+            );
+
+            next TICKETID if !%Ticket;
+            next TICKETID if _DiagnosisNoActionTicket( Ticket => \%Ticket );
+
+            push @ActionableTicketIDs, $TicketID;
+        }
+
+        return @ActionableTicketIDs if @ActionableTicketIDs;
+    }
+
+    return;
+}
+
 sub _ExistingChapterPlayCount {
     my (%Param) = @_;
 
@@ -440,9 +716,12 @@ sub _ExistingChapterPlayForRecord {
         };
     }
 
-    return if !$RecordHasStableIdentity;
+    if ($RecordHasStableIdentity) {
+        my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
+        return @TicketIDs if @TicketIDs;
+    }
 
-    return $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
+    return _ExistingDiagnosisChapterPlayForRecord(%Param);
 }
 
 sub Run {
@@ -775,6 +1054,10 @@ sub Run {
         my $OwnerGroup = _SupportProfileResolve(
             Value  => $Record->{Profile},
             UserID => $UserID,
+        ) || _SupportProfileByRoleResolve(
+            Role          => $Record->{Role},
+            ApplicationID => $Ticket->{'DynamicField_ZTicket-Application'},
+            UserID        => $UserID,
         );
 
         $LogObject->Log(
@@ -784,6 +1067,8 @@ sub Run {
                 . "ChildTicketID=$NewTicketID "
                 . "Profile="
                 . ( $Record->{Profile} || '' )
+                . " Role="
+                . ( $Record->{Role} || '' )
                 . " OwnerGroup="
                 . ( $OwnerGroup || '' ),
         );

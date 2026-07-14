@@ -1515,6 +1515,28 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
         {
+            Name       => 'ZIN-Severity',
+            Label      => 'Severity',
+            FieldOrder => 10155,
+            FieldType  => 'GovernanceObject',
+            Config     => {
+                ClassIDs              => ['IncidentSeverity'],
+                DisplayType           => '',
+                EditFieldMode         => 'Dropdown',
+                ImportSearchAttribute => '',
+                LinkDirection         => 'ReferencingIsSource',
+                LinkType              => '',
+                MultiValue            => 0,
+                Multiselect           => 0,
+                PossibleNone          => 0,
+                ReferenceFilterList   => [],
+                ReferencedObjectType  => 'GovernanceObject',
+                SearchAttribute       => '',
+                Tooltip               => 'Incident Severity',
+                ZTSMStatusIDs         => ['Active'],
+            },
+        },
+        {
             Name       => 'ZIN-Plan',
             Label      => 'Resolution Plan',
             FieldOrder => 10160,
@@ -1599,6 +1621,11 @@ sub _TicketRuntimeDynamicFieldsEnsure {
 
     FIELD:
     for my $Field (@Fields) {
+        $Field->{Config} = $Self->_TicketRuntimeDynamicFieldConfigPrepare(
+            FieldType => $Field->{FieldType},
+            Config    => $Field->{Config},
+        );
+
         my $Existing = $DynamicFieldObject->DynamicFieldGet(
             Name => $Field->{Name},
         );
@@ -1627,6 +1654,41 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     $DynamicFieldObject->EventHandlerTransaction();
 
     return 1;
+}
+
+sub _TicketRuntimeDynamicFieldConfigPrepare {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+    my %Prepared = %{$Config};
+
+    return \%Prepared if ( $Param{FieldType} || '' ) ne 'GovernanceObject';
+
+    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %ClassName2ID = reverse %{
+        $GeneralCatalogObject->ItemList(
+            Class => 'ZTSM::GovernanceObject::Class',
+            Valid => 1,
+        ) || {}
+    };
+    my %StatusName2ID = reverse %{
+        $GeneralCatalogObject->ItemList(
+            Class => 'ZTSM::GovernanceObject::Status',
+            Valid => 1,
+        ) || {}
+    };
+
+    if ( ref $Prepared{ClassIDs} eq 'ARRAY' ) {
+        my @ClassIDs = grep {$_} map { $_ =~ m{\A\d+\z} ? $_ : $ClassName2ID{$_} } @{ $Prepared{ClassIDs} };
+        $Prepared{ClassIDs} = \@ClassIDs;
+    }
+
+    if ( ref $Prepared{ZTSMStatusIDs} eq 'ARRAY' ) {
+        my @StatusIDs = grep {$_} map { $_ =~ m{\A\d+\z} ? $_ : $StatusName2ID{$_} } @{ $Prepared{ZTSMStatusIDs} };
+        $Prepared{ZTSMStatusIDs} = \@StatusIDs;
+    }
+
+    return \%Prepared;
 }
 
 sub _ITSMConfigItemLifecycleDateDynamicFieldsEnsure {

@@ -1257,6 +1257,19 @@ sub Run {
             );
         }
 
+        if (
+            !$Self->_DiagnosisParentSeverityRollupApply(
+                Ticket              => \%Ticket,
+                Diagnosis           => \%Diagnosis,
+                CustomerPanelUserID => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update parent incident severity.',
+            );
+        }
+
         my $ZTicketOutcome = $DiagnosisState eq 'closed no action' ? '1' : '0';
         if (
             !$Self->_TicketDynamicFieldSet(
@@ -1321,7 +1334,9 @@ sub Run {
         );
     }
     else {
-        my @Attachments = $IPCApprovalOverride ? $Self->_RuntimeUploadAttachments() : ();
+        my @Attachments = ( $IPCApprovalOverride || $ActionConfig->{DiagnosisSnapshot} )
+            ? $Self->_RuntimeUploadAttachments()
+            : ();
 
         $Self->_RuntimeArticleCreate(
             TicketID             => $TicketID,
@@ -1556,11 +1571,13 @@ sub _FollowUpParentCompleteIfReady {
         $ParentTicketID            = $ParentTicket{TicketID};
     }
 
+    my $ParentIteration = _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} );
+
     my $BlueLevelComplete = Kernel::System::ZTSMBlueBookRuntime::LevelComplete(
         ParentTicketID => $ParentTicketID,
         BlueBookID     => $BlueBookID,
         BlueLevel      => $BlueLevel,
-        Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+        Iteration      => $ParentIteration,
         UserID         => 1,
     );
     if ( !$BlueLevelComplete && $LegacyChildParentTicketID ) {
@@ -1568,7 +1585,7 @@ sub _FollowUpParentCompleteIfReady {
             ParentTicketID => $LegacyChildParentTicketID,
             BlueBookID     => $BlueBookID,
             BlueLevel      => $BlueLevel,
-            Iteration      => _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ),
+            Iteration      => $ParentIteration,
             UserID         => 1,
         );
     }
@@ -4339,16 +4356,18 @@ sub _DiagnosisFieldsSet {
             );
         }
 
-        my $ValidationResult = $DynamicFieldBackendObject->EditFieldValueValidate(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            ParamObject        => $ParamObject,
-            Mandatory          => $Mandatory{$FieldName} ? 1 : 0,
-        );
-        if ( !IsHashRefWithData($ValidationResult) || $ValidationResult->{ServerError} ) {
-            return (
-                %Result,
-                Message => "Please complete the required diagnosis field '$DynamicFieldConfig->{Label}'.",
+        if ( $Mandatory{$FieldName} ) {
+            my $ValidationResult = $DynamicFieldBackendObject->EditFieldValueValidate(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                ParamObject        => $ParamObject,
+                Mandatory          => 1,
             );
+            if ( !IsHashRefWithData($ValidationResult) || $ValidationResult->{ServerError} ) {
+                return (
+                    %Result,
+                    Message => "Please complete the required diagnosis field '$DynamicFieldConfig->{Label}'.",
+                );
+            }
         }
 
         my $Value = $DynamicFieldBackendObject->EditFieldValueGet(
@@ -4356,6 +4375,18 @@ sub _DiagnosisFieldsSet {
             ParamObject        => $ParamObject,
             LayoutObject       => $LayoutObject,
         );
+        $Value = $Self->_DiagnosisSubmittedValueNormalize(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            TicketID           => $Param{TicketID},
+            Value              => $Value,
+        );
+
+        if ( $Mandatory{$FieldName} && !_DiagnosisValueHasData($Value) ) {
+            return (
+                %Result,
+                Message => "Please complete the required diagnosis field '$DynamicFieldConfig->{Label}'.",
+            );
+        }
 
         my $Success = $DynamicFieldBackendObject->ValueSet(
             DynamicFieldConfig => $DynamicFieldConfig,
@@ -4380,6 +4411,198 @@ sub _DiagnosisFieldsSet {
 
     $Result{Success} = 1;
     return %Result;
+}
+
+sub _DiagnosisSubmittedValueNormalize {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+
+    if ( !_DiagnosisValueHasData($Value) ) {
+        return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+            ObjectID           => $Param{TicketID},
+        );
+    }
+
+    return $Value if ( $Param{DynamicFieldConfig}->{FieldType} || '' ) ne 'GovernanceObject';
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return [
+            map {
+                $Self->_DiagnosisGovernanceObjectValueResolve(
+                    DynamicFieldConfig => $Param{DynamicFieldConfig},
+                    Value              => $_,
+                )
+            } @{$Value}
+        ];
+    }
+
+    return $Self->_DiagnosisGovernanceObjectValueResolve(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        Value              => $Value,
+    );
+}
+
+sub _DiagnosisGovernanceObjectValueResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value || $Value eq '';
+
+    my $GovernanceObjectObject = eval { $Kernel::OM->Get('Kernel::System::GovernanceObject') };
+    return $Value if !$GovernanceObjectObject;
+
+    my $Existing = eval {
+        $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $Value,
+            Silent             => 1,
+        );
+    };
+    return $Value if IsHashRefWithData($Existing);
+
+    my %SearchBase = $Self->_DiagnosisGovernanceObjectRestrictions(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+    );
+
+    SEARCH:
+    for my $Attribute (qw(Name Number)) {
+        my @IDs = eval {
+            $GovernanceObjectObject->GovernanceObjectSearch(
+                %SearchBase,
+                Result  => 'ARRAY',
+                Limit   => 2,
+                SortBy  => 'Name',
+                OrderBy => 'Up',
+                UserID  => 1,
+                $Attribute => $Value,
+            );
+        };
+        next SEARCH if @IDs != 1;
+        return $IDs[0];
+    }
+
+    return $Value;
+}
+
+sub _DiagnosisGovernanceObjectRestrictions {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{DynamicFieldConfig}->{Config} || {};
+    my %Search;
+
+    if ( IsArrayRefWithData( $Config->{ClassIDs} ) ) {
+        $Search{ClassIDs} = $Config->{ClassIDs};
+    }
+    if ( IsArrayRefWithData( $Config->{ZTSMStatusIDs} ) ) {
+        $Search{ZTSMStatusIDs} = $Config->{ZTSMStatusIDs};
+    }
+
+    return %Search;
+}
+
+sub _DiagnosisValueHasData {
+    my ($Value) = @_;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        for my $Item ( @{$Value} ) {
+            return 1 if _DiagnosisValueHasData($Item);
+        }
+        return;
+    }
+
+    $Value = _NormalizeValue($Value);
+    return defined $Value && $Value ne '';
+}
+
+sub _DiagnosisParentSeverityRollupApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return 1 if !IsHashRefWithData($Ticket);
+    return 1 if !IsHashRefWithData( $Param{Diagnosis} );
+    return 1 if !$Param{CustomerPanelUserID};
+
+    my $ChildSeverity = $Param{Diagnosis}->{Severity};
+    return 1 if !_DiagnosisValueHasData($ChildSeverity);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return 1 if !$ParentTicketID;
+
+    my %ParentTicket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $Param{CustomerPanelUserID},
+        Silent        => 1,
+    );
+    return 1 if !IsHashRefWithData( \%ParentTicket );
+
+    my $ParentSeverity = $ParentTicket{'DynamicField_ZIN-Severity'};
+    return 1 if !$Self->_DiagnosisSeverityHigher(
+        Candidate => $ChildSeverity,
+        Current   => $ParentSeverity,
+    );
+
+    my $Success = $Self->_TicketDynamicFieldSet(
+        FieldName => 'ZIN-Severity',
+        TicketID  => $ParentTicketID,
+        Value     => $ChildSeverity,
+        UserID    => $Param{CustomerPanelUserID},
+    );
+
+    if ($Success) {
+        $Self->_ZTSMActionLog(
+            Priority => 'notice',
+            Message  => 'Diagnosis severity roll-up updated parent '
+                . "ParentTicketID='$ParentTicketID' "
+                . "ChildTicketID='$Ticket->{TicketID}' "
+                . 'ChildSeverity='
+                . ( $Self->_DiagnosisSeverityLabel( Value => $ChildSeverity ) || _NormalizeValue($ChildSeverity) || '' )
+                . ' ParentSeverity='
+                . ( $Self->_DiagnosisSeverityLabel( Value => $ParentSeverity ) || _NormalizeValue($ParentSeverity) || '' )
+                . '.',
+        );
+    }
+
+    return $Success;
+}
+
+sub _DiagnosisSeverityHigher {
+    my ( $Self, %Param ) = @_;
+
+    my $CandidateRank = $Self->_DiagnosisSeverityRank( Value => $Param{Candidate} );
+    return if !defined $CandidateRank;
+
+    my $CurrentRank = $Self->_DiagnosisSeverityRank( Value => $Param{Current} );
+    return 1 if !defined $CurrentRank;
+
+    return $CandidateRank < $CurrentRank ? 1 : 0;
+}
+
+sub _DiagnosisSeverityRank {
+    my ( $Self, %Param ) = @_;
+
+    my $Label = $Self->_DiagnosisSeverityLabel( Value => $Param{Value} );
+    $Label = _NormalizeValue( $Param{Value} ) if !defined $Label || $Label eq '';
+    return if !defined $Label || $Label eq '';
+
+    return int($1) if $Label =~ m{\bS\s*0*(\d+)\b}i;
+    return int($1) if $Label =~ m{\bSeverity\s*0*(\d+)\b}i;
+
+    return;
+}
+
+sub _DiagnosisSeverityLabel {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return '' if !_DiagnosisValueHasData($Value);
+
+    return $Self->_RiskAssessmentDisplayValue(
+        Field => 'ZIN-Severity',
+        Type  => 'GovernanceObject',
+        Value => $Value,
+    ) || _NormalizeValue($Value) || '';
 }
 
 sub _DiagnosisOutcomeState {
@@ -4428,13 +4651,25 @@ sub _DiagnosisArticleBody {
     return ''
         . '<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1340;">'
         . '<p><strong>Note:</strong> This is a system-generated diagnosis result message.</p>'
-        . '<table style="width:100%;border-collapse:collapse;">'
-        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;width:180px;">Diagnosis Outcome</th><td style="border:1px solid #d9deea;padding:8px;">' . $Outcome . '</td></tr>'
-        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Diagnosis</th><td style="border:1px solid #d9deea;padding:8px;">' . $DiagnosisHTML . '</td></tr>'
-        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Severity</th><td style="border:1px solid #d9deea;padding:8px;">' . $Severity . '</td></tr>'
-        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">KB</th><td style="border:1px solid #d9deea;padding:8px;">' . $KB . '</td></tr>'
-        . '<tr><th style="text-align:left;border:1px solid #d9deea;padding:8px;background:#eef2f7;">Resolution Plan</th><td style="border:1px solid #d9deea;padding:8px;">' . $PlanHTML . '</td></tr>'
-        . '</table>'
+        . _DiagnosisArticleRow( 'Diagnosis Outcome', $Outcome )
+        . _DiagnosisArticleRow( 'Diagnosis', $DiagnosisHTML )
+        . _DiagnosisArticleRow( 'Severity', $Severity )
+        . _DiagnosisArticleRow( 'KB', $KB )
+        . _DiagnosisArticleRow( 'Resolution Plan', $PlanHTML )
+        . '</div>';
+}
+
+sub _DiagnosisArticleRow {
+    my ( $Label, $Value ) = @_;
+
+    return ''
+        . '<div style="display:block;border:1px solid #d9deea;margin-top:-1px;clear:both;overflow:hidden;">'
+        . '<div style="float:left;width:180px;box-sizing:border-box;padding:8px;background:#eef2f7;font-weight:bold;white-space:nowrap;">'
+        . _HTML($Label)
+        . '</div>'
+        . '<div style="margin-left:180px;box-sizing:border-box;padding:8px;min-height:34px;border-left:1px solid #d9deea;">'
+        . ( defined $Value ? $Value : '' )
+        . '</div>'
         . '</div>';
 }
 
