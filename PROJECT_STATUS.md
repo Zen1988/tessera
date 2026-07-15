@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-14
+Last Updated: 2026-07-15
 
 ## Current Focus
 
@@ -17,8 +17,730 @@ Last Updated: 2026-07-14
 - ZTSM first-class Template and RiskStatement governance concepts.
 - Keep governance truth separate from execution evidence.
 - Incident Diagnosis loop-capable runtime with iteration-aware child orchestration.
+- Incident Confirmation runtime action and unresolved loopback to diagnosis.
+- Incident parent Severity visibility on the customer request context panel.
+- Incident same-level Diagnosis fan-out across distinct support profiles.
+- BlueBook Profile-aware assignment for direct SupportProfile and dynamic GovernanceRole values.
+- Initial request article snapshots with inline service-field RichText images.
 
 ## Completed Work
+
+## 2026-07-15 GovernanceDB 0.0.316 Embedded Articles Detect HTML Body Attachment
+
+### Completed work
+
+- Superseded `0.0.315` iframe routing condition for embedded request-context `Articles`.
+- Changed embedded article expansion to detect an HTML-body attachment via `Kernel::Output::HTML::Article::MIMEBase->HTMLBodyAttachmentIDGet()` instead of relying on `ArticleGet->{ContentType}`.
+- Kept the iframe rendering path for articles with an HTML-body attachment, and retained plain preview fallback for genuinely plain-text articles.
+- Removed the invalid `ms-allow-popups` sandbox flag from the embedded article iframe.
+- Synchronized `CustomerTicketZoom` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.316`.
+- Generated `Kernel/Package/GovernanceDB-0.0.316.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.316.opm` SHA256: `5774801FEB75B6A3F5D1DC380A2CEF5EE563378857D1A16012C0825251FAEF5E`.
+- Supersedes `0.0.315`; use `0.0.316` for embedded article format retesting.
+
+### Root cause
+
+- OTOBO stores HTML articles as a plain-text article body plus a separate HTML-body attachment. After article creation, `ArticleGet->{ContentType}` can therefore present as plain text even when the original HTML table is available as an HTML attachment.
+- The embedded panel was still falling through to the plain preview branch for risk summary articles, so it displayed the ASCII body (`Category`, `Maximum Residual Risk`, etc.) rather than the HTML table attachment.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `CustomerTicketZoom`.
+- Generated OPM parsed successfully as XML with package version `0.0.316`, file count `204`, `missing_or_empty=0`, and `bad_base64=0`.
+- Decoded `0.0.316` runtime-overlay payload for `CustomerTicketZoom` matches package-source hash.
+- Focused `git diff --check` passed for touched files.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.316`.
+
+## 2026-07-15 GovernanceDB 0.0.315 Embedded Articles Use Article Content Iframe
+
+### Completed work
+
+- Superseded the `0.0.314` inline article-preview approach for embedded request-context `Articles`.
+- Changed HTML article expansion in the embedded `Articles` list to render a sandboxed iframe pointing at `CustomerTicketArticleContent` for the same parent ticket/article pair.
+- Added `ZTSMParentArticleFrame` sizing so the expanded article content loads as a usable article viewport inside the request-context panel.
+- Synchronized `CustomerTicketZoom` and `CustomerTicketZoom.tt` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.315`.
+- Generated `Kernel/Package/GovernanceDB-0.0.315.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.315.opm` SHA256: `9F59473A9E35456F404237968BEFE736288A6438FF4C36638AB83E8A4F19A43E`.
+- Supersedes `0.0.314`; use `0.0.315` for embedded article format retesting.
+
+### Root cause
+
+- `0.0.314` still inlined article preview content into the sidebar. The full customer article view loads HTML articles through `CustomerTicketArticleContent` in an iframe, so inline preview could still lose table formatting and display the same stored risk summary as linear text.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `CustomerTicketZoom`.
+- Mirror hashes match for `CustomerTicketZoom` and `CustomerTicketZoom.tt` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.315`, file count `204`, `missing_or_empty=0`, and `bad_base64=0`.
+- Decoded `0.0.315` runtime-overlay payloads for `CustomerTicketZoom` and `CustomerTicketZoom.tt` match package-source hashes.
+- Focused `git diff --check` passed for touched files.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.315`.
+
+## 2026-07-15 GovernanceDB 0.0.314 Embedded Articles Preserve Article HTML
+
+### Completed work
+
+- Changed embedded request-context `Articles` rendering on `CustomerTicketZoom` to use OTOBO article preview content for each article instead of reconstructing the body from `ArticleGet`.
+- Preserved stored article subjects as the fast row heading, while the expanded content now renders the article's original HTML body so risk tables, badges, and other article formatting remain intact.
+- Removed custom embedded article table cell restyling that made the sidebar output diverge from the main article view.
+- Synchronized `CustomerTicketZoom` and `CustomerTicketZoom.tt` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.314`.
+- Generated `Kernel/Package/GovernanceDB-0.0.314.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.314.opm` SHA256: `C80DA8784708EBD2FBC9D193DAFAA9E56F856FF0593EC39071D278F26301B18E`.
+- Supersedes `0.0.313`; use `0.0.314` for embedded article format retesting.
+
+### Root cause
+
+- The embedded article list was converting article body content through its own sidebar helper, while the main article stream uses OTOBO article preview/rendering. That separate path flattened rich article HTML into plain lines, which is why the same risk summary looked different in the sidebar and in the main article view.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `CustomerTicketZoom`.
+- Mirror hashes match for `CustomerTicketZoom` and `CustomerTicketZoom.tt` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.314`, file count `204`, `missing_or_empty=0`, and `bad_base64=0`.
+- Decoded `0.0.314` runtime-overlay payloads for `CustomerTicketZoom` and `CustomerTicketZoom.tt` match package-source hashes.
+- Focused `git diff --check` passed for touched files; repository-wide `git diff --check` still reports pre-existing trailing whitespace in `AGENTS.md`.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.314`.
+- Articles already created before `0.0.313` may still contain the old mirrored-note wrapper because article bodies are immutable evidence; new mirrored submissions use the original evidence body.
+
+## 2026-07-15 GovernanceDB 0.0.313 Original Evidence Body in Embedded Articles
+
+### Completed work
+
+- Corrected mirrored parent article body creation so it writes the original submitted evidence body unchanged instead of prepending a separate mirrored-child note block.
+- Preserved `0.0.312` stored evidence-aware article subjects; the child/source summary belongs in the subject, while the article body should remain the same evidence view users see on the child ticket.
+- Restored a single section-level `Expand` control on the embedded `Articles` panel, matching the `Submitted Details` interaction.
+- Kept individual article rows clickable/expandable without repeating `Expand` on every row.
+- Synchronized `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and `CustomerTicketZoom.tt` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.313`.
+- Generated `Kernel/Package/GovernanceDB-0.0.313.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.313.opm` SHA256: `AD0E0AA6769299EAD779584DDC473689ADB7432F1B3A742DB1F952370B0FD081`.
+- Supersedes `0.0.312`; use `0.0.313` for original article-body rendering and embedded article expand retesting.
+
+### Root cause
+
+- Mirrored parent articles added an extra wrapper/note before the original evidence, so the embedded article panel did not visually match the original child article and pushed the real table/content down.
+- The article body should remain the submitted evidence; child/source context is better represented by the stored article subject.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `CustomerTicketZTSMAction` and `CustomerTicketZoom`.
+- Mirror hashes match for `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and `CustomerTicketZoom.tt` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.313`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.313` runtime-overlay payloads for `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and `CustomerTicketZoom.tt` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.313`.
+
+## 2026-07-15 GovernanceDB 0.0.312 Stored Evidence-Aware Parent Article Subjects
+
+### Completed work
+
+- Moved evidence-aware article row naming out of `CustomerTicketZoom` render time and into the parent article write path.
+- Embedded article lists now display the stored article subject directly, keeping ticket open/render fast and predictable.
+- Mirrored parent child-submission articles now write meaningful subjects at creation time:
+  - Diagnosis uses submitted outcome and diagnosis/finding text;
+  - Risk assessment uses Business, Governance, and Technical residual risk values when present;
+  - Approval, endorsement, task, verification, and confirmation subjects include their submitted outcome/status;
+  - submitter name is included when available.
+- Removed render-time evidence parsing helpers from `CustomerTicketZoom`.
+- Synchronized `CustomerTicketZTSMAction` and `CustomerTicketZoom` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.312`.
+- Generated `Kernel/Package/GovernanceDB-0.0.312.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.312.opm` SHA256: `7DBD6FBA4D9C2EE453F09D665438524A77ABD1DBB616AC8688507B80BEF8EDFD`.
+- Supersedes `0.0.311`; use `0.0.312` for parent article subject and embedded list retesting.
+
+### Root cause
+
+- Evidence-aware row naming was previously computed every time the ticket zoom rendered, which made the list smart but added unnecessary article-body parsing to page open.
+- The correct durable place for the summary is the article subject at creation time; the embedded list should only read and display stored article metadata.
+
+### Validation
+
+- Perl syntax checks passed for canonical `CustomerTicketZTSMAction` and `CustomerTicketZoom`.
+- Mirror hashes match for `CustomerTicketZTSMAction` and `CustomerTicketZoom` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.312`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.312` runtime-overlay payloads for `CustomerTicketZTSMAction` and `CustomerTicketZoom` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.312`.
+
+## 2026-07-15 GovernanceDB 0.0.311 Evidence-Aware Article Row Titles
+
+### Completed work
+
+- Replaced generic embedded article row titles such as `Child diagnosis submitted` with evidence-aware titles derived from the parent article body.
+- Diagnosis article rows now summarize Diagnosis Outcome, diagnosis/finding text, and submitter when present.
+- Risk assessment rows now summarize Business, Governance, and Technical residual risk values when present.
+- Approval, endorsement, task, verification, and confirmation rows now expose their submitted outcome/status in the collapsed article title.
+- Preserved the `0.0.310` embedded article list behavior: users review article evidence in-place without navigating away from the active child ticket.
+- Synchronized `CustomerTicketZoom` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.311`.
+- Generated `Kernel/Package/GovernanceDB-0.0.311.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.311.opm` SHA256: `3A6C23E150DF561A39B4A4FC3FE953FB36FC1C4A118718688939FA7B4976998A`.
+- Supersedes `0.0.310`; use `0.0.311` for embedded article list title retesting.
+
+### Root cause
+
+- The embedded article list originally reused the article subject, which is intentionally generic for audit consistency but too abstract as a compact evidence index.
+- Users need the collapsed row to communicate the actual submitted outcome before expanding the article.
+
+### Validation
+
+- Perl syntax checks passed for canonical, package-source, runtime-overlay, and ZTSMOverlay `CustomerTicketZoom`.
+- Mirror hashes match for the `CustomerTicketZoom` copy group.
+- Generated OPM parsed successfully as XML with package version `0.0.311`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.311` runtime-overlay payload for `CustomerTicketZoom` matches package-source hash.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.311`.
+
+## 2026-07-15 GovernanceDB 0.0.310 Embedded Parent Article Evidence List
+
+### Completed work
+
+- Replaced the `Parent Articles` navigation link introduced in `0.0.309` with an embedded, scrollable parent article list inside the request context panel.
+- Parent articles now render in-place as expandable rows, so a user working on a child ticket can review parent evidence without navigating away from the current runtime action.
+- Kept the parent runtime evidence mirroring from `0.0.309`; child submissions still write mirrored evidence articles to the parent request.
+- Kept the RichText `Submitted Details` fix; service/request RichText fields still render as clean escaped text in the request context panel instead of opening the broken full-text widget.
+- Synchronized `CustomerTicketZoom` and `CustomerTicketZoom.tt` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.310`.
+- Generated `Kernel/Package/GovernanceDB-0.0.310.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.310.opm` SHA256: `69AD2C5016E3318EAC0BB1CEC34330EE5EA701F678F9B3F4D19799597D3A1462`.
+- Supersedes `0.0.309`; use `0.0.310` for in-place parent article list and Submitted Details retesting.
+
+### Root cause
+
+- The first parent article visibility fix used a link to the parent ticket, which made users leave the child ticket where they were supposed to submit runtime action work.
+- The desired interaction is parent-led evidence visibility inside the current child runtime workspace, not navigation to a different ticket.
+
+### Validation
+
+- Perl syntax checks passed for canonical, package-source, runtime-overlay, and ZTSMOverlay `CustomerTicketZoom`.
+- Mirror hashes match for `CustomerTicketZoom` and `CustomerTicketZoom.tt` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.310`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.310` runtime-overlay payloads for `CustomerTicketZoom` and `CustomerTicketZoom.tt` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.310`.
+
+## 2026-07-15 GovernanceDB 0.0.309 Parent Runtime Evidence and Submitted Details Fix
+
+### Completed work
+
+- Added parent-led evidence mirroring for child runtime action submissions:
+  - generic child runtime submissions now create the normal child article and a mirrored parent article with the submitted detail body;
+  - child Verification submissions now mirror the submitted verification article to the parent;
+  - child Assessment submissions now mirror risk assessment result articles and the risk assessment summary article to the parent.
+- Parent mirrored articles include the child ticket summary before the submitted details, so the parent request remains the governance ledger while preserving child execution evidence.
+- Added a `Parent Articles` open action to the request context panel; it opens the parent request in read-only mode with all articles expanded.
+- Corrected request `Submitted Details` rendering for RichText fields so sidebar detail values render as clean escaped text instead of invoking the rich-text full-text modal that could show broken inline-image placeholders.
+- Synchronized `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and `CustomerTicketZoom.tt` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.309`.
+- Generated `Kernel/Package/GovernanceDB-0.0.309.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.309.opm` SHA256: `1DBCED2A2E7C58827DD7EC07D96CD75F11B35ADCD2543F24040D981D8016199F`.
+- Supersedes `0.0.308`; use `0.0.309` for parent runtime evidence visibility and Submitted Details retesting.
+
+### Root cause
+
+- Child runtime actions were not consistently recording their submitted evidence on the parent Incident/request, so users entering the next parent state/BlueBook level could miss previous child evidence unless they opened each child ticket.
+- The request context `Submitted Details` panel reused backend RichText display output, which can render the full-text/modal widget and expose broken inline image references in the compact request context.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and package-source `Bootstrap`.
+- Mirror hashes match for `CustomerTicketZTSMAction`, `CustomerTicketZoom`, and `CustomerTicketZoom.tt` copy groups.
+- Generated OPM parsed successfully as XML with package version `0.0.309`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.309` payloads for runtime-overlay `CustomerTicketZTSMAction`, `CustomerTicketZoom`, `CustomerTicketZoom.tt`, and package-source `Bootstrap` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.309`.
+
+## 2026-07-15 GovernanceDB 0.0.308 Diagnosis Severity Rollup Guard
+
+### Completed work
+
+- Corrected Diagnosis parent Severity roll-up so only affected/actionable Diagnosis outcomes update the parent Incident severity.
+- `Not Applicable`, recovered/no-action, duplicate, and other non-diagnosed outcomes now preserve the submitted child Diagnosis evidence without touching parent `ZIN-Severity`.
+- Added backend validation so affected/actionable Diagnosis outcomes must explicitly submit `ZIN-Severity`; this prevents silent affected submissions with an empty severity.
+- Updated the Diagnosis runtime field seed so `ZIN-Outcome` defaults to empty and allows a none option instead of preselecting `Symptom Observed`.
+- Updated `ZIN-Severity` seed to allow an empty option so new Diagnosis forms do not silently default to `S1`.
+- Synchronized `CustomerTicketZTSMAction` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.308`.
+- Generated `Kernel/Package/GovernanceDB-0.0.308.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.308.opm` SHA256: `6C4FA152B80AB04B11DB4E560C9C977D21D772B80694100F4D917E3F253E6106`.
+- Supersedes `0.0.307`; use `0.0.308` for Diagnosis severity default and Not Applicable parent severity retesting.
+
+### Root cause
+
+- Diagnosis submission always passed the child `ZIN-Severity` into parent roll-up after field capture, regardless of whether the selected Diagnosis outcome represented an affected/actionable result.
+- The runtime seed made `ZIN-Severity` non-empty by construction, so an untouched Diagnosis form could carry `S1` simply because it was the first available referenced severity.
+
+### Validation
+
+- Perl syntax checks passed for canonical, package-source, runtime-overlay, and ZTSMOverlay `CustomerTicketZTSMAction`.
+- Perl syntax check passed for package-source `Kernel::System::GovernanceDB::Bootstrap`.
+- Mirror hashes match for all `CustomerTicketZTSMAction` copies.
+- Focused `git diff --check` passed for touched runtime, package, overlay, SOPM, OPM, and continuity files.
+- Generated OPM parsed successfully as XML with package version `0.0.308`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.308` payloads for `CustomerTicketZTSMAction` and `Bootstrap` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.308`.
+
+## 2026-07-15 GovernanceDB 0.0.307 Confirmation Ownership Visibility and Diagnosis Loopback Respawn
+
+### Completed work
+
+- Corrected customer `CustomerTicketZoom` runtime action visibility for Confirmation tickets:
+  - `Confirm` now requires `ZTicket-Owner` to match the current customer user;
+  - support-profile membership without owner assignment no longer shows the direct Confirm action;
+  - users who match the support scope should take ownership first, then confirm.
+- Corrected BlueBook Diagnosis duplicate suppression for loopback iterations:
+  - failed Confirmation increments parent `ZIN-Iteration` and returns the Incident to `diagnose`;
+  - Diagnosis child spawn now only suppresses same-iteration duplicates;
+  - previous-iteration Diagnosis tickets no longer block new Diagnosis tickets for the next investigation cycle.
+- Applied the same iteration-specific Diagnosis lookup rule in both `ZTSMBlueBookReader` and `ZTSMBlueBookRuntime`.
+- Synchronized `CustomerTicketZoom`, `ZTSMBlueBookReader`, and `ZTSMBlueBookRuntime` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.307`.
+- Generated `Kernel/Package/GovernanceDB-0.0.307.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.307.opm` SHA256: `B177CF1545D00D418215ECAA57C848AF4C6C9DF7958ED9519801977EF7B3B78A`.
+- Supersedes `0.0.306`; use `0.0.307` for Confirmation ownership visibility and failed-confirmation Diagnosis respawn retesting.
+
+### Root cause
+
+- The visible Confirm button allowed `OwnerGroupMatchesCurrentUser` for Confirmation tickets, so a customer in the support scope could see Confirm before `ZTicket-Owner` was assigned. The submit path still rejected this as no permission, producing the observed No Permission page.
+- Failed Confirmation loopback correctly returned the parent Incident to `diagnose`, but the Diagnosis duplicate lookup also considered `ZIN-Iteration - 1`. That caused the previous Diagnosis cycle to suppress fresh Diagnosis tickets in the new iteration.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `CustomerTicketZoom`, `ZTSMBlueBookReader`, and `ZTSMBlueBookRuntime`.
+- Mirror hashes match for all three touched file families.
+- Focused `git diff --check` passed for touched runtime, package, overlay, SOPM, and OPM files.
+- Generated OPM parsed successfully as XML with package version `0.0.307`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.307` runtime-overlay payload hashes for `CustomerTicketZoom`, `ZTSMBlueBookReader`, and `ZTSMBlueBookRuntime` match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.307`.
+
+## 2026-07-15 GovernanceDB 0.0.306 Requester Default GovernanceRole Resolution
+
+### Completed work
+
+- Corrected `REQUESTER-DEFAULT` handling when BlueBook stores the profile as a GovernanceRole object instead of a plain profile directive.
+- Updated both TransitionAction and Generic Agent `ZTSMRoleDirector` paths so a dynamic GovernanceRole whose display/key resolves to `REQUESTER-DEFAULT` uses the requester/customer-user default support profile path first.
+- Preserved requester-owner fallback behavior: if no support profile or application fallback can be resolved, `ZTicket-Owner` is still set to the ticket customer user so the customer portal can expose the completion action.
+- Corrected the TransitionAction requester fast path so it only short-circuits to owner-only assignment when no support profile was resolved; when a support profile exists, normal normalization writes `ZTicket-OwnerGroup` and `ZTicket-Owner`.
+- Synchronized RoleDirector changes across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.306`.
+- Generated `Kernel/Package/GovernanceDB-0.0.306.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.306.opm` SHA256: `7BFEBFF156603BCE7D161D6900AEFCC93708C0614CC3F4EC5E2605CEB60DB627`.
+- Supersedes `0.0.305`; use `0.0.306` for requester-default Confirmation and Escalation/Primary/Secondary retesting.
+
+### Root cause
+
+- Runtime logs showed Confirmation ticket `263` with `CustomerUserID='zen.chan@ncs.com.sg'` but `Owner=''`, so customer completion was hidden even though the current user matched the ticket customer user.
+- The failure article showed `Profile: REQUESTER-DEFAULT`, `Role: 13`, `Resolved Candidate: N/A`.
+- Because `REQUESTER-DEFAULT` arrived as a dynamic GovernanceRole selector, RoleDirector entered the GovernanceRole branch and tried Support Assignment lookup for role `13`; it never reached the older requester-default branch.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package-source `ZTSMRoleDirector` copies.
+- TransitionAction RoleDirector mirror group hash: `00D90751CB69CFAAF1FD965B027DC3DEFEA6F1922A561BC8207B05583A210504`.
+- Generic Agent RoleDirector mirror group hash: `6860E8C5076B1A158B29A7C0DE97FDC2F4785F92306CC01110FE0F8A4994D9FF`.
+- Focused `git diff --check` passed for touched RoleDirector, SOPM, and OPM files.
+- Generated OPM parsed successfully as XML with package version `0.0.306`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.306` runtime-overlay payload hashes for both RoleDirector files match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.306`.
+
+## 2026-07-15 GovernanceDB 0.0.305 Escalation Role User Preference Resolution
+
+### Completed work
+
+- Corrected `ZTSMRoleDirector` handling for BlueBook `Profile` / `Role` values that are GovernanceRole objects such as `Escalation`, `Primary`, and `Secondary`.
+- Preserved the BlueBook behavior that creates the child ticket with the GovernanceRole selector in `ZTicket-OwnerGroup`.
+- Added an affected-user support-role branch in both TransitionAction and Generic Agent RoleDirector paths:
+  - when the GovernanceRole display resolves to `Escalation`, `Primary`, or `Secondary`, the resolver first reads the child ticket customer user preference/default support profile;
+  - if the customer user has no support profile/default support profile, it falls back to the application default approval profile;
+  - the selected customer user remains recorded in `ZTicket-Owner` for the affected-user role path.
+- Fixed the `ZTSMStateBookResume` odd anonymous hash warning seen in runtime logs:
+  - `_NormalizeValue()` now returns explicit `undef` for empty paths;
+  - `_RecordsParse()` stores `ZState-Book` in a scalar before placing it into the parsed-record hash.
+- Synchronized `ZTSMRoleDirector` and `ZTSMStateBookResume` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.305`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.305.opm` from the previous package template with refreshed package-source payloads because the local OTOBO console build path is pinned to `/opt/otobo`.
+- `Kernel/Package/GovernanceDB-0.0.305.opm` SHA256: `17DCD7479E34896789DB5A47BBE8793551A044505BF203FB57F2762851607E6C`.
+- Supersedes `0.0.304`; use `0.0.305` for Escalation/Primary/Secondary requester preference resolution retesting.
+
+### Architectural decisions
+
+- Escalation/Primary/Secondary are not requester-default profile directives; they are affected-user support-role selectors.
+- BlueBook should keep storing the GovernanceRole selector first. RoleDirector normalizes that selector after ticket creation.
+- Customer-user preference/default support profile is the first resolution source for affected-user support roles; application default approval profile is only the fallback.
+
+### Validation
+
+- Runtime logs confirmed child `259` was created with `Profile=15 Role=15 OwnerGroup=15` and later showed `Owner=''`, proving the GovernanceRole selector was not normalized to the affected user's preference path.
+- All touched RoleDirector and StateBookResume mirror groups have matching SHA256 hashes within their respective file families.
+- Perl syntax checks passed for canonical and package/runtime-overlay `ZTSMRoleDirector` and `ZTSMStateBookResume` copies.
+- Focused `git diff --check` passed for the touched files.
+- Generated OPM parsed successfully as XML with package version `0.0.305`, file count `204`, and `missing_or_empty=0`.
+- Decoded `0.0.305` runtime-overlay payload hashes for RoleDirector and StateBookResume match package-source hashes.
+- Live OTOBO retest remains required after installing/upgrading to `0.0.305`.
+
+## 2026-07-14 GovernanceDB 0.0.304 Incident Iteration Initialization and Confirmation Advancement
+
+### Completed work
+
+- Added an idempotent first-submission initializer in `CustomerTicketMessage`:
+  - applies only when the submitted ticket type is `Incident`;
+  - reads the existing `ZIN-Iteration` value directly from the Ticket DynamicField backend;
+  - writes `ZIN-Iteration = 1` only when no value exists;
+  - does not depend on `ZIN-Iteration` being visible or editable on the customer ticket form.
+- Added an idempotent StateBook runtime repair for existing Incidents created before this fix:
+  - initializes missing `ZIN-Iteration` to `1` before lifecycle orchestration continues;
+  - updates the in-memory parent ticket so the same StateBook-to-BlueBook handoff immediately inherits iteration `1`;
+  - leaves existing non-empty iteration values unchanged.
+- Corrected unresolved Confirmation iteration advancement:
+  - every Confirmation status other than a successful status advances the parent to the next iteration;
+  - uses the Confirmation child ticket's `ZIN-Iteration` as the authoritative source when available;
+  - uses iteration `1` as the legacy baseline when both child and parent values are missing, so the first failure writes `2`;
+  - preserves a higher existing parent iteration and remains stable when the same Confirmation operation is retried.
+- Treated both `Resolved` and `Auto-Confirmed` as successful Confirmation statuses:
+  - closes the Confirmation ticket as `closed resolved`;
+  - closes the parent Incident as `closed resolved`;
+  - does not increment `ZIN-Iteration`.
+- Synchronized `CustomerTicketMessage`, `CustomerTicketZTSMAction`, and `ZTSMStateBookReader` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Removed the completed parent-iteration initialization item from `PROJECT_NEXT.md`; child iteration propagation remains an active contract.
+- Bumped `GovernanceDB.sopm` to `0.0.304`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.304.opm`.
+- `Kernel/Package/GovernanceDB-0.0.304.opm` SHA256: `D240B527924E047413D3D61F46068D4E5B7C6C54BF3992DF2BBD37DF18102D95`.
+- Supersedes `0.0.303`; use `0.0.304` for new Incident initialization, Confirmation failure loopback, `Auto-Confirmed`, and DIAGNOSE fan-out retesting.
+
+### Architectural decisions
+
+- Parent Incident iteration is system-owned execution context and is initialized after ticket creation, independently of customer-field visibility.
+- StateBookReader provides the upgrade-safe runtime repair because existing Incident governance ledgers may predate the customer-submit initializer.
+- A failed Confirmation advances from the Confirmation execution ledger's own iteration, preventing stale parent state from choosing the wrong next cycle.
+- `Auto-Confirmed` is a successful terminal confirmation, equivalent to `Resolved` for closure and iteration behavior.
+
+### Rejected approaches
+
+- Do not rely on the customer form to submit `ZIN-Iteration`.
+- Do not initialize every ticket type to iteration `1`; the first-submit initializer is Incident-specific.
+- Do not use missing iteration plus one as `1` after a failed Confirmation; missing means the failed cycle was iteration `1`, so the next cycle is `2`.
+- Do not increment again when retrying the same failed Confirmation after the parent already reached the calculated next iteration.
+
+### Validation
+
+- All eight active `CustomerTicketMessage.pm` and `CustomerTicketZTSMAction.pm` mirrors pass `perl -I. -IKernel/cpan-lib -c`.
+- `CustomerTicketMessage.pm` mirrors share SHA256 `DC45F7D51926187C31CFED00F288C1E3A739F8346AC7741BC14EF346C010A19B`.
+- `CustomerTicketZTSMAction.pm` mirrors share SHA256 `DBFEF0A8C58CCD4558BD1DB41B7FFFFFC1A847004D8B93EEF3FF1AC8A063615F`.
+- `ZTSMStateBookReader.pm` mirrors share SHA256 `AF49412B4629B30523FAD35C516B5819088B4439D2A3569CC55D2482F519EC0E`.
+- Generated OPM parses successfully as XML with package version `0.0.304`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirm Incident-only submission initialization, existing-Incident StateBook repair, in-memory handoff value `1`, Confirmation-child iteration sourcing, legacy failure advancement to `2`, retry stability, and `Auto-Confirmed` success handling.
+- Focused diff validation passes `git diff --check`.
+- Live customer Incident creation and Confirmation status retesting remain required after installing/upgrading to `0.0.304`.
+
+## 2026-07-14 GovernanceDB 0.0.303 DIAGNOSE Evidence Routing and Assessment Fan-Out
+
+### Completed work
+
+- Corrected the `DIAGNOSE` GovernanceRole path in Generic Agent `ZTSMRoleDirector` so it no longer resolves through Support Assignment plus Application.
+- Added closed Diagnosis evidence lookup using the same `ZTicket-Parent`, `TicketType = Diagnosis`, `StateType = closed`, and the same `ZIN-Iteration` first.
+- Added `ZIN-Iteration - 1` fallback only when no closed Diagnosis tickets exist at the current iteration.
+- Resolved `ZIN-Outcome` through the DynamicField backend before filtering, so stored catalog IDs and display values behave consistently.
+- Excluded `Not Applicable` and `Recovered` outcomes from downstream ownership.
+- Preserved distinct actionable Diagnosis `ZTicket-OwnerGroup` values in deterministic source-ticket order.
+- Updated the original downstream ticket with the first diagnosis-derived SupportProfile.
+- Added downstream ticket fan-out from index 1 onward:
+  - creates one sibling for each additional distinct diagnosis-derived OwnerGroup;
+  - copies the source ticket's core ticket data;
+  - copies every valid Ticket DynamicField except `ZTicket-OwnerGroup`;
+  - writes the target diagnosis-derived OwnerGroup after the copy.
+- Added retry-safe duplicate prevention using ticket type, parent, iteration, BlueBook, chapter, and target OwnerGroup.
+- Made retries preserve an already-valid diagnosis-derived SupportProfile while creating only missing sibling tickets.
+- Synchronized Generic Agent `ZTSMRoleDirector` across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` to `0.0.303` and rebuilt `Kernel/Package/GovernanceDB-0.0.303.opm`.
+- `Kernel/Package/GovernanceDB-0.0.303.opm` SHA256: `8F673C6DB16DC7FDF509E8886BCB6DD0BD41966347F488D44A4E5F5293253B08`.
+- Supersedes the `0.0.302` DIAGNOSE Support Assignment behavior; use `0.0.303` for the next DIAGNOSE routing and fan-out retest.
+
+### Architectural decisions
+
+- `DIAGNOSE` is an evidence-driven GovernanceRole directive, not a Support Assignment role lookup.
+- Diagnosis ownership comes from closed Diagnosis execution ledgers sharing the downstream ticket's parent and iteration.
+- The first owner group normalizes the existing downstream ticket; additional owner groups expand it into sibling execution tickets.
+- Current-iteration closed Diagnosis evidence is authoritative. Previous-iteration fallback is allowed only when current-iteration closed Diagnosis tickets do not exist.
+- Multiple actionable Diagnosis tickets with the same OwnerGroup produce one downstream ticket for that distinct operational scope.
+- ChapterDirector remains outside owner-group resolution and downstream fan-out.
+
+### Rejected approaches
+
+- Do not resolve `DIAGNOSE` through `SupportAssignment` using GovernanceRole and Application.
+- Do not select a single diagnosis winner and discard other actionable OwnerGroups.
+- Do not fall back to the previous iteration merely because current outcomes are all non-actionable.
+- Do not clone `ZTicket-OwnerGroup` from the source downstream ticket before assigning the diagnosis-derived value.
+
+### Validation
+
+- All four Generic Agent `ZTSMRoleDirector` mirrors pass `perl -I. -IKernel/cpan-lib -c` and share SHA256 `7538750FD439D5D607A480D270E8DBF74CF4323965585ADBDE105E0E288C6337`.
+- Generated OPM parses successfully as XML with package version `0.0.303`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirm closed Diagnosis lookup, current/previous iteration handling, outcome exclusion, OwnerGroup assignment, and sibling fan-out markers.
+- Focused diff validation passes `git diff --check`.
+- Live OTOBO Generic Agent execution and multi-owner fan-out retesting remain required after installing/upgrading to `0.0.303`.
+
+## 2026-07-14 GovernanceDB 0.0.302 Diagnosis Role Auto-Resolution and Severity Badges
+
+### Completed work
+
+- Diagnosed why GovernanceRole-based Diagnosis children retained `GovernanceRole: DIAGNOSE` in `ZTicket-OwnerGroup`:
+  - BlueBookReader correctly created the child and stored OwnerGroup `167`;
+  - the TicketCreate Generic Agent job is `TESSERA-ACTIVITY-ROLELOOKUP` using `ZTSMRoleDirector`, not ChapterDirector;
+  - its ticket-type filter omitted `Diagnosis`, so the role resolver never ran for the new child.
+- Added `Diagnosis` and `Confirmation` to the role-lookup Generic Agent type filter.
+- Extended Generic Agent and TransitionAction RoleDirector implementations so a Profile governance object of class `GovernanceRole`:
+  - resolves Support Assignment by the GovernanceRole and ticket/parent Application;
+  - converts the matching Support Assignment SupportProfile reference to its canonical GovernanceObjectID;
+  - updates `ZTicket-OwnerGroup` from the temporary GovernanceRole selector to the resolved SupportProfile;
+  - does not treat an existing GovernanceRole OwnerGroup as already resolved.
+- Preserved strict application scoping: a present but unresolved Application does not fall back to another application's assignment.
+- Added compact Incident severity badges to the customer request context:
+  - S1 uses red with white text;
+  - S2 uses orange with dark text;
+  - S3 uses yellow with dark text;
+  - S4 remains transparent with a restrained outline;
+  - Not Identified remains plain text.
+- Synchronized Generic Agent RoleDirector, TransitionAction RoleDirector, CustomerTicketZoom, and CustomerTicketZoom template across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.302`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.302.opm`.
+- `Kernel/Package/GovernanceDB-0.0.302.opm` SHA256: `D6E1C9F8E960E37743E032B0D12A4D7A40E80FFF5699F03A18022BB0AC6752E6`.
+- Supersedes `0.0.301`; use `0.0.302` for the next Diagnosis TicketCreate role-resolution and Incident severity display retest.
+
+### Architectural decisions
+
+- BlueBook creation first records the configured Profile selector on the child OwnerGroup.
+- TicketCreate RoleDirector then normalizes a GovernanceRole selector to the matching operational SupportProfile.
+- ChapterDirector remains responsible for chapter orchestration and does not perform owner-group normalization.
+- Severity color is a compact status signal, not a replacement for the accessible severity label.
+
+### Rejected approaches
+
+- Do not add role-resolution behavior to ChapterDirector.
+- Do not consider any non-empty OwnerGroup resolved; its governance class must be SupportProfile.
+- Do not use the separate BlueBook `Role` metadata field as the Support Assignment selector.
+
+### Validation
+
+- All twelve active Generic Agent RoleDirector, TransitionAction RoleDirector, and CustomerTicketZoom Perl mirrors passed `perl -c`.
+- Generic Agent seed parsed successfully as YAML and contains both `Diagnosis` and `Confirmation` type filters.
+- Generic Agent RoleDirector, TransitionAction RoleDirector, CustomerTicketZoom, and CustomerTicketZoom template mirror groups each have one matching SHA256 across all four active copies.
+- Generated OPM parsed successfully as XML with package version `0.0.302`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirmed the new ticket-type filters, GovernanceRole/Application Support Assignment resolver, severity HTML helper, and S1-S4 style classes.
+- Focused diff validation passed; live OTOBO TicketCreate and browser rendering retests remain required after installing/upgrading to `0.0.302`.
+- Git staging/commit/push was requested but remains pending because the Codex workspace denied `.git/index` writes and the required escalation was rejected after the app approval quota was exhausted until 2026-07-20 09:12 local time.
+
+## 2026-07-14 GovernanceDB 0.0.301 Polymorphic OwnerGroup and Dynamic Participation
+
+### Completed work
+
+- Corrected BlueBook child creation so `ZTicket-OwnerGroup` always receives the BlueBook Profile selector instead of an eagerly resolved SupportProfile.
+- Direct `SupportProfile` Profile values remain direct owner groups.
+- Dynamic `GovernanceRole` Profile values now remain immutable execution selectors on the child ticket.
+- Updated the upgrade-safe ticket DynamicField repair so `ZTicket-OwnerGroup` permits both `Governance Role` and `Support Profile` classes on fresh installs, upgrades, and reinstalls.
+- Extended `ZTSMUserIDCheck` participation and failback resolution:
+  - direct SupportProfile owner groups search Support Assignment by SupportProfile and user;
+  - GovernanceRole owner groups search Support Assignment by GovernanceRole, child Application, and user;
+  - text governance names are resolved by class before numeric reference filters are applied;
+  - a present but unresolvable Application does not fall back to a cross-application role match.
+- Preserved the user-exported `ZIN-Status` bootstrap addition and `Confirmation` General Catalog entry unchanged.
+- Synchronized BlueBook Reader, reusable runtime, and customer permission modules across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.301`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.301.opm`.
+- `Kernel/Package/GovernanceDB-0.0.301.opm` SHA256: `11205B271CDCC186D2887FF663E92BDE45760DF3A55C8D0341DA26F8C1183DD6`.
+- Supersedes `0.0.300`; use `0.0.301` for the next GovernanceRole OwnerGroup and Incident Diagnosis access retest.
+
+### Architectural decisions
+
+- `ZTicket-OwnerGroup` is the operational assignment selector and is intentionally polymorphic.
+- GovernanceRole-based assignment remains dynamic; it is not converted into a SupportProfile during child creation.
+- `ZTicket-Profile` remains an execution snapshot for compatibility and is not used as the customer-permission ownership source.
+- The BlueBook `ZBlue-Role` / child `ZTicket-Role` remains escalation and notification metadata and does not replace the OwnerGroup selector.
+
+### Rejected approaches
+
+- Do not leave `ZTicket-OwnerGroup` empty when GovernanceRole resolution has no immediate SupportProfile result.
+- Do not force `ZTicket-OwnerGroup` to SupportProfile-only.
+- Do not resolve a GovernanceRole without the ticket Application when Application context is present.
+- Do not rely on the legacy RoleDirector to rewrite the OwnerGroup after child creation.
+
+### Validation
+
+- All twelve active BlueBook Reader, reusable runtime, and customer permission mirrors passed `perl -c`.
+- GovernanceDB Bootstrap passed `perl -c` with the polymorphic upgrade repair.
+- Reader, runtime, and permission mirror groups each have one matching SHA256 across all four active copies.
+- Generated OPM parsed successfully as XML with package version `0.0.301`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirmed:
+  - Bootstrap repairs `ZTicket-OwnerGroup` with both Governance Role and Support Profile classes;
+  - Reader and runtime store the BlueBook Profile directly and contain no eager assignment resolver call;
+  - customer permission contains class-aware OwnerGroup assignment resolution with GovernanceRole and Application filters.
+- Live OTOBO runtime retest remains required after installing/upgrading to `0.0.301`.
+
+## 2026-07-14 GovernanceDB 0.0.300 Profile-Aware Dynamic Assignment
+
+### Completed work
+
+- Corrected BlueBook child assignment when `ZBlue-Profile` contains a `GovernanceRole` instead of a direct `SupportProfile`.
+- Assignment now treats the polymorphic Profile field as the assignment source:
+  - `SupportProfile` values resolve directly.
+  - `GovernanceRole` values resolve through `SupportAssignment` using the parent `ZTicket-Application`.
+- The separate `ZBlue-Role` field remains execution metadata and is no longer used as the fallback assignment role.
+- GovernanceRole and Application text values are resolved by class and name before filtering; only numeric governance references are passed to GovernanceObject DynamicField searches.
+- Synchronized the TransitionAction reader and reusable BlueBook runtime across canonical, package-source, GovernanceDB runtime-overlay, and ZTSMOverlay copies.
+- Bumped `GovernanceDB.sopm` package version to `0.0.300`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.300.opm`.
+- `Kernel/Package/GovernanceDB-0.0.300.opm` SHA256: `8E7EFFCEF03A17D819371C04662C6D5CFEB920A8ED6B098CBDC0DD9C19A83685`.
+- Supersedes `0.0.299`; use `0.0.300` for the next Incident Assessment assignment retest.
+
+### Architectural decisions
+
+- `ZBlue-Profile` is intentionally polymorphic and remains the sole BlueBook assignment selector.
+- Support Assignment determines operational scope only when the Profile value is a `GovernanceRole`.
+- Human-readable governance names are accepted at the boundary, but GovernanceObject reference fields are always queried with numeric references.
+
+### Rejected approaches
+
+- Do not use `ZBlue-Role` such as `Primary` to replace a Profile value such as `DIAGNOSE`; these fields have different responsibilities.
+- Do not send raw text such as `Primary` or `IaaS Ext` into GovernanceObject reference-field filters.
+
+### Validation
+
+- All eight active canonical/package/runtime-overlay/ZTSMOverlay Reader and Runtime copies passed `perl -c`.
+- Reader mirrors share one SHA256 and Runtime mirrors share one SHA256.
+- Generated OPM parsed successfully as XML with package version `0.0.300`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirmed both shipped modules contain `_AssignmentSupportProfileResolve`, resolve Application references by class, use Profile as the dynamic assignment role, and contain no `$Record->{Role}` owner fallback.
+- Focused `git diff --check` passed for the files changed by this build. Repository-wide `git diff --check` remains blocked only by pre-existing trailing whitespace in `AGENTS.md` lines 437 and 439.
+- Live OTOBO runtime retest remains required after installing/upgrading to `0.0.300`.
+
+## 2026-07-14 GovernanceDB 0.0.299 Diagnosis Fan-Out and Initial Article RichText Images
+
+### Completed work
+
+- Diagnosed the missing Network Diagnosis child from the runtime trace for parent TicketID `232`:
+  - BlueBook records BR-001 and BR-002 both correctly used governance role `Primary`;
+  - BR-001 created Cloud child TicketID `233`;
+  - the iteration-aware Diagnosis fallback then searched only by parent, BlueBook, level, and role, so BR-002 incorrectly reused Cloud child `233` as its existing ChapterPlay;
+  - role reference expansion also passed display name `Primary` to integer-backed `ZTicket-Role`, producing `Invalid Integer 'Primary'` and `Search not executed` errors.
+- Updated `ZTSMBlueBookReader.pm` and `ZTSMBlueBookRuntime.pm` so Diagnosis current/previous-iteration lookup:
+  - uses `ZTicket-Chapter` as the record identity within parent, BlueBook, level, and iteration;
+  - does not use support profile or governance role as duplicate-search filters;
+  - preserves the existing current-iteration-first and previous-iteration fallback behavior.
+- BR-001 / Cloud / Primary and BR-002 / Network / Primary are therefore distinct execution records even though their governance role is intentionally the same.
+- Different chapters at the same BlueLevel always spawn distinct child tasks even when they resolve to the same SupportProfile and owner group.
+- Assignment remains profile-first: a configured SupportProfile resolves the owner group directly; GovernanceRole lookup is used only for a dynamic-assignment record that does not provide a SupportProfile.
+- GovernanceRole remains stored on the child as escalation/notification metadata and is not part of ChapterPlay identity.
+- Corrected initial request article snapshots in `CustomerTicketMessage.pm`:
+  - service-defined RichText fields now contribute sanitized RichText document content directly to the article snapshot;
+  - the normal RichText screen-display renderer is no longer embedded into the article, removing the inappropriate `Show Full Text` widget and scrollable preview document;
+  - pasted image `ContentID` references remain in the article body so existing form upload-cache attachments can be written and resolved as inline article images.
+- Regular service-detail UI rendering is unchanged; the direct RichText path applies only while building the submitted-details article snapshot.
+- Synced the BlueBook reader/runtime and customer ticket message modules across canonical source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Kept the divergent checked-in `otobo-11.0.16/Kernel/Modules/CustomerTicketMessage.pm` legacy copy unchanged; package deployment uses the synchronized GovernanceDB runtime overlay.
+- Bumped `GovernanceDB.sopm` package version to `0.0.299`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.299.opm`.
+- `Kernel/Package/GovernanceDB-0.0.299.opm` SHA256: `31F54B5ACE5913B2F3BD6F17478ACDF41768C3A004B6D13E372E92A546C4D91A`.
+- Supersedes `0.0.298`; use `0.0.299` for the next Incident creation and initial-article image retest.
+
+### Validation
+
+- Perl syntax checks passed for all canonical, package-source, runtime-overlay, and `ZTSMOverlay` copies of `ZTSMBlueBookReader.pm`, `ZTSMBlueBookRuntime.pm`, and `CustomerTicketMessage.pm`.
+- Mirrored hashes match:
+  - `ZTSMBlueBookReader.pm`: `2AB5C580D48C61EE69F8704143546B90300944ACC70C092C3858BE5A3B9490D5`;
+  - `ZTSMBlueBookRuntime.pm`: `A6DC10336289ABD56E75FAC4F5C5535E60EF01B225F5D25C05B716D530EFB23C`;
+  - `CustomerTicketMessage.pm`: `9B49441D3B4F8A327644E9FB86FAF348576FC853A075C97B3CFCBADD4F32C513`.
+- Generated OPM parsed successfully as XML with version `0.0.299`, file count `204`, and `MissingOrNonBase64=0`.
+- Decoded OPM payload checks confirmed:
+  - both BlueBook implementations contain Chapter identity and no Profile or Role filter inside `_ExistingDiagnosisChapterPlayForRecord`;
+  - stable record identity is based on Chapter;
+  - profile-first / role-fallback dynamic assignment remains available;
+  - initial request RichText snapshots use sanitized direct content via `HTMLUtils::Safety` and `DocumentStrip`.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.299`, create an Incident from the two-record BlueBook and verify both Cloud and Network Diagnosis children are generated at level 1.
+- Confirm the runtime log no longer contains `Invalid Integer 'Primary'` or a BR-002 skip pointing to BR-001's child.
+- Submit a new request with pasted images in service-defined RichText fields and verify the initial article renders the images directly without `Show Full Text` widgets or broken image icons.
+
+## 2026-07-14 GovernanceDB 0.0.298 Incident Severity Parent Panel
+
+### Completed work
+
+- Added an always-visible `Severity` row to the request context summary when the root parent ticket type is `Incident`.
+- The row resolves `ZIN-Severity` through the existing Dynamic Field backend so GovernanceObject values render with their display labels, such as `S1` or `S2`.
+- Incidents with no identified severity render `Not Identified` instead of hiding the row.
+- The incident Severity field is suppressed from `Submitted Details` to avoid duplicate presentation.
+- Child execution views continue to show the root Incident severity because `CustomerTicketZoom` resolves `ZTicket-Parent` before building the request context panel.
+- Non-Incident request types are unchanged.
+- Synced `CustomerTicketZoom.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, `ZTSMOverlay`, and the checked-in OTOBO runtime copy.
+- Bumped `GovernanceDB.sopm` package version to `0.0.298`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.298.opm`.
+- `Kernel/Package/GovernanceDB-0.0.298.opm` SHA256: `BF04198A14B54AE2CD831E74B23AA8C6C244811BD6ECE2579DDA2A4F08B96590`.
+- Supersedes `0.0.297`; use `0.0.298` for the next Incident and Confirmation runtime retest.
+
+### Validation
+
+- Perl syntax checks passed for canonical, package-source, runtime-overlay, `ZTSMOverlay`, and checked-in OTOBO runtime copies of `CustomerTicketZoom.pm`.
+- All five `CustomerTicketZoom.pm` copies have SHA256 `D29C52AD91FF6D041F7FA6E7B7CD46F022B64598C7329D44A363D312C0C6543E`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.298.opm` parsed successfully as XML.
+- The generated OPM reports version `0.0.298`, file count `204`, and its decoded runtime-overlay payload contains the Incident guard, `ZIN-Severity`, `Not Identified`, and duplicate-suppression markers.
+- Focused `git diff --check` passed; the only output was the existing `PROJECT_STATUS.md` CRLF normalization warning.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.298`, verify the left request context panel on both a parent Incident and one of its child execution tickets:
+  - blank parent `ZIN-Severity` displays `Not Identified`;
+  - identified severity displays its GovernanceObject label;
+  - non-Incident parents do not display the Severity row.
+
+## 2026-07-14 GovernanceDB 0.0.297 Confirmation Runtime Action
+
+### Completed work
+
+- Added `Confirm` / `confirm` runtime action support for `Confirmation` child tickets in `CustomerTicketZoom.pm` and `CustomerTicketZTSMAction.pm`.
+- The customer zoom action is visible when the current customer user is either:
+  - the `ZTicket-Owner`; or
+  - a support-assignment participant for `ZTicket-OwnerGroup`.
+- The confirm dialog uses the existing runtime action modal and exposes only `ZIN-Status`.
+- On submit:
+  - `ZIN-Status` is written to the confirmation child;
+  - `Resolved` closes the confirmation child as `closed resolved`;
+  - `Resolved` also writes parent `ZIN-Status` and closes the parent ticket as `closed resolved`;
+  - any other status closes the confirmation child as `closed unsuccessful`;
+  - unresolved confirmation writes parent `ZIN-Status`, increments parent `ZIN-Iteration`, moves the parent to the configured loopback state, and runs `ZTSMStateBookReader` on the parent for the next diagnosis pass.
+- Added SysConfig setting `Ticket::Frontend::CustomerTicketZTSMAction###ConfirmLoopbackState`, default `diagnose`.
+- Added package bootstrap seed for DynamicField `ZIN-Status` with exported values:
+  - `Auto-Confirmed`;
+  - `Not Resolved`;
+  - `Partially Resolved`;
+  - `Recurring`;
+  - `Resolved`;
+  - `Unable to Confirm`.
+- Added `Confirmation` to the package GeneralCatalog seed under `ZTSM::Type`.
+- Added `Confirmation => CF` to the TESSERA ticket-number type-code mapping.
+- Synced `CustomerTicketZTSMAction.pm` and `CustomerTicketZoom.pm` across canonical runtime source, GovernanceDB package source, GovernanceDB runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.297`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.297.opm`.
+- `Kernel/Package/GovernanceDB-0.0.297.opm` SHA256: `E8B08FE158137B2A65AC00631F8AC2392A86EC0844DBCAF9F524DA9C225DAF61`.
+- Supersedes `0.0.296`; use `0.0.297` for the next confirmation action retest.
+
+### Validation
+
+- Perl syntax checks passed with repo/package `@INC` for:
+  - canonical `CustomerTicketZTSMAction.pm`;
+  - canonical `CustomerTicketZoom.pm`;
+  - `GovernanceDB::Bootstrap`.
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- Mirrored file hashes match:
+  - `CustomerTicketZTSMAction.pm`: `D505F47AFD0A54DC7E586D23FB72DE7B6B54A97771A9528837AC6A80DC53EFE2`;
+  - `CustomerTicketZoom.pm`: `BD55223EBE76CC6CBB2E696045CF591D7C309F8B7E87D39ECF4C007B82CED0B3`.
+- `GovernanceDB-0.0.297.opm` parsed successfully as XML with version `0.0.297`, file count `204`, and `MissingOrNonBase64=0`.
+- `git diff --check` passed for the changed confirmation/package/status files.
+
+### Known Issues / Follow-Up
+
+- After installing/upgrading to `0.0.297`, retest a Confirmation child:
+  - owner user can see and submit `confirm`;
+  - owner-group participant can see and submit `confirm`;
+  - `ZIN-Status = Resolved` closes child and parent as `closed resolved`;
+  - `ZIN-Status != Resolved` closes child as `closed unsuccessful`, increments parent `ZIN-Iteration`, returns parent to `diagnose`, and creates the next diagnosis pass.
+- `PROJECT_NEXT.md` still contains the broader Incident Diagnosis Loop design until the installed runtime confirmation retest is complete.
 
 ## 2026-07-14 GovernanceDB 0.0.296 DIAGNOSE Iteration Lookup and Role Ownership
 

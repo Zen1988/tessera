@@ -1814,6 +1814,14 @@ sub _ZTSMRequestDynamicFieldDisplay {
     );
     return if !defined $Value || $Value eq '';
 
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'RichText' ) {
+        return $Self->_ZTSMRequestRichTextDynamicFieldDisplay(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            FieldName          => $FieldName,
+            Value              => $Value,
+        );
+    }
+
     my $Display = $BackendObject->DisplayValueRender(
         DynamicFieldConfig => $DynamicFieldConfig,
         Value              => $Value,
@@ -1827,6 +1835,30 @@ sub _ZTSMRequestDynamicFieldDisplay {
         Label => $DynamicFieldConfig->{Label} || $FieldName,
         Value => $Display->{Value} || '',
         Title => $Display->{Title} || '',
+    };
+}
+
+sub _ZTSMRequestRichTextDynamicFieldDisplay {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    return if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $Value        = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    my $Text = $LayoutObject->RichText2Ascii( String => $Value );
+    $Text =~ s{\r\n}{\n}g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+    return if $Text eq '';
+
+    my $ValueHTML = $LayoutObject->Ascii2Html( Text => $Text ) =~ s{\n}{<br />}gr;
+
+    return {
+        Label => $DynamicFieldConfig->{Label} || $Param{FieldName},
+        Value => $ValueHTML,
+        Title => $Text,
     };
 }
 
@@ -2191,6 +2223,7 @@ sub _ZTSMRequestInfoHTML {
     my $TicketID = $RootTicket->{TicketID};
     my $TicketHook = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Hook') || 'Ticket';
     my $TicketHookDivider = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::HookDivider') || '#';
+    my $IsIncident = lc( $RootTicket->{Type} || '' ) eq 'incident' ? 1 : 0;
 
     my @SummaryFields = (
         [ 'Ticket ID', $TicketHook . $TicketHookDivider . ( $RootTicket->{TicketNumber} || '' ) ],
@@ -2199,6 +2232,25 @@ sub _ZTSMRequestInfoHTML {
         [ 'Title',     $RootTicket->{Title} || '' ],
         [ 'Created',   $RootTicket->{Created} || $RootTicket->{CreateTime} || '' ],
     );
+
+    if ($IsIncident) {
+        my $Severity = $Self->_ZTSMRequestDynamicFieldDisplay(
+            FieldName => 'ZIN-Severity',
+            TicketID  => $TicketID,
+        );
+
+        my $SeverityValue = IsHashRefWithData($Severity) ? $Severity->{Value} : '';
+        my $SeverityBadge = $Self->_ZTSMIncidentSeverityBadgeHTML(
+            Value => $SeverityValue,
+        );
+
+        splice @SummaryFields, 2, 0,
+            $SeverityBadge
+            ? [ 'Severity', $SeverityBadge, 1 ]
+            : $SeverityValue
+            ? [ 'Severity', $SeverityValue, 1 ]
+            : [ 'Severity', 'Not Identified' ];
+    }
 
     my $Requester = $Self->_ZTSMRequesterHTML(
         Ticket => $RootTicket,
@@ -2232,6 +2284,7 @@ sub _ZTSMRequestInfoHTML {
     my %SummaryDynamicField = map { $_ => 1 } qw(
         ZTicket-Parent
     );
+    $SummaryDynamicField{'ZIN-Severity'} = 1 if $IsIncident;
 
     if ( IsArrayRefWithData($ServiceFieldNames) ) {
         SERVICEFIELD:
@@ -2313,7 +2366,7 @@ sub _ZTSMRequestInfoHTML {
 
     if (@DetailFields) {
         $HTML .= '<details class="ZTSMRequestMore"><summary><span>Submitted Details</span>'
-            . '<span class="ZTSMOverlayButton">Open</span></summary><div class="ZTSMRequestDetailGrid">';
+            . '<span class="ZTSMOverlayButton">Expand</span></summary><div class="ZTSMRequestDetailGrid">';
         for my $Field (@DetailFields) {
             $HTML .= '<div class="ZTSMRequestDetailItem"><span>' . $LayoutObject->Ascii2Html( Text => $Field->{Label} ) . '</span><div>'
                 . $Field->{Value} . '</div></div>';
@@ -2321,9 +2374,139 @@ sub _ZTSMRequestInfoHTML {
         $HTML .= '</div></details>';
     }
 
+    my $ParentArticleHTML = $Self->_ZTSMRequestParentArticlesHTML(
+        TicketID => $TicketID,
+    );
+    if ($ParentArticleHTML) {
+        $HTML .= $ParentArticleHTML;
+    }
+
     $HTML .= '</section>';
 
     return $HTML;
+}
+
+sub _ZTSMRequestParentArticlesHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $TicketID = $Param{TicketID};
+    return '' if !$TicketID;
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my @ArticleList = $ArticleObject->ArticleList(
+        TicketID             => $TicketID,
+        IsVisibleForCustomer => 1,
+        DynamicFields        => 0,
+    );
+    return '' if !@ArticleList;
+
+    my @Rows;
+    ARTICLE:
+    for my $ArticleMeta ( reverse @ArticleList ) {
+        next ARTICLE if !IsHashRefWithData($ArticleMeta);
+
+        my $BackendObject = $ArticleObject->BackendForArticle( %{$ArticleMeta} );
+        next ARTICLE if !$BackendObject;
+
+        my %Article = $BackendObject->ArticleGet(
+            TicketID  => $TicketID,
+            ArticleID => $ArticleMeta->{ArticleID},
+        );
+        next ARTICLE if !%Article;
+
+        my $Body = $Self->_ZTSMArticleContentForPanel(
+            TicketID  => $TicketID,
+            ArticleID => $ArticleMeta->{ArticleID},
+            Article   => \%Article,
+        );
+        next ARTICLE if !$Body;
+
+        my $Subject = $Article{Subject} || 'Article';
+
+        push @Rows, '<details class="ZTSMParentArticleItem">'
+            . '<summary><span class="ZTSMParentArticleSubject">'
+            . $LayoutObject->Ascii2Html( Text => $Subject )
+            . '</span><small>'
+            . $LayoutObject->Ascii2Html( Text => $Article{CreateTime} || '' )
+            . '</small></summary><div class="ZTSMParentArticleBody">'
+            . $Body
+            . '</div></details>';
+    }
+
+    return '' if !@Rows;
+
+    return '<details class="ZTSMParentArticles"><summary><span>Articles</span><span class="ZTSMOverlayButton">Expand</span></summary>'
+        . '<div class="ZTSMParentArticleList">'
+        . join( '', @Rows )
+        . '</div></details>';
+}
+
+sub _ZTSMArticleContentForPanel {
+    my ( $Self, %Param ) = @_;
+
+    my $Article = $Param{Article};
+    return '' if !IsHashRefWithData($Article);
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $TicketID     = $Param{TicketID};
+    my $ArticleID    = $Param{ArticleID};
+    return '' if !$TicketID || !$ArticleID;
+
+    my $HTMLBodyAttachmentID = $Kernel::OM->Get('Kernel::Output::HTML::Article::MIMEBase')->HTMLBodyAttachmentIDGet(
+        TicketID  => $TicketID,
+        ArticleID => $ArticleID,
+    );
+    if ($HTMLBodyAttachmentID) {
+        my $Src = $LayoutObject->{Baselink}
+            . "Action=CustomerTicketArticleContent;TicketID=$TicketID;ArticleID=$ArticleID;";
+
+        if ( !$Kernel::OM->Get('Kernel::Config')->Get('SessionUseCookie') ) {
+            my $SessionName = $Self->{SessionName} || '';
+            my $SessionID   = $Self->{SessionID}   || '';
+            if ( $SessionName && $SessionID ) {
+                $Src .= "$SessionName=$SessionID;";
+            }
+        }
+
+        return '<iframe class="ZTSMParentArticleFrame" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" frameborder="0" src="'
+            . $LayoutObject->Ascii2Html( Text => $Src )
+            . '"></iframe>';
+    }
+
+    my $ArticleContent = $LayoutObject->ArticlePreview(
+        TicketID    => $TicketID,
+        ArticleID   => $ArticleID,
+        ResultType  => 'plain',
+    );
+    return '' if !defined $ArticleContent || $ArticleContent eq '';
+
+    return $LayoutObject->Ascii2Html(
+        Text           => $ArticleContent,
+        HTMLResultMode => 1,
+        LinkFeature    => 1,
+    );
+}
+
+sub _ZTSMIncidentSeverityBadgeHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return '' if !defined $Value || $Value eq '';
+
+    return '' if $Value !~ m{\bS\s*0*([1-4])\b}i;
+
+    my $Severity = 'S' . $1;
+    return '<span class="ZTSMSeverityBadge ZTSMSeverityBadge'
+        . $Severity
+        . '" title="Severity '
+        . $Severity
+        . '" aria-label="Severity '
+        . $Severity
+        . '">'
+        . $Severity
+        . '</span>';
 }
 
 sub _ZTSMRequestRiskBadgeHTML {
@@ -2483,6 +2666,11 @@ sub _ZTSMRuntimeActions {
             State => 'diagnosed',
             Types => ['Diagnosis'],
         },
+        Confirm => {
+            Label => 'confirm',
+            State => 'pending confirmation',
+            Types => ['Confirmation'],
+        },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -2640,10 +2828,16 @@ sub _ZTSMRuntimeActions {
         return;
     }
 
+    my $OwnerGroupMatchesCurrentUser = $Self->_ZTSMCurrentUserCanTakeOwnership(
+        Ticket => $Ticket,
+    );
+
     my $DiagnosisRuntimeActionAllowed = $OwnerMatchesCurrentUser
         && ( $Ticket->{Type} || '' ) eq 'Diagnosis';
+    my $ConfirmRuntimeActionAllowed = $OwnerMatchesCurrentUser
+        && ( $Ticket->{Type} || '' ) eq 'Confirmation';
 
-    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed;
+    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed || $ConfirmRuntimeActionAllowed;
 
     if ( !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess && !$CompleteTaskAccess ) {
         $Self->_ZTSMRuntimeActionDiagnosticsLog(
@@ -2768,8 +2962,9 @@ sub _ZTSMRuntimeActions {
             next ACTION;
         }
 
-        next ACTION if !$TicketOwner;
-        next ACTION if lc $TicketOwner ne lc $Self->{UserID};
+        next ACTION if $Action ne 'Confirm' && !$TicketOwner;
+        next ACTION if $Action ne 'Confirm' && lc $TicketOwner ne lc $Self->{UserID};
+        next ACTION if $Action eq 'Confirm' && !$ConfirmRuntimeActionAllowed;
 
         my %RuntimeAction = (
             Action         => $Action,
@@ -2783,6 +2978,13 @@ sub _ZTSMRuntimeActions {
         }
         elsif ( $Ticket->{Type} eq 'Diagnosis' && $Action eq 'Diagnose' ) {
             $RuntimeAction{IsDiagnosis} = 1;
+        }
+        elsif ( $Ticket->{Type} eq 'Confirmation' && $Action eq 'Confirm' ) {
+            $RuntimeAction{RiskFieldsHTML} = $Self->_ZTSMRuntimeRiskFieldsHTML(
+                Ticket => $Ticket,
+                Fields => ['ZIN-Status'],
+            );
+            $RuntimeAction{RemarksRequired} = 0;
         }
 
         push @RuntimeActions, \%RuntimeAction;

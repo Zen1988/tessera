@@ -113,6 +113,40 @@
         line-height: 1;
     }
 
+    .TicketZoom .ZTSMSeverityBadge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        box-sizing: border-box;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .TicketZoom .ZTSMSeverityBadgeS1 {
+        background: #b91c1c;
+        color: #ffffff;
+    }
+
+    .TicketZoom .ZTSMSeverityBadgeS2 {
+        background: #f97316;
+        color: #211200;
+    }
+
+    .TicketZoom .ZTSMSeverityBadgeS3 {
+        background: #facc15;
+        color: #1f1a00;
+    }
+
+    .TicketZoom .ZTSMSeverityBadgeS4 {
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: transparent;
+        color: #ffffff;
+    }
+
     .TicketZoom .ZTSMSectionHead strong {
         flex: 0 0 auto;
         padding: 5px 10px;
@@ -363,6 +397,95 @@
 
     .TicketZoom .ZTSMRequestMore {
         display: block;
+    }
+
+    .TicketZoom .ZTSMParentArticles {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .TicketZoom .ZTSMParentArticles > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .TicketZoom .ZTSMParentArticles > summary::-webkit-details-marker,
+    .TicketZoom .ZTSMParentArticleItem > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .TicketZoom .ZTSMParentArticles > summary span,
+    .TicketZoom .ZTSMParentArticleItem > summary .ZTSMParentArticleSubject {
+        color: #ffffff;
+        font-weight: 700;
+    }
+
+    .TicketZoom .ZTSMParentArticles > summary .ZTSMOverlayButton {
+        flex: 0 0 auto;
+    }
+
+    .TicketZoom .ZTSMParentArticleList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 420px;
+        margin-top: 12px;
+        overflow: auto;
+    }
+
+    .TicketZoom .ZTSMParentArticleItem {
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+    }
+
+    .TicketZoom .ZTSMParentArticleItem > summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .TicketZoom .ZTSMParentArticleItem > summary small {
+        flex: 0 0 auto;
+        color: #cfd7ff;
+        font-size: 11px;
+        line-height: 28px;
+    }
+
+    .TicketZoom .ZTSMParentArticleBody {
+        max-height: 360px;
+        overflow: auto;
+        margin: 0 12px 12px;
+        padding: 14px;
+        border-radius: 4px;
+        background: #ffffff;
+        color: #02063c;
+        overflow-wrap: anywhere;
+    }
+
+    .TicketZoom .ZTSMParentArticleBody img,
+    .TicketZoom .ZTSMParentArticleBody table {
+        max-width: 100%;
+    }
+
+    .TicketZoom .ZTSMParentArticleBody table {
+        width: 100%;
+    }
+
+    .TicketZoom .ZTSMParentArticleFrame {
+        display: block;
+        width: 100%;
+        min-height: 320px;
+        border: 0;
+        background: #ffffff;
     }
 
     .TicketZoom .ZTSMRequestMore summary {
@@ -818,6 +941,76 @@
                     }
                 }());
                 </script>
+[% ELSIF Data.IsDiagnosis %]
+                <div id="ZTSMDiagnosisLazy_[% Data.Action | uri %]" class="ZTSMDiagnosisLazy" data-loaded="0">
+                    <div class="Messenger">
+                        <fieldset class="DontPrint">
+                            <div class="MessageHeader">
+                                <h2>[% Translate(Data.Label) | html %]</h2>
+                            </div>
+                            <div class="ZTSMDiagnosisLazyBody">[% Translate("Loading...") | html %]</div>
+                        </fieldset>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var Container = document.getElementById('ZTSMDiagnosisLazy_[% Data.Action | uri %]');
+                    var Button = document.getElementById('Button_ZTSM_[% Data.Action | uri %]');
+
+                    function ExecuteScripts(Scope) {
+                        var Scripts = Scope.querySelectorAll('script');
+                        Array.prototype.forEach.call(Scripts, function (Script) {
+                            var NewScript = document.createElement('script');
+                            if (Script.src) {
+                                NewScript.src = Script.src;
+                            }
+                            else {
+                                NewScript.text = Script.text || Script.textContent || Script.innerHTML || '';
+                            }
+                            Script.parentNode.replaceChild(NewScript, Script);
+                        });
+                    }
+
+                    function LoadDiagnosis() {
+                        if (!Container || Container.getAttribute('data-loaded') === '1') {
+                            return;
+                        }
+
+                        Container.setAttribute('data-loaded', '1');
+                        var Body = Container.querySelector('.ZTSMDiagnosisLazyBody');
+                        var BaseLink = window.Core && Core.Config && typeof Core.Config.Get === 'function'
+                            ? Core.Config.Get('Baselink')
+                            : '[% Env("CGIHandle") | html %]?';
+                        var URL = BaseLink
+                            + 'Action=CustomerTicketZTSMAction'
+                            + ';TicketID=[% Data.TicketID | uri %]'
+                            + ';RuntimeAction=[% Data.Action | uri %]'
+                            + ';Subaction=DiagnosisInline';
+
+                        var Request = new XMLHttpRequest();
+                        Request.open('GET', URL, true);
+                        Request.onreadystatechange = function () {
+                            if (Request.readyState !== 4 || !Body) {
+                                return;
+                            }
+                            if (Request.status >= 200 && Request.status < 300) {
+                                Body.innerHTML = Request.responseText;
+                                ExecuteScripts(Body);
+                                return;
+                            }
+                            Container.setAttribute('data-loaded', '0');
+                            Body.innerHTML = '[% Translate("Could not load diagnosis form.") | html %]';
+                        };
+                        Request.send();
+                    }
+
+                    if (Button) {
+                        Button.addEventListener('click', function () {
+                            window.setTimeout(LoadDiagnosis, 0);
+                        });
+                    }
+                }());
+                </script>
 [% ELSIF Data.InlineHTML %]
                 [% Data.InlineHTML %]
 [% ELSE %]
@@ -924,28 +1117,66 @@
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAckRow,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAckRow {
-                        min-height: 56px;
+                        min-height: 0;
+                        padding: 14px 24px;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck {
+                        position: relative;
                         display: flex;
-                        align-items: flex-start;
-                        gap: 10px;
+                        align-items: center;
+                        gap: 12px;
                         max-width: 100%;
+                        margin: 0;
+                        cursor: pointer;
                         white-space: normal;
                         overflow-wrap: anywhere;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input {
-                        flex: 0 0 auto;
-                        width: auto;
-                        min-height: 0;
-                        margin-top: 4px;
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"],
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"] {
+                        position: absolute;
+                        left: 0;
+                        top: 50%;
+                        width: 20px !important;
+                        height: 20px;
+                        min-height: 20px;
+                        margin: -10px 0 0 0;
+                        opacity: 0;
+                        cursor: pointer;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span {
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMCheckboxVisual {
+                        position: relative;
+                        display: inline-block;
+                        flex: 0 0 auto;
+                        width: 18px;
+                        height: 18px;
+                        border: 2px solid #161b66;
+                        border-radius: 4px;
+                        background: #fff;
+                        box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual {
+                        background: #1028ff;
+                        border-color: #1028ff;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after {
+                        content: "";
+                        position: absolute;
+                        left: 5px;
+                        top: 1px;
+                        width: 5px;
+                        height: 10px;
+                        border: solid #fff;
+                        border-width: 0 2px 2px 0;
+                        transform: rotate(45deg);
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span:not(.ZTSMCheckboxVisual),
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span:not(.ZTSMCheckboxVisual) {
                         display: block;
                         min-width: 0;
+                        line-height: 1.35;
                     }
                 </style>
                 <form action="[% Env("CGIHandle") | html %]" method="post" enctype="multipart/form-data" name="ZTSMRuntimeAction[% Data.Action | html %]" class="Validate PreventMultipleSubmits">

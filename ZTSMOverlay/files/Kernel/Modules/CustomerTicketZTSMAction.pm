@@ -12,6 +12,7 @@ use warnings;
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian ();
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader ();
 use Kernel::System::ZTSMBlueBookRuntime ();
 use Kernel::System::VariableCheck qw(:all);
 
@@ -448,6 +449,16 @@ sub Run {
             if ( $RuntimeAction eq 'AddRequiredSupportProfile' || $RuntimeAction eq 'FollowUp' || $RuntimeAction eq 'Diagnose' ) {
                 my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
                 $ConfiguredOwnerActionAccess = $Owner && lc $Owner eq lc $Self->{UserID};
+            }
+            elsif ( $RuntimeAction eq 'Confirm' ) {
+                my $Owner = _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} );
+                $ConfiguredOwnerActionAccess = (
+                    $Owner
+                    && lc $Owner eq lc $Self->{UserID}
+                ) || $Self->_UserCanTakeOwnership(
+                    Ticket         => \%Ticket,
+                    CustomerUserID => $Self->{UserID},
+                );
             }
             elsif ( $RuntimeAction eq 'CompleteTask' ) {
                 $ConfiguredOwnerActionAccess = $CompleteTaskAccess;
@@ -913,6 +924,17 @@ sub Run {
                 Attachments         => \@Attachments,
             );
 
+            $Self->_RuntimeParentSubmissionArticleCreate(
+                Ticket              => \%Ticket,
+                RuntimeAction       => $RuntimeAction,
+                Label               => 'Complete Verification',
+                Subject             => 'Child verification submitted',
+                Body                => $Body,
+                Config              => $Config,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Attachments         => \@Attachments,
+            );
+
             $Self->_ChapterDirectorRun(
                 TicketID            => $TicketID,
                 TicketObject        => $TicketObject,
@@ -1057,7 +1079,13 @@ sub Run {
                 TicketID            => $ParentTicketID,
                 RuntimeAction       => $RuntimeAction,
                 Label               => 'Complete',
-                Subject             => 'Child task completion submitted',
+                Subject             => $Self->_RuntimeParentSubmissionSubject(
+                    Ticket        => \%Ticket,
+                    RuntimeAction => $RuntimeAction,
+                    Body          => $ParentBody,
+                    Subject       => 'Child task completion submitted',
+                    ContentType   => $Config->{ContentType} || 'text/plain; charset=utf-8',
+                ),
                 Body                => $ParentBody,
                 Config              => $Config,
                 CustomerPanelUserID => $CustomerPanelUserID,
@@ -1306,6 +1334,59 @@ sub Run {
         $ActionConfig->{ContentType}       = 'text/html; charset=utf-8';
     }
 
+    if ( $Ticket{Type} eq 'Confirmation' && $RuntimeAction eq 'Confirm' ) {
+        my %Confirmation = $Self->_ConfirmationFieldsSet(
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        );
+
+        if ( !$Confirmation{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $Confirmation{Message} || 'Could not update confirmation status.',
+            );
+        }
+
+        my $ConfirmationStatus = lc( $Confirmation{Status} || '' );
+        my $Resolved = $ConfirmationStatus eq 'resolved'
+            || $ConfirmationStatus eq 'auto-confirmed';
+        $ActionConfig->{State}       = $Resolved ? 'closed resolved' : 'closed unsuccessful';
+        $ActionConfig->{Subject}   ||= 'Confirmation submitted';
+        $ActionConfig->{Body}      ||= $Self->_ConfirmationArticleBody(
+            Status => $Confirmation{Status},
+        );
+
+        my $ConfirmationOutcome = $Resolved ? '0' : '-1';
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Outcome',
+                TicketID  => $TicketID,
+                Value     => $ConfirmationOutcome,
+                UserID    => $CustomerPanelUserID,
+            )
+            || !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-Result',
+                TicketID  => $TicketID,
+                Value     => $Confirmation{Status},
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update confirmation outcome evidence.',
+            );
+        }
+
+        $ActionConfig->{ConfirmationParentApply} = {
+            Ticket              => \%Ticket,
+            Status              => $Confirmation{Status},
+            Resolved            => $Resolved,
+            Config              => $Config,
+            TicketObject        => $TicketObject,
+            CustomerPanelUserID => $CustomerPanelUserID,
+        };
+        $ActionConfig->{SkipChapterDirector} = 1;
+    }
+
     my $StateSet = $TicketObject->TicketStateSet(
         State    => $ActionConfig->{State},
         TicketID => $TicketID,
@@ -1327,6 +1408,7 @@ sub Run {
     if ( IsArrayRefWithData( $ActionConfig->{RiskAssessmentRows} ) ) {
         $Self->_RiskAssessmentArticlesCreate(
             TicketID             => $TicketID,
+            Ticket               => \%Ticket,
             Rows                 => $ActionConfig->{RiskAssessmentRows},
             Remarks              => $Remarks,
             Config               => $Config,
@@ -1354,13 +1436,44 @@ sub Run {
             CustomerPanelUserID  => $CustomerPanelUserID,
             Attachments          => \@Attachments,
         );
+
+        $Self->_RuntimeParentSubmissionArticleCreate(
+            Ticket              => \%Ticket,
+            RuntimeAction       => $RuntimeAction,
+            Label               => $ActionConfig->{Label} || $RuntimeAction,
+            Remarks             => $Remarks,
+            Body                => $ActionConfig->{Body},
+            Subject             => 'Child ' . lc( $ActionConfig->{Subject} || "runtime action $RuntimeAction submitted" ),
+            Config              => $ActionConfig->{ContentType}
+                ? {
+                %{$Config},
+                ContentType => $ActionConfig->{ContentType},
+                }
+                : $Config,
+            CustomerPanelUserID => $CustomerPanelUserID,
+            Attachments         => \@Attachments,
+        );
     }
 
-    $Self->_ChapterDirectorRun(
-        TicketID             => $TicketID,
-        TicketObject         => $TicketObject,
-        CustomerPanelUserID  => $CustomerPanelUserID,
-    );
+    if ( $ActionConfig->{ConfirmationParentApply} ) {
+        my %ParentResult = $Self->_ConfirmationParentApply(
+            %{ $ActionConfig->{ConfirmationParentApply} },
+        );
+
+        if ( !$ParentResult{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $ParentResult{Message} || 'Could not update parent incident confirmation result.',
+            );
+        }
+    }
+
+    if ( !$ActionConfig->{SkipChapterDirector} ) {
+        $Self->_ChapterDirectorRun(
+            TicketID             => $TicketID,
+            TicketObject         => $TicketObject,
+            CustomerPanelUserID  => $CustomerPanelUserID,
+        );
+    }
 
     return $LayoutObject->Redirect(
         OP => "Action=CustomerTicketZoom;TicketID=$TicketID",
@@ -3643,6 +3756,7 @@ sub _OutcomeForState {
     return if !defined $State || $State eq '';
 
     return '0'  if $State eq 'closed successful';
+    return '0'  if $State eq 'closed resolved';
     return '0'  if $State eq 'diagnosed';
     return '1'  if $State eq 'closed no action';
     return '1'  if $State eq 'closed duplicate';
@@ -4123,6 +4237,171 @@ sub _RuntimeArticleCreate {
     return $ArticleID;
 }
 
+sub _RuntimeParentSubmissionArticleCreate {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return 1 if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return 1 if !$ParentTicketID;
+
+    my $Config      = $Param{Config} || {};
+    my $ContentType = $Config->{ContentType} || 'text/plain; charset=utf-8';
+    my $Body        = $Param{Body} || '';
+    my $Subject     = $Self->_RuntimeParentSubmissionSubject(
+        %Param,
+        ContentType => $ContentType,
+    );
+
+    return $Self->_RuntimeArticleCreate(
+        %Param,
+        TicketID => $ParentTicketID,
+        Subject  => $Subject,
+        Body     => $Body,
+    );
+}
+
+sub _RuntimeParentSubmissionSubject {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket       = $Param{Ticket} || {};
+    my $RuntimeAction = $Param{RuntimeAction} || '';
+    my $Subject      = $Param{Subject} || '';
+    my $Text         = $Self->_RuntimeArticleSummaryText(
+        Body        => $Param{Body},
+        ContentType => $Param{ContentType},
+    );
+    my $By = $Self->{UserFullname} || $Self->{UserID} || '';
+    my $BySuffix = $By ? " by $By" : '';
+
+    if ( $RuntimeAction eq 'Diagnose' || $Subject =~ m{diagnos}i || $Text =~ m{Diagnosis Outcome}i ) {
+        my $Outcome = _RuntimeArticleValueAfterLabel( Text => $Text, Label => 'Diagnosis Outcome' );
+        my $Finding = _RuntimeArticleValueAfterLabel( Text => $Text, Label => 'Diagnosis' );
+
+        return 'Diagnosis: '
+            . _RuntimeArticleSummaryCompact( join ' - ', grep {$_} $Outcome, $Finding )
+            . $BySuffix
+            if $Outcome || $Finding;
+    }
+
+    if ( $RuntimeAction eq 'Assess' || $Subject =~ m{risk assessment}i || $Text =~ m{Maximum Residual Risk}i ) {
+        my @RiskBits;
+        for my $Risk ( [ 'B', 'Business' ], [ 'G', 'Governance' ], [ 'T', 'Technical' ] ) {
+            my $Value = _RuntimeArticleValueAfterLabel( Text => $Text, Label => $Risk->[1] );
+            push @RiskBits, "$Risk->[0] $Value" if $Value;
+        }
+
+        return 'Risk: ' . join( ', ', @RiskBits ) . $BySuffix if @RiskBits;
+        return 'Risk assessment' . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'Confirm' || $Subject =~ m{confirmation}i || $Text =~ m{\bStatus\b}i ) {
+        my $Status = _RuntimeArticleValueAfterLabel( Text => $Text, Label => 'Status' );
+        return 'Confirmation: ' . ( $Status || 'Submitted' ) . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'CompleteTask' || $Subject =~ m{task completion|complete task|child task}i ) {
+        my $Outcome = _RuntimeArticleValueAfterLabel( Text => $Text, Label => 'Outcome' );
+        return 'Task: ' . ( $Outcome || 'Completed' ) . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'CompleteVerification' || $Subject =~ m{verification}i ) {
+        my $Result = _RuntimeArticleValueAfterLabel( Text => $Text, Label => 'Result' );
+        return 'Verification: ' . ( $Result || 'Submitted' ) . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'Endorse' ) {
+        return 'Endorsement: Endorsed' . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'Approve' ) {
+        return 'Approval: Approved' . $BySuffix;
+    }
+
+    if ( $RuntimeAction eq 'Reject' ) {
+        my $Type = $Ticket->{Type} || '';
+        return 'Endorsement: Rejected' . $BySuffix if $Type eq 'Endorsement';
+        return 'Approval: Rejected' . $BySuffix if $Type eq 'Approval';
+        return 'Assessment: Rejected' . $BySuffix if $Type eq 'Assessment';
+        return 'Rejected' . $BySuffix;
+    }
+
+    if ($RuntimeAction) {
+        return _RuntimeArticleSummaryCompact("Runtime: $RuntimeAction$BySuffix");
+    }
+
+    return _RuntimeArticleSummaryCompact($Subject) || 'Child runtime submission';
+}
+
+sub _RuntimeArticleSummaryText {
+    my ( $Self, %Param ) = @_;
+
+    my $Body = defined $Param{Body} ? $Param{Body} : '';
+    return '' if $Body eq '';
+
+    my $ContentType = lc( $Param{ContentType} || '' );
+    if ( _ContentTypeIsHTML($ContentType) || $Body =~ m{<[^>]+>} ) {
+        $Body = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->RichText2Ascii(
+            String => $Body,
+        );
+    }
+
+    $Body =~ s{\r\n}{\n}g;
+    $Body =~ s{[ \t]+}{ }g;
+    $Body =~ s{\n[ \t]+}{\n}g;
+    $Body =~ s{\A\s+|\s+\z}{}g;
+
+    return $Body;
+}
+
+sub _RuntimeArticleValueAfterLabel {
+    my (%Param) = @_;
+
+    my $Text  = $Param{Text} || '';
+    my $Label = $Param{Label} || '';
+    return '' if $Text eq '' || $Label eq '';
+
+    my @Lines = grep { defined && $_ ne '' } map {
+        my $Line = $_;
+        $Line =~ s{\A\s+|\s+\z}{}g;
+        $Line;
+    } split /\n+/, $Text;
+
+    my $QuotedLabel = quotemeta $Label;
+    for my $Index ( 0 .. $#Lines ) {
+        my $Line = $Lines[$Index];
+
+        if ( $Line =~ m{\A$QuotedLabel\s*:\s*(.+)\z}i ) {
+            return _RuntimeArticleSummaryCompact($1);
+        }
+
+        if ( $Line =~ m{\A$QuotedLabel\s+(.+)\z}i ) {
+            return _RuntimeArticleSummaryCompact($1);
+        }
+
+        next if $Line !~ m{\A$QuotedLabel\s*:?\z}i;
+
+        for my $Next ( $Index + 1 .. $#Lines ) {
+            next if !defined $Lines[$Next] || $Lines[$Next] eq '';
+            return _RuntimeArticleSummaryCompact( $Lines[$Next] );
+        }
+    }
+
+    return '';
+}
+
+sub _RuntimeArticleSummaryCompact {
+    my ($Text) = @_;
+
+    return '' if !defined $Text;
+    $Text =~ s{\s+}{ }g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+    return '' if $Text eq '';
+
+    return length $Text > 110 ? substr( $Text, 0, 107 ) . '...' : $Text;
+}
+
 sub _RiskAssessmentColumns {
     return (
         { Field => 'ZRM-ImpactCategory',          Label => 'Category',                             Type => 'GeneralCatalog' },
@@ -4388,6 +4667,20 @@ sub _DiagnosisFieldsSet {
             );
         }
 
+        if (
+            $FieldName eq 'ZIN-Severity'
+            && $Self->_DiagnosisOutcomeAllowsSeverityRollup(
+                Outcome => $Result{Outcome},
+            )
+            && !_DiagnosisValueHasData($Value)
+            )
+        {
+            return (
+                %Result,
+                Message => 'Please select a diagnosis severity for an affected diagnosis outcome.',
+            );
+        }
+
         my $Success = $DynamicFieldBackendObject->ValueSet(
             DynamicFieldConfig => $DynamicFieldConfig,
             ObjectID           => $Param{TicketID},
@@ -4411,6 +4704,239 @@ sub _DiagnosisFieldsSet {
 
     $Result{Success} = 1;
     return %Result;
+}
+
+sub _ConfirmationFieldsSet {
+    my ( $Self, %Param ) = @_;
+
+    my %Result = (
+        Success => 0,
+    );
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
+        Name => 'ZIN-Status',
+    );
+
+    if ( !IsHashRefWithData($DynamicFieldConfig) || $DynamicFieldConfig->{ObjectType} ne 'Ticket' ) {
+        $Self->_ZTSMActionLog( Message => "Confirmation submit failed: dynamic field 'ZIN-Status' is missing or not a Ticket field." );
+        return (
+            %Result,
+            Message => "Confirmation status field is not available.",
+        );
+    }
+
+    my $ValidationResult = $DynamicFieldBackendObject->EditFieldValueValidate(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ParamObject        => $ParamObject,
+        Mandatory          => 1,
+    );
+    if ( !IsHashRefWithData($ValidationResult) || $ValidationResult->{ServerError} ) {
+        return (
+            %Result,
+            Message => "Please complete the required confirmation field '$DynamicFieldConfig->{Label}'.",
+        );
+    }
+
+    my $Value = $DynamicFieldBackendObject->EditFieldValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ParamObject        => $ParamObject,
+        LayoutObject       => $LayoutObject,
+    );
+    $Value = _NormalizeValue($Value);
+
+    if ( !defined $Value || $Value eq '' ) {
+        return (
+            %Result,
+            Message => "Please complete the required confirmation field '$DynamicFieldConfig->{Label}'.",
+        );
+    }
+
+    my $Success = $DynamicFieldBackendObject->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+        Value              => $Value,
+        UserID             => $Param{UserID},
+    );
+    if ( !$Success ) {
+        $Self->_ZTSMActionLog(
+            Message => "Confirmation submit failed: could not set dynamic field 'ZIN-Status' for TicketID='$Param{TicketID}'.",
+        );
+        return (
+            %Result,
+            Message => "Could not update confirmation status.",
+        );
+    }
+
+    return (
+        Success => 1,
+        Status  => $Value,
+    );
+}
+
+sub _ConfirmationArticleBody {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $Status = $LayoutObject->Ascii2Html( Text => $Param{Status} || '' );
+
+    return '<p><strong>Note:</strong> This is a system-generated confirmation result message.</p>'
+        . '<table style="border-collapse:collapse;width:100%;max-width:920px;">'
+        . '<tr>'
+        . '<th style="border:1px solid #d5dbea;background:#eef2f7;text-align:left;padding:10px 12px;width:220px;">Status</th>'
+        . '<td style="border:1px solid #d5dbea;padding:10px 12px;">' . $Status . '</td>'
+        . '</tr>'
+        . '</table>';
+}
+
+sub _ConfirmationParentApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return ( Success => 1 ) if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return ( Success => 1 ) if !$ParentTicketID;
+
+    my $TicketObject = $Param{TicketObject} || $Kernel::OM->Get('Kernel::System::Ticket');
+    my $UserID       = $Param{CustomerPanelUserID} || 1;
+
+    my %ParentTicket = $TicketObject->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $UserID,
+        Silent        => 1,
+    );
+
+    if ( !IsHashRefWithData( \%ParentTicket ) ) {
+        return (
+            Success => 0,
+            Message => 'Could not load parent ticket for confirmation update.',
+        );
+    }
+
+    if ( $Param{Resolved} ) {
+        return (
+            Success => 0,
+            Message => 'Could not update parent incident status.',
+        ) if !$Self->_TicketDynamicFieldSet(
+            FieldName => 'ZIN-Status',
+            TicketID  => $ParentTicketID,
+            Value     => $Param{Status},
+            UserID    => $UserID,
+        );
+
+        return (
+            Success => 0,
+            Message => 'Could not close parent incident as resolved.',
+        ) if !$TicketObject->TicketStateSet(
+            State    => 'closed resolved',
+            TicketID => $ParentTicketID,
+            UserID   => $UserID,
+        );
+
+        $Self->_RuntimeArticleCreate(
+            TicketID            => $ParentTicketID,
+            RuntimeAction       => 'Confirm',
+            Label               => 'confirm',
+            Subject             => 'Incident confirmation resolved',
+            Body                => "Confirmation returned '$Param{Status}'. Parent incident has been closed resolved.",
+            Config              => $Param{Config},
+            CustomerPanelUserID => $UserID,
+        );
+
+        return ( Success => 1 );
+    }
+
+    my $CurrentIteration = _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} );
+    my $ConfirmationIteration = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} );
+
+    my $BaseIteration = defined $ConfirmationIteration && $ConfirmationIteration =~ m{\A\d+\z}
+        ? $ConfirmationIteration
+        : defined $CurrentIteration && $CurrentIteration =~ m{\A\d+\z}
+        ? $CurrentIteration
+        : 1;
+
+    my $NextIteration = $BaseIteration + 1;
+    if (
+        defined $CurrentIteration
+        && $CurrentIteration =~ m{\A\d+\z}
+        && $CurrentIteration > $NextIteration
+        )
+    {
+        $NextIteration = $CurrentIteration;
+    }
+
+    return (
+        Success => 0,
+        Message => 'Could not increment parent incident iteration.',
+    ) if !$Self->_TicketDynamicFieldSet(
+        FieldName => 'ZIN-Iteration',
+        TicketID  => $ParentTicketID,
+        Value     => $NextIteration,
+        UserID    => $UserID,
+    );
+
+    return (
+        Success => 0,
+        Message => 'Could not update parent incident confirmation status.',
+    ) if !$Self->_TicketDynamicFieldSet(
+        FieldName => 'ZIN-Status',
+        TicketID  => $ParentTicketID,
+        Value     => $Param{Status},
+        UserID    => $UserID,
+    );
+
+    my $LoopbackState = $Self->_ConfirmationLoopbackState(
+        Config => $Param{Config},
+    );
+
+    return (
+        Success => 0,
+        Message => 'Could not return parent incident to diagnosis.',
+    ) if !$TicketObject->TicketStateSet(
+        State    => $LoopbackState,
+        TicketID => $ParentTicketID,
+        UserID   => $UserID,
+    );
+
+    $Self->_RuntimeArticleCreate(
+        TicketID            => $ParentTicketID,
+        RuntimeAction       => 'Confirm',
+        Label               => 'confirm',
+        Subject             => 'Incident confirmation requires diagnosis',
+        Body                => "Confirmation returned '$Param{Status}'. Parent incident has been returned to '$LoopbackState' for iteration $NextIteration.",
+        Config              => $Param{Config},
+        CustomerPanelUserID => $UserID,
+    );
+
+    my %ReloadedParentTicket = $TicketObject->TicketGet(
+        TicketID      => $ParentTicketID,
+        DynamicFields => 1,
+        UserID        => $UserID,
+        Silent        => 1,
+    );
+
+    if ( IsHashRefWithData( \%ReloadedParentTicket ) ) {
+        my $StateBookReader = Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader->new();
+        $StateBookReader->Run(
+            Ticket => \%ReloadedParentTicket,
+            UserID => $UserID,
+        );
+    }
+
+    return ( Success => 1 );
+}
+
+sub _ConfirmationLoopbackState {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+    return $Config->{ConfirmLoopbackState} || 'diagnose';
 }
 
 sub _DiagnosisSubmittedValueNormalize {
@@ -4522,6 +5048,9 @@ sub _DiagnosisParentSeverityRollupApply {
     return 1 if !IsHashRefWithData($Ticket);
     return 1 if !IsHashRefWithData( $Param{Diagnosis} );
     return 1 if !$Param{CustomerPanelUserID};
+    return 1 if !$Self->_DiagnosisOutcomeAllowsSeverityRollup(
+        Outcome => $Param{Diagnosis}->{Outcome},
+    );
 
     my $ChildSeverity = $Param{Diagnosis}->{Severity};
     return 1 if !_DiagnosisValueHasData($ChildSeverity);
@@ -4565,6 +5094,20 @@ sub _DiagnosisParentSeverityRollupApply {
     }
 
     return $Success;
+}
+
+sub _DiagnosisOutcomeAllowsSeverityRollup {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my $OutcomeState = $Self->_DiagnosisOutcomeState(
+        Outcome => $Outcome,
+    );
+    return 1 if defined $OutcomeState && $OutcomeState eq 'diagnosed';
+
+    return;
 }
 
 sub _DiagnosisSeverityHigher {
@@ -5224,29 +5767,56 @@ sub _RiskAssessmentArticlesCreate {
         my $Row = $Param{Rows}->[$Index];
         next ROW if !IsHashRefWithData($Row);
 
+        my $Body = $Self->_RiskAssessmentArticleBody(
+            Row   => $Row,
+            Index => $Index + 1,
+        );
+        my $Subject = 'Risk assessment result ' . ( $Index + 1 );
+        my $ArticleConfig = {
+            %{$Config},
+            ContentType => 'text/html; charset=utf-8',
+        };
+
         $Self->_RuntimeArticleCreate(
             TicketID            => $Param{TicketID},
-            Body                => $Self->_RiskAssessmentArticleBody(
-                Row   => $Row,
-                Index => $Index + 1,
-            ),
-            Subject             => 'Risk assessment result ' . ( $Index + 1 ),
-            Config              => {
-                %{$Config},
-                ContentType => 'text/html; charset=utf-8',
-            },
+            Body                => $Body,
+            Subject             => $Subject,
+            Config              => $ArticleConfig,
+            CustomerPanelUserID => $Param{CustomerPanelUserID},
+        );
+
+        $Self->_RuntimeParentSubmissionArticleCreate(
+            Ticket              => $Param{Ticket},
+            RuntimeAction       => 'Assess',
+            Label               => 'Assess',
+            Body                => $Body,
+            Subject             => 'Child ' . lc $Subject,
+            Config              => $ArticleConfig,
             CustomerPanelUserID => $Param{CustomerPanelUserID},
         );
     }
 
+    my $SummaryBody = $Self->_RiskAssessmentSummaryArticleBody(%Param);
+    my $SummaryConfig = {
+        %{$Config},
+        ContentType => 'text/html; charset=utf-8',
+    };
+
     $Self->_RuntimeArticleCreate(
         TicketID            => $Param{TicketID},
-        Body                => $Self->_RiskAssessmentSummaryArticleBody(%Param),
+        Body                => $SummaryBody,
         Subject             => 'Risk assessment summary',
-        Config              => {
-            %{$Config},
-            ContentType => 'text/html; charset=utf-8',
-        },
+        Config              => $SummaryConfig,
+        CustomerPanelUserID => $Param{CustomerPanelUserID},
+    );
+
+    $Self->_RuntimeParentSubmissionArticleCreate(
+        Ticket              => $Param{Ticket},
+        RuntimeAction       => 'Assess',
+        Label               => 'Assess',
+        Body                => $SummaryBody,
+        Subject             => 'Child risk assessment summary',
+        Config              => $SummaryConfig,
         CustomerPanelUserID => $Param{CustomerPanelUserID},
     );
 
@@ -6032,6 +6602,11 @@ sub _ActionConfig {
             State => 'diagnosed',
             Types => ['Diagnosis'],
         },
+        Confirm => {
+            Label => 'confirm',
+            State => 'pending confirmation',
+            Types => ['Confirmation'],
+        },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -6084,6 +6659,11 @@ sub _ActionableTicketType {
             Label => 'diagnose',
             State => 'diagnosed',
             Types => ['Diagnosis'],
+        },
+        Confirm => {
+            Label => 'confirm',
+            State => 'pending confirmation',
+            Types => ['Confirmation'],
         },
         CloseDuplicate => {
             Label => 'Duplicate',
