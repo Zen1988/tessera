@@ -14,6 +14,6 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 <input type="hidden" id="DynamicField_[% Data.Name | html %]_[% Data.Index | html %]" name="SetIndex_[% Data.Name | html %]" value="[% Data.Index | html %]"/>
-<fieldset class="DynamicFieldSet[% Data.RenderLayoutClass | html %]">
+<fieldset class="[% Data.FieldSetClass | html %][% Data.RenderLayoutClass | html %]">
 [% Data.DynamicFieldHTML %]
 </fieldset>

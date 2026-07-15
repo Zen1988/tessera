@@ -2566,6 +2566,87 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="DynamicFields::Driver###DynamicFieldGroup" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Dynamic Field Group</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::DynamicFieldGroup</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldGroup</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminDynamicFieldGroup" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">This module is part of the admin area of OTOBO.</Item>
+                    <Item Key="Title" Translatable="1">Dynamic Field Group Backend GUI</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminDynamicFieldGroup###002-DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.Agent.Admin.DynamicField.css</Item>
+                        <Item>Core.CodeMirrorEditor.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.DynamicField.js</Item>
+                        <Item>Core.Agent.Admin.SysConfig.Entity.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/mode/yaml/yaml.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchtags.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldcode.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/xml-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/searchcursor.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/search.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.js</Item>
+                        <Item>Core.CodeMirrorEditor.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
 
     <!-- dynamic field Governance Object Reference -->
     <Setting Name="DynamicFields::Driver###GovernanceObject" Required="0" Valid="1">

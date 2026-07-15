@@ -59,7 +59,8 @@ sub Run {
     }
 
     # TODO refine checks based upon event
-    return 1 if $Param{Data}{NewData}{FieldType} ne 'Set';
+    return 1 if ( $Param{Data}{NewData}{FieldType} || '' ) ne 'Set'
+        && ( $Param{Data}{NewData}{FieldType} || '' ) ne 'DynamicFieldGroup';
     return   if none { $Param{Event} eq $_ } qw(DynamicFieldAdd DynamicFieldDelete DynamicFieldUpdate);
 
     my $DynamicFieldObject    = $Kernel::OM->Get('Kernel::System::DynamicField');

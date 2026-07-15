@@ -210,7 +210,7 @@ sub EditFieldRender {
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
 
     # check and set class if necessary
-    my $FieldClass = 'DynamicFieldSet';
+    my $FieldClass = $Self->_FieldClassBaseGet();
     if ( defined $Param{Class} && $Param{Class} ne '' ) {
         $FieldClass .= ' ' . $Param{Class};
     }
@@ -230,9 +230,9 @@ sub EditFieldRender {
         $FieldTemplateData{DivIDServerError} = $FieldName . 'ServerError';
     }
 
-    my $FieldTemplateFile = $Param{CustomerInterface}
-        ? 'DynamicField/Customer/Set'
-        : 'DynamicField/Agent/Set';
+    my $FieldTemplateFile = $Self->_FieldTemplateFileGet(
+        CustomerInterface => $Param{CustomerInterface},
+    );
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
@@ -317,6 +317,7 @@ sub EditFieldRender {
                 Name              => $Param{DynamicFieldConfig}->{Name},
                 Index             => $SetIndex,
                 DynamicFieldHTML  => $DynamicFieldHTML,
+                FieldSetClass     => $Self->_FieldSetClassGet(),
                 RenderLayoutClass => $Self->_RenderLayoutClassGet(
                     DynamicFieldConfig => $Param{DynamicFieldConfig},
                 ),
@@ -361,6 +362,7 @@ sub EditFieldRender {
                 Name              => $Param{DynamicFieldConfig}->{Name},
                 Index             => 'Template',
                 DynamicFieldHTML  => $DynamicFieldHTML,
+                FieldSetClass     => $Self->_FieldSetClassGet(),
                 RenderLayoutClass => $Self->_RenderLayoutClassGet(
                     DynamicFieldConfig => $Param{DynamicFieldConfig},
                 ),
@@ -1375,6 +1377,22 @@ sub _RenderLayoutClassGet {
 
     return ' DynamicFieldSetLayoutHorizontal' if $RenderLayout eq 'Horizontal';
     return ' DynamicFieldSetLayoutVertical';
+}
+
+sub _FieldClassBaseGet {
+    return 'DynamicFieldSet';
+}
+
+sub _FieldSetClassGet {
+    return 'DynamicFieldSet';
+}
+
+sub _FieldTemplateFileGet {
+    my ( $Self, %Param ) = @_;
+
+    return $Param{CustomerInterface}
+        ? 'DynamicField/Customer/Set'
+        : 'DynamicField/Agent/Set';
 }
 
 1;

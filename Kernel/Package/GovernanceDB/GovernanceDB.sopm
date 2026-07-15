@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.316</Version>
+    <Version>0.0.317</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -130,6 +130,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Language/es_ServiceCatalog.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldDB.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldScreen.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldGroup.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldSet.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminService.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminServiceImportExport.pm" Permission="660"/>
@@ -180,7 +181,9 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogModal.html.tmpl" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Date.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/DynamicFieldGroup.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Set.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Event/UpdateSetFieldIncludedFields.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/ObjectType/Service.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicFieldDB.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm" Permission="660"/>

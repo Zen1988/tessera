@@ -22,8 +22,59 @@ Last Updated: 2026-07-15
 - Incident same-level Diagnosis fan-out across distinct support profiles.
 - BlueBook Profile-aware assignment for direct SupportProfile and dynamic GovernanceRole values.
 - Initial request article snapshots with inline service-field RichText images.
+- Dynamic Field Group support for two-depth service payload rows, such as one service request containing multiple server provisioning rows.
 
 ## Completed Work
+
+## 2026-07-15 Dynamic Field Group Source Implementation for Two-Depth Rows
+
+### Completed work
+
+- Added a new `DynamicFieldGroup` DynamicField driver as a Set-derived container that can be included inside an outer Dynamic Field Set.
+- Kept existing Dynamic Field Set behavior stable by adding small extension hooks for field CSS/template class selection instead of changing Set storage semantics.
+- Added nested parameter naming for Group render/value/validation state so inner controls are scoped by the group instance and outer row, avoiding collisions across repeated server rows.
+- Added nested storage handling for Group inside Set:
+  - outer Set index maps to `IndexSet`;
+  - inner Group row index maps to `IndexValue`;
+  - Group children are treated as storage multi-values only while nested inside a Set.
+- Added `AdminDynamicFieldGroup` as a Set-admin derivative that rejects Set/Group children and rejects multi-value child fields, keeping this first implementation to a maximum of two row depths.
+- Updated DynamicField included-field tracking so `UpdateSetFieldIncludedFields` applies to both `Set` and `DynamicFieldGroup`.
+- Registered `DynamicFieldGroup` for Ticket and ITSMConfigItem in core DynamicFields config, and for Ticket, ITSMConfigItem, Article, and GovernanceObject through GovernanceDB config.
+- Synced the new/changed runtime files into the GovernanceDB runtime overlay and added them to `GovernanceDB.sopm`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.317`.
+- Built `Kernel/Package/GovernanceDB-0.0.317.opm`.
+- `Kernel/Package/GovernanceDB-0.0.317.opm` SHA256: `13D95D7584BA13762CEE54AAD0C9DA0DE4AD2ADE85E8B30C8EE373FF751A83C8`.
+- Supersedes `0.0.316`; use `0.0.317` for Dynamic Field Group install/upgrade testing.
+
+### Architectural decisions
+
+- Chose `DynamicFieldGroup` over a `DynamicFieldSchema` wrapper because the current Set driver already owns row storage, rendering, Include YAML validation, and DynamicField backend delegation.
+- Group is allowed inside Set, but Group cannot contain Set or another Group. This gives the required two-depth shape without introducing unbounded recursive field containers.
+- Multi-value child fields inside Group are rejected for now because Group-inside-Set uses the existing two-dimensional DynamicField storage axes. Supporting multi-value children would require a new three-dimensional storage contract.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `Kernel/System/DynamicField/Driver/DynamicFieldGroup.pm`
+  - `Kernel/Modules/AdminDynamicFieldGroup.pm`
+  - `Kernel/System/DynamicField/Driver/Set.pm`
+  - `Kernel/System/DynamicField/Event/UpdateSetFieldIncludedFields.pm`
+  - matching GovernanceDB runtime-overlay copies.
+- XML parse checks passed for:
+  - `Kernel/Config/Files/XML/DynamicFields.xml`
+  - `Kernel/Package/GovernanceDB/Kernel/Config/Files/XML/GovernanceDB.xml`
+  - `Kernel/Package/GovernanceDB/GovernanceDB.sopm`
+- Mirror hashes match for the touched source/runtime-overlay file pairs.
+- Generated OPM parsed successfully as XML with package version `0.0.317`, file count `207`, and `missing_or_bad_base64=0`.
+- Focused `git diff --check` passed for the touched Dynamic Field Group files and package metadata.
+
+### Known issues / follow-up
+
+- Live OTOBO retest is required:
+  - create a `DynamicFieldGroup` for server rows;
+  - create an outer `DynamicFieldSet` that includes the group;
+  - verify add/remove row behavior and submitted values on Ticket, ITSMConfigItem, and GovernanceObject surfaces.
+- The first supported shape is two-depth rows only: Set -> Group -> ordinary single-value DynamicFields.
 
 ## 2026-07-15 GovernanceDB 0.0.316 Embedded Articles Detect HTML Body Attachment
 
