@@ -11,6 +11,8 @@ use namespace::autoclean;
 
 use parent qw(Kernel::System::DynamicField::Driver::Set);
 
+use List::Util qw(max);
+
 use Kernel::System::VariableCheck qw(:all);
 
 sub new {
@@ -196,6 +198,50 @@ sub GetFieldState {
     my ( $Self, %Param ) = @_;
 
     return $Self->SUPER::GetFieldState( $Self->_GroupParamNormalize(%Param) );
+}
+
+sub ValueIsDifferent {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->SUPER::ValueIsDifferent(%Param) if !$Param{Set};
+
+    my $IncludedFields = $Self->_GetIncludedDynamicFields(
+        InputFieldDefinition => $Param{DynamicFieldConfig}{Config}{Include},
+        DynamicFieldObject   => $Kernel::OM->Get('Kernel::System::DynamicField'),
+    );
+
+    return 0 if !IsHashRefWithData($IncludedFields);
+
+    my @GroupValue1 = ref $Param{Value1} eq 'ARRAY' ? $Param{Value1}->@* : ();
+    my @GroupValue2 = ref $Param{Value2} eq 'ARRAY' ? $Param{Value2}->@* : ();
+
+    OUTER:
+    for my $OuterIndex ( 0 .. max( $#GroupValue1, $#GroupValue2 ) ) {
+
+        my @InnerValue1 = ref $GroupValue1[$OuterIndex] eq 'ARRAY' ? $GroupValue1[$OuterIndex]->@* : ();
+        my @InnerValue2 = ref $GroupValue2[$OuterIndex] eq 'ARRAY' ? $GroupValue2[$OuterIndex]->@* : ();
+
+        INNER:
+        for my $InnerIndex ( 0 .. max( $#InnerValue1, $#InnerValue2 ) ) {
+
+            my $Value1 = ref $InnerValue1[$InnerIndex] eq 'HASH' ? $InnerValue1[$InnerIndex] : {};
+            my $Value2 = ref $InnerValue2[$InnerIndex] eq 'HASH' ? $InnerValue2[$InnerIndex] : {};
+
+            FIELD:
+            for my $FieldName ( keys $IncludedFields->%* ) {
+                my $InnerValueIsDifferent = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueIsDifferent(
+                    %Param,
+                    DynamicFieldConfig => $IncludedFields->{$FieldName},
+                    Value1             => $Value1->{$FieldName},
+                    Value2             => $Value2->{$FieldName},
+                );
+
+                return 1 if $InnerValueIsDifferent;
+            }
+        }
+    }
+
+    return 0;
 }
 
 sub _FieldClassBaseGet {

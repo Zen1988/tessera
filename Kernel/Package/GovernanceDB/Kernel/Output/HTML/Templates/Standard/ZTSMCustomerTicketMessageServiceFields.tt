@@ -1748,17 +1748,12 @@
             });
 
             if (TemplateRows.length) {
-                TemplateRows.forEach(function (Row, Index) {
-                    if (Index === TemplateRows.length - 1) {
+                TemplateRows.forEach(function (Row) {
+                    Row.Input.value = 'Template';
+
+                    if (!TemplateInput) {
                         TemplateInput = Row.Input;
                         TemplateCell = Row.Cell && Row.Cell.classList.contains('MultiValue_Template') ? Row.Cell : Row.Input.closest('.MultiValue_Template');
-                        Row.Input.value = 'Template';
-                        return;
-                    }
-
-                    if (Row.Cell && SeenCells.indexOf(Row.Cell) === -1) {
-                        SeenCells.push(Row.Cell);
-                        RealRows.push(Row);
                     }
                 });
             }

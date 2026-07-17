@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-15
+Last Updated: 2026-07-17
 
 ## Current Focus
 
@@ -25,6 +25,92 @@ Last Updated: 2026-07-15
 - Dynamic Field Group support for two-depth service payload rows, such as one service request containing multiple server provisioning rows.
 
 ## Completed Work
+
+## 2026-07-17 Dynamic Field Group Live Retest Fix
+
+### Completed work
+
+- Fixed the first live `DynamicFieldGroup` retest issue where nested Set/Group templates could render as an extra visible VM provisioning row before the requester clicked add.
+- Changed customer service-field Set index normalization so hidden template rows remain templates instead of promoting extra nested templates into real rows.
+- Re-initialized `DynamicFieldReference` autocomplete controls after service-field row normalization, row creation, payload import/apply, and initial render paths in the follow-up `0.0.320` build.
+- Added `DynamicFieldGroup::ValueIsDifferent()` for nested Set storage so Group values compare as outer row -> inner group row -> child field hashes instead of falling through to the flat Set comparison.
+- Synced changes into GovernanceDB package source/runtime overlay and ZTSM overlay copies where applicable.
+- Bumped `GovernanceDB.sopm` package version to `0.0.318`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.318.opm`.
+- `Kernel/Package/GovernanceDB-0.0.318.opm` SHA256: `48971280394A4EE403D3F0E08288A185B2E6FFC82B61232ED08B2265752A8911`.
+- Rejected `0.0.318` after live retest because it accidentally packaged unrelated canonical service-field template changes, breaking service label display and service payload loading.
+- Restored the service-field runtime template from the known-good `0.0.317` package payload and reapplied only the hidden-template promotion fix.
+- Bumped `GovernanceDB.sopm` package version to `0.0.319`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.319.opm`.
+- `Kernel/Package/GovernanceDB-0.0.319.opm` SHA256: `751D16686EC16AF60DA9DD5D2C2B814CB3F1BF4E22B5DC2BA25A1E3B4F6F4106`.
+- Live retest confirmed `0.0.319` restored the service display and payload loading, but nested reference/autocomplete controls were not bound.
+- Added a narrow `0.0.320` patch that initializes only visible `.ZTSMServiceExtensionField .DynamicFieldReference` controls after Set/Group row cloning and renumbering.
+- Bumped `GovernanceDB.sopm` package version to `0.0.320`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.320.opm`.
+- `Kernel/Package/GovernanceDB-0.0.320.opm` SHA256: `8022467A06E40F654565493B50CD26F49F1FB244A256D01C64B0692170B8C79D`.
+- Live retest showed `0.0.320` still failed autocomplete initialization on ordinary service reference fields such as `ZTicket-Platform` because the customer page was missing `Core.Config.Autocomplete.DynamicFieldReference`.
+- Confirmed from `Export/ALL_DynamicFields_2026-07-17 07_55_06.yml` that `ZTicket-Platform` is correctly configured as Ticket `GovernanceObject`, `EditFieldMode: AutoComplete`, `ClassIDs: 382`, `SearchAttribute: Name`, and `ZTSMStatusIDs: 319`.
+- Added a `0.0.321` patch that seeds the missing customer-side DynamicFieldReference autocomplete config before calling OTOBO's reference initializer, and only marks a field initialized after the initializer succeeds.
+- Bumped `GovernanceDB.sopm` package version to `0.0.321`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.321.opm`.
+- `Kernel/Package/GovernanceDB-0.0.321.opm` SHA256: `BF5DB857F3F2D9C0597035F6A2C10F0C72B7F16E120AD803EA27636168BA7C9F`.
+- Live retest showed `0.0.321` removed the console warning but still did not trigger an autocomplete AJAX request on focus/input.
+- Added a `0.0.323` fallback binder for customer service-field `DynamicFieldReference` controls. The fallback uses jQuery autocomplete and the same `AgentReferenceSearch` query shape as OTOBO's native reference widget, including current form serialization.
+- Bumped `GovernanceDB.sopm` package version to `0.0.323`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.323.opm`.
+- `Kernel/Package/GovernanceDB-0.0.323.opm` SHA256: `78EAAA710E20B6A8467CB3D4117241D71BFD0CB0E0F6DC0573CF413559A946A0`.
+- Rejected `0.0.320`, `0.0.321`, and `0.0.323` after live retests because the autocomplete experiments either did not bind or broke the customer theme/service payload rendering.
+- Restored the service-field runtime template from the known-good embedded `0.0.319` OPM payload, preserving the DynamicFieldGroup backend submit fix separately.
+- Bumped `GovernanceDB.sopm` package version to `0.0.324`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.324.opm`.
+- `Kernel/Package/GovernanceDB-0.0.324.opm` SHA256: `123BBEEAAB3DC008CB9F07A3E55CCE078BE8E9DE87AA493EF89E68AD93AF0702`.
+- Supersedes `0.0.319` as the recovery build; use `0.0.324` to restore page/theme/service payload behavior. Do not use rejected `0.0.320`, `0.0.321`, or `0.0.323`.
+
+### Architectural decisions
+
+- Kept autocomplete/reference fields instead of changing them to dropdowns. Reference fields are still the correct control for governance/CI-style objects because dropdowns become heavy and stale as records grow.
+- Preserved the two-depth contract: outer Set row plus inner Group row; no support for Group-inside-Group or multi-value child fields was introduced.
+
+### Validation
+
+- Perl syntax checks passed for canonical and runtime-overlay `DynamicFieldGroup.pm`.
+- Mirrored `DynamicFieldGroup.pm` copies share SHA256 `0BC8C7F3F755D44B9E3E0C2BB63925712EE746ADF287A8DAC3FABC8163C0670B`.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies share SHA256 `A64D6E0ED6BBED192DC5A776B9949794B8D6A1B0CE126A32AAE062CD6D1A5249`.
+- Template JavaScript parse check passed with bundled Node after extracting script blocks and stripping Template Toolkit tags.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.318.opm` parsed successfully as XML.
+- Generated OPM contains package version `0.0.318`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Focused `git diff --check` passed for the touched Dynamic Field Group files, service-field templates, package metadata, generated OPM, and project status.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.319.opm` parsed successfully as XML.
+- Generated `0.0.319` OPM contains package version `0.0.319`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Conservative `0.0.319` service-field template JavaScript parse check passed with bundled Node.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies for `0.0.320` share SHA256 `29E29A703835E5F6DF979A29994D718D9D6FEB03276082578F3667044FD84C54`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.320.opm` parsed successfully as XML.
+- Generated `0.0.320` OPM contains package version `0.0.320`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Conservative `0.0.320` service-field template JavaScript parse check passed with bundled Node.
+- Focused `git diff --check` passed for the touched service-field templates, package metadata, generated OPM, and Dynamic Field Group files.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies for `0.0.321` share SHA256 `4E95077C110095F39FB243750DEE583955A1FF7D56990BF8F33BB9638F3BFAA6`.
+- Generated `0.0.321` OPM embeds the same runtime service-field template SHA256 `4E95077C110095F39FB243750DEE583955A1FF7D56990BF8F33BB9638F3BFAA6`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.321.opm` parsed successfully as XML.
+- Generated `0.0.321` OPM contains package version `0.0.321`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Conservative `0.0.321` service-field template JavaScript parse check passed with bundled Node.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies for `0.0.323` share SHA256 `5726D1B4783AD10272E8F2A22069DB62F2A64D06F284CD41E89C6B4D8FD78CAF`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.323.opm` parsed successfully as XML.
+- Generated `0.0.323` OPM contains package version `0.0.323`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Conservative `0.0.323` service-field template JavaScript parse check passed with bundled Node.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies for `0.0.324` share restored `0.0.319` SHA256 `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Generated `0.0.324` OPM embeds the same runtime service-field template SHA256 `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.324.opm` parsed successfully as XML.
+- Generated `0.0.324` OPM contains package version `0.0.324`, file count `207`, `MissingEncode=0`, and `BadBase64=0`.
+- Conservative `0.0.324` service-field template JavaScript parse check passed with bundled Node.
+
+### Known issues / follow-up
+
+- Live retest should confirm:
+  - only one VM provisioning row is visible before add;
+  - add/remove works independently for outer VM rows and inner filesystem rows;
+  - service payload and customer theme render correctly again after rejected autocomplete builds;
+  - submit no longer hits `Not a HASH reference ... DynamicField/Driver/Set.pm line 924`.
+- Autocomplete for `ZTicket-Platform` remains unresolved and should be investigated separately without changing the service-field runtime template until the binding path is proven in the browser.
 
 ## 2026-07-15 Dynamic Field Group Source Implementation for Two-Depth Rows
 
