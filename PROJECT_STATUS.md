@@ -1,6 +1,6 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-17
+Last Updated: 2026-07-20
 
 ## Current Focus
 
@@ -25,6 +25,893 @@ Last Updated: 2026-07-17
 - Dynamic Field Group support for two-depth service payload rows, such as one service request containing multiple server provisioning rows.
 
 ## Completed Work
+
+## 2026-07-20 Reference Picker Inline Slot Enforcement 0.0.357
+
+### Completed work
+
+- Corrected `0.0.356` after runtime showed shared picker button classes could still fall back to static inline placement across multiple fields.
+- Added `ApplyPickerButtonSlot()` so every scan physically moves each search trigger to its own `.Field` wrapper.
+- Re-applies per-button inline slot styles with `!important` for absolute right-side placement, size, margin, padding, and box sizing.
+- Keeps native add/remove lane styling separate from the search trigger placement.
+- Built `Kernel/Package/GovernanceDB-0.0.357.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker Field Slot 0.0.356
+
+### Completed work
+
+- Corrected `0.0.355` after runtime showed static inline picker buttons falling to the left/bottom of select-backed fields before any user action.
+- Kept the search trigger owned by the `.Field` host, but changed field-hosted picker buttons to an absolute right-side field slot.
+- Kept native add/remove rows separate and moved only the marked `ZTSMReferencePickerAddRemoveLane` further right, so fields without `+/-` do not inherit multi-value spacing.
+- Built `Kernel/Package/GovernanceDB-0.0.356.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker Native Lane Separation 0.0.355
+
+### Completed work
+
+- Corrected the `0.0.354` assumption after runtime DOM showed the picker button was not inside `.AddRemoveValueRow`; it was inside `.Field`, while OTOBO generated `.AddRemoveValueRow` later as a sibling.
+- Stopped preferring `.AddRemoveValueRow` as the picker host so the search trigger remains attached to the field/value container.
+- Added a field-cell marker `ZTSMReferencePickerFieldCell` and native row marker `ZTSMReferencePickerAddRemoveLane` whenever a reference picker field is scanned.
+- Scoped native add/remove row CSS to the marked field cell and forced `.AddValueRow`, `.RemoveValueRow`, and their icons into stable inline-flex controls.
+- Built `Kernel/Package/GovernanceDB-0.0.355.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker AddRemove Direct Toolbar 0.0.354
+
+### Completed work
+
+- Confirmed runtime DevTools evidence showed native generated add/remove anchors still computing as `display: inline`, so the previous field-scoped selector was not reliably matching the active generated controls.
+- Added direct CSS ownership for `.AddRemoveValueRow.ZTSMReferencePickerInputHost` so picker-enabled multi-value control rows become a fixed-width inline-flex toolbar.
+- Forced child `.AddValueRow`, `.RemoveValueRow`, and their icon glyphs into stable icon-sized inline-flex controls.
+- Removed the noisy `measure-layout` console trace after it identified the selector miss.
+- Built `Kernel/Package/GovernanceDB-0.0.354.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker AddRemove Lane 0.0.353
+
+### Completed work
+
+- Changed strategy after runtime testing showed moving the search icon alone still left it colliding with the native multi-value lane.
+- Identified native customer CSS cause: `.AddRemoveValueRow` is absolutely positioned and constrained to about `33px` width.
+- Added a field-level marker class `ZTSMReferencePickerField` when a reference picker is attached.
+- Scoped an override to `.Field.ZTSMReferencePickerField .AddRemoveValueRow` so picker-enabled multi-value rows become a compact inline-flex toolbar.
+- Expanded picker-enabled add/remove rows to a minimum width of `92px` and moved the lane rightward to accommodate search + remove + add controls.
+- Fixed native `.AddValueRow` and `.RemoveValueRow` anchors in picker-enabled rows to stable `18px x 34px` icon controls.
+- Kept non-multi reference fields as independent inline picker controls.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.353`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.353.opm`.
+- `Kernel/Package/GovernanceDB-0.0.353.opm` SHA256: `3A33593D65C1865ED296747D81ECDA79B03CCFBC1DAB16DB95C4D8ADCA6E4B06`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.353` OPM contains package version `0.0.353`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.353` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.353` tracer payload hash is `92A7EB7AB9CA9E9E01365DE6CD906DB96D84A59D29B9E27A51781D1420E79883`.
+- Decoded `0.0.353` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Independent Control 0.0.352
+
+### Completed work
+
+- Replaced the absolute-positioned picker trigger layout after repeated runtime testing showed it could push the native help icon and still fail to resolve stacking with `+/-`.
+- Removed picker host right-padding behavior from the visible trigger path.
+- Removed absolute positioning from `.ZTSMReferencePickerInputButton`; the picker is now a normal inline control.
+- For multi-value fields, `PickerHostGet()` now prefers `.AddRemoveValueRow`, and `InsertPickerButton()` inserts the search trigger before the native remove/add controls.
+- For non-multi-value fields, the search trigger remains an independent inline sibling control rather than being positioned over the field.
+- Kept targeted `measure-layout` logs and DOM attributes for now, but they no longer drive absolute placement.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.352`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.352.opm`.
+- `Kernel/Package/GovernanceDB-0.0.352.opm` SHA256: `A12B281B43706236D67F3D3AB7CEE18B7E82D2453DCD91AE14FAAA1CF8C51D8B`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.352` OPM contains package version `0.0.352`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.352` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.352` tracer payload hash is `F7B1E8557FB56117091DC618A6B7A0CFF7D7BA9490DE3A67C3C4EDAE1C7BDDCE`.
+- Decoded `0.0.352` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Help Fallback 0.0.351
+
+### Completed work
+
+- Corrected the `0.0.350` measurement after runtime logs still showed `helpLeft=""`, `helpRight=""`, and `right=34`.
+- Interpreted the visible help icon as likely pseudo-rendered or otherwise not producing a measurable rectangle.
+- Added help/add-remove candidate counters to `measure-layout` logs and DOM attributes:
+  - `data-ztsm-reference-picker-help-count`
+  - `data-ztsm-reference-picker-addremove-count`
+- Added a fallback help lane of `64px` when help/tooltip candidates exist but no visible help rectangle can be measured.
+- The picker right offset should now jump from `34px` to about `74px` when help exists without a measurable rect, before adding any `+/-` width.
+- Kept targeted `measure-layout` logs and suppressed routine reference/autocomplete logs.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.351`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.351.opm`.
+- `Kernel/Package/GovernanceDB-0.0.351.opm` SHA256: `AEE1E5ECDB5D745365B746FE5E03B92211B5F708AE21D668BBB2DDD740703AA6`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.351` OPM contains package version `0.0.351`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.351` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.351` tracer payload hash is `53EDFE7088E268E5B10172E8DC5BAFAE5B3C7399246FCBD46024B14DA33152F8`.
+- Decoded `0.0.351` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Visible Rect Measurement 0.0.350
+
+### Completed work
+
+- Corrected the `0.0.349` measurement after runtime logs showed `helpLeft=0`, `helpRight=0`, and `right=34`, proving the code was measuring an invisible/empty tooltip wrapper.
+- Replaced first-match tooltip measurement with `RightmostVisibleRect()`.
+- Help/control measurement now scans likely tooltip/help descendants and chooses the rightmost visible rectangle.
+- Replaced add/remove wrapper width with `VisibleUnionWidth()` so `+/-` size is computed from visible children, not a possibly zero-width wrapper.
+- Kept targeted `measure-layout` logs and `data-ztsm-reference-picker-*` DOM attributes.
+- Kept routine reference/autocomplete logs suppressed.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.350`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.350.opm`.
+- `Kernel/Package/GovernanceDB-0.0.350.opm` SHA256: `9722CEE0370F91700B2FD007A028C77EC1D3736D28C42271B3A75BA3A45DC2C2`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.350` OPM contains package version `0.0.350`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.350` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.350` tracer payload hash is `271587004AAAEED3A2AC50F224C174FE942AFE74507C35F3859FDE2FEA4BAF8B`.
+- Decoded `0.0.350` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Measurement Trace 0.0.349
+
+### Completed work
+
+- Added a targeted `measure-layout` console trace after `0.0.348` was too quiet for diagnosing the still-stacked picker.
+- Routine reference/autocomplete logs remain suppressed; only layout measurement and failures are emitted.
+- Wrote calculated layout values onto the host and picker trigger as `data-ztsm-reference-picker-*` attributes for DOM inspection.
+- Corrected picker offset calculation to use real rectangles:
+  - host right edge,
+  - help icon left/right,
+  - help width,
+  - picker width,
+  - add/remove row width.
+- The picker now calculates its right offset from `host.right - help.left + gap`, then adds `+/-` width when present, instead of only using help icon width.
+- Kept relocation and explicit host priority logic from `0.0.346`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.349`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.349.opm`.
+- `Kernel/Package/GovernanceDB-0.0.349.opm` SHA256: `CE7B2B8D1EA01C10CD88966B55DC8A75697DDBD73426993D2DB3CFA496BAE13B`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.349` OPM contains package version `0.0.349`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.349` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.349` tracer payload hash is `2575D09E5FBFD7F65A119B2182A09DAE29D713418207FCF9915A69F6EFF92A71`.
+- Decoded `0.0.349` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Calculated Layout 0.0.348
+
+### Completed work
+
+- Cleaned up noisy customer console diagnostics from `ZTSM.Customer.ReferenceTrace.js`.
+- Routine trace events such as ready, input, autocomplete search, picker search, and XHR now stay silent.
+- `Log()` now emits only failure/error/exception stages through `console.error`.
+- Replaced hardcoded picker spacing with per-field CSS variables:
+  - `--ztsm-reference-picker-right`
+  - `--ztsm-reference-picker-padding`
+- Added `UpdatePickerLayout()` to calculate picker placement from runtime DOM measurements:
+  - native help/tooltip control width,
+  - picker button width,
+  - `AddRemoveValueRow` width when the picker still shares the broader field host.
+- Kept relocation and explicit host priority logic from `0.0.346`.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.348`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.348.opm`.
+- `Kernel/Package/GovernanceDB-0.0.348.opm` SHA256: `07964DD5D02B373FBEECA590D239C5F26EEFFA25B2BA5584302CB1F619D75629`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.348` OPM contains package version `0.0.348`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.348` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.348` tracer payload hash is `0FAA622F449B6F1FFBF6C9184434DBC2A27F5A1EC222F2D1297726F7E8F1C092`.
+- Decoded `0.0.348` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Help Slot 0.0.347
+
+### Completed work
+
+- Corrected the `0.0.346` relocation attempt after runtime showed the picker now conflicts with the help icon slot after selecting a reference value.
+- Treated the issue as a class/layout collision rather than only a DOM-order problem.
+- Updated picker CSS so reference hosts reserve right-side space for controls.
+- Moved the picker trigger into a dedicated left-of-help slot (`right: 72px`) and reduced its z-index so it does not visually dominate the native help icon.
+- Kept the relocation and explicit host priority logic from `0.0.346`.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.347`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.347.opm`.
+- `Kernel/Package/GovernanceDB-0.0.347.opm` SHA256: `9EF28D7EB70ACC20C408233B9A097604EE3F3009C14262B9B9E2152234534042`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.347` OPM contains package version `0.0.347`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.347` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.347` tracer payload hash is `46E518543EEFD80D72B99B99A4EC6F27648AE7B339EFBE98FBCEB6C97C4DF813`.
+- Decoded `0.0.347` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Relocation 0.0.346
+
+### Completed work
+
+- Corrected the `0.0.345` placement attempt after runtime showed the picker span could still remain as a sibling after `.AddRemoveValueRow`.
+- Root cause: OTOBO can render/update the multi-value `+/-` row after the picker already exists, and the previous scan skipped existing fields once `data-ztsm-reference-picker` was set.
+- Added relocation logic for existing picker triggers:
+  - every scan now calls `RelocatePickerButton()` for already-bound reference fields,
+  - existing picker triggers are linked to their field with `data-ztsm-reference-picker-for`,
+  - if the trigger is in the wrong host, it is moved into the preferred host.
+- Preferred host remains the visible `.InputField_Container`, then `.FieldCell`, then broader fallbacks.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.346`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.346.opm`.
+- `Kernel/Package/GovernanceDB-0.0.346.opm` SHA256: `37C49FA20F5D8AA080D7D7D06CF7B697B70E57AC1D60C05F2AAFE2C3283C4E40`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.346` OPM contains package version `0.0.346`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.346` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.346` tracer payload hash is `7EB7133E45BE4668DD42C5F11CF374E35BF97BEF552E8BA8E8A117FCB3BC4EF6`.
+- Decoded `0.0.346` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Container Anchor 0.0.345
+
+### Completed work
+
+- Corrected the `0.0.344` anchor attempt after runtime DOM showed why `+/-` still visually covered the picker:
+  - The search picker was appended inside `.Field` before `.AddRemoveValueRow`.
+  - OTOBO renders/updates `.AddRemoveValueRow` after the picker, so the later add/remove row can sit on top of the search trigger.
+  - A combined `Element.closest('.FieldCell, ..., .Field')` selector still chose nearest `.Field`, because `closest()` does not honor selector priority.
+- Added explicit `PickerHostGet()` priority logic:
+  - first use `.InputField_Container` within the current `.Field`,
+  - then `.InputField_Container`,
+  - then `.FieldCell`,
+  - then broader fallback wrappers.
+- This keeps the picker inside the visible chip/value container rather than before the later sibling add/remove row.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.345`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.345.opm`.
+- `Kernel/Package/GovernanceDB-0.0.345.opm` SHA256: `CA91FA5374B0C39EE971DF147305DD6DDF37BCC188332DBD82D814F957C904A0`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.345` OPM contains package version `0.0.345`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.345` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.345` tracer payload hash is `EA02E5ABBD76F213A77C1E0744B8C1BA868C54371AA93FE4D904C248DF4782F4`.
+- Decoded `0.0.345` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker FieldCell Anchor 0.0.344
+
+### Completed work
+
+- Used runtime DOM inspection to identify the correct structure for multi-value reference fields:
+  - `.Field` contains the visible `.FieldCell MultiValue_0` and sibling `.AddRemoveValueRow`.
+  - The `+/-` controls live in `.AddRemoveValueRow`, not inside the visible field cell.
+- Changed picker host selection to prefer `.FieldCell` before `fieldset`, `.Field`, row, or generic div wrappers.
+- Reset picker icon offsets relative to `.FieldCell`, so the search trigger should render inside the value/chip box instead of beside the sibling `+/-` controls.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.344`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.344.opm`.
+- `Kernel/Package/GovernanceDB-0.0.344.opm` SHA256: `FC4AB28387BEF25E7130AFD129269F227B9FD051C6317351BA3B95AA38D72AB6`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.344` OPM contains package version `0.0.344`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.344` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.344` tracer payload hash is `BEBDE20FCE48ADD545EC5E7889814BFC3C5D4AFCB10FE5682C368EBD869A0D78`.
+- Decoded `0.0.344` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Fieldset Anchor 0.0.343
+
+### Completed work
+
+- Corrected the `0.0.342` spacing attempt after runtime showed the picker icon still outside the visible bordered field.
+- Changed picker host selection to prefer the visible `fieldset` wrapper before broader row/div wrappers.
+- Reset picker icon offsets relative to the fieldset so the search trigger should sit inside the rendered field border instead of in the outside `+/-` lane.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.343`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.343.opm`.
+- `Kernel/Package/GovernanceDB-0.0.343.opm` SHA256: `8843BFACBC9CAA68300AD0173B8005FFFFF15C2B33F47B0BDF2933C1C0A19CCB`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.343` OPM contains package version `0.0.343`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.343` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.343` tracer payload hash is `CAF6EB843C7133E88C86AAC571FA5E51EF57DD9CDB503EDB9A22EA982441FF53`.
+- Decoded `0.0.343` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Field-Inset Spacing 0.0.342
+
+### Completed work
+
+- Corrected the `0.0.341` spacing attempt after runtime showed the picker icon still sitting in the outside control lane beside DynamicField Set `+/-` controls.
+- Moved the default compact picker icon placement farther left so it sits inside the rendered field area instead of between the field border and set controls.
+- Increased the set-control offset for rows where nearby `+/-` controls are detected.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.342`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.342.opm`.
+- `Kernel/Package/GovernanceDB-0.0.342.opm` SHA256: `D5D0320851C077533FF23E7582D8AD3A551CD1D7B27588BC07A533250CBA0746`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.342` OPM contains package version `0.0.342`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.342` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.342` tracer payload hash is `BE29770DF0C616A36369A9C6D7FB18D625143207D06C52FCE75B3B17935D49B4`.
+- Decoded `0.0.342` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Set Control Spacing 0.0.341
+
+### Completed work
+
+- Added a targeted runtime detector for nearby DynamicField Set `+/-` controls around reference picker hosts.
+- When set controls are present, the compact reference picker icon now shifts farther left to avoid stacking on top of `+/-`.
+- Single-value reference picker fields keep the existing compact icon placement.
+- Kept the neutral non-button picker trigger from `0.0.340`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.341`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.341.opm`.
+- `Kernel/Package/GovernanceDB-0.0.341.opm` SHA256: `59BF6D1671EA5931C37F9754536A993B8B5163A38C602072C0B289D7DFFD69A0`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.341` OPM contains package version `0.0.341`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.341` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.341` tracer payload hash is `0E1D1953AE77B429C30A921D26CF0DDC2E01BEBD01D85FB56D14440B4E3E967F`.
+- Decoded `0.0.341` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Trigger Neutral Icon 0.0.340
+
+### Completed work
+
+- Replaced the reference picker trigger element from a real HTML `button` to a neutral `span` with `role="button"` and `tabindex="0"`.
+- Added Enter/Space keyboard activation for the neutral picker trigger.
+- Updated picker trigger CSS selectors so portal/global button styling can no longer turn the search icon into the large blue primary pill shown in runtime testing.
+- Preserved the native OTOBO reference chip/preselected display for Location, Environment, Application, and similar fields.
+- Kept nested DynamicField Set picker support for fields such as `ZCompute-Image`.
+- Kept backend context filtering from `0.0.339`, including Application-to-Platform and Platform/Location-to-Image filtering.
+- Mirrored updated `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Mirrored current `AgentReferenceSearch.pm` into package runtime overlay, live source, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.340`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.340.opm`.
+- `Kernel/Package/GovernanceDB-0.0.340.opm` SHA256: `8263E787647A21BD928B67919F92B92932961B9E2A1684650CF5C8CF4F415C71`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.340` and clearing loader/cache, the search picker should show as a compact neutral icon overlay instead of a large blue portal button.
+- Existing selected chips such as `Location: LDC`, `Environment: PROD`, and `Application: IaaS Extension` should remain visible before searching.
+- Clicking the compact icon should still open the richer CI/GO picker modal.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.340` OPM contains package version `0.0.340`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.340` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.340` tracer payload hash is `BE5C10D58842D03965E57E31F01D4A8F1C0A5B61C1B3CD959940B5853F0F5360`.
+- Decoded `0.0.340` `AgentReferenceSearch.pm` payload hash remains `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Widget Visual Correction 0.0.339
+
+### Completed work
+
+- Corrected the `0.0.337/0.0.338` visible replacement approach after runtime testing showed duplicated blue picker surfaces below the native preselected chip UI.
+- Kept the rule as widget-style based: rendered reference object controls get the search picker widget, regardless of field-name family.
+- Removed the select replacement shell/display path and preserved OTOBO's existing preselected chip/native reference display.
+- The picker now adds only a compact search icon overlay to reference object controls.
+- Strengthened picker button CSS with `all: unset !important` plus explicit dimensions to prevent portal primary button styling from stretching the search icon.
+- Retained DynamicField Set rescan and nested text/autocomplete placement for fields such as `ZCompute-Image`.
+- Retained backend reference context filter specs from `0.0.338`, including Platform/Location filtering for `ZCompute-Image`.
+- Mirrored updated `ZTSM.Customer.ReferenceTrace.js` and `AgentReferenceSearch.pm` into package runtime overlay, `ZTSMOverlay/files`, live source, and local `otobo-11.0.16`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Bumped `GovernanceDB.sopm` package version to `0.0.339`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.339.opm`.
+- `Kernel/Package/GovernanceDB-0.0.339.opm` SHA256: `CD6B84EB5CD06F01263F1BCCEC111F6C47FA73C418B28345A616335499C98BED`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.339` and clearing loader/cache, Location/Environment/Application should keep their existing preselected chip display.
+- The duplicate blue display buttons from `0.0.337/0.0.338` should be gone.
+- A compact search icon should be available on reference object controls to open the richer picker.
+- Nested Image should still get picker access and backend filtering by Platform/Location.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Updated `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.339` OPM contains package version `0.0.339`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.339` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.339` tracer payload hash is `6A37FC21454362BFF7AC70FE4E075206A9FCCFA97B7EEB621A01FB23DC9839D5`.
+- Decoded `0.0.339` `AgentReferenceSearch.pm` payload hash is `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Search Widget Hardening 0.0.338
+
+### Completed work
+
+- Clarified the widget rule: reference object controls use the search picker widget based on rendered reference behavior, not hand-selected field names.
+- Hardened picker button CSS with explicit sizing and theme overrides so portal button styles cannot stretch the search icon into a full-width primary action.
+- Added visible overlay placement for text/autocomplete reference inputs so nested DynamicField Set fields such as `ZCompute-Image` get a usable picker button inside the field area.
+- Added a MutationObserver rescan so dynamically inserted set rows receive picker widgets after the original page scan.
+- Fixed select replacement spacing so selected labels sit below the floating field label instead of colliding with it.
+- Replaced the one-off application-platform filter with a central reference context filter spec table inside `AgentReferenceSearch.pm`.
+- Current filter specs:
+  - `ZTicket-Application` constrains `ZTicket-Platform` through `ZTSMAppSystem-Platform`.
+  - `ZTicket-Platform` constrains `ZCompute-Image` through image CI field `ZTAM-Platform`.
+  - `ZTicket-Location` constrains `ZCompute-Image` through image CI field `ZTAM-Location`.
+- The filter table is still code-local in this build, but isolated so it can move to SysConfig/configuration later without rewriting search flow.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Mirrored updated `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Mirrored updated `AgentReferenceSearch.pm` into package runtime overlay and `ZTSMOverlay/files`; direct live-source and local `otobo-11.0.16` Perl mirror copies were locked by Windows with `user-mapped section open`, so the generated OPM should be used as the deployment authority.
+- Bumped `GovernanceDB.sopm` package version to `0.0.338`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.338.opm`.
+- `Kernel/Package/GovernanceDB-0.0.338.opm` SHA256: `16C143586196B4A8C269267CD2CE364CF10C08AF6EBB2CAFDA01CC0BB20B2B24`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.338` and clearing loader/cache, the Hosting Platform picker button should render as a compact icon button.
+- Nested VM Image fields should show the picker button inside the field area.
+- Image picker results should be filtered by selected Platform and Location when those context fields have values.
+- The selected values should still pre-populate visibly before any search.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Updated package runtime-overlay `AgentReferenceSearch.pm` passed Perl syntax checks.
+- Updated `ZTSMOverlay/files/Kernel/Modules/AgentReferenceSearch.pm` passed Perl syntax checks.
+- Generated `0.0.338` OPM contains package version `0.0.338`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.338` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.338` tracer payload hash is `26EA0F9E7E22E02CF88013BAB6920BF02CBDB68FAF81172D566F6509FF4C3AA4`.
+- Decoded `0.0.338` `AgentReferenceSearch.pm` payload hash is `33006215F1B61120DABF1F83D5EDC308348F876A452FF752F09DD50E814FBE3A`.
+
+## 2026-07-20 Reference Picker Visible Replacement 0.0.337
+
+### Completed work
+
+- Promoted the picker from an extra button beside select-backed reference fields into the visible replacement widget for those fields.
+- Native `select.DynamicFieldReference` controls remain in the DOM for form submission, validation, and OTOBO dependent-field change handling, but are moved out of the visible layout.
+- Added a clean read-only picker display surface with the selected label and a search button for dropdown-rendered references such as Application, Location, and Environment.
+- Picker display syncs when the native select changes, including dependent updates caused by other fields.
+- Picker selection still writes the real object key to the native select, adds the option if needed, and triggers normal `change`.
+- Kept text autocomplete references such as Platform/Image on their existing field surface plus picker button.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Mirrored updated `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.337`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.337.opm`.
+- `Kernel/Package/GovernanceDB-0.0.337.opm` SHA256: `4C3CD7E2B395F9C438CC8D09825E84A83530FEDF1C92F39A1033E52AD853E000`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.337` and clearing loader/cache, ugly dropdown-rendered reference fields should appear as the new picker display widget instead of a native dropdown.
+- Existing backend payload submission and dependent-field filtering should continue because the native select value is still present and changed under the hood.
+- Text autocomplete reference fields remain visible as text fields with picker access.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.337` OPM contains package version `0.0.337`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.337` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.337` tracer payload hash is `0097662A5C7B0BC89A1C22AD3B453D1FB3B2D7286B5E265E1D45989EC8FE5134`.
+- Decoded `0.0.337` `AgentReferenceSearch.pm` payload hash remains `5FE3CDCFDC0E825C1BD25921594C1E6262247997276344E9EAADA4E6916D9864`.
+
+## 2026-07-20 Reference Picker For Select Fields 0.0.336
+
+### Completed work
+
+- Expanded the customer reference picker widget to include select-backed `DynamicFieldReference` controls, not only text autocomplete inputs.
+- Application, Location, Environment, and other dropdown-rendered CI/GO reference fields can now show the same picker button as Platform/Image.
+- Kept autocomplete repair/search forcing input-only so select fields are not incorrectly treated as jQuery UI autocomplete widgets.
+- Picker modal uses the selected option label as the initial search term for select fields, rather than the raw numeric object key.
+- Picker selection for select-backed reference fields now writes the selected object key into the select, adds the option if it was not already present, and triggers normal `change` handling.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Mirrored updated `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.336`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.336.opm`.
+- `Kernel/Package/GovernanceDB-0.0.336.opm` SHA256: `CD1E48997819A6BEA67B556EBAECB8FFDB253FCF72A5FC70146634A8B846A434`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.336` and clearing loader/cache, dropdown-style reference fields such as Application should get the picker button.
+- Selecting through the picker should update the underlying select value and fire dependent field behavior, including Application-to-Platform filtering/autofill.
+- Operators can use the picker as the preferred widget while the original dropdown remains present for compatibility.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.336` OPM contains package version `0.0.336`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.336` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.336` tracer payload hash is `93EE972BE240B8C79A8427A2A4B86E0C39EA12C852F4DF315FD81D72C0E3BA1C`.
+- Decoded `0.0.336` `AgentReferenceSearch.pm` payload hash remains `5FE3CDCFDC0E825C1BD25921594C1E6262247997276344E9EAADA4E6916D9864`.
+
+## 2026-07-20 Customer Reference Picker Coverage 0.0.335
+
+### Completed work
+
+- Expanded the customer reference picker from only `ZTicket-*` reference inputs to all real `DynamicFieldReference` autocomplete inputs.
+- This means CI/GO-style fields such as nested Image references should receive the picker button without manually changing each field to autocomplete configuration.
+- Kept ordinary non-reference text inputs out of picker discovery by requiring the `DynamicFieldReference` class.
+- Hardened `AgentReferenceSearch.pm` field-name parsing for DynamicField Group / nested field ids such as `Autocomplete_DynamicField_<Group>_<InnerField>_0_2`.
+- Backend fallback now tries real configured DynamicField candidates from the nested DOM id and picks the innermost reference-capable DynamicField.
+- Kept platform filtering and auto-fill behavior from `0.0.334`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Mirrored updated `AgentReferenceSearch.pm` and `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.335`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.335.opm`.
+- `Kernel/Package/GovernanceDB-0.0.335.opm` SHA256: `736526CA55869135B025C484FA0718CE9837C33A63973D6B0E816AE1CC6F7CCD`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.335` and clearing loader/cache, Image and other CI/GO DynamicFieldReference inputs should show the picker button.
+- Operators should not need to manually change every reference field to autocomplete just to get picker access.
+- Nested service-payload fields should call `AgentReferenceSearch` with a backend-resolved inner field name rather than failing with `Need Field!`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Updated `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.335` OPM contains package version `0.0.335`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.335` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.335` tracer payload hash is `EE23575ABA3F1E365BC606658C0301B5D2CC96CB762F9DE06B41E88EECECDC35`.
+- Decoded `0.0.335` `AgentReferenceSearch.pm` payload hash is `5FE3CDCFDC0E825C1BD25921594C1E6262247997276344E9EAADA4E6916D9864`.
+
+## 2026-07-20 Customer Reference Picker Prototype 0.0.334
+
+### Completed work
+
+- Added a first reusable customer reference picker on top of the standalone `ZTSM.Customer.ReferenceTrace.js` asset.
+- The picker adds a small search button beside real `ZTicket-*` DynamicFieldReference text inputs and opens a modal table instead of relying only on the fragile inline autocomplete popup.
+- Picker searches call `AgentReferenceSearch` with `Picker=1`, `Field`, `Term`, `MaxResults=50`, and the current form values so backend restrictions can use selected Service/Application/Location/Environment context.
+- Backend picker mode now returns richer row data for CI/GO-style references: label, description, object type, name, number, class, status, field name, and whether the field is configured as MultiValue.
+- Picker-mode backend search broadens candidates and filters by value, description, name, number, class, status, and object type, so the popup can support description-oriented lookup without changing the normal autocomplete path.
+- Added customer-side platform auto-fill: when `ZTicket-Application` is selected and `ZTicket-Platform` is empty, the picker search runs with current form context. If exactly one platform remains, it is applied automatically; otherwise no free-form platform is chosen.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the recovered `0.0.324` payload.
+- Mirrored updated `AgentReferenceSearch.pm` and `ZTSM.Customer.ReferenceTrace.js` into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.334`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.334.opm`.
+- `Kernel/Package/GovernanceDB-0.0.334.opm` SHA256: `193FD2155D665706D8B54A916FA55F0A496C84A53E00B6321924D3F7750648BF`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.334` and clearing loader/cache, CI/GO reference fields should show a search button beside the text field.
+- Clicking the button should open a searchable modal table with name, class, number, status, and description columns.
+- Searches should honor current form context; for example, selected Application should restrict Platform choices to that application's configured platform values.
+- If Application narrows Platform to exactly one object, Platform should auto-populate. If multiple platforms remain, the operator should choose through the picker.
+- Existing inline autocomplete tracing remains available while the picker path is tested.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Updated `AgentReferenceSearch.pm` passed Perl syntax checks in package overlay, live source, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.334` OPM contains package version `0.0.334`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.334` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.334` tracer payload hash is `BF3AA01AD40D7C8E1547CDC6E16E28FE0066550393E384D8170C83616B16F466`.
+- Decoded `0.0.334` `AgentReferenceSearch.pm` payload hash is `352373BBB6B012D7F5C04C34BDF63EB6164C9E21870CB6A5DF7BB49A61FEFCC6`.
+
+### Known issues / next slice
+
+- The picker currently applies one selected reference through OTOBO's existing hidden-key reference setter. True tick-multiple-and-return must be implemented against OTOBO's MultiValue row mechanics instead of joining keys into one hidden field.
+- Runtime retest should confirm whether all desired CI and Governance Object DynamicFieldReference fields receive the picker button; ordinary non-reference text fields are intentionally ignored.
+
+## 2026-07-20 Customer Reference Search Scheduling Trace 0.0.333
+
+### Completed work
+
+- Live capture from `0.0.332` showed `direct-input`, `direct-keyup`, and `value-watch-change` for `Autocomplete_DynamicField_ZTicket-Platform` with value `IaaS Ex`, but no `autocomplete-search-forced`.
+- Clarified expected delays: core autocomplete delay is `100ms`, forced-search nudge delay is `120ms`, and value watcher interval is `400ms`; lack of popup after several seconds is not expected latency.
+- Identified a possible diagnostic edge where `ForceAutocompleteSearch()` recorded the last searched term before the timer fired, so a canceled/replaced timer could dedupe later identical terms.
+- Moved the last-term marker to after the search timer actually fires.
+- Added explicit `autocomplete-search-scheduled` and `autocomplete-search-skip` logs with skip reasons: `not-text-autocomplete-input`, `not-bound`, `term-too-short`, or `duplicate-term`.
+- Added document-level `paste` tracing alongside direct `paste` tracing.
+- Kept all changes outside `ZTSMCustomerTicketMessageServiceFields.tt`; the service payload template remains the recovered `0.0.324` payload.
+- Mirrored the updated tracer into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.333`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.333.opm`.
+- `Kernel/Package/GovernanceDB-0.0.333.opm` SHA256: `ED300E07D3E98EBA1E8B05008A21543722D53CE8C86E3252728E18DAA3EDD3CA`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.333` and clearing loader/cache, typing in Platform/Image should log either `autocomplete-search-scheduled` followed by `autocomplete-search-forced`, or `autocomplete-search-skip` with the exact reason.
+- If `autocomplete-search-scheduled` appears but `autocomplete-search-forced` does not appear within about one second, timer execution is being blocked or repeatedly replaced.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks.
+- Generated `0.0.333` OPM contains package version `0.0.333`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.333` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.333` tracer payload hash is `3B69CDB1C7A9178CF7AAF7E894CB404CB8B40D8E1900651D8EF9913BE8590A3F`.
+
+## 2026-07-20 Customer Reference Result Normalization 0.0.332
+
+### Completed work
+
+- Live capture from `0.0.331` showed value watcher and forced search working: `autocomplete-search-forced`, `autocomplete-source-call`, and `autocomplete-source-response` appeared.
+- Confirmed backend responses are now reaching the browser, but OTOBO autocomplete rendering crashed with `Cannot read properties of undefined (reading 'replace')` in `Core.UI.Autocomplete._renderItem`.
+- Identified the crash as at least one autocomplete suggestion reaching jQuery UI without a usable `label`.
+- Narrowed forced search/watch behavior to real text autocomplete inputs only, preventing existing select-backed fields such as Location, Env, and Application from being force-searched by their stored numeric values.
+- Added frontend result normalization in `ZTSM.Customer.ReferenceTrace.js` so suggestions always contain string `label`, `value`, and `key` before rendering.
+- Hardened `AgentReferenceSearch.pm` backend result generation so `Value` falls back through `Long`, `Normal`, `Short`, `Name`, then `ObjectID`, and sorting handles empty values safely.
+- Mirrored the updated tracer and backend module into package runtime overlay, `ZTSMOverlay/files`, local source, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.332`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.332.opm`.
+- `Kernel/Package/GovernanceDB-0.0.332.opm` SHA256: `0A67591BB42BFB952B2AE75B080FD7868DA194A9FE3193151D0657E65962BBCB`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.332` and clearing loader/cache, typing in real text autocomplete fields such as Platform/Image should still show forced search/source traces.
+- Existing select-backed reference values should no longer trigger noisy forced searches.
+- Suggestion rendering should no longer crash on missing label values.
+- Backend logs should show `TESSERA AgentReferenceSearch hit/result` for typed text autocomplete fields that reach the backend.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks.
+- Updated package runtime-overlay `AgentReferenceSearch.pm` passed Perl syntax checks with OTOBO include paths.
+- Generated `0.0.332` OPM contains package version `0.0.332`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.332` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.332` tracer payload hash is `1585AD43A2C509BD8BEE2186B4499DC6ADA4E41CCBFAF30FD3E509EF97F46262`.
+- Decoded `0.0.332` `AgentReferenceSearch.pm` payload hash is `0BF3EB19165C08CF33219B0E25E7DAEBE32C699E478478A6E5CFA5EE7771207B`.
+
+## 2026-07-20 Customer Reference Direct Event Watcher 0.0.331
+
+### Completed work
+
+- Live capture from `0.0.330` showed `ready`, `autocomplete-options`, and `autocomplete-source-wrapped` for `Autocomplete_DynamicField_ZTicket-Platform`, but no `autocomplete-search-forced`, `autocomplete-source-call`, `xhr-*`, or backend hit.
+- Interpreted the gap as post-focus typing not reliably reaching the document-level event path used by the diagnostic asset.
+- Enhanced `ZTSM.Customer.ReferenceTrace.js` to bind direct `input`, `keyup`, `paste`, and `change` handlers to `ZTicket-*` reference inputs after autocomplete is detected.
+- Added a narrow 400ms value watcher for `ZTicket-*` reference controls, so value changes trigger `ForceAutocompleteSearch` even if browser events are swallowed by the modernized field wrapper.
+- Added trace points `direct-events-bound`, `direct-keyup` / `direct-input`, and `value-watch-change`.
+- Kept all changes outside `ZTSMCustomerTicketMessageServiceFields.tt`; the service payload template remains the recovered `0.0.324` payload.
+- Mirrored the updated tracer into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.331`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.331.opm`.
+- `Kernel/Package/GovernanceDB-0.0.331.opm` SHA256: `E380D2958DD94F6AB78821A1F04BB09BD07A49D65AB40724A88D1E024BC66319`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.331` and clearing loader/cache, focusing platform should show `direct-events-bound`.
+- Typing should show either `direct-keyup` / `direct-input` or `value-watch-change`, followed by `autocomplete-search-forced`.
+- If `autocomplete-search-forced` appears but no `autocomplete-source-call`, the widget search method is being suppressed below jQuery UI's public API.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks.
+- Generated `0.0.331` OPM contains package version `0.0.331`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.331` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.331` tracer payload hash is `CDA45D9917EBFA1D66DE7314B7E085BEA1E6275635F1A37019B647BC18E4C352`.
+
+## 2026-07-20 Customer Reference Forced Search Trace 0.0.330
+
+### Completed work
+
+- Live capture from `0.0.329` showed `Autocomplete_DynamicField_ZTicket-Platform` had `autocompleteBound: true`, `minLength: "2"`, `delay: "100"`, `disabled: false`, and `hasSource: true`, but still no `xhr-*` trace or backend `AgentReferenceSearch` hit.
+- Identified the remaining gap as the jQuery autocomplete search/source path not being invoked despite correct widget options.
+- Enhanced `ZTSM.Customer.ReferenceTrace.js` to wrap the autocomplete `source` function for `ZTicket-*` reference controls and log `autocomplete-source-call` and `autocomplete-source-response`.
+- Added a narrow forced-search nudge for `ZTicket-*` reference inputs: on key/input value change with length above `minLength`, call the widget's own `.autocomplete('search', term)`.
+- Kept all changes outside `ZTSMCustomerTicketMessageServiceFields.tt`; the service payload template remains the recovered `0.0.324` payload.
+- Mirrored the updated tracer into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.330`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.330.opm`.
+- `Kernel/Package/GovernanceDB-0.0.330.opm` SHA256: `BF86032947E206D3EE96D43D2BCECB47141DA05EBF1E7A42F09E4F74FEC09686`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.330` and clearing loader/cache, typing in platform should show `autocomplete-source-wrapped`, `autocomplete-search-forced`, then `autocomplete-source-call`.
+- If `autocomplete-source-call` appears, the next expected frontend trace is `xhr-open` / `xhr-send` for `AgentReferenceSearch`.
+- If `xhr-open` appears, backend should log `TESSERA AgentReferenceSearch hit`.
+- If `autocomplete-source-call` appears without `xhr-open`, the failure is inside the core source function before `Core.AJAX.FunctionCall`.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks.
+- Generated `0.0.330` OPM contains package version `0.0.330`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.330` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.330` tracer payload hash is `9B45AD1A559417AB9460A840F6DF2AB1B8B8E913023AD50A2DC0E126A8A4BD33`.
+
+## 2026-07-20 Customer Reference Autocomplete Activation 0.0.329
+
+### Completed work
+
+- Live retest of `0.0.327` later showed `[TESSERA reference trace] keyup` for `Autocomplete_DynamicField_ZTicket-Platform` with `autocompleteBound: true`, but still no frontend AJAX or backend `AgentReferenceSearch` hit.
+- Identified the likely runtime state as jQuery autocomplete bound in button-only/passive mode, where core `DynamicFieldReferenceSearch` uses `minLength: 500` when autocomplete active config is not applied.
+- Enhanced `ZTSM.Customer.ReferenceTrace.js` to log jQuery autocomplete options for `ZTicket-*` reference fields.
+- Added a narrow repair for `ZTicket-*` reference autocomplete controls: when the field is already bound but has `minLength >= 500` or disabled, set `minLength` to configured `MinQueryLength` or `2`, set delay to configured `QueryDelay` or `100`, and enable the widget.
+- Kept the repair outside `ZTSMCustomerTicketMessageServiceFields.tt`; the service payload template remains the recovered `0.0.324` payload.
+- Mirrored the updated tracer into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.329`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.329.opm`.
+- `Kernel/Package/GovernanceDB-0.0.329.opm` SHA256: `304820DAEF4F60FE2234A50F4F9526125F96625D7F7A03CCA3B447B85C84A63E`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.329` and clearing loader/cache, the console should log `autocomplete-options` or `autocomplete-repaired` for `Autocomplete_DynamicField_ZTicket-Platform`.
+- If `autocomplete-repaired` appears, typing `IaaS` should now trigger `xhr-open` / `xhr-send` to `AgentReferenceSearch` and backend `TESSERA AgentReferenceSearch hit`.
+- If `autocomplete-options` shows `minLength: 2` and typing still does not fire AJAX, the next issue is inside the autocomplete source/search event path rather than passive-mode configuration.
+
+### Validation
+
+- Updated tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.329` OPM contains package version `0.0.329`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.329` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.329` tracer payload hash is `8E5D6AC5450F833AE6B946A2CB5575E875E28B6224367CF8C996B7F3A6AB9D46`.
+
+## 2026-07-20 Customer Reference Trace DOM Widening 0.0.328
+
+### Completed work
+
+- Live retest of `0.0.327` showed only `[TESSERA reference trace] ready`; browser console and backend logs showed no input, AJAX, or `AgentReferenceSearch` activity while typing in platform autocomplete.
+- Widened `ZTSM.Customer.ReferenceTrace.js` to log a JSON copy of each diagnostic entry so collapsed DevTools objects are not required.
+- Added startup field inventory for `DynamicField`, `ZTicket`, service, and select2-related controls.
+- Added select2/search-input awareness so generated search boxes without `ZTicket-*` ids/names can still be traced and related back to the hidden dynamic field where possible.
+- Mirrored the widened tracer into package runtime overlay, `ZTSMOverlay/files`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.328`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.328.opm`.
+- `Kernel/Package/GovernanceDB-0.0.328.opm` SHA256: `4E95697C48F198821F09DF9D6959242F3D268983C8F1D1042BAFBB92F70F24C9`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.328` and clearing loader/cache, console should show both collapsible and JSON-string trace lines.
+- The `ready` JSON should include a `fields` array that reveals the actual ids/names/classes for the rendered platform control.
+- Typing into a generated select2 search field should now log `focusin`, `input`, or `keyup` even if the generated input itself has no dynamic-field name.
+- If field activity appears but no `xhr-*` / `jquery-ajax` appears, the UI is capturing text but no autocomplete request is being fired.
+
+### Validation
+
+- Widened tracer passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- Generated `0.0.328` OPM contains package version `0.0.328`, file count `209`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.328` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.328` tracer payload hash is `5B088C59058A0A7E6A7EA149EA949AA4882ECB82ADB5B992A49FD6516E0E8D35`.
+
+## 2026-07-20 Customer Reference Trace Loader 0.0.327
+
+### Completed work
+
+- Added standalone customer frontend trace asset `ZTSM.Customer.ReferenceTrace.js`.
+- Registered the tracer through `Loader::Module::CustomerTicketMessage###110-ZTSMReferenceTrace` in `ZTSMGovernanceRuntime.xml`.
+- Kept `ZTSMCustomerTicketMessageServiceFields.tt` unchanged from the `0.0.324` recovery payload.
+- Mirrored the tracer into the package runtime overlay, `ZTSMOverlay/files`, and the local `otobo-11.0.16` runtime tree.
+- Bumped `GovernanceDB.sopm` package version to `0.0.327`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.327.opm`.
+- `Kernel/Package/GovernanceDB-0.0.327.opm` SHA256: `221516D059DAA4069AB5385B41C554C1348AA1B74368F5D0F702FF7F3FDE6773`.
+
+### Architectural decisions
+
+- Do not add more diagnostic JavaScript inside `ZTSMCustomerTicketMessageServiceFields.tt` while service payload rendering remains fragile.
+- Use an isolated loader asset to answer frontend/backend hit questions without changing payload form DOM generation.
+- Keep backend diagnostic logs at `error` priority for the current live retest because the deployment log level hides lower-priority output.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` passed bundled Node syntax checks in package overlay, `ZTSMOverlay`, and local runtime copies.
+- `ZTSMGovernanceRuntime.xml` and `GovernanceDB.sopm` parsed successfully as XML.
+- Perl syntax checks passed for package runtime-overlay `CustomerTicketMessage.pm` and `AgentReferenceSearch.pm`.
+- Generated `0.0.327` OPM contains package version `0.0.327`, file count `209`, and the new tracer payload.
+- Decoded `0.0.327` service-field template payload hash remains `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`.
+- Decoded `0.0.327` tracer payload hash is `7ED2261348981B30CFB56BD315ED978BF613F89D4B73E543BF14D1B6A5218A15`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.327` and clearing loader/cache, the browser console should show `[TESSERA reference trace] ready` on `CustomerTicketMessage`.
+- Typing in `ZTicket-*` reference/autocomplete fields should show `[TESSERA reference trace] input` or `keyup`.
+- If the browser sends an autocomplete/payload request, console should show `xhr-open`, `xhr-send`, or `jquery-ajax` for `AgentReferenceSearch`, `ZTSMServicePayloadReferenceResolve`, or `ZTSMServiceExtensionDynamicFields`.
+- If console shows field input but no request log and backend has no `TESSERA AgentReferenceSearch hit`, the autocomplete binding did not fire in the browser.
+
+## 2026-07-20 Service Payload Template Recovery 0.0.326
+
+### Completed work
+
+- Rejected `0.0.325` after live retest because the customer theme broke again and the service payload form was not generated below the selected service.
+- Restored all `ZTSMCustomerTicketMessageServiceFields.tt` copies from the known-good `0.0.324` runtime-overlay OPM payload.
+- Removed the risky frontend autocomplete/request tracing changes by restoring the service-field template to the `0.0.324` recovery hash.
+- Kept backend-only diagnostic logging in `CustomerTicketMessage.pm` and `AgentReferenceSearch.pm` at `error` priority.
+- Kept backend application-platform filtering for `ZTicket-Platform` autocomplete/resolution.
+- Bumped `GovernanceDB.sopm` package version to `0.0.326`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.326.opm`.
+- `Kernel/Package/GovernanceDB-0.0.326.opm` SHA256: `FD84EC8F343FEB73214AB4B48BCDC4A1BCE6C9CA893F71C4D2078B3C2EC61A9F`.
+
+### Architectural decisions
+
+- Do not instrument the customer service-field template while service payload rendering is unstable.
+- Backend logs are sufficient for the immediate hit/no-hit question because `AgentReferenceSearch` now logs native autocomplete backend hits directly.
+- `0.0.326` should be used instead of `0.0.325` for retesting theme and service payload generation.
+
+### Validation
+
+- Restored `ZTSMCustomerTicketMessageServiceFields.tt` copies share SHA256 `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`, matching the documented `0.0.324` recovery template.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Perl syntax checks passed for canonical `CustomerTicketMessage.pm` and `AgentReferenceSearch.pm`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.326.opm` parsed successfully as XML.
+- Generated `0.0.326` OPM contains package version `0.0.326`, file count `208`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.326` runtime-overlay payload hashes:
+  - service-field template: `AB412F9511D2163D75D52764EE72223B912E733E4EED84B3570E134EBD594A76`;
+  - `CustomerTicketMessage.pm`: `5A38B61BDAA80115435B8719D9DEE2C19B73FB99709E9982141AB68737CF7F6B`;
+  - `AgentReferenceSearch.pm`: `086BCDC246C2E0E5824B168B6229A7E353E7D0D68623C6B59A4E944ECB688445`.
+
+### Runtime expectation
+
+- After upgrading to `0.0.326`, the customer theme and service payload form should behave like `0.0.324`.
+- Backend OTOBO error log should still show `TESSERA CustomerTicketMessage submit trace ... backend-hit` for service submit/update paths and `TESSERA AgentReferenceSearch hit/result` for native autocomplete backend requests.
+
+## 2026-07-20 Service Payload Autocomplete Trace and Platform Filter 0.0.325
+
+### Completed work
+
+- Added high-visibility customer service-field submit trace receipts in `CustomerTicketMessage` for `StoreNew`, `AJAXUpdate`, `ZTSMServiceExtensionDynamicFields`, and `ZTSMServicePayloadReferenceResolve`.
+- Added backend resolver result logging for `ZTSMServicePayloadReferenceResolve`, including field, requested value, success, key, and message.
+- Added frontend debug trace for service-field reference controls:
+  - `reference init attempt` when native DynamicFieldReference initialization is attempted;
+  - `reference autocomplete ajax send/done` for native `AgentReferenceSearch` requests;
+  - payload apply resolver/search send and miss diagnostics.
+- Added a runtime-overlay `AgentReferenceSearch.pm` so customer autocomplete backend hits are logged with prefix `TESSERA AgentReferenceSearch`.
+- Added application-platform filtering for `ZTicket-Platform`:
+  - native autocomplete results are filtered to the selected `ZTicket-Application` object's `ZTSMAppSystem-Platform` values when an application is selected;
+  - payload reference resolution applies the same application-platform constraint before accepting a platform match.
+- Added `var/governancedb/runtime_overlay/Kernel/Modules/AgentReferenceSearch.pm` to `GovernanceDB.sopm`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.325`.
+- Rebuilt `Kernel/Package/GovernanceDB-0.0.325.opm`.
+- `Kernel/Package/GovernanceDB-0.0.325.opm` SHA256: `E7F1AE444A5A66F85E4B6D876CF6C676E5312529441D54C6D4A9CB046457D73C`.
+
+### Architectural decisions
+
+- Kept `ZTicket-Platform` as a GovernanceObject reference/autocomplete field, not free-form text.
+- Enforced the application platform relationship on the backend so autocomplete and payload import/apply share the same rule.
+- Kept diagnostic logs at `error` priority for this retest build because absence/presence of backend log lines is the current troubleshooting signal.
+
+### Validation
+
+- Perl syntax checks passed for canonical and package/runtime `CustomerTicketMessage.pm`.
+- Perl syntax checks passed for canonical and package runtime-overlay `AgentReferenceSearch.pm`.
+- Template inline JavaScript parsed successfully with bundled Node after stripping Template Toolkit tags.
+- Mirrored `CustomerTicketMessage.pm` copies share SHA256 `5A38B61BDAA80115435B8719D9DEE2C19B73FB99709E9982141AB68737CF7F6B`.
+- Mirrored `ZTSMCustomerTicketMessageServiceFields.tt` copies share SHA256 `B5C1CA53C15D23594AE4CB7DEC4E9DCC5B5225A8CE5E4D54E3035F78944322C3`.
+- Mirrored `AgentReferenceSearch.pm` copies share SHA256 `086BCDC246C2E0E5824B168B6229A7E353E7D0D68623C6B59A4E944ECB688445`.
+- `GovernanceDB.sopm` and generated `GovernanceDB-0.0.325.opm` parsed successfully as XML.
+- Generated `0.0.325` OPM contains package version `0.0.325`, file count `208`, `MissingEncode=0`, and `EmptyPayload=0`.
+- Decoded `0.0.325` runtime-overlay payload hashes match the updated source files.
+
+### Runtime expectation
+
+- Enable browser debug with `localStorage.setItem('ZTSMServicePayloadDebug', '1')`, reload, then retry platform autocomplete.
+- If the frontend logs `reference autocomplete ajax send` but OTOBO logs do not show `TESSERA AgentReferenceSearch hit`, the request is not reaching the backend or the runtime overlay is not active.
+- If OTOBO logs show `TESSERA AgentReferenceSearch result ... count=0 applicationPlatformFilter=...`, the backend was hit and the selected application platform filter removed all candidates.
+- For payload import/apply, compare browser `reference resolver send/miss` with OTOBO `backend-payload-reference-resolve-result`.
 
 ## 2026-07-17 Dynamic Field Group Live Retest Fix
 

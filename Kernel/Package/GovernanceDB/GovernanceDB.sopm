@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.0.324</Version>
+    <Version>0.0.357</Version>
     <Framework>11.0.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -135,6 +135,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminService.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminServiceImportExport.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminSLAImportExport.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentReferenceSearch.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketDecision.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentTicketQuickClose.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerDashboardCommon.pm" Permission="660"/>
@@ -179,6 +180,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogContainer.html.tmpl" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogDetailed.html.tmpl" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogModal.html.tmpl" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Customer.ReferenceTrace.js" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/BaseDateTime.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/Date.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/DynamicFieldGroup.pm" Permission="660"/>
