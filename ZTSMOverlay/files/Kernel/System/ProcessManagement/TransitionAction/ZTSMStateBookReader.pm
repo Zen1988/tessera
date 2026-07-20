@@ -81,6 +81,40 @@ sub _TicketOnHold {
     return;
 }
 
+sub _IncidentIterationInitialize {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if lc( $Ticket->{Type} || '' ) ne 'incident';
+
+    my $Iteration = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} );
+    return 1 if defined $Iteration && $Iteration ne '';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZIN-Iteration',
+    );
+    return if !$DynamicFieldConfig || ref $DynamicFieldConfig ne 'HASH';
+    return if ( $DynamicFieldConfig->{ObjectType} || '' ) ne 'Ticket';
+
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Ticket->{TicketID},
+        Value              => 1,
+        UserID             => $Param{UserID} || 1,
+    );
+    return if !$Success;
+
+    $Ticket->{'DynamicField_ZIN-Iteration'} = 1;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'notice',
+        Message  => "ZTSMStateBookReader: Initialized missing Incident ZIN-Iteration=1 TicketID=$Ticket->{TicketID}",
+    );
+
+    return 1;
+}
+
 sub _FieldCandidates {
     my ($Value) = @_;
 
@@ -374,6 +408,14 @@ sub Run {
             Message  => "ZTSMStateBookReader: Ticket is onhold, skip lifecycle orchestration TicketID=$TicketID",
         );
         return 1;
+    }
+
+    if ( !_IncidentIterationInitialize( Ticket => $Ticket, UserID => $Param{UserID} || 1 ) ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMStateBookReader: Could not initialize Incident iteration TicketID=$TicketID",
+        );
+        return;
     }
 
     # ------------------------------------------------------------ #

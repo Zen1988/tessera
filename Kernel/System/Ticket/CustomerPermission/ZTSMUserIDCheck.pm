@@ -168,21 +168,150 @@ sub _GetTicketDynamicField {
     );
 }
 
-sub _SupportProfileVariants {
+sub _GovernanceObjectReferenceValues {
     my (%Param) = @_;
 
-    my $Value = _NormalizeValue( $Param{SupportProfile} );
+    my $Value = _NormalizeValue( $Param{Value} );
 
     return if !defined $Value;
     return if $Value eq '';
 
-    my %Value;
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @GovernanceObjects;
 
     if ( $Value =~ m{\A\d+\z} ) {
-        $Value{$Value} = 1;
+        for my $Lookup (
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
+            )
+        {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    %{$Lookup},
+                    DynamicFields => 0,
+                    Silent        => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+    else {
+        my @GovernanceObjectIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Result  => 'ARRAY',
+            Classes => [ $Param{Class} ],
+            Name    => $Value,
+            Limit   => 10,
+            UserID  => $Param{UserID} || 1,
+        );
+
+        for my $GovernanceObjectID (@GovernanceObjectIDs) {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    GovernanceObjectID => $GovernanceObjectID,
+                    DynamicFields      => 0,
+                    Silent             => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
     }
 
-    return sort keys %Value;
+    my %Reference;
+    for my $GovernanceObject (@GovernanceObjects) {
+        next if ( $GovernanceObject->{Class} || '' ) ne $Param{Class};
+
+        $Reference{ $GovernanceObject->{GovernanceObjectID} } = 1 if $GovernanceObject->{GovernanceObjectID};
+        $Reference{ $GovernanceObject->{LastVersionID} }      = 1 if $GovernanceObject->{LastVersionID};
+        $Reference{ $GovernanceObject->{VersionID} }          = 1 if $GovernanceObject->{VersionID};
+    }
+
+    return sort { $a <=> $b } grep { defined $_ && $_ =~ m{\A\d+\z} } keys %Reference;
+}
+
+sub _OwnerGroupAssignmentIDs {
+    my (%Param) = @_;
+
+    my @SupportProfileReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{OwnerGroup},
+        Class  => 'SupportProfile',
+        UserID => $Param{UserID},
+    );
+    my @RoleReferences = @SupportProfileReferences ? () : _GovernanceObjectReferenceValues(
+        Value  => $Param{OwnerGroup},
+        Class  => 'GovernanceRole',
+        UserID => $Param{UserID},
+    );
+
+    return if !@SupportProfileReferences && !@RoleReferences;
+
+    my @ApplicationReferences;
+    if (@RoleReferences) {
+        @ApplicationReferences = _GovernanceObjectReferenceValues(
+            Value  => $Param{ApplicationID},
+            Class  => 'Application',
+            UserID => $Param{UserID},
+        );
+        return if defined $Param{ApplicationID} && $Param{ApplicationID} ne '' && !@ApplicationReferences;
+    }
+
+    my @CustomerUserIDs = _CustomerUserReferenceIDs(
+        CustomerUserID => $Param{CustomerUserID},
+    );
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %AssignmentID;
+
+    for my $CustomerUserID (@CustomerUserIDs) {
+        for my $SupportProfile (@SupportProfileReferences) {
+            my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                Classes => ['SupportAssignment'],
+                'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
+                    Equals => $SupportProfile,
+                },
+                'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                    Equals => $CustomerUserID,
+                },
+                Result => 'ARRAY',
+                Limit  => 100,
+                UserID => $Param{UserID} || 1,
+            );
+            $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+        }
+
+        for my $Role (@RoleReferences) {
+            my %BaseSearch = (
+                Classes => ['SupportAssignment'],
+                'DynamicField_ZTSMSupportAssignment-Role' => {
+                    Equals => $Role,
+                },
+                'DynamicField_ZTSMSupportAssignment-UserAccount' => {
+                    Equals => $CustomerUserID,
+                },
+                Result => 'ARRAY',
+                Limit  => 100,
+                UserID => $Param{UserID} || 1,
+            );
+
+            if (@ApplicationReferences) {
+                for my $Application (@ApplicationReferences) {
+                    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                        %BaseSearch,
+                        'DynamicField_ZTSMSupportAssignment-Application' => {
+                            Equals => $Application,
+                        },
+                    );
+                    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+                }
+            }
+            else {
+                my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(%BaseSearch);
+                $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+            }
+        }
+    }
+
+    return sort { $a <=> $b } keys %AssignmentID;
 }
 
 # ------------------------------------------------------------ #
@@ -199,62 +328,26 @@ sub _UserParticipateSupportProfile {
         'Kernel::System::GovernanceObject'
     );
 
-    #
-    # Search Support Assignment
-    #
-
-    SUPPORTPROFILE:
-    for my $SupportProfile (
-        _SupportProfileVariants(
-            SupportProfile => $Param{SupportProfile},
-            ReferenceOnly  => 1,
-        )
-        )
-    {
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'debug',
-        Message  => 'ZTSM Permission support assignment search enter: CustomerUserID='
-            . $Param{CustomerUserID}
-            . ' SupportProfile='
-            . $SupportProfile,
+    my @AssignmentIDs = _OwnerGroupAssignmentIDs(
+        OwnerGroup     => $Param{SupportProfile},
+        ApplicationID => $Param{ApplicationID},
+        CustomerUserID => $Param{CustomerUserID},
+        UserID         => $Param{UserID},
     );
-
-    my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
-    my %AssignmentID;
-
-    for my $CustomerUserID (@CustomerUserIDs) {
-    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
-
-        Classes => ['SupportAssignment'],
-        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
-            Equals => $SupportProfile,
-        },
-        'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-            Equals => $CustomerUserID,
-        },
-        Result => 'ARRAY',
-        Limit  => 100,
-    );
-
-    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
-    }
-
-    my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'debug',
         Message  => 'ZTSM Permission support assignment search result: CustomerUserID='
             . $Param{CustomerUserID}
-            . ' CandidateIDs='
-            . join( '|', @CustomerUserIDs )
-            . ' SupportProfile='
-            . $SupportProfile
+            . ' AssignmentIDs='
+            . join( '|', @AssignmentIDs )
+            . ' OwnerGroup='
+            . $Param{SupportProfile}
             . ' Count='
             . scalar @AssignmentIDs,
     );
 
-    next SUPPORTPROFILE if !@AssignmentIDs;
+    return if !@AssignmentIDs;
 
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
@@ -279,8 +372,8 @@ sub _UserParticipateSupportProfile {
             Priority => 'info',
             Message  => 'ZTSM Permission assignment accepted user: AssignmentID='
                 . $AssignmentID
-                . ' SupportProfile='
-                . $SupportProfile,
+                . ' OwnerGroup='
+                . $Param{SupportProfile},
         );
 
         return 1;
@@ -308,7 +401,6 @@ sub _UserParticipateSupportProfile {
                 && $Param{Role} eq $Type
             );
     }
-    }
 
     return;
 }
@@ -324,37 +416,14 @@ sub _UserHasSupportAssignmentType {
         'Kernel::System::GovernanceObject'
     );
 
-    SUPPORTPROFILE:
-    for my $SupportProfile (
-        _SupportProfileVariants(
-            SupportProfile => $Param{SupportProfile},
-            ReferenceOnly  => 1,
-        )
-        )
-    {
-
-    my @CustomerUserIDs = _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} );
-    my %AssignmentID;
-
-    for my $CustomerUserID (@CustomerUserIDs) {
-    my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
-        Classes => ['SupportAssignment'],
-        'DynamicField_ZTSMSupportAssignment-SupportProfile' => {
-            Equals => $SupportProfile,
-        },
-        'DynamicField_ZTSMSupportAssignment-UserAccount' => {
-            Equals => $CustomerUserID,
-        },
-        Result => 'ARRAY',
-        Limit  => 100,
+    my @AssignmentIDs = _OwnerGroupAssignmentIDs(
+        OwnerGroup      => $Param{SupportProfile},
+        ApplicationID  => $Param{ApplicationID},
+        CustomerUserID => $Param{CustomerUserID},
+        UserID          => $Param{UserID},
     );
 
-    $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
-    }
-
-    my @AssignmentIDs = sort { $a <=> $b } keys %AssignmentID;
-
-    next SUPPORTPROFILE if !@AssignmentIDs;
+    return if !@AssignmentIDs;
 
     ASSIGNMENT:
     for my $AssignmentID (@AssignmentIDs) {
@@ -376,8 +445,8 @@ sub _UserHasSupportAssignmentType {
             Priority => 'info',
             Message  => 'ZTSM Permission failback assignment accepted user: AssignmentID='
                 . $AssignmentID
-                . ' SupportProfile='
-                . $SupportProfile,
+                . ' OwnerGroup='
+                . $Param{SupportProfile},
         );
 
         my $Type = _NormalizeValue(
@@ -389,7 +458,6 @@ sub _UserHasSupportAssignmentType {
         return 1
             if defined $Type
             && $Type eq $Param{AssignmentType};
-    }
     }
 
     return;
@@ -475,6 +543,11 @@ sub _CanParticipateTicket {
             SupportProfile => $OwnerGroup,
 
             CustomerUserID => $Param{CustomerUserID},
+
+            ApplicationID => _GetTicketDynamicField(
+                Ticket => $Ticket,
+                Field  => 'ZTicket-Application',
+            ),
 
             Role => $Role,
         );
@@ -663,6 +736,10 @@ sub Run {
             if _UserParticipateSupportProfile(
             SupportProfile => $OwnerGroup,
             CustomerUserID => $CustomerUserID,
+            ApplicationID  => _GetTicketDynamicField(
+                Ticket => \%Ticket,
+                Field  => 'ZTicket-Application',
+            ),
             Role           => $Role,
             );
 
@@ -679,6 +756,10 @@ sub Run {
             if _UserHasSupportAssignmentType(
             SupportProfile => $OwnerGroup,
             CustomerUserID => $CustomerUserID,
+            ApplicationID  => _GetTicketDynamicField(
+                Ticket => \%Ticket,
+                Field  => 'ZTicket-Application',
+            ),
             AssignmentType => 'Escalation',
             );
 

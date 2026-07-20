@@ -19,6 +19,7 @@
                         <Item Key="Incident">IN</Item>
                         <Item Key="Problem">PR</Item>
                         <Item Key="Assessment">AS</Item>
+                        <Item Key="Confirmation">CF</Item>
                         <Item Key="Approval">AP</Item>
                         <Item Key="Task">TA</Item>
                         <Item Key="Verification">VE</Item>
@@ -357,6 +358,13 @@
             </Item>
         </Value>
     </Setting>
+    <Setting Name="Ticket::Frontend::CustomerTicketZTSMAction###ConfirmLoopbackState" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parent ticket state used when confirmation reports that the incident is not resolved.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="String">diagnose</Item>
+        </Value>
+    </Setting>
     <Setting Name="Loader::Module::CustomerTicketZTSMAction###002-Ticket" Required="0" Valid="1">
         <Description Translatable="1">Loader module registration for TESSERA customer runtime ticket actions.</Description>
         <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
@@ -369,6 +377,23 @@
                 <Item Key="JavaScript">
                     <Array>
                         <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketMessage###110-ZTSMReferenceTrace" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer ticket reference diagnostics.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ZTSM.Customer.ReferenceTrace.js</Item>
                     </Array>
                 </Item>
             </Hash>

@@ -153,6 +153,19 @@ sub _IsRequesterDefaultProfile {
     return;
 }
 
+sub _IsAffectedUserSupportRole {
+    my ($Profile) = @_;
+
+    $Profile = _ProfileKey($Profile);
+    return if !defined $Profile;
+
+    return 1 if $Profile eq 'ESCALATION';
+    return 1 if $Profile eq 'PRIMARY';
+    return 1 if $Profile eq 'SECONDARY';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # UPDATE TICKET FIELD
 # ------------------------------------------------------------ #
@@ -231,6 +244,148 @@ sub _IsSupportProfile {
     return @SupportProfileIDs ? 1 : 0;
 }
 
+sub _GovernanceObjectReferenceValues {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value || $Value eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @GovernanceObjects;
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        for my $Lookup (
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
+            )
+        {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    %{$Lookup},
+                    DynamicFields => 0,
+                    Silent        => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+    else {
+        my @GovernanceObjectIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Result  => 'ARRAY',
+            Classes => [ $Param{Class} ],
+            Name    => $Value,
+            Limit   => 10,
+            UserID  => $Param{UserID} || 1,
+        );
+
+        for my $GovernanceObjectID (@GovernanceObjectIDs) {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    GovernanceObjectID => $GovernanceObjectID,
+                    DynamicFields      => 0,
+                    Silent             => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+
+    my %Reference;
+    for my $GovernanceObject (@GovernanceObjects) {
+        next if ( $GovernanceObject->{Class} || '' ) ne $Param{Class};
+
+        $Reference{ $GovernanceObject->{GovernanceObjectID} } = 1 if $GovernanceObject->{GovernanceObjectID};
+        $Reference{ $GovernanceObject->{LastVersionID} }      = 1 if $GovernanceObject->{LastVersionID};
+        $Reference{ $GovernanceObject->{VersionID} }          = 1 if $GovernanceObject->{VersionID};
+    }
+
+    return sort { $a <=> $b } grep { defined $_ && $_ =~ m{\A\d+\z} } keys %Reference;
+}
+
+sub _ResolveGovernanceRoleSupportProfile {
+    my (%Param) = @_;
+
+    my @RoleReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{GovernanceRole},
+        Class  => 'GovernanceRole',
+        UserID => $Param{UserID},
+    );
+    return if !@RoleReferences;
+
+    my @ApplicationReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{ApplicationID},
+        Class  => 'Application',
+        UserID => $Param{UserID},
+    );
+    return if defined $Param{ApplicationID} && $Param{ApplicationID} ne '' && !@ApplicationReferences;
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %AssignmentID;
+
+    for my $RoleReference (@RoleReferences) {
+        my %BaseSearch = (
+            Classes => ['SupportAssignment'],
+            'DynamicField_ZTSMSupportAssignment-Role' => {
+                Equals => $RoleReference,
+            },
+            Result => 'ARRAY',
+            Limit  => 1000,
+            UserID => $Param{UserID} || 1,
+        );
+
+        if (@ApplicationReferences) {
+            for my $ApplicationReference (@ApplicationReferences) {
+                my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                    %BaseSearch,
+                    'DynamicField_ZTSMSupportAssignment-Application' => {
+                        Equals => $ApplicationReference,
+                    },
+                );
+                $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+            }
+        }
+        else {
+            my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(%BaseSearch);
+            $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+        }
+    }
+
+    for my $AssignmentID ( sort { $a <=> $b } keys %AssignmentID ) {
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+        next if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $SupportProfile = _GetDynamicFieldValue(
+            Object => $Assignment,
+            Field  => 'ZTSMSupportAssignment-SupportProfile',
+        );
+        next if !$SupportProfile;
+
+        my @SupportProfileReferences = _GovernanceObjectReferenceValues(
+            Value  => $SupportProfile,
+            Class  => 'SupportProfile',
+            UserID => $Param{UserID},
+        );
+        for my $SupportProfileReference (@SupportProfileReferences) {
+            my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                Result             => 'ARRAY',
+                Classes            => ['SupportProfile'],
+                GovernanceObjectID => [$SupportProfileReference],
+                Limit              => 1,
+                UserID             => $Param{UserID} || 1,
+            );
+            return $SupportProfileIDs[0] if @SupportProfileIDs;
+        }
+    }
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RESOLVE PROFILE DIRECTIVE
 # ------------------------------------------------------------ #
@@ -263,6 +418,11 @@ sub _ResolveProfileDirective {
             )
         {
             $Result{SupportProfile} = $Profile;
+            return %Result;
+        }
+
+        if ( ( $GovernanceObject->{Class} || '' ) eq 'GovernanceRole' ) {
+            $Result{GovernanceRole} = $Profile;
             return %Result;
         }
 
@@ -594,8 +754,12 @@ sub Run {
 
     my $ProfileDisplay = $ProfileDirective{Display} || $Profile;
 
+    my $DynamicGovernanceRole;
     if ( $ProfileDirective{SupportProfile} ) {
         $ResolvedSupportProfile = $ProfileDirective{SupportProfile};
+    }
+    elsif ( $ProfileDirective{GovernanceRole} ) {
+        $DynamicGovernanceRole = $ProfileDirective{GovernanceRole};
     }
     else {
         $Profile = $ProfileDirective{ProfileKey} || $Profile;
@@ -607,8 +771,51 @@ sub Run {
 
     my $ResolutionCandidate;
     my $RequesterOwnerUserID;
+    my $AffectedUserOwnerUserID;
 
-    if (
+    if ($DynamicGovernanceRole) {
+        if ( _IsRequesterDefaultProfile($ProfileDisplay) ) {
+            $ResolutionCandidate = _ResolveRequesterProfile(
+
+                CustomerUserID => $CustomerUserID,
+            );
+
+            if ( !$ResolutionCandidate ) {
+                $ResolutionCandidate = _ResolveAppProfile(
+
+                    ApplicationID => $ApplicationID,
+                );
+            }
+
+            $ResolvedSupportProfile = $ResolutionCandidate;
+            $RequesterOwnerUserID   = $CustomerUserID;
+        }
+        elsif ( _IsAffectedUserSupportRole($ProfileDisplay) ) {
+            $ResolutionCandidate = _ResolveRequesterProfile(
+
+                CustomerUserID => $CustomerUserID,
+            );
+
+            if ( !$ResolutionCandidate ) {
+                $ResolutionCandidate = _ResolveAppProfile(
+
+                    ApplicationID => $ApplicationID,
+                );
+            }
+
+            $AffectedUserOwnerUserID = $CustomerUserID;
+        }
+        else {
+            $ResolutionCandidate = _ResolveGovernanceRoleSupportProfile(
+                GovernanceRole => $DynamicGovernanceRole,
+                ApplicationID  => $ApplicationID,
+                UserID          => 1,
+            );
+        }
+        $ResolvedSupportProfile = $ResolutionCandidate;
+    }
+
+    elsif (
         !$ResolvedSupportProfile
         &&
         _IsRequesterDefaultProfile($Profile)
@@ -621,6 +828,18 @@ sub Run {
 
         $ResolvedSupportProfile = $ResolutionCandidate;
         if ( !$ResolvedSupportProfile ) {
+            $ResolutionCandidate = _ResolveAppProfile(
+
+                ApplicationID => $ApplicationID,
+            );
+
+            $ResolvedSupportProfile = $ResolutionCandidate;
+        }
+
+        if ( !$ResolvedSupportProfile ) {
+            $RequesterOwnerUserID = $CustomerUserID;
+        }
+        else {
             $RequesterOwnerUserID = $CustomerUserID;
         }
     }
@@ -720,7 +939,7 @@ sub Run {
     # RESOLUTION FAILED
     # -------------------------------------------------------- #
 
-    if ($RequesterOwnerUserID) {
+    if ( $RequesterOwnerUserID && !$ResolvedSupportProfile ) {
 
         _UpdateTicketField(
 
@@ -810,14 +1029,14 @@ sub Run {
         Value => $ResolvedSupportProfile,
     );
 
-    if ( _IsRequesterDefaultProfile($Profile) ) {
+    if ( _IsRequesterDefaultProfile($Profile) || $AffectedUserOwnerUserID ) {
         _UpdateTicketField(
 
             TicketID => $TicketID,
 
             FieldName => 'ZTicket-Owner',
 
-            Value => '',
+            Value => $RequesterOwnerUserID || $AffectedUserOwnerUserID || $CustomerUserID || '',
         );
     }
 

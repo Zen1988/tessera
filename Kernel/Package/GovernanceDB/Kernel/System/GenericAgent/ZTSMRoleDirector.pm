@@ -149,6 +149,19 @@ sub _IsRequesterDefaultProfile {
     return;
 }
 
+sub _IsAffectedUserSupportRole {
+    my ($Profile) = @_;
+
+    $Profile = _ProfileKey($Profile);
+    return if !defined $Profile;
+
+    return 1 if $Profile eq 'ESCALATION';
+    return 1 if $Profile eq 'PRIMARY';
+    return 1 if $Profile eq 'SECONDARY';
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # UPDATE TICKET FIELD
 # ------------------------------------------------------------ #
@@ -227,6 +240,148 @@ sub _IsSupportProfile {
     return @SupportProfileIDs ? 1 : 0;
 }
 
+sub _GovernanceObjectReferenceValues {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value || $Value eq '';
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my @GovernanceObjects;
+
+    if ( $Value =~ m{\A\d+\z} ) {
+        for my $Lookup (
+            { GovernanceObjectID => $Value },
+            { VersionID          => $Value },
+            )
+        {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    %{$Lookup},
+                    DynamicFields => 0,
+                    Silent        => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+    else {
+        my @GovernanceObjectIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+            Result  => 'ARRAY',
+            Classes => [ $Param{Class} ],
+            Name    => $Value,
+            Limit   => 10,
+            UserID  => $Param{UserID} || 1,
+        );
+
+        for my $GovernanceObjectID (@GovernanceObjectIDs) {
+            my $GovernanceObject = eval {
+                $GovernanceObjectObject->GovernanceObjectGet(
+                    GovernanceObjectID => $GovernanceObjectID,
+                    DynamicFields      => 0,
+                    Silent             => 1,
+                );
+            };
+            push @GovernanceObjects, $GovernanceObject
+                if $GovernanceObject && ref $GovernanceObject eq 'HASH';
+        }
+    }
+
+    my %Reference;
+    for my $GovernanceObject (@GovernanceObjects) {
+        next if ( $GovernanceObject->{Class} || '' ) ne $Param{Class};
+
+        $Reference{ $GovernanceObject->{GovernanceObjectID} } = 1 if $GovernanceObject->{GovernanceObjectID};
+        $Reference{ $GovernanceObject->{LastVersionID} }      = 1 if $GovernanceObject->{LastVersionID};
+        $Reference{ $GovernanceObject->{VersionID} }          = 1 if $GovernanceObject->{VersionID};
+    }
+
+    return sort { $a <=> $b } grep { defined $_ && $_ =~ m{\A\d+\z} } keys %Reference;
+}
+
+sub _ResolveGovernanceRoleSupportProfile {
+    my (%Param) = @_;
+
+    my @RoleReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{GovernanceRole},
+        Class  => 'GovernanceRole',
+        UserID => $Param{UserID},
+    );
+    return if !@RoleReferences;
+
+    my @ApplicationReferences = _GovernanceObjectReferenceValues(
+        Value  => $Param{ApplicationID},
+        Class  => 'Application',
+        UserID => $Param{UserID},
+    );
+    return if defined $Param{ApplicationID} && $Param{ApplicationID} ne '' && !@ApplicationReferences;
+
+    my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %AssignmentID;
+
+    for my $RoleReference (@RoleReferences) {
+        my %BaseSearch = (
+            Classes => ['SupportAssignment'],
+            'DynamicField_ZTSMSupportAssignment-Role' => {
+                Equals => $RoleReference,
+            },
+            Result => 'ARRAY',
+            Limit  => 1000,
+            UserID => $Param{UserID} || 1,
+        );
+
+        if (@ApplicationReferences) {
+            for my $ApplicationReference (@ApplicationReferences) {
+                my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                    %BaseSearch,
+                    'DynamicField_ZTSMSupportAssignment-Application' => {
+                        Equals => $ApplicationReference,
+                    },
+                );
+                $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+            }
+        }
+        else {
+            my @FoundAssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(%BaseSearch);
+            $AssignmentID{$_} = 1 for @FoundAssignmentIDs;
+        }
+    }
+
+    for my $AssignmentID ( sort { $a <=> $b } keys %AssignmentID ) {
+        my $Assignment = $GovernanceObjectObject->GovernanceObjectGet(
+            GovernanceObjectID => $AssignmentID,
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+        next if !$Assignment || ref $Assignment ne 'HASH';
+
+        my $SupportProfile = _GetDynamicFieldValue(
+            Object => $Assignment,
+            Field  => 'ZTSMSupportAssignment-SupportProfile',
+        );
+        next if !$SupportProfile;
+
+        my @SupportProfileReferences = _GovernanceObjectReferenceValues(
+            Value  => $SupportProfile,
+            Class  => 'SupportProfile',
+            UserID => $Param{UserID},
+        );
+        for my $SupportProfileReference (@SupportProfileReferences) {
+            my @SupportProfileIDs = $GovernanceObjectObject->GovernanceObjectSearch(
+                Result             => 'ARRAY',
+                Classes            => ['SupportProfile'],
+                GovernanceObjectID => [$SupportProfileReference],
+                Limit              => 1,
+                UserID             => $Param{UserID} || 1,
+            );
+            return $SupportProfileIDs[0] if @SupportProfileIDs;
+        }
+    }
+
+    return;
+}
+
 # ------------------------------------------------------------ #
 # RESOLVE PROFILE DIRECTIVE
 # ------------------------------------------------------------ #
@@ -259,6 +414,11 @@ sub _ResolveProfileDirective {
             )
         {
             $Result{SupportProfile} = $Profile;
+            return %Result;
+        }
+
+        if ( ( $GovernanceObject->{Class} || '' ) eq 'GovernanceRole' ) {
+            $Result{GovernanceRole} = $Profile;
             return %Result;
         }
 
@@ -559,6 +719,258 @@ sub _ReadProfile {
 	}
 }
 
+sub _DiagnosisOutcomeLabel {
+    my (%Param) = @_;
+
+    my $Value = _NormalizeValue( $Param{Value} );
+    return if !defined $Value || $Value eq '';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZIN-Outcome',
+    );
+
+    if ( $DynamicFieldConfig && $DynamicFieldConfig->{ID} ) {
+        my $DisplayValue = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueLookup(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            Key                => $Value,
+        );
+
+        return _NormalizeValue($DisplayValue)
+            if defined $DisplayValue && $DisplayValue ne '';
+    }
+
+    return $Value;
+}
+
+sub _DiagnosisOwnerGroupsResolve {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $Iteration      = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} );
+    return if !$ParentTicketID;
+    return if !defined $Iteration || $Iteration eq '';
+
+    my @Iterations = ($Iteration);
+    push @Iterations, $Iteration - 1
+        if $Iteration =~ m{\A\d+\z} && $Iteration > 0;
+
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $LogObject    = $Kernel::OM->Get('Kernel::System::Log');
+
+    ITERATION:
+    for my $CandidateIteration (@Iterations) {
+        my @DiagnosisTicketIDs = sort { $a <=> $b } $TicketObject->TicketSearch(
+            Result    => 'ARRAY',
+            Types     => ['Diagnosis'],
+            StateType => ['closed'],
+            'DynamicField_ZTicket-Parent' => {
+                Equals => $ParentTicketID,
+            },
+            'DynamicField_ZIN-Iteration' => {
+                Equals => $CandidateIteration,
+            },
+            UserID => $Param{UserID} || 1,
+        );
+
+        next ITERATION if !@DiagnosisTicketIDs;
+
+        my @OwnerGroups;
+        my %SeenOwnerGroup;
+
+        DIAGNOSISTICKET:
+        for my $DiagnosisTicketID (@DiagnosisTicketIDs) {
+            my %DiagnosisTicket = $TicketObject->TicketGet(
+                TicketID      => $DiagnosisTicketID,
+                DynamicFields => 1,
+                UserID        => $Param{UserID} || 1,
+                Silent        => 1,
+            );
+            next DIAGNOSISTICKET if !%DiagnosisTicket;
+
+            my $Outcome = _DiagnosisOutcomeLabel(
+                Value => $DiagnosisTicket{'DynamicField_ZIN-Outcome'},
+            );
+            $Outcome = lc( _NormalizeValue($Outcome) || '' );
+            $Outcome =~ s{\A\s+|\s+\z}{}g;
+            next DIAGNOSISTICKET
+                if $Outcome eq 'not applicable' || $Outcome eq 'recovered';
+
+            my $OwnerGroup = _NormalizeValue(
+                $DiagnosisTicket{'DynamicField_ZTicket-OwnerGroup'}
+            );
+            next DIAGNOSISTICKET if !$OwnerGroup;
+            next DIAGNOSISTICKET if $SeenOwnerGroup{$OwnerGroup}++;
+
+            push @OwnerGroups, $OwnerGroup;
+        }
+
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => 'ZTSMRoleDirector: DIAGNOSE evidence lookup '
+                . "ParentTicketID=$ParentTicketID "
+                . "RequestedIteration=$Iteration "
+                . "MatchedIteration=$CandidateIteration "
+                . 'DiagnosisTicketIDs=' . join( ',', @DiagnosisTicketIDs ) . ' '
+                . 'OwnerGroups=' . join( ',', @OwnerGroups ),
+        );
+
+        return @OwnerGroups;
+    }
+
+    $LogObject->Log(
+        Priority => 'error',
+        Message  => 'ZTSMRoleDirector: DIAGNOSE evidence lookup found no closed Diagnosis tickets '
+            . "ParentTicketID=$ParentTicketID Iteration=$Iteration",
+    );
+
+    return;
+}
+
+sub _DiagnosisFanoutExists {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return if !$Param{OwnerGroup};
+
+    my %Search = (
+        Result => 'ARRAY',
+        Types  => [ $Ticket->{Type} ],
+        'DynamicField_ZTicket-OwnerGroup' => {
+            Equals => $Param{OwnerGroup},
+        },
+        UserID => $Param{UserID} || 1,
+    );
+
+    for my $FieldName (qw(ZTicket-Parent ZIN-Iteration ZTicket-BlueBook ZTicket-Chapter)) {
+        my $Value = _NormalizeValue( $Ticket->{"DynamicField_$FieldName"} );
+        next if !defined $Value || $Value eq '';
+
+        $Search{"DynamicField_$FieldName"} = {
+            Equals => $Value,
+        };
+    }
+
+    my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
+    return @TicketIDs ? 1 : 0;
+}
+
+sub _DiagnosisFanoutDynamicFieldsCopy {
+    my (%Param) = @_;
+
+    return if !$Param{SourceTicketID} || !$Param{TargetTicketID};
+
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LogObject                 = $Kernel::OM->Get('Kernel::System::Log');
+
+    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => ['Ticket'],
+    ) || [];
+
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{$DynamicFieldList} ) {
+        next DYNAMICFIELD if ref $DynamicFieldConfig ne 'HASH';
+        next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+        next DYNAMICFIELD if $DynamicFieldConfig->{Name} eq 'ZTicket-OwnerGroup';
+
+        my $Value = $DynamicFieldBackendObject->ValueGet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{SourceTicketID},
+        );
+        next DYNAMICFIELD if !defined $Value;
+        next DYNAMICFIELD if !ref $Value && $Value eq '';
+
+        my $Success = $DynamicFieldBackendObject->ValueSet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $Param{TargetTicketID},
+            Value              => $Value,
+            UserID             => $Param{UserID} || 1,
+        );
+        next DYNAMICFIELD if $Success;
+
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "ZTSMRoleDirector: DIAGNOSE fan-out could not copy dynamic field "
+                . "$DynamicFieldConfig->{Name} SourceTicketID=$Param{SourceTicketID} "
+                . "TargetTicketID=$Param{TargetTicketID}",
+        );
+    }
+
+    return 1;
+}
+
+sub _DiagnosisFanoutTicketCreate {
+    my (%Param) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return if !$Param{OwnerGroup};
+
+    my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+
+    if ( _DiagnosisFanoutExists(%Param) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket already exists '
+                . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$Param{OwnerGroup}",
+        );
+        return 1;
+    }
+
+    my $NewTicketID = $Kernel::OM->Get('Kernel::System::Ticket')->TicketCreate(
+        TN            => undef,
+        Title         => $Ticket->{Title},
+        Queue         => $Ticket->{Queue},
+        Lock          => $Ticket->{Lock} || 'unlock',
+        Priority      => $Ticket->{Priority},
+        State         => $Ticket->{State},
+        CustomerID    => $Ticket->{CustomerID},
+        CustomerUser  => $Ticket->{CustomerUserID},
+        OwnerID       => $Ticket->{OwnerID} || 1,
+        UserID        => $Param{UserID} || 1,
+        Type          => $Ticket->{Type},
+        ServiceID     => $Ticket->{ServiceID},
+        SLAID         => $Ticket->{SLAID},
+        ResponsibleID => $Ticket->{ResponsibleID} || 1,
+        ParentTicketID => _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} ),
+    );
+
+    if ( !$NewTicketID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out TicketCreate failed '
+                . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$Param{OwnerGroup}",
+        );
+        return;
+    }
+
+    _DiagnosisFanoutDynamicFieldsCopy(
+        SourceTicketID => $Ticket->{TicketID},
+        TargetTicketID => $NewTicketID,
+        UserID         => $Param{UserID} || 1,
+    );
+
+    _UpdateTicketField(
+        TicketID => $NewTicketID,
+        FieldName => 'ZTicket-OwnerGroup',
+        Value     => $Param{OwnerGroup},
+    );
+
+    $LogObject->Log(
+        Priority => 'notice',
+        Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket created '
+            . "SourceTicketID=$Ticket->{TicketID} NewTicketID=$NewTicketID "
+            . "OwnerGroup=$Param{OwnerGroup}",
+    );
+
+    return $NewTicketID;
+}
+
 
 # ------------------------------------------------------------ #
 # RUN
@@ -667,14 +1079,19 @@ sub Run {
     return if !$Profile;
 
     my $ResolvedSupportProfile;
+    my @DiagnosisFanoutOwnerGroups;
     my %ProfileDirective = _ResolveProfileDirective(
         Profile => $Profile,
     );
 
     my $ProfileDisplay = $ProfileDirective{Display} || $Profile;
 
+    my $DynamicGovernanceRole;
     if ( $ProfileDirective{SupportProfile} ) {
         $ResolvedSupportProfile = $ProfileDirective{SupportProfile};
+    }
+    elsif ( $ProfileDirective{GovernanceRole} ) {
+        $DynamicGovernanceRole = $ProfileDirective{GovernanceRole};
     }
     else {
         $Profile = $ProfileDirective{ProfileKey} || $Profile;
@@ -682,7 +1099,9 @@ sub Run {
 
     return 1
         if $ExistingOwnerGroup
-        && !_IsRequesterDefaultProfile($Profile);
+        && _IsSupportProfile( GovernanceObjectID => $ExistingOwnerGroup, UserID => 1 )
+        && !_IsRequesterDefaultProfile($Profile)
+        && !( $DynamicGovernanceRole && _ProfileKey($ProfileDisplay) eq 'DIAGNOSE' );
 
     # -------------------------------------------------------- #
     # REQUESTER DEFAULT
@@ -690,8 +1109,81 @@ sub Run {
 
     my $ResolutionCandidate;
     my $RequesterOwnerUserID;
+    my $AffectedUserOwnerUserID;
 
-    if (
+    if ($DynamicGovernanceRole) {
+        if ( _ProfileKey($ProfileDisplay) eq 'DIAGNOSE' ) {
+            my @OwnerGroups = _DiagnosisOwnerGroupsResolve(
+                Ticket => \%Ticket,
+                UserID => 1,
+            );
+
+            if (@OwnerGroups) {
+                my %DiagnosisOwnerGroup = map { $_ => 1 } @OwnerGroups;
+
+                if (
+                    $ExistingOwnerGroup
+                    && $DiagnosisOwnerGroup{$ExistingOwnerGroup}
+                    && _IsSupportProfile(
+                        GovernanceObjectID => $ExistingOwnerGroup,
+                        UserID             => 1,
+                    )
+                    )
+                {
+                    $ResolutionCandidate     = $ExistingOwnerGroup;
+                    $ResolvedSupportProfile = $ExistingOwnerGroup;
+                    @DiagnosisFanoutOwnerGroups = grep { $_ ne $ExistingOwnerGroup } @OwnerGroups;
+                }
+                else {
+                    $ResolutionCandidate = shift @OwnerGroups;
+                    $ResolvedSupportProfile = $ResolutionCandidate;
+                    @DiagnosisFanoutOwnerGroups = @OwnerGroups;
+                }
+            }
+        }
+        elsif ( _IsRequesterDefaultProfile($ProfileDisplay) ) {
+            $ResolutionCandidate = _ResolveRequesterProfile(
+
+                CustomerUserID => $CustomerUserID,
+            );
+
+            if ( !$ResolutionCandidate ) {
+                $ResolutionCandidate = _ResolveAppProfile(
+
+                    ApplicationID => $ApplicationID,
+                );
+            }
+
+            $ResolvedSupportProfile = $ResolutionCandidate;
+            $RequesterOwnerUserID   = $CustomerUserID;
+        }
+        elsif ( _IsAffectedUserSupportRole($ProfileDisplay) ) {
+            $ResolutionCandidate = _ResolveRequesterProfile(
+
+                CustomerUserID => $CustomerUserID,
+            );
+
+            if ( !$ResolutionCandidate ) {
+                $ResolutionCandidate = _ResolveAppProfile(
+
+                    ApplicationID => $ApplicationID,
+                );
+            }
+
+            $ResolvedSupportProfile = $ResolutionCandidate;
+            $AffectedUserOwnerUserID = $CustomerUserID;
+        }
+        else {
+            $ResolutionCandidate = _ResolveGovernanceRoleSupportProfile(
+                GovernanceRole => $DynamicGovernanceRole,
+                ApplicationID  => $ApplicationID,
+                UserID          => 1,
+            );
+            $ResolvedSupportProfile = $ResolutionCandidate;
+        }
+    }
+
+    elsif (
         !$ResolvedSupportProfile
         &&
         _IsRequesterDefaultProfile($Profile)
@@ -703,6 +1195,15 @@ sub Run {
         );
 
         $ResolvedSupportProfile = $ResolutionCandidate;
+        if ( !$ResolvedSupportProfile ) {
+            $ResolutionCandidate = _ResolveAppProfile(
+
+                ApplicationID => $ApplicationID,
+            );
+
+            $ResolvedSupportProfile = $ResolutionCandidate;
+        }
+
         $RequesterOwnerUserID = $CustomerUserID;
     }
 
@@ -782,7 +1283,7 @@ sub Run {
     # NO MATCH
     # -------------------------------------------------------- #
 
-    elsif (!$ResolvedSupportProfile) {
+    elsif (!$ResolvedSupportProfile && !$DynamicGovernanceRole) {
 
         $LogObject->Log(
 
@@ -891,14 +1392,22 @@ sub Run {
         Value => $ResolvedSupportProfile,
     );
 
-    if ( _IsRequesterDefaultProfile($Profile) ) {
+    for my $OwnerGroup (@DiagnosisFanoutOwnerGroups) {
+        _DiagnosisFanoutTicketCreate(
+            Ticket     => \%Ticket,
+            OwnerGroup => $OwnerGroup,
+            UserID     => 1,
+        );
+    }
+
+    if ( _IsRequesterDefaultProfile($Profile) || $AffectedUserOwnerUserID ) {
         _UpdateTicketField(
 
             TicketID => $TicketID,
 
             FieldName => 'ZTicket-Owner',
 
-            Value => $RequesterOwnerUserID || $CustomerUserID || '',
+            Value => $RequesterOwnerUserID || $AffectedUserOwnerUserID || $CustomerUserID || '',
         );
     }
 

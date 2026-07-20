@@ -131,19 +131,13 @@ Core.UI.RichTextEditor = (function (TargetNS) {
             removedPlugins = [ 'SimpleUploadAdapter' ];
         }
 
-        // if this is a RichText DF, disable Image Upload
-        if($EditorArea.hasClass('DynamicFieldRichText')) {
-            ToolbarConfig = Core.Config.Get('RichText.ToolbarWithoutImage');
-            Integrations = [ 'url' ];
-            removedPlugins = [ 'SimpleUploadAdapter' ];
-        }
-
         var ClassicEditor = CKEditor5Wrapper.ClassicEditor;
+        var PluginRegistry = window.CKEditor5Plugins || window.CKEditor5Wrapper || {};
         let EnabledPlugins = [];
         for (let pluginName of PluginList) {
-            let Plugin = CKEditor5Plugins[pluginName];
+            let Plugin = PluginRegistry[pluginName];
             if (Plugin) {
-                EnabledPlugins.push(CKEditor5Plugins[pluginName]);
+                EnabledPlugins.push(Plugin);
             } else {
                 Core.Exception.ShowError('Couldn\'t find plugin: ' + pluginName, 'JavaScriptError');
             }

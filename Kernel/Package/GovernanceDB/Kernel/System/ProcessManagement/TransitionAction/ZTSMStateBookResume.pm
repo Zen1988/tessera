@@ -33,7 +33,7 @@ sub new {
 sub _NormalizeValue {
     my ($Value) = @_;
 
-    return if !defined $Value;
+    return undef if !defined $Value;
 
     if ( ref $Value eq 'ARRAY' ) {
         return _NormalizeValue( $Value->[0] );
@@ -43,7 +43,7 @@ sub _NormalizeValue {
         return $Value->{Content} if defined $Value->{Content} && $Value->{Content} ne '';
         return $Value->{Key}     if defined $Value->{Key}     && $Value->{Key} ne '';
         return $Value->{Value}   if defined $Value->{Value}   && $Value->{Value} ne '';
-        return;
+        return undef;
     }
 
     return $Value;
@@ -311,10 +311,12 @@ sub _RecordsParse {
         next RECORD if !$Sequence;
         next RECORD if !$State;
 
+        my $BlueBook = _RecordValue( $Record, 'ZState-Book' );
+
         push @ParsedRecords, {
             Sequence => $Sequence,
             State    => $State,
-            BlueBook => _RecordValue( $Record, 'ZState-Book' ),
+            BlueBook => $BlueBook,
         };
     }
 

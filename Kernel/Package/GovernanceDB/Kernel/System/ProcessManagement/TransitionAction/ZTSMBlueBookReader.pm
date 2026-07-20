@@ -432,7 +432,7 @@ sub _GovernanceObjectReferenceValues {
 sub _SupportProfileByRoleResolve {
     my (%Param) = @_;
 
-    my @RoleReferences = _GovernanceObjectReferenceValues(
+    my @RoleReferences = grep { defined $_ && $_ =~ m{\A\d+\z} } _GovernanceObjectReferenceValues(
         Value  => $Param{Role},
         Class  => 'GovernanceRole',
         UserID => $Param{UserID},
@@ -440,8 +440,9 @@ sub _SupportProfileByRoleResolve {
 
     return if !@RoleReferences;
 
-    my @ApplicationReferences = _GovernanceObjectReferenceValues(
+    my @ApplicationReferences = grep { defined $_ && $_ =~ m{\A\d+\z} } _GovernanceObjectReferenceValues(
         Value  => $Param{ApplicationID},
+        Class  => 'Application',
         UserID => $Param{UserID},
     );
 
@@ -564,57 +565,43 @@ sub _ExistingDiagnosisChapterPlayForRecord {
 
     if ( defined $Iteration && $Iteration ne '' ) {
         push @Iterations, $Iteration;
-        push @Iterations, $Iteration - 1 if $Iteration =~ m{\A\d+\z} && $Iteration > 0;
     }
 
     push @Iterations, undef if !@Iterations;
 
-    my @RoleReferences = _GovernanceObjectReferenceValues(
-        Value  => $Param{Record}->{Role},
-        Class  => 'GovernanceRole',
-        UserID => $Param{UserID},
-    );
-
-    @RoleReferences = ( _NormalizeValue( $Param{Record}->{Role} ) ) if !@RoleReferences;
+    my $Chapter = _NormalizeValue( $Param{Record}->{Chapter} );
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
     ITERATION:
     for my $CandidateIteration (@Iterations) {
-        my %TicketID;
+        my %Search = (
+            Result => 'ARRAY',
+            'DynamicField_ZTicket-Parent' => {
+                Equals => $Param{ParentTicketID},
+            },
+            'DynamicField_ZTicket-BlueBook' => {
+                Equals => $Param{BlueBookID},
+            },
+            'DynamicField_ZTicket-BlueLevel' => {
+                Equals => $Param{BlueLevel},
+            },
+            UserID => $Param{UserID} || 1,
+        );
 
-        ROLE:
-        for my $RoleReference (@RoleReferences) {
-            next ROLE if !defined $RoleReference || $RoleReference eq '';
-
-            my %Search = (
-                Result => 'ARRAY',
-                'DynamicField_ZTicket-Parent' => {
-                    Equals => $Param{ParentTicketID},
-                },
-                'DynamicField_ZTicket-BlueBook' => {
-                    Equals => $Param{BlueBookID},
-                },
-                'DynamicField_ZTicket-BlueLevel' => {
-                    Equals => $Param{BlueLevel},
-                },
-                'DynamicField_ZTicket-Role' => {
-                    Equals => $RoleReference,
-                },
-                UserID => $Param{UserID} || 1,
-            );
-
-            if ( defined $CandidateIteration && $CandidateIteration ne '' ) {
-                $Search{'DynamicField_ZIN-Iteration'} = {
-                    Equals => $CandidateIteration,
-                };
-            }
-
-            my @FoundTicketIDs = $TicketObject->TicketSearch(%Search);
-            $TicketID{$_} = 1 for @FoundTicketIDs;
+        if ( defined $Chapter && $Chapter ne '' ) {
+            $Search{'DynamicField_ZTicket-Chapter'} = {
+                Equals => $Chapter,
+            };
         }
 
-        my @TicketIDs = sort { $b <=> $a } keys %TicketID;
+        if ( defined $CandidateIteration && $CandidateIteration ne '' ) {
+            $Search{'DynamicField_ZIN-Iteration'} = {
+                Equals => $CandidateIteration,
+            };
+        }
+
+        my @TicketIDs = sort { $b <=> $a } $TicketObject->TicketSearch(%Search);
         next ITERATION if !@TicketIDs;
 
         return @TicketIDs if defined $CandidateIteration && defined $Iteration && $CandidateIteration eq $Iteration;
@@ -701,10 +688,8 @@ sub _ExistingChapterPlayForRecord {
 
     my %RecordFieldMap = (
         'DynamicField_ZTicket-Chapter' => $Param{Record}->{Chapter},
-        'DynamicField_ZTicket-Profile' => $Param{Record}->{Profile},
-        'DynamicField_ZTicket-Role'    => $Param{Record}->{Role},
     );
-    my $RecordHasStableIdentity = _NormalizeValue( $Param{Record}->{Profile} ) ? 1 : 0;
+    my $RecordHasStableIdentity = _NormalizeValue( $Param{Record}->{Chapter} ) ? 1 : 0;
 
     FIELD:
     for my $SearchField ( sort keys %RecordFieldMap ) {
@@ -1051,18 +1036,11 @@ sub Run {
             UserID   => $UserID,
         );
 
-        my $OwnerGroup = _SupportProfileResolve(
-            Value  => $Record->{Profile},
-            UserID => $UserID,
-        ) || _SupportProfileByRoleResolve(
-            Role          => $Record->{Role},
-            ApplicationID => $Ticket->{'DynamicField_ZTicket-Application'},
-            UserID        => $UserID,
-        );
+        my $OwnerGroup = $Record->{Profile};
 
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Support profile owner group resolution "
+            Message  => "ZTSMBlueBookReader: Owner group selector assignment "
                 . "TicketID=$TicketID "
                 . "ChildTicketID=$NewTicketID "
                 . "Profile="

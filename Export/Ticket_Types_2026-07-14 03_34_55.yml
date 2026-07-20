@@ -1,0 +1,50 @@
+---
+Types:
+  Approval:
+    Name: Approval
+    Valid: valid
+  Assessment:
+    Name: Assessment
+    Valid: valid
+  Change:
+    Name: Change
+    Valid: valid
+  Change::Major:
+    Name: Change::Major
+    Valid: valid
+  Confirmation:
+    Name: Confirmation
+    Valid: valid
+  Diagnosis:
+    Name: Diagnosis
+    Valid: valid
+  Endorsement:
+    Name: Endorsement
+    Valid: valid
+  Implementation:
+    Name: Implementation
+    Valid: valid
+  Incident:
+    Name: Incident
+    Valid: valid
+  Incident::Major:
+    Name: Incident::Major
+    Valid: valid
+  IncidentAssessment:
+    Name: IncidentAssessment
+    Valid: invalid
+  Problem:
+    Name: Problem
+    Valid: valid
+  ServiceRequest:
+    Name: ServiceRequest
+    Valid: valid
+  Task:
+    Name: Task
+    Valid: valid
+  Unclassified:
+    Name: Unclassified
+    Valid: valid
+  Verification:
+    Name: Verification
+    Valid: valid

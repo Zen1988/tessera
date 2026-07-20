@@ -823,6 +823,10 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
+    name: Confirmation
+    preferences: {}
+    valid: valid
+  - comment: ''
     name: Change
     preferences: {}
     valid: valid

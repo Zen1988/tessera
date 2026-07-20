@@ -236,6 +236,26 @@ sub Run {
         );
     };
 
+    if (
+        ( $Self->{Subaction} || '' ) eq 'StoreNew'
+        || ( $Self->{Subaction} || '' ) eq 'AJAXUpdate'
+        || ( $Self->{Subaction} || '' ) eq 'ZTSMServiceExtensionDynamicFields'
+        || ( $Self->{Subaction} || '' ) eq 'ZTSMServicePayloadReferenceResolve'
+    )
+    {
+        $ZTSMSubmitTraceLog->(
+            Stage       => 'backend-hit',
+            Force       => 1,
+            Priority    => 'error',
+            ServiceID   => $GetParam{ServiceID} || '',
+            TypeID      => $GetParam{TypeID} || '',
+            Field       => $ParamObject->GetParam( Param => 'Field' ) || '',
+            Term        => $ParamObject->GetParam( Param => 'Term' ) || '',
+            Value       => $ParamObject->GetParam( Param => 'Value' ) || '',
+            ElementChanged => $ElementChanged || '',
+        );
+    }
+
     my $ZTSMDateTimeRestrictionOverride = sub {
         my (%Data) = @_;
 
@@ -382,6 +402,17 @@ sub Run {
         my $ReferenceResult = $Self->_ZTSMServicePayloadReferenceResolve(
             LayoutObject => $LayoutObject,
             ParamObject  => $ParamObject,
+        );
+
+        $ZTSMSubmitTraceLog->(
+            Stage    => 'backend-payload-reference-resolve-result',
+            Force    => 1,
+            Priority => 'error',
+            Field    => $ParamObject->GetParam( Param => 'Field' ) || '',
+            Value    => $ParamObject->GetParam( Param => 'Value' ) || '',
+            Success  => $ReferenceResult->{Success} || 0,
+            Key      => $ReferenceResult->{Key} || '',
+            Message  => $ReferenceResult->{Message} || '',
         );
 
         return $LayoutObject->JSONReply(
@@ -1365,6 +1396,12 @@ sub Run {
             );
         }
 
+        $Self->_ZTSMIncidentIterationInitialize(
+            TicketID => $TicketID,
+            TypeID   => $GetParam{TypeID},
+            UserID   => $ConfigObject->Get('CustomerPanelUserID'),
+        );
+
         $Self->_ZTSMRequesterOwnerSnapshotSet(
             TicketID        => $TicketID,
             CustomerUserID  => $EffectiveCustomer{UserID},
@@ -2238,6 +2275,7 @@ sub _ZTSMServicePayloadReferenceResolve {
             DynamicFieldConfig        => $DynamicFieldConfig,
             LayoutObject              => $LayoutObject,
             ObjectID                  => $ObjectID,
+            ParamObject               => $ParamObject,
             SearchValues              => [ $Value, $SearchValue ],
         );
     }
@@ -2270,6 +2308,7 @@ sub _ZTSMServicePayloadReferenceResolve {
                 DynamicFieldConfig        => $DynamicFieldConfig,
                 LayoutObject              => $LayoutObject,
                 ObjectID                  => $ObjectID,
+                ParamObject               => $ParamObject,
                 SearchValues              => [ $Value, $SearchValue, $Term ],
             );
             return $Result if $Result->{Success};
@@ -2362,7 +2401,15 @@ sub _ZTSMServicePayloadReferenceClassAllowed {
     }
 
     return 1 if !%AllowedClassID;
-    return $AllowedClassID{ $ObjectData->{ClassID} } ? 1 : 0;
+    return if !$AllowedClassID{ $ObjectData->{ClassID} };
+
+    if ( ( $DynamicFieldConfig->{Name} || '' ) eq 'ZTicket-Platform' ) {
+        my %AllowedPlatformID = $Self->_ZTSMServicePayloadApplicationPlatformIDsGet(%Param);
+        return 1 if !%AllowedPlatformID;
+        return $AllowedPlatformID{ $Param{ObjectID} } ? 1 : 0;
+    }
+
+    return 1;
 }
 
 sub _ZTSMServicePayloadReferenceObjectGet {
@@ -2377,6 +2424,132 @@ sub _ZTSMServicePayloadReferenceObjectGet {
         UserID             => 1,
         Silent             => 1,
     );
+}
+
+sub _ZTSMServicePayloadApplicationPlatformIDsGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Param{ParamObject};
+    return if !$ParamObject;
+
+    my $ApplicationID = $Self->_ZTSMServicePayloadReferenceParamValueGet(
+        ParamObject => $ParamObject,
+        Field       => 'ZTicket-Application',
+    );
+    return if !$ApplicationID;
+
+    my $Application = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $ApplicationID,
+        DynamicFields      => 1,
+        UserID             => 1,
+        Silent             => 1,
+    );
+    return if !IsHashRefWithData($Application);
+
+    my %PlatformID;
+    for my $PlatformID ( $Self->_ZTSMServicePayloadObjectDynamicFieldValues(
+        Object => $Application,
+        Field  => 'ZTSMAppSystem-Platform',
+    ) )
+    {
+        next if !$PlatformID;
+        $PlatformID{$PlatformID} = 1;
+    }
+
+    return %PlatformID;
+}
+
+sub _ZTSMServicePayloadReferenceParamValueGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Param{ParamObject};
+    my $Field       = $Param{Field};
+    return if !$ParamObject || !$Field;
+
+    PARAM:
+    for my $ParamName (
+        'DynamicField_' . $Field,
+        'DynamicField_' . $Field . '_0',
+        'Autocomplete_DynamicField_' . $Field,
+        'Autocomplete_DynamicField_' . $Field . '_0',
+    )
+    {
+        my $Value = $ParamObject->GetParam( Param => $ParamName );
+        next PARAM if !defined $Value || $Value eq '';
+        return $Value =~ m{\A(\d+)\z} ? $1 : $Value;
+    }
+
+    return;
+}
+
+sub _ZTSMServicePayloadObjectDynamicFieldValues {
+    my ( $Self, %Param ) = @_;
+
+    my $Object = $Param{Object};
+    my $Field  = $Param{Field};
+
+    return if !$Object || ref $Object ne 'HASH';
+    return if !$Field;
+
+    my @Values = $Self->_ZTSMServicePayloadNormalizeArray( $Object->{ 'DynamicField_' . $Field } );
+    return @Values if @Values;
+
+    my $XMLData = $Object->{XMLData};
+    return if !$XMLData || ref $XMLData ne 'HASH';
+    return if !exists $XMLData->{$Field};
+
+    my $XMLValue = $XMLData->{$Field};
+    my @Items = ref $XMLValue eq 'ARRAY' ? @{$XMLValue} : ($XMLValue);
+    my @XMLValues;
+
+    ITEM:
+    for my $Item (@Items) {
+        next ITEM if !defined $Item;
+        next ITEM if !ref $Item && $Item eq '';
+
+        if ( ref $Item eq 'HASH' ) {
+            push @XMLValues, $Self->_ZTSMServicePayloadNormalizeArray(
+                exists $Item->{Content} ? $Item->{Content} : $Item
+            );
+            next ITEM;
+        }
+
+        push @XMLValues, $Self->_ZTSMServicePayloadNormalizeArray($Item);
+    }
+
+    return grep { defined $_ && $_ ne '' } @XMLValues;
+}
+
+sub _ZTSMServicePayloadNormalizeArray {
+    my ( $Self, $Value ) = @_;
+
+    return if !defined $Value;
+
+    if ( ref $Value eq 'HASH' ) {
+        $Value = [ $Value ];
+    }
+
+    if ( ref $Value eq 'ARRAY' ) {
+        my @Result;
+
+        ITEM:
+        for my $Item ( @{$Value} ) {
+            next ITEM if !defined $Item || $Item eq '';
+
+            if ( ref $Item eq 'HASH' ) {
+                push @Result, $Self->_ZTSMServicePayloadNormalizeArray(
+                    exists $Item->{Content} ? $Item->{Content} : $Item
+                );
+                next ITEM;
+            }
+
+            push @Result, $Item;
+        }
+
+        return @Result;
+    }
+
+    return $Value;
 }
 
 sub _ZTSMServicePayloadReferenceImportValue {
@@ -2926,6 +3099,48 @@ sub _ZTSMRequesterOwnerSnapshotSet {
     );
 }
 
+sub _ZTSMIncidentIterationInitialize {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{TicketID};
+    return 1 if !$Param{TypeID};
+
+    my $Type = $Kernel::OM->Get('Kernel::System::Type')->TypeLookup(
+        TypeID => $Param{TypeID},
+    );
+    return 1 if lc( $Type || '' ) ne 'incident';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZIN-Iteration',
+    );
+    return if !IsHashRefWithData($DynamicFieldConfig);
+    return if ( $DynamicFieldConfig->{ObjectType} || '' ) ne 'Ticket';
+
+    my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $ExistingValue = $BackendObject->ValueGet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+    );
+    return 1 if $Self->_ZTSMValueHasData($ExistingValue);
+
+    my $Success = $BackendObject->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $Param{TicketID},
+        Value              => 1,
+        UserID             => $Param{UserID} || 1,
+    );
+
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "CustomerTicketMessage: Could not initialize ZIN-Iteration=1 for Incident TicketID=$Param{TicketID}",
+        );
+        return;
+    }
+
+    return 1;
+}
+
 sub _ServiceExtensionDynamicFieldValuesSync {
     my ( $Self, %Param ) = @_;
 
@@ -3313,6 +3528,29 @@ sub _ServiceExtensionDisplayValueRender {
     my $Value              = $Param{Value};
     my $LayoutObject       = $Param{LayoutObject};
     my $HTMLOutput         = $Param{HTMLOutput} ? 1 : 0;
+
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'RichText' ) {
+        if ( !$HTMLOutput ) {
+            return $LayoutObject->RichText2Ascii(
+                String => $Value,
+            );
+        }
+
+        my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
+        my %SafeContent = $HTMLUtilsObject->Safety(
+            String       => $Value,
+            NoApplet     => 1,
+            NoObject     => 1,
+            NoEmbed      => 1,
+            NoIntSrcLoad => 0,
+            NoExtSrcLoad => 0,
+            NoJavaScript => 1,
+        );
+
+        return $HTMLUtilsObject->DocumentStrip(
+            String => $SafeContent{String} || '',
+        );
+    }
 
     if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
         || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject' )

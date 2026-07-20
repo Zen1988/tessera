@@ -417,6 +417,7 @@ Before performing any analysis, design, code generation, refactoring, or impleme
 2. Read PROJECT_STATUS.md
 3. Read latest SOPM
 4. Read latest generated OPM
+5. Read PROJECT_NEXT.md
 
 PROJECT_STATUS.md is the authoritative project memory.
 
@@ -432,6 +433,10 @@ Whenever a significant change is made:
 Future sessions must continue from PROJECT_STATUS.md rather than reconstructing history from chat context.
 
 Do not assume previous conversation history is available.
+
+PROJECT_NEXT.md is out of codex design features. 
+
+It contain all the design decision, and different constraint. Once it comfirmed implemented, it should clean up the PROJECT_NEXT.md and recorded under PROJECT_STATUS.md istead. 
 
 # TESSERA Development Rules (Critical)
 
@@ -544,3 +549,5 @@ All package changes should be installable on both:
 
 without manual intervention.
 
+## TESSERA UI Engineering Standard
+A UI patch is not accepted just because it looks correct. It must also preserve DOM simplicity, component clarity, CSS ownership, responsiveness, accessibility, and maintainability.

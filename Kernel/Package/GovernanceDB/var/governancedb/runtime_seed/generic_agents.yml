@@ -68,6 +68,8 @@ GenericAgents:
     Types:
     - Approval
     - Assessment
+    - Confirmation
+    - Diagnosis
     - Endorsement
     - Implementation
     - Task
