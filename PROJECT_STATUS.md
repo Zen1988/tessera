@@ -26,6 +26,78 @@ Last Updated: 2026-07-20
 
 ## Completed Work
 
+## 2026-07-20 Service Payload Snapshot ConfigItem Display 0.0.362
+
+### Completed work
+
+- Diagnosed the submitted-details article showing VM Image as `101 - Restricted` after submit succeeded.
+- Confirmed this was a snapshot display-layer issue: service payload numeric `ConfigItem` values were rendered through the GovernanceObject name resolver, so a ConfigItem ID could collide with an unrelated GovernanceObject ID.
+- Split service extension snapshot rendering by DynamicField type:
+  - `ConfigItem` / `ConfigItemVersion` now resolve via `Kernel::System::ITSMConfigItem`.
+  - `GovernanceObject` / `GovernanceObjectVersion` continue resolving via `Kernel::System::GovernanceObject`.
+- Mirrored the fix across canonical source, package runtime overlay, `ZTSMOverlay`, and local OTOBO runtime copy.
+
+### Runtime expectation
+
+- Re-submit the same request after upgrading to `0.0.362`.
+- The submitted details row for VM Image should render the ConfigItem name for ID `101`, for example `101 - MS Windows Server 2022`, instead of the unrelated GovernanceObject name `Restricted`.
+
+## 2026-07-20 Reference Picker Submit Resolver 0.0.361
+
+### Completed work
+
+- Diagnosed server logs showing `StoreNew` validation rejected `ZTicket-Platform` before the late frontend resolver searched for `Platform: IaaS Extension`.
+- Added frontend normalization for decorated chip labels such as `Platform: IaaS Extension`, resolving them as `IaaS Extension`.
+- Added `ResolveMissingSubmitValue()` callback support so missing hidden keys can be resolved before submit completion.
+- Added a submit interceptor that pauses form submit only when reference fields have display text but no submit key, resolves them, then resubmits once.
+- Hardened `AgentReferenceSearch.pm` to normalize decorated search terms by stripping a leading `Label:` prefix before backend search/filtering.
+- Built `Kernel/Package/GovernanceDB-0.0.361.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 GovernanceDB Version Rollover Rule
+
+### Completed work
+
+- Recorded the package versioning decision in `AGENTS.md`.
+- GovernanceDB `0.0.x` patch builds must stop at `0.0.365`.
+- After `0.0.365`, the next GovernanceDB package version must be `0.1.0`, not `0.0.366`.
+- Future patch builds after that continue from the `0.1.x` line unless superseded by a newer project decision.
+
+## 2026-07-20 Reference Picker Submit Key Sync 0.0.360
+
+### Completed work
+
+- Corrected the `0.0.359` display-only selected state after runtime showed Hosting Platform could look selected but still fail mandatory submit validation.
+- Added `PickerSubmitValue()` so visual selected state is only applied when the real submitted value exists.
+- After native `Core.Agent.DynamicFieldReferenceSearch.AddTicketReference()` calls, explicitly sets the visible label and hidden reference key.
+- Changed platform auto-fill skip logic so a visible platform label does not block auto-fill when the hidden submit key is still empty.
+- Removed fake selected styling when a display label exists without a submit value, allowing mandatory validation to reflect the real state.
+- Built `Kernel/Package/GovernanceDB-0.0.360.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker Selected Theme Sync 0.0.359
+
+### Completed work
+
+- Corrected the Hosting Platform unhover theme state after runtime showed the selected value and floating label only rendered correctly after hover/focus.
+- Added `SyncPickerVisibleState()` so reference fields with a display value are marked as selected on every scan and immediately after picker selection.
+- Applies `oooSelected` and `ZTSMReferencePickerHasValue` to the field, field cell, and input container when a reference value exists.
+- Writes the display label into `title` attributes for the field, field cell, input container, and underlying control.
+- Added a narrow CSS reinforcement for `ZTSMReferencePickerHasValue` so selected reference fields render with the active selected shell before hover.
+- Built `Kernel/Package/GovernanceDB-0.0.359.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
+## 2026-07-20 Reference Picker Per-Field MultiValue Slot 0.0.358
+
+### Completed work
+
+- Corrected `0.0.357` after runtime showed Location, Environment, and Application still shared a uniform search icon offset.
+- Added per-field-cell detection for `.AddRemoveValueRow` inside `ApplyPickerButtonSlot()`.
+- Normal reference fields keep the standard search slot at `right: -48px`.
+- Multi-value reference fields with native `+/-` move the search trigger to a farther lane at `right: -94px`, so it no longer overlaps the `+/-` controls.
+- Built `Kernel/Package/GovernanceDB-0.0.358.opm`.
+- Verified the protected `ZTSMCustomerTicketMessageServiceFields.tt` payload stayed unchanged.
+
 ## 2026-07-20 Reference Picker Inline Slot Enforcement 0.0.357
 
 ### Completed work

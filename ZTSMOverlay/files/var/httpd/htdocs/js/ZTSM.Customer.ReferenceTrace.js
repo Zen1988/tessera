@@ -520,6 +520,8 @@
             '.ZTSMReferencePickerInputButton{position:static!important;right:auto!important;top:auto!important;transform:none!important;z-index:auto!important;margin:0 6px 0 0!important}',
             '.Field.ZTSMReferencePickerInputHost{position:relative!important}',
             '.Field.ZTSMReferencePickerInputHost > .ZTSMReferencePickerInputButton{position:absolute!important;right:-48px!important;left:auto!important;top:50%!important;transform:translateY(-50%)!important;z-index:2!important;margin:0!important}',
+            '.Field.ZTSMReferencePickerHasValue,.Field.ZTSMReferencePickerHasValue.oooSelected{background:#fff!important;border-color:#8784aa!important}',
+            '.Field.ZTSMReferencePickerHasValue label,.Field.ZTSMReferencePickerHasValue.oooSelected label{background:#fff!important}',
             '.FieldCell.ZTSMReferencePickerFieldCell > .ZTSMReferencePickerAddRemoveLane{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;width:52px!important;min-width:52px!important;max-width:52px!important;right:-108px!important;left:auto!important;top:20px!important;margin:0!important;white-space:nowrap!important;overflow:visible!important;vertical-align:middle!important}',
             '.FieldCell.ZTSMReferencePickerFieldCell > .ZTSMReferencePickerAddRemoveLane .AddValueRow,.FieldCell.ZTSMReferencePickerFieldCell > .ZTSMReferencePickerAddRemoveLane .RemoveValueRow{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;min-width:20px!important;max-width:20px!important;height:34px!important;min-height:34px!important;max-height:34px!important;margin:0!important;padding:0!important;line-height:1!important;vertical-align:middle!important}',
             '.FieldCell.ZTSMReferencePickerFieldCell > .ZTSMReferencePickerAddRemoveLane .AddValueRow > i,.FieldCell.ZTSMReferencePickerFieldCell > .ZTSMReferencePickerAddRemoveLane .RemoveValueRow > i{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:20px!important;height:34px!important;margin:0!important;padding:0!important;line-height:1!important}',
@@ -572,6 +574,39 @@
         if (Element.tagName === 'SELECT') {
             Selected = Element.options && Element.selectedIndex >= 0 ? Element.options[Element.selectedIndex] : null;
             return Selected && Selected.text ? Selected.text : '';
+        }
+
+        return Element.value || '';
+    }
+
+    function PickerCleanDisplayValue(Element) {
+        var Label = PickerDisplayValue(Element),
+            Title = PickerTitle(Element);
+
+        Label = String(Label || '').replace(/\s+/g, ' ').trim();
+        Title = String(Title || '').replace(/\s+/g, ' ').trim();
+
+        if (Title && Label.indexOf(Title + ':') === 0) {
+            Label = Label.substring(Title.length + 1).replace(/\s+/g, ' ').trim();
+        }
+
+        return Label;
+    }
+
+    function PickerSubmitValue(Element) {
+        var Hidden;
+
+        if (!Element) {
+            return '';
+        }
+
+        if (Element.tagName === 'SELECT') {
+            return Element.value || '';
+        }
+
+        Hidden = document.getElementById((Element.id || '').replace(/^Autocomplete_/, ''));
+        if (Hidden) {
+            return Hidden.value || '';
         }
 
         return Element.value || '';
@@ -720,6 +755,10 @@
             && typeof Core.Agent.DynamicFieldReferenceSearch.AddTicketReference === 'function'
         ) {
             Core.Agent.DynamicFieldReferenceSearch.AddTicketReference(Element.id, Label, Key);
+            Element.value = Label;
+            if (Hidden && Key) {
+                Hidden.value = Key;
+            }
         }
         else {
             Element.value = Label;
@@ -741,6 +780,7 @@
             }
         }
 
+        SyncPickerVisibleState(Element);
         Log('picker-selection-applied', {
             field: FieldInfo(Element),
             item: Item
@@ -923,7 +963,10 @@
     }
 
     function ApplyPickerButtonSlot(Element, Host, Button) {
-        var Field = Element && Element.closest ? Element.closest('.Field') : null;
+        var Field = Element && Element.closest ? Element.closest('.Field') : null,
+            FieldCell = Element && Element.closest ? Element.closest('.FieldCell') : null,
+            HasAddRemove = false,
+            Right = '-48px';
 
         if (!Button) {
             return Host;
@@ -938,9 +981,20 @@
             Field.style.setProperty('position', 'relative', 'important');
         }
 
+        if (FieldCell && FieldCell.querySelector) {
+            HasAddRemove = !!FieldCell.querySelector('.AddRemoveValueRow');
+        }
+        if (HasAddRemove) {
+            Right = '-94px';
+            Button.setAttribute('data-ztsm-reference-picker-has-addremove', '1');
+        }
+        else {
+            Button.removeAttribute('data-ztsm-reference-picker-has-addremove');
+        }
+
         Button.classList.add('ZTSMReferencePickerFieldSlotButton');
         Button.style.setProperty('position', 'absolute', 'important');
-        Button.style.setProperty('right', '-48px', 'important');
+        Button.style.setProperty('right', Right, 'important');
         Button.style.setProperty('left', 'auto', 'important');
         Button.style.setProperty('top', '50%', 'important');
         Button.style.setProperty('transform', 'translateY(-50%)', 'important');
@@ -975,6 +1029,90 @@
             Array.prototype.forEach.call(AddRemoveRows, function (Row) {
                 if (Row && Row.classList) {
                     Row.classList.add('ZTSMReferencePickerAddRemoveLane');
+                }
+            });
+        }
+        SyncPickerVisibleState(Element);
+        ResolveMissingSubmitValue(Element);
+    }
+
+    function ResolveMissingSubmitValue(Element, Done) {
+        var Label,
+            RequestKey;
+
+        if (!Element || PickerSubmitValue(Element)) {
+            if (typeof Done === 'function') {
+                Done();
+            }
+            return;
+        }
+
+        Label = PickerCleanDisplayValue(Element);
+        if (!Label) {
+            if (typeof Done === 'function') {
+                Done();
+            }
+            return;
+        }
+
+        RequestKey = Label + '|' + (Element.id || Element.name || '');
+        if (Element.getAttribute('data-ztsm-reference-picker-resolving') === RequestKey) {
+            if (typeof Done === 'function') {
+                Done();
+            }
+            return;
+        }
+
+        Element.setAttribute('data-ztsm-reference-picker-resolving', RequestKey);
+        PickerSearch(Element, Label, function (Rows) {
+            Element.removeAttribute('data-ztsm-reference-picker-resolving');
+            if (Rows && Rows.length === 1) {
+                ApplyReferenceSelection(Element, [ Rows[0] ]);
+            }
+            if (typeof Done === 'function') {
+                Done();
+            }
+        });
+    }
+
+    function SyncPickerVisibleState(Element) {
+        var Field = Element && Element.closest ? Element.closest('.Field') : null,
+            FieldCell = Element && Element.closest ? Element.closest('.FieldCell') : null,
+            Container = Field && Field.querySelector ? Field.querySelector('.InputField_Container') : null,
+            Label = PickerDisplayValue(Element),
+            SubmitValue = PickerSubmitValue(Element);
+
+        if (!Element) {
+            return;
+        }
+
+        if (Label) {
+            Element.setAttribute('title', Label);
+            if (Field) {
+                Field.setAttribute('title', Label);
+            }
+            if (FieldCell) {
+                FieldCell.setAttribute('title', Label);
+            }
+            if (Container) {
+                Container.setAttribute('title', Label);
+            }
+        }
+
+        if (Label && SubmitValue) {
+            [ Field, FieldCell, Container ].forEach(function (Node) {
+                if (Node && Node.classList) {
+                    Node.classList.add('oooSelected');
+                    Node.classList.add('ZTSMReferencePickerHasValue');
+                    Node.removeAttribute('aria-invalid');
+                }
+            });
+        }
+        else {
+            [ Field, FieldCell, Container ].forEach(function (Node) {
+                if (Node && Node.classList) {
+                    Node.classList.remove('ZTSMReferencePickerHasValue');
+                    Node.classList.remove('oooSelected');
                 }
             });
         }
@@ -1243,7 +1381,7 @@
         if (!Platform || !Application || !Application.value) {
             return;
         }
-        if ((Hidden && Hidden.value) || Platform.value) {
+        if (Hidden ? Hidden.value : Platform.value) {
             return;
         }
 
@@ -1261,6 +1399,55 @@
                     count: Rows && Rows.length ? Rows.length : 0
                 });
             }
+        });
+    }
+
+    function MissingReferenceSubmitFieldsGet(Form) {
+        return Array.prototype.slice.call((Form || document).querySelectorAll(
+            'input.DynamicFieldReference[id*="DynamicField_"], input.DynamicFieldReference[name*="DynamicField_"], input[id^="Autocomplete_DynamicField_"], input[name^="Autocomplete_DynamicField_"], select.DynamicFieldReference[id*="DynamicField_"], select.DynamicFieldReference[name*="DynamicField_"]'
+        )).filter(function (Element) {
+            return PickerCleanDisplayValue(Element) && !PickerSubmitValue(Element);
+        });
+    }
+
+    function OnFormSubmit(Event) {
+        var Form = Event && Event.target,
+            Missing,
+            Remaining,
+            Submitter;
+
+        if (!Form || Form.getAttribute('data-ztsm-reference-picker-submit-resolved') === '1') {
+            if (Form) {
+                Form.removeAttribute('data-ztsm-reference-picker-submit-resolved');
+            }
+            return;
+        }
+
+        Missing = MissingReferenceSubmitFieldsGet(Form);
+        if (!Missing.length) {
+            return;
+        }
+
+        Event.preventDefault();
+        Event.stopPropagation();
+        Remaining = Missing.length;
+        Submitter = Event.submitter || null;
+
+        Missing.forEach(function (Element) {
+            ResolveMissingSubmitValue(Element, function () {
+                Remaining--;
+                if (Remaining > 0) {
+                    return;
+                }
+
+                Form.setAttribute('data-ztsm-reference-picker-submit-resolved', '1');
+                if (typeof Form.requestSubmit === 'function') {
+                    Form.requestSubmit(Submitter);
+                }
+                else {
+                    Form.submit();
+                }
+            });
         });
     }
 
@@ -1418,6 +1605,7 @@
     document.addEventListener('keyup', OnInput, true);
     document.addEventListener('paste', OnInput, true);
     document.addEventListener('change', OnInput, true);
+    document.addEventListener('submit', OnFormSubmit, true);
     document.addEventListener('change', function (Event) {
         if (Event && Event.target && /DynamicField_ZTicket-Application/.test((Event.target.id || '') + ' ' + (Event.target.name || ''))) {
             window.setTimeout(AutoPopulatePlatformFromApplication, 150);

@@ -3553,14 +3553,25 @@ sub _ServiceExtensionDisplayValueRender {
     }
 
     if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
-        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject' )
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItemVersion' )
     {
-        my $ConfigItemValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
+        my $ConfigItemValue = $Self->_ServiceExtensionConfigItemValueRender(
             Value        => $Value,
             LayoutObject => $LayoutObject,
             HTMLOutput   => $HTMLOutput,
         );
         return $ConfigItemValue if defined $ConfigItemValue && $ConfigItemValue ne '';
+    }
+
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject'
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObjectVersion' )
+    {
+        my $GovernanceObjectValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
+            Value        => $Value,
+            LayoutObject => $LayoutObject,
+            HTMLOutput   => $HTMLOutput,
+        );
+        return $GovernanceObjectValue if defined $GovernanceObjectValue && $GovernanceObjectValue ne '';
     }
 
     my $Rendered = $Param{BackendObject}->DisplayValueRender(
@@ -3573,6 +3584,61 @@ sub _ServiceExtensionDisplayValueRender {
     return if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
 
     return $Rendered->{Value};
+}
+
+sub _ServiceExtensionConfigItemValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my @Values = ref $Param{Value} eq 'ARRAY' ? @{ $Param{Value} } : ( $Param{Value} );
+    my @Display;
+
+    VALUE:
+    for my $Value (@Values) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $Display = $Self->_ServiceExtensionConfigItemDisplayName(
+            Value => $Value,
+        );
+        next VALUE if !$Display;
+
+        if ( $Param{HTMLOutput} ) {
+            $Display = $Param{LayoutObject}->Ascii2Html( Text => $Display );
+        }
+
+        push @Display, $Display;
+    }
+
+    return if !@Display;
+    return join( $Param{HTMLOutput} ? '<br />' : "\n", @Display );
+}
+
+sub _ServiceExtensionConfigItemDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    for my $GetParam (
+        { ConfigItemID => $Value },
+        { VersionID    => $Value },
+        )
+    {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($ConfigItem);
+        next if !$ConfigItem->{Name};
+
+        return $Value . ' - ' . $ConfigItem->{Name};
+    }
+
+    return $Value;
 }
 
 sub _ServiceExtensionGovernanceObjectValueRender {

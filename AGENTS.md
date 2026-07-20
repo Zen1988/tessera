@@ -300,6 +300,16 @@ Only ticket state is modified.
 
 # TESSERA Development Rules (Critical)
 
+## Package Versioning Rule
+
+GovernanceDB `0.0.x` patch builds must stop at `0.0.365`.
+
+After `0.0.365`, the next GovernanceDB package version must be `0.1.0`, not `0.0.366`.
+
+Future patch builds after that must increment from the `0.1.x` line unless a newer project decision changes the version series.
+
+---
+
 ## Source of Truth Priority
 
 When generating, modifying, or rebuilding code:
@@ -439,6 +449,16 @@ PROJECT_NEXT.md is out of codex design features.
 It contain all the design decision, and different constraint. Once it comfirmed implemented, it should clean up the PROJECT_NEXT.md and recorded under PROJECT_STATUS.md istead. 
 
 # TESSERA Development Rules (Critical)
+
+## Package Versioning Rule
+
+GovernanceDB `0.0.x` patch builds must stop at `0.0.365`.
+
+After `0.0.365`, the next GovernanceDB package version must be `0.1.0`, not `0.0.366`.
+
+Future patch builds after that must increment from the `0.1.x` line unless a newer project decision changes the version series.
+
+---
 
 ## Source of Truth Priority
 

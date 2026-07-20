@@ -149,7 +149,7 @@ sub Run {
 
     # search referenced object
     my $MaxResults = int( $ParamObject->GetParam( Param => 'MaxResults' ) || 20 );
-    my $Term       = $ParamObject->GetParam( Param => 'Term' ) || '';
+    my $Term       = _TESSERAReferenceSearchTermNormalize( Term => $ParamObject->GetParam( Param => 'Term' ) || '' );
     my $SetIndex   = $ParamObject->GetParam( Param => 'SetIndex' );
     my $TraceID    = $ParamObject->GetParam( Param => 'ZTSMServiceSubmitTraceID' ) || '';
     my $PickerMode = $ParamObject->GetParam( Param => 'Picker' ) || 0;
@@ -324,6 +324,17 @@ sub _TESSERAReferenceFieldNameCandidatesGet {
     }
 
     return @Candidates;
+}
+
+sub _TESSERAReferenceSearchTermNormalize {
+    my (%Param) = @_;
+
+    my $Term = $Param{Term} || '';
+    $Term =~ s{\A\s+|\s+\z}{}g;
+    $Term =~ s{\A[^:]{1,80}:\s*}{};
+    $Term =~ s{\A\s+|\s+\z}{}g;
+
+    return $Term;
 }
 
 sub _TESSERAPickerTermMatches {
