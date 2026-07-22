@@ -174,8 +174,35 @@
             });
         }
 
+        function initReferenceFields() {
+            if (!window.jQuery) {
+                return;
+            }
+
+            window.jQuery(root || document).find('.ZTSMDiagnosisField .DynamicFieldReference').each(function () {
+                var field = window.jQuery(this);
+
+                if (field.data('ZTSMDiagnosisReferenceReady')) {
+                    return;
+                }
+
+                if (
+                    window.Core
+                    && Core.Agent
+                    && Core.Agent.DynamicFieldReferenceSearch
+                    && typeof Core.Agent.DynamicFieldReferenceSearch.InitElement === 'function'
+                    && typeof field.autocomplete === 'function'
+                ) {
+                    Core.Agent.DynamicFieldReferenceSearch.InitElement(field, true);
+                }
+
+                field.data('ZTSMDiagnosisReferenceReady', true);
+            });
+        }
+
         syncNavigationOffset();
         initRichText();
+        initReferenceFields();
         window.addEventListener('resize', syncNavigationOffset);
     }());
     </script>

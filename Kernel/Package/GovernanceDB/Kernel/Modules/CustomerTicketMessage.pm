@@ -23,6 +23,8 @@ use warnings;
 
 our $ObjectManagerDisabled = 1;
 
+use Digest::MD5 qw(md5_hex);
+use Time::HiRes();
 use Time::Local qw(timegm);
 
 use Kernel::System::VariableCheck qw(:all);
@@ -241,12 +243,13 @@ sub Run {
         || ( $Self->{Subaction} || '' ) eq 'AJAXUpdate'
         || ( $Self->{Subaction} || '' ) eq 'ZTSMServiceExtensionDynamicFields'
         || ( $Self->{Subaction} || '' ) eq 'ZTSMServicePayloadReferenceResolve'
-    )
+        || ( $Self->{Subaction} || '' ) eq 'ZTSMHostnamePolicyResolve'
+        )
     {
         $ZTSMSubmitTraceLog->(
             Stage       => 'backend-hit',
             Force       => 1,
-            Priority    => 'error',
+            Priority    => 'notice',
             ServiceID   => $GetParam{ServiceID} || '',
             TypeID      => $GetParam{TypeID} || '',
             Field       => $ParamObject->GetParam( Param => 'Field' ) || '',
@@ -417,6 +420,16 @@ sub Run {
 
         return $LayoutObject->JSONReply(
             Data => $ReferenceResult,
+        );
+    }
+
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMHostnamePolicyResolve' ) {
+        my $HostnameResult = $Self->_ZTSMHostnamePolicyResolve(
+            ParamObject => $ParamObject,
+        );
+
+        return $LayoutObject->JSONReply(
+            Data => $HostnameResult,
         );
     }
 
@@ -998,6 +1011,10 @@ sub Run {
             ServiceID          => $GetParam{ServiceID},
             Visibility         => \%Visibility,
         ) || {};
+        $Self->_ZTSMHostnamePolicySubmittedValuesApply(
+            DynamicFieldValues => \%DynamicFieldValues,
+            GetParam           => \%GetParam,
+        );
 
         $ZTSMSubmitTraceLog->(
             Stage                   => 'backend-validation-enter',
@@ -2221,6 +2238,574 @@ sub Run {
             Comment => Translatable('Please contact the administrator.'),
         );
     }
+}
+
+sub _ZTSMHostnamePolicyResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Param{ParamObject} || $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $Config      = $Kernel::OM->Get('Kernel::Config')->Get('ZTSM::Provisioning::HostnamePolicy') || {};
+    my $Separator   = defined $Config->{Separator} ? $Config->{Separator} : '';
+
+    my $Custom = $Self->_ZTSMHostnamePolicyFieldValueGet(
+        ParamObject => $ParamObject,
+        Field       => 'ZTicket-Custom',
+    );
+
+    if ( !$Self->_ZTSMHostnamePolicyTruthy( $Config->{EnforceGlobalPolicy} ) ) {
+        return {
+            Success             => 1,
+            EnforceGlobalPolicy => 0,
+            Hostname            => $Self->_ZTSMHostnamePolicySegmentSanitize($Custom),
+            NetworkAllocation   => $Self->_ZTSMNetworkPoolAllocationModeGet(
+                ParamObject => $ParamObject,
+            ),
+            Segments            => [
+                {
+                    Field => 'ZTicket-Custom',
+                    Value => $Self->_ZTSMHostnamePolicySegmentSanitize($Custom),
+                },
+            ],
+        };
+    }
+
+    my $Positions = $Config->{SegmentPositions} || {};
+    my @Segments;
+    my $RunningNumberPosition = $Positions->{'ZTSM-RunningNumber'} || 0;
+
+    FIELD:
+    for my $Field ( sort keys %{$Positions} ) {
+        next FIELD if $Field eq 'ZTSM-RunningNumber';
+
+        my $Position = $Positions->{$Field} || 0;
+        next FIELD if $Position !~ m{\A[1-9][0-9]*\z}xms;
+
+        my $RawValue = $Self->_ZTSMHostnamePolicyFieldValueGet(
+            ParamObject => $ParamObject,
+            Field       => $Field,
+        );
+        my $Value = $Self->_ZTSMHostnamePolicyFieldCodeGet(
+            Field => $Field,
+            Value => $RawValue,
+            Config => $Config,
+        );
+        $Value = $Self->_ZTSMHostnamePolicySegmentSanitize($Value);
+        next FIELD if !$Value;
+
+        push @Segments, {
+            Field    => $Field,
+            Position => int $Position,
+            Value    => $Value,
+        };
+    }
+
+    if ( $RunningNumberPosition =~ m{\A[1-9][0-9]*\z}xms ) {
+        my $RunningNumber = $Self->_ZTSMHostnamePolicyRunningNumberGet(
+            Config   => $Config,
+            Segments => \@Segments,
+            Values   => {
+                map {
+                    $_ => $Self->_ZTSMHostnamePolicyFieldValueGet(
+                        ParamObject => $ParamObject,
+                        Field       => $_,
+                    )
+                } qw(
+                    ZTicket-Location
+                    ZTicket-Env
+                    ZTicket-Application
+                    ZTicket-Platform
+                    ZTicket-FunctionProfile
+                )
+            },
+            Consume  => $Param{ConsumeRunningNumber} ? 1 : 0,
+        );
+
+        if ($RunningNumber) {
+            push @Segments, {
+                Field    => 'ZTSM-RunningNumber',
+                Position => int $RunningNumberPosition,
+                Value    => $RunningNumber,
+            };
+        }
+    }
+
+    @Segments = sort {
+        $a->{Position} <=> $b->{Position}
+            || $a->{Field} cmp $b->{Field}
+    } @Segments;
+
+    return {
+        Success             => 1,
+        EnforceGlobalPolicy => 1,
+        Hostname            => join( $Separator, map { $_->{Value} } @Segments ),
+        NetworkAllocation   => $Self->_ZTSMNetworkPoolAllocationModeGet(
+            ParamObject => $ParamObject,
+        ),
+        Segments            => \@Segments,
+    };
+}
+
+sub _ZTSMHostnamePolicySubmittedValuesApply {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{DynamicFieldValues} );
+
+    my $VMRows = $Param{DynamicFieldValues}{'ZCompute-VM'};
+    return if ref $VMRows ne 'ARRAY' || !@{$VMRows};
+
+    my $Config      = $Kernel::OM->Get('Kernel::Config')->Get('ZTSM::Provisioning::HostnamePolicy') || {};
+    my $Separator   = defined $Config->{Separator} ? $Config->{Separator} : '';
+    my $Enforced    = $Self->_ZTSMHostnamePolicyTruthy( $Config->{EnforceGlobalPolicy} );
+    my $Positions   = $Config->{SegmentPositions} || {};
+    my $RunningNumberPosition = $Positions->{'ZTSM-RunningNumber'} || 0;
+    my %GlobalValue = map { $_ => $Param{DynamicFieldValues}{$_} } qw(
+        ZTicket-Location
+        ZTicket-Env
+        ZTicket-Application
+        ZTicket-Platform
+    );
+
+    ROW:
+    for my $Row ( @{$VMRows} ) {
+        next ROW if ref $Row ne 'HASH';
+
+        my $Hostname = '';
+
+        if (!$Enforced) {
+            $Hostname = $Self->_ZTSMHostnamePolicySegmentSanitize( $Row->{'ZTicket-Custom'} );
+        }
+        else {
+            my @Segments;
+
+            FIELD:
+            for my $Field ( sort keys %{$Positions} ) {
+                next FIELD if $Field eq 'ZTSM-RunningNumber';
+
+                my $Position = $Positions->{$Field} || 0;
+                next FIELD if $Position !~ m{\A[1-9][0-9]*\z}xms;
+
+                my $RawValue = exists $Row->{$Field} ? $Row->{$Field} : $GlobalValue{$Field};
+                $RawValue = $Self->_ZTSMHostnamePolicyScalarValue($RawValue);
+
+                my $Value = $Self->_ZTSMHostnamePolicyFieldCodeGet(
+                    Field  => $Field,
+                    Value  => $RawValue,
+                    Config => $Config,
+                );
+                $Value = $Self->_ZTSMHostnamePolicySegmentSanitize($Value);
+                next FIELD if !$Value;
+
+                push @Segments, {
+                    Field    => $Field,
+                    Position => int $Position,
+                    Value    => $Value,
+                };
+            }
+
+            if ( $RunningNumberPosition =~ m{\A[1-9][0-9]*\z}xms ) {
+                my $RunningNumber = $Self->_ZTSMHostnamePolicyRunningNumberGet(
+                    Config   => $Config,
+                    Segments => \@Segments,
+                    Values   => {
+                        %GlobalValue,
+                        map { $_ => $Row->{$_} } qw(
+                            ZTicket-FunctionProfile
+                            ZTicket-Custom
+                            ZCompute-Image
+                        )
+                    },
+                    Consume  => 1,
+                );
+
+                if ($RunningNumber) {
+                    push @Segments, {
+                        Field    => 'ZTSM-RunningNumber',
+                        Position => int $RunningNumberPosition,
+                        Value    => $RunningNumber,
+                    };
+                }
+            }
+
+            @Segments = sort {
+                $a->{Position} <=> $b->{Position}
+                    || $a->{Field} cmp $b->{Field}
+            } @Segments;
+
+            $Hostname = join $Separator, map { $_->{Value} } @Segments;
+        }
+
+        next ROW if !$Hostname;
+
+        $Row->{'ZTicket-Hostname'} = $Hostname;
+    }
+
+    if ( IsHashRefWithData( $Param{GetParam} ) ) {
+        $Param{GetParam}->{DynamicField}{'DynamicField_ZCompute-VM'} = $VMRows;
+    }
+
+    return 1;
+}
+
+sub _ZTSMHostnamePolicyScalarValue {
+    my ( $Self, $Value ) = @_;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        VALUE:
+        for my $Item ( @{$Value} ) {
+            my $Scalar = $Self->_ZTSMHostnamePolicyScalarValue($Item);
+            next VALUE if !defined $Scalar || $Scalar eq '';
+            return $Scalar;
+        }
+        return;
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        for my $Key (qw(Value ID Key Name)) {
+            next if !defined $Value->{$Key} || $Value->{$Key} eq '';
+            return $Value->{$Key};
+        }
+        return;
+    }
+
+    return $Value;
+}
+
+sub _ZTSMHostnamePolicyRunningNumberGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+    my $Width  = $Self->_ZTSMHostnamePolicyPositiveInteger(
+        Value   => $Config->{RunningNumberWidth},
+        Default => 3,
+    );
+    my $Number = $Param{Consume}
+        ? $Self->_ZTSMHostnamePolicyRunningNumberConsume(%Param)
+        : $Self->_ZTSMHostnamePolicyRunningNumberPeek(%Param);
+
+    return if !$Number;
+
+    return sprintf "%0*u", $Width, $Number;
+}
+
+sub _ZTSMHostnamePolicyRunningNumberPeek {
+    my ( $Self, %Param ) = @_;
+
+    my $ScopePrefix = $Self->_ZTSMHostnamePolicyRunningNumberScopePrefix(%Param);
+    return if !$ScopePrefix;
+
+    my $LikePrefix = $ScopePrefix . '%';
+    my $DBObject   = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT MAX(counter)
+            FROM ticket_number_counter
+            WHERE counter_uid LIKE ?
+                AND counter > 0',
+        Bind => [ \$LikePrefix ],
+    );
+
+    my $Counter = 0;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Counter = $Row[0] || 0;
+    }
+
+    return $Counter + 1;
+}
+
+sub _ZTSMHostnamePolicyRunningNumberConsume {
+    my ( $Self, %Param ) = @_;
+
+    my $ScopePrefix = $Self->_ZTSMHostnamePolicyRunningNumberScopePrefix(%Param);
+    return if !$ScopePrefix;
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $CurrentTime    = $DateTimeObject->ToString();
+    my $CounterUID;
+
+    ATTEMPT:
+    for my $Attempt ( 1 .. 5 ) {
+        $CounterUID = $ScopePrefix . substr( md5_hex( time() . rand() . $$ . $Attempt ), 0, 32 - length $ScopePrefix );
+        last ATTEMPT if $DBObject->Do(
+            SQL => '
+                INSERT INTO ticket_number_counter
+                    (counter, counter_uid, create_time)
+                VALUES
+                    (0, ?, ?)',
+            Bind => [ \$CounterUID, \$CurrentTime ],
+        );
+
+        $CounterUID = undef;
+        Time::HiRes::sleep(0.01);
+    }
+
+    return if !$CounterUID;
+
+    Time::HiRes::sleep(0.05);
+
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id
+            FROM ticket_number_counter
+            WHERE counter_uid = ?',
+        Bind  => [ \$CounterUID ],
+        Limit => 1,
+    );
+
+    my $CounterID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $CounterID = $Row[0];
+    }
+    return if !$CounterID;
+
+    my $LikePrefix = $ScopePrefix . '%';
+    my $PreviousCounter = 0;
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT MAX(counter)
+            FROM ticket_number_counter
+            WHERE counter_uid LIKE ?
+                AND counter > 0',
+        Bind => [ \$LikePrefix ],
+    );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $PreviousCounter = $Row[0] || 0;
+    }
+
+    my @UnsetCounterIDs;
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id
+            FROM ticket_number_counter
+            WHERE counter = 0
+                AND counter_uid LIKE ?
+                AND id <= ?
+            ORDER BY id ASC',
+        Bind => [ \$LikePrefix, \$CounterID ],
+    );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @UnsetCounterIDs, $Row[0];
+    }
+
+    for my $UnsetCounterID (@UnsetCounterIDs) {
+        my $NewCounter = ++$PreviousCounter;
+        return if !$DBObject->Do(
+            SQL => '
+                UPDATE ticket_number_counter
+                SET counter = ?
+                WHERE id = ?',
+            Bind => [ \$NewCounter, \$UnsetCounterID ],
+        );
+    }
+
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT counter
+            FROM ticket_number_counter
+            WHERE counter_uid = ?',
+        Bind  => [ \$CounterUID ],
+        Limit => 1,
+    );
+
+    my $Counter;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Counter = $Row[0];
+    }
+
+    return $Counter;
+}
+
+sub _ZTSMHostnamePolicyRunningNumberScopePrefix {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config} || {};
+    my $Scope  = $Config->{RunningNumberScope} || 'PrefixYear';
+    my $ScopeKey = 'HostnamePolicy';
+
+    if ( $Scope =~ m{Prefix}i && ref $Param{Segments} eq 'ARRAY' ) {
+        my @Values = map { $_->{Value} || '' } sort {
+            ( $a->{Position} || 0 ) <=> ( $b->{Position} || 0 )
+                || ( $a->{Field} || '' ) cmp ( $b->{Field} || '' )
+        } $Param{Segments}->@*;
+        $ScopeKey .= ':' . join '|', @Values;
+    }
+
+    if ( $Scope =~ m{Application}i ) {
+        my $Application = $Self->_ZTSMHostnamePolicyScalarValue(
+            ref $Param{Values} eq 'HASH' ? $Param{Values}{'ZTicket-Application'} : undef
+        ) || 'NoApplication';
+        $ScopeKey .= ':Application:' . $Application;
+    }
+
+    if ( $Scope =~ m{Location}i ) {
+        my $Location = $Self->_ZTSMHostnamePolicyScalarValue(
+            ref $Param{Values} eq 'HASH' ? $Param{Values}{'ZTicket-Location'} : undef
+        ) || 'NoLocation';
+        $ScopeKey .= ':Location:' . $Location;
+    }
+
+    if ( $Scope =~ m{Environment|Env}i ) {
+        my $Environment = $Self->_ZTSMHostnamePolicyScalarValue(
+            ref $Param{Values} eq 'HASH' ? $Param{Values}{'ZTicket-Env'} : undef
+        ) || 'NoEnvironment';
+        $ScopeKey .= ':Environment:' . $Environment;
+    }
+
+    if ( $Scope =~ m{Year}i ) {
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+        my $DateTime       = $DateTimeObject->Get();
+        $ScopeKey .= ':' . ( $DateTime->{Year} || '' );
+    }
+
+    return 'ZH' . substr( md5_hex($ScopeKey), 0, 12 );
+}
+
+sub _ZTSMHostnamePolicyPositiveInteger {
+    my ( $Self, %Param ) = @_;
+
+    return $Param{Default} if !$Param{Value};
+    return $Param{Default} if $Param{Value} !~ m{\A[1-9][0-9]*\z}xms;
+
+    return $Param{Value};
+}
+
+sub _ZTSMHostnamePolicyFieldValueGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Param{ParamObject};
+    my $Field       = $Param{Field};
+    return if !$ParamObject || !$Field;
+
+    PARAM:
+    for my $ParamName (
+        'HostnamePolicyField_' . $Field,
+        'DynamicField_' . $Field,
+        'DynamicField_' . $Field . '_0',
+        'Autocomplete_DynamicField_' . $Field,
+        'Autocomplete_DynamicField_' . $Field . '_0',
+    )
+    {
+        my $Value = $ParamObject->GetParam( Param => $ParamName );
+        next PARAM if !defined $Value || $Value eq '';
+        return $Value;
+    }
+
+    return;
+}
+
+sub _ZTSMHostnamePolicyFieldCodeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Field = $Param{Field} || '';
+    my $Value = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    return $Value if $Field eq 'ZTicket-Custom';
+
+    my $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => $Field,
+    );
+    return $Value if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $FieldType = $DynamicFieldConfig->{FieldType} || '';
+    my $CodeFields = $Param{Config}{CodeDynamicFields} || {};
+
+    if ( $FieldType eq 'GovernanceObject' && $Value =~ m{\A\d+\z}xms ) {
+        my $Object = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $Value,
+            DynamicFields      => 1,
+            UserID             => 1,
+            Silent             => 1,
+        );
+        return $Self->_ZTSMHostnamePolicyObjectCodeGet(
+            Object => $Object,
+            Field  => $CodeFields->{$Field} || $CodeFields->{GovernanceObject} || 'ZTSM-Code',
+        ) || $Value;
+    }
+
+    if ( $FieldType =~ m{\A(?:ConfigItem|ConfigItemVersion)\z}xms && $Value =~ m{\A\d+\z}xms ) {
+        my $Object = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+            ConfigItemID  => $Value,
+            DynamicFields => 1,
+            UserID        => 1,
+            Silent        => 1,
+        );
+        return $Self->_ZTSMHostnamePolicyObjectCodeGet(
+            Object => $Object,
+            Field  => $CodeFields->{$Field} || $CodeFields->{ConfigItem} || 'ZTAM-Code',
+        ) || $Value;
+    }
+
+    return $Value;
+}
+
+sub _ZTSMHostnamePolicyObjectCodeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Object = $Param{Object};
+    my $Field  = $Param{Field};
+    return if !IsHashRefWithData($Object) || !$Field;
+
+    for my $Value ( $Self->_ZTSMServicePayloadObjectDynamicFieldValues(
+        Object => $Object,
+        Field  => $Field,
+    ) )
+    {
+        return $Value if defined $Value && $Value ne '';
+    }
+
+    return;
+}
+
+sub _ZTSMHostnamePolicySegmentSanitize {
+    my ( $Self, $Value ) = @_;
+
+    return '' if !defined $Value;
+
+    $Value = uc "$Value";
+    $Value =~ s{\A\s+|\s+\z}{}xmsg;
+    $Value =~ s{[^A-Z0-9-]}{}xmsg;
+    $Value =~ s{-+}{-}xmsg;
+    $Value =~ s{\A-+|-+\z}{}xmsg;
+
+    return $Value;
+}
+
+sub _ZTSMHostnamePolicyTruthy {
+    my ( $Self, $Value ) = @_;
+
+    return $Value && $Value =~ m{\A(?:1|true|yes|on)\z}ims ? 1 : 0;
+}
+
+sub _ZTSMNetworkPoolAllocationModeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Param{ParamObject};
+    my $PoolID      = $Self->_ZTSMHostnamePolicyFieldValueGet(
+        ParamObject => $ParamObject,
+        Field       => 'ZTicket-NetworkPool',
+    );
+    return '' if !$PoolID || $PoolID !~ m{\A\d+\z}xms;
+
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID  => $PoolID,
+        DynamicFields => 1,
+        UserID        => 1,
+        Silent        => 1,
+    );
+    return '' if !IsHashRefWithData($ConfigItem);
+
+    for my $Value ( $Self->_ZTSMServicePayloadObjectDynamicFieldValues(
+        Object => $ConfigItem,
+        Field  => 'ZTAM-NetworkAllocation',
+    ) )
+    {
+        next if !defined $Value || $Value eq '';
+        return $Value;
+    }
+
+    return '';
 }
 
 sub _ZTSMServicePayloadReferenceResolve {
@@ -3553,14 +4138,25 @@ sub _ServiceExtensionDisplayValueRender {
     }
 
     if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItem'
-        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject' )
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'ConfigItemVersion' )
     {
-        my $ConfigItemValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
+        my $ConfigItemValue = $Self->_ServiceExtensionConfigItemValueRender(
             Value        => $Value,
             LayoutObject => $LayoutObject,
             HTMLOutput   => $HTMLOutput,
         );
         return $ConfigItemValue if defined $ConfigItemValue && $ConfigItemValue ne '';
+    }
+
+    if ( ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject'
+        || ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObjectVersion' )
+    {
+        my $GovernanceObjectValue = $Self->_ServiceExtensionGovernanceObjectValueRender(
+            Value        => $Value,
+            LayoutObject => $LayoutObject,
+            HTMLOutput   => $HTMLOutput,
+        );
+        return $GovernanceObjectValue if defined $GovernanceObjectValue && $GovernanceObjectValue ne '';
     }
 
     my $Rendered = $Param{BackendObject}->DisplayValueRender(
@@ -3573,6 +4169,61 @@ sub _ServiceExtensionDisplayValueRender {
     return if !defined $Rendered->{Value} || $Rendered->{Value} eq '';
 
     return $Rendered->{Value};
+}
+
+sub _ServiceExtensionConfigItemValueRender {
+    my ( $Self, %Param ) = @_;
+
+    my @Values = ref $Param{Value} eq 'ARRAY' ? @{ $Param{Value} } : ( $Param{Value} );
+    my @Display;
+
+    VALUE:
+    for my $Value (@Values) {
+        next VALUE if !defined $Value || $Value eq '';
+
+        my $Display = $Self->_ServiceExtensionConfigItemDisplayName(
+            Value => $Value,
+        );
+        next VALUE if !$Display;
+
+        if ( $Param{HTMLOutput} ) {
+            $Display = $Param{LayoutObject}->Ascii2Html( Text => $Display );
+        }
+
+        push @Display, $Display;
+    }
+
+    return if !@Display;
+    return join( $Param{HTMLOutput} ? '<br />' : "\n", @Display );
+}
+
+sub _ServiceExtensionConfigItemDisplayName {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    return if !defined $Value || $Value eq '';
+
+    return $Value if $Value !~ m{\A\d+\z};
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    for my $GetParam (
+        { ConfigItemID => $Value },
+        { VersionID    => $Value },
+        )
+    {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            %{$GetParam},
+            DynamicFields => 0,
+            Silent        => 1,
+        );
+
+        next if !IsHashRefWithData($ConfigItem);
+        next if !$ConfigItem->{Name};
+
+        return $Value . ' - ' . $ConfigItem->{Name};
+    }
+
+    return $Value;
 }
 
 sub _ServiceExtensionGovernanceObjectValueRender {

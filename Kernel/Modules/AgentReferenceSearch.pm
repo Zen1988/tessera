@@ -436,7 +436,17 @@ sub _TESSERAReferenceContextFilterGet {
             ParamObject => $ParamObject,
             Field       => $Spec->{ContextField},
         );
-        next SPEC if !$ContextValue;
+        if (!$ContextValue) {
+            if ( $Spec->{Required} ) {
+                return (
+                    Applied   => 1,
+                    ObjectIDs => [],
+                    Summary   => "$Spec->{ContextField}:missing",
+                );
+            }
+
+            next SPEC;
+        }
 
         if ( $Spec->{Mode} && $Spec->{Mode} eq 'SourceListContainsTarget' ) {
             my $SourceObject = _TESSERAReferenceObjectGet(
@@ -522,6 +532,34 @@ sub _TESSERAReferenceContextFilterSpecsGet {
             ContextField      => 'ZTicket-Location',
             Mode              => 'TargetFieldEqualsContext',
             TargetObjectField => 'ZTAM-Location',
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Application',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Application',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Env',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Environment',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Location',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Location',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Platform',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Platform',
+            Required          => 1,
         },
     );
 }

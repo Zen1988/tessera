@@ -436,7 +436,17 @@ sub _TESSERAReferenceContextFilterGet {
             ParamObject => $ParamObject,
             Field       => $Spec->{ContextField},
         );
-        next SPEC if !$ContextValue;
+        if (!$ContextValue) {
+            if ( $Spec->{Required} ) {
+                return (
+                    Applied   => 1,
+                    ObjectIDs => [],
+                    Summary   => "$Spec->{ContextField}:missing",
+                );
+            }
+
+            next SPEC;
+        }
 
         if ( $Spec->{Mode} && $Spec->{Mode} eq 'SourceListContainsTarget' ) {
             my $SourceObject = _TESSERAReferenceObjectGet(
@@ -470,15 +480,14 @@ sub _TESSERAReferenceContextFilterGet {
                     FieldType => $Param{DynamicFieldConfig}->{FieldType},
                     ObjectID  => $ObjectID,
                 );
+                my @TargetValues = _TESSERAObjectDynamicFieldValues(
+                    Object => $TargetObject,
+                    Field  => $Spec->{TargetObjectField},
+                );
                 if (
                     !IsHashRefWithData($TargetObject)
                     || !_TESSERAValueListContains(
-                        Values => [
-                            _TESSERAObjectDynamicFieldValues(
-                                Object => $TargetObject,
-                                Field  => $Spec->{TargetObjectField},
-                            )
-                        ],
+                        Values => \@TargetValues,
                         Value => $ContextValue,
                     )
                     )
@@ -523,6 +532,34 @@ sub _TESSERAReferenceContextFilterSpecsGet {
             Mode              => 'TargetFieldEqualsContext',
             TargetObjectField => 'ZTAM-Location',
         },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Application',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Application',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Env',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Environment',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Location',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Location',
+            Required          => 1,
+        },
+        {
+            TargetField       => 'ZTicket-NetworkPool',
+            ContextField      => 'ZTicket-Platform',
+            Mode              => 'TargetFieldEqualsContext',
+            TargetObjectField => 'ZTAM-Platform',
+            Required          => 1,
+        },
     );
 }
 
@@ -560,12 +597,74 @@ sub _TESSERAValueListContains {
     my $Value = $Param{Value};
     return if !defined $Value || $Value eq '';
 
+    my %Wanted = map { $_ => 1 } _TESSERAReferenceValueAliasesGet( Value => $Value );
+    return if !%Wanted;
+
     for my $Item ( @{ $Param{Values} || [] } ) {
         next if !defined $Item || $Item eq '';
-        return 1 if "$Item" eq "$Value";
+        for my $Alias ( _TESSERAReferenceValueAliasesGet( Value => $Item ) ) {
+            return 1 if $Wanted{$Alias};
+        }
     }
 
     return;
+}
+
+sub _TESSERAReferenceValueAliasesGet {
+    my (%Param) = @_;
+
+    my $Value = $Param{Value};
+    return if !defined $Value;
+
+    my @Aliases;
+    my %Seen;
+
+    VALUE:
+    for my $Candidate ( _TESSERANormalizeArray($Value) ) {
+        next VALUE if !defined $Candidate || ref $Candidate;
+
+        my $Text = "$Candidate";
+        $Text =~ s{\A\s+|\s+\z}{}g;
+        next VALUE if $Text eq '';
+
+        for my $Alias (
+            $Text,
+            $Text =~ m{\A[^:]{1,80}:\s*(.+)\z} ? $1 : (),
+        )
+        {
+            next if !defined $Alias;
+            $Alias =~ s{\A\s+|\s+\z}{}g;
+            next if $Alias eq '';
+            next if $Seen{$Alias}++;
+            push @Aliases, $Alias;
+        }
+
+        if ( $Text =~ m{\A\d+\z} ) {
+            my $Object = eval {
+                $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+                    GovernanceObjectID => $Text,
+                    DynamicFields      => 0,
+                    UserID             => 1,
+                    Silent             => 1,
+                );
+            };
+            next VALUE if !IsHashRefWithData($Object);
+
+            for my $Alias (
+                $Object->{Name},
+                $Object->{Number},
+                $Object->{Class} && $Object->{Name} ? "$Object->{Class}: $Object->{Name}" : (),
+            )
+            {
+                next if !defined $Alias || $Alias eq '';
+                $Alias =~ s{\A\s+|\s+\z}{}g;
+                next if $Seen{$Alias}++;
+                push @Aliases, $Alias;
+            }
+        }
+    }
+
+    return @Aliases;
 }
 
 sub _TESSERAReferenceParamValueGet {

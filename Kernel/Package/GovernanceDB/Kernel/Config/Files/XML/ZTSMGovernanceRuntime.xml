@@ -31,6 +31,55 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="ZTSM::Provisioning::HostnamePolicy" Required="0" Valid="1">
+        <Description Translatable="1">Defines the provisioning hostname policy. When global policy is disabled, ZTicket-Custom from each ZCompute-VM row is used as the hostname. When enabled, fields with position greater than zero are resolved and joined in position order per VM row. Use ZTSM-RunningNumber as a synthetic segment for a scoped running number. Supported running number scopes include Global, GlobalYear, Application, ApplicationYear, Location, LocationYear, Environment, EnvironmentYear, Prefix, and PrefixYear.</Description>
+        <Navigation>Core::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="EnforceGlobalPolicy" ValueType="Checkbox">0</Item>
+                <Item Key="Separator" ValueType="String"></Item>
+                <Item Key="RunningNumberScope" ValueType="Select" SelectedID="ApplicationYear">
+                    <Item ValueType="Option" Value="Global" Translatable="1">Global</Item>
+                    <Item ValueType="Option" Value="GlobalYear" Translatable="1">Global yearly</Item>
+                    <Item ValueType="Option" Value="Application" Translatable="1">Application</Item>
+                    <Item ValueType="Option" Value="ApplicationYear" Translatable="1">Application yearly</Item>
+                    <Item ValueType="Option" Value="Location" Translatable="1">Location</Item>
+                    <Item ValueType="Option" Value="LocationYear" Translatable="1">Location yearly</Item>
+                    <Item ValueType="Option" Value="Environment" Translatable="1">Environment</Item>
+                    <Item ValueType="Option" Value="EnvironmentYear" Translatable="1">Environment yearly</Item>
+                    <Item ValueType="Option" Value="Prefix" Translatable="1">Generated prefix</Item>
+                    <Item ValueType="Option" Value="PrefixYear" Translatable="1">Generated prefix yearly</Item>
+                </Item>
+                <Item Key="RunningNumberWidth" ValueType="String">3</Item>
+                <Item Key="SegmentPositions">
+                    <Hash>
+                        <DefaultItem ValueType="String" ValueRegex="^[0-9]+$">0</DefaultItem>
+                        <Item Key="ZTicket-Location">0</Item>
+                        <Item Key="ZTicket-Env">0</Item>
+                        <Item Key="ZTicket-Application">0</Item>
+                        <Item Key="ZTicket-FunctionProfile">0</Item>
+                        <Item Key="ZTicket-Custom">1</Item>
+                        <Item Key="ZCompute-Image">0</Item>
+                        <Item Key="ZCompute-CpuCore">0</Item>
+                        <Item Key="ZCompute-GPU">0</Item>
+                        <Item Key="ZCompute-RAM">0</Item>
+                        <Item Key="ZStorage-FS">0</Item>
+                        <Item Key="ZTicket-NetworkPool">0</Item>
+                        <Item Key="ZTSM-RunningNumber">0</Item>
+                    </Hash>
+                </Item>
+                <Item Key="CodeDynamicFields">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                        <Item Key="GovernanceObject">ZTSM-Code</Item>
+                        <Item Key="ConfigItem">ZTAM-Code</Item>
+                        <Item Key="ZCompute-Image">ZTAM-Code</Item>
+                        <Item Key="ZTicket-NetworkPool">ZTAM-Code</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
     <Setting Name="DynamicFields::Driver###Service" Required="0" Valid="1">
         <Description Translatable="1">DynamicField backend registration.</Description>
         <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
@@ -367,6 +416,23 @@
     </Setting>
     <Setting Name="Loader::Module::CustomerTicketZTSMAction###002-Ticket" Required="0" Valid="1">
         <Description Translatable="1">Loader module registration for TESSERA customer runtime ticket actions.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZoom###112-ZTSMRuntimeReferenceSearch" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer runtime reference search controls loaded inline on ticket zoom.</Description>
         <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
         <Value>
             <Hash>

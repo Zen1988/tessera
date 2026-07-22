@@ -1436,6 +1436,34 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
         {
+            Name       => 'ZTicket-Custom',
+            Label      => 'Custom Hostname Segment',
+            FieldOrder => 10105,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Custom hostname value or custom hostname segment for provisioning policy.',
+            },
+        },
+        {
+            Name       => 'ZTicket-Hostname',
+            Label      => 'Hostname',
+            FieldOrder => 10106,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Resolved provisioning hostname for the VM row.',
+            },
+        },
+        {
             Name       => 'ZIN-Observed',
             Label      => 'Observed Behavior',
             FieldOrder => 10110,
@@ -1561,6 +1589,25 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
         {
+            Name       => 'ZIN-KB',
+            Label      => 'KB',
+            FieldOrder => 10158,
+            FieldType  => 'FAQ',
+            Config     => {
+                DisplayType                => '',
+                EditFieldMode              => 'AutoComplete',
+                LinkDirection              => 'ReferencingIsSource',
+                LinkObjectForReferenceType => '',
+                MultiValue                 => 0,
+                Multiselect                => 0,
+                PossibleNone               => 1,
+                ReferenceFilterList        => [],
+                ReferencedObjectType       => 'FAQ',
+                SearchAttribute            => 'Title',
+                Tooltip                    => 'Related Knowledge Based',
+            },
+        },
+        {
             Name       => 'ZIN-Plan',
             Label      => 'Resolution Plan',
             FieldOrder => 10160,
@@ -1653,7 +1700,42 @@ sub _TicketRuntimeDynamicFieldsEnsure {
         my $Existing = $DynamicFieldObject->DynamicFieldGet(
             Name => $Field->{Name},
         );
-        next FIELD if $Existing && $Existing->{ID};
+        if ( $Existing && $Existing->{ID} ) {
+            my $NeedsReferenceRepair = $Field->{Name} eq 'ZIN-KB'
+                && !$Self->_DynamicFieldConfigEqual(
+                    Left => {
+                        Name       => $Existing->{Name},
+                        Label      => $Existing->{Label},
+                        FieldType  => $Existing->{FieldType},
+                        ObjectType => $Existing->{ObjectType},
+                        Config     => $Existing->{Config} || {},
+                    },
+                    Right => {
+                        Name       => $Field->{Name},
+                        Label      => $Field->{Label},
+                        FieldType  => $Field->{FieldType},
+                        ObjectType => 'Ticket',
+                        Config     => $Field->{Config},
+                    },
+                );
+
+            if ($NeedsReferenceRepair) {
+                $Self->_DynamicFieldUpdateForce(
+                    ID         => $Existing->{ID},
+                    Name       => $Field->{Name},
+                    Label      => $Field->{Label},
+                    FieldOrder => $Existing->{FieldOrder},
+                    FieldType  => $Field->{FieldType},
+                    ObjectType => 'Ticket',
+                    Config     => $Field->{Config},
+                    ValidID    => $Existing->{ValidID} || 1,
+                    UserID     => 1,
+                    Reorder    => 0,
+                );
+            }
+
+            next FIELD;
+        }
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},

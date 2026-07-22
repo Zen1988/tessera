@@ -107,7 +107,10 @@ sub ValueSet {
             for my $InnerIndex ( 0 .. $#{ $GroupByOuter[$OuterIndex] } ) {
                 next INNER if ref $GroupByOuter[$OuterIndex][$InnerIndex] ne 'HASH';
 
-                $FieldValue[$OuterIndex][$InnerIndex] = $GroupByOuter[$OuterIndex][$InnerIndex]{$Name};
+                $FieldValue[$OuterIndex][$InnerIndex] = $Self->_NestedSingleValueNormalize(
+                    DynamicFieldConfig => $DynamicField->{$Name},
+                    Value              => $GroupByOuter[$OuterIndex][$InnerIndex]{$Name},
+                );
             }
         }
 
@@ -288,6 +291,23 @@ sub _NestedStorageFieldConfigGet {
     };
 
     return $DynamicFieldConfig;
+}
+
+sub _NestedSingleValueNormalize {
+    my ( $Self, %Param ) = @_;
+
+    return $Param{Value} if $Param{DynamicFieldConfig}->{Config}->{MultiValue};
+    return $Param{Value} if ref $Param{Value} ne 'ARRAY';
+
+    VALUE:
+    for my $Value ( $Param{Value}->@* ) {
+        next VALUE if ref $Value;
+        next VALUE if !defined $Value || $Value eq '';
+
+        return $Value;
+    }
+
+    return;
 }
 
 1;

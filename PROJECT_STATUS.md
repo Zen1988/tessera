@@ -1,9 +1,10 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-20
+Last Updated: 2026-07-22
 
 ## Current Focus
 
+- Auto hostname/provisioning policy via System Configuration.
 - Standalone MELT package development outside GovernanceDB.
 - Customer runtime execution actions on `CustomerTicketZoom`.
 - Runtime stakeholder injection for active execution child tickets.
@@ -25,6 +26,1284 @@ Last Updated: 2026-07-20
 - Dynamic Field Group support for two-depth service payload rows, such as one service request containing multiple server provisioning rows.
 
 ## Completed Work
+
+## 2026-07-22 Service First-Select Timing Fix 0.1.33
+
+### Completed work
+
+- Added a delegated jQuery service watcher for `ServiceID` changes because OTOBO Modernize/service controls can trigger jQuery events without native `addEventListener` listeners seeing them.
+- Added a narrow `ajaxComplete` fallback: after OTOBO native AJAX finishes, if `ServiceID` has a value and the service payload block still has no rendered rows, the TESSERA payload refresh runs once.
+- Added late settled service checks after first selection so the payload refresh occurs after the native service UI has finished updating.
+- Downgraded the `TESSERA CustomerTicketMessage submit trace stage=backend-hit` log from `error` to `notice`; it was diagnostic noise and not a real exception.
+- Synced `CustomerTicketMessage.pm` and `ZTSMCustomerTicketMessageServiceFields.tt` across package source, runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16` where applicable.
+- Bumped `GovernanceDB.sopm` package version to `0.1.33`.
+- Generated `Kernel/Package/GovernanceDB-0.1.33.opm`.
+- `Kernel/Package/GovernanceDB-0.1.33.opm` SHA256: `7F07DCBF23B454A05AC09983CED64EB246BCCD4B5A930B2C450886B897FECCC8`.
+
+### Validation
+
+- `CustomerTicketMessage.pm` syntax OK with OTOBO include path.
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- Inline service payload JavaScript parsed successfully after extraction from the template.
+- `Kernel/Package/GovernanceDB-0.1.33.opm` parsed as XML with document root `otobo_package`, package version `0.1.33`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime overlay payload contains the jQuery service watcher, AJAX-complete empty-payload fallback, and backend trace downgrade.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.33.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest selecting Service `306` once; payload should render without selecting the same service a second time.
+
+## 2026-07-22 Service Picker First-Apply Payload Refresh 0.1.32
+
+### Completed work
+
+- Fixed the service/reference picker apply path so applying a selected reference dispatches a native `ZTSMReferencePicker:applied` event.
+- Updated the customer service payload watcher to listen for `ZTSMReferencePicker:applied` and immediately refresh service payload fields when the Service picker is applied.
+- Fixed reference picker visible labels to prefer full result descriptions before short names, so Service display should show the full service label instead of only `New`.
+- Synced the reference picker JavaScript across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Synced the service payload template across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.32`.
+- Generated `Kernel/Package/GovernanceDB-0.1.32.opm`.
+- `Kernel/Package/GovernanceDB-0.1.32.opm` SHA256: `CFC18AF1973059C8CF8530C37D96607FB20CCA3656854ADDB1025F8415717B2C`.
+
+### Validation
+
+- `CustomerTicketMessage.pm` syntax OK with OTOBO include path.
+- `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js.
+- Inline service payload JavaScript parsed successfully after extraction from the template.
+- `Kernel/Package/GovernanceDB-0.1.32.opm` parsed as XML with document root `otobo_package`, package version `0.1.32`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime overlay payload contains `ZTSMReferencePicker:applied`, `reference-picker-apply`, and full-description label preference.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.32.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest selecting Service once; service payload should load immediately after Apply and the Service field should show the full label.
+
+## 2026-07-22 Hostname Running Number Scope 0.1.31
+
+### Completed work
+
+- Added synthetic hostname policy segment `ZTSM-RunningNumber`.
+- Added SysConfig options under `ZTSM::Provisioning::HostnamePolicy`:
+  - `RunningNumberScope`, default `ApplicationYear`.
+  - `RunningNumberWidth`, default `3`.
+  - `SegmentPositions###ZTSM-RunningNumber`, default `0`.
+- Running number scope is now a SysConfig selectable dropdown, defaulting to `ApplicationYear`, so hostname running numbers are application-scoped by default instead of global.
+- Running number scope supports selectable values:
+  - `Global`
+  - `GlobalYear`
+  - `Application`
+  - `ApplicationYear`
+  - `Location`
+  - `LocationYear`
+  - `Environment`
+  - `EnvironmentYear`
+  - `Prefix`
+  - `PrefixYear`
+- Implemented application-scoped counters so different applications do not share one global hostname running sequence.
+- Browser preview peeks the next number without consuming it; submit-time backend hostname fill consumes the authoritative number.
+- Synced `CustomerTicketMessage.pm` across package source, package runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.31`.
+- Generated `Kernel/Package/GovernanceDB-0.1.31.opm`.
+- `Kernel/Package/GovernanceDB-0.1.31.opm` SHA256: `DF7EC4620D8229600E5F6E9089C7E613D773940FDD2A4079FB8E0998B7F52992`.
+
+### Usage note
+
+- To use running numbers in generated hostnames:
+  - Enable `EnforceGlobalPolicy`.
+  - Set `SegmentPositions###ZTSM-RunningNumber` to the desired position.
+  - Set `RunningNumberScope` to the desired scope, normally `ApplicationYear`.
+  - Keep `RunningNumberWidth` at `3` for `001`, `002`, `003`, etc.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/Modules/CustomerTicketMessage.pm` syntax OK with OTOBO include path.
+- `Kernel/Package/GovernanceDB/Kernel/Config/Files/XML/ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.31.opm` parsed as XML with document root `otobo_package`, package version `0.1.31`, file count `209`, and `missingEncode=0`.
+- Generated OPM payload contains `_ZTSMHostnamePolicyRunningNumberScopePrefix`, `ZTSM-RunningNumber`, and default `ApplicationYear`.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.31.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Configure hostname policy with `ZTSM-RunningNumber` in `SegmentPositions`.
+- Retest two applications and confirm each application has an independent running sequence.
+
+## 2026-07-22 Hostname Submit-Time Policy Fill 0.1.29
+
+### Completed work
+
+- Fixed VM hostname submission so browser AJAX timing cannot leave later VM rows blank.
+- Added backend submit-time policy application for `ZCompute-VM` rows:
+  - When `ZTSM::Provisioning::HostnamePolicy###EnforceGlobalPolicy` is disabled, each row's `ZTicket-Hostname` is filled from that row's `ZTicket-Custom`.
+  - When global policy is enabled, each row's `ZTicket-Hostname` is generated from configured `SegmentPositions` using ticket-level context plus row-level values.
+- Synced `CustomerTicketMessage.pm` across package source, package runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.29`.
+- Generated `Kernel/Package/GovernanceDB-0.1.29.opm`.
+- `Kernel/Package/GovernanceDB-0.1.29.opm` SHA256: `B58F57366D633D36A1E177B9D5D1DC83237D326CD10DAA55D0CBFC397BC3F1F7`.
+
+### Architectural decisions
+
+- Hostname policy remains SysConfig-owned:
+  - Custom mode preserves requester/service payload custom hostnames.
+  - Global mode is required for generated hostnames based on `ZTicket-Location`, `ZTicket-Env`, `ZTicket-Application`, function profile, or other configured segments.
+- Submit-time backend fill is authoritative; browser-side AJAX remains a preview/UI assist only.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/Modules/CustomerTicketMessage.pm` syntax OK with OTOBO include path.
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.29.opm` parsed as XML with document root `otobo_package`, package version `0.1.29`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime-overlay payload for `CustomerTicketMessage.pm` contains `_ZTSMHostnamePolicySubmittedValuesApply`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.29.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest two VM rows where row 0 custom is `A1` and row 1 custom is `B1`; the submitted snapshot should show Hostname `A1` and `B1`.
+- If generated `LDC...` hostnames are required, enable `ZTSM::Provisioning::HostnamePolicy###EnforceGlobalPolicy` and set non-zero `SegmentPositions` for the desired source fields.
+
+## 2026-07-22 GovernanceDB Package Encoding Recovery 0.1.28
+
+### Completed work
+
+- Withdrawn `Kernel/Package/GovernanceDB-0.1.27.opm` from use because its generated OPM structure was invalid for OTOBO package installation:
+  - The document root was generated as `<GovernanceDB>` instead of `<otobo_package>`.
+  - File payloads were base64 text but the `File` entries did not declare `Encode="Base64"`.
+- Rebuilt the package as `Kernel/Package/GovernanceDB-0.1.28.opm`.
+- Fixed the generated OPM so PackageManager installs decoded source files instead of raw base64 text.
+- Bumped `GovernanceDB.sopm` package version to `0.1.28`.
+- `Kernel/Package/GovernanceDB-0.1.28.opm` SHA256: `9EF126037A9BDD69C7CF9A0D2F4BC8B8FFB5738C5895B1599A2FE3171453BB18`.
+
+### Recovery note
+
+- If `0.1.27` was already installed, OTOBO may fail before AdminPackageManager can render because core package modules were overwritten with raw base64 text and Perl reports `Identifier too long`.
+- Recover by installing/upgrading to `0.1.28` from the OTOBO console/CLI or by restoring decoded package files first, then clearing OTOBO cache.
+- Do not install or retest with `0.1.27`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB-0.1.28.opm` parsed as XML with document root `otobo_package`, package version `0.1.28`, file count `209`, and `missingEncode=0`.
+- Decoded OPM payload for `Kernel/Output/HTML/Layout/GovernanceObject.pm` starts as valid Perl source, not base64 text.
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `git diff --check` reported no whitespace errors; it only reported the existing CRLF/LF warning for `GovernanceDB.sopm`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.28.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest the service-payload behavior from the `0.1.27` source fix once the corrupted package install is repaired.
+
+## 2026-07-22 Nested Service Payload Index Ownership Fix 0.1.27
+
+### Completed work
+
+- Fixed service payload DynamicFieldSet/DynamicFieldGroup row normalization so a top-level `ZCompute-VM` row no longer counts nested filesystem/network rows as VM peer rows.
+- Added nested group compaction for rows under each VM:
+  - Nested filesystem rows submit as `SetIndex_ZStorage-FS_<VMIndex>` with child row values `0..n`.
+  - Nested network adapter rows submit as `SetIndex_ZTicket-NetworkAdapter_<VMIndex>` with child row values `0..n`.
+  - Nested control names, labels, and managed reference picker targets are rewritten to `<ParentVMIndex>_<NestedRowIndex>`.
+- Fixed service payload import/collect row helpers to apply the same SetIndex owner filter, preventing payload loading from adding extra nested groups as if they were top-level VM rows.
+- Fixed nested field base-name parsing so controls such as `DynamicField_ZStorage-MountPoint_ZStorage-FS_1_0` resolve as `ZStorage-MountPoint`, and `DynamicField_ZTicket-NetworkPool_ZTicket-NetworkAdapter_4_4` resolves as `ZTicket-NetworkPool`.
+- Updated the service change watcher to refresh when a ServiceID exists but no service payload rows have rendered yet, addressing the “select Service twice before payload appears” timing gap without reintroducing periodic refresh.
+- Updated the managed reference picker to re-enable hidden reference inputs when applying a selection, so the hidden ID submits immediately and label state refreshes without requiring an extra click/blur.
+- Synced the customer service payload template across package source, package runtime overlay, and `ZTSMOverlay`.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.27`.
+- Generated `Kernel/Package/GovernanceDB-0.1.27.opm`.
+- `Kernel/Package/GovernanceDB-0.1.27.opm` SHA256: `D6D581BBB410117F7411E77ACA369914B86D970550CD25F17DEC821CE32481E5`.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js.
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- Nested field base-name parsing was checked for `ZStorage-MountPoint`, `ZTicket-NetworkPool`, `ZTicket-FunctionProfile`, and `ZCompute-Image`.
+- `Kernel/Package/GovernanceDB-0.1.27.opm` parsed successfully as XML with file count `209` and `bad_base64=0`.
+- Generated OPM payload confirmed the service template contains `ZTSMServiceExtensionNestedSetIndexCompact`, `ContainerSetName`, and the finite empty-payload ServiceID refresh guard; reference picker payload confirmed `Hidden.disabled = false`.
+- `git diff --check` reported no whitespace errors; it only reported the existing CRLF/LF warning for `GovernanceDB.sopm`.
+
+### Next priorities
+
+- Superseded by `0.1.28`; do not install `Kernel/Package/GovernanceDB-0.1.27.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest selecting Service once; service payload should render without selecting it a second time.
+- Retest two VM rows with nested filesystem rows and multiple network adapters; submitted article snapshot should show nested values under the correct VM row.
+
+## 2026-07-22 Nested DynamicFieldGroup Reference Submit Fix 0.1.26
+
+### Completed work
+
+- Fixed nested DynamicFieldGroup reference submission for second and later `ZCompute-VM` rows.
+- Added backend normalization in `DynamicFieldGroup.pm` so non-multivalue nested fields such as `ZTicket-NetworkPool` collapse accidental array values to the first scalar before the ConfigItem driver validates/stores them.
+- Updated the managed reference picker so references inside nested DynamicFieldGroup rows use single-choice radio selection, while top-level multivalue references such as `ZTicket-Location` can still use checkbox multi-select.
+- Preserved the previous `0.1.25` row-indexing behavior that updates nested parent row suffixes and reference button targets for cloned service payload rows.
+- Synced `DynamicFieldGroup.pm` to the package runtime overlay and local runtime copy.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.26`.
+- Generated `Kernel/Package/GovernanceDB-0.1.26.opm`.
+- `Kernel/Package/GovernanceDB-0.1.26.opm` SHA256: `036AAA87DB3F0B2BD210946EE7600B8240E4E6BE34C0D8BCDC033A753006A26B`.
+
+### Architectural decisions
+
+- Multiple network adapters are represented by multiple `ZTicket-NetworkAdapter` group rows, not by writing multiple ConfigItem IDs into one `ZTicket-NetworkPool` value.
+- Direct reference multi-select remains valid only where the field itself can store multiple values; nested group reference fields stay scalar per nested row.
+- Backend normalization is retained as a defensive guard because browser UI state can still be manipulated or cloned by OTOBO row logic.
+
+### Validation
+
+- Perl syntax check passed for `Kernel/System/DynamicField/Driver/DynamicFieldGroup.pm`.
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js.
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.26.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirmed `_NestedSingleValueNormalize` and `NestedGroupReference` are present, with no `MutationObserver` or `setInterval()` in the affected service/reference UI payloads.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.26.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest two VM rows with nested filesystems and three network adapters, confirming each Network Adapter row submits one Network Pool value.
+- Confirm the submitted article snapshot shows nested DynamicFieldGroup values for both VM rows.
+
+## 2026-07-22 Service Value Lookup and Submit-Time Group Stability 0.1.24
+
+### Completed work
+
+- Fixed Service payload refresh to prefer the real native Service select/hidden value instead of a visible helper input/chip value such as `New`.
+- Forced service-extension AJAX refresh FormData to post one authoritative `ServiceID` from `ZTSMServiceExtensionValue()`.
+- Removed DynamicFieldSet/DynamicFieldGroup index normalization from submit-click and submit-event handlers so browser validation failures no longer mutate service payload groups.
+- Kept normalization in render/import/row-add initialization paths where row structure is intentionally being prepared.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.24`.
+- Generated `Kernel/Package/GovernanceDB-0.1.24.opm`.
+- `Kernel/Package/GovernanceDB-0.1.24.opm` SHA256: `8105CBB121A4DD28C0B11C61811D8E028B9C30D8A4F4A13F7562FD8E7BF32E92`.
+
+### Architectural decisions
+
+- Service payload refresh must use the stored Service identity, not the modernized display chip text.
+- Submit/validation paths must not reshape DynamicFieldGroup rows; they may log and prepare trace data only.
+
+### Validation
+
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.24.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirmed `ZTSMServiceElement`, authoritative `ServiceID` FormData replacement, no submit-time `ZTSMServiceExtensionSetIndexNormalize`, and no `MutationObserver`/`setInterval()` in the service payload template payload.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.24.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify first Service selection immediately renders service payload rows and preserves full Service path display.
+- Verify validation errors no longer create extra Mount Point/DynamicFieldGroup rows.
+
+## 2026-07-22 Event-Driven Service Payload Refresh Restore 0.1.23
+
+### Completed work
+
+- Restored service payload refresh without reintroducing idle DOM observers or intervals.
+- Added a one-shot initial service payload refresh when Service already has a selected value but no rendered service rows exist.
+- Added finite delayed checks after direct Service UI mouse/keyboard interactions so OTOBO/InputField/Select2 has time to copy the selected visual chip into the native value before refresh evaluation.
+- Added explicit reference picker enhancement after DynamicFieldSet/DynamicFieldGroup row `+/-` actions, including short delayed re-enhancement for cloned rows after OTOBO finishes reindexing.
+- Preserved observer-free behavior from `0.1.22`; no broad page watch or recurring refresh loop was added back.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.23`.
+- Generated `Kernel/Package/GovernanceDB-0.1.23.opm`.
+- `Kernel/Package/GovernanceDB-0.1.23.opm` SHA256: `2E0F0A5F559A241D55F737A773F4898967EBE8D6C138E472D13472E1EB37A44E`.
+
+### Architectural decisions
+
+- DynamicFieldSet row suffixes are treated as OTOBO internal slot IDs; non-contiguous suffixes such as `_0` then `_3` are valid if each visible/hidden pair matches within the row.
+- Service payload refresh is event-driven and finite: direct Service UI interaction may schedule a few settle checks, but there is no idle refresh loop.
+
+### Validation
+
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.23.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirmed `initial-service-value`, service UI settle hooks, `ZTSMServiceExtensionHasRenderedRows`, and no `MutationObserver` or `setInterval()` in the service payload template payload.
+- Source copy scan confirmed no `MutationObserver`, `setInterval()`, `ZTSMServiceExtensionMutationWatch`, or `data-ztsm-service-change-observer` remains in the customer service payload/reference UI files.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.23.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify choosing Service renders service payload rows without idle refresh.
+- Verify adding second and later VM/NetworkAdapter rows rebinds reference search buttons after OTOBO reindexing.
+
+## 2026-07-22 Service Payload Idle Refresh Removal 0.1.22
+
+### Completed work
+
+- Removed the remaining broad `MutationObserver` from the customer service payload template that watched `document.body` for row mutations.
+- Removed the service-control DOM observer that reacted to class/title/value churn around the service selector.
+- Kept service payload updates event-driven: service `change/input`, row `+/-` clicks, import/apply actions, picker Apply, and initial page setup.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.22`.
+- Generated `Kernel/Package/GovernanceDB-0.1.22.opm`.
+- `Kernel/Package/GovernanceDB-0.1.22.opm` SHA256: `238D7900CD8E2F6F07B70DDB36862F240BFA8A986443790469533B4538DF4B2E`.
+
+### Architectural decisions
+
+- Customer service payload UI must not use idle DOM watching for normal operation.
+- Dynamic form updates should be triggered only by explicit user/runtime events, not by recurring or observer-driven refresh loops.
+
+### Validation
+
+- Reference picker JS parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- Service payload template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.22.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload scan confirmed no `MutationObserver` or `setInterval()` remains in checked service payload/reference UI files.
+- Source copy scan confirmed no `MutationObserver`, `setInterval()`, `ZTSMServiceExtensionMutationWatch`, or `data-ztsm-service-change-observer` remains in the customer service payload/reference UI files.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.22.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify DevTools no longer shows idle DOM refresh while no user action is happening.
+- Verify service selection and DynamicFieldSet row add/remove still update the form.
+
+## 2026-07-22 DynamicFieldSet Cloned Reference Button Rebind 0.1.21
+
+### Completed work
+
+- Fixed reference picker search buttons in newly added DynamicFieldSet/DynamicFieldGroup rows.
+- Reworked enhancement so an existing `.ZTSMReferencePickerButton` is rebound in-place instead of being skipped.
+- Handles cloned buttons whose DOM attributes were copied from row `0` but whose event listeners were not copied by the browser.
+- Keeps button metadata refreshed to the current visible reference input before opening the picker.
+- Preserved `0.1.20` behavior: Apply settle/label float, read-only reference display input, and direct multi-reference selection.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.21`.
+- Generated `Kernel/Package/GovernanceDB-0.1.21.opm`.
+- `Kernel/Package/GovernanceDB-0.1.21.opm` SHA256: `A2C363ED016710D43203B63BE9BF46AE428D98F8C56E38BB49C081DD5D755DFC`.
+
+### Architectural decisions
+
+- Dynamic row enhancement must be idempotent against cloned DOM, because DynamicFieldSet can copy rendered controls before row indexes are settled.
+- Rebinding an existing managed search button is safer than adding duplicate buttons or assuming cloned listeners survive.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- `Kernel/Package/GovernanceDB-0.1.21.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirms `BindPickerButton`, `ZTSMReferencePickerBoundElement`, and direct cloned-button fallback are present.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.21.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify reference search buttons work after adding second and later DynamicFieldSet/DynamicFieldGroup rows.
+- If `test` still appears after IP address in the submitted snapshot, inspect the submitted `ZTicket-IpAddress` value for the Network Adapter row.
+
+## 2026-07-22 Reference Picker Apply Settle and Readonly Display 0.1.20
+
+### Completed work
+
+- Fixed the post-Apply display state where service payload reference labels stayed over the selected value until the user clicked into the field and blurred it.
+- Reference picker Apply now fires the same bounded value-settle path immediately: explicit label refresh, service payload visible selection refresh, `input`, `change`, `focusout`, and `blur`, with short delayed refreshes after the UI settles.
+- Added direct service payload value classes from the picker refresh path so selected reference values float labels without waiting for hover/focus side effects.
+- Made managed reference visible inputs read-only display fields, preserving the hidden reference value submission while preventing users from deleting only the display text.
+- Kept the direct multi-reference selection behavior from `0.1.18` unchanged.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.20`.
+- Generated `Kernel/Package/GovernanceDB-0.1.20.opm`.
+- `Kernel/Package/GovernanceDB-0.1.20.opm` SHA256: `46D95DE2E77291856C9DD78AF364A75274B016C34FC7624679720D609B73E8B3`.
+
+### Architectural decisions
+
+- Managed reference fields now treat the visible autocomplete input as display-only; the search modal owns selection and the native hidden reference field remains the submit source.
+- Use event-driven Apply settling rather than broad DOM observers, polling, or global autocomplete/AJAX hooks.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- `Kernel/Package/GovernanceDB-0.1.20.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Confirmed `FieldValueSettle`, `focusout`, `blur`, `ZTSMServicePayloadHasValue`, and `ZTSMReferencePickerReadonly` are present in all three JS copies.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported existing CRLF/LF warnings for `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.20.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify Apply immediately leaves reference labels floated without needing the manual click/blur.
+- Verify managed reference display text cannot be edited directly and search-modal multi-select still submits all hidden values.
+
+## 2026-07-22 Service Payload Has-Value Display State 0.1.19
+
+### Completed work
+
+- Fixed remaining service payload display issue where fields with values still relied on hover/focus theme behavior for correct label/value layout.
+- Added explicit `ZTSMServicePayloadHasValue` wrapper state for service payload fields when a value is present.
+- Styled `ZTSMServicePayloadHasValue` fields with floated label position, stable relative wrapper positioning, and value padding so labels do not sit over values.
+- Added `ZTSMReferencePickerHasValue` wrapper state for reference picker fields, including padding for long combined multi-reference labels so they do not run underneath search/help icons.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.19`.
+- Generated `Kernel/Package/GovernanceDB-0.1.19.opm`.
+- `Kernel/Package/GovernanceDB-0.1.19.opm` SHA256: `3ABB9117ACE7C11A26AA26AB4F16BE10B6B0E8B84E86CDAC7B38CD043C383C07`.
+
+### Architectural decisions
+
+- Service payload value-present layout is now owned by explicit TESSERA state classes rather than native hover/focus CSS side effects.
+- Reference multi-select behavior from `0.1.18` remains unchanged; this package only stabilizes display state.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.19.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the service-field template and reference picker JS payloads.
+- Confirmed `ZTSMServicePayloadHasValue`, service payload value padding, `ZTSMReferencePickerHasValue`, and reference value right padding are present.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.19.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify service payload fields with values keep stable label/value layout without hover.
+- Verify reference multi-select from `0.1.18` still submits all checked values.
+
+## 2026-07-22 Reference Picker Direct Multi-Apply 0.1.18
+
+### Completed work
+
+- Made the reference picker modal apply all checked rows for `DynamicFieldReference` fields marked as `MultiValue`.
+- Writes selected values into OTOBO's native repeated hidden reference inputs with the same submit name, preserving backend `GetArray()` handling.
+- Shows the combined selected labels in the first visible reference field, separated by `; `.
+- Hides native `+/-` controls for reference rows managed by the picker via `.ZTSMReferencePickerManaged .AddRemoveValueRow`.
+- Hides extra native reference rows after Apply while keeping hidden inputs enabled when they hold selected values.
+- Disables blank extra hidden reference inputs so empty duplicate rows no longer overwrite or pollute AJAX update values.
+- Added general reference label float handling in `ZTSM.Customer.ReferenceTrace.js` so reference labels stay floated when value or hidden value exists, without relying on hover.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.18`.
+- Generated `Kernel/Package/GovernanceDB-0.1.18.opm`.
+- `Kernel/Package/GovernanceDB-0.1.18.opm` SHA256: `97D7789D6A4D7128AE65E9CF6746C74D9F53DC7B5B9EBD69A961F962DEE78DC3`.
+
+### Architectural decisions
+
+- For multi-value reference fields, picker UI owns value selection; native OTOBO `+/-` controls are hidden for those managed reference rows.
+- Preserve native backend submission semantics by using OTOBO's repeated hidden input names rather than introducing a new encoded value format.
+- Keep implementation event-driven; do not reintroduce broad DOM polling or global request interception.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `F1D96FA26FB5ED5A885CA57C1CD347D784F7525797E5B22F4818CA156B11EDD6`.
+- `Kernel/Package/GovernanceDB-0.1.18.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirms native `+/-` hiding, `ApplySelections()`, `MultiValueSlots()`, combined labels, blank hidden-input disabling, and reference label float CSS are present.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, `ZTSMReferencePickerHasValue`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.18.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify checking multiple reference picker rows then Apply updates the visible field and submits all selected values.
+- Verify native `+/-` controls are hidden for reference fields but unaffected for non-reference multi-value fields.
+- Verify reference labels remain floated whenever values are present, without needing hover.
+
+## 2026-07-22 Service Payload Label Value State 0.1.17
+
+### Completed work
+
+- Fixed service payload reference labels covering their selected value until hover.
+- Added explicit `label.ZTSMServicePayloadLabelFloated` CSS for service payload fields so labels remain in the floated/top position when the field has a value.
+- Updated `ZTSMServicePayloadFieldLabelFloat()` to add the floated label class when active and remove it only when inactive.
+- Updated the reference picker modal to render checkbox controls when `AgentReferenceSearch` marks search results as `MultiValue`.
+- Kept true direct multi-value submit behavior out of this package; checkbox UI is a visual/selection-direction step only, while full multi-apply remains a separate renderer change.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.17`.
+- Generated `Kernel/Package/GovernanceDB-0.1.17.opm`.
+- `Kernel/Package/GovernanceDB-0.1.17.opm` SHA256: `F4ECCB3907467B831B21DEE138965EA28D1F93EED4DD73BCA87821D91604C3A2`.
+
+### Architectural decisions
+
+- Value-present label state must be explicit in TESSERA service payload code instead of depending on hover/focus theme behavior.
+- Full direct multi-select for `DynamicFieldReference` `MultiValue` fields remains separate because it changes how multiple values are submitted and rendered.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.17.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the service-field template and reference picker JS payloads.
+- Confirmed `label.ZTSMServicePayloadLabelFloated`, active label class add behavior, and multi-value checkbox rendering are present.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, `ZTSMReferencePickerHasValue`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.17.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify labels remain floated whenever a service payload field has a value, without needing hover.
+- Implement true direct multi-select submit behavior for `DynamicFieldReference` fields configured as `MultiValue`.
+
+## 2026-07-22 Reference Picker Row-Safe Hidden Value 0.1.16
+
+### Completed work
+
+- Fixed reference picker selection on cloned / second rows by resolving the hidden reference value input from the same `.FieldCell`, `.Field`, or `.Row_DynamicField` before falling back to `document.getElementById()`.
+- Moved the reference search button farther left inside the field at `right:72px`, separating it from the help icon and the native external `+/-` controls.
+- Converted the injected search control from a `span[role=button]` to a real `button type="button"`.
+- Added pointer/mouse/click event cancellation on the search button so row overlays, tooltips, or native field focus handlers do not swallow second-row clicks.
+- After modal selection, refreshes visible service-payload selection state through `ZTSMServicePayloadVisibleSelectionRefresh()` when available, keeping visible and hidden values aligned.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.16`.
+- Generated `Kernel/Package/GovernanceDB-0.1.16.opm`.
+- `Kernel/Package/GovernanceDB-0.1.16.opm` SHA256: `618F8A909409398C3602770A0AD39CC98F8F4E74F97DD899822748F3EF14D993`.
+
+### Architectural decisions
+
+- Keep `0.1.16` scoped to row-safe reference picker behavior instead of replacing OTOBO's DynamicField multi-value renderer in the same patch.
+- Direct multi-select for `DynamicFieldReference` fields remains a valid next direction, but it should be implemented as a separate package because it changes submit/render behavior for multi-value fields.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `EC7480C6CE39EAD4BA19EEF6EB0C1CB67C8531935F8AB54A3F43FD3D00D80D65`.
+- `Kernel/Package/GovernanceDB-0.1.16.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirms `right:72px!important`, same-row `HiddenField()` lookup, visible-selection refresh, `button type="button"`, and event stop handling are present.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, `ZTSMReferencePickerHasValue`, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.16.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify second-row reference search buttons open the modal and update the same row's hidden/display value.
+- Design direct multi-select for `DynamicFieldReference` fields that are configured as `MultiValue`, replacing visible `+/-` row controls only after submit compatibility is proven.
+
+## 2026-07-22 Reference Search Icon Field-Lane Layout 0.1.15
+
+### Completed work
+
+- Fixed the `0.1.14` layout issue where the restored reference search icon occupied the same outside lane as OTOBO's DynamicFieldSet `+` control.
+- Moved the custom reference search icon inside the field area at `right:44px`, keeping it attached to the field and leaving the native external `+/-` controls visible.
+- Removed the extra right padding from the wrapper cell so the field/control layout stays owned by the native OTOBO row.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.15`.
+- Generated `Kernel/Package/GovernanceDB-0.1.15.opm`.
+- `Kernel/Package/GovernanceDB-0.1.15.opm` SHA256: `AFD2252CA1D2F6076BB490B95000E76CAA54FE4FDB4F16B59A6426C2D83BC3C9`.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `D290B8CD1A822B2F9D3AA3321017D6C37EBC99BB8B8A715E57F2E334C5B2C833`.
+- `Kernel/Package/GovernanceDB-0.1.15.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload confirms `right:44px!important` is present and the old `right:-48px!important` outside-lane position is absent.
+- Confirmed removed risky patterns remain absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, selected wrapper classes, and `right:-48px`.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.15.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify reference search icons sit inside the field while native `+/-` controls remain visible outside the field.
+
+## 2026-07-22 Minimal Reference Search Button Restore 0.1.14
+
+### Completed work
+
+- Restored customer reference search icons after the `0.1.12` / `0.1.13` cleanup removed them.
+- Rebuilt `ZTSM.Customer.ReferenceTrace.js` as a minimal search-button/modal enhancer only.
+- Kept the risky code removed:
+  - no polling interval,
+  - no broad `MutationObserver`,
+  - no global XHR or jQuery AJAX hooks,
+  - no autocomplete source wrapping,
+  - no native `AddTicketReference()` call,
+  - no selected-state wrapper classes.
+- Exposed `window.ZTSMReferencePickerEnhance` so dynamic service payload replacement can ask for a scoped reference-button scan.
+- Updated the service-field template to call the enhancer after service payload replacement and initial ready.
+- Added scoped add/remove-row click enhancement so newly added rows can receive search icons without watching the whole page.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, package runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.14`.
+- Generated `Kernel/Package/GovernanceDB-0.1.14.opm`.
+- `Kernel/Package/GovernanceDB-0.1.14.opm` SHA256: `98B504EAF6363AE5B97DA50CB4544908912922C277B58BA9807362883C9C6C04`.
+
+### Architectural decisions
+
+- Search icons are allowed, but row/theme ownership remains native OTOBO.
+- Reintroduce only the modal picker behavior, not the old diagnostic/autocomplete interception stack.
+- Dynamic payload replacement may trigger a one-shot scoped enhancement call; idle repaint loops remain rejected.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `E8B21CD887682403EDE02FED63D8C665E8D802BE2F0A8227F952F09259BD7407`.
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.14.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the service-field template and reference picker JS payloads.
+- Confirmed removed risky patterns are absent from the reference picker JS: broad `MutationObserver`, `setInterval()`, global XHR prototype hooks, jQuery AJAX prefilters, autocomplete source wrapping, `AddTicketReference()`, and selected wrapper classes.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.14.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify search icons appear on initial fields and on rows added with `+`.
+- Verify Service value changes still refresh the full service display and load service payload fields.
+- Verify idle DevTools inspection no longer shows continuous DynamicFieldSet refresh.
+
+## 2026-07-22 Service Change Event Refresh Restore 0.1.13
+
+### Completed work
+
+- Fixed the `0.1.12` regression where removing the idle service watcher also stopped Service value changes from refreshing the full service display and loading the service payload fields.
+- Added debounced Service-specific change handling inside `ZTSMServiceExtensionWatch()`:
+  - listens to Service field events,
+  - listens to DOM changes inside the Service input-field container because OTOBO selected-chip controls may change without a normal input/change event,
+  - compares the current ServiceID against the last seen ServiceID,
+  - refreshes the full service label and service payload only when the ServiceID actually changes.
+- Kept the `0.1.12` protection against idle refresh loops:
+  - no global 500ms service interval,
+  - no external reference picker enhancer,
+  - no mutation normalization on hidden `SetIndex_` / `FieldCell MultiValue_*` churn.
+- Synced the service-field template across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.13`.
+- Generated `Kernel/Package/GovernanceDB-0.1.13.opm`.
+- `Kernel/Package/GovernanceDB-0.1.13.opm` SHA256: `C3AAD4B000DCDA371F4577F7E6785FB07AA9F84201D2C7A8690C327EA8F2C886`.
+
+### Architectural decisions
+
+- Service payload refresh must be driven by actual ServiceID changes, not by idle polling and not by unrelated DynamicFieldSet row/theme mutations.
+- OTOBO's selected-chip Service control needs a small DOM observer local to the Service container, because selected value changes may not always emit ordinary form events.
+
+### Validation
+
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- Cleanup-only `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js.
+- `Kernel/Package/GovernanceDB-0.1.13.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the service-field template and cleanup-only reference JS payloads.
+- Confirmed `ZTSMServiceChangedHandle()`, `ZTSMServiceChangedCheckLater()`, and `data-ztsm-service-change-observer` are present.
+- Confirmed no `setInterval()` remains in the service-field template.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.13.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify selecting/changing Service displays the full service path and loads the service payload fields.
+- Verify idle DevTools inspection no longer shows continuous `FieldCell MultiValue_*` refresh.
+
+## 2026-07-22 DynamicFieldSet Refresh Loop Stop 0.1.12
+
+### Completed work
+
+- Disabled the external `ZTSM.Customer.ReferenceTrace.js` reference picker enhancer after runtime testing showed injected `ZTSMReferencePickerButton` elements still caused layout churn and did not fix second-row behavior.
+- Replaced `ZTSM.Customer.ReferenceTrace.js` with a cleanup-only shim that removes stale TESSERA picker buttons, overlays, classes, inline CSS variables, and data attributes from older page loads.
+- Removed the service template's idle 500ms service watcher that could refresh service fields even when the user did nothing.
+- Tightened `ZTSMServiceExtensionMutationNeedsNormalize()` so DynamicFieldSet/Group mutation normalization only reacts to actual `.AddValueRow` / `.RemoveValueRow` controls, not hidden `SetIndex_` or `FieldCell MultiValue_*` churn.
+- Synced the service-field template across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Synced the cleanup-only reference JS across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.12`.
+- Generated `Kernel/Package/GovernanceDB-0.1.12.opm`.
+- `Kernel/Package/GovernanceDB-0.1.12.opm` SHA256: `E0C1685D6B79D35DBAC053E63E7CB74CF874B34D6B1B9138BF4A7EC7F7E9AA2B`.
+
+### Architectural decisions
+
+- Stop enhancing customer DynamicFieldReference rows with externally injected picker buttons until a clean component can be designed and tested against DynamicFieldSet/Group rows.
+- Treat `FieldCell MultiValue_*` and hidden `SetIndex_*` changes as internal OTOBO renderer churn, not as a reason to rerun TESSERA normalization.
+- Keep the reference trace script path as a cleanup shim for upgrade safety, so stale DOM/classes from earlier package versions are actively removed.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.1.12.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the cleanup-only reference JS and service-field template payloads.
+- Confirmed the reference JS no longer contains custom picker button creation, XHR hooks, jQuery prefilters, mutation observers, autocomplete wrappers, or polling intervals.
+- `git diff --check` reported no whitespace errors; it only reported CRLF/LF warnings on existing files.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.12.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Verify DevTools no longer shows continuously changing `FieldCell MultiValue_*` / `Row_DynamicField` nodes while idle.
+- Verify `ZTSMReferencePickerButton` elements disappear from the DOM after refresh.
+- Verify Add/Remove row behavior returns to native OTOBO behavior before any new picker customization is reintroduced.
+
+## 2026-07-22 Reference Picker Scoped Reinitialization 0.1.11
+
+### Completed work
+
+- Fixed the requester form refresh-loop risk where hovering `Row_DynamicField` could create theme/tooltip DOM and trigger the reference picker mutation observer to re-scan the whole document.
+- Removed the permanent 400ms reference value watcher from `ZTSM.Customer.ReferenceTrace.js`; reference picker setup now relies on initial scan, field events, scoped mutations, and add/remove clicks.
+- Scoped the reference picker `MutationObserver` so it only reacts to actual service/reference row additions, DynamicField reference controls, or Add/Remove row controls.
+- Added a captured click handler for `.AddValueRow` and `.RemoveValueRow` so newly cloned second/subsequent rows are re-scanned after OTOBO adds/removes them.
+- Stopped `SyncPickerVisibleState()` from adding/removing `oooSelected` and `ZTSMReferencePickerHasValue` on `.Field` and `.FieldCell` wrappers; selected-state classes are limited to the concrete input container.
+- Synced `ZTSM.Customer.ReferenceTrace.js` across GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.11`.
+- Generated `Kernel/Package/GovernanceDB-0.1.11.opm`.
+- `Kernel/Package/GovernanceDB-0.1.11.opm` SHA256: `451248EE368EC046A8DCBB9F10F0D3920101350D2FCD83AB7E0D0C85A19025C0`.
+
+### Architectural decisions
+
+- Reference picker reinitialization must be event/scoped-mutation driven, not continuous polling.
+- TESSERA customer picker code must not apply OTOBO selected-state classes to wrapper rows or field cells, because those classes affect theme label layout.
+- Cloned DynamicFieldSet/Group rows should be enhanced after add/remove actions by scanning the changed row area only.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `B8ACC632CC880177E9DB1324FCB210B9CE11BE2323D5F0118F0FF037A7E63CB6`.
+- Confirmed removed risky patterns are absent from all three synced JS copies:
+  - `setInterval(WatchReferenceValues`
+  - `WatcherStarted`
+  - `StartWatcher(`
+  - `[ Field, FieldCell, Container ]`
+  - the old no-argument broad `MutationObserver` callback
+- `Kernel/Package/GovernanceDB-0.1.11.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for the reference picker JS and service-field template payloads.
+- Service-field template inline JavaScript parsed successfully after Template Toolkit stripping.
+- `git diff --check` reported no whitespace errors; it only reported an existing CRLF/LF warning for `ZTSMGovernanceRuntime.xml`.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.11.opm`.
+- Clear OTOBO cache and hard refresh browser assets before testing.
+- Verify hovering `Row_DynamicField` no longer causes visible refresh/reflow.
+- Verify clicking `+` creates a second row and the second-row reference fields receive the same picker/search button behavior as the first row.
+- Verify `-` on second/subsequent rows removes the intended row.
+
+## 2026-07-22 Reference UI Rollback to 0.1.4 Baseline 0.1.10
+
+### Completed work
+
+- Rolled back the broad `0.1.8` requester form reference display normalizer because runtime testing showed it also affected unrelated top-level fields such as Type, Service, Subject, and Text.
+- Restored the requester service-field template and reference picker JavaScript exactly from the `0.1.4` package payload after runtime testing showed later UI patches kept compounding the theme problem.
+- Synced the rollback template across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Synced the rollback reference picker JavaScript across package runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.10`.
+- Generated `Kernel/Package/GovernanceDB-0.1.10.opm`.
+- `Kernel/Package/GovernanceDB-0.1.10.opm` SHA256: `1163FA812FCEB4943F816C831B9020F9D6262E5ACAFB8E675ED1CD9DB1A11BC9`.
+
+### Architectural decisions
+
+- Do not normalize or hide OTOBO native selected chips with broad customer-form CSS/DOM cleanup; that approach is too risky for unrelated DynamicFieldReference fields.
+- Return to the last user-requested stable requester UI baseline before any further dropdown/filtering work.
+- Any future reference picker fix must begin from live DOM inspection of the `0.1.4` baseline instead of carrying forward `0.1.5` through `0.1.9` UI assumptions.
+
+### Rejected approaches
+
+- Rejected the `0.1.8` display-normalizer and chip-hiding CSS because it made fields look selected/chip-styled even when unrelated to the current service payload issue.
+- Rejected the intermediate `0.1.9` rollback attempt because it still carried later `0.1.7` picker/layout changes instead of restoring exactly to `0.1.4`.
+- Rejected additional visual offset patches for search and add/remove buttons until the live DOM ownership is inspected from the restored `0.1.4` baseline.
+
+### Validation
+
+- Confirmed the restored service-field template and reference picker JavaScript embedded in `0.1.10` byte-match the corresponding files from `Kernel/Package/GovernanceDB-0.1.4.opm`.
+- Confirmed the worst later display-normalizer identifiers are absent from the synced files:
+  - `ReferenceAutocompleteDisplayNormalize`
+  - `ReferenceSelectionText`
+  - broad `.InputField_Selection` hiding under `ZTSMReferencePickerInputHost`
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `CD0628BDBC7E7FE3630EC15F89751A4C2D2438AC22173106E38377F25BBB1E50`.
+- Service-field template JavaScript parsed successfully after Template Toolkit stripping.
+- All four service-field template copies share SHA256 `594DFABBAE7FF757C81519D8D4C8758DBFDF6996397867FC21268595FA17D1F0`.
+- `Kernel/Package/GovernanceDB-0.1.10.opm` parsed successfully as XML with file count `209`, `empty_payloads=0`, and `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for:
+  - `var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt`
+  - `var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Customer.ReferenceTrace.js`
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.10.opm`; do not continue testing `0.1.8` or the intermediate `0.1.9`.
+- After upgrade, clear OTOBO cache and hard refresh browser assets so the old customer template and `ZTSM.Customer.ReferenceTrace.js` are not still cached.
+- Verify Type, Service, Subject, Text, Location, Environment, and Application System return to baseline visual behavior first.
+- Then verify FunctionProfile/Image and Network Pool separately from the clean baseline.
+- If a visual issue remains, inspect the live DOM class ownership before another CSS/JS patch.
+
+## 2026-07-22 Reference Autocomplete Display Mode 0.1.8
+
+### Completed work
+
+- Fixed the remaining requester form reference display problem where selected values existed but were covered by native `InputField_Selection` chips and only appeared on hover.
+- Kept the fields as `DynamicFieldReference` for submit compatibility, but normalized their visual behavior to plain autocomplete display.
+- Added `ReferenceAutocompleteDisplayNormalize()` in `ZTSM.Customer.ReferenceTrace.js` to:
+  - read the selected chip text when OTOBO creates one,
+  - write the clean label back into the visible autocomplete input,
+  - remove `.InputField_Selection`, `.InputField_SelectionFilter`, and `.InputField_More` from reference picker containers,
+  - remove stale `oooSelected`, `oooFull`, and `ZTSMReferencePickerHasValue` classes after selection, scan, mutation, and change events.
+- Added CSS in `ZTSMCustomerTicketMessageServiceFields.tt` to hide native selected chips under `.ZTSMReferencePickerInputHost` and keep `input.DynamicFieldReference` visible and full width.
+- Mirrored the template and reference JS changes across package source, GovernanceDB runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16` JS copy.
+- Bumped `GovernanceDB.sopm` package version to `0.1.8`.
+- Generated `Kernel/Package/GovernanceDB-0.1.8.opm`.
+- `Kernel/Package/GovernanceDB-0.1.8.opm` SHA256: `CEC74F0E811C0ADD2AD9D92966736B2FD66A41000016E83562747654498CDB09`.
+
+### Architectural decisions
+
+- Do not convert all fields away from `DynamicFieldReference`; preserve the reference field type and backend key/value semantics.
+- Treat OTOBO selected chips as an incompatible renderer for this requester form and normalize them into autocomplete input display instead.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `76D94F8E295FC7C4E2B228F0792B2A862C6E59F20464187317D2E77E4D51AEAC`.
+- Service-field template JavaScript parsed successfully after Template Toolkit stripping.
+- All four service-field template copies share SHA256 `8BAD1AA86B2E54F508113D159BD3BE8DC73C7FE26CA79DC31F51ACB92206D8FB`.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.8.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.8.opm` parsed successfully as XML: version `0.1.8`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for:
+  - `var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt`
+  - `var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Customer.ReferenceTrace.js`
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.8.opm`.
+- After upgrade, hard refresh/clear browser cache so the updated service template and `ZTSM.Customer.ReferenceTrace.js` are loaded.
+- Verify Location, Environment, Application System, Platform, FunctionProfile, Image, and Network Pool render selected values inside the field, without chip overlays.
+- Verify Network Pool dropdown still shares the modal search context filter from `0.1.7`.
+
+## 2026-07-22 Inline Reference Dropdown Filtering 0.1.7
+
+### Completed work
+
+- Fixed the requester form inline autocomplete/dropdown path for DynamicField references so it now uses TESSERA `PickerSearch()` instead of the native autocomplete source.
+- This makes the inline dropdown follow the same guarded search/context logic as the modal Search button, including the `ZTicket-NetworkPool` requirement for `ZTicket-Application`, `ZTicket-Env`, `ZTicket-Location`, and `ZTicket-Platform`.
+- Added a custom autocomplete `select` handler that applies the selected reference through `ApplyReferenceSelection()` and immediately cleans wrapper selected-state classes.
+- Removed the dead service template branch that could still add `oooFull` and manufacture `InputField_Selection` chips after future edits.
+- Expanded reference cleanup to remove stale `oooFull` from requester form fields, field cells, rows, and DynamicField reference inputs/selects.
+- Mirrored the template and reference JS changes across package source, GovernanceDB runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16` JS copy.
+- Bumped `GovernanceDB.sopm` package version to `0.1.7`.
+- Generated `Kernel/Package/GovernanceDB-0.1.7.opm`.
+- `Kernel/Package/GovernanceDB-0.1.7.opm` SHA256: `702FF07B3F8B8414C798A7C0DEAC0758323A1FD3486F04C5B4E5E86AB523864B`.
+
+### Architectural decisions
+
+- TESSERA reference dropdowns and TESSERA reference modal searches must share the same request/filter path; otherwise modal filtering can be correct while inline autocomplete still leaks unscoped records.
+- Service payload cosmetic refreshers remain cleanup-only and must not create selected chips or add OTOBO selected/full-state classes in nested DynamicFieldSet/Group layouts.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `0E4E51FAF9836DC62FE8D43D62CB2581144D1C92AC23D43CDC9C2D0E6B97AA8C`.
+- Service-field template JavaScript parsed successfully after Template Toolkit stripping.
+- All four service-field template copies share SHA256 `A899B114A0D11C443F8CFE4976A66CCE1E10FCDE2E7C4FE58EE50E095806B7BE`.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.7.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.7.opm` parsed successfully as XML: version `0.1.7`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+- Generated OPM payload spot-check confirmed exact matches for:
+  - `var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt`
+  - `var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Customer.ReferenceTrace.js`
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.7.opm`.
+- After upgrade, hard refresh/clear browser cache so the updated service template and `ZTSM.Customer.ReferenceTrace.js` are loaded.
+- Verify clicking inside Network Pool with incomplete Application/Environment/Location/Platform context shows no dropdown records, matching modal Search.
+- Verify selecting FunctionProfile no longer causes `Image` or other reference labels to float into wrapper labels/chips.
+
+## 2026-07-22 Reference Theme Selected-State Neutralization 0.1.6
+
+### Completed work
+
+- Fixed the remaining requester form theme breakage where selected reference labels/chips appeared as field labels, such as `Location *`, `Application System *`, or nested `Image` floating into the VM wrapper.
+- Stopped `ZTSMCustomerTicketMessageServiceFields.tt` from manually manufacturing `InputField_Selection` chips or adding `oooSelected` during cosmetic refresh.
+- Converted service payload reference/select refresh into a cleanup-only pass that removes TESSERA-added selected state and lets OTOBO's native control rendering own visible values.
+- Updated `ZTSM.Customer.ReferenceTrace.js` so the custom reference helper no longer applies `oooSelected` or `ZTSMReferencePickerHasValue` to fields, field cells, rows, or input containers.
+- Removed custom CSS rules for `.Field.ZTSMReferencePickerHasValue` selected styling.
+- Added `CleanupSelectedWrappers()` to strip `oooSelected` from `#NewCustomerTicket` `.Field`, `.FieldCell`, and `.Row_DynamicField` wrappers after scan, mutation, change, and picker visible-state sync.
+- Preserved the `0.1.5` reference request interception logic; this change is focused on visual/theming ownership.
+- Mirrored the template and reference JS changes across package source, GovernanceDB runtime overlay, root runtime copy, `ZTSMOverlay`, and local `otobo-11.0.16` JS copy.
+- Bumped `GovernanceDB.sopm` package version to `0.1.6`.
+- Generated `Kernel/Package/GovernanceDB-0.1.6.opm`.
+- `Kernel/Package/GovernanceDB-0.1.6.opm` SHA256: `4945E91E79E9DC724B4EB18928C3EB283C1B281E422DD3183F16BD8F0B1E636C`.
+
+### Architectural decisions
+
+- TESSERA service-form code must not redraw selected chips for DynamicField references; native OTOBO input-field rendering remains the owner of reference visual state.
+- TESSERA may add picker buttons and request interception, but it must not apply selected-state classes to wrapper fields in nested DynamicFieldSet/Group structures.
+- Wrapper-level `oooSelected` is unsafe for nested service payload layouts and should be cleaned up on the requester form.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `A74DBF3B0169FC05FDE9CABF27019F20BE261837144743C7E1A23F84252A7032`.
+- Service-field template JavaScript parsed successfully for root runtime, package source, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- All four service-field template copies share SHA256 `B0C4764323B078D7C7DAD37027C00F7CE2FFC99DB2858BF847445E9FDD04CC76`.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.6.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.6.opm` parsed successfully as XML: version `0.1.6`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+- Generated OPM embedded runtime overlay hashes:
+  - `ZTSM.Customer.ReferenceTrace.js`: `A74DBF3B0169FC05FDE9CABF27019F20BE261837144743C7E1A23F84252A7032`
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `B0C4764323B078D7C7DAD37027C00F7CE2FFC99DB2858BF847445E9FDD04CC76`
+  - `AgentReferenceSearch.pm`: `9FD7F6097B50B24F671DF6FFA241273FD54E80A35840BAB3E47F69DA51E9D56E`
+- `git diff --check` reported no whitespace errors for touched files.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.6.opm`.
+- After upgrade, hard refresh/clear browser cache so the updated service template and `ZTSM.Customer.ReferenceTrace.js` are loaded.
+- Verify top-level reference fields show real selected values, not field labels as chips.
+- Verify selecting FunctionProfile does not float `Image` to the VM wrapper.
+
+## 2026-07-22 Custom Reference Interceptor Network Pool Fix 0.1.5
+
+### Completed work
+
+- Fixed the remaining requester UI issue where `0.1.4` still allowed stale/unfiltered `ZTicket-NetworkPool` results and parent-level selected styling after selecting `ZTicket-FunctionProfile`.
+- Identified that the visible magnifier/dropdown path is controlled by `ZTSM.Customer.ReferenceTrace.js`, not only `ZTSMCustomerTicketMessageServiceFields.tt`.
+- Updated the custom reference interceptor to normalize nested field names such as DynamicFieldSet/Group controls back to the actual target field, including `ZTicket-NetworkPool`.
+- Added Network Pool context interception for all custom/core `AgentReferenceSearch` requests made through:
+  - custom picker search
+  - raw `XMLHttpRequest`
+  - jQuery AJAX prefilter
+- Appended authoritative current values for `ZTicket-Application`, `ZTicket-Env`, `ZTicket-Location`, and `ZTicket-Platform` after existing query/form parameters so these values win over stale serialized form data.
+- Prevented custom picker search for `ZTicket-NetworkPool` when required context is incomplete.
+- Changed custom picker visible-state styling so selected state is applied only to the current `.InputField_Container`, not the parent `.Field` / `.FieldCell`, preventing nested labels such as `Image` from floating to the VM wrapper.
+- Mirrored `ZTSM.Customer.ReferenceTrace.js` across GovernanceDB runtime overlay, `ZTSMOverlay`, and the local `otobo-11.0.16` runtime tree.
+- Bumped `GovernanceDB.sopm` package version to `0.1.5`.
+- Generated `Kernel/Package/GovernanceDB-0.1.5.opm`.
+- `Kernel/Package/GovernanceDB-0.1.5.opm` SHA256: `A5CB1706AB62B394D44B6D3A1D87B03265D59B0DF1BE99241464B95944685A80`.
+
+### Architectural decisions
+
+- Service-form reference filtering must be enforced at the custom ConfigItem/GovernanceObject interceptor layer, because not all visible picker/autocomplete loading paths pass through the service-template dropdown refresh.
+- For context-sensitive references, explicit current context parameters must be appended at request time and after generic serialized form state.
+- Modernized selected styling for nested DynamicFieldSet/Group controls belongs to the concrete input container only.
+
+### Validation
+
+- `ZTSM.Customer.ReferenceTrace.js` parsed successfully with bundled Node.js for GovernanceDB runtime overlay, `ZTSMOverlay`, and local `otobo-11.0.16` copies.
+- All three `ZTSM.Customer.ReferenceTrace.js` copies share SHA256 `33EE6D7A2C5BB6D2D1F43AE9F9ACE4C60C600804623D442EFA24035E40A7F255`.
+- Service-field template JavaScript still parses successfully for root runtime, package source, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- Perl syntax OK for root runtime, GovernanceDB runtime overlay, and `ZTSMOverlay` `AgentReferenceSearch.pm`.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.5.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.5.opm` parsed successfully as XML: version `0.1.5`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+- Generated OPM embedded runtime overlay hashes:
+  - `ZTSM.Customer.ReferenceTrace.js`: `33EE6D7A2C5BB6D2D1F43AE9F9ACE4C60C600804623D442EFA24035E40A7F255`
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `594DFABBAE7FF757C81519D8D4C8758DBFDF6996397867FC21268595FA17D1F0`
+  - `AgentReferenceSearch.pm`: `9FD7F6097B50B24F671DF6FFA241273FD54E80A35840BAB3E47F69DA51E9D56E`
+- `git diff --check` reported no whitespace errors for touched files.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.5.opm`.
+- After upgrade, clear browser cache or hard refresh so the new `ZTSM.Customer.ReferenceTrace.js` is loaded.
+- Verify selecting FunctionProfile no longer marks the parent VM/field wrapper and no longer floats the `Image` label.
+- Verify `ZTicket-NetworkPool` request URLs include current Application, Environment, Location, and Platform context and return no records when the selected pool does not match.
+
+## 2026-07-22 Function Refresh Context and Label Scope Fix 0.1.4
+
+### Completed work
+
+- Fixed the post-Function selection theme issue where nested labels such as `Image` could be resolved from an ancestor wrapper after dynamic field refresh.
+- Scoped modernized reference container lookup to the current `.FieldCell` / `.Row_DynamicField` so nested VM fields do not decorate parent/group containers.
+- Removed the parent-container label fallback that could return the wrong label in DynamicFieldSet/Group layouts.
+- Added explicit `ZTicket-NetworkPool` frontend context completeness checking for:
+  - `ZTicket-Application`
+  - `ZTicket-Env`
+  - `ZTicket-Location`
+  - `ZTicket-Platform`
+- Network Pool dropdowns now clear themselves when required context is incomplete instead of querying broad results.
+- Network Pool refresh now appends explicit context after serialized form data so stale/empty serialized values cannot override the current selected Application/Environment/Location/Platform.
+- Mirrored the service-field template across GovernanceDB package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.4`.
+- Generated `Kernel/Package/GovernanceDB-0.1.4.opm`.
+- `Kernel/Package/GovernanceDB-0.1.4.opm` SHA256: `E85754E719045E697F3860B5401C922D42BF713E25BB6521773E4EFA2F17159A`.
+
+### Architectural decisions
+
+- DynamicFieldSet/Group cosmetic refresh must stay row-local; parent wrapper labels are not valid fallback labels for nested controls.
+- `ZTicket-NetworkPool` is not searchable until all required ticket-level context fields are populated.
+- Explicit current context should be authoritative over generic serialized form data during filtered reference refresh.
+
+### Validation
+
+- `ZTSMCustomerTicketMessageServiceFields.tt` JavaScript parsed successfully for root runtime, package source, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- All four service-field template copies share SHA256 `594DFABBAE7FF757C81519D8D4C8758DBFDF6996397867FC21268595FA17D1F0`.
+- Generated OPM embedded runtime overlay hashes:
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `594DFABBAE7FF757C81519D8D4C8758DBFDF6996397867FC21268595FA17D1F0`
+  - `AgentReferenceSearch.pm`: `9FD7F6097B50B24F671DF6FFA241273FD54E80A35840BAB3E47F69DA51E9D56E`
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.4.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.4.opm` parsed successfully as XML: version `0.1.4`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+- `git diff --check` reported no whitespace errors for the touched files.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.4.opm`.
+- Verify selecting FunctionProfile no longer floats the `Image` label to the VM wrapper.
+- Verify `ZTicket-NetworkPool` remains empty unless the selected pool matches current Application, Environment, Location, and Platform.
+
+## 2026-07-22 Network Pool Strict Context and Nested Label Theme Fix 0.1.3
+
+### Completed work
+
+- Fixed `ZTicket-NetworkPool` reference filtering so missing required context no longer falls through to an unfiltered pool list.
+- Marked the `ZTicket-NetworkPool` filter context fields as required:
+  - `ZTicket-Application`
+  - `ZTicket-Env`
+  - `ZTicket-Location`
+  - `ZTicket-Platform`
+- Updated `AgentReferenceSearch.pm` so a missing required context returns an applied empty result set with a `ContextField:missing` summary.
+- Fixed nested service-field theme refresh so selected reference styling stays on the actual `.InputField_Container`.
+- Removed parent/grandparent `oooSelected` promotion that could make nested labels such as `Image` float at the VM/parent wrapper level.
+- Mirrored changes across GovernanceDB package source/runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.3`.
+- Generated `Kernel/Package/GovernanceDB-0.1.3.opm`.
+- `Kernel/Package/GovernanceDB-0.1.3.opm` SHA256: `C8DEBBD255FDF2275F9D2588087189CE566D14E8BB7F28EA6532721D3AC018F1`.
+
+### Architectural decisions
+
+- `ZTicket-NetworkPool` is context-complete only after Application, Environment, Location, and Platform are known.
+- Empty network-pool context must mean no candidates, not unrestricted candidates.
+- Modernized reference cosmetic refresh must not mark ancestor field wrappers as selected in nested DynamicFieldSet/Group layouts.
+
+### Validation
+
+- Perl syntax OK for root runtime, GovernanceDB runtime overlay, and `ZTSMOverlay` `AgentReferenceSearch.pm`.
+- `ZTSMCustomerTicketMessageServiceFields.tt` JavaScript parsed successfully for root runtime, package source, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- GovernanceDB package source/runtime overlay and `ZTSMOverlay` service-field templates share SHA256 `9AE7ED1FB7D2F131781DC20C66A31FEE864D53CC0CD2133F7A8DC21EC4B7D4AD`.
+- Generated OPM embedded runtime overlay hashes match source:
+  - `AgentReferenceSearch.pm`: `9FD7F6097B50B24F671DF6FFA241273FD54E80A35840BAB3E47F69DA51E9D56E`
+  - `ZTSMCustomerTicketMessageServiceFields.tt`: `9AE7ED1FB7D2F131781DC20C66A31FEE864D53CC0CD2133F7A8DC21EC4B7D4AD`
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.3.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.3.opm` parsed successfully as XML: version `0.1.3`, file count `209`, `empty_payloads=0`, `bad_base64=0`.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.3.opm`.
+- Verify clicking an empty `ZTicket-NetworkPool` picker before context selection shows no pool candidates.
+- Verify `Image` and other nested reference labels stay inside their own field level after VM/NetworkAdapter row refresh.
+
+## 2026-07-21 Network Pool Filter and Nested UI Correction 0.1.2
+
+### Completed work
+
+- Corrected `ZTicket-NetworkPool` context filtering so reference comparisons primarily use the submitted reference ID behind the control.
+- Added defensive alias normalization for reference comparisons so rendered values such as `Application: IaaS Extension` do not bypass the filter when a browser/control submits display text instead of the hidden/select reference ID.
+- Fixed nested DynamicFieldSet/Group cosmetic refresh so it no longer searches a parent container for the first `.InputField_Container`, which could make labels/selections such as `Image` appear at the wrong VM level.
+- Stopped modernized reference refresh from marking the grandparent field wrapper as selected in nested VM/NetworkAdapter structures.
+- Mirrored changes across GovernanceDB runtime overlay and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.2`.
+- Generated `Kernel/Package/GovernanceDB-0.1.2.opm`.
+- `Kernel/Package/GovernanceDB-0.1.2.opm` SHA256: `01165119C9D202ADB0CBA1498B463751A1A10258073DA248BA80830711B57D68`.
+
+### Architectural decisions
+
+- Reference fields must be filtered using the stored reference identity behind the control; visible chip/dropdown names remain display only.
+- Label/name alias matching is retained only as a defensive fallback for rendered-control edge cases.
+- Nested service payload cosmetic refresh must never climb into parent field/group wrappers when decorating a selected child reference.
+
+### Validation
+
+- Perl syntax OK for runtime overlay and `ZTSMOverlay` `AgentReferenceSearch.pm`.
+- `ZTSMCustomerTicketMessageServiceFields.tt` JavaScript parsed successfully for canonical, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.2.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.2.opm` parsed successfully as XML: version `0.1.2`, file count `209`, `missing_payloads=0`, `empty_payloads=0`, `bad_base64=0`.
+- `git diff --check` reported no whitespace errors; PowerShell reported the existing XML CRLF normalization warning.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.2.opm`.
+- Verify an IaaS Extension request with no matching `NetworkAddressPool` shows no ICS pool option.
+- Verify Image/FunctionProfile labels stay in their own VM row/field level after dynamic row refresh.
+
+## 2026-07-21 Network Pool Allocation Control 0.1.1
+
+### Completed work
+
+- Updated provisioning hostname policy defaults to use `ZTicket-NetworkPool` instead of the `ZTicket-NetworkAdapter` container field.
+- Added `ZTicket-NetworkPool` to hostname code-field mapping so selected `NetworkAddressPool` ConfigItems resolve through `ZTAM-Code`.
+- Extended customer hostname-policy AJAX response with the selected network pool's `ZTAM-NetworkAllocation` value.
+- Added per-`ZTicket-NetworkAdapter` row browser logic that disables `ZTicket-IpAddress` unless the selected pool allocation is `Manual`.
+- Added customer dropdown refresh for `ZTicket-NetworkPool` so dropdown options are refreshed from the filtered reference-search endpoint after ticket context changes.
+- Extended reference-search context filtering for `ZTicket-NetworkPool` by ticket-level `ZTicket-Application`, `ZTicket-Env`, `ZTicket-Location`, and `ZTicket-Platform`, mapped to `ZTAM-Application`, `ZTAM-Environment`, `ZTAM-Location`, and `ZTAM-Platform` on the `NetworkAddressPool` ConfigItem.
+- Mirrored runtime changes across GovernanceDB package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.1`.
+- Generated `Kernel/Package/GovernanceDB-0.1.1.opm`.
+- `Kernel/Package/GovernanceDB-0.1.1.opm` SHA256: `C3A780036D327DBC0C776A7795C0712278A5E32E28FAA65129BB527931460F6D`.
+
+### Architectural decisions
+
+- `ZTicket-NetworkAdapter` remains the row/container object; the actual selected network segment for hostname/pool policy is `ZTicket-NetworkPool`.
+- IP entry is controlled by the selected `NetworkAddressPool` record's `ZTAM-NetworkAllocation`; only `Manual` allows requester edit.
+- Pool filtering is ticket-context driven and compares selected ticket-level reference IDs directly against the target pool's context DynamicFields.
+
+### Validation
+
+- Perl syntax OK for canonical, runtime overlay, and `ZTSMOverlay` `CustomerTicketMessage.pm`.
+- Perl syntax OK for runtime overlay and `ZTSMOverlay` `AgentReferenceSearch.pm`.
+- `ZTSMCustomerTicketMessageServiceFields.tt` JavaScript parsed successfully for canonical, runtime overlay, and `ZTSMOverlay` copies after Template Toolkit stripping.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.1.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.1.opm` parsed successfully as XML: version `0.1.1`, file count `209`, `missing_payloads=0`, `empty_payloads=0`, `bad_base64=0`.
+- `git diff --check` reported no whitespace errors.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.1.opm`.
+- Verify the requester portal filters `ZTicket-NetworkPool` by Application, Env, Location, and Platform before selection.
+- Verify `ZTicket-IpAddress` is disabled for `Allocated` and `DHCP` pools and editable only for `Manual` pools in each network adapter row.
+
+## 2026-07-21 Diagnosis KB Reference Search Coverage 0.1.0
+
+### Completed work
+
+- Confirmed latest dynamic field export defines `ZIN-KB` as an `FAQ` reference DynamicField using autocomplete by FAQ `Title`.
+- Added package bootstrap creation for `ZIN-KB` under Ticket runtime DynamicFields so fresh installs expose the KB picker in Diagnosis.
+- Added a narrowly scoped bootstrap repair path for existing `ZIN-KB` fields so upgraded environments align the field with the exported `FAQ` reference configuration.
+- Kept Diagnosis rendering through `DynamicFieldBackendObject->EditFieldRender`; the `0.0.365` lazy-form reference-search loader and Diagnosis initializer now cover `ZIN-KB` alongside ConfigItem/GovernanceObject references.
+- Bumped `GovernanceDB.sopm` package version to `0.1.0`.
+- Generated `Kernel/Package/GovernanceDB-0.1.0.opm`.
+- `Kernel/Package/GovernanceDB-0.1.0.opm` SHA256: `8195757F0B79D7CE3FA0C5DF87BBB9D0743E3A05D3DAB034AD55D4C75B8F84DA`.
+
+### Architectural decisions
+
+- KB references in Diagnosis use the OTOBO `FAQ` DynamicField type, not a custom text field or GovernanceObject proxy.
+- `ZIN-KB` remains part of the Diagnosis record only; it is not promoted to parent-ticket governance truth.
+- GovernanceDB package versioning has moved onto the `0.1.x` line after the required `0.0.365` cap.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm` syntax OK with OTOBO include path.
+- `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZTSMAction.pm` syntax OK with OTOBO include path.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.1.0.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.1.0.opm` parsed successfully as XML: version `0.1.0`, file count `209`, `missing_payloads=0`, `empty_payloads=0`, `bad_base64=0`.
+- `git diff --check` reported no whitespace errors.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.1.0.opm`.
+- Verify the inline Diagnosis dialog initializes the `ZIN-KB` FAQ autocomplete after lazy loading inside `CustomerTicketZoom`.
+
+## 2026-07-21 Custom Runtime Reference Search Coverage 0.0.365
+
+### Completed work
+
+- Reviewed custom Risk Assessment and Diagnosis runtime renderers for ConfigItem/GovernanceObject enhanced search coverage.
+- Confirmed Risk Assessment already renders custom reference inputs with `DynamicFieldReference` and explicitly initializes `Core.Agent.DynamicFieldReferenceSearch.InitElement`.
+- Confirmed Risk Assessment also has a fallback `AgentReferenceSearch` suggestion flow for inline/lazy cases where the official widget is unavailable.
+- Confirmed Diagnosis renders fields through `DynamicFieldBackendObject->EditFieldRender`, so GovernanceObject/ConfigItem diagnosis fields use normal DynamicField reference markup.
+- Added explicit Diagnosis template initialization for `.ZTSMDiagnosisField .DynamicFieldReference` controls after the lazy custom form is injected.
+- Added `Loader::Module::CustomerTicketZoom###112-ZTSMRuntimeReferenceSearch` so inline Risk Assessment / Diagnosis forms hosted inside `CustomerTicketZoom` have `Core.Agent.DynamicFieldReferenceSearch.js` available.
+- Kept existing `CustomerTicketZTSMAction` loader coverage for standalone custom runtime action pages.
+- Bumped `GovernanceDB.sopm` package version to `0.0.365`.
+- Generated `Kernel/Package/GovernanceDB-0.0.365.opm`.
+- `Kernel/Package/GovernanceDB-0.0.365.opm` SHA256: `31AD7FAD26E031EBB9CC88B125B2D3755E5CB90B4C4F94A74C39989949EE9D6A`.
+
+### Architectural decisions
+
+- Custom runtime forms must not rely only on the generic DynamicField page initialization, because Risk Assessment and Diagnosis are lazy-loaded into `CustomerTicketZoom`.
+- Risk Assessment remains custom because it intentionally bypasses generic DynamicFieldSet rendering.
+- Diagnosis remains custom but should still initialize any reference DynamicFields rendered by the DynamicField backend.
+- `0.0.365` is the last allowed GovernanceDB `0.0.x` patch build. The next GovernanceDB package version must be `0.1.0`.
+
+### Validation
+
+- `CustomerTicketZTSMDiagnosis.tt` script bodies parsed successfully for runtime overlay and `ZTSMOverlay`.
+- `Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZTSMAction.pm` syntax OK with OTOBO include path.
+- `GovernanceDB.sopm`, `ZTSMGovernanceRuntime.xml`, and `Kernel/Package/GovernanceDB-0.0.365.opm` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.365.opm` parsed successfully as XML: version `0.0.365`, file count `209`, `missing_payloads=0`.
+- `git diff --check` reported no whitespace errors.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.0.365.opm`.
+- Verify inline `CustomerTicketZoom` Risk Assessment and Diagnosis dialogs both initialize GovernanceObject/ConfigItem search controls after lazy loading.
+- Start the next GovernanceDB package from version `0.1.0`.
+
+## 2026-07-21 Provisioning Hostname Policy Row Binding 0.0.364
+
+### Completed work
+
+- Corrected provisioning hostname policy to use `ZTicket-Env` instead of the non-authoritative `ZTicket-Environment`.
+- Added bootstrap creation for ticket DynamicField `ZTicket-Hostname` as a Text field for resolved VM hostnames.
+- Updated customer service-form hostname resolution so each `ZCompute-VM` DynamicFieldSet row is resolved independently.
+- The resolver reads global ticket context from direct ticket fields: `ZTicket-Application`, `ZTicket-Env`, and `ZTicket-Location`.
+- The resolver reads per-VM hostname segments from the matching `ZCompute-VM` row: `ZTicket-FunctionProfile`, `ZTicket-Custom`, `ZCompute-Image`, `ZCompute-CpuCore`, `ZCompute-GPU`, `ZCompute-RAM`, `ZStorage-FS`, and `ZTicket-NetworkAdapter`.
+- Generated hostname values are written back into the same row's `ZTicket-Hostname` field, preserving row-level binding for later provisioning automation and CMDB creation.
+- `ZTicket-Hostname` fields are made read-only in the requester form by the service-form integration; they remain submitted so the DynamicFieldSet stores the resolved hostname with the VM record.
+- Kept hidden `ZTSMHostnamePolicyResolved` as JSON row summary for runtime compatibility/debugging, but the authoritative submitted value is the row-local `ZTicket-Hostname`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.364`.
+- Generated `Kernel/Package/GovernanceDB-0.0.364.opm`.
+- `Kernel/Package/GovernanceDB-0.0.364.opm` SHA256: `5F836C021C6E8308F257A0811B0E4F8C2380D754D12A6540FC9C2FCE132BD95E`.
+
+### Architectural decisions
+
+- Hostname policy is row-scoped for provisioning records, not ticket-scoped.
+- `ZTicket-Custom` remains an input segment inside `ZCompute-VM`.
+- `ZTicket-Hostname` is the generated output field inside `ZCompute-VM` and is the future CMDB automation binding key.
+- When global hostname policy is disabled, row-local `ZTicket-Custom` becomes that row's complete hostname and is written into row-local `ZTicket-Hostname`.
+- When global hostname policy is enabled, configured segments are resolved per row and written into row-local `ZTicket-Hostname`.
+
+### Validation
+
+- `Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm` syntax OK.
+- `Kernel/Package/GovernanceDB/Kernel/Modules/CustomerTicketMessage.pm` syntax OK with OTOBO include path.
+- `ZTSMCustomerTicketMessageServiceFields.tt` script body parsed successfully with bundled Node.js.
+- `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- `Kernel/Package/GovernanceDB-0.0.364.opm` parsed successfully as XML: version `0.0.364`, file count `209`, `missing_payloads=0`.
+- `git diff --check` reported no whitespace errors.
+
+### Next priorities
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.0.364.opm`.
+- Verify in the requester portal that adding multiple `ZCompute-VM` rows produces one distinct `ZTicket-Hostname` value per row.
+- Confirm downstream provisioning automation consumes `DynamicField_ZCompute-VM[*].ZTicket-Hostname` when creating the CMDB ConfigItem.
+
+## 2026-07-21 Provisioning Hostname Policy 0.0.363
+
+### Completed work
+
+- Added SysConfig `ZTSM::Provisioning::HostnamePolicy`.
+- Policy supports global enforcement on/off:
+  - When enforcement is off, `ZTicket-Custom` is treated as the provided hostname.
+  - When enforcement is on, fields with position greater than `0` are resolved and joined in position order.
+- Added default configurable segment positions for:
+  - `ZTicket-Location`
+  - `ZTicket-Environment`
+  - `ZTicket-Application`
+  - `ZTicket-FunctionProfile`
+  - `ZTicket-Custom`
+  - `ZCompute-Image`
+  - `ZCompute-CpuCore`
+  - `ZCompute-GPU`
+  - `ZCompute-RAM`
+  - `ZStorage-FS`
+  - `ZTicket-NetworkAdapter`
+- Added code-field mapping defaults:
+  - GovernanceObject references resolve `ZTSM-Code`.
+  - ConfigItem references resolve `ZTAM-Code`.
+  - `ZCompute-Image` explicitly resolves `ZTAM-Code`.
+- Added bootstrap-created Ticket DynamicField `ZTicket-Custom` as a Text field.
+- Added customer portal AJAX resolver `ZTSMHostnamePolicyResolve` in `CustomerTicketMessage`.
+- Added service-form browser integration to send current provisioning field values, receive the resolved hostname, and store it in hidden submit field `ZTSMHostnamePolicyResolved` without overwriting `ZTicket-Custom`.
+- Mirrored customer module/template changes across package source, runtime overlay, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.0.363`.
+- Generated `Kernel/Package/GovernanceDB-0.0.363.opm`.
+- `Kernel/Package/GovernanceDB-0.0.363.opm` SHA256: `801E6584FD6851E356837AC4BE787E3F3C4F5232FE69D95B26B765F15B67F6BF`.
+
+### Architectural decisions
+
+- Hostname policy is a provisioning/service-form concern, not a ticket-number identity concern.
+- Segment position `0` disables that segment.
+- `ZTicket-Custom` is deliberately not overwritten when global policy is enforced, because it remains the requester/operator custom segment.
+- The generated hostname is exposed as `ZTSMHostnamePolicyResolved` for runtime/provisioning consumption.
+
+### Validation
+
+- Perl syntax checks passed for canonical, runtime overlay, and `ZTSMOverlay` `CustomerTicketMessage.pm`.
+- `GovernanceDB.sopm` and `ZTSMGovernanceRuntime.xml` parsed successfully as XML.
+- Edited `ZTSMCustomerTicketMessageServiceFields.tt` inline JavaScript parsed successfully after Template Toolkit stripping.
+- `Kernel/Package/GovernanceDB-0.0.363.opm` parsed successfully as XML: version `0.0.363`, file count `209`, `missing_payloads=0`.
+- `git diff --check` passed.
+
+### Known issues / follow-up
+
+- Runtime install/upgrade verification is needed in OTOBO using `Kernel/Package/GovernanceDB-0.0.363.opm`.
+- Confirm whether downstream provisioning should persist `ZTSMHostnamePolicyResolved` into a dedicated DynamicField or consume it directly during CI creation.
+- Confirm final production segment ordering in SysConfig once real `ZTSM-Code` / `ZTAM-Code` values are populated.
 
 ## 2026-07-20 Service Payload Snapshot ConfigItem Display 0.0.362
 
