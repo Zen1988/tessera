@@ -1,9 +1,10 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-22
+Last Updated: 2026-07-31
 
 ## Current Focus
 
+- Next implementation direction: customer portal ConfigItem entitlement, discovery, and detail access based on ContractEntitlement, SupportProfile, SupportAssignment, and GovernanceRole `ASSET`.
 - Auto hostname/provisioning policy via System Configuration.
 - Standalone MELT package development outside GovernanceDB.
 - Customer runtime execution actions on `CustomerTicketZoom`.
@@ -24,8 +25,291 @@ Last Updated: 2026-07-22
 - BlueBook Profile-aware assignment for direct SupportProfile and dynamic GovernanceRole values.
 - Initial request article snapshots with inline service-field RichText images.
 - Dynamic Field Group support for two-depth service payload rows, such as one service request containing multiple server provisioning rows.
+- Change Request plan orchestration for scheduled Pre-check, Implementation, Post-change, and Rollback child execution.
 
 ## Completed Work
+
+## 2026-07-31 Confirmed Next Direction: Customer Portal Asset Entitlement
+
+### Confirmed design
+
+- Customer portal ConfigItem access will become a new first-class TESSERA feature; today customers do not have an accepted asset visibility model.
+- The latest GovernanceObject, ConfigItem, and DynamicField exports are the design baseline for the next implementation session.
+- The ConfigItem model introduces class `ContractEntitlement`.
+- `ContractEntitlement` points to the applicable SupportProfile.
+- Assets use the exported fields `ZTAM-ContractEntitlement` and `ZTAM-SupportProfile`.
+- A CustomerUser may select, filter, search, or otherwise discover only assets whose SupportProfile is covered by ContractEntitlement and matches a SupportAssignment held by that CustomerUser.
+- Assets outside that entitlement boundary must remain undiscoverable through every route, including direct IDs, crafted requests, alternative listings, autocomplete, search, and filter endpoints.
+- Full ConfigItem detail visibility requires a matching SupportAssignment whose GovernanceRole is `ASSET`.
+- `ASSET` is a new GovernanceRole value.
+- Discovery/selection eligibility and full-detail visibility are deliberately separate permissions: entitlement makes an asset an eligible request target; the `ASSET` role grants access to all asset information.
+- Customer company membership, ticket association, knowledge of an asset identifier, and frontend-only hiding do not independently grant ConfigItem access.
+- Missing or ambiguous entitlement resolution must fail closed.
+
+### Export-aligned field names
+
+- `ZTAM-ContractEntitlement`
+- `ZTAM-SupportProfile`
+- `Contract-ServiceProfile`
+- `Contract-Coverage`
+- `Contract-SupportProfie`
+- `ZTSMSupportAssignment-UserAccount`
+- `ZTSMSupportAssignment-SupportProfile`
+- `ZTSMSupportAssignment-Role`
+
+`Contract-SupportProfie` is recorded with the exact spelling present in the latest ConfigItem export. Implementation must not silently invent a corrected field name.
+
+### Next implementation sequence
+
+1. Trace all customer-facing ConfigItem selection, autocomplete, filter, search, list, zoom, and direct object access paths.
+2. Define one centralized backend entitlement and detail-permission service.
+3. Resolve CustomerUser SupportAssignments and their SupportProfiles using the exported governance model.
+4. Resolve asset ContractEntitlement and SupportProfile relationships using the exported ConfigItem model.
+5. Apply entitlement filtering to every discovery path before results are returned.
+6. Apply GovernanceRole `ASSET` authorization to ConfigItem detail access.
+7. Add portal UI only after backend enforcement is consistent.
+8. Add bypass-focused tests for direct URLs, crafted identifiers, alternate endpoints, stale references, missing assignments, inactive/ambiguous records, and users entitled without the `ASSET` role.
+9. Package the feature with idempotent fresh-install, upgrade, and reinstall behavior.
+
+### Explicitly deferred
+
+- No customer ConfigItem runtime implementation was started on 2026-07-31.
+- No portal screens, permission modules, routing, package bootstrap changes, or migrations for this feature have yet been designed or accepted.
+- Implementation is intentionally deferred to the next work session so it begins from this recorded contract and the latest exports.
+
+## 2026-07-28 Change Template Service-Payload Hydration 0.1.38
+
+### Completed work
+
+- Changed Change Request template selection to a standalone `ZCH-Template` reference-object action after the service payload is loaded.
+- Added an authenticated `CustomerTicketMessage;Subaction=ZTSMChangeTemplatePayload` JSON endpoint.
+- Added Template governance-object hydration for all four change phases:
+  - `ZTemplate-ChPrecheck` to `ZCH-Precheck`
+  - `ZTemplate-ChImplementation` to `ZCH-Implementation`
+  - `ZTemplate-ChPostChange` to `ZCH-PostChange`
+  - `ZTemplate-ChRollback` to `ZCH-Rollback`
+- Added the confirmed component mapping:
+  - `ZTemplate-ChSeq` to `ZCH-Seq`
+  - `ZTemplate-ChStrict` to `ZCH-Strict`
+  - `ZTemplate-ChMandatory` to `ZCH-Mandatory`
+  - `ZTemplate-ChActivity` to `ZCH-Activity`
+  - `ZTemplate-ChDescription` to `ZCH-Description`
+  - `ZTemplate-ChTicketType` to `ZCH-TicketType`
+  - `ZTemplate-ChProfile` to `ZCH-Profile`
+  - `ZTemplate-ChWeightage` to `ZCH-Weightage`
+  - `ZTemplate-ChBlueLevel` to `ZCH-BlueLevel`
+- Template hydration deliberately excludes `ZCH-Owner`, `ZCH-ScheduleStart`, and `ZCH-ScheduleFinish`; the team supplies those execution-specific values.
+- Reused the existing service-payload row hydrator so Set row creation, reference resolution, RichText handling, validation reset, responsive layout, and accessibility behavior remain centralized.
+- Removed `ZCH-Template` from the package bootstrap definition of the four `ZCH-*` Sets.
+- Bumped `GovernanceDB.sopm` from `0.1.37` to `0.1.38`.
+- Generated `Kernel/Package/GovernanceDB-0.1.38.opm`.
+- `Kernel/Package/GovernanceDB-0.1.38.opm` SHA256: `B922C6E7951B9159D00BFA89554609B4FFE8EEF2BF6DECC747C4B54C887BC58B`.
+
+### Architectural decisions
+
+- A Change Template is reusable execution-plan content, not an execution assignment or schedule.
+- Template selection is independent of every task row and applies all four plan sections atomically.
+- The change-task reader remains template-agnostic and continues to consume only the hydrated `ZCH-*` execution evidence.
+
+### Validation
+
+- Perl syntax passed for `ZTSMBlueBookRuntime.pm` and `CustomerTicketMessage.pm`.
+- Focused mapping test passed for Template resolution, phase mapping, component mapping, and exclusion of owner/schedule values.
+- Service payload inline JavaScript parsed successfully after Template Toolkit stripping.
+- All maintained runtime/package/overlay copies are synchronized.
+- `GovernanceDB.sopm` and `GovernanceDB-0.1.38.opm` parsed successfully as XML.
+- Generated OPM contains package version `0.1.38`, 210 file nodes, `MissingEncode=0`, and byte-for-byte payload verification failures `0`.
+- `git diff --check` passed apart from existing CRLF normalization warnings.
+
+### Known issues / follow-up
+
+- Runtime install/upgrade and browser interaction testing are required in OTOBO.
+- At the time of implementation, the latest visible Dynamic Field export still showed `ZCH-Template` inside `ZCH-Precheck`; the package bootstrap enforces the confirmed standalone-selector design.
+
+## 2026-07-27 Change Request Execution Plan Runtime 0.1.37
+
+### Completed work
+
+- Added `Kernel::System::GenericAgent::ZTSMChangeTaskReader` as a change-specific execution reader separate from StateBook and BlueBook readers.
+- Added exact parsing for the exported multi-value change plan fields:
+  - `ZCH-Precheck`
+  - `ZCH-Implementation`
+  - `ZCH-PostChange`
+  - `ZCH-Rollback`
+- Added idempotent child identity using existing execution evidence fields:
+  - `ZTicket-Parent`
+  - `ZTicket-Stage = change-<phase>`
+  - `ZTicket-BlueLevel`
+  - `ZTicket-Chapter = ZCH-Seq`
+- Added field propagation:
+  - `ZCH-ScheduleStart` to `ZTicket-ScheduleStart`
+  - `ZCH-ScheduleFinish` to `ZTicket-ScheduleFinish`
+  - `ZCH-Profile` to `ZTicket-Profile` and `ZTicket-OwnerGroup`
+  - `ZCH-Owner` to `ZTicket-Owner`
+  - `ZCH-Weightage` to `ZTicket-RequiredWeightage` and `ZTicket-OwnerWeightage`
+  - mandatory, strict, level, and sequence execution controls
+- Added execution semantics:
+  - mandatory rows must close successfully before their level is complete;
+  - non-mandatory rows do not block progression when open or unsuccessful;
+  - strict rows are generated only after `ZCH-ScheduleStart`;
+  - non-strict rows generate as soon as the preceding mandatory level is complete;
+  - scheduled non-mandatory rows must still be generated before the complete change plan releases the parent.
+- Added direct SupportProfile assignment behavior:
+  - no profile derivation or substitution is performed;
+  - an explicit `ZCH-Owner` must have a matching SupportAssignment membership for the exact `ZCH-Profile`;
+  - invalid owner/profile combinations are rejected with parent-ticket evidence.
+- Added shared rollback behavior:
+  - any unsuccessful mandatory Pre-check, Implementation, or Post-change child activates the same `ZCH-Rollback` plan;
+  - normal change lifecycle progression stops while rollback is active;
+  - successful mandatory rollback execution closes the parent Change Request as `closed rollback`;
+  - StateBook does not resume after rollback.
+- Added child and parent orchestration articles following the existing BlueBook evidence style.
+- Extended `ZTSMBlueBookComplete` so the final in-progress BlueBook level cannot release a Change Request until its change execution plan is also complete.
+- Added event-driven and every-minute scheduled GenericAgent jobs so strict scheduled tasks are generated even when no ticket event occurs at the scheduled time.
+- Added upgrade-safe bootstrap definitions for all exported `ZCH-*` component and Set Dynamic Fields, using class names rather than environment-specific GeneralCatalog IDs.
+- Bumped `GovernanceDB.sopm` from `0.1.36` to `0.1.37`.
+- Generated `Kernel/Package/GovernanceDB-0.1.37.opm`.
+- `Kernel/Package/GovernanceDB-0.1.37.opm` SHA256: `5357F3CDE6EA5B3B66DF7082ABFD3EE19C13AA0A71314E32E120228F4AC23A83`.
+
+### Architectural decisions
+
+- Change Request task plans are execution choreography owned by the Change Request, not StateBook transitions and not BlueBook records.
+- The normal in-progress BlueBook remains active. Final StateBook continuation requires both the normal BlueBook and the change-specific plan to complete.
+- Change children use existing execution evidence fields for identity; no unconfirmed lifecycle or marker Dynamic Field was invented.
+- Rollback follows the configured rollback levels and sequences rather than inferring a reverse implementation order.
+- Schedule arrival is handled by a recurring reader scan because event-only execution cannot observe time passing.
+
+### Rejected approaches
+
+- Do not extend `ZTSMBlueBookReader` to parse `ZCH-*` rows.
+- Do not copy environment-specific GovernanceObject class/status IDs from the Dynamic Field export into package bootstrap.
+- Do not resolve a substitute SupportProfile when `ZCH-Profile` is configured.
+- Do not allow a mandatory unsuccessful change child to advance normal execution.
+- Do not resume StateBook after a completed rollback.
+
+### Validation
+
+- Perl syntax checks passed for:
+  - `ZTSMChangeTaskReader.pm`
+  - `ZTSMBlueBookComplete.pm`
+  - `GovernanceDB::Bootstrap.pm`
+- GenericAgent runtime seed parsed successfully as YAML.
+- `GovernanceDB.sopm` parsed successfully as XML.
+- Generated OPM parsed successfully as XML with package version `0.1.37`, 210 file nodes, and `MissingEncode=0`.
+- Generated OPM contains the new reader, updated completion validator, updated bootstrap, and GenericAgent seed.
+- `git diff --check` passed apart from existing CRLF normalization warnings.
+
+### Known issues / follow-up
+
+- Runtime install/upgrade testing is required in OTOBO with `Kernel/Package/GovernanceDB-0.1.37.opm`.
+- Verify the configured Change ticket state is represented as `in progress` or `in-progress`; the reader normalizes either form.
+- Exercise strict future scheduling under the daemon and confirm the every-minute GenericAgent job fires in the deployment timezone.
+- Confirm the four Change Request Set fields are exposed in the intended Change intake/approval ActivityDialog.
+- Confirm rollback rows and their order are populated by the implementation assessment before approval.
+
+## 2026-07-23 Repeated Nested Group Row Aggregation 0.1.36
+
+### Completed work
+
+- Fixed nested JSON collection when repeated DynamicFieldGroup rows are rendered as separate sibling `.DFSetOuterField` containers.
+- Nested group discovery now stores every immediate visible row for the same blueprint group name instead of retaining only the first matching container.
+- Two rendered `ZTicket-NetworkAdapter` rows now export as two objects in one `ZTicket-NetworkAdapter` array.
+- The same aggregation applies generically to repeated `ZStorage-FS` rows and other nested DynamicFieldGroup/Set fields.
+- Hidden and template rows remain excluded from exported JSON.
+- Updated nested JSON apply compatibility to work with the aggregated row registry and refresh it after adding rows.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.36`.
+- Generated `Kernel/Package/GovernanceDB-0.1.36.opm`.
+- `Kernel/Package/GovernanceDB-0.1.36.opm` SHA256: `35C13E5812258F04E52F61F86CA41AAF354657445006B3582D45EDFAE22C86B7`.
+
+### Root cause
+
+- `0.1.35` correctly discovered nested groups, but stored only the first DOM container for each nested group name.
+- OTOBO renders repeated nested DynamicFieldGroup rows in sibling containers, so collecting rows from the first container omitted the second and later rows.
+
+### Validation
+
+- Inline service payload JavaScript parsed successfully after Template Toolkit stripping in all four mirrored templates.
+- All four mirrored service payload templates have matching SHA256 `055C67912C29206ACCE5CB690A4636960294493838B50766D76427418749F158`.
+- Static regression checks confirm nested group definitions retain arrays of containers and rows, and collection maps the aggregated rows.
+- `Kernel/Package/GovernanceDB-0.1.36.opm` parsed as XML with package version `0.1.36`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime overlay payload matches the runtime-overlay template bytes.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.36.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest JSON export with the two visible network adapters shown in the supplied screenshot.
+
+## 2026-07-23 Nested DynamicFieldGroup Discovery Fix 0.1.35
+
+### Completed work
+
+- Corrected the `0.1.34` nested group discovery regression where `ZStorage-FS`, `ZTicket-NetworkAdapter`, and other DynamicFieldGroup descendants disappeared from exported JSON.
+- Replaced container-level ownership detection with row ancestry detection:
+  - resolve the nested Set/Group row from its `SetIndex_*` input;
+  - resolve that nested row's nearest ancestor Set row;
+  - include the group when that ancestor is the current parent row.
+- Preserved the `0.1.34` direct-control ownership filter, so nested fields are not flattened into the VM object and hidden/template defaults are still excluded.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.35`.
+- Generated `Kernel/Package/GovernanceDB-0.1.35.opm`.
+- `Kernel/Package/GovernanceDB-0.1.35.opm` SHA256: `0AED160CA109C763A2AF5258D8D501B1AA1DD8619A8116D04E702BAF63119F3B`.
+
+### Root cause
+
+- `0.1.34` tested a DynamicFieldGroup container's nearest row against the VM row.
+- In the live DOM, that container resolves through the nested group row, so the test rejected every nested group before collection.
+- Ownership belongs to the nested row's parent-row ancestry, not to the container's own nearest-row result.
+
+### Validation
+
+- Inline service payload JavaScript parsed successfully after Template Toolkit stripping in all four mirrored templates.
+- All four mirrored service payload templates have matching SHA256 `240F2D107C207F4953391B29F583D58371F31F7598B6D11D9A95A7DED11B219A`.
+- Static regression checks confirm the parent-row ancestry test is present and the rejected container ownership test is absent.
+- `Kernel/Package/GovernanceDB-0.1.35.opm` parsed as XML with package version `0.1.35`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime overlay payload matches the runtime-overlay template bytes.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.35.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest JSON export for one VM with two filesystem rows and one network adapter.
+
+## 2026-07-23 Blueprint-Shaped Service Payload JSON 0.1.34
+
+### Completed work
+
+- Reworked the CustomerTicketMessage service payload JSON collector to preserve the nested DynamicField Set / DynamicFieldGroup hierarchy defined by the Service.Field blueprint.
+- `ZCompute-VM` rows now export nested `ZStorage-FS` and `ZTicket-NetworkAdapter` arrays as arrays of row objects instead of merging their descendant controls into parallel arrays on the VM object.
+- Restricted row collection to controls owned by the current row, excluding controls from nested rows and hidden/template rows; this prevents phantom default values such as extra `auto` filesystem types and `30` GB sizes.
+- Reworked JSON apply recursively so nested object arrays hydrate the corresponding nested form rows.
+- Preserved import compatibility for legacy flat payloads: parallel child-field arrays are mapped into blueprint-defined nested rows when the nested group property is absent.
+- Synced `ZTSMCustomerTicketMessageServiceFields.tt` across package source, runtime overlay, root runtime copy, and `ZTSMOverlay`.
+- Bumped `GovernanceDB.sopm` package version to `0.1.34`.
+- Generated `Kernel/Package/GovernanceDB-0.1.34.opm`.
+- `Kernel/Package/GovernanceDB-0.1.34.opm` SHA256: `C0BEF5FF0B7005EFAD4BF41D2E5B09E72CAE9D8028DADF234B24D64014AA1141`.
+
+### Architectural decisions
+
+- Service.Field blueprint structure is the schema authority for service payload JSON.
+- Every multivalue Set or DynamicFieldGroup is represented as an array of objects under its Dynamic Field name.
+- Child fields are owned by their nearest Set/Group row and must not be flattened into the ancestor row.
+- Newly exported JSON uses the canonical nested form; legacy flat JSON remains import-only compatibility input.
+
+### Validation
+
+- Inline service payload JavaScript parsed successfully after Template Toolkit stripping.
+- All four mirrored service payload templates have matching SHA256 `F26E678D5DBEA529DA6F1D523FD34BD2FC42CDE70134AB1960581E6FC9CCB90C`.
+- `Kernel/Package/GovernanceDB-0.1.34.opm` parsed as XML with package version `0.1.34`, file count `209`, and `missingEncode=0`.
+- Generated OPM runtime overlay payload matches the canonical runtime-overlay template bytes.
+
+### Next priorities
+
+- Install/upgrade using `Kernel/Package/GovernanceDB-0.1.34.opm`.
+- Clear OTOBO cache and hard refresh browser assets.
+- Retest one VM with two filesystem rows (`C:`, `D:`) and one network adapter; JSON export should contain `ZStorage-FS` and `ZTicket-NetworkAdapter` arrays of objects with no third default row.
+- Apply the exported JSON back to the form and confirm the nested rows round-trip without field drift.
 
 ## 2026-07-22 Service First-Select Timing Fix 0.1.33
 

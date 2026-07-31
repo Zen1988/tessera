@@ -8,6 +8,7 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
+use Kernel::System::GenericAgent::ZTSMChangeTaskReader ();
 use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
@@ -102,6 +103,22 @@ sub Validate {
     );
 
     return if defined $NextBlueLevel && $NextBlueLevel ne '';
+
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $TicketID,
+        DynamicFields => 1,
+        UserID        => $Param{UserID} || 1,
+        Silent        => 1,
+    );
+
+    if ( lc( $Ticket{Type} || '' ) eq 'change' ) {
+        my $ChangeTaskReader = Kernel::System::GenericAgent::ZTSMChangeTaskReader->new();
+        return if !$ChangeTaskReader->PlanComplete(
+            ParentTicketID => $TicketID,
+            ParentTicket   => \%Ticket,
+            UserID         => $Param{UserID} || 1,
+        );
+    }
 
     return 1;
 }

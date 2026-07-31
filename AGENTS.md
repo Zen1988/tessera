@@ -46,6 +46,64 @@ Never invent field names.
 - DynamicField Set rendering bypasses Row_DynamicField
 - Customer process actions injected dynamically into TicketZoom
 
+## Customer Portal ConfigItem Entitlement and Asset Access Contract
+
+### Purpose
+
+Customer portal ConfigItem access is a new TESSERA feature. Customer users must not be able to discover or access assets merely because the ConfigItem customer frontend exists.
+
+### Authoritative Export Model
+
+Use the latest GovernanceObject, ConfigItem, and DynamicField exports before implementation.
+
+The current exported model includes:
+
+- ConfigItem class `ContractEntitlement`
+- ConfigItem field `ZTAM-ContractEntitlement`
+- ConfigItem field `ZTAM-SupportProfile`
+- ContractEntitlement field `Contract-ServiceProfile`
+- ContractEntitlement field `Contract-Coverage`
+- ContractEntitlement field `Contract-SupportProfie`
+- SupportAssignment field `ZTSMSupportAssignment-UserAccount`
+- SupportAssignment field `ZTSMSupportAssignment-SupportProfile`
+- SupportAssignment field `ZTSMSupportAssignment-Role`
+
+`Contract-SupportProfie` is the exact current exported field name. Do not silently rename or correct it in code.
+
+### Discovery and Selection Boundary
+
+`ContractEntitlement` points to the applicable SupportProfile.
+
+A CustomerUser may discover, list for selection, filter, or search only ConfigItems whose SupportProfile is covered by a ContractEntitlement and for which that CustomerUser has the corresponding SupportAssignment.
+
+This entitlement boundary must be applied server-side to every customer-facing ConfigItem lookup path, including request selection, autocomplete, filtering, searching, direct listing, and equivalent APIs.
+
+A ConfigItem outside this boundary must not be returned or disclosed, regardless of URL manipulation, request parameters, alternate portal paths, or direct object identifiers.
+
+### Detail Visibility Boundary
+
+Discovery permission and full detail permission are separate concerns.
+
+A CustomerUser who is entitled to discover a ConfigItem may view the ConfigItem's full information only when the matching SupportAssignment uses GovernanceRole `ASSET`.
+
+`ASSET` is a new GovernanceRole value.
+
+Without the matching `ASSET` SupportAssignment role, entitlement may permit the asset to appear as a selectable or searchable request target, but it must not grant access to the ConfigItem detail view or its full data.
+
+### Security and Architecture Rules
+
+- Enforce both boundaries in backend permission/search logic; UI hiding alone is insufficient.
+- Default to no access when ContractEntitlement, SupportProfile, SupportAssignment, CustomerUser, or GovernanceRole resolution is missing or ambiguous.
+- Do not broaden ConfigItem visibility through customer company membership alone.
+- Do not treat `ZTAM-Owner`, ticket participation, or possession of a ConfigItem ID as entitlement.
+- Reuse the exported objects and Dynamic Fields; never invent replacement field names.
+- Preserve the separation between governance truth, entitlement scope, operational assignment, and ticket execution evidence.
+- Design installation and upgrades idempotently for existing and fresh environments.
+
+### Next Implementation Direction
+
+The next work session should begin with read-only tracing of every customer ConfigItem search, selection, filter, list, zoom, and direct-access path. Then establish one centralized permission service used consistently by all paths before adding portal UI.
+
 
 ## Risk Assessment Workspace Design
 

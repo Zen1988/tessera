@@ -1436,6 +1436,245 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
         {
+            Name       => 'ZCH-Seq',
+            Label      => 'Sequence',
+            FieldOrder => 10404,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [
+                    {
+                        ErrorMessage => 'Sequence must be in number',
+                        Value        => '^[0-9]+$',
+                    },
+                ],
+                Tooltip => 'Sequence Number (Execution Order)',
+            },
+        },
+        {
+            Name       => 'ZCH-BlueLevel',
+            Label      => 'Level',
+            FieldOrder => 10405,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [
+                    {
+                        ErrorMessage => 'Execution Number must be in sequence',
+                        Value        => '^[0-9]+$',
+                    },
+                ],
+                Tooltip => 'Level (Group of execution order)',
+            },
+        },
+        {
+            Name       => 'ZCH-Strict',
+            Label      => 'Strict',
+            FieldOrder => 10406,
+            FieldType  => 'Checkbox',
+            Config     => {
+                DefaultValue => 1,
+                MultiValue   => 0,
+                Tooltip      => 'Strict Follow Scheduled Execution Time',
+            },
+        },
+        {
+            Name       => 'ZCH-Mandatory',
+            Label      => 'Mandatory',
+            FieldOrder => 10407,
+            FieldType  => 'Checkbox',
+            Config     => {
+                DefaultValue => 1,
+                MultiValue   => 0,
+                Tooltip      => 'Mandatory Execution Task',
+            },
+        },
+        {
+            Name       => 'ZCH-ScheduleStart',
+            Label      => 'Schedule Start',
+            FieldOrder => 10408,
+            FieldType  => 'DateTime',
+            Config     => {
+                DateRestriction => '',
+                DefaultValue    => 0,
+                Link            => '',
+                LinkPreview     => '',
+                MultiValue      => 0,
+                Tooltip         => 'Scheduled Start',
+                YearsInFuture   => 5,
+                YearsInPast     => 5,
+                YearsPeriod     => 0,
+            },
+        },
+        {
+            Name       => 'ZCH-ScheduleFinish',
+            Label      => 'Schedule Finish',
+            FieldOrder => 10409,
+            FieldType  => 'DateTime',
+            Config     => {
+                DateRestriction => '',
+                DefaultValue    => 0,
+                Link            => '',
+                LinkPreview     => '',
+                MultiValue      => 0,
+                Tooltip         => 'Scheduled Finish Date/Time',
+                YearsInFuture   => 5,
+                YearsInPast     => 5,
+                YearsPeriod     => 0,
+            },
+        },
+        {
+            Name       => 'ZCH-TicketType',
+            Label      => 'Ticket Type',
+            FieldOrder => 10410,
+            FieldType  => 'GeneralCatalog',
+            Config     => {
+                Class        => 'ZTSM::Type',
+                MultiValue   => 0,
+                Multiselect  => 0,
+                PossibleNone => 0,
+                Tooltip      => 'Ticket Type',
+            },
+        },
+        {
+            Name       => 'ZCH-Activity',
+            Label      => 'Activity',
+            FieldOrder => 10411,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Activity Summary',
+            },
+        },
+        {
+            Name       => 'ZCH-Template',
+            Label      => 'Template',
+            FieldOrder => 10412,
+            FieldType  => 'GovernanceObject',
+            Config     => {
+                ClassIDs              => ['Template'],
+                DisplayType           => '',
+                EditFieldMode         => 'AutoComplete',
+                ImportSearchAttribute => '',
+                LinkDirection         => 'ReferencingIsSource',
+                LinkType              => '',
+                MultiValue            => 0,
+                Multiselect           => 0,
+                PossibleNone          => 1,
+                ReferenceFilterList   => [],
+                ReferencedObjectType  => 'GovernanceObject',
+                SearchAttribute       => 'Name',
+                Tooltip               => 'Template',
+                ZTSMStatusIDs         => ['Active'],
+            },
+        },
+        {
+            Name       => 'ZCH-Description',
+            Label      => 'Description',
+            FieldOrder => 10414,
+            FieldType  => 'RichText',
+            Config     => {
+                DefaultValue => '',
+                RegExList    => [],
+                Tooltip      => 'Description',
+            },
+        },
+        {
+            Name       => 'ZCH-Profile',
+            Label      => 'Profile',
+            FieldOrder => 10418,
+            FieldType  => 'GovernanceObject',
+            Config     => {
+                ClassIDs              => ['SupportProfile'],
+                DisplayType           => '',
+                EditFieldMode         => 'AutoComplete',
+                ImportSearchAttribute => '',
+                LinkDirection         => 'ReferencingIsSource',
+                LinkType              => '',
+                MultiValue            => 0,
+                Multiselect           => 0,
+                PossibleNone          => 1,
+                ReferenceFilterList   => [],
+                ReferencedObjectType  => 'GovernanceObject',
+                SearchAttribute       => 'Name',
+                Tooltip               => 'OwnerGroup',
+                ZTSMStatusIDs         => ['Active'],
+            },
+        },
+        {
+            Name       => 'ZCH-Owner',
+            Label      => 'Owner',
+            FieldOrder => 10419,
+            FieldType  => 'CustomerUser',
+            Config     => {
+                EditFieldMode         => 'AutoComplete',
+                ImportSearchAttribute => '',
+                MultiValue            => 0,
+                Multiselect           => 0,
+                PossibleNone          => 1,
+                ReferencedObjectType  => 'CustomerUser',
+                Tooltip               => 'Owner',
+            },
+        },
+        {
+            Name       => 'ZCH-Weightage',
+            Label      => 'Weightage',
+            FieldOrder => 10420,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => 1,
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Weightage',
+            },
+        },
+        map {
+            {
+                Name       => $_->[0],
+                Label      => $_->[1],
+                FieldOrder => $_->[2],
+                FieldType  => 'Set',
+                Config     => {
+                    Include => [
+                        map { { DF => $_ } } qw(
+                            ZCH-BlueLevel
+                            ZCH-Seq
+                            ZCH-Strict
+                            ZCH-Mandatory
+                            ZCH-ScheduleStart
+                            ZCH-ScheduleFinish
+                            ZCH-TicketType
+                            ZCH-Activity
+                            ZCH-Description
+                            ZCH-Profile
+                            ZCH-Owner
+                            ZCH-Weightage
+                        )
+                    ],
+                    MultiValue   => 1,
+                    RenderLayout => 'Vertical',
+                    Tooltip      => '',
+                },
+            }
+        } (
+            [ 'ZCH-Precheck',       'Pre-check',      10413 ],
+            [ 'ZCH-Implementation', 'Implementation', 10415 ],
+            [ 'ZCH-Rollback',       'Rollback',       10416 ],
+            [ 'ZCH-PostChange',     'Post-Change',    10417 ],
+        ),
+        {
             Name       => 'ZTicket-Custom',
             Label      => 'Custom Hostname Segment',
             FieldOrder => 10105,

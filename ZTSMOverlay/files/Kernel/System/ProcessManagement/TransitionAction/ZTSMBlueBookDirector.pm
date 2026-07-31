@@ -14,6 +14,7 @@ use parent qw(
 );
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
+use Kernel::System::GenericAgent::ZTSMChangeTaskReader ();
 use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
@@ -28,6 +29,25 @@ sub new {
     return bless {}, $Type;
 }
 
+sub _NormalizeValue {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+    return _NormalizeValue( $Value->[0] ) if ref $Value eq 'ARRAY';
+    return _NormalizeValue( $Value->{Content} ) if ref $Value eq 'HASH';
+    return $Value;
+}
+
+sub _TicketOnHold {
+    my ($Ticket) = @_;
+
+    return if !$Ticket || ref $Ticket ne 'HASH';
+    return 1 if _NormalizeValue( $Ticket->{'DynamicField_ZTicket-HoldState'} );
+    return 1 if lc( $Ticket->{State} || '' ) eq 'onhold';
+
+    return;
+}
+
 sub Run {
     my ( $Self, %Param ) = @_;
 
@@ -40,6 +60,33 @@ sub Run {
     my $UserID   = $Param{UserID} || 1;
 
     return if !$TicketID;
+
+    if ( _TicketOnHold($Ticket) ) {
+        $LogObject->Log(
+            Priority => 'notice',
+            Message  => "ZTSMBlueBookDirector: Ticket is onhold, skip BlueBook advance TicketID=$TicketID",
+        );
+        return 1;
+    }
+
+    if ( lc( $Ticket->{Type} || '' ) eq 'change' ) {
+        my $ChangeTaskReader = Kernel::System::GenericAgent::ZTSMChangeTaskReader->new();
+        if (
+            !$ChangeTaskReader->NormalProgressAllowed(
+                ParentTicketID => $TicketID,
+                ParentTicket   => $Ticket,
+                UserID         => $UserID,
+            )
+            )
+        {
+            $LogObject->Log(
+                Priority => 'notice',
+                Message  =>
+                    "ZTSMBlueBookDirector: Change execution failure or rollback blocks BlueBook advance TicketID=$TicketID",
+            );
+            return 1;
+        }
+    }
 
     my $BlueBookID = Kernel::System::ZTSMBlueBookRuntime::BlueBookIDGet(
         Ticket => $Ticket,

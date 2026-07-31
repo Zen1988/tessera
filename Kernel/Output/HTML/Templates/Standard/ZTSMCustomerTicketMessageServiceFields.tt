@@ -3994,6 +3994,8 @@
         var Controls = [];
 
         Array.prototype.forEach.call(Row.querySelectorAll('select, textarea, input'), function (Element) {
+            var OwnerRow;
+
             if (!Element.name || Element.type === 'hidden' || Element.name.indexOf('SetIndex_') === 0) {
                 return;
             }
@@ -4004,15 +4006,154 @@
                 return;
             }
 
+            OwnerRow = Element.closest && Element.closest('.FieldCell[class*="MultiValue_"], .MultiValue_Template');
+            if (OwnerRow && OwnerRow !== Row) {
+                return;
+            }
+
             Controls.push(Element);
         });
 
         return Controls;
     }
 
+    function ZTSMServicePayloadNestedSets(Row) {
+        var Sets = {};
+
+        Array.prototype.forEach.call(Row.querySelectorAll('input[type="hidden"][name^="SetIndex_"]'), function (Input) {
+            var SetName = ZTSMServiceExtensionNestedSetBaseName(Input.name),
+                SetRow = ZTSMServiceExtensionSetRowGet(Input),
+                ParentRow,
+                Container;
+
+            if (!SetName || !SetRow || SetRow === Row) {
+                return;
+            }
+
+            ParentRow = SetRow.parentElement && SetRow.parentElement.closest('.FieldCell[class*="MultiValue_"], .MultiValue_Template');
+            if (ParentRow !== Row) {
+                return;
+            }
+
+            Container = Input.closest('.DFSetOuterField') || SetRow.parentNode;
+            if (!Container) {
+                return;
+            }
+
+            if (!Sets[SetName]) {
+                Sets[SetName] = {
+                    Containers: [],
+                    Rows: []
+                };
+            }
+            if (Sets[SetName].Containers.indexOf(Container) === -1) {
+                Sets[SetName].Containers.push(Container);
+            }
+            if (
+                Input.value !== 'Template'
+                && !SetRow.classList.contains('MultiValue_Template')
+                && !ZTSMServiceExtensionElementHidden(SetRow)
+                && Sets[SetName].Rows.indexOf(SetRow) === -1
+            ) {
+                Sets[SetName].Rows.push(SetRow);
+            }
+        });
+
+        return Sets;
+    }
+
+    function ZTSMServicePayloadRowCollect(Row) {
+        var RowData = {},
+            NestedSets = ZTSMServicePayloadNestedSets(Row);
+
+        ZTSMServicePayloadControls(Row).forEach(function (Element) {
+            var Name = ZTSMServicePayloadFieldBaseName(Element),
+                Value = ZTSMServicePayloadOutputValue(Element);
+
+            RowData[Name] = ZTSMServicePayloadValueMerge(RowData[Name], Value);
+            ZTSMServicePayloadCollectDebug(Element, Name, Value);
+        });
+
+        Object.keys(NestedSets).forEach(function (SetName) {
+            RowData[SetName] = NestedSets[SetName].Rows.map(function (NestedRow) {
+                return ZTSMServicePayloadRowCollect(NestedRow);
+            });
+        });
+
+        return RowData;
+    }
+
+    function ZTSMServicePayloadLegacyNestedRows(Data, SetInfo) {
+        var Rows = SetInfo ? SetInfo.Rows : [],
+            FieldNames = {},
+            Count = 0,
+            Found = false,
+            Result = [];
+
+        if (!Rows.length) {
+            return;
+        }
+
+        ZTSMServicePayloadControls(Rows[0]).forEach(function (Element) {
+            var Name = ZTSMServicePayloadFieldBaseName(Element),
+                Value = ZTSMServicePayloadObjectLookup(Data || {}, [ Name, 'DynamicField_' + Name ]);
+
+            if (Value === undefined) {
+                return;
+            }
+
+            Found = true;
+            FieldNames[Name] = Value;
+            Count = Math.max(Count, Array.isArray(Value) ? Value.length : 1);
+        });
+
+        if (!Found) {
+            return;
+        }
+
+        Array.apply(null, Array(Count)).forEach(function (_, Index) {
+            var RowData = {};
+
+            Object.keys(FieldNames).forEach(function (Name) {
+                var Value = FieldNames[Name];
+                RowData[Name] = Array.isArray(Value) ? Value[Index] : (Index === 0 ? Value : '');
+            });
+            Result.push(RowData);
+        });
+
+        return Result;
+    }
+
+    function ZTSMServicePayloadNestedRowsEnsure(ParentRow, SetName, SetInfo, Count) {
+        var Rows = SetInfo ? SetInfo.Rows.slice(0) : [],
+            AddButton,
+            Guard = 0,
+            Refreshed;
+
+        while (Rows.length < Count && Guard < Count + 5) {
+            Guard++;
+            AddButton = SetInfo && SetInfo.Containers[0] ? SetInfo.Containers[0].querySelector('.AddValueRow') : null;
+            if (!AddButton) {
+                AddButton = ParentRow.querySelector('.AddValueRow');
+            }
+            if (!AddButton) {
+                break;
+            }
+
+            AddButton.click();
+            ZTSMServiceExtensionSetIndexNormalize(ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'), ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'));
+            Refreshed = ZTSMServicePayloadNestedSets(ParentRow)[SetName];
+            SetInfo = Refreshed || SetInfo;
+            Rows = SetInfo ? SetInfo.Rows.slice(0) : Rows;
+        }
+
+        return Rows;
+    }
+
     function ZTSMServicePayloadRowApply(Row, Data, SetName) {
         var Work = [],
-            FieldIndex = {};
+            FieldIndex = {},
+            NestedSets = ZTSMServicePayloadNestedSets(Row);
 
         ZTSMServicePayloadControls(Row).forEach(function (Element) {
             var FieldName = ZTSMServicePayloadFieldBaseName(Element),
@@ -4039,6 +4180,30 @@
             }
 
             Work.push(ZTSMServicePayloadInputSet(Element, Value));
+        });
+
+        Object.keys(NestedSets).forEach(function (NestedSetName) {
+            var NestedPayload = ZTSMServicePayloadObjectLookup(Data || {}, [
+                    NestedSetName,
+                    'DynamicField_' + NestedSetName,
+                    SetName + '.' + NestedSetName
+                ]),
+                NestedRows;
+
+            if (NestedPayload === undefined) {
+                NestedPayload = ZTSMServicePayloadLegacyNestedRows(Data, NestedSets[NestedSetName]);
+                if (NestedPayload === undefined) {
+                    return;
+                }
+            }
+
+            NestedPayload = Array.isArray(NestedPayload) ? NestedPayload : [ NestedPayload || {} ];
+            NestedRows = ZTSMServicePayloadNestedRowsEnsure(Row, NestedSetName, NestedSets[NestedSetName], NestedPayload.length);
+            NestedPayload.forEach(function (NestedRowData, Index) {
+                if (NestedRows[Index]) {
+                    Work.push(ZTSMServicePayloadRowApply(NestedRows[Index], NestedRowData || {}, NestedSetName));
+                }
+            });
         });
 
         return Promise.all(Work);
@@ -4089,6 +4254,55 @@
         });
     }
 
+    function ZTSMChangeTemplateApply(TemplateID) {
+        var QueryString;
+
+        if (!TemplateID) {
+            return Promise.resolve();
+        }
+
+        QueryString = 'Action=CustomerTicketMessage;Subaction=ZTSMChangeTemplatePayload'
+            + ';TemplateID=' + encodeURIComponent(TemplateID);
+
+        return new Promise(function (Resolve) {
+            var XHR = new XMLHttpRequest();
+
+            XHR.open('GET', Core.Config.Get('Baselink') + QueryString, true);
+            XHR.onreadystatechange = function () {
+                var Result;
+
+                if (XHR.readyState !== 4) {
+                    return;
+                }
+
+                try {
+                    Result = JSON.parse(XHR.responseText || '{}');
+                }
+                catch (Error) {
+                    Result = {};
+                }
+
+                if (XHR.status >= 200 && XHR.status < 300 && Result.Success && Result.Payload) {
+                    ZTSMServicePayloadApply(Result.Payload).then(function () {
+                        ZTSMServicePayloadStatus(
+                            document.querySelector('.ZTSMServicePayloadTools'),
+                            'Change template applied. Select owner and schedule for each task.'
+                        );
+                        Resolve(true);
+                    });
+                    return;
+                }
+
+                ZTSMServicePayloadStatus(
+                    document.querySelector('.ZTSMServicePayloadTools'),
+                    Result.Message || 'Unable to load the selected change template.'
+                );
+                Resolve(false);
+            };
+            XHR.send();
+        });
+    }
+
     function ZTSMServicePayloadCollect() {
         var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
             End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd'),
@@ -4111,16 +4325,7 @@
                 Payload[SetName] = [];
                 Rows = ZTSMServicePayloadSetRows(FieldContainer);
                 Rows.forEach(function (Row) {
-                    var RowData = {};
-
-                    ZTSMServicePayloadControls(Row).forEach(function (Element) {
-                        var Name = ZTSMServicePayloadFieldBaseName(Element),
-                            Value = ZTSMServicePayloadOutputValue(Element);
-
-                        RowData[Name] = ZTSMServicePayloadValueMerge(RowData[Name], Value);
-                        ZTSMServicePayloadCollectDebug(Element, SetName + '.' + Name, Value);
-                    });
-                    Payload[SetName].push(RowData);
+                    Payload[SetName].push(ZTSMServicePayloadRowCollect(Row));
                 });
             }
             else {
@@ -5226,6 +5431,11 @@
                     Hidden = Detail.hidden,
                     Field = Detail.field || '',
                     IsServicePicker = false;
+
+                if (Field === 'ZCH-Template') {
+                    ZTSMChangeTemplateApply(Detail.value || (Hidden && Hidden.value) || '');
+                    return;
+                }
 
                 if (Element && Element.matches && Element.matches('select#ServiceID, select[name="ServiceID"], input#ServiceID, input[name="ServiceID"]')) {
                     IsServicePicker = true;

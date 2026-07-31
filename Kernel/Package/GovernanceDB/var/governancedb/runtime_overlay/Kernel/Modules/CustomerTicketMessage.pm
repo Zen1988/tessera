@@ -29,6 +29,7 @@ use Time::Local qw(timegm);
 
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language              qw(Translatable);
+use Kernel::System::ZTSMBlueBookRuntime ();
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -243,6 +244,7 @@ sub Run {
         || ( $Self->{Subaction} || '' ) eq 'AJAXUpdate'
         || ( $Self->{Subaction} || '' ) eq 'ZTSMServiceExtensionDynamicFields'
         || ( $Self->{Subaction} || '' ) eq 'ZTSMServicePayloadReferenceResolve'
+        || ( $Self->{Subaction} || '' ) eq 'ZTSMChangeTemplatePayload'
         || ( $Self->{Subaction} || '' ) eq 'ZTSMHostnamePolicyResolve'
         )
     {
@@ -420,6 +422,18 @@ sub Run {
 
         return $LayoutObject->JSONReply(
             Data => $ReferenceResult,
+        );
+    }
+
+    if ( $Self->{Subaction} && $Self->{Subaction} eq 'ZTSMChangeTemplatePayload' ) {
+        my $TemplateID = $ParamObject->GetParam( Param => 'TemplateID' ) || '';
+        my $Result = Kernel::System::ZTSMBlueBookRuntime::ChangeTemplatePayloadGet(
+            TemplateID => $TemplateID,
+            UserID     => $Self->{UserID} || 1,
+        );
+
+        return $LayoutObject->JSONReply(
+            Data => $Result,
         );
     }
 
