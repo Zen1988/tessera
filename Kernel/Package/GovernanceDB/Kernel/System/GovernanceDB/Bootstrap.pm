@@ -145,6 +145,12 @@ sub InstallDefaults {
 
     $Self->_RuntimeOverlayInstall();
 
+    $Self->_CustomerBrandingEnsure();
+
+    $Self->_CustomerDashboardEnsure();
+
+    $Self->_CustomerAssetFrontendEnsure();
+
     $Self->_SysConfigDeploy();
 
     $Self->_ServiceTicketTypeACLsRebuild();
@@ -235,7 +241,17 @@ sub _RuntimeOverlayInstall {
                 my $Source = $File::Find::name;
                 my $Target = $Source;
                 $Target =~ s{\A\Q$SourceDir\E[\\/]}{}xms;
-                $Target = "$Home/$Target";
+                # OTOBO loads framework customizations from Custom before the
+                # corresponding core path.  Never overwrite 11.1 framework
+                # modules, configuration XML or templates during package
+                # installation; keeping these files below Custom allows later
+                # framework upgrades to update their own files independently.
+                if ( $Target =~ m{\A(?:Kernel|scripts)[\\/]}xms ) {
+                    $Target = "$Home/Custom/$Target";
+                }
+                else {
+                    $Target = "$Home/$Target";
+                }
 
                 my $TargetDir = $Target;
                 $TargetDir =~ s{[\\/][^\\/]+\z}{};
@@ -780,6 +796,7 @@ sub _GovernanceRoleObjectsEnsure {
         IMPLEMENTER
         VERIFIER
         SUPPORT
+        ASSET
         ESCALATION
     );
 
@@ -1640,40 +1657,6 @@ sub _TicketRuntimeDynamicFieldsEnsure {
                 Tooltip      => 'Weightage',
             },
         },
-        map {
-            {
-                Name       => $_->[0],
-                Label      => $_->[1],
-                FieldOrder => $_->[2],
-                FieldType  => 'Set',
-                Config     => {
-                    Include => [
-                        map { { DF => $_ } } qw(
-                            ZCH-BlueLevel
-                            ZCH-Seq
-                            ZCH-Strict
-                            ZCH-Mandatory
-                            ZCH-ScheduleStart
-                            ZCH-ScheduleFinish
-                            ZCH-TicketType
-                            ZCH-Activity
-                            ZCH-Description
-                            ZCH-Profile
-                            ZCH-Owner
-                            ZCH-Weightage
-                        )
-                    ],
-                    MultiValue   => 1,
-                    RenderLayout => 'Vertical',
-                    Tooltip      => '',
-                },
-            }
-        } (
-            [ 'ZCH-Precheck',       'Pre-check',      10413 ],
-            [ 'ZCH-Implementation', 'Implementation', 10415 ],
-            [ 'ZCH-Rollback',       'Rollback',       10416 ],
-            [ 'ZCH-PostChange',     'Post-Change',    10417 ],
-        ),
         {
             Name       => 'ZTicket-Custom',
             Label      => 'Custom Hostname Segment',
@@ -1928,6 +1911,43 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
     );
+
+    my @ChangeSetIncludedFields = qw(
+        ZCH-BlueLevel
+        ZCH-Seq
+        ZCH-Strict
+        ZCH-Mandatory
+        ZCH-ScheduleStart
+        ZCH-ScheduleFinish
+        ZCH-TicketType
+        ZCH-Activity
+        ZCH-Description
+        ZCH-Profile
+        ZCH-Owner
+        ZCH-Weightage
+    );
+    my @ChangeSetDefinitions = (
+        [ 'ZCH-Precheck',       'Pre-check',      10413 ],
+        [ 'ZCH-Implementation', 'Implementation', 10415 ],
+        [ 'ZCH-Rollback',       'Rollback',       10416 ],
+        [ 'ZCH-PostChange',     'Post-Change',    10417 ],
+    );
+
+    for my $Definition (@ChangeSetDefinitions) {
+        my ( $Name, $Label, $FieldOrder ) = @{$Definition};
+        push @Fields, {
+            Name       => $Name,
+            Label      => $Label,
+            FieldOrder => $FieldOrder,
+            FieldType  => 'Set',
+            Config     => {
+                Include      => [ map { { DF => $_ } } @ChangeSetIncludedFields ],
+                MultiValue   => 1,
+                RenderLayout => 'Vertical',
+                Tooltip      => '',
+            },
+        };
+    }
 
     FIELD:
     for my $Field (@Fields) {
@@ -2440,6 +2460,19 @@ sub _SysConfigDeploy {
         'CustomerFrontend::Module###CustomerTicketZTSMAction',
         'ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime',
         'CustomerPreferencesGroups###ZTSMRequestDefaults',
+        'CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset',
+        'CustomerFrontend::Module###CustomerITSMConfigItem',
+        'CustomerFrontend::Module###CustomerITSMConfigItemSearch',
+        'CustomerFrontend::Module###CustomerITSMConfigItemZoom',
+        'CustomerFrontend::Navigation###CustomerITSMConfigItem###003-ITSMConfigItem',
+        'Customer::ConfigItem::PermissionConditions###01',
+        'CustomerLogin::Settings',
+        'CustomerLogo',
+        'Loader::Module::CustomerLogin###002-CustomerLogin',
+        'CustomerDashboard::Configuration::Text',
+        'CustomerDashboard::Tiles###NewTicket',
+        'CustomerDashboard::Tiles###FeaturedLink-01',
+        'CustomerDashboard::Tiles###TicketList-01',
     );
 
     my %DeploymentResult = $SysConfigObject->ConfigurationDeploy(
@@ -2504,6 +2537,208 @@ sub _DynamicFieldDriverObjectTypeEnsure {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "GovernanceDB could not update SysConfig setting $SettingName.",
+        );
+        return;
+    }
+
+    return 1;
+}
+
+sub _CustomerBrandingEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my @Settings;
+
+    my %LoginSetting = $SysConfigObject->SettingGet(
+        Name => 'CustomerLogin::Settings',
+    );
+    if ( ref $LoginSetting{EffectiveValue} eq 'HASH' ) {
+        my %LoginValue = %{ $LoginSetting{EffectiveValue} };
+        $LoginValue{LoginText}  = 'TESSERA ICT Ticket Platform';
+        $LoginValue{Background} = '<OTOBO_CONFIG_Frontend::WebPath>common/img/TESSERA/LoginBG.jpg';
+        push @Settings, {
+            Name           => 'CustomerLogin::Settings',
+            IsValid        => 1,
+            EffectiveValue => \%LoginValue,
+        };
+    }
+
+    my %LogoSetting = $SysConfigObject->SettingGet(
+        Name => 'CustomerLogo',
+    );
+    if (%LogoSetting) {
+        push @Settings, {
+            Name    => 'CustomerLogo',
+            IsValid => 1,
+            EffectiveValue => {
+                URLLogo   => 'common/img/TESSERA/TESSERA_LOGIN_v2.svg',
+                URLSignet => 'common/img/TESSERA/TESSERA_MARK_v2.svg',
+            },
+        };
+    }
+
+    my $LoaderSettingName = 'Loader::Module::CustomerLogin###002-CustomerLogin';
+    my %LoaderSetting = $SysConfigObject->SettingGet(
+        Name => $LoaderSettingName,
+    );
+    if ( ref $LoaderSetting{EffectiveValue} eq 'HASH' ) {
+        my %LoaderValue = %{ $LoaderSetting{EffectiveValue} };
+        my @CSS = ref $LoaderValue{CSS} eq 'ARRAY' ? @{ $LoaderValue{CSS} } : ();
+        my %Seen = map { $_ => 1 } @CSS;
+        push @CSS, 'TESSERA.Customer.Branding.css' if !$Seen{'TESSERA.Customer.Branding.css'};
+        $LoaderValue{CSS} = \@CSS;
+        push @Settings, {
+            Name           => $LoaderSettingName,
+            IsValid        => 1,
+            EffectiveValue => \%LoaderValue,
+        };
+    }
+
+    return 1 if !@Settings;
+
+    my $Success = $SysConfigObject->SettingsSet(
+        Settings => \@Settings,
+        Comments => 'GovernanceDB TESSERA customer branding',
+        UserID   => 1,
+    );
+
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB could not update TESSERA customer branding settings.',
+        );
+        return;
+    }
+
+    return 1;
+}
+
+sub _CustomerDashboardEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my @Settings;
+
+    my %DashboardSettings = (
+        'CustomerDashboard::Configuration::Text' => {
+            WelcomeText => 'Welcome %s, to your TESSERA workspace.',
+            Name        => 'UserFirstname',
+            SubText     => 'This service portal is available to you all day every day.',
+        },
+        'CustomerDashboard::Tiles###NewTicket' => {
+            Order    => '1',
+            Template => 'Dashboard/TileNewTicket',
+            Config   => {
+                Color => '#001bff',
+            },
+        },
+        'CustomerDashboard::Tiles###FeaturedLink-01' => {
+            Order    => '2',
+            Module   => 'Kernel::Output::HTML::CustomerDashboard::TileFeaturedFAQ',
+            Template => 'Dashboard/TileFeaturedFAQ',
+            Config   => {
+                CategoryName => 'Announcement',
+                StartField   => 'ZFAQ-Start',
+                ExpiryField  => 'ZFAQ-Expiry',
+                Limit        => '5',
+                EmptyText    => 'No current announcements.',
+            },
+        },
+        'CustomerDashboard::Tiles###TicketList-01' => {
+            Order  => '3',
+            Module => 'Kernel::Output::HTML::CustomerDashboard::TileTicketList',
+            Config => {
+                Text           => 'My workspace',
+                SortBy         => 'Age',
+                OrderBy        => 'Down',
+                StateType      => '',
+                CompanyTickets => '0',
+                MaxTickets     => '9',
+            },
+        },
+    );
+
+    for my $SettingName ( sort keys %DashboardSettings ) {
+        my %Setting = $SysConfigObject->SettingGet( Name => $SettingName );
+        next if !%Setting;
+
+        push @Settings, {
+            Name           => $SettingName,
+            IsValid        => 1,
+            EffectiveValue => $DashboardSettings{$SettingName},
+        };
+    }
+
+    return 1 if !@Settings;
+
+    my $Success = $SysConfigObject->SettingsSet(
+        Settings => \@Settings,
+        Comments => 'GovernanceDB TESSERA customer dashboard',
+        UserID   => 1,
+    );
+
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB could not activate TESSERA customer dashboard settings.',
+        );
+        return;
+    }
+
+    return 1;
+}
+
+sub _CustomerAssetFrontendEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my @SettingNames = (
+        'CustomerFrontend::Module###CustomerITSMConfigItem',
+        'CustomerFrontend::Module###CustomerITSMConfigItemSearch',
+        'CustomerFrontend::Module###CustomerITSMConfigItemZoom',
+        'Customer::ConfigItem::PermissionConditions###01',
+    );
+
+    my @Settings;
+    for my $SettingName (@SettingNames) {
+        my %Setting = $SysConfigObject->SettingGet( Name => $SettingName );
+        next if !%Setting;
+        push @Settings, {
+            Name           => $SettingName,
+            IsValid        => 1,
+            EffectiveValue => $Setting{EffectiveValue},
+        };
+    }
+
+    my $NavigationName = 'CustomerFrontend::Navigation###CustomerITSMConfigItem###003-ITSMConfigItem';
+    my %NavigationSetting = $SysConfigObject->SettingGet( Name => $NavigationName );
+    if ( ref $NavigationSetting{EffectiveValue} eq 'ARRAY' ) {
+        my @Navigation = map { ref $_ eq 'HASH' ? { %{$_} } : $_ } @{ $NavigationSetting{EffectiveValue} };
+        if ( ref $Navigation[0] eq 'HASH' ) {
+            $Navigation[0]{Name}        = 'Assets';
+            $Navigation[0]{Description} = 'Assets covered by your support assignments.';
+            $Navigation[0]{svgIcon}     = 'var/httpd/htdocs/skins/Customer/default/img/ztsm_assets.svg';
+        }
+        push @Settings, {
+            Name           => $NavigationName,
+            IsValid        => 1,
+            EffectiveValue => \@Navigation,
+        };
+    }
+
+    return 1 if !@Settings;
+
+    my $Success = $SysConfigObject->SettingsSet(
+        Settings => \@Settings,
+        Comments => 'GovernanceDB customer asset portal registration',
+        UserID   => 1,
+    );
+
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB could not enable the customer asset portal settings.',
         );
         return;
     }

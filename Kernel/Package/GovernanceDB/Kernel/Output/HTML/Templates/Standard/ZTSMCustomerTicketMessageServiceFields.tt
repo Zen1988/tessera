@@ -25,9 +25,36 @@
     scrollbar-gutter: stable;
 }
 
+/* OTOBO 11.1 positions generic help icons with negative inline offsets.
+ * Reference fields use a grid-owned cell, so anchor their help control to
+ * that component instead of allowing it to become a displaced grid item. */
+#NewCustomerTicket .ZTSMServiceExtensionField.ZTSMReferencePickerManaged > .ZTSMReferencePickerCell {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField.ZTSMReferencePickerManaged > .ZTSMReferencePickerCell > .Tooltip.oooTooltip {
+    position: absolute !important;
+    top: 32px !important;
+    right: 116px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: -9px 0 0 !important;
+    transform: none !important;
+    z-index: 6 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField.ZTSMReferencePickerManaged > .ZTSMReferencePickerCell > .Tooltip.oooTooltip > .Content {
+    right: 0 !important;
+    left: auto !important;
+    max-width: min(280px, calc(100vw - 48px)) !important;
+}
+
 #NewCustomerTicket .ZTSMServiceExtensionField .DFSetOuterField > .DynamicFieldSet {
-    width: 100% !important;
-    inline-size: 100% !important;
+    width: max-content !important;
+    inline-size: max-content !important;
     max-width: 1120px !important;
     max-inline-size: 1120px !important;
     min-width: 0 !important;
@@ -35,6 +62,84 @@
     overflow: visible !important;
     padding-bottom: 10px;
     box-sizing: border-box;
+}
+
+/* Keep nested Set/Group controls inside their own component boundary. */
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .FieldCell {
+    position: relative;
+    min-width: 0;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .ZTSMReferencePickerCell > .Tooltip.oooTooltip,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .ZTSMReferencePickerCell > .Field > .Tooltip.oooTooltip {
+    position: absolute !important;
+    top: 32px !important;
+    right: 68px !important;
+    bottom: auto !important;
+    left: auto !important;
+    margin: -9px 0 0 !important;
+    transform: none !important;
+    z-index: 7 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .ZTSMReferencePickerCell > .ZTSMReferencePickerButton,
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .ZTSMReferencePickerCell > .Field > .ZTSMReferencePickerButton {
+    position: absolute !important;
+    top: 11px !important;
+    right: 14px !important;
+    bottom: auto !important;
+    left: auto !important;
+    margin: 0 !important;
+    z-index: 7 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .FieldCell:not(.ZTSMReferencePickerCell) > .Tooltip.oooTooltip {
+    position: absolute !important;
+    top: 32px !important;
+    right: 18px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: -9px 0 0 !important;
+    transform: none !important;
+    z-index: 6 !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSet .FieldCell:not(.ZTSMReferencePickerCell) > .Tooltip.oooTooltip > .Content {
+    right: 0 !important;
+    left: auto !important;
+    max-width: min(280px, calc(100vw - 48px)) !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup {
+    padding: 20px 14px 14px !important;
+    border: 1px solid #b9bcd3 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup button,
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup input[type="button"] {
+    min-height: 34px !important;
+    padding: 7px 14px !important;
+    border: 1px solid #7d82ad !important;
+    border-radius: 7px !important;
+    background: #fff !important;
+    color: #00063d !important;
+    font: inherit !important;
+    line-height: 18px !important;
+    box-shadow: none !important;
+}
+
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup button:hover,
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup button:focus,
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup input[type="button"]:hover,
+#NewCustomerTicket .ZTSMServiceExtensionField fieldset.DynamicFieldGroup input[type="button"]:focus {
+    border-color: #0818ff !important;
+    color: #0818ff !important;
+    outline: none !important;
 }
 
 #NewCustomerTicket .ZTSMFieldSetScrollViewport {
@@ -44,21 +149,24 @@
     max-inline-size: 1120px;
     min-width: 0;
     min-inline-size: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     box-sizing: border-box;
-    padding-bottom: 10px;
-    scrollbar-gutter: stable;
+    padding-bottom: 0;
 }
 
 #NewCustomerTicket .ZTSMFieldSetScrollViewport > .DynamicFieldSet {
     width: 100% !important;
     inline-size: 100% !important;
-    max-width: 1120px !important;
-    max-inline-size: 1120px !important;
+    max-width: 100% !important;
+    max-inline-size: 100% !important;
     min-width: 0 !important;
     min-inline-size: 0 !important;
-    overflow: visible !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding-right: 44px !important;
+    contain: inline-size;
+    overscroll-behavior-inline: contain;
+    scrollbar-gutter: stable;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField,
@@ -67,23 +175,22 @@
     flex-wrap: nowrap;
     align-items: stretch;
     gap: 10px;
-    width: 100% !important;
-    inline-size: 100% !important;
-    min-width: 0 !important;
-    min-inline-size: 0 !important;
-    max-width: 100% !important;
-    max-inline-size: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    width: max-content !important;
+    inline-size: max-content !important;
+    min-width: 100% !important;
+    min-inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    overflow: visible !important;
     grid-template-columns: none !important;
     scrollbar-gutter: stable;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell {
-    flex: 1 1 0 !important;
-    width: auto !important;
-    min-width: 190px !important;
+    flex: 0 0 300px !important;
+    width: 300px !important;
+    min-width: 300px !important;
     max-width: none !important;
 }
 
@@ -91,9 +198,9 @@
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField > .FieldCell.DynamicFieldDateTime,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDate,
 #NewCustomerTicket .ZTSMServiceExtensionField .DynamicFieldSetLayoutHorizontal > .Row_DynamicField.MultiColumn > .FieldCell.DynamicFieldDateTime {
-    flex: 1.05 1 0 !important;
-    width: auto !important;
-    min-width: 210px !important;
+    flex: 0 0 300px !important;
+    width: 300px !important;
+    min-width: 300px !important;
     max-width: none !important;
 }
 
@@ -1497,9 +1604,11 @@
                 Outer = Set.closest('.ZTSMServiceExtensionField'),
                 OuterField = Set.closest('.DFSetOuterField'),
                 Viewport = Set.closest('.ZTSMFieldSetScrollViewport'),
+                ViewportWidth,
+                SetWidth,
                 Cells;
 
-            Set.dataset.ZTSMLayoutVersion = '20260706-richtext-label-wrap';
+            Set.dataset.ZTSMLayoutVersion = '20260803-contained-scroll-surface';
 
             if (!Viewport && OuterField) {
                 Viewport = document.createElement('div');
@@ -1528,13 +1637,24 @@
             }
 
             if (Viewport) {
-                ZTSMServiceExtensionViewportSize(Viewport);
+                ViewportWidth = ZTSMServiceExtensionViewportSize(Viewport);
                 Viewport.style.setProperty('min-width', '0', 'important');
                 Viewport.style.setProperty('min-inline-size', '0', 'important');
-                Viewport.style.setProperty('overflow-x', 'auto', 'important');
-                Viewport.style.setProperty('overflow-y', 'hidden', 'important');
+                Viewport.style.setProperty('overflow', 'visible', 'important');
                 Viewport.style.setProperty('box-sizing', 'border-box', 'important');
-                Viewport.style.setProperty('padding-bottom', '10px', 'important');
+                Viewport.style.setProperty('padding-bottom', '0', 'important');
+            }
+
+            if (ViewportWidth) {
+                SetWidth = Math.max(ViewportWidth - 44, 320);
+                if (Outer) {
+                    Outer.style.setProperty('width', ViewportWidth + 'px', 'important');
+                    Outer.style.setProperty('max-width', ViewportWidth + 'px', 'important');
+                }
+                if (OuterField) {
+                    OuterField.style.setProperty('width', ViewportWidth + 'px', 'important');
+                    OuterField.style.setProperty('max-width', ViewportWidth + 'px', 'important');
+                }
             }
 
             Set.style.removeProperty('width');
@@ -1543,21 +1663,25 @@
             Set.style.removeProperty('inline-size');
             Set.style.removeProperty('max-inline-size');
             Set.style.removeProperty('min-inline-size');
-            Set.style.setProperty('width', '100%', 'important');
-            Set.style.setProperty('inline-size', '100%', 'important');
-            Set.style.setProperty('max-width', '1120px', 'important');
-            Set.style.setProperty('max-inline-size', '1120px', 'important');
+            Set.style.setProperty('width', SetWidth ? SetWidth + 'px' : '100%', 'important');
+            Set.style.setProperty('inline-size', SetWidth ? SetWidth + 'px' : '100%', 'important');
+            Set.style.setProperty('max-width', SetWidth ? SetWidth + 'px' : '100%', 'important');
+            Set.style.setProperty('max-inline-size', SetWidth ? SetWidth + 'px' : '100%', 'important');
             Set.style.setProperty('min-width', '0', 'important');
             Set.style.setProperty('min-inline-size', '0', 'important');
-            Set.style.setProperty('overflow', 'visible', 'important');
+            Set.style.setProperty('overflow-x', 'auto', 'important');
+            Set.style.setProperty('overflow-y', 'hidden', 'important');
+            Set.style.setProperty('contain', 'inline-size', 'important');
+            Set.style.setProperty('overscroll-behavior-inline', 'contain', 'important');
             Set.style.setProperty('box-sizing', 'border-box', 'important');
+            Set.style.setProperty('padding-right', '44px', 'important');
             Set.style.setProperty('padding-bottom', '10px', 'important');
 
             if (!Row) {
                 return;
             }
 
-            Row.dataset.ZTSMLayoutVersion = '20260706-richtext-label-wrap';
+            Row.dataset.ZTSMLayoutVersion = '20260803-contained-scroll-content';
 
             Row.style.removeProperty('width');
             Row.style.removeProperty('max-width');
@@ -1568,40 +1692,155 @@
             Row.style.setProperty('flex-wrap', 'nowrap', 'important');
             Row.style.setProperty('align-items', 'stretch', 'important');
             Row.style.setProperty('gap', '10px', 'important');
-            Row.style.setProperty('width', '100%', 'important');
-            Row.style.setProperty('inline-size', '100%', 'important');
-            Row.style.setProperty('min-width', '0', 'important');
-            Row.style.setProperty('min-inline-size', '0', 'important');
-            Row.style.setProperty('max-width', '100%', 'important');
-            Row.style.setProperty('max-inline-size', '100%', 'important');
-            Row.style.setProperty('overflow-x', 'auto', 'important');
-            Row.style.setProperty('overflow-y', 'hidden', 'important');
+            Row.style.setProperty('width', 'max-content', 'important');
+            Row.style.setProperty('inline-size', 'max-content', 'important');
+            Row.style.setProperty('min-width', '100%', 'important');
+            Row.style.setProperty('min-inline-size', '100%', 'important');
+            Row.style.setProperty('max-width', 'none', 'important');
+            Row.style.setProperty('max-inline-size', 'none', 'important');
+            Row.style.setProperty('overflow', 'visible', 'important');
             Row.style.setProperty('grid-template-columns', 'none', 'important');
 
             Cells = Row.querySelectorAll(':scope > .FieldCell');
 
             Array.prototype.forEach.call(Cells, function (Cell) {
-                var MinWidth = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '210px' : '190px',
-                    Flex = Cell.classList.contains('DynamicFieldDate') || Cell.classList.contains('DynamicFieldDateTime') ? '1.05 1 0' : '1 1 0';
+                var MinWidth = '300px',
+                    Flex = '0 0 300px',
+                    Field = Cell.querySelector(':scope > .Field'),
+                    ControlSurface,
+                    FieldRect,
+                    SurfaceRect,
+                    ControlCenter = 32,
+                    Tooltip = Cell.querySelector(':scope > .Tooltip.oooTooltip')
+                        || (Field ? Field.querySelector('.Tooltip.oooTooltip') : null),
+                    Button = Cell.querySelector(':scope > .ZTSMReferencePickerButton')
+                        || (Field ? Field.querySelector('.ZTSMReferencePickerButton') : null),
+                    IsReferencePicker = Cell.classList.contains('ZTSMReferencePickerCell');
 
                 Cell.style.setProperty('flex', Flex, 'important');
-                Cell.style.setProperty('width', 'auto', 'important');
+                Cell.style.setProperty('width', MinWidth, 'important');
                 Cell.style.setProperty('min-width', MinWidth, 'important');
                 Cell.style.setProperty('max-width', 'none', 'important');
+
+                if (!Field || !Tooltip) {
+                    return;
+                }
+
+                Cell.style.setProperty('display', 'block', 'important');
+                Cell.style.removeProperty('grid-template-columns');
+                Cell.style.removeProperty('grid-template-rows');
+                Cell.style.removeProperty('align-items');
+                Cell.style.removeProperty('column-gap');
+
+                Field.style.removeProperty('grid-column');
+                Field.style.removeProperty('grid-row');
+                Field.style.setProperty('position', 'relative', 'important');
+                Field.style.setProperty('width', '100%', 'important');
+                Field.style.setProperty('min-width', '0', 'important');
+                Field.style.setProperty('padding-right', '0', 'important');
+                Field.style.setProperty('box-sizing', 'border-box', 'important');
+
+                ControlSurface = Field.querySelector(
+                    'input:not([type="hidden"]), select, textarea, .InputField_Container'
+                );
+                if (ControlSurface) {
+                    ControlSurface.style.setProperty(
+                        'padding-right',
+                        IsReferencePicker && Button ? '62px' : '28px',
+                        'important'
+                    );
+                    ControlSurface.style.setProperty('box-sizing', 'border-box', 'important');
+
+                    FieldRect = Field.getBoundingClientRect();
+                    SurfaceRect = ControlSurface.getBoundingClientRect();
+                    if (SurfaceRect.height > 0) {
+                        ControlCenter = Math.round(
+                            SurfaceRect.top - FieldRect.top + (SurfaceRect.height / 2)
+                        );
+                    }
+                }
+
+                if (Tooltip.parentNode !== Field) {
+                    Field.appendChild(Tooltip);
+                }
+                if (IsReferencePicker && Button && Button.parentNode !== Field) {
+                    Field.appendChild(Button);
+                }
+
+                Tooltip.style.removeProperty('grid-column');
+                Tooltip.style.removeProperty('grid-row');
+                Tooltip.style.setProperty('position', 'absolute', 'important');
+                Tooltip.style.setProperty('inset', 'auto', 'important');
+                Tooltip.style.setProperty('top', ControlCenter + 'px', 'important');
+                Tooltip.style.setProperty('right', IsReferencePicker && Button ? '60px' : '12px', 'important');
+                Tooltip.style.setProperty('bottom', 'auto', 'important');
+                Tooltip.style.setProperty('left', 'auto', 'important');
+                Tooltip.style.setProperty('width', '18px', 'important');
+                Tooltip.style.setProperty('height', '18px', 'important');
+                Tooltip.style.setProperty('margin', '0', 'important');
+                Tooltip.style.setProperty('transform', 'translateY(-50%)', 'important');
+                Tooltip.style.setProperty('z-index', '8', 'important');
+
+                if (IsReferencePicker && Button) {
+                    Button.style.removeProperty('grid-column');
+                    Button.style.removeProperty('grid-row');
+                    Button.style.setProperty('position', 'absolute', 'important');
+                    Button.style.setProperty('inset', 'auto', 'important');
+                    Button.style.setProperty('top', ControlCenter + 'px', 'important');
+                    Button.style.setProperty('right', '8px', 'important');
+                    Button.style.setProperty('bottom', 'auto', 'important');
+                    Button.style.setProperty('left', 'auto', 'important');
+                    Button.style.setProperty('margin', '0', 'important');
+                    Button.style.setProperty('transform', 'translateY(-50%)', 'important');
+                    Button.style.setProperty('z-index', '8', 'important');
+                }
             });
+
         });
     }
 
     function ZTSMServiceExtensionViewportSize(Viewport) {
         var Form = ZTSMFirst('#NewCustomerTicket'),
+            ServiceField = Viewport ? Viewport.closest('.ZTSMServiceExtensionField') : null,
+            Candidates,
+            CandidateRect,
+            Surface,
+            ViewportRect,
             FormRect,
-            Width;
+            Width = 0;
 
         if (!Viewport) {
-            return;
+            return 0;
         }
 
-        if (Form && Form.getBoundingClientRect) {
+        if (ServiceField && ServiceField.getBoundingClientRect) {
+            CandidateRect = ServiceField.getBoundingClientRect();
+            if (CandidateRect.width > 0) {
+                Width = Math.floor(CandidateRect.width);
+                Viewport.dataset.ZTSMWidthSource = 'service-field-container';
+            }
+        }
+
+        if (!Width && Form && Form.querySelectorAll) {
+            Candidates = Form.querySelectorAll('.ZTSMServiceExtensionField.ZTSMReferencePickerManaged > .ZTSMReferencePickerCell');
+            Array.prototype.forEach.call(Candidates, function (Candidate) {
+                Surface = Candidate.querySelector(':scope > .Field')
+                    || Candidate.querySelector(':scope > .InputField_Container')
+                    || Candidate.querySelector('input[name^="Autocomplete_DynamicField_"]');
+                CandidateRect = (Surface || Candidate).getBoundingClientRect();
+                if (CandidateRect.width > Width && CandidateRect.width <= 1120) {
+                    Width = Math.floor(CandidateRect.width);
+                    Viewport.dataset.ZTSMWidthSource = Surface ? 'visible-field-surface' : 'reference-cell-fallback';
+                }
+            });
+        }
+
+        if ((!Width || Width < 320) && Viewport.getBoundingClientRect) {
+            ViewportRect = Viewport.getBoundingClientRect();
+            Width = Math.floor((window.innerWidth || document.documentElement.clientWidth || 0) - ViewportRect.left - 32);
+        }
+
+        if ((!Width || Width < 320) && Form && Form.getBoundingClientRect) {
             FormRect = Form.getBoundingClientRect();
             Width = Math.floor(FormRect.width - 24);
         }
@@ -1618,6 +1857,9 @@
         Viewport.style.setProperty('inline-size', Width + 'px', 'important');
         Viewport.style.setProperty('max-width', '1120px', 'important');
         Viewport.style.setProperty('max-inline-size', '1120px', 'important');
+        Viewport.dataset.ZTSMResolvedWidth = String(Width);
+
+        return Width;
     }
 
     function ZTSMServiceExtensionNestedIndexedAttributeSet(Node, Attribute, Index, ParentSetName) {
@@ -1896,20 +2138,16 @@
         return Input.closest('.FieldCell[class*="MultiValue_"], .MultiValue_Template') || Input.closest('.DFSetOuterField');
     }
 
-    function ZTSMServiceExtensionNormalizeLater() {
-        [0, 25, 100, 250].forEach(function (Delay) {
-            window.setTimeout(function () {
-                var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
-                    End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
+    function ZTSMServiceExtensionNormalize() {
+        var Start = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsStart'),
+            End = ZTSMFirst('#ZTSMServiceExtensionDynamicFieldsEnd');
 
-            if (Start && End) {
-                ZTSMServiceExtensionSetIndexNormalize(Start, End);
-                ZTSMServiceExtensionLayoutFix(Start, End);
-                ZTSMServiceExtensionDatepickerInit(Start, End);
-                ZTSMServicePayloadToolsEnsure(Start, End);
-            }
-        }, Delay);
-        });
+        if (Start && End) {
+            ZTSMServiceExtensionSetIndexNormalize(Start, End);
+            ZTSMServiceExtensionLayoutFix(Start, End);
+            ZTSMServiceExtensionDatepickerInit(Start, End);
+            ZTSMServicePayloadToolsEnsure(Start, End);
+        }
     }
 
     function ZTSMServiceExtensionMutationNeedsNormalize(Node) {
@@ -1921,8 +2159,11 @@
             return false;
         }
 
-        return Node.matches('.AddValueRow, .RemoveValueRow')
-            || !!Node.querySelector('.AddValueRow, .RemoveValueRow');
+        return Node.matches(
+            '.AddValueRow, .RemoveValueRow, .ZTSMReferencePickerButton, .Tooltip.oooTooltip, .ZTSMReferencePickerCell'
+        ) || !!Node.querySelector(
+            '.AddValueRow, .RemoveValueRow, .ZTSMReferencePickerButton, .Tooltip.oooTooltip, .ZTSMReferencePickerCell'
+        );
     }
 
     function ZTSMServiceExtensionSetIndexNormalize(Start, End) {
@@ -1997,7 +2238,11 @@
                 if (TemplateInput.id) {
                     TemplateInput.id = TemplateInput.id.replace(/_(?:\d+|Template)$/, '_Template');
                 }
-                if (TemplateCell && TemplateCell.parentNode) {
+                if (
+                    TemplateCell
+                    && TemplateCell.parentNode
+                    && TemplateCell.parentNode.lastElementChild !== TemplateCell
+                ) {
                     TemplateCell.parentNode.appendChild(TemplateCell);
                 }
             }
@@ -5132,6 +5377,7 @@
         var LastServiceID = '',
             Service = ZTSMServiceElement(),
             ServiceCheckTimer,
+            MutationObserverObject,
             Events = [ 'change', 'input', 'keyup', 'paste', 'blur', 'select2:select', 'select2:unselect' ];
 
         ZTSMServicePayloadNativeSubmitTraceEnsure();
@@ -5176,16 +5422,38 @@
                 }
 
                 Scope = Control.closest('.ZTSMServiceExtensionField') || document;
-                ZTSMServiceExtensionNormalizeLater();
+                ZTSMServiceExtensionNormalize();
                 if (window.ZTSMReferencePickerEnhance) {
                     window.ZTSMReferencePickerEnhance(Scope);
-                    window.setTimeout(function () {
-                        window.ZTSMReferencePickerEnhance(Scope);
-                    }, 120);
-                    window.setTimeout(function () {
-                        window.ZTSMReferencePickerEnhance(Scope);
-                    }, 350);
                 }
+            });
+        }
+
+        if (
+            window.MutationObserver
+            && !document.body.dataset.ZTSMServiceExtensionPickerMutationWatch
+        ) {
+            document.body.dataset.ZTSMServiceExtensionPickerMutationWatch = '1';
+            MutationObserverObject = new window.MutationObserver(function (Mutations) {
+                var NeedsNormalize = false;
+
+                Mutations.forEach(function (Mutation) {
+                    Array.prototype.forEach.call(Mutation.addedNodes || [], function (Node) {
+                        if (ZTSMServiceExtensionMutationNeedsNormalize(Node)) {
+                            NeedsNormalize = true;
+                        }
+                    });
+                });
+
+                if (!NeedsNormalize) {
+                    return;
+                }
+
+                ZTSMServiceExtensionNormalize();
+            });
+            MutationObserverObject.observe(document.body, {
+                childList: true,
+                subtree: true
             });
         }
 

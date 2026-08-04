@@ -52,6 +52,11 @@ sub Run {
     my $LayoutObject         = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $ParamObject          = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $SessionObject        = $Kernel::OM->Get('Kernel::System::AuthSession');
+    my $CustomerEntitlementObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
+
+    if ( !$CustomerEntitlementObject->CustomerHasAssetRole( CustomerUserID => $Self->{UserID} ) ) {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
 
     my $Config = $ConfigObject->Get("ITSMConfigItem::Frontend::$Self->{Action}");
 
@@ -508,16 +513,24 @@ sub Run {
             Limit  => $Limit,
             Result => 'ARRAY',
         );
+        @OriginalViewableConfigItems = @{
+            $CustomerEntitlementObject->ConfigItemIDsFilter(
+                CustomerUserID   => $Self->{UserID},
+                ConfigItemIDs    => \@OriginalViewableConfigItems,
+                RequireAssetRole => 1,
+            )
+        };
 
         my $Total = scalar @OriginalViewableConfigItems;
 
         my $StartHit = $ParamObject->GetParam( Param => 'StartHit' ) || 1;
 
-        my @ViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
-            %SearchConfig,
-            Limit  => $StartHit + $PageShown - 1,
-            Result => 'ARRAY',
-        );
+        my $FirstIndex = $StartHit - 1;
+        my $LastIndex  = $FirstIndex + $PageShown - 1;
+        $LastIndex = $#OriginalViewableConfigItems if $LastIndex > $#OriginalViewableConfigItems;
+        my @ViewableConfigItems = $FirstIndex <= $#OriginalViewableConfigItems
+            ? @OriginalViewableConfigItems[ $FirstIndex .. $LastIndex ]
+            : ();
 
         %PageNav = $LayoutObject->PageNavBar(
             Limit     => 10000,

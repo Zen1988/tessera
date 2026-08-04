@@ -1,0 +1,48 @@
+#oooLoginBG .oooBG {
+    background-position: center;
+    background-size: cover;
+}
+
+#oooLoginBG #oooBGSignet {
+    background-image: url("../../../../common/img/TESSERA/TESSERA_MARK_v2.svg") !important;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+#MainBox.Login #oooSignet {
+    content: url("../../../../common/img/TESSERA/TESSERA_LOGO_v2.svg");
+    height: auto;
+    max-height: 120px;
+    max-width: 180px;
+    object-fit: contain;
+    width: auto;
+}
+
+#ztsmLoginPage form .ztsmRemember {
+    align-items: center;
+    background: transparent;
+    color: inherit;
+    display: inline-flex;
+    gap: 10px;
+    inset: auto;
+    line-height: normal;
+    max-width: none;
+    padding: 0;
+    position: static;
+    white-space: nowrap;
+    width: auto;
+    z-index: auto;
+}
+
+#ztsmLoginPage .ztsmLoginForm .ztsmField > label {
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    white-space: nowrap;
+    width: 1px;
+}

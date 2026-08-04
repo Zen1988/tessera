@@ -15,7 +15,6 @@
 # --
 
 package Kernel::Modules::CustomerDashboardCommon;
-## nofilter(TidyAll::Plugin::OTOBO::Perl::DBObject)
 
 use strict;
 use warnings;
@@ -91,7 +90,7 @@ sub Run {
         if ( !$UsedTiles->{$Tile}{Module} ) {
             if ( !$UsedTiles->{$Tile}{Template} ) {
                 my $Message = $LayoutObject->{LanguageObject}->Translate(
-                    'Registration for tile %s of CustomerDashboard is invalid! Either Module or Template needed.',
+                    'Registration for tile %s of customer dashboard is invalid! Either Module or Template needed.',
                     $Tile,
                 );
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -172,10 +171,11 @@ sub Run {
 
         # get the HTML
         $TileHTML .= $BackendObject->Run(
-            TileID   => $TileID,
-            Template => $UsedTiles->{$Tile}{Template} || '',
-            Config   => $Config,
-            UserID   => $Self->{UserID},
+            TileID    => $TileID,
+            Template  => $UsedTiles->{$Tile}{Template} || '',
+            Config    => $Config,
+            UserID    => $Self->{UserID},
+            UserLogin => $Self->{UserLogin},
         );
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(

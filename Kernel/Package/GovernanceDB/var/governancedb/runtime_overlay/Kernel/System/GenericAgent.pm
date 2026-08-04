@@ -26,18 +26,23 @@ use Kernel::System::VariableCheck qw(:all);
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
-    'Kernel::System::DateTime',
+    'Kernel::System::CustomerUser',
     'Kernel::System::DB',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::Lock',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::Priority',
     'Kernel::System::Queue',
+    'Kernel::System::SLA',
+    'Kernel::System::Service',
     'Kernel::System::State',
+    'Kernel::System::TemplateGenerator',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::Article',
-    'Kernel::System::TemplateGenerator',
-    'Kernel::System::CustomerUser',
+    'Kernel::System::Type',
+    'Kernel::System::User',
 );
 
 =head1 NAME

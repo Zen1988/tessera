@@ -1,10 +1,9 @@
 # TESSERA Project Status
 
-Last Updated: 2026-07-31
+Last Updated: 2026-08-04
 
 ## Current Focus
 
-- Next implementation direction: customer portal ConfigItem entitlement, discovery, and detail access based on ContractEntitlement, SupportProfile, SupportAssignment, and GovernanceRole `ASSET`.
 - Auto hostname/provisioning policy via System Configuration.
 - Standalone MELT package development outside GovernanceDB.
 - Customer runtime execution actions on `CustomerTicketZoom`.
@@ -28,6 +27,868 @@ Last Updated: 2026-07-31
 - Change Request plan orchestration for scheduled Pre-check, Implementation, Post-change, and Rollback child execution.
 
 ## Completed Work
+
+## 2026-08-04 Idempotent Mutation Normalization 0.1.74
+
+### Completed work
+
+- Diagnosed the customer request page hang introduced by the `0.1.73` service-field `MutationObserver`.
+- Confirmed the loop was not caused by duplicate jQuery service events: Set normalization unconditionally re-appended an already-last template row, producing another matching child-list mutation and recursively scheduling normalization without reaching an idle DOM.
+- Made template-row ordering idempotent by moving the template row only when it is not already the parent's last element.
+- Preserved event-driven reference-picker normalization while removing its self-generated infinite mutation cycle.
+
+### Package
+
+- GovernanceDB version: `0.1.74`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.74.opm`
+- SHA256: `CB0F8409472BC2AFC8AF038C4FE363D1B3CC21AC512240FDB9D7921F2743A83E`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`85E88963D0CE1022738E5C8D8139E5DB079A426DA277C3E46CD944C3FEFC359F`).
+- The OPM contains 216 Base64-encoded files with no empty payloads.
+- The service-field template embedded in the OPM matches the source template byte-for-byte.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Event-Driven Reference-Picker Normalization 0.1.73
+
+### Completed work
+
+- Rejected the timer-retry approach after live `0.1.72` testing confirmed that OTOBO could still relocate the reference-picker controls after the scheduled passes.
+- Replaced the six fixed normalization delays with one synchronous normalization routine invoked by actual UI events.
+- Added a scoped `MutationObserver` that reacts when OTOBO inserts, moves, or recreates DynamicField Set rows, reference-picker cells, tooltips, or search buttons.
+- Kept the add/remove-row click hook event-driven and removed the additional 120 ms and 350 ms picker-enhancement retries.
+- Added permanent CSS ownership for both supported DOM arrangements: controls directly under the field cell and controls normalized inside `.Field`.
+- This makes tooltip/search positioning respond to the DOM lifecycle itself rather than depending on browser or enhancer timing.
+
+### Package
+
+- GovernanceDB version: `0.1.73`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.73.opm`
+- SHA256: `E4D044A105DC825BD0D9AADAEAAF392D47EA982A9B321AE2746D07D86BA3466F`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`50F3ADAE945EE563B55CA22C35F33642454FE71114D270C2A2F280D8268CD11A`).
+- The OPM contains 216 Base64-encoded files with no empty payloads.
+- The service-field template embedded in the OPM matches the source template byte-for-byte.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Idempotent Reference-Picker Control Rediscovery 0.1.72
+
+### Completed work
+
+- Accepted the live evidence that tooltip occupied the rightmost slot while the search button flowed below it.
+- Identified the idempotence defect: after the first normalization moved controls into `.Field`, later passes searched only direct `.FieldCell` children, failed to rediscover the button, and treated the component as tooltip-only.
+- Updated every normalization pass to locate tooltip and search button either at their original direct-cell location or inside the normalized `.Field` location.
+- Repeated add-row, delayed enhancer, and resize normalization can now continuously enforce the intended right-side order: tooltip followed by search button.
+
+### Package
+
+- GovernanceDB version: `0.1.72`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.72.opm`
+- SHA256: `8F1BB582DB6164BE284192B78BB646AFBD51D16ADC75EF09193AAACE8D7B281C`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`FAFFCE047D72EB3A87783EC6E36ECD696FBA42DD4E3AAC4D84EE84A40459A10D`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Measured Visible-Control Picker Alignment 0.1.71
+
+### Completed work
+
+- Accepted live screenshot evidence that the fixed `top: 32px` correction remained too low because OTOBO offsets the visible input relative to its `.Field` positioning parent.
+- Replaced the fixed vertical assumption with per-field rendered geometry measurement.
+- Runtime normalization now calculates `control.top - field.top + control.height / 2` and uses that exact relative centre for both tooltip and search-button placement.
+- The alignment adapts independently to reference inputs, other control surfaces, cloned rows, theme offsets, and subsequent normalization passes.
+
+### Package
+
+- GovernanceDB version: `0.1.71`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.71.opm`
+- SHA256: `FF55633F737B0F9DDCC9C84E7CF78632D137EFD8B4812594CEA2B8565C98742B`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`F9D0DE6B4430B2EE6B06B808D2E415A3C0859CA7890B93DCB2533D1858D9C60F`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Asset Icon Visibility and Visible-Control Anchoring 0.1.70
+
+### Completed work
+
+- Confirmed the Assets navigation link remained present after `0.1.69`; only the SVG graphic was invisible.
+- Corrected the external SVG from `currentColor`, which cannot inherit the customer sidebar foreground color when loaded as an image, to an explicit `#7f82ab` fill matching the muted sidebar icons.
+- Confirmed the tooltip did not push the search button into normal flow; both controls remained absolutely positioned.
+- Corrected their vertical reference from `50%` of OTOBO's taller `.Field` wrapper to the visible 64px control centre at `top: 32px`, keeping tooltip and search aligned with the input surface.
+
+### Package
+
+- GovernanceDB version: `0.1.70`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.70.opm`
+- SHA256: `7E6D0D8ED3F810606D8BAF576E058DC5B8B6631A7900AFFB02A8676400F70A9C`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`280B5B51E1A3DC1238CA41C6D483E5DF8FC13AAC51B7722C490CEF90FC44D09E`).
+- Asset SVG SHA256: `895A3B3EC3C8B809C15117720BCABD5959D3C6D4FD24C13DD7E8CE8619F22CAA`.
+- Customer Asset navbar module passes Perl syntax checking.
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Asset Navigation and Field-Edge Picker Anchoring 0.1.69
+
+### Completed work
+
+- Confirmed that GovernanceDB bootstrap already activates the OTOBO customer ConfigItem overview, search, and zoom modules and renames the CMDB navigation entry to Assets.
+- Corrected `ZTSMCustomerAsset` to consume and return OTOBO's actual `NavBar->{Sub}` structure. ASSET users now retain the functional Asset entry unchanged; non-ASSET users have only the `CustomerITSMConfigItem` navigation item removed.
+- Replaced fixed-column tooltip/search positioning with field-edge anchoring.
+- Runtime normalization now moves each direct tooltip and reference-picker search button into its actual `.Field` component, anchors help at `right: 60px` and search at `right: 8px`, and vertically centres both against that field.
+- Controls therefore follow the visible field edge as the cell or field grows and apply consistently to initial and cloned Set rows.
+
+### Package
+
+- GovernanceDB version: `0.1.69`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.69.opm`
+- SHA256: `D6C83B0FDF8838D49966B76CF77D6A7DD5D1BA4CD34140931E26E5EB9C0335DF`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`AF31AED008A6566F55E2C927D903BF1EC1D9AAAA268FC7493AF78A0F77A4B1A9`).
+- Both customer Asset navbar module copies are byte-identical (`056474F8705C2C2884195C49653E4D9D4358CFEDDAFC0538A660007F1459C059`) and pass Perl syntax checking.
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Cloned-Row In-Surface Controls 0.1.68
+
+### Completed work
+
+- Diagnosed the remaining cloned-row inconsistency: control-space padding was applied to the transparent `.Field` wrapper, shortening the visible white input surface and leaving normalized tooltip/search controls visually outside it.
+- Removed reserved padding from the transparent wrapper and applied it to the actual input, select, textarea, or input container instead.
+- The visible themed control now spans the complete cell beneath the overlaid tooltip/search controls, while its content retains `62px` reference-picker or `28px` help-only clearance.
+- The correction is part of the repeated layout normalization and therefore applies identically to initial and dynamically cloned rows.
+
+### Package
+
+- GovernanceDB version: `0.1.68`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.68.opm`
+- SHA256: `742B2E470F1DCE642E7D1899CB9E230244C896CC86654761941785E55EE9E345`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`570474E90A61A2268074735F06FF61D8F77966A0BBC875913D9C8C1CDB769F4A`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Added-Row Theme Persistence 0.1.67
+
+### Completed work
+
+- Reproduced the added-row theme regression from the live portal screenshot: adding a Set row caused reference-picker enhancement to restore default tooltip/search positioning across the Set.
+- Identified the timing race: existing normalization ended at `250ms`, while `ZTSMReferencePickerEnhance` performed a later pass at `350ms`.
+- Added post-enhancement normalization passes at `400ms` and `650ms`, ensuring newly cloned rows and existing rows modified by the enhancer finish with the TESSERA component grid.
+- Preserved row indexing, picker enhancement, horizontal scrolling, and the established `44px` right-edge gutter.
+
+### Package
+
+- GovernanceDB version: `0.1.67`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.67.opm`
+- SHA256: `42A9E8F2A78B9D969F0816371010706A2AFBC128610E9406EFD22FF2771A852C`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`FC8FAC740C200F4CFCF1A6742F296C339496705B8882E2D5A9C0929F75CDDEF4`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Right-Edge Midpoint Correction 0.1.66
+
+### Completed work
+
+- Confirmed from the `0.1.65` screenshot that reducing the gutter to `36px` widened the fieldset beyond the top-level service-field right edge.
+- Set the outer Set-control gutter and fieldset width deduction to `44px`, placing the result between the slightly inset `0.1.64` and oversized `0.1.65` layouts.
+- The resulting fieldset is `8px` narrower than `0.1.65` and `4px` wider than `0.1.64`.
+
+### Package
+
+- GovernanceDB version: `0.1.66`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.66.opm`
+- SHA256: `CABEEFFB29379E141F61422CD87E0FCA9E519E2C3350B76BA8AEFEDAF5958AB2`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`6033289DA6DD93B61A32630A55EBFCF293CC8138AE92F0416B58D9F3DD5BAAB6`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Outer Right-Gutter Tuning 0.1.65
+
+### Completed work
+
+- Corrected the tuning target after live comparison: the reported excess was the DynamicFieldSet's outer right margin, not the picker field's internal reserved control padding.
+- Reduced the Set-control gutter from `48px` to `36px` and increased the scroll-owning fieldset width by the corresponding `12px`.
+- Preserved the fieldset's left alignment, inner reference-picker component grid, and existing help/search positioning.
+
+### Package
+
+- GovernanceDB version: `0.1.65`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.65.opm`
+- SHA256: `32D7B7B11E339D86083F2AA00BCED016453260D593308AA4404C7410205AD64F`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`25EBA3C5DE507D2398040E2C8551FD0CAA95761753AC45532818181D2DC3C1D4`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Picker Right-Margin Tuning 0.1.64
+
+### Completed work
+
+- Tuned the nested reference-picker controls after comparison with the top-level themed fields.
+- Shifted the help/search pair `16px` toward the right edge of the inner field surface to remove excessive trailing space.
+- Reduced the field's reserved picker-control padding from `78px` to `62px`, matching the positional change while preserving readable input space.
+- Left the outer fieldset width, alignment, Set-control rail, and horizontal scrolling unchanged.
+
+### Package
+
+- GovernanceDB version: `0.1.64`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.64.opm`
+- SHA256: `3DB4FC750965E59EC9247B878D2B53646109A25534D3B46ABA12B9B8F822256A`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`A4284CD842A13DEDBCAABF692011B560376E146815811D7DC771C406B288EFF1`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset In-Surface Picker Controls 0.1.63
+
+### Completed work
+
+- Tuned the normalized inner component grid so the field surface spans the complete cell instead of ending before the help/search columns.
+- Overlaid the tooltip and search controls within the field's right side, matching the established top-level service-field theme.
+- Reserved `78px` of internal field space for reference-picker help and search controls and `28px` for non-reference help, preventing input content from rendering beneath those controls.
+- Raised the overlaid controls above the field surface while retaining keyboard/button behavior and the existing horizontal Set scrolling.
+
+### Package
+
+- GovernanceDB version: `0.1.63`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.63.opm`
+- SHA256: `AC3C02D518824E57A3488847398456FB91206A2DC4A7148A404654FCA20C0390`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`72C095AAA3D7AAAA86E265480D81C7EEB9420A7F64BF33F072629491EE185062`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Inner Component Grid 0.1.62
+
+### Completed work
+
+- Identified that OTOBO emits `!important` tooltip positioning directly in the element style, which prevented stylesheet-only alignment from taking effect.
+- Added runtime normalization for each horizontal DynamicFieldSet cell containing a direct field and tooltip.
+- Each reference picker cell now uses one component grid row: flexible field column, `18px` tooltip column, and `44px` search-button column, with an `8px` gap and centred alignment.
+- Runtime normalization explicitly clears the injected tooltip inset and converts both tooltip and search button from displaced positioning into grid participants.
+- Non-reference fields with help controls use the same field-plus-tooltip row without the search-button column.
+
+### Package
+
+- GovernanceDB version: `0.1.62`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.62.opm`
+- SHA256: `66E02900284AFA58A979394749AECAF5A896018BD4B099A301AB747573893DD9`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`1D7285ABC30006581AB1A4F792F546B5A952A36AF80F0BE2F0727282481A20B1`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Reference-Cell Component Alignment 0.1.61
+
+### Completed work
+
+- Confirmed from the live DOM that the reference field, tooltip, label, and search button are sibling nodes within each `ZTSMReferencePickerCell`.
+- Converted the nested reference picker presentation into one coherent component row: search button anchored at the right and tooltip icon immediately to its left, both vertically centred against the first field control.
+- Kept the outer service-field wrapper at its full aligned width while applying the `48px` reduction only to the nested scroll-owning fieldset, preserving its correct left edge without the earlier centred right shift.
+- Retained the internal Set-control rail, `300px` cells, max-content row, containment, and horizontal scrolling.
+
+### Package
+
+- GovernanceDB version: `0.1.61`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.61.opm`
+- SHA256: `45B1256B04D511B27171A59BD21E4B155C8E91143C5ACA634C5F977C97D8760E`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`1D20590649825ED10B2496CB86E619BF75CDF5EF829AADAA1B235EEAB0816CFA`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Alignment and Control Rail 0.1.60
+
+### Completed work
+
+- Reverted the external `48px` width subtraction that caused the auto-margined fieldset to shift right relative to the top-level service controls.
+- Restored full responsive service-container width and reserved the same `48px` inside the fieldset as a dedicated right-side Set-control rail.
+- Anchored standard reference and non-reference help icons at the vertical centre of the first `64px` control row (`top: 32px`) instead of centring them against the complete tall field cell.
+- Retained `300px` inner columns, max-content row sizing, inline-size containment, and fieldset-owned horizontal scrolling.
+
+### Package
+
+- GovernanceDB version: `0.1.60`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.60.opm`
+- SHA256: `ACC0BE7DBEFC27C556BF8FA5AA9085AA41F52FC404085617695C6D61D890C1FE`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`71C64EA1F77A5819E426471C0CF721638957582DBEE8EB9D5FA9CC35B23F7383`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Column and Control-Gutter Tuning 0.1.59
+
+### Completed work
+
+- Increased horizontal DynamicFieldSet cells from `240px` to `300px` in both CSS and runtime inline normalization so themed inputs, labels, reference-picker controls, and tooltip icons have adequate component space.
+- Retained the max-content inner row and fieldset-owned horizontal scrolling.
+- Reduced the resolved outer fieldset width by a `48px` Set-control gutter so its border and scrollbar do not sit underneath the right-edge remove/add controls.
+
+### Package
+
+- GovernanceDB version: `0.1.59`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.59.opm`
+- SHA256: `D6B26609D2C109602671D3C32625E79A24D3AE7E0D1CDC73A27B6C5B60E59CD1`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`CD0D9E5E008DDF678AAD144449DB4E31E66194B6BF71171C3B2349C0608C46BD`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Outer-Width Correction 0.1.58
+
+### Completed work
+
+- Confirmed that the `3240px` `Row_DynamicField MultiColumn` is the valid inner scroll content and restored its max-content width.
+- Corrected the actual defect in the outer fieldset width resolver: it now measures the reset, responsive `.ZTSMServiceExtensionField` container instead of deriving the fieldset width from one reference control surface.
+- Preserved the bounded fieldset scrollbar, inline-size containment, fixed `240px` child cells, and nowrap inner row.
+
+### Package
+
+- GovernanceDB version: `0.1.58`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.58.opm`
+- SHA256: `AA07249C801D167A871A62E788B54BF78ABFF7F8A1EC042C5B31EA03449E1A57`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`EEF1F5FE67EC950267999ADBE2AE32896F9104B02C85EB2844E7AAE43E99BFBA`).
+- OPM contains 216 encoded files with no empty payloads.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Scroll Containment 0.1.57
+
+### Completed work
+
+- Confirmed the intended two-layer layout from the live DOM: the `DynamicFieldSet` is the bounded horizontal scroll surface, while its direct `Row_DynamicField MultiColumn` content remains long.
+- Added explicit inline-size containment and inline overscroll containment to the fieldset so the long row cannot contribute its max-content width to the outer customer form.
+- Preserved the existing max-content flex row and stable `240px` cells; no shrinking or wrapping was introduced.
+- Added distinct runtime layout markers for the scroll surface and its long scroll content.
+
+### Package
+
+- GovernanceDB version: `0.1.57`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.57.opm`
+- SHA256: `D5DC3EA1F564626D0AC1BA4F3066649343935E2512D9D9A5337D244FC122CB5D`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`7B21E0E2AD5025714C0C4E4193D3F253D272DF80AEEBE82668A7D18D9CBC3295`).
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime template contains the fieldset containment rules and both layout markers.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Visible-Control Surface Width 0.1.56
+
+### Completed work
+
+- Corrected `0.1.55` measuring the full reference `.FieldCell`, which still represented the oversized grid rather than the visible white control.
+- Width resolution now measures the direct visible `.Field` surface, then the input container or autocomplete input as controlled fallbacks.
+- Added runtime diagnostics on the transparent viewport wrapper: resolved width and whether it came from the visible field surface or a fallback.
+- Retained the fieldset-owned scrollbar, max-content internal row, and stable field cells.
+
+### Package
+
+- GovernanceDB version: `0.1.56`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.56.opm`
+- SHA256: `758E3CF778DC050618A07A305C1BA6282C72AA49151B8CDF9586721B588FCB3F`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`966B8ADAB372A486C5432BC9445C96DC83DDE55207E2F901DA2EC58351375482`).
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime template measures the visible control surface and exposes width diagnostics.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset Visible-Field Width Constraint 0.1.55
+
+### Completed work
+
+- Confirmed that fieldset-owned scrolling worked in `0.1.54`, but `width: 100%` still resolved against an oversized service-row grid and exceeded the visible portal field boundary.
+- Derived the fieldset viewport width from the widest rendered top-level service reference field, aligning horizontal sets with the Location, Environment, and Application System rows.
+- Added viewport-edge and form-width fallbacks for services without a visible top-level reference field.
+- Applied the resolved pixel width consistently to the service row container, outer set field, transparent viewport wrapper, and scroll-owning DynamicFieldSet.
+- Preserved the internal `max-content` row, stable `240px` cells, and horizontal fieldset scrolling.
+
+### Package
+
+- GovernanceDB version: `0.1.55`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.55.opm`
+- SHA256: `1A69597D071A6CB2F3FCF4AEF2C9BB60C42457D8AD8BF64720A484812BB5DDDD`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`D94979B03786598654C51AFA6BE9B3AAAF1A4BE4C2EE58A708857A90D01D54E9`).
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime template contains the visible-field width resolver and fallbacks.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Fieldset-Owned Horizontal Scrolling 0.1.54
+
+### Completed work
+
+- Corrected the final scroll ownership based on live DOM verification: the DynamicFieldSet itself now remains form-width and owns horizontal scrolling.
+- Kept the internal horizontal row at `max-content` width with stable `240px` cells, so long sets scroll without expanding the fieldset or page.
+- Made the generated `ZTSMFieldSetScrollViewport` a transparent sizing wrapper rather than a second scroll container.
+- Removed the `0.1.53` row-width measurement that expanded the fieldset to `3242px`; that result was technically measured correctly but contradicted the intended fixed-width fieldset design.
+- Preserved row-action controls outside the scrolling content surface.
+
+### Package
+
+- GovernanceDB version: `0.1.54`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.54.opm`
+- SHA256: `0C4EFBDB514EBEB9F6F3B36FC62A825DDFD6D3DCD44611B5640820D4F1405FAA`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`3A3503AC880CA3F45E90420544BD6D11DB48563195F620B1F436E4FFBC48DDC2`).
+- OPM contains 216 encoded files, no empty payloads, uses the fieldset-owned scroll revision, and contains no obsolete `Row.scrollWidth` expansion logic.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Chromium Dynamic Fieldset Measured-Width Repair 0.1.53
+
+### Completed work
+
+- Confirmed from the live DOM that the viewport (`548px`) and horizontal row (`3240px`) were correct, but Chromium resolved the containing `<fieldset>` to only `240px` despite `max-content` styling.
+- Replaced unreliable fieldset intrinsic sizing with an explicit runtime width derived from the completed row's `scrollWidth`.
+- Kept the fieldset at least as wide as its form viewport, while allowing its border and content surface to follow long horizontal rows inside the single scrolling viewport.
+- Preserved stable `240px` field cells and the fixed row-action controls outside the viewport.
+- Added a new layout revision marker so live DOM normalization replaces the earlier `0.1.52` sizing state.
+
+### Rejected approach
+
+- CSS-only `fieldset { width: max-content; }` was rejected because Chromium's special fieldset intrinsic sizing ignored the overflowing flex row in this OTOBO DOM.
+
+### Package
+
+- GovernanceDB version: `0.1.53`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.53.opm`
+- SHA256: `8FE1C6783218BCCAF40FB698E59862F4CAF53A046E20BF4E08D4CA384A349063`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`B37EAC34AC8A2B2AE9123CEC0692191F6D374DF6C2055DC15DB9713C9650D74B`).
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime template contains the `Row.scrollWidth` fieldset measurement repair.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Dynamic Field Set Single-Viewport Scrolling 0.1.52
+
+### Completed work
+
+- Made the DynamicFieldSet viewport the sole horizontal scroll owner instead of allowing both the field row and its wrapper to scroll independently.
+- Kept each horizontal Dynamic Field cell at a stable `240px` width so reference pickers, text areas, labels, and help controls no longer compress or drift across the row.
+- Changed horizontal fieldsets and rows to `max-content` width with a `100%` minimum, keeping short sets form-width while allowing long sets to scroll naturally.
+- Preserved the existing `+ / −` controls outside the scrolling viewport so row actions remain fixed and immediately accessible.
+- Applied the layout consistently to all maintained service-field template mirrors and the upgrade runtime overlay.
+
+### Package
+
+- GovernanceDB version: `0.1.52`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.52.opm`
+- SHA256: `30503ED5D78D7442471AFA2ADBEBDB2B87AC2292D18123230A9456E6F9B12458`
+
+### Verification
+
+- All four service-field template mirrors are byte-identical (`CD15704C505C9E881CD027331622E338E890F1CA91F26A9FD74B681EC29E039C`).
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime template contains the single-viewport `max-content` layout and stable `240px` cells.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Customer TicketZoom Navigation Layer Repair 0.1.51
+
+### Completed work
+
+- Corrected the CustomerTicketZoom white sticky header rendering above the left customer navigation bar.
+- Restored OTOBO 11.1's intended layer ownership: content header at `z-index: 1000`, customer navigation at `z-index: 2000`.
+- Preserved the TicketZoom header layout, sticky behavior, runtime action menu, and responsive navigation-offset handling.
+- Applied the change consistently to all maintained CustomerTicketZoom template mirrors and the upgrade runtime overlay.
+
+### Package
+
+- GovernanceDB version: `0.1.51`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.51.opm`
+- SHA256: `71FD3775ED1A7489453344609CD6D642E54F01BD8688AA448F84B28D0875BCF7`
+
+### Verification
+
+- All four CustomerTicketZoom template mirrors are byte-identical (`186D54A3AA786BDF0991207EEC6308DBA945022EE9201DA40C7064D7CA920457`).
+- No maintained CustomerTicketZoom template retains the incorrect `z-index: 3200` rule.
+- OPM contains 216 encoded files, no empty payloads, and its decoded runtime TicketZoom template uses `z-index: 1000`.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Nested Dynamic Field Set and Group Theme Repair 0.1.50
+
+### Completed work
+
+- Contained generic OTOBO 11.1 help controls inside their owning nested Dynamic Field Set/Group cells instead of allowing the inherited negative offset to place icons outside the form.
+- Right-anchored nested help content so tooltip panels remain within the customer form viewport.
+- Normalized nested `DynamicFieldGroup` spacing, border, background, and button controls to the TESSERA customer portal design language.
+- Kept the repair scoped to service-extension Set/Group components so the already-correct reference picker layout and ordinary customer form controls remain unchanged.
+
+### Package
+
+- GovernanceDB version: `0.1.50`
+- Upgrade-safe: the runtime overlay and all maintained template mirrors carry the same scoped CSS repair.
+- Artifact: `Kernel/Package/GovernanceDB-0.1.50.opm`
+- SHA256: `D4824CCE4644C8B44F24BEFEBB557A51DC3B1BE707028B0C33C141B7A9B3E6B0`
+
+### Verification
+
+- All four maintained service-field template mirrors are byte-identical (`DE44836B4B3052F4E2B7488B2A491869B316A78343A340E56538D41DFD30EB0E`).
+- OPM contains 216 encoded files, no empty payloads, and the decoded runtime template contains the nested Set/Group repair.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed.
+
+## 2026-08-03 Complete Customer Zoom Design and Runtime Tooltip Repair 0.1.49
+
+### Completed work
+
+- Corrected the incomplete `0.1.47` CustomerTicketZoom rebase after live testing showed the parent/request tile, parent-child navigation, and customer runtime action menu were absent.
+- Audited historical package payloads and identified `GovernanceDB-0.1.39.opm` / `0.0.365` as the last known-good CustomerTicketZoom design containing the complete rendering contract.
+- Restored the full TESSERA CustomerTicketZoom template surface:
+  - `Data.ZTSMRequestInfoHTML` parent/request information tile;
+  - original/parent ticket link;
+  - child execution-ticket links;
+  - ZTSM action menu and direct action links;
+  - runtime action dialogs, including inline Risk Assessment and Diagnosis;
+  - requester/governance context and responsive layout behavior.
+- Synchronized the 1,394-line Zoom template across canonical source, package source, 11.1 runtime overlay, and `ZTSMOverlay`.
+- Hardened the reference tooltip correction at runtime in `ZTSM.Customer.ReferenceTrace.js`: the reference-picker component now locates its direct tooltip and applies component-owned positioning with inline `!important` declarations after the late stylesheet/DOM enhancement runs.
+- Synchronized the reference-picker JavaScript across the package runtime overlay and `ZTSMOverlay`.
+- Bumped GovernanceDB from `0.1.48` to `0.1.49` and built `Kernel/Package/GovernanceDB-0.1.49.opm`.
+- Package SHA256: `044CCC4F49F362698D7EADF84DBA5C88D041C67FCF91CC40C62A4B3592C96D75`.
+
+### Validation
+
+- CustomerTicketZoom contains all parent tile, original/child link, action-menu, and runtime-dialog markers with 21 balanced render-block pairs.
+- All four CustomerTicketZoom mirrors match SHA256 `52816FE6806B9F4E8EBC58B97EE80405B828A188250B6370A5E4A34CD3686521`.
+- Reference-picker JavaScript mirrors match and pass the bundled Node.js syntax check.
+- Generated OPM contains 216 Base64-encoded payload files.
+- Decoded OPM verification confirms the parent tile, parent/child links, action menu, runtime dialogs, and runtime tooltip positioning logic are embedded.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+### Runtime expectation
+
+- Upgrade to `0.1.49`, restart PSGI/web workers, clear OTOBO/Loader cache, and hard-refresh both customer creation and zoom screens.
+- CustomerTicketZoom should again display the full TESSERA parent/request context and applicable action menu.
+- Reference-field help icons should be repositioned by the picker component itself after DOM enhancement and no longer escape to the page margin.
+
+## 2026-08-03 OTOBO 11.1 Reference Tooltip Containment 0.1.48
+
+### Completed work
+
+- Fixed customer service-extension help icons rendering outside their DynamicField reference rows after the OTOBO 11.1 form rebase.
+- Runtime DOM evidence confirmed each `.Tooltip.oooTooltip` remained inside its `.ZTSMReferencePickerCell`, but OTOBO 11.1's generic negative tooltip offsets treated it as an inline control while the TESSERA reference row owns a CSS-grid layout.
+- Scoped the correction to `.ZTSMServiceExtensionField.ZTSMReferencePickerManaged` only.
+- Made the reference picker cell the positioning owner, reset the tooltip's inherited top/left/margin offsets, and anchored the help icon at the right side of the field before the search button.
+- Positioned the tooltip content from the component's right edge and constrained its width to the viewport.
+- Synchronized the service-field template across canonical source, package source, 11.1 runtime overlay, and `ZTSMOverlay`.
+- Bumped GovernanceDB from `0.1.47` to `0.1.48` and built `Kernel/Package/GovernanceDB-0.1.48.opm`.
+- Package SHA256: `38C0BD77725140398FF4D0C12FB6DD710CE5D9EEDB47E833745BF2C8C49651C6`.
+
+### Validation
+
+- All four service-field template mirrors match SHA256 `5E75862DEDF4F358D20B6E08F3D3BCB5B0A5D722012DF04404D6C81CB763BFA4`.
+- Generated OPM contains 216 Base64-encoded payload files.
+- Decoded OPM verification confirms the component-owned tooltip anchor and legacy left-offset reset are embedded.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+### Runtime expectation
+
+- Upgrade to `0.1.48`, restart PSGI/web workers, clear Loader/cache, and hard-refresh the ticket creation page.
+- Location, Environment, Application System, and equivalent reference-field help icons should remain inside their field component, immediately before the search button; the popup should open inward without leaving the form.
+
+## 2026-08-03 OTOBO 11.1 Customer Ticket UI Rebase 0.1.47
+
+### Completed work
+
+- Corrected the customer ticket creation and ticket zoom screens after live testing showed that full template copies inherited from the earlier OTOBO version were replacing the OTOBO 11.1 layouts.
+- Rebased `CustomerTicketMessage.tt` onto the OTOBO 11.1 beta 2 template while preserving only the required TESSERA differences:
+  - raise-on-behalf requester selection;
+  - governance-driven routing with the customer Queue field still absent;
+  - the established Type/Service, Subject/Text, service DynamicField, and attachment ordering;
+  - `ZTSMCustomerTicketMessageServiceFields.tt` integration and its DynamicField Set/Group boundary markers.
+- Rebased `CustomerTicketZoom.tt` onto the OTOBO 11.1 beta 2 template and removed the old full-page `ZTSMZoomLayout` replacement.
+- Recovered and retained the complete ZTSM runtime-action dialog block from the known-good `0.1.46` package, including inline Risk Assessment, Diagnosis, governance action forms, acknowledgement controls, evidence upload, and supporting JavaScript/CSS.
+- Synchronized the ticket zoom template across canonical source, package source, 11.1 `Custom` runtime overlay, and `ZTSMOverlay`.
+- Confirmed the package still carries the customized customer/agent DynamicField Set templates, Set driver, Set included-field update event, and nested ZTSM service payload template.
+- Bumped GovernanceDB from `0.1.46` to `0.1.47` and built `Kernel/Package/GovernanceDB-0.1.47.opm`.
+- Package SHA256: `EA9807AE73CEDFEFD41B4A49180EBD7F1E44A50BBAD4DEF0DEFB8873663B05A7`.
+
+### Validation
+
+- Customer form uses the OTOBO 11.1 `ModularForm` structure, has exactly one DynamicField insertion point, and contains no Queue render block.
+- Customer zoom uses the OTOBO 11.1 layout, contains balanced Template Toolkit render blocks, retains the ZTSM runtime-action dialog, and contains no old `ZTSMZoomLayout` override.
+- All required DynamicField Set/Group and ZTSM service-field sources are present in the authoritative SOPM.
+- Generated OPM contains 216 Base64-encoded, non-empty payloads.
+- Decoded OPM verification confirms Queue remains absent, service DynamicFields remain included, the legacy zoom layout is absent, and ZTSM runtime dialogs remain included.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+### Runtime expectation
+
+- Upgrade to `0.1.47`, restart PSGI/web workers, clear OTOBO/Loader cache, and hard-refresh the browser.
+- Customer ticket creation and ticket zoom should follow OTOBO 11.1 layout behavior while retaining TESSERA governance and execution features.
+
+## 2026-08-03 OTOBO 11.1 Customer Dashboard Activation 0.1.46
+
+### Completed work
+
+- Corrected the authenticated customer dashboard after the OTOBO 11.1 upgrade retained its stock featured card and standard ticket-list SysConfig values.
+- Confirmed the TESSERA `CustomerDashboard.tt` override was already active; the remaining defect was the effective database-backed `CustomerDashboard::Tiles` configuration, not template selection.
+- Added idempotent `_CustomerDashboardEnsure()` bootstrap handling for the TESSERA welcome configuration, new-ticket tile, FAQ announcement tile, and `My workspace` ticket tile.
+- Added the dashboard settings to the forced SysConfig deployment list so package upgrades replace stale OTOBO effective values.
+- Restored the custom FAQ announcement and workspace module/template files through the 11.1-safe `Custom` runtime overlay.
+- Preserved customer login identity when loading FAQ announcements so customer category visibility is evaluated for the signed-in user.
+- Bumped GovernanceDB from `0.1.45` to `0.1.46` and built `Kernel/Package/GovernanceDB-0.1.46.opm`.
+- Package SHA256: `E768BF4508749B6C89223F935244749DED7C70ED133D5ABECDA86393A2A12493`.
+
+### Validation
+
+- GovernanceDB SOPM and customized Framework SysConfig XML parse successfully with no missing package sources.
+- Bootstrap, FAQ announcement tile, and workspace ticket tile compile against the OTOBO 11.1 beta 2 tree.
+- Generated OPM contains 216 Base64-encoded payload files with no empty payloads.
+- Decoded OPM verification confirms the dashboard activation routine and all four custom dashboard module/template payloads are embedded.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+### Runtime expectation
+
+- Upgrade to `0.1.46`, restart PSGI/web workers so the new `Custom` Perl modules are loaded, and refresh the customer dashboard after clearing the browser cache.
+- The stock OTOBO 11.1 featured card must be replaced by TESSERA announcements, and the standard last-ticket list must be replaced by `My workspace`.
+
+## 2026-08-03 Customer Login Stray Password Label Fix 0.1.45
+
+### Completed work
+
+- Bumped GovernanceDB from `0.1.44` to `0.1.45` after live verification showed the semantic `Password` label rendered at the top of the page.
+- Root cause: the same OTOBO 11.1 global absolute `form label` styling affected the username/password field labels while the branded inputs already provide their visible prompts through placeholders.
+- Added a scoped visually-hidden treatment to `.ztsmLoginForm .ztsmField > label` in both the custom login template and registered branding stylesheet.
+- Preserved the semantic labels for assistive technology instead of deleting them or applying `display: none`.
+- Kept the legitimate `Forgot password?` recovery action unchanged.
+- Built `Kernel/Package/GovernanceDB-0.1.45.opm`.
+- Package SHA256: `FC76EF9CECCF69B31FA7D211F0168CE74E38583665090E52D954B67A7304C2F5`.
+
+### Validation
+
+- Generated OPM contains 212 encoded payload files.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+## 2026-08-03 Customer Login Remember-Me Layout Fix 0.1.44
+
+### Completed work
+
+- Bumped GovernanceDB from `0.1.43` to `0.1.44` after live verification exposed the `Remember me` checkbox label at the top of the branded login form.
+- Root cause: OTOBO 11.1 applies absolute positioning to general `form label` elements; the custom `.ztsmRemember` label did not reset that framework rule.
+- Added a scoped positioning, sizing, padding, background, line-height, and stacking reset for `.ztsmRemember` in both the branded `CustomerLogin.tt` and `TESSERA.Customer.Branding.css`.
+- Built `Kernel/Package/GovernanceDB-0.1.44.opm`.
+- Package SHA256: `655930DA6CE0A8727CB9B7CE677BDF29A8BD504D15E5B361E784D57DD9BA0344`.
+
+### Validation
+
+- Generated OPM contains 212 encoded payload files.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+- `git diff --check` passes with line-ending normalization warnings only.
+
+## 2026-08-03 Bootstrap Change Set Definition Fix 0.1.43
+
+### Completed work
+
+- Bumped GovernanceDB from `0.1.42` to `0.1.43` after the live OTOBO 11.1 upgrade aborted in `InstallDefaults()` with `Not an ARRAY reference` at Bootstrap line 1666.
+- Confirmed the failed `0.1.42` payload used a nested implicit-`$_` `map` expression to construct `ZCH-Precheck`, `ZCH-Implementation`, `ZCH-Rollback`, and `ZCH-PostChange` Set DynamicFields.
+- Replaced the nested expression with explicit included-field and definition arrays plus a named loop that validates the array shape through lexical variables.
+- The branding configuration in `0.1.42` did not deploy because the bootstrap terminated before `_CustomerBrandingEnsure()` and `_SysConfigDeploy()`; `0.1.43` retains those branding changes and allows execution to reach them.
+- Built `Kernel/Package/GovernanceDB-0.1.43.opm`.
+- Package SHA256: `E18A2D59BBA40A248DE35E0AD080930AD746A08C148E7B3D899C51823FB5740F`.
+
+### Validation
+
+- Bootstrap compiles against OTOBO 11.1 beta 2.
+- Generated OPM contains 212 encoded payload files.
+- The exact failing nested Change Set expression is absent from the corrected Bootstrap.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+
+### Runtime notes
+
+- The GovernanceObject layout subroutine redefinition messages are consistent with package upgrade replacing/reloading modules already resident in PSGI; restart PSGI/Apache after a successful upgrade.
+- Upgrade to `0.1.43`; after bootstrap completes, verify the TESSERA effective values for `CustomerLogin::Settings`, `CustomerLogo`, and `Loader::Module::CustomerLogin###002-CustomerLogin`.
+
+## 2026-08-03 OTOBO 11.1 SysConfig-Driven Customer Branding 0.1.42
+
+### Completed work
+
+- Bumped GovernanceDB from `0.1.41` to `0.1.42` after runtime evidence confirmed that `Custom` template precedence was not taking effect for the OTOBO 11.1 customer login page.
+- Added idempotent bootstrap updates for the effective OTOBO 11.1 settings:
+  - `CustomerLogin::Settings` now points `Background` to `common/img/TESSERA/LoginBG.jpg` and sets `LoginText` to `TESSERA ICT Ticket Platform`.
+  - `CustomerLogo` now points to the packaged TESSERA logo and mark.
+  - `Loader::Module::CustomerLogin###002-CustomerLogin` now loads `TESSERA.Customer.Branding.css` once without duplicating the CSS entry on reinstall.
+- Added `TESSERA.Customer.Branding.css` to replace the stock hardcoded login signets through CSS while continuing to use the OTOBO 11.1 stock login template.
+- Added all three settings to the forced SysConfig deployment list so package install and upgrade make the effective values active.
+- Built `Kernel/Package/GovernanceDB-0.1.42.opm`.
+- Package SHA256: `D08604ADE828A4032D8A9901D309A1F5EBD8C54C85AAA2F5A5FDE7B075CEDFE6`.
+
+### Validation
+
+- Bootstrap compiles against OTOBO 11.1 beta 2.
+- Generated OPM contains 212 encoded payload files, including the customer branding CSS, background and favicon.
+- Generated Bootstrap payload contains all three branding setting names and TESSERA values.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+- `git diff --check` passes with line-ending normalization warnings only.
+
+### Runtime requirement
+
+- Upgrade to `0.1.42`, allow the package bootstrap to deploy configuration, restart PSGI/Apache, and hard-refresh the browser.
+- Verify effective values in System Configuration if the login background remains stock.
+
+## 2026-08-03 OTOBO 11.1 Branding Restoration 0.1.41
+
+### Completed work
+
+- Bumped GovernanceDB from `0.1.40` to `0.1.41` after runtime testing showed that the OTOBO 11.1 upgrade restored the stock favicon and customer login branding.
+- Changed the six TESSERA branding assets from bootstrap-only runtime-overlay payloads to direct package destinations:
+  - `var/httpd/htdocs/common/img/icons/favicon.ico`
+  - `var/httpd/htdocs/common/img/icons/product.ico`
+  - `var/httpd/htdocs/common/img/TESSERA/LoginBG.jpg`
+  - `var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGIN_v2.svg`
+  - `var/httpd/htdocs/common/img/TESSERA/TESSERA_LOGO_v2.svg`
+  - `var/httpd/htdocs/common/img/TESSERA/TESSERA_MARK_v2.svg`
+- Branded login and HTML-head templates continue to deploy through the OTOBO 11.1 `Custom` path, protecting framework-owned templates from package overwrites.
+- Built `Kernel/Package/GovernanceDB-0.1.41.opm`.
+- Package SHA256: `0E87AC12000678464F62A3B9F8B6C7C3F697C46459711349F09547B3BF744AE6`.
+
+### Validation
+
+- Generated OPM contains 210 Base64 payload files.
+- All six branding assets are present at their direct web destinations and their embedded hashes match the authoritative package-source files.
+- Generated bootstrap still contains the `$OTOBO_HOME/Custom` routing for framework templates and modules.
+- Customer ConfigItem entitlement regression test passes all 21 assertions with package version `0.1.41` and framework `11.1.x`.
+
+### Runtime requirement
+
+- Upgrade to `0.1.41`, rebuild configuration/cache as required by the package workflow, restart PSGI or Apache, and hard-refresh the browser because favicons are aggressively cached.
+
+## 2026-08-03 OTOBO 11.1 Port and Custom Overlay Isolation 0.1.40
+
+### Completed work
+
+- Ported the authoritative GovernanceDB package line to OTOBO `11.1.x` and bumped the package from `0.1.39` to `0.1.40`.
+- Used the checked-in `otobo-11.1.0-beta2` source as the exact framework baseline.
+- Three-way rebased the GovernanceDB runtime customization set against OTOBO 11.1 beta 2 where the corresponding upstream files changed.
+- Removed nine runtime overlays that contained no TESSERA changes: `AdminService.pm`, `CustomerTicketOverview.pm`, `TileTicketList.pm`, their associated templates, `Service.pm`, `Ticket.pm`, `Ticket/NumberBase.pm`, and `Core.UI.RichTextEditor.js`.
+- Changed `Kernel::System::GovernanceDB::Bootstrap::_RuntimeOverlayInstall()` so existing framework modules, SysConfig XML, templates, and test paths are installed below `$OTOBO_HOME/Custom` instead of overwriting `$OTOBO_HOME/Kernel` or `$OTOBO_HOME/scripts`.
+- Non-framework web assets continue to deploy below their normal `var` path.
+- Built `Kernel/Package/GovernanceDB-0.1.40.opm` with 210 Base64-encoded payload files.
+- Package SHA256: `02E38673FBF7BE7B7F3642B595698066155660F129ED96B9702789B66EE6E9F5`.
+
+### Validation
+
+- SOPM and generated OPM parse successfully as XML.
+- Generated OPM reports version `0.1.40`, framework `11.1.x`, 210 files, and no missing Base64 payloads.
+- All 169 package and runtime-overlay Perl modules compile against the OTOBO 11.1 beta 2 library tree.
+- Customer ConfigItem entitlement regression test passes all 21 assertions.
+- `git diff --check` passes; remaining messages are line-ending normalization warnings only.
+
+### Architectural decisions
+
+- OTOBO core is framework-owned and must remain upgradeable independently of GovernanceDB.
+- GovernanceDB customizations of existing framework files belong under `$OTOBO_HOME/Custom`; direct core overwrites are prohibited for the 11.1 package line.
+- New uniquely named GovernanceDB modules may remain normal package payload files because they do not replace framework files.
+- PSGI or Apache must be restarted after installing/upgrading GovernanceDB so Perl modules under `Custom` are loaded.
+
+### Known issues / runtime verification
+
+- Install and upgrade must still be exercised in a running OTOBO 11.1 beta 2 environment with its database and companion packages.
+- Retest customer ticket create/zoom, DynamicField Set administration/rendering, GenericAgent execution, process actions, and customer ConfigItem entitlement after restart.
+- OTOBO 11.1 is still beta; a final 11.1 release compatibility audit remains required before production rollout.
+
+## 2026-08-03 Customer Asset Access Enforcement Clarification
+
+### Confirmed design
+
+- Add a dedicated customer portal asset icon/navigation entry.
+- The asset icon must be authorization-aware; it must not provide or imply asset access for every customer user merely because the customer ConfigItem frontend is enabled.
+- Full asset list/detail access requires a matching `SupportAssignment` for the logged-in CustomerUser whose GovernanceRole is exactly `ASSET`.
+- IPC membership, emergency IPC capabilities, customer company membership, ticket participation, and any other role or privilege must not bypass the `ASSET` requirement.
+- Direct ConfigItem zoom URLs, version selection, and attachment/inline-content endpoints must enforce the same centralized backend authorization as the asset icon and asset list.
+- Request-target discovery remains a separate entitlement boundary: where a workflow needs selectable assets, results are limited by ContractEntitlement and matching SupportProfile assignment, while full asset viewing still requires role `ASSET`.
+
+### Initial read-only trace
+
+- `CustomerITSMConfigItem` performs list and filter searches directly through `ConfigItemSearch` using the legacy `Customer::ConfigItem::PermissionConditions` model.
+- `CustomerITSMConfigItemSearch` performs its own direct `ConfigItemSearch` calls.
+- `CustomerITSMConfigItemZoom` and `CustomerITSMConfigItemAttachment` call the legacy `CustomerPermission` method, which can grant through generic group, class, Dynamic Field, CustomerUser, or customer-company conditions.
+- The stock `CustomerFrontend::Navigation###CustomerITSMConfigItem###003-ITSMConfigItem` entry is static and cannot by itself enforce the new per-user SupportAssignment/`ASSET` authorization.
+- No IPC or generic legacy customer permission path is acceptable as a fallback for the new asset-access surface.
+
+### Current implementation direction
+
+1. Add one centralized deny-by-default customer ConfigItem entitlement service.
+2. Separate request-target discovery checks from `ASSET` list/detail checks.
+3. Route customer list, search, zoom, version, attachment, and navigation visibility through that service.
+4. Add bypass-focused automated tests before enabling portal UI.
+
+## 2026-08-03 Customer Portal ConfigItem Entitlement 0.1.39
+
+### Completed work
+
+- Added centralized deny-by-default service `Kernel::System::ITSMConfigItem::CustomerEntitlement`.
+- Implemented request-target discovery checks using the exact exported relationships:
+  - asset `ZTAM-ContractEntitlement`;
+  - asset `ZTAM-SupportProfile`;
+  - ContractEntitlement `Contract-SupportProfie`;
+  - SupportAssignment `ZTSMSupportAssignment-UserAccount` and `ZTSMSupportAssignment-SupportProfile`.
+- Implemented full asset access checks requiring the same entitlement/profile match plus GovernanceRole exactly `ASSET`.
+- Replaced legacy customer ConfigItem permission grants with the centralized detail-access check; customer group, company, IPC, ticket participation, and generic permission conditions cannot bypass it.
+- Protected customer ConfigItem list, filter counts, search, pagination, zoom, version selection, attachment download, inline attachment content, linked ConfigItem permission checks, and direct identifiers.
+- Protected customer ConfigItem reference autocomplete and picker results through the separate discovery boundary.
+- Added an authorization-aware customer `Assets` icon and navigation guard; customers without an `ASSET` SupportAssignment do not receive the navigation item.
+- Enabled the customer ConfigItem list/search/zoom modules and the base search category idempotently during GovernanceDB install or upgrade.
+- Added idempotent bootstrap creation of GovernanceRole `ASSET`.
+- Added regression test `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`.
+- Bumped GovernanceDB from `0.1.38` to `0.1.39` and generated `Kernel/Package/GovernanceDB-0.1.39.opm`.
+- Package SHA256: `52057F7A59D1839E29053879F3F338871B6B2B38A3E546219A78023B617174F5`.
+
+### Validation
+
+- All changed Perl modules pass syntax checks.
+- Customer ConfigItem entitlement regression suite passes 20 assertions.
+- GovernanceDB SOPM and generated OPM parse successfully as XML.
+- SOPM and OPM contain 219 unique file nodes.
+- Every OPM file node uses Base64 encoding and decodes byte-for-byte to its source payload.
+- Focused `git diff --check` has no new whitespace error; the existing SOPM line-ending warning remains.
+
+### Runtime test priorities
+
+- Upgrade/install `GovernanceDB-0.1.39.opm`, clear OTOBO cache, and restart the web/PSGI process.
+- Confirm the bootstrap creates GovernanceRole `ASSET` once without duplicates.
+- Create SupportAssignments for test customers and verify the positive and negative matrix documented in the handoff.
 
 ## 2026-07-31 Confirmed Next Direction: Customer Portal Asset Entitlement
 

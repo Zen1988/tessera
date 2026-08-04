@@ -64,9 +64,9 @@ sub Run {
     my $ConfigObject     = $Kernel::OM->Get('Kernel::Config');
 
     # check for access rights
-    my $HasAccess = $ConfigItemObject->CustomerPermission(
-        ConfigItemID => $ConfigItemID,
-        UserID       => $Self->{UserID},
+    my $HasAccess = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemDetailAccessCheck(
+        ConfigItemID    => $ConfigItemID,
+        CustomerUserID => $Self->{UserID},
     );
 
     if ( !$HasAccess ) {

@@ -167,6 +167,15 @@ returns whether the user has permissions or not
 sub CustomerPermission {
     my ( $Self, %Param ) = @_;
 
+    # TESSERA customer ConfigItem detail access is governed exclusively by
+    # ContractEntitlement, SupportProfile, and an ASSET SupportAssignment.
+    # Legacy group/company/condition grants must not bypass this boundary.
+    return $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemDetailAccessCheck(
+        ConfigItemID    => $Param{ConfigItemID},
+        CustomerUserID => $Param{UserID},
+        LogNo          => $Param{LogNo},
+    );
+
     # check needed stuff
     for my $Needed (qw(ConfigItemID UserID)) {
         if ( !$Param{$Needed} ) {

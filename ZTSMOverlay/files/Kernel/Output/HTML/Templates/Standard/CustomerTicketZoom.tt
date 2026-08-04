@@ -46,7 +46,7 @@
 
     .TicketZoom #oooHeader {
         position: relative;
-        z-index: 3200;
+        z-index: 1000;
         overflow: visible;
     }
 
@@ -268,7 +268,7 @@
     }
 
     .TicketZoom .ZTSMRequesterModal,
-    .TicketZoom .ZTSMRequestDetailOverlay {
+    .TicketZoom .ZTSMRequestDetailOverlay {
         display: none;
         position: fixed;
         inset: 0;
@@ -559,7 +559,7 @@
         vertical-align: top;
     }
 
-    .TicketZoom #ZTSMStoryLinks p,
+    .TicketZoom #ZTSMStoryLinks p,
     .TicketZoom #ZTSMStoryLinks ul,
     .TicketZoom #ZTSMArticleSummaryPanel ul {
         margin: 0;
@@ -775,7 +775,7 @@
 [% RenderBlockEnd("Expand") %]
 [% RenderBlockStart("ZTSMRuntimeActionMenuItem") %]
 [% IF Data.DirectURL %]
-                <a role="menuitem" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZTSMAction;TicketID=[% Data.TicketID | uri %];RuntimeAction=[% Data.Action | uri %]">[% Translate(Data.Label) | html %]</a>
+                <a role="menuitem" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZTSMAction;TicketID=[% Data.TicketID | uri %];RuntimeAction=[% Data.Action | uri %]">[% Translate(Data.Label) | html %]</a>
 [% ELSE %]
                 <a role="menuitem" href="#Process_ZTSM_[% Data.Action | uri %]" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.hidden = false; Element.style.display = 'block'; Element.classList.remove('Hidden'); Element.classList.add('Visible'); var Menu = this.closest('details'); if (Menu) { Menu.open = false; } Element.scrollIntoView({ behavior: 'smooth', block: 'start' }); var Field = Element.querySelector('textarea, select, input:not([type=hidden]), button[type=submit]'); if (Field) { window.setTimeout(function () { Field.focus(); }, 250); } } return false;">[% Translate(Data.Label) | html %]</a>
 [% END %]
@@ -866,7 +866,7 @@
         <ul id='oooArticleListExpanded'[% IF Data.TicketInfoDisplayType == 'Permanent' %] class="oooTicketInfoPermanent"[% END %]>
 [% RenderBlockStart("ProcessActivity") %]
             <li id="Process_[% Data.ActivityDialogEntityID | uri %]" class="Activity">
-                [% Data.ActivityHTML %]
+                [% Data.ActivityHTML %]
             </li>
 [% RenderBlockEnd("ProcessActivity") %]
 [% RenderBlockStart("ZTSMRuntimeActionDialog") %]
@@ -998,7 +998,7 @@
                                 ExecuteScripts(Body);
                                 return;
                             }
-                            Container.setAttribute('data-loaded', '0');
+                            Container.setAttribute('data-loaded', '0');
                             Body.innerHTML = '[% Translate("Could not load diagnosis form.") | html %]';
                         };
                         Request.send();
@@ -1144,7 +1144,7 @@
                         opacity: 0;
                         cursor: pointer;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMCheckboxVisual {
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMCheckboxVisual {
                         position: relative;
                         display: inline-block;
                         flex: 0 0 auto;
@@ -1254,7 +1254,7 @@
                     </div>
                     <label for="RichText" class="Mandatory">[% Translate("Text") | html %] <span class="Marker">*</span></label>
                     <div id="RichTextServerError" class="TooltipErrorMessage NoJavaScriptMessage[% Data.RichTextInvalid | html %]">
-                        <p>[% Translate("This field is required.") | html %]</p>
+                        <p>[% Translate("This field is required.") | html %]</p>
                     </div>
                 </div>
 

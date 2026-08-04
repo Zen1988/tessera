@@ -27,7 +27,7 @@ use utf8;
 use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 # core modules
-use List::Util qw(max);
+use List::Util qw(max pairs);
 
 # CPAN modules
 
@@ -40,6 +40,8 @@ our @ObjectDependencies = (
     'Kernel::System::GeneralCatalog',
     'Kernel::Output::HTML::DynamicField::Mask',
     'Kernel::System::Log',
+    'Kernel::System::Cache',
+    'Kernel::System::Web::Request',
 );
 
 =head1 NAME
@@ -88,6 +90,7 @@ sub new {
         'IsCustomerInterfaceCapable'   => 1,
         'IsSetCapable'                 => 0,
         'SetsDynamicContent'           => 1,
+        'IsSetField'                   => 1,
     };
 
     return $Self;
@@ -134,6 +137,7 @@ sub ValueSet {
 
     my @SetValue = defined $Param{Value} ? $Param{Value}->@* : ( {} );
 
+    my $ParamObject        = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
@@ -145,11 +149,90 @@ sub ValueSet {
 
     return if !$DynamicField;
 
+    # if we've been coming via some form, parts may be invisible
+    my @HiddenFields;
+
+    my $FormID = $ParamObject->GetParam( Param => 'FormID' );
+    if ($FormID) {
+
+        my $Visibility = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => 'HiddenFields',
+            Key  => $FormID,
+        );
+
+        # check if any of our Set inner fields are hidden
+        for my $DFName ( keys $DynamicField->%* ) {
+
+            my $Fullname = "DynamicField_$DFName";
+            if ( exists $Visibility->{$Fullname} && $Visibility->{$Fullname} == 0 ) {
+
+                push @HiddenFields, $DFName;
+            }
+        }
+    }
+
     for my $Name ( sort keys $DynamicField->%* ) {
 
-        # The values for an included dynamic field are the values from the respective column
+        # the values for an included dynamic field are the values from the respective column
         my @FieldValue = map { $_->{$Name} } @SetValue;
 
+        # check if this set field is hidden
+        my $IsHidden = grep { $_ eq $Name } @HiddenFields;
+        if ( $IsHidden && $ParamObject ) {
+
+            # restore hidden field values from old values
+            my $OldValues = $BackendObject->ValueGet(
+                %Param,
+                DynamicFieldConfig => $DynamicField->{$Name},
+                Set                => 1,
+                ObjectName         => undef,
+            ) // [];
+
+            if ( $Param{DynamicFieldConfig}{Config}{MultiValue} ) {
+
+                my $IndexMax = $#FieldValue;
+
+                # gather OriginSetIndex values
+                # to detect if we had delete/append operations
+                my @OriginSetIndex = $ParamObject->GetArray(
+                    Param => 'OriginSetIndex_' . $Param{DynamicFieldConfig}->{Name},
+                );
+
+                for my $Index ( 0 .. $IndexMax ) {
+
+                    my $OriginIndex = $OriginSetIndex[$Index];
+
+                    if ( $OriginIndex == $Index ) {
+
+                        # index is still at original position,
+                        # no delete/append happend
+                        # but since the field is hidden,
+                        # replace the incoming value
+                        $FieldValue[$Index] = $OldValues->[$Index];
+                    }
+                    elsif ( $OriginIndex == -1 ) {
+
+                        # index did not exist initially,
+                        # value is result of append,
+                        # make sure hidden field gets empty value
+                        $FieldValue[$Index] = undef;
+                    }
+                    else {
+
+                        # index has moved due to delete/append
+                        # so replace incoming value with the
+                        # value from DB at the *original* index
+                        $FieldValue[$Index] = $OldValues->[$OriginIndex];
+                    }
+                }
+            }
+            else {
+
+                @FieldValue = $OldValues->@*;
+            }
+        }
+
+        # finally store the value
         if (
             !$BackendObject->ValueSet(
                 %Param,
@@ -281,10 +364,17 @@ sub EditFieldRender {
         }
     }
 
+    if ( $Param{Visibility} ) {
+        %Visibility = (
+            %Visibility,
+            $Param{Visibility}->%*,
+        );
+    }
+
     for my $SetIndex ( 0 .. $#SetValue ) {
         my %Value;
         for my $Name ( sort keys $DynamicField->%* ) {
-            $Value{"DynamicField_$Name"}          = $SetValue[$SetIndex]{$Name};
+            $Value{"DynamicField_$Name"}          = $Visibility{"DynamicField_$Name"} ? $SetValue[$SetIndex]{$Name} : undef;
             $DynamicField->{$Name}{Name}          = $Name . ( $Param{DynamicFieldConfig}{ProcessSuffix} // '' ) . '_' . $SetIndex;
             $DynamicField->{$Name}{ProcessSuffix} = $Param{DynamicFieldConfig}{ProcessSuffix};
         }
@@ -350,6 +440,7 @@ sub EditFieldRender {
             ParamObject        => $Param{ParamObject},
             DynamicFieldValues => \%TemplateValues,
             CustomerInterface  => $Param{CustomerInterface},
+            Visibility         => \%Visibility,
 
             # can be set by preceding GetFieldState()
             PossibleValuesFilter => $Self->{PossibleValuesFilter}{ $Param{DynamicFieldConfig}->{Name} }[ $#SetValue + 1 ] // {},
@@ -830,8 +921,8 @@ sub RandomValueSet {
 
     return { Success => 0 } if !$DynamicField;
 
-    for my $Name ( sort keys $DynamicField->%* ) {
-        my $DynamicFieldConfig = $DynamicField->{$Name};
+    for my $Pair ( pairs $DynamicField->%* ) {
+        my ( $Name, $DynamicFieldConfig ) = $Pair->@*;
 
         my $Return = $BackendObject->RandomValueSet(
             %Param,
@@ -951,9 +1042,44 @@ sub GetFieldState {
 
     my %Return;
 
+    #  check if whole Set re-appears
+    my $WholeSetReAppears = 0;
+    if ( $Param{CachedVisibility} && $Param{CachedVisibility}{"DynamicField_$SetConfig->{Name}"} == 0 )
+    {
+        $WholeSetReAppears = 1;
+    }
+
+    my $PassVisibility = 0;
+    if ( $Param{CachedVisibility} ) {
+        my $InnerField = ( keys $DynamicField->%* )[0];
+
+        # if we are not in the first run for this mask, we provide the cached visibility for the inner fields
+        if ( exists $Param{CachedVisibility}{"DynamicField_$InnerField\_0"} ) {
+            $PassVisibility = 1;
+        }
+    }
+
     for my $SetIndex ( 0 .. $#SetValue ) {
-        for my $Name ( sort keys $DynamicField->%* ) {
+
+        for my $Name ( keys $DynamicField->%* ) {
             $DFParam{"DynamicField_$Name"} = $SetValue[$SetIndex]{$Name};
+        }
+
+        my %IndexVisibility;
+
+        # if we have a cached visibility, we use it for set inner fields, too
+        if ($PassVisibility) {
+
+            # if the whole set is reappearing, we must treat all inner fields as reappearing
+            if ($WholeSetReAppears) {
+                %IndexVisibility = map { 'DynamicField_' . $_ => 0 } keys $DynamicField->%*;
+            }
+            else {
+                for my $Name ( keys $DynamicField->%* ) {
+                    $IndexVisibility{"DynamicField_$Name"} =
+                        $Param{CachedVisibility}{"DynamicField_$Name\_$SetIndex"} // $Param{CachedVisibility}{"DynamicField_$Name\_Template"};
+                }
+            }
         }
 
         my $LoopProtection = 100;
@@ -965,19 +1091,76 @@ sub GetFieldState {
                 %DFParam,
                 DynamicField => \%DFParam,
             },
-            LoopProtection     => \$LoopProtection,
-            PossibleValuesOnly => 1,
-            SetIndex           => $SetIndex,
+            LoopProtection   => \$LoopProtection,
+            SetIndex         => $SetIndex,
+            CachedVisibility => $PassVisibility ? \%IndexVisibility : undef,
+            NoDefaultValue   => 1,
         );
 
-        for my $Name ( sort keys $SetFieldStates{Fields}->%* ) {
+        for my $Name ( keys $SetFieldStates{Fields}->%* ) {
+
+            my $DFName = "DynamicField_" . $Name;
+            if (
+                exists $IndexVisibility{$DFName} &&
+                $IndexVisibility{$DFName} == 0   &&
+                $SetFieldStates{Visibility}{$DFName}
+                )
+            {
+                my $ParamObject = $Param{ParamObject} // $Kernel::OM->Get('Kernel::System::Web::Request');
+                if ( $ParamObject && $Param{ObjectID} ) {
+
+                    my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+                    my $OldValues     = $BackendObject->ValueGet(
+                        ObjectID           => $Param{ObjectID},
+                        DynamicFieldConfig => $DynamicField->{$Name},
+                        Set                => 1,
+                        ObjectName         => undef,
+                    ) // [];
+
+                    if ( $DynamicField->{$Name}{Config}{MultiValue} ) {
+
+                        # gather OriginSetIndex values
+                        # to detect if we had delete/append operations
+                        my @OriginSetIndex = $ParamObject->GetArray(
+                            Param => 'OriginSetIndex_' . $SetConfig->{Name},
+                        );
+
+                        if (@OriginSetIndex) {
+
+                            my $OriginIndex = $OriginSetIndex[$SetIndex];
+                            if ( $OriginIndex == $SetIndex ) {
+
+                                # index is still at original position,
+                                # no delete/append happend
+                                # but since the field is hidden,
+                                # replace the incoming value
+                                $SetFieldStates{NewValues}{$Name} = $OldValues->[$SetIndex];
+                            }
+                            elsif ( $OriginIndex == -1 ) {
+
+                                # index did not exist initially,
+                                # value is result of append,
+                                # make sure hidden field gets empty value
+                                $SetFieldStates{NewValues}{$Name} = undef;
+                            }
+                            else {
+
+                                # index has moved due to delete/append
+                                # so replace incoming value with the
+                                # value from DB at the *original* index
+                                $SetFieldStates{NewValues}{$Name} = $OldValues->[$OriginIndex];
+                            }
+                        }
+                    }
+                }
+            }
 
             my $SuffixedName = $Name . ( $SetConfig->{ProcessSuffix} || '' );
 
             # prepare the return used by the frontend modules for AJAX updates
-            $Return{Set}{$Name}{DynamicFieldConfig}                             = $DynamicField->{$Name};
-            $Return{Set}{$Name}{FieldStates}{ $SuffixedName . '_' . $SetIndex } = $SetFieldStates{Fields}{$Name};
-            $Return{Set}{$Name}{Values}{ $SuffixedName . '_' . $SetIndex }      = exists $SetFieldStates{NewValues}{$Name}
+            $Return{Sets}{$Name}{DynamicFieldConfig}                             = $DynamicField->{$Name};
+            $Return{Sets}{$Name}{FieldStates}{ $SuffixedName . '_' . $SetIndex } = $SetFieldStates{Fields}{$Name};
+            $Return{Sets}{$Name}{Values}{ $SuffixedName . '_' . $SetIndex }      = exists $SetFieldStates{NewValues}{$Name}
                 ?
                 $SetFieldStates{NewValues}{$Name}
                 : $DFParam{"DynamicField_$Name"};
@@ -990,11 +1173,36 @@ sub GetFieldState {
             # store the reduced possible values in this object for a possible subsequent EditFieldRender
             $Self->{PossibleValuesFilter}{ $SetConfig->{Name} }[$SetIndex]{ 'DynamicField_' . $Name } = $SetFieldStates{Fields}{$Name}{PossibleValues};
         }
+
+        for my $DFName ( keys $SetFieldStates{Visibility}->%* ) {
+
+            # the returned visibility will only be cached if the changed element affects visibility
+
+            # ajax visibility
+            $Return{Visibility}{ $DFName . '_' . $SetIndex } = $SetFieldStates{Visibility}{$DFName};
+
+            # initial render visibility
+            $Return{Visibility}{$DFName} = $SetFieldStates{Visibility}{$DFName};
+        }
     }
 
     if ( $SetConfig->{Config}{MultiValue} ) {
-        for my $Name ( sort keys $DynamicField->%* ) {
+        for my $Name ( keys $DynamicField->%* ) {
             $DFParam{"DynamicField_$Name"} = undef;
+        }
+
+        my %IndexVisibility;
+        if ($PassVisibility) {
+
+            # if the whole set is reappearing, we must treat all inner fields as reappearing
+            if ($WholeSetReAppears) {
+                %IndexVisibility = map { 'DynamicField_' . $_ => 0 } keys $DynamicField->%*;
+            }
+            else {
+                for my $Name ( keys $DynamicField->%* ) {
+                    $IndexVisibility{"DynamicField_$Name"} = $Param{CachedVisibility}{"DynamicField_$Name\_Template"};
+                }
+            }
         }
 
         my $LoopProtection = 100;
@@ -1006,8 +1214,9 @@ sub GetFieldState {
                 %DFParam,
                 DynamicField => \%DFParam,
             },
-            LoopProtection     => \$LoopProtection,
-            PossibleValuesOnly => 1,
+            LoopProtection   => \$LoopProtection,
+            CachedVisibility => $PassVisibility ? \%IndexVisibility : undef,
+            NoDefaultValue   => 1,
         );
 
         for my $Name ( sort keys $SetFieldStates{Fields}->%* ) {
@@ -1015,9 +1224,9 @@ sub GetFieldState {
             my $SuffixedName = $Name . ( $SetConfig->{ProcessSuffix} || '' );
 
             # prepare the return used by the frontend modules for AJAX updates
-            $Return{Set}{$Name}{DynamicFieldConfig}                         = $DynamicField->{$Name};
-            $Return{Set}{$Name}{FieldStates}{ $SuffixedName . '_Template' } = $SetFieldStates{Fields}{$Name};
-            $Return{Set}{$Name}{Values}{ $SuffixedName . '_Template' }      = exists $SetFieldStates{NewValues}{$Name}
+            $Return{Sets}{$Name}{DynamicFieldConfig}                         = $DynamicField->{$Name};
+            $Return{Sets}{$Name}{FieldStates}{ $SuffixedName . '_Template' } = $SetFieldStates{Fields}{$Name};
+            $Return{Sets}{$Name}{Values}{ $SuffixedName . '_Template' }      = exists $SetFieldStates{NewValues}{$Name}
                 ?
                 $SetFieldStates{NewValues}{$Name}
                 : $DFParam{"DynamicField_$Name"};
@@ -1029,8 +1238,51 @@ sub GetFieldState {
                 $SetFieldStates{NewValues}{$Name}
                 : $DFParam{"DynamicField_$Name"};
         }
+
+        for my $DFName ( keys $SetFieldStates{Visibility}->%* ) {
+            $Return{Visibility}{ $DFName . '_Template' } = $SetFieldStates{Visibility}{$DFName};
+        }
     }
 
+    if ($WholeSetReAppears) {
+
+        my $ParamObject = $Param{ParamObject} // $Kernel::OM->Get('Kernel::System::Web::Request');
+        if ( $ParamObject && $Param{ObjectID} ) {
+
+            my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+            my $OldValues     = $BackendObject->ValueGet(
+                ObjectID           => $Param{ObjectID},
+                DynamicFieldConfig => $SetConfig,
+                Set                => 1,
+                ObjectName         => undef,
+            ) // [];
+
+            my @InnerFields = map { $_->{DF} } $SetConfig->{Config}->{Include}->@*;
+
+            for my $SetIndex ( 0 .. $#SetValue ) {
+
+                for my $DFName (@InnerFields) {
+
+                    $Return{Sets}{$DFName}{DynamicFieldConfig} = $DynamicField->{$DFName};
+                    $Return{Sets}{$DFName}{Values}{ $DFName . "_" . $SetIndex } = $OldValues->[$SetIndex]->{$DFName};
+                    if ( !exists $Return{Sets}{$DFName}{FieldStates}{ $DFName . '_' . $SetIndex } ) {
+                        $Return{Sets}{$DFName}{FieldStates}{ $DFName . '_' . $SetIndex } = {
+                            'PossibleValues'  => undef,
+                            'NotACLReducible' => 1,
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    # fill up NewValue with existing ones
+    if ( exists $Return{NewValue} ) {
+        $Return{NewValue} = $Self->_MergeValues(
+            GetParamValue => $DFParam{"DynamicField_$SetConfig->{Name}"},
+            NewValue      => $Return{NewValue},
+        );
+    }
     return %Return;
 }
 

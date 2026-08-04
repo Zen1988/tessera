@@ -168,6 +168,11 @@ sub Run {
 
     # get layout object
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $CustomerEntitlementObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
+
+    if ( !$CustomerEntitlementObject->CustomerHasAssetRole( CustomerUserID => $Self->{UserID} ) ) {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
 
     my $Output;
     if ( $Self->{Subaction} ne 'AJAXFilterUpdate' ) {
@@ -338,11 +343,18 @@ sub Run {
 
             my $Count = 0;
             if ( @ViewableClassIDs && @ViewableDeplStateIDs ) {
-                $Count = $ConfigItemObject->ConfigItemSearch(
+                my @CountConfigItemIDs = $ConfigItemObject->ConfigItemSearch(
                     %FilterSearch,
                     %ColumnFilter,
-                    Result => 'COUNT',
+                    Result => 'ARRAY',
                 );
+                $Count = scalar @{
+                    $CustomerEntitlementObject->ConfigItemIDsFilter(
+                        CustomerUserID   => $Self->{UserID},
+                        ConfigItemIDs    => \@CountConfigItemIDs,
+                        RequireAssetRole => 1,
+                    )
+                };
             }
 
             $Filters{$ConfigIdentifier} = {
@@ -493,6 +505,13 @@ sub Run {
                 Limit  => $Limit,
                 Result => 'ARRAY',
             );
+            @OriginalViewableConfigItems = @{
+                $CustomerEntitlementObject->ConfigItemIDsFilter(
+                    CustomerUserID   => $Self->{UserID},
+                    ConfigItemIDs    => \@OriginalViewableConfigItems,
+                    RequireAssetRole => 1,
+                )
+            };
 
             my $StartHit = $ParamObject->GetParam( Param => 'StartHit' ) || 1;
 
@@ -506,12 +525,12 @@ sub Run {
                 IDPrefix  => 'CustomerITSMConfigItem',
             );
 
-            @ViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
-                %{ $Filters{$Filter}->{Search} },
-                %ColumnFilter,
-                Limit  => $StartHit + $PageShown - 1,
-                Result => 'ARRAY',
-            );
+            my $FirstIndex = $StartHit - 1;
+            my $LastIndex  = $FirstIndex + $PageShown - 1;
+            $LastIndex = $#OriginalViewableConfigItems if $LastIndex > $#OriginalViewableConfigItems;
+            @ViewableConfigItems = $FirstIndex <= $#OriginalViewableConfigItems
+                ? @OriginalViewableConfigItems[ $FirstIndex .. $LastIndex ]
+                : ();
         }
 
     }
@@ -568,11 +587,18 @@ sub Run {
     for my $FilterColumn ( sort keys %Filters ) {
         my $Count = 0;
         if (@ViewableDeplStateIDs) {
-            $Count = $ConfigItemObject->ConfigItemSearch(
+            my @CountConfigItemIDs = $ConfigItemObject->ConfigItemSearch(
                 %{ $Filters{$FilterColumn}->{Search} },
                 %ColumnFilter,
-                Result => 'COUNT',
-            ) || 0;
+                Result => 'ARRAY',
+            );
+            $Count = scalar @{
+                $CustomerEntitlementObject->ConfigItemIDsFilter(
+                    CustomerUserID   => $Self->{UserID},
+                    ConfigItemIDs    => \@CountConfigItemIDs,
+                    RequireAssetRole => 1,
+                )
+            };
         }
 
         if ( $FilterColumn eq $Filter ) {

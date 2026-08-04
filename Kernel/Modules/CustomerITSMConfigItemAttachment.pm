@@ -88,9 +88,9 @@ sub Run {
     }
 
     # check permissions
-    my $HasAccess = $ConfigItemObject->CustomerPermission(
-        ConfigItemID => $ConfigItem->{ConfigItemID},
-        UserID       => $Self->{UserID},
+    my $HasAccess = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemDetailAccessCheck(
+        ConfigItemID    => $ConfigItem->{ConfigItemID},
+        CustomerUserID => $Self->{UserID},
     );
     if ( !$HasAccess ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );

@@ -143,7 +143,7 @@ sub Run {
 
         my $Subject;
 
-        # TODO: get config oútside the loop
+        # TODO: get config outside the loop
         my $SmallViewColumnHeader = $ConfigObject->Get('Ticket::Frontend::CustomerTicketOverview')->{ColumnHeader};
 
         # Check if the last customer subject or ticket title should be shown.
@@ -163,7 +163,8 @@ sub Run {
         # Age design.
         $Ticket{CustomerAge} = $LayoutObject->CustomerAge(
             Age   => $Ticket{Age},
-            Space => ' '
+            Space => ' ',
+            Date  => $Ticket{Created},
         ) || 0;
 
         # return ticket information if there is no article
@@ -217,6 +218,7 @@ sub Run {
         my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
         my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
+        # NOTE the sysconfig setting Ticket::Frontend::CustomerTicketOverview is not used for its original purpose anymore, but kept here due to historical reasons
         # get dynamic field config for frontend module
         my $DynamicFieldFilter = $ConfigObject->Get("Ticket::Frontend::CustomerTicketOverview")->{DynamicField};
         my $DynamicField       = $DynamicFieldObject->DynamicFieldListGet(
@@ -251,7 +253,6 @@ sub Run {
             my $ValueStrg = $BackendObject->DisplayValueRender(
                 DynamicFieldConfig => $DynamicFieldConfig,
                 Value              => $Value,
-                ValueMaxChars      => 20,
                 LayoutObject       => $LayoutObject,
             );
             next DYNAMICFIELD if ( !defined $ValueStrg->{Value} || $ValueStrg->{Value} eq '' );

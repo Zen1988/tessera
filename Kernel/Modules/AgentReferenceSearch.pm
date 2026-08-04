@@ -178,6 +178,20 @@ sub Run {
         %UserData,
     );
 
+    if (
+        $LayoutObject->{SessionSource} eq 'CustomerInterface'
+        && ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{\AConfigItem(?:Version)?\z}
+        )
+    {
+        @ObjectIDs = @{
+            $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
+                CustomerUserID   => $Self->{UserID},
+                ConfigItemIDs    => \@ObjectIDs,
+                RequireAssetRole => 0,
+            )
+        };
+    }
+
     if ( $PickerMode && $Term ne '' ) {
         my @PickerObjectIDs = $DynamicFieldBackendObject->SearchObjects(
             DynamicFieldConfig => $DynamicFieldConfig,
@@ -186,6 +200,20 @@ sub Run {
             ParamObject        => $ParamObject,
             %UserData,
         );
+
+        if (
+            $LayoutObject->{SessionSource} eq 'CustomerInterface'
+            && ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{\AConfigItem(?:Version)?\z}
+            )
+        {
+            @PickerObjectIDs = @{
+                $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
+                    CustomerUserID   => $Self->{UserID},
+                    ConfigItemIDs    => \@PickerObjectIDs,
+                    RequireAssetRole => 0,
+                )
+            };
+        }
 
         my %SeenObjectID = map { $_ => 1 } @ObjectIDs;
         for my $ObjectID (@PickerObjectIDs) {

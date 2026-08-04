@@ -178,6 +178,20 @@ sub Run {
         %UserData,
     );
 
+    if (
+        $LayoutObject->{SessionSource} eq 'CustomerInterface'
+        && ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{\AConfigItem(?:Version)?\z}
+        )
+    {
+        @ObjectIDs = @{
+            $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
+                CustomerUserID   => $Self->{UserID},
+                ConfigItemIDs    => \@ObjectIDs,
+                RequireAssetRole => 0,
+            )
+        };
+    }
+
     if ( $PickerMode && $Term ne '' ) {
         my @PickerObjectIDs = $DynamicFieldBackendObject->SearchObjects(
             DynamicFieldConfig => $DynamicFieldConfig,
@@ -186,6 +200,20 @@ sub Run {
             ParamObject        => $ParamObject,
             %UserData,
         );
+
+        if (
+            $LayoutObject->{SessionSource} eq 'CustomerInterface'
+            && ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{\AConfigItem(?:Version)?\z}
+            )
+        {
+            @PickerObjectIDs = @{
+                $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
+                    CustomerUserID   => $Self->{UserID},
+                    ConfigItemIDs    => \@PickerObjectIDs,
+                    RequireAssetRole => 0,
+                )
+            };
+        }
 
         my %SeenObjectID = map { $_ => 1 } @ObjectIDs;
         for my $ObjectID (@PickerObjectIDs) {
@@ -480,14 +508,15 @@ sub _TESSERAReferenceContextFilterGet {
                     FieldType => $Param{DynamicFieldConfig}->{FieldType},
                     ObjectID  => $ObjectID,
                 );
-                my @TargetValues = _TESSERAObjectDynamicFieldValues(
-                    Object => $TargetObject,
-                    Field  => $Spec->{TargetObjectField},
-                );
                 if (
                     !IsHashRefWithData($TargetObject)
                     || !_TESSERAValueListContains(
-                        Values => \@TargetValues,
+                        Values => [
+                            _TESSERAObjectDynamicFieldValues(
+                                Object => $TargetObject,
+                                Field  => $Spec->{TargetObjectField},
+                            )
+                        ],
                         Value => $ContextValue,
                     )
                     )
@@ -597,74 +626,12 @@ sub _TESSERAValueListContains {
     my $Value = $Param{Value};
     return if !defined $Value || $Value eq '';
 
-    my %Wanted = map { $_ => 1 } _TESSERAReferenceValueAliasesGet( Value => $Value );
-    return if !%Wanted;
-
     for my $Item ( @{ $Param{Values} || [] } ) {
         next if !defined $Item || $Item eq '';
-        for my $Alias ( _TESSERAReferenceValueAliasesGet( Value => $Item ) ) {
-            return 1 if $Wanted{$Alias};
-        }
+        return 1 if "$Item" eq "$Value";
     }
 
     return;
-}
-
-sub _TESSERAReferenceValueAliasesGet {
-    my (%Param) = @_;
-
-    my $Value = $Param{Value};
-    return if !defined $Value;
-
-    my @Aliases;
-    my %Seen;
-
-    VALUE:
-    for my $Candidate ( _TESSERANormalizeArray($Value) ) {
-        next VALUE if !defined $Candidate || ref $Candidate;
-
-        my $Text = "$Candidate";
-        $Text =~ s{\A\s+|\s+\z}{}g;
-        next VALUE if $Text eq '';
-
-        for my $Alias (
-            $Text,
-            $Text =~ m{\A[^:]{1,80}:\s*(.+)\z} ? $1 : (),
-        )
-        {
-            next if !defined $Alias;
-            $Alias =~ s{\A\s+|\s+\z}{}g;
-            next if $Alias eq '';
-            next if $Seen{$Alias}++;
-            push @Aliases, $Alias;
-        }
-
-        if ( $Text =~ m{\A\d+\z} ) {
-            my $Object = eval {
-                $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
-                    GovernanceObjectID => $Text,
-                    DynamicFields      => 0,
-                    UserID             => 1,
-                    Silent             => 1,
-                );
-            };
-            next VALUE if !IsHashRefWithData($Object);
-
-            for my $Alias (
-                $Object->{Name},
-                $Object->{Number},
-                $Object->{Class} && $Object->{Name} ? "$Object->{Class}: $Object->{Name}" : (),
-            )
-            {
-                next if !defined $Alias || $Alias eq '';
-                $Alias =~ s{\A\s+|\s+\z}{}g;
-                next if $Seen{$Alias}++;
-                push @Aliases, $Alias;
-            }
-        }
-    }
-
-    return @Aliases;
 }
 
 sub _TESSERAReferenceParamValueGet {

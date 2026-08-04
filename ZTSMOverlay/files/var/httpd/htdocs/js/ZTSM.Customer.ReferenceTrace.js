@@ -661,7 +661,9 @@
             var Cell,
                 Row,
                 Key,
-                Button;
+                Button,
+                Tooltip,
+                TooltipContent;
 
             if (!IsReferenceField(Element) || Element.type === 'hidden') {
                 return;
@@ -674,6 +676,26 @@
 
             Key = Element.id || Element.name || '';
             Cell.classList.add('ZTSMReferencePickerCell');
+            Tooltip = Array.prototype.filter.call(Cell.children || [], function (Child) {
+                return Child.classList
+                    && Child.classList.contains('Tooltip')
+                    && Child.classList.contains('oooTooltip');
+            })[0];
+            if (Tooltip) {
+                Tooltip.classList.add('ZTSMReferencePickerTooltip');
+                Tooltip.style.setProperty('position', 'absolute', 'important');
+                Tooltip.style.setProperty('top', '50%', 'important');
+                Tooltip.style.setProperty('right', '116px', 'important');
+                Tooltip.style.setProperty('bottom', 'auto', 'important');
+                Tooltip.style.setProperty('left', 'auto', 'important');
+                Tooltip.style.setProperty('margin', '-9px 0 0', 'important');
+                Tooltip.style.setProperty('transform', 'none', 'important');
+                TooltipContent = Tooltip.querySelector(':scope > .Content');
+                if (TooltipContent) {
+                    TooltipContent.style.setProperty('right', '0', 'important');
+                    TooltipContent.style.setProperty('left', 'auto', 'important');
+                }
+            }
             MakeReadonlyDisplay(Element);
             Row = Element.closest ? Element.closest('.Row_DynamicField') : null;
             if (Row && Row.classList) {
