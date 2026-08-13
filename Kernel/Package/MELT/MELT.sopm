@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>MELT</Name>
-    <Version>0.0.1</Version>
-    <Framework>11.0.x</Framework>
+    <Version>0.0.14</Version>
+    <Framework>11.1.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
     <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
@@ -21,6 +21,8 @@
         <File Location="Kernel/Modules/AgentMELTGeneralCatalogDocument.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentMELTObject.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentMELTObjectAdd.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentMELTObjectActivity.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentMELTObjectWorkbook.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentMELTObjectAttachment.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentMELTObjectBulk.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentMELTObjectDelete.pm" Permission="660"/>
@@ -56,9 +58,11 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTGeneralCatalogDocument.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObject.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectAdd.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectActivity.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectBulk.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectDelete.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectDocument.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectWorkbook.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectEdit.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectHistory.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentMELTObjectOverviewNavBar.tt" Permission="660"/>
@@ -81,6 +85,8 @@
         <File Location="Kernel/System/MELT/Number/MELTID.pm" Permission="660"/>
         <File Location="Kernel/System/MELTObject.pm" Permission="660"/>
         <File Location="Kernel/System/MELTObject/ColumnFilter.pm" Permission="660"/>
+        <File Location="Kernel/System/MELTObject/Activity.pm" Permission="660"/>
+        <File Location="Kernel/System/MELTObject/Event/ActivityRecorder.pm" Permission="660"/>
         <File Location="Kernel/System/MELTObject/Definition.pm" Permission="660"/>
         <File Location="Kernel/System/MELTObject/Document.pm" Permission="660"/>
         <File Location="Kernel/System/MELTObject/Event/DefinitionMELTObjectUpdate.pm" Permission="660"/>
@@ -111,6 +117,8 @@
         <File Location="var/melt/default_classes.json" Permission="660"/>
         <File Location="var/melt/default_general_catalog.yml" Permission="660"/>
         <File Location="var/httpd/htdocs/js/Core.Agent.Admin.MELTGeneralCatalogDocument.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/ZTSM.Agent.MELTObject.Workbook.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/thirdparty/melt-sheetjs-0.20.3/xlsx.full.min.js" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
@@ -122,609 +130,18 @@
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::MELT::Bootstrap');
         $BootstrapObject->InstallDefaults();
     ]]></CodeUpgrade>
-
-    <DatabaseInstall Type="post">
-        <Insert Type="post" Table="groups_table">
-            <Data Key="name" Type="Quote">melt</Data>
-            <Data Key="comments" Type="Quote">MELT access group.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-
-        <TableCreate Type="post" Name="melt_object">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="meltid" Required="true" Size="100" Type="VARCHAR"/>
-            <Column Name="ztsm_code" Required="true" Size="100" Type="VARCHAR"/>
-            <Column Name="ztsm_status" Required="true" Size="50" Type="VARCHAR"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Unique Name="melt_object_meltid">
-                <UniqueColumn Name="meltid"/>
-            </Unique>
-            <Unique Name="melt_object_ztsm_code">
-                <UniqueColumn Name="ztsm_code"/>
-            </Unique>
-            <Index Name="melt_object_ztsm_status">
-                <IndexColumn Name="ztsm_status"/>
-            </Index>
-            <Index Name="melt_object_class_id">
-                <IndexColumn Name="class_id"/>
-            </Index>
-            <Index Name="melt_object_last_version_id">
-                <IndexColumn Name="last_version_id"/>
-            </Index>
-            <ForeignKey ForeignTable="general_catalog">
-                <Reference Foreign="id" Local="class_id"/>
-            </ForeignKey>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_definition">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="definition" Required="true" Type="LONGBLOB"/>
-            <Column Name="version" Required="true" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <ForeignKey ForeignTable="general_catalog">
-                <Reference Foreign="id" Local="class_id"/>
-            </ForeignKey>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_version">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="name" Required="true" Size="250" Type="VARCHAR"/>
-            <Column Name="description" Required="false" Size="250" Type="VARCHAR"/>
-            <Column Name="definition_id" Required="true" Type="BIGINT"/>
-            <Column Name="version_string" Required="true" Size="50" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Index Name="melt_object_version_object_id">
-                <IndexColumn Name="melt_object_id"/>
-            </Index>
-            <Index Name="melt_object_version_definition_id">
-                <IndexColumn Name="definition_id"/>
-            </Index>
-            <ForeignKey ForeignTable="melt_object">
-                <Reference Foreign="id" Local="melt_object_id"/>
-            </ForeignKey>
-            <ForeignKey ForeignTable="melt_object_definition">
-                <Reference Foreign="id" Local="definition_id"/>
-            </ForeignKey>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_counter">
-            <Column Name="counter_key" Required="true" PrimaryKey="true" Size="100" Type="VARCHAR"/>
-            <Column Name="counter_value" Required="true" Type="BIGINT"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_history_type">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="SMALLINT"/>
-            <Column Name="name" Required="true" Size="100" Type="VARCHAR"/>
-            <Column Name="comments" Required="false" Size="250" Type="VARCHAR"/>
-            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Unique Name="melt_object_history_type_name">
-                <UniqueColumn Name="name"/>
-            </Unique>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_history">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="history_type_id" Required="true" Type="SMALLINT"/>
-            <Column Name="name" Required="true" Size="200" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <ForeignKey ForeignTable="melt_object">
-                <Reference Foreign="id" Local="melt_object_id"/>
-            </ForeignKey>
-            <ForeignKey ForeignTable="melt_object_history_type">
-                <Reference Foreign="id" Local="history_type_id"/>
-            </ForeignKey>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_definition_sync">
-            <Column Name="class_id" Required="true" PrimaryKey="true" Type="INTEGER"/>
-            <Column Name="definition_hash" Required="true" Size="32" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_link">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="source_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="source_melt_object_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <ForeignKey ForeignTable="melt_object">
-                <Reference Foreign="id" Local="source_melt_object_id"/>
-            </ForeignKey>
-            <ForeignKey ForeignTable="melt_object_version">
-                <Reference Foreign="id" Local="source_melt_object_version_id"/>
-            </ForeignKey>
-            <ForeignKey ForeignTable="melt_object">
-                <Reference Foreign="id" Local="target_melt_object_id"/>
-            </ForeignKey>
-            <ForeignKey ForeignTable="melt_object_version">
-                <Reference Foreign="id" Local="target_melt_object_version_id"/>
-            </ForeignKey>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="meltid" Required="true" Size="100" Type="VARCHAR"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Unique Name="melt_object_item_meltid"><UniqueColumn Name="meltid"/></Unique>
-            <Index Name="melt_object_item_class_id"><IndexColumn Name="class_id"/></Index>
-            <Index Name="melt_object_item_last_version_id"><IndexColumn Name="last_version_id"/></Index>
-            <Index Name="melt_object_item_ztsm_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_definition">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="melt_object_item_definition" Required="true" Type="LONGBLOB"/>
-            <Column Name="dynamicfield_definition" Required="false" Type="LONGBLOB"/>
-            <Column Name="version" Required="true" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_version">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="version_string" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="definition_id" Required="true" Type="INTEGER"/>
-            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
-            <Column Name="description" Required="false" Size="1800000" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Index Name="melt_object_item_version_object_id"><IndexColumn Name="melt_object_id"/></Index>
-            <Index Name="melt_object_item_version_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_counter">
-            <Column Name="class_id" PrimaryKey="true" Required="true" Type="INTEGER"/>
-            <Column Name="counter_type" Required="true" Size="50" Type="VARCHAR"/>
-            <Column Name="counter" Required="true" Size="50" Type="VARCHAR"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_history_type">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
-            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="comments" Required="false" Size="191" Type="VARCHAR"/>
-            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="false" Type="DATE"/>
-            <Column Name="change_by" Required="false" Type="INTEGER"/>
-            <Unique Name="melt_object_item_history_type_name"><UniqueColumn Name="name"/></Unique>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_history">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="type_id" Required="true" Type="INTEGER"/>
-            <Column Name="content" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_definition_sync">
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="field_id" Required="true" Type="INTEGER"/>
-        </TableCreate>
-
-        <TableCreate Type="post" Name="melt_object_item_link">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="source_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="source_melt_object_item_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_item_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
-            <Column Name="dynamic_field_id" Required="false" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data>
-            <Data Key="name" Translatable="1" Type="Quote">All</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Governance</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Runtime</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">BlueBook</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">StateBook</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">ServiceSupportMap</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data>
-            <Data Key="name" Translatable="1" Type="Quote">SupportAssignment</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Draft</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Review</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Approved</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Active</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="general_catalog">
-            <Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data>
-            <Data Key="name" Translatable="1" Type="Quote">Retired</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-
-        <Insert Type="post" Table="melt_object_history_type">
-            <Data Key="name" Type="Quote">MELTObjectCreate</Data>
-            <Data Key="comments" Type="Quote">MELT object created.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_history_type">
-            <Data Key="name" Type="Quote">MELTObjectUpdate</Data>
-            <Data Key="comments" Type="Quote">MELT object updated.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_history_type">
-            <Data Key="name" Type="Quote">VersionCreate</Data>
-            <Data Key="comments" Type="Quote">MELT object version created.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_history_type">
-            <Data Key="name" Type="Quote">StatusUpdate</Data>
-            <Data Key="comments" Type="Quote">Governance status updated.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">MELTObjectCreate</Data>
-            <Data Key="comments" Type="Quote">MELTObjectCreate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">MELTObjectUpdate</Data>
-            <Data Key="comments" Type="Quote">MELTObjectUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">MELTObjectDelete</Data>
-            <Data Key="comments" Type="Quote">MELTObjectDelete history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">LinkAdd</Data>
-            <Data Key="comments" Type="Quote">LinkAdd history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">LinkDelete</Data>
-            <Data Key="comments" Type="Quote">LinkDelete history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">NameUpdate</Data>
-            <Data Key="comments" Type="Quote">NameUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">DefinitionUpdate</Data>
-            <Data Key="comments" Type="Quote">DefinitionUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">VersionCreate</Data>
-            <Data Key="comments" Type="Quote">VersionCreate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">VersionUpdate</Data>
-            <Data Key="comments" Type="Quote">VersionUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">DefinitionCreate</Data>
-            <Data Key="comments" Type="Quote">DefinitionCreate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">VersionDelete</Data>
-            <Data Key="comments" Type="Quote">VersionDelete history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">AttachmentAddPost</Data>
-            <Data Key="comments" Type="Quote">AttachmentAddPost history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">AttachmentDeletePost</Data>
-            <Data Key="comments" Type="Quote">AttachmentDeletePost history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">ValueUpdate</Data>
-            <Data Key="comments" Type="Quote">ValueUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">DeploymentStateUpdate</Data>
-            <Data Key="comments" Type="Quote">DeploymentStateUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-        <Insert Type="post" Table="melt_object_item_history_type">
-            <Data Key="name" Type="Quote">IncidentStateUpdate</Data>
-            <Data Key="comments" Type="Quote">IncidentStateUpdate history entry.</Data>
-            <Data Key="valid_id">1</Data>
-            <Data Key="create_time">current_timestamp</Data>
-            <Data Key="create_by">1</Data>
-            <Data Key="change_time">current_timestamp</Data>
-            <Data Key="change_by">1</Data>
-        </Insert>
-    </DatabaseInstall>
+    <CodeUpgrade Type="post" Version="0.0.6"><![CDATA[
+        my $BootstrapObject = $Kernel::OM->Get('Kernel::System::MELT::Bootstrap');
+        $BootstrapObject->CopiedObjectDataClear();
+    ]]></CodeUpgrade>
+    <DatabaseInstall Type="post"><Insert Type="post" Table="groups_table"><Data Key="name" Type="Quote">melt</Data><Data Key="comments" Type="Quote">MELT access group.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><TableCreate Type="post" Name="melt_object"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="meltid" Required="true" Size="100" Type="VARCHAR" /><Column Name="ztsm_code" Required="true" Size="100" Type="VARCHAR" /><Column Name="ztsm_status" Required="true" Size="50" Type="VARCHAR" /><Column Name="class_id" Required="true" Type="INTEGER" /><Column Name="last_version_id" Required="false" Type="BIGINT" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="true" Type="DATE" /><Column Name="change_by" Required="true" Type="INTEGER" /><Unique Name="melt_object_meltid"><UniqueColumn Name="meltid" /></Unique><Unique Name="melt_object_ztsm_code"><UniqueColumn Name="ztsm_code" /></Unique><Index Name="melt_object_ztsm_status"><IndexColumn Name="ztsm_status" /></Index><Index Name="melt_object_class_id"><IndexColumn Name="class_id" /></Index><Index Name="melt_object_last_version_id"><IndexColumn Name="last_version_id" /></Index><ForeignKey ForeignTable="general_catalog"><Reference Foreign="id" Local="class_id" /></ForeignKey></TableCreate><TableCreate Type="post" Name="melt_object_definition"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="class_id" Required="true" Type="INTEGER" /><Column Name="definition" Required="true" Type="LONGBLOB" /><Column Name="version" Required="true" Type="INTEGER" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><ForeignKey ForeignTable="general_catalog"><Reference Foreign="id" Local="class_id" /></ForeignKey></TableCreate><TableCreate Type="post" Name="melt_object_version"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="melt_object_id" Required="true" Type="BIGINT" /><Column Name="name" Required="true" Size="250" Type="VARCHAR" /><Column Name="description" Required="false" Size="250" Type="VARCHAR" /><Column Name="definition_id" Required="true" Type="BIGINT" /><Column Name="version_string" Required="true" Size="50" Type="VARCHAR" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Index Name="melt_object_version_object_id"><IndexColumn Name="melt_object_id" /></Index><Index Name="melt_object_version_definition_id"><IndexColumn Name="definition_id" /></Index><ForeignKey ForeignTable="melt_object"><Reference Foreign="id" Local="melt_object_id" /></ForeignKey><ForeignKey ForeignTable="melt_object_definition"><Reference Foreign="id" Local="definition_id" /></ForeignKey></TableCreate><TableCreate Type="post" Name="melt_object_counter"><Column Name="counter_key" Required="true" PrimaryKey="true" Size="100" Type="VARCHAR" /><Column Name="counter_value" Required="true" Type="BIGINT" /></TableCreate><TableCreate Type="post" Name="melt_object_history_type"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="SMALLINT" /><Column Name="name" Required="true" Size="100" Type="VARCHAR" /><Column Name="comments" Required="false" Size="250" Type="VARCHAR" /><Column Name="valid_id" Required="true" Type="SMALLINT" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="true" Type="DATE" /><Column Name="change_by" Required="true" Type="INTEGER" /><Unique Name="melt_object_history_type_name"><UniqueColumn Name="name" /></Unique></TableCreate><TableCreate Type="post" Name="melt_object_history"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="melt_object_id" Required="true" Type="BIGINT" /><Column Name="history_type_id" Required="true" Type="SMALLINT" /><Column Name="name" Required="true" Size="200" Type="VARCHAR" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><ForeignKey ForeignTable="melt_object"><Reference Foreign="id" Local="melt_object_id" /></ForeignKey><ForeignKey ForeignTable="melt_object_history_type"><Reference Foreign="id" Local="history_type_id" /></ForeignKey></TableCreate><TableCreate Type="post" Name="melt_object_definition_sync"><Column Name="class_id" Required="true" PrimaryKey="true" Type="INTEGER" /><Column Name="definition_hash" Required="true" Size="32" Type="VARCHAR" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="true" Type="DATE" /><Column Name="change_by" Required="true" Type="INTEGER" /></TableCreate><TableCreate Type="post" Name="melt_object_link"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="source_melt_object_id" Required="false" Type="BIGINT" /><Column Name="source_melt_object_version_id" Required="false" Type="BIGINT" /><Column Name="target_melt_object_id" Required="false" Type="BIGINT" /><Column Name="target_melt_object_version_id" Required="false" Type="BIGINT" /><Column Name="link_type_id" Required="true" Type="SMALLINT" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><ForeignKey ForeignTable="melt_object"><Reference Foreign="id" Local="source_melt_object_id" /></ForeignKey><ForeignKey ForeignTable="melt_object_version"><Reference Foreign="id" Local="source_melt_object_version_id" /></ForeignKey><ForeignKey ForeignTable="melt_object"><Reference Foreign="id" Local="target_melt_object_id" /></ForeignKey><ForeignKey ForeignTable="melt_object_version"><Reference Foreign="id" Local="target_melt_object_version_id" /></ForeignKey></TableCreate><TableCreate Type="post" Name="melt_object_item"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="meltid" Required="true" Size="100" Type="VARCHAR" /><Column Name="class_id" Required="true" Type="INTEGER" /><Column Name="last_version_id" Required="false" Type="BIGINT" /><Column Name="ztsm_status_id" Required="false" Type="INTEGER" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="true" Type="DATE" /><Column Name="change_by" Required="true" Type="INTEGER" /><Unique Name="melt_object_item_meltid"><UniqueColumn Name="meltid" /></Unique><Index Name="melt_object_item_class_id"><IndexColumn Name="class_id" /></Index><Index Name="melt_object_item_last_version_id"><IndexColumn Name="last_version_id" /></Index><Index Name="melt_object_item_ztsm_status_id"><IndexColumn Name="ztsm_status_id" /></Index></TableCreate><TableCreate Type="post" Name="melt_object_item_definition"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER" /><Column Name="class_id" Required="true" Type="INTEGER" /><Column Name="melt_object_item_definition" Required="true" Type="LONGBLOB" /><Column Name="dynamicfield_definition" Required="false" Type="LONGBLOB" /><Column Name="version" Required="true" Type="INTEGER" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /></TableCreate><TableCreate Type="post" Name="melt_object_item_version"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="melt_object_id" Required="true" Type="BIGINT" /><Column Name="name" Required="true" Size="191" Type="VARCHAR" /><Column Name="version_string" Required="true" Size="191" Type="VARCHAR" /><Column Name="definition_id" Required="true" Type="INTEGER" /><Column Name="ztsm_status_id" Required="false" Type="INTEGER" /><Column Name="description" Required="false" Size="1800000" Type="VARCHAR" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="true" Type="DATE" /><Column Name="change_by" Required="true" Type="INTEGER" /><Index Name="melt_object_item_version_object_id"><IndexColumn Name="melt_object_id" /></Index><Index Name="melt_object_item_version_status_id"><IndexColumn Name="ztsm_status_id" /></Index></TableCreate><TableCreate Type="post" Name="melt_object_item_counter"><Column Name="class_id" PrimaryKey="true" Required="true" Type="INTEGER" /><Column Name="counter_type" Required="true" Size="50" Type="VARCHAR" /><Column Name="counter" Required="true" Size="50" Type="VARCHAR" /></TableCreate><TableCreate Type="post" Name="melt_object_item_history_type"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER" /><Column Name="name" Required="true" Size="191" Type="VARCHAR" /><Column Name="comments" Required="false" Size="191" Type="VARCHAR" /><Column Name="valid_id" Required="true" Type="SMALLINT" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /><Column Name="change_time" Required="false" Type="DATE" /><Column Name="change_by" Required="false" Type="INTEGER" /><Unique Name="melt_object_item_history_type_name"><UniqueColumn Name="name" /></Unique></TableCreate><TableCreate Type="post" Name="melt_object_item_history"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="melt_object_id" Required="true" Type="BIGINT" /><Column Name="type_id" Required="true" Type="INTEGER" /><Column Name="content" Required="true" Size="191" Type="VARCHAR" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /></TableCreate><TableCreate Type="post" Name="melt_item_definition_sync"><Column Name="class_id" Required="true" Type="INTEGER" /><Column Name="field_id" Required="true" Type="INTEGER" /></TableCreate><TableCreate Type="post" Name="melt_object_item_link"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT" /><Column Name="source_melt_object_id" Required="false" Type="BIGINT" /><Column Name="source_melt_object_item_version_id" Required="false" Type="BIGINT" /><Column Name="target_melt_object_id" Required="false" Type="BIGINT" /><Column Name="target_melt_object_item_version_id" Required="false" Type="BIGINT" /><Column Name="link_type_id" Required="true" Type="SMALLINT" /><Column Name="dynamic_field_id" Required="false" Type="INTEGER" /><Column Name="create_time" Required="true" Type="DATE" /><Column Name="create_by" Required="true" Type="INTEGER" /></TableCreate><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data><Data Key="name" Translatable="1" Type="Quote">All</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data><Data Key="name" Translatable="1" Type="Quote">Governance</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class::Category</Data><Data Key="name" Translatable="1" Type="Quote">Runtime</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data><Data Key="name" Translatable="1" Type="Quote">BlueBook</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data><Data Key="name" Translatable="1" Type="Quote">StateBook</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data><Data Key="name" Translatable="1" Type="Quote">ServiceSupportMap</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Class</Data><Data Key="name" Translatable="1" Type="Quote">SupportAssignment</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data><Data Key="name" Translatable="1" Type="Quote">Draft</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data><Data Key="name" Translatable="1" Type="Quote">Review</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data><Data Key="name" Translatable="1" Type="Quote">Approved</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data><Data Key="name" Translatable="1" Type="Quote">Active</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="general_catalog"><Data Key="general_catalog_class" Type="Quote">ZTSM::MELT::Status</Data><Data Key="name" Translatable="1" Type="Quote">Retired</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_history_type"><Data Key="name" Type="Quote">MELTObjectCreate</Data><Data Key="comments" Type="Quote">MELT object created.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_history_type"><Data Key="name" Type="Quote">MELTObjectUpdate</Data><Data Key="comments" Type="Quote">MELT object updated.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_history_type"><Data Key="name" Type="Quote">VersionCreate</Data><Data Key="comments" Type="Quote">MELT object version created.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_history_type"><Data Key="name" Type="Quote">StatusUpdate</Data><Data Key="comments" Type="Quote">Governance status updated.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">MELTObjectCreate</Data><Data Key="comments" Type="Quote">MELTObjectCreate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">MELTObjectUpdate</Data><Data Key="comments" Type="Quote">MELTObjectUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">MELTObjectDelete</Data><Data Key="comments" Type="Quote">MELTObjectDelete history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">LinkAdd</Data><Data Key="comments" Type="Quote">LinkAdd history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">LinkDelete</Data><Data Key="comments" Type="Quote">LinkDelete history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">NameUpdate</Data><Data Key="comments" Type="Quote">NameUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">DefinitionUpdate</Data><Data Key="comments" Type="Quote">DefinitionUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">VersionCreate</Data><Data Key="comments" Type="Quote">VersionCreate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">VersionUpdate</Data><Data Key="comments" Type="Quote">VersionUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">DefinitionCreate</Data><Data Key="comments" Type="Quote">DefinitionCreate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">VersionDelete</Data><Data Key="comments" Type="Quote">VersionDelete history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">AttachmentAddPost</Data><Data Key="comments" Type="Quote">AttachmentAddPost history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">AttachmentDeletePost</Data><Data Key="comments" Type="Quote">AttachmentDeletePost history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">ValueUpdate</Data><Data Key="comments" Type="Quote">ValueUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">DeploymentStateUpdate</Data><Data Key="comments" Type="Quote">DeploymentStateUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><Insert Type="post" Table="melt_object_item_history_type"><Data Key="name" Type="Quote">IncidentStateUpdate</Data><Data Key="comments" Type="Quote">IncidentStateUpdate history entry.</Data><Data Key="valid_id">1</Data><Data Key="create_time">current_timestamp</Data><Data Key="create_by">1</Data><Data Key="change_time">current_timestamp</Data><Data Key="change_by">1</Data></Insert><TableCreate Type="post" Name="melt_object_activity_article"><Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/><Column Name="melt_object_id" Required="false" Type="BIGINT"/><Column Name="object_number" Required="false" Size="100" Type="VARCHAR"/><Column Name="event_type" Required="true" Size="100" Type="VARCHAR"/><Column Name="source" Required="true" Size="100" Type="VARCHAR"/><Column Name="subject" Required="true" Size="255" Type="VARCHAR"/><Column Name="body" Required="true" Type="LONGBLOB"/><Column Name="payload" Required="false" Type="LONGBLOB"/><Column Name="create_time" Required="true" Type="DATE"/><Column Name="create_by" Required="true" Type="INTEGER"/><Index Name="melt_activity_object"><IndexColumn Name="melt_object_id"/></Index></TableCreate></DatabaseInstall>
     <DatabaseUpgrade>
-        <TableCreate Type="post" Name="melt_object_item" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="meltid" Required="true" Size="100" Type="VARCHAR"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="last_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Unique Name="melt_object_item_meltid"><UniqueColumn Name="meltid"/></Unique>
-            <Index Name="melt_object_item_class_id"><IndexColumn Name="class_id"/></Index>
-            <Index Name="melt_object_item_last_version_id"><IndexColumn Name="last_version_id"/></Index>
-            <Index Name="melt_object_item_ztsm_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_definition" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
-            <Column Name="class_id" Required="true" Type="INTEGER"/>
-            <Column Name="melt_object_item_definition" Required="true" Type="LONGBLOB"/>
-            <Column Name="dynamicfield_definition" Required="false" Type="LONGBLOB"/>
-            <Column Name="version" Required="true" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_version" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="version_string" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="definition_id" Required="true" Type="INTEGER"/>
-            <Column Name="ztsm_status_id" Required="false" Type="INTEGER"/>
-            <Column Name="description" Required="false" Size="1800000" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="true" Type="DATE"/>
-            <Column Name="change_by" Required="true" Type="INTEGER"/>
-            <Index Name="melt_object_item_version_object_id"><IndexColumn Name="melt_object_id"/></Index>
-            <Index Name="melt_object_item_version_status_id"><IndexColumn Name="ztsm_status_id"/></Index>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_counter" Version="0.0.8">
-            <Column Name="class_id" PrimaryKey="true" Required="true" Type="INTEGER"/>
-            <Column Name="counter_type" Required="true" Size="50" Type="VARCHAR"/>
-            <Column Name="counter" Required="true" Size="50" Type="VARCHAR"/>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_history_type" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="INTEGER"/>
-            <Column Name="name" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="comments" Required="false" Size="191" Type="VARCHAR"/>
-            <Column Name="valid_id" Required="true" Type="SMALLINT"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-            <Column Name="change_time" Required="false" Type="DATE"/>
-            <Column Name="change_by" Required="false" Type="INTEGER"/>
-            <Unique Name="melt_object_item_history_type_name"><UniqueColumn Name="name"/></Unique>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_history" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="melt_object_id" Required="true" Type="BIGINT"/>
-            <Column Name="type_id" Required="true" Type="INTEGER"/>
-            <Column Name="content" Required="true" Size="191" Type="VARCHAR"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_definition_sync" Version="0.0.8">
+        <TableCreate Type="post" Name="melt_item_definition_sync" Version="0.0.5">
             <Column Name="class_id" Required="true" Type="INTEGER"/>
             <Column Name="field_id" Required="true" Type="INTEGER"/>
         </TableCreate>
-        <TableCreate Type="post" Name="melt_object_item_link" Version="0.0.8">
-            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
-            <Column Name="source_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="source_melt_object_item_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_id" Required="false" Type="BIGINT"/>
-            <Column Name="target_melt_object_item_version_id" Required="false" Type="BIGINT"/>
-            <Column Name="link_type_id" Required="true" Type="SMALLINT"/>
-            <Column Name="dynamic_field_id" Required="false" Type="INTEGER"/>
-            <Column Name="create_time" Required="true" Type="DATE"/>
-            <Column Name="create_by" Required="true" Type="INTEGER"/>
-        </TableCreate>
-    </DatabaseUpgrade>
-    <DatabaseUninstall Type="pre">
+    </DatabaseUpgrade>    <DatabaseUninstall Type="pre">
+        <TableDrop Type="pre" Name="melt_object_activity_article"/>
         <TableDrop Type="pre" Name="melt_object_item"/>
         <TableDrop Type="pre" Name="melt_object_item_definition"/>
         <TableDrop Type="pre" Name="melt_object_item_version"/>
@@ -732,7 +149,7 @@
         <TableDrop Type="pre" Name="melt_object_item_history"/>
         <TableDrop Type="pre" Name="melt_object_item_counter"/>
         <TableDrop Type="pre" Name="melt_object_item_link"/>
-        <TableDrop Type="pre" Name="melt_object_item_definition_sync"/>
+        <TableDrop Type="pre" Name="melt_item_definition_sync"/>
         <TableDrop Type="pre" Name="melt_object_definition_sync"/>
         <TableDrop Type="pre" Name="melt_object_link"/>
         <TableDrop Type="pre" Name="melt_object_counter"/>

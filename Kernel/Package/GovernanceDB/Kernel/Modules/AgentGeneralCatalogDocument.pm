@@ -48,8 +48,12 @@ sub Run {
     my $ClassesText    = $ParamObject->GetParam( Param => 'Classes' ) || '';
     my $Classes        = IsStringWithData($ClassesText) ? $ClassesText : $SelectedClass;
     my $ReturnAction = $ParamObject->GetParam( Param => 'ReturnAction' ) || 'AgentGovernanceObject';
-    $ReturnAction = 'AdminGeneralCatalog' if $ReturnAction eq 'AdminGeneralCatalog';
-    $ReturnAction = 'AgentGovernanceObject' if $ReturnAction ne 'AdminGeneralCatalog';
+    my %AllowedReturnAction = map { $_ => 1 } qw(
+        AdminGeneralCatalog
+        AgentGovernanceObject
+        AgentITSMConfigItem
+    );
+    $ReturnAction = 'AgentGovernanceObject' if !$AllowedReturnAction{$ReturnAction};
 
     my $DocumentText = '';
     my $Message      = '';

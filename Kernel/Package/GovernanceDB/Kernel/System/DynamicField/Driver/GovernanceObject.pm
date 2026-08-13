@@ -461,36 +461,10 @@ sub ObjectDescriptionGet {
         $ClassNameStrg = $Param{LayoutObject}{LanguageObject}->Translate($ClassNameStrg);
     }
 
-    my $DFConfig = $Param{DynamicFieldConfig} || {};
-    my $DFDetails = $DFConfig->{Config} || $DFConfig;
-
-    my %Descriptions;
-    if ( $DFDetails->{DisplayType} ) {
-
-        # prepare string as configured
-        my $DisplayType = $DFDetails->{DisplayType};
-        if ( $DisplayType eq 'GOID' || $DisplayType eq 'ConfigItemNumber' ) {
-            $Descriptions{Normal} = "$GovernanceObject->{Number}";
-            $Descriptions{Long}   = "$GovernanceObject->{Number}";
-        }
-        elsif ( $DisplayType eq 'GovernanceObjectName' || $DisplayType eq 'ConfigItemName' ) {
-            $Descriptions{Normal} = "$GovernanceObject->{Name}";
-            $Descriptions{Long}   = "$GovernanceObject->{Name}";
-        }
-        elsif ( $DisplayType eq 'ClassGOID' || $DisplayType eq 'ClassConfigItemNumber' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $GovernanceObject->{Number}";
-            $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Number}";
-        }
-        elsif ( $DisplayType eq 'ClassGovernanceObjectName' || $DisplayType eq 'ClassConfigItemName' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $GovernanceObject->{Name}";
-            $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Name}";
-        }
-    }
-
-    if ( !$Descriptions{Long} ) {
-        $Descriptions{Normal} = "$GovernanceObject->{Name}";
-        $Descriptions{Long}   = "$ClassNameStrg: $GovernanceObject->{Name}";
-    }
+    my %Descriptions = (
+        Normal => "$ClassNameStrg: $GovernanceObject->{Name}",
+        Long   => "$ClassNameStrg: $GovernanceObject->{Name}",
+    );
 
     my $Link;
     if ( $Param{Link} && $Param{LayoutObject}{SessionSource} ) {

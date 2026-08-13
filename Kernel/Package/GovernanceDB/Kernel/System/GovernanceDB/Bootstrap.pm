@@ -41,6 +41,8 @@ sub new {
 sub InstallDefaults {
     my ( $Self, %Param ) = @_;
 
+    $Self->_ActivityTablesEnsure();
+
     my $Defaults = $Self->_DefaultsLoad();
     return if !$Defaults;
 
@@ -123,6 +125,8 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
+    $Self->_ReferenceDisplayTypesRepair();
+
     $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
@@ -155,6 +159,53 @@ sub InstallDefaults {
 
     $Self->_ServiceTicketTypeACLsRebuild();
 
+    return 1;
+}
+
+# Upgrade-safe repair for activity tables. A failed 0.1.100 attempt may already
+# have created the ConfigItem table, so upgrade metadata must not blindly create
+# it again. Fresh installs still use the SOPM DatabaseInstall definitions.
+sub _ActivityTablesEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+
+    if ( !$Table{ztsm_configitem_activity} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_configitem_activity (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    configitem_id BIGINT NULL,
+    configitem_number VARCHAR(100) NULL,
+    event_type VARCHAR(100) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body LONGBLOB NOT NULL,
+    payload LONGBLOB NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    INDEX ztsm_configitem_activity_ci (configitem_id)
+)
+END_SQL
+    }
+    if ( !$Table{governance_object_activity} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE governance_object_activity (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    governance_object_id BIGINT NULL,
+    object_number VARCHAR(100) NULL,
+    event_type VARCHAR(100) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body LONGBLOB NOT NULL,
+    payload LONGBLOB NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    INDEX governance_activity_object (governance_object_id)
+)
+END_SQL
+    }
     return 1;
 }
 
@@ -600,6 +651,42 @@ sub _DynamicFieldUpdateForce {
         Type => 'DynamicFieldValue',
     );
 
+    return 1;
+}
+
+sub _ReferenceDisplayTypesRepair {
+    my ($Self) = @_;
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $List = $DynamicFieldObject->DynamicFieldList(
+        Valid      => 0,
+        ResultType => 'HASH',
+    ) || {};
+
+    for my $Name ( values %{$List} ) {
+        my $Field = $DynamicFieldObject->DynamicFieldGet( Name => $Name );
+        next if !$Field || ref $Field->{Config} ne 'HASH';
+
+        my %DisplayTypeFor = (
+            ConfigItem              => 'ClassConfigItemName',
+            ConfigItemVersion       => 'ClassConfigItemName',
+            GovernanceObject        => 'ClassGovernanceObjectName',
+            GovernanceObjectVersion => 'ClassGovernanceObjectName',
+        );
+        my $DisplayType = $DisplayTypeFor{ $Field->{FieldType} || '' };
+        next if !$DisplayType;
+        next if ( $Field->{Config}{DisplayType} || '' ) eq $DisplayType;
+
+        my %Config = ( %{ $Field->{Config} }, DisplayType => $DisplayType );
+        $Self->_DynamicFieldUpdateForce(
+            %{$Field},
+            Config  => \%Config,
+            UserID  => 1,
+            Reorder => 0,
+        );
+    }
+
+    $DynamicFieldObject->EventHandlerTransaction();
     return 1;
 }
 
@@ -2464,8 +2551,12 @@ sub _SysConfigDeploy {
         'CustomerFrontend::Module###CustomerITSMConfigItem',
         'CustomerFrontend::Module###CustomerITSMConfigItemSearch',
         'CustomerFrontend::Module###CustomerITSMConfigItemZoom',
+        'Loader::Module::CustomerITSMConfigItem###003-ITSMConfigItem',
         'CustomerFrontend::Navigation###CustomerITSMConfigItem###003-ITSMConfigItem',
         'Customer::ConfigItem::PermissionConditions###01',
+        'ITSMConfigItem::Frontend::CustomerOverview###Small',
+        'Customer::ConfigItem::PermissionConditionColumns###Default',
+        'Customer::ConfigItem::PermissionConditionColumns###01',
         'CustomerLogin::Settings',
         'CustomerLogo',
         'Loader::Module::CustomerLogin###002-CustomerLogin',
@@ -2473,6 +2564,7 @@ sub _SysConfigDeploy {
         'CustomerDashboard::Tiles###NewTicket',
         'CustomerDashboard::Tiles###FeaturedLink-01',
         'CustomerDashboard::Tiles###TicketList-01',
+        'Ticket::Frontend::CustomerDisableCompanyTicketAccess',
     );
 
     my %DeploymentResult = $SysConfigObject->ConfigurationDeploy(
@@ -2670,6 +2762,16 @@ sub _CustomerDashboardEnsure {
         };
     }
 
+    my $DisableCompanyTicketsName = 'Ticket::Frontend::CustomerDisableCompanyTicketAccess';
+    my %DisableCompanyTicketsSetting = $SysConfigObject->SettingGet( Name => $DisableCompanyTicketsName );
+    if (%DisableCompanyTicketsSetting) {
+        push @Settings, {
+            Name           => $DisableCompanyTicketsName,
+            IsValid        => 1,
+            EffectiveValue => 1,
+        };
+    }
+
     return 1 if !@Settings;
 
     my $Success = $SysConfigObject->SettingsSet(
@@ -2708,6 +2810,96 @@ sub _CustomerAssetFrontendEnsure {
             Name           => $SettingName,
             IsValid        => 1,
             EffectiveValue => $Setting{EffectiveValue},
+        };
+    }
+
+    my $AssetLoaderName = 'Loader::Module::CustomerITSMConfigItem###003-ITSMConfigItem';
+    my %AssetLoaderSetting = $SysConfigObject->SettingGet( Name => $AssetLoaderName );
+    if ( ref $AssetLoaderSetting{EffectiveValue} eq 'HASH' ) {
+        my %LoaderValue = %{ $AssetLoaderSetting{EffectiveValue} };
+        my @JavaScript = ref $LoaderValue{JavaScript} eq 'ARRAY' ? @{ $LoaderValue{JavaScript} } : ();
+        if ( !grep { $_ eq 'ZTSM.Customer.AssetFilters.js' } @JavaScript ) {
+            push @JavaScript, 'ZTSM.Customer.AssetFilters.js';
+        }
+        $LoaderValue{JavaScript} = \@JavaScript;
+        push @Settings, {
+            Name           => $AssetLoaderName,
+            IsValid        => 1,
+            EffectiveValue => \%LoaderValue,
+        };
+    }
+
+    my $AgentLoaderName = 'Loader::Module::AgentITSMConfigItem###003-ITSMConfigItem';
+    my %AgentLoaderSetting = $SysConfigObject->SettingGet( Name => $AgentLoaderName );
+    if ( ref $AgentLoaderSetting{EffectiveValue} eq 'HASH' ) {
+        my %AgentLoaderValue = %{ $AgentLoaderSetting{EffectiveValue} };
+        my @JavaScript = ref $AgentLoaderValue{JavaScript} eq 'ARRAY'
+            ? @{ $AgentLoaderValue{JavaScript} }
+            : ();
+        @JavaScript = grep {
+            $_ ne 'ITSM.UI.ConfigItemActionRow.js'
+                && $_ ne 'ZTSM.Agent.ConfigItem.OverviewGuard.js'
+                && $_ ne 'ZTSM.Agent.ConfigItem.DataActions.js'
+        } @JavaScript;
+        my $OverviewIndex = scalar @JavaScript;
+        for my $Index ( 0 .. $#JavaScript ) {
+            if ( $JavaScript[$Index] eq 'ITSM.Agent.ConfigItem.Overview.js' ) {
+                $OverviewIndex = $Index;
+                last;
+            }
+        }
+        splice @JavaScript, $OverviewIndex, 0,
+            'ITSM.UI.ConfigItemActionRow.js',
+            'ZTSM.Agent.ConfigItem.OverviewGuard.js',
+            'ZTSM.Agent.ConfigItem.DataActions.js';
+        $AgentLoaderValue{JavaScript} = \@JavaScript;
+        push @Settings, {
+            Name           => $AgentLoaderName,
+            IsValid        => 1,
+            EffectiveValue => \%AgentLoaderValue,
+        };
+    }
+
+    my $OverviewBackendName = 'ITSMConfigItem::Frontend::CustomerOverview###Small';
+    my %OverviewBackend = $SysConfigObject->SettingGet( Name => $OverviewBackendName );
+    if ( ref $OverviewBackend{EffectiveValue} eq 'HASH' ) {
+        my %OverviewValue = %{ $OverviewBackend{EffectiveValue} };
+        $OverviewValue{Module} = 'Kernel::Output::HTML::ITSMConfigItem::ZTSMCustomerOverviewSmall';
+        push @Settings, {
+            Name           => $OverviewBackendName,
+            IsValid        => 1,
+            EffectiveValue => \%OverviewValue,
+        };
+    }
+
+    my $AgentOverviewBackendName = 'ITSMConfigItem::Frontend::Overview###Small';
+    my %AgentOverviewBackend = $SysConfigObject->SettingGet( Name => $AgentOverviewBackendName );
+    if ( ref $AgentOverviewBackend{EffectiveValue} eq 'HASH' ) {
+        my %AgentOverviewValue = %{ $AgentOverviewBackend{EffectiveValue} };
+        $AgentOverviewValue{Module} = 'Kernel::Output::HTML::ITSMConfigItem::ZTSMOverviewSmall';
+        push @Settings, {
+            Name           => $AgentOverviewBackendName,
+            IsValid        => 1,
+            EffectiveValue => \%AgentOverviewValue,
+        };
+    }
+
+    my @AssetColumns = (
+        'Number', 'Name', 'ZTSMAssetTag', 'Class', 'ZTSMProductModel',
+        'ZTSMApplication', 'ZTSMEnvironment', 'ZTSMLocation',
+        'ZTSMDomain', 'ZTSMFunctionProfile', 'CurDeplState',
+    );
+    for my $ColumnSettingName (
+        'Customer::ConfigItem::PermissionConditionColumns###Default',
+        'Customer::ConfigItem::PermissionConditionColumns###01',
+        )
+    {
+        my %ColumnSetting = $SysConfigObject->SettingGet( Name => $ColumnSettingName );
+        next if !%ColumnSetting;
+        push @Settings, {
+            Name           => $ColumnSettingName,
+            IsValid        => 1,
+            EffectiveValue => [@AssetColumns],
         };
     }
 

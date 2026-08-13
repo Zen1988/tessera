@@ -20,7 +20,6 @@ our @ObjectDependencies = (
     'Kernel::System::MELT',
     'Kernel::System::MELTObject',
     'Kernel::System::Group',
-    'Kernel::System::ITSMConfigItem',
     'Kernel::System::ProcessManagement::DB::Process',
     'Kernel::System::JSON',
     'Kernel::System::Log',
@@ -40,6 +39,8 @@ sub new {
 
 sub InstallDefaults {
     my ( $Self, %Param ) = @_;
+
+    $Self->_ActivityTableEnsure();
 
     my $Defaults = $Self->_DefaultsLoad();
     return if !$Defaults;
@@ -123,32 +124,45 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
-    $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
-
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
-
-    $Self->_RuntimePrerequisitesEnsure();
-
-    $Self->_TicketReferenceDynamicFieldsRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_ConfigItemsCopyToMELTObjects(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_TicketReferenceValuesRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
 
     $Self->_RuntimeOverlayInstall();
 
     $Self->_SysConfigDeploy();
 
-    $Self->_ServiceTicketTypeACLsRebuild();
+    return 1;
+}
 
+sub _ActivityTableEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+    return 1 if $Table{melt_object_activity_article};
+    return $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE melt_object_activity_article (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    melt_object_id BIGINT NULL,
+    object_number VARCHAR(100) NULL,
+    event_type VARCHAR(100) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body LONGBLOB NOT NULL,
+    payload LONGBLOB NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    INDEX melt_activity_object (melt_object_id)
+)
+END_SQL
+}
+
+sub CopiedObjectDataClear {
+    my ($Self) = @_;
+
+    # Compatibility no-op. Preview builds copied external objects into MELT,
+    # but an upgrade must never delete runtime evidence or user-created data.
     return 1;
 }
 
@@ -277,273 +291,22 @@ sub _RuntimeOverlayInstall {
 
 sub _TicketReferenceValuesRepair {
     my ( $Self, %Param ) = @_;
-
-    my $DynamicFieldObject      = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $ConfigItemObject        = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-    my $MELTObjectObject  = $Kernel::OM->Get('Kernel::System::MELTObject');
-    my $DBObject                = $Kernel::OM->Get('Kernel::System::DB');
-
-    my %FieldNames = map { $_ => 1 } qw(
-        ZTicket-Application
-        ZTicket-ApprovalModel
-        ZTicket-BlueBook
-        ZTicket-Env
-        ZTicket-Location
-        ZTicket-OwnerGroup
-        ZTicket-Profile
-        ZTicket-Role
-        ZTicket-StateBook
-        ZFirewall-DstSystem
-        ZFirewall-Env
-        ZFirewall-SrcSystem
-        ZTSMSupportAssignment-SupportProfile
-        ZTSMServiceSupportMap-Application
-        ZTSMServiceSupportMap-Environment
-        ZTSMServiceSupportMap-Location
-    );
-
-    for my $Class ( @{ $Param{Classes} || [] } ) {
-        FIELD:
-        for my $FieldName ( keys %{ $Class->{DynamicFields} || {} } ) {
-            my $Field = $Class->{DynamicFields}{$FieldName};
-            next FIELD if ref $Field ne 'HASH';
-            next FIELD if ( $Field->{FieldType} || '' ) ne 'MELTObject';
-
-            $FieldNames{ $Field->{Name} || $FieldName } = 1;
-        }
-    }
-
-    FIELD:
-    for my $FieldName ( sort keys %FieldNames ) {
-        my $Field = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
-        next FIELD if !$Field || !$Field->{ID};
-
-        return if !$DBObject->Prepare(
-            SQL => <<'END_SQL',
-SELECT id, value_int
-  FROM dynamic_field_value
-  WHERE field_id = ?
-    AND value_int IS NOT NULL
-END_SQL
-            Bind => [ \$Field->{ID} ],
-        );
-
-        my @ValueRows;
-        while ( my @Row = $DBObject->FetchrowArray() ) {
-            push @ValueRows, {
-                ID            => $Row[0],
-                ConfigItemID  => $Row[1],
-            };
-        }
-
-        VALUE:
-        for my $ValueRow (@ValueRows) {
-            next VALUE if !$ValueRow->{ConfigItemID};
-
-            my $ExistingMELTObject = $MELTObjectObject->MELTObjectGet(
-                MELTObjectID => $ValueRow->{ConfigItemID},
-                Silent             => 1,
-            );
-            next VALUE if $ExistingMELTObject && $ExistingMELTObject->{MELTObjectID};
-
-            my $ConfigItem = $ConfigItemObject->ConfigItemGet(
-                ConfigItemID => $ValueRow->{ConfigItemID},
-                Silent       => 1,
-            );
-            next VALUE if !$ConfigItem || !$ConfigItem->{Number};
-
-            my $MELTObjectID = $MELTObjectObject->MELTObjectLookup(
-                MELTID => $ConfigItem->{Number},
-            );
-            next VALUE if !$MELTObjectID;
-            next VALUE if $MELTObjectID == $ValueRow->{ConfigItemID};
-
-            $DBObject->Do(
-                SQL  => 'UPDATE dynamic_field_value SET value_int = ? WHERE id = ?',
-                Bind => [ \$MELTObjectID, \$ValueRow->{ID} ],
-            );
-        }
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'DynamicFieldValue',
-    );
-
+    # Disabled compatibility bridge. MELT does not rewrite values owned by
+    # Ticket, ConfigItem, GovernanceObject, or any other object type.
     return 1;
 }
 
 sub _TicketReferenceDynamicFieldsRepair {
     my ( $Self, %Param ) = @_;
-
-    my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-
-    my $ClassID2Name = $GeneralCatalogObject->ItemList(
-        Class => 'ZTSM::MELT::Class',
-    ) || {};
-
-    my %ClassNameLookup;
-    for my $Class ( @{ $Param{Classes} || [] } ) {
-        next if ref $Class ne 'HASH' || !$Class->{Name};
-
-        my ($ClassID) = grep { ( $ClassID2Name->{$_} || '' ) eq $Class->{Name} } keys %{$ClassID2Name};
-        next if !$ClassID;
-
-        $ClassNameLookup{ $Self->_ClassNameNormalize( $Class->{Name} ) } = $ClassID;
-    }
-
-    my %TicketReferenceFields = (
-        'ZTicket-Application'    => ['Application'],
-        'ZTicket-ApprovalModel' => ['Approval Model'],
-        'ZTicket-BlueBook'      => ['BlueBook'],
-        'ZTicket-Env'           => ['Environment'],
-        'ZTicket-Location'      => ['Location'],
-        'ZTicket-OwnerGroup'    => ['Support Profile'],
-        'ZTicket-Profile'       => [ 'Governance Role', 'Support Profile' ],
-        'ZTicket-Role'          => ['Governance Role'],
-        'ZTicket-StateBook'     => ['StateBook'],
-        'ZFirewall-DstSystem'   => [ 'Application', 'Location' ],
-        'ZFirewall-Env'         => ['Environment'],
-        'ZFirewall-SrcSystem'   => [ 'Application', 'Location' ],
-    );
-
-    FIELD:
-    for my $FieldName ( sort keys %TicketReferenceFields ) {
-        my $Field = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
-        next FIELD if !$Field || ref $Field ne 'HASH';
-        next FIELD if ( $Field->{ObjectType} || '' ) ne 'Ticket';
-
-        my @ClassIDs;
-        for my $ClassName ( @{ $TicketReferenceFields{$FieldName} } ) {
-            my $GovernanceClassID = $ClassNameLookup{ $Self->_ClassNameNormalize($ClassName) };
-            push @ClassIDs, $GovernanceClassID if $GovernanceClassID;
-        }
-
-        my %Config = %{ $Field->{Config} || {} };
-        $Config{ClassIDs}             = \@ClassIDs;
-        $Config{ReferencedObjectType} = 'MELTObject';
-        $Config{DisplayType}          ||= '';
-        $Config{EditFieldMode}        ||= 'Dropdown';
-        $Config{LinkDirection}        ||= 'ReferencingIsSource';
-        $Config{MultiValue}           ||= '0';
-        $Config{Multiselect}          ||= '0';
-        $Config{PossibleNone}         = exists $Config{PossibleNone} ? $Config{PossibleNone} : '1';
-        $Config{ReferenceFilterList}  ||= [];
-        delete $Config{DeplStateIDs};
-
-        my $Updated = $Self->_DynamicFieldUpdateForce(
-            ID         => $Field->{ID},
-            Name       => $Field->{Name},
-            Label      => $Field->{Label},
-            FieldOrder => $Field->{FieldOrder},
-            FieldType  => 'MELTObject',
-            ObjectType => 'Ticket',
-            Config     => \%Config,
-            ValidID    => $Field->{ValidID} || 1,
-            UserID     => 1,
-            Reorder    => 0,
-        );
-
-        if ( !$Updated ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "MELT bootstrap could not repair ticket dynamic field $FieldName to MELTObject.",
-            );
-        }
-    }
-
-    $DynamicFieldObject->EventHandlerTransaction();
-
+    # Disabled compatibility bridge. Ticket references remain owned by their
+    # defining package and retain their original field driver and values.
     return 1;
 }
 
 sub _ConfigItemsCopyToMELTObjects {
     my ( $Self, %Param ) = @_;
-
-    my $GeneralCatalogObject   = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    my $ConfigItemObject       = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-    my $MELTObjectObject = $Kernel::OM->Get('Kernel::System::MELTObject');
-
-    my %GovernanceClassByName = reverse %{ $GeneralCatalogObject->ItemList(
-        Class => 'ZTSM::MELT::Class',
-    ) || {} };
-    return if !%GovernanceClassByName;
-
-    my %GovernanceClassByNormalizedName = map {
-        $Self->_ClassNameNormalize($_) => {
-            Name => $_,
-            ID   => $GovernanceClassByName{$_},
-        }
-    } keys %GovernanceClassByName;
-
-    my %ConfigItemClassByName = reverse %{ $GeneralCatalogObject->ItemList(
-        Class => 'ITSM::ConfigItem::Class',
-    ) || {} };
-
-    my %StatusByName = reverse %{ $GeneralCatalogObject->ItemList(
-        Class => 'ZTSM::MELT::Status',
-    ) || {} };
-    my $DefaultStatusID = $StatusByName{Active} || $StatusByName{Draft} || ( values %StatusByName )[0];
-    return if !$DefaultStatusID;
-
-    CLASS:
-    for my $ConfigItemClassName ( sort keys %ConfigItemClassByName ) {
-        my $GovernanceClass = $GovernanceClassByNormalizedName{ $Self->_ClassNameNormalize($ConfigItemClassName) };
-        next CLASS if !$GovernanceClass || !$GovernanceClass->{ID};
-
-        my @ConfigItemIDs = $ConfigItemObject->ConfigItemSearch(
-            Classes => [$ConfigItemClassName],
-            Result  => 'ARRAY',
-            Limit   => 100000,
-        );
-        next CLASS if !@ConfigItemIDs;
-
-        CONFIGITEM:
-        for my $ConfigItemID (@ConfigItemIDs) {
-            my $ConfigItem = $ConfigItemObject->ConfigItemGet(
-                ConfigItemID  => $ConfigItemID,
-                DynamicFields => 1,
-                Silent        => 1,
-            );
-            next CONFIGITEM if !$ConfigItem || ref $ConfigItem ne 'HASH';
-            next CONFIGITEM if !$ConfigItem->{Number};
-
-            my $ExistingID = $MELTObjectObject->MELTObjectLookup(
-                MELTID => $ConfigItem->{Number},
-            );
-            next CONFIGITEM if $ExistingID;
-
-            my %DynamicFieldParam;
-            KEY:
-            for my $Key ( sort keys %{$ConfigItem} ) {
-                next KEY if $Key !~ m{\A DynamicField_}xms;
-                $DynamicFieldParam{$Key} = $ConfigItem->{$Key};
-            }
-
-            my $ZTSMStatusID = $DefaultStatusID;
-            if ( $ConfigItem->{'DynamicField_ZTSM-Status'} && $StatusByName{ $ConfigItem->{'DynamicField_ZTSM-Status'} } ) {
-                $ZTSMStatusID = $StatusByName{ $ConfigItem->{'DynamicField_ZTSM-Status'} };
-            }
-
-            my $MELTObjectID = $MELTObjectObject->MELTObjectAdd(
-                ClassID      => $GovernanceClass->{ID},
-                ZTSMStatusID => $ZTSMStatusID,
-                Number       => $ConfigItem->{Number},
-                Name         => $ConfigItem->{Name} || $ConfigItem->{Number},
-                Description  => $ConfigItem->{Description} || '',
-                %DynamicFieldParam,
-                UserID       => 1,
-            );
-
-            if ( !$MELTObjectID ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "MELT bootstrap could not copy ConfigItemID $ConfigItemID to MELTObject.",
-                );
-            }
-        }
-    }
-
+    # Disabled compatibility bridge. MELT starts and remains independent; it
+    # does not copy ConfigItem or GovernanceObject records during installation.
     return 1;
 }
 
@@ -1345,6 +1108,15 @@ sub _DynamicFieldsEnsure {
         my $Existing  = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
 
         if ($Existing) {
+            if ( ( $Existing->{ObjectType} || '' ) ne 'MELTObject' ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'notice',
+                    Message  => "MELT bootstrap skipped dynamic field $FieldName because it belongs to object type "
+                        . ( $Existing->{ObjectType} || '<unknown>' ) . '.',
+                );
+                next FIELD;
+            }
+
             my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
                 Config         => $Existing->{Config} || {},
                 AllowedClasses => \%AllowedClasses,
@@ -1453,126 +1225,6 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     return 1;
 }
 
-sub _ITSMConfigItemLifecycleDateDynamicFieldsEnsure {
-    my ( $Self, %Param ) = @_;
-
-    my $DynamicFieldObject   = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $GeneralCatalogObject = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    my $ConfigItemObject     = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
-
-    my @FieldNames = qw(
-        ZTAM-Released
-        ZTAM-EoSale
-        ZTAM-EoStandardSupport
-        ZTAM-EoExtendedSupport
-        ZTAM-EoServiceLife
-    );
-
-    my %FieldIDs;
-
-    FIELD:
-    for my $FieldName (@FieldNames) {
-        my $Field = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
-        next FIELD if !$Field || ref $Field ne 'HASH';
-        next FIELD if ( $Field->{ObjectType} || '' ) ne 'ITSMConfigItem';
-        next FIELD if ( $Field->{FieldType}  || '' ) ne 'Date';
-
-        $FieldIDs{ $Field->{Name} } = $Field->{ID};
-
-        my %Config = %{ $Field->{Config} || {} };
-        my $Changed;
-
-        if ( ( $Config{YearsPeriod} // '' ) ne '1' ) {
-            $Config{YearsPeriod} = '1';
-            $Changed = 1;
-        }
-
-        my $YearsInFuture = $Config{YearsInFuture};
-        if ( !defined $YearsInFuture || $YearsInFuture !~ m{\A\d+\z} || $YearsInFuture < 10 ) {
-            $Config{YearsInFuture} = '10';
-            $Changed = 1;
-        }
-
-        if ( !defined $Config{YearsInPast} || $Config{YearsInPast} !~ m{\A\d+\z} ) {
-            $Config{YearsInPast} = '5';
-            $Changed = 1;
-        }
-
-        next FIELD if !$Changed;
-
-        my $Updated = $Self->_DynamicFieldUpdateForce(
-            ID         => $Field->{ID},
-            Name       => $Field->{Name},
-            Label      => $Field->{Label},
-            FieldOrder => $Field->{FieldOrder},
-            FieldType  => $Field->{FieldType},
-            ObjectType => $Field->{ObjectType},
-            Config     => \%Config,
-            ValidID    => $Field->{ValidID} || 1,
-            UserID     => 1,
-            Reorder    => 0,
-        );
-
-        if ( !$Updated ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "MELT bootstrap could not extend ITSM ConfigItem lifecycle date range for $FieldName.",
-            );
-        }
-    }
-
-    $DynamicFieldObject->EventHandlerTransaction();
-
-    if (%FieldIDs) {
-        my $ClassList = $GeneralCatalogObject->ItemList(
-            Class => 'ITSM::ConfigItem::Class',
-        ) || {};
-
-        my %OutOfSyncDefinitions;
-        CLASS:
-        for my $ClassID ( sort keys %{$ClassList} ) {
-            my $Definition = $ConfigItemObject->DefinitionGet(
-                ClassID => $ClassID,
-            );
-            next CLASS if !$Definition || ref $Definition ne 'HASH';
-            next CLASS if ref $Definition->{DynamicFieldRef} ne 'HASH';
-
-            FIELD:
-            for my $FieldName ( sort keys %FieldIDs ) {
-                next FIELD if !$Definition->{DynamicFieldRef}{$FieldName};
-
-                push @{ $OutOfSyncDefinitions{$ClassID} }, $FieldIDs{$FieldName};
-            }
-        }
-
-        if (%OutOfSyncDefinitions) {
-            my $SyncMarked = $ConfigItemObject->DefinitionSetOutOfSync(
-                Classes => \%OutOfSyncDefinitions,
-            );
-            if ( !$SyncMarked ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => 'MELT bootstrap could not mark ITSM ConfigItem definitions out of sync for lifecycle date fields.',
-                );
-            }
-
-            my $Synced = $ConfigItemObject->DefinitionSync();
-            if ( !$Synced ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => 'MELT bootstrap could not sync ITSM ConfigItem definitions after lifecycle date range repair.',
-                );
-            }
-        }
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'ConfigItemDefinition',
-    );
-
-    return 1;
-}
-
 sub _CustomerUserPreferenceDynamicFieldsEnsure {
     my ( $Self, %Param ) = @_;
 
@@ -1626,6 +1278,20 @@ sub _CustomerUserPreferenceDynamicFieldsEnsure {
 
         my $Existing = $DynamicFieldObject->DynamicFieldGet( Name => $Field->{Name} );
         if ($Existing) {
+            if (
+                ( $Existing->{ObjectType} || '' ) ne 'CustomerUser'
+                || ( $Existing->{FieldType} || '' ) ne 'MELTObject'
+                )
+            {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'notice',
+                    Message  => "MELT bootstrap skipped customer-user field $Field->{Name} because it is owned by "
+                        . ( $Existing->{ObjectType} || '<unknown>' ) . '/'
+                        . ( $Existing->{FieldType} || '<unknown>' ) . '.',
+                );
+                next FIELD;
+            }
+
             my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
                 Config         => $Existing->{Config} || {},
                 AllowedClasses => { map { $_ => $_ } @ClassIDs },

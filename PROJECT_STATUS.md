@@ -1,6 +1,333 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-04
+Last Updated: 2026-08-13
+
+## 2026-08-13 GovernanceDB 0.1.111 Test Package
+
+- Bumped GovernanceDB from `0.1.110` to `0.1.111` and generated the installable OPM containing the OSCAL Policy import interface, portable reference cleanup, and governance-admin runtime corrections.
+- `GovernanceDB-0.1.111.opm` contains 248 Base64 payloads: zero missing source files, zero missing Base64 declarations, and zero byte mismatches.
+- Perl syntax checks passed for the OSCAL service/interface and corrected governance runtime modules. The GovTech catalog mapping suite passes all 14 assertions.
+- SHA256: `FE038194A6361299A66879019DE92EDA9B607E71F2801367299578A4FD26D526`.
+
+## 2026-08-13 OSCAL Policy Fan-Out Import Interface
+
+- Added an agent-facing `OSCAL Policy Import` interface under GovernanceDB with JSON file upload/paste, preview, warnings, per-class counts, and explicit confirmed import.
+- Added `Kernel::System::GovernanceObject::OSCALImport` as the mapping/orchestration service. The OSCAL catalog becomes the parent `Policy`; each OSCAL group/domain becomes a child `Policy`; each supplied control risk becomes a `RiskStatement`; and each control becomes a `ControlObjective`.
+- Mapping follows the 2026-08-13 authoritative Governance Object export: catalog title becomes the parent Policy name; group title becomes child Policy name; group ID becomes child Policy annex; group overview becomes child Policy description; and `ZRM-Parent` links the domain through portable `Policy: Name` identity. Control title becomes ControlObjective and RiskStatement name; control ID becomes `ZRM-Annex`; risk prose becomes RiskStatement description; statement and guidance become labeled ControlObjective description sections and retain their corresponding policy filter/evaluation fields.
+- Generated relationships use portable `Class: Name` values (`Policy: ...`, `RiskStatement: ...`) and resolve through the Governance Object document importer on the target instance.
+- OSCAL group title is preserved in `ZRM-ControlClass`. It is deliberately not written to `ZRM-ControlCategory`, whose TESSERA vocabulary is People/Process/Technology/Data and has no authoritative OSCAL mapping.
+- TESSERA likelihood/impact factors and control type are not invented when OSCAL omits them; model defaults remain authoritative.
+- Import is idempotent by Governance Object class plus name: repeat imports update existing objects and create only new controls. Preview state is cached per user for one hour and import remains challenge-token protected.
+- The included GovTech IM8 catalog validates at one parent Policy, 15 child domain Policies, 137 controls, and 137 risk statements. Controls and risks reference their domain Policy. The focused test verifies parent-child Policy mapping, AS-1 mapping, descriptions, portable references, and non-invention of TESSERA-only classifications.
+
+## 2026-08-13 Governance Admin Runtime Log Corrections
+
+- `AdminGovernanceObject` now treats `var/governancedb/classes` as an optional examples directory and does not call `DirectoryRead` when it is absent.
+- Governance Object result listing now returns an empty result when no productive governance statuses exist, preventing MariaDB `IN ()` syntax errors during bootstrap or catalog repair.
+- Governance Object Dynamic Field definition transformation now handles missing `FieldType` safely and removes unresolved class names/IDs instead of propagating undefined entries into Dynamic Field and SQL processing.
+- The packaged GenericAgent runtime overlay explicitly loads the standard GenericAgent import/export extension, restoring `ExportGenericAgents` and `ImportGenericAgents` even when the legacy `AutoloadPerlPackages` hook is unavailable in the current process.
+- All four affected modules pass Perl syntax checks; a focused runtime load confirmed both GenericAgent import/export methods are installed.
+
+## 2026-08-13 Portable Reference Identity Cleanup
+
+- All Governance Object, ConfigItem, and MELT object-reference UI descriptions now use `Class: Name`; field-level blank, ID/number, or name-only display settings can no longer leak instance-local identities into user-facing reference values.
+- GovernanceDB bootstrap repairs every existing ConfigItem and Governance Object reference Dynamic Field to the corresponding class-qualified-name display type, idempotently preserving stored IDs as internal keys.
+- Governance Object and ConfigItem YAML/JSON/XLSX document conversion now recognizes both Governance Object and ConfigItem references, exports `Class: Name`, and resolves that identity within the destination instance and the field's allowed classes during import.
+- Unresolved/deleted object references no longer fall back to exporting a raw instance-local ID. Legacy ID-shaped imports remain accepted only for backward compatibility and update workflows.
+
+## 2026-08-11 Description CKEditor Normalization
+
+- Top-level Description bypassed Dynamic Field conversion and therefore still exported stored CKEditor HTML.
+- ConfigItem, GovernanceObject, and MELT document exports now pass Description through the same authored-text normalizer used for RichText Dynamic Fields. Stored descriptions remain unchanged.
+- GovernanceDB `0.1.106`: 242 verified Base64 payloads, zero mismatches. SHA256: `B534BB3C3A0B75F929AE7D5725A6E9DCAD7676D2C8E76F7C32EF90A01ACD0518`.
+- MELT `0.0.12`: 100 verified Base64 payloads, zero mismatches. SHA256: `A89DBB8A19897327C9CCD75BA431A2217A29C93BDF108A480F309E3496ECAC4A`.
+
+## 2026-08-11 Click-Time Workbook Model 0.1.105
+
+- 0.1.104 runtime evidence showed the modernized selector displaying Product while the model embedded during initial page rendering remained empty.
+- Removed the dependency between widget change timing and the embedded model. Both download buttons now request `Subaction=Model` with the selector's current ClassID at click time, receive only that class's server-filtered model, and then generate the XLSX.
+- Empty template and populated export therefore use the visible current selection in one click; the strict missing/invalid-class rejection remains.
+- GovernanceDB `0.1.105`: 242 verified Base64 payloads, zero mismatches. SHA256: `BF906928D817FC3B255D64A8F5B977A86E5429DE67C3471C69AE4F1D41F45FE5`.
+
+## 2026-08-11 Workbook Selected-Class Model Fix 0.1.104
+
+- Runtime screenshot showed Product selected in the modernized class widget while the client model was empty, causing `Select a ConfigItem class first.`
+- Removed a redundant class-level permission rejection from model construction. Frontend module access remains group-controlled, the ClassID must exist, and exported asset rows remain server-filtered through `ConfigItemSearch(Permission => 'ro', UserID => ...)`.
+- The strict no-ClassID guard remains: a missing class still produces no model and never exposes the complete CMDB.
+- GovernanceDB `0.1.104`: 242 verified Base64 payloads, zero mismatches. SHA256: `52983FA0BB1F51090CF6226C9E64D3342FBCDD77D12C989BE5FF02EDD1AE1936`.
+
+## 2026-08-11 Human-Readable References and Strict Workbook Scope
+
+### Completed work
+
+- GovernanceDB `0.1.103` and MELT `0.0.11` export object references as `Class: Name`, for example `Application: Integrated Clearance System` and `Environment: Production`.
+- New exports no longer prefer `ZTSM-Code`; compact values such as `P` are therefore not emitted as authored reference identity.
+- Import parses `Class: Name`, restricts lookup to that named class and the field's configured allowed classes, and requires an unambiguous match. Legacy code/name/number imports remain accepted for backward compatibility.
+- The CMDB workbook backend now returns no model unless one valid and readable ConfigItem ClassID is supplied. It cannot fall back from Product to Contract or export the complete CMDB when class propagation is missing.
+
+### Validation
+
+- GovernanceDB `0.1.103`: 242 verified Base64 payloads, zero mismatches. SHA256: `305474C0C049B948DE64FADD5808272492A3524D08B71574885E68201CF74F02`.
+- MELT `0.0.11`: 100 verified Base64 payloads, zero mismatches. SHA256: `6531907F4CE52C9EACF35806BDF5AE615DEAD3BA145CCE557849657A51A85632`.
+- Perl, JavaScript, focused tests, OPM XML, and `git diff --check` pass.
+
+## 2026-08-11 RichText Export and Class Selection Corrections
+
+### Completed work
+
+- GovernanceDB `0.1.102` and MELT `0.0.10` normalize every RichText Dynamic Field passing through the ConfigItem, GovernanceObject, and MELT YAML/JSON document exporters. Excel inherits the ConfigItem document normalization.
+- Exported RichText now contains authored plain content only. CKEditor HTML elements, attributes, widget wrappers, editor state, trailing whitespace, and non-breaking-space artifacts are excluded; stored object data is not modified.
+- Fixed CMDB workbook class propagation: the active numeric overview `Filter` is now carried as `ClassID`.
+- Removed the alphabetical fallback that silently selected Contract. Without a valid class, download stops and requires explicit selection, so Product cannot silently generate a Contract template/export.
+- Made MELT activity-table upgrade recovery idempotent and corrected MELT OPM Base64 encoding in the new release, matching the GovernanceDB package recovery standard.
+
+### Validation
+
+- GovernanceDB `0.1.102`: 242 byte-verified payloads, zero mismatches, zero missing Base64 declarations. SHA256: `BA26146944E6CA7D1659BD44EBE1B4A24D820DBB7FBF35B62EDC912C15CE9E57`.
+- MELT `0.0.10`: 100 byte-verified payloads, zero mismatches, zero missing Base64 declarations. SHA256: `8704C7119B029EE6329D59BC9581260BF28A766CC53DA7E4CBC5294A171E7FC5`.
+- Perl, JavaScript, SOPM/OPM XML, focused data-action tests, activity tests, and `git diff --check` pass.
+
+## 2026-08-11 GovernanceDB 0.1.101 Package Recovery
+
+### Runtime evidence and root causes
+
+- The first 0.1.100 OPM omitted `Encode="Base64"` from every embedded payload. OTOBO consequently installed Base64 text as source files, producing the widespread `Identifier too long ... line 1` and dependent module-load failures.
+- The missing SysConfig `Init` diagnostic was a consequence of the incorrectly extracted Base64 XML payload; all GovernanceDB source XML files have a valid `Framework`, `Application`, `Config`, or `Changes` init value.
+- `governance_object_activity_article` exceeded OTOBO's 30-character table-name limit.
+- The failed upgrade had already created `ztsm_configitem_activity`, so a blind retry of the same upgrade table operation was unsafe.
+
+### Completed recovery
+
+- Corrected OPM generation so all 242 payloads declare `Encode="Base64"` and decode byte-for-byte to their package sources.
+- Shortened the separate GovernanceObject table to `governance_object_activity` without changing its object ownership or semantics.
+- Kept activity tables in the fresh-install schema, removed their non-idempotent upgrade declarations, and added bootstrap table discovery that creates only a missing activity table. This supports retry after the observed partial 0.1.100 failure.
+
+### Validation
+
+- Released the recovery as `0.1.101` so Package Manager can upgrade whether the failed attempt retained registry version 0.1.99 or 0.1.100.
+- GovernanceDB `0.1.101` contains 242 byte-verified payloads, zero mismatches, and zero missing Base64 encoding declarations.
+- SHA256: `0F7AF76714D285633FC7D4335867122672C63BE5D5373CF312C0DF70B3B60F2E`.
+- GovernanceDB source XML, SOPM, generated OPM, bootstrap Perl, activity Perl, and focused tests pass validation.
+
+## 2026-08-11 Object-Owned Activity Articles
+
+### Completed work
+
+- Added rich Activity Articles independently to ConfigItem, GovernanceObject, and MELTObject. Each object family has its own table, system adapter, event recorder, frontend action, and article list.
+- Preserved the existing short technical history recorders. Activity Articles are additive and use later `110-TESSERAActivityArticles` event modules; they do not replace the existing history modules.
+- Structured ConfigItem imports create an additional readable activity snapshot identifying YAML/JSON or Excel as the source.
+- Preserved strict ownership: GovernanceDB owns ConfigItem and GovernanceObject activity implementations; MELT owns only MELTObject activity implementation. No object is copied, migrated, renamed, or retyped.
+
+### Architectural decisions
+
+- An Activity Article is immutable execution/audit evidence owned by its subject object. Similar behavior is duplicated through object-specific adapters, not implemented by converting one object family into another.
+- Technical history and readable Activity Articles serve different purposes and remain side by side.
+
+### Validation
+
+- Added `scripts/test/TESSERA/ObjectActivityArticles.t` to verify separate tables, separate event recorders, visible actions, and preservation of the original MELT history registration.
+- GovernanceDB `0.1.100` contains 242 byte-verified payloads with zero mismatches. Corrected SHA256: `5ADC062B5AD93659350A16DE6340E5AA9573E0AAEAF95F16FE0CFDE115B12D6C`.
+- MELT `0.0.9` contains 100 byte-verified payloads with zero mismatches. SHA256: `096521E2837B57D2FC3F3A319D8147A32C77AC920C96497994FA986A9C69BEAC`.
+
+## 2026-08-11 CMDB Data Actions and Workbook 0.1.100
+
+### Completed work
+
+- Duplicated the established action-row capabilities onto the agent CMDB overview without changing the GovernanceObject actions: Bulk, ConfigItem YAML/JSON, General Catalog YAML/JSON, and Excel Import/Export.
+- General Catalog YAML/JSON now accepts `AgentITSMConfigItem` as a safe return target, while retaining the existing GovernanceObject and admin return paths.
+- Added a ConfigItem-owned YAML/JSON codec and frontend; it resolves runtime ConfigItem class definitions and does not reuse GovernanceObject persistence.
+- Added genuine XLSX export/import using the packaged SheetJS runtime. Every active ConfigItem class receives its own worksheet and every asset occupies one row.
+- Export headers are generated from current class definitions. Structured, Set, Group, and multi-value values remain one JSON cell rather than numbered columns.
+- Added class-specific `Download empty template` and `Export class assets` actions. The selected class defaults from the CMDB class page when available.
+- Template columns walk the effective `DefinitionRef` returned by `DefinitionGet()`, after referenced role definitions have been expanded, so the spreadsheet follows the actual class-page form instead of a static field list.
+- Added preview-token-gated commit. Every row requires explicit Create, Update, or Skip; imports do not silently overwrite.
+- When an update would clear previously populated values, preview identifies the fields and requires the separate `UPDATE_CLEAR` decision plus a browser confirmation.
+- Missing ConfigItem Number plus a matching Name/Application/Environment/Location tuple produces `REVIEW_SAME_ASSET`. The tuple comparison is case-insensitive; CMDB Number remains exact.
+- Added configurable `TESSERA::CMDB::VirtualAssetTag###Pattern`, defaulting to `<ZTSM-Code>-VT-<running id>`. The code is resolved from the referenced Application GovernanceObject and ConfigItemID supplies the monotonic running ID.
+
+### Validation
+
+- New and modified Perl modules pass syntax validation.
+- GovernanceDB SysConfig XML parses successfully.
+- Both new JavaScript modules pass Node syntax validation.
+- Added `scripts/test/TESSERA/ConfigItemDataActions.t` for action, duplicate-rule, workbook, and virtual-tag invariants.
+
+### Architectural decisions
+
+- Human-readable names are workbook/document identity; numeric database identifiers are not exposed as authored reference identity.
+- Duplicate reconciliation is advisory and case-insensitive across the four business identity fields. It never implies an automatic merge when CMDB Number is absent.
+- Virtual-tag generation fails closed when the Application or its exact `ZTSM-Code` cannot be resolved.
+
+## 2026-08-11 CMDB Action-Row Script Loader Restoration 0.1.99
+
+### Runtime evidence
+
+- Browser console confirmed both required configuration structures are present and populated:
+  - `Core.Config.Get('ITSMConfigItemActionRow')`;
+  - `Core.Config.Get('ITSMConfigItem').ConfigItemActionRow`.
+- Therefore the repeated `reading 'ConfigItemActionRow'` exception is not missing row data. It is the dereference of the missing `ITSM.UI.ConfigItemActionRow` JavaScript namespace inside `ITSM.Agent.ConfigItem.Overview`.
+
+### Completed work
+
+- Bumped GovernanceDB to `0.1.99`.
+- Corrected `_CustomerAssetFrontendEnsure()` so every install/upgrade explicitly injects `ITSM.UI.ConfigItemActionRow.js` into the effective `AgentITSMConfigItem` module loader immediately before the guard and overview script.
+- The bootstrap removes stale/duplicate occurrences first, making the resulting order deterministic:
+  1. `ITSM.UI.ConfigItemActionRow.js`;
+  2. `ZTSM.Agent.ConfigItem.OverviewGuard.js`;
+  3. `ITSM.Agent.ConfigItem.Overview.js`.
+- This repairs deployed SysConfig state even when the source XML already contains the correct script but the live effective loader value lost it.
+
+### Validation
+
+- GovernanceDB bootstrap passes Perl syntax validation.
+- Built `Kernel/Package/GovernanceDB-0.1.99.opm` with 227 verified payloads and zero payload mismatches.
+- SHA256: `A3593F74F7F7C9BAE57205E0EE53FC81AEDD62F4BF24194ED7E89E0B29AD8556`.
+- `git diff --check` passed.
+
+## 2026-08-11 MELT Cross-Object Rewrite Removal 0.0.8
+
+### Root cause
+
+- Confirmed the early MELT compatibility bridge was still present in the current bootstrap and could mutate globally named Dynamic Fields owned by ConfigItem, GovernanceObject, Ticket, or CustomerUser.
+- `_DynamicFieldsEnsure()` resolved fields by global name and force-updated collisions to `ObjectType => MELTObject`, including a direct SQL fallback. This directly explains the deployed `*Old` MELTObject fields followed by reimported GovernanceObject replacements.
+- Additional inherited bridge methods could rewrite Ticket reference drivers and stored reference IDs, copy ConfigItems into MELT, and delete MELT runtime records during package upgrade.
+
+### Completed work
+
+- Bumped MELT to `0.0.8`.
+- Removed the `Kernel::System::ITSMConfigItem` bootstrap dependency.
+- Disabled all inherited ConfigItem/Ticket migration bridges:
+  - `_TicketReferenceValuesRepair()`;
+  - `_TicketReferenceDynamicFieldsRepair()`;
+  - `_ConfigItemsCopyToMELTObjects()`.
+- Converted `CopiedObjectDataClear()` into a compatibility no-op so MELT upgrades never delete runtime objects or evidence.
+- Added strict Dynamic Field ownership boundaries:
+  - MELT class-field maintenance skips any existing field whose `ObjectType` is not `MELTObject`.
+  - MELT customer-user maintenance skips existing fields unless they are already `CustomerUser/MELTObject` fields.
+  - MELT definition snapshots now accept only valid `MELTObject` fields and exclude included fields owned by other object types.
+- Preserved all ConfigItem and GovernanceObject modules, templates, SysConfig, and package file ownership outside MELT.
+
+### Architectural decisions
+
+- MELT is a standalone evidence/object database. It must not migrate, copy, rename, retype, repair, or delete ConfigItem, GovernanceObject, Ticket, or CustomerUser data.
+- A global Dynamic Field name collision is fail-closed: MELT logs and skips the field. It never takes ownership from another object type.
+- MELT forms may use only fields genuinely owned by `MELTObject`; a cloned definition is not authority to capture another package's Dynamic Field.
+- The old compatibility methods remain as inert entry points for upgrade compatibility, but their cross-object behavior is permanently disabled.
+
+### Validation
+
+- MELT bootstrap and MELTObject definition modules pass Perl syntax validation.
+- MELT `0.0.8` has 96 verified payloads with zero payload mismatches.
+- MELT file ownership overlap is zero against both GovernanceDB `0.1.98` and the authoritative ITSMConfigurationManagement package.
+- No ConfigItem dependency, Ticket reference-ID update SQL, external reference-driver rewrite, or upgrade table-delete loop remains in the MELT bootstrap.
+- Built `Kernel/Package/MELT-0.0.8.opm`.
+- SHA256: `24B04B892D133A91B2A289ED2FFEADFBC62296CDA503946E250E4C987E011424`.
+
+### Runtime recovery order
+
+- Upgrade MELT to `0.0.8` first so it can no longer damage restored ownership.
+- Upgrade/reinstall GovernanceDB `0.1.98` next so its authoritative bootstrap and CMDB overlay restore GovernanceObject and ConfigItem runtime registrations.
+- Retain the `*Old` rows temporarily as recovery evidence; do not delete them until field ownership, values, and references have been reconciled from the latest exports.
+
+## 2026-08-11 OTOBO 11.1 ConfigItem Action-Row Compatibility 0.1.98
+
+### Completed work
+
+- Confirmed from the `0.1.97` runtime retest that the flat `ITSMConfigItemActionRow` guard was insufficient: the installed OTOBO initializer dereferences grouped configuration through `.ConfigItemActionRow`.
+- Updated both agent and customer ConfigItem overview backends to publish the action-row map in two compatible forms:
+  - `ITSMConfigItemActionRow` for the established OTOBO 11.0 initializer.
+  - `ITSMConfigItem.ConfigItemActionRow` for the grouped OTOBO 11.1 initializer observed at runtime.
+- Updated the pre-loader guard to create and populate the grouped `ITSMConfigItem` object synchronously before `ITSM.Agent.ConfigItem.Overview` initializes.
+- Retained the restored ConfigItem class YAML import/export module and template introduced in `0.1.97`.
+
+### Rejected approach
+
+- The `0.1.97` flat-key-only guard is recorded as insufficient and must not be reused as the complete fix for OTOBO 11.1.
+
+### Validation
+
+- Both ConfigItem overview backends pass Perl syntax validation.
+- Built `Kernel/Package/GovernanceDB-0.1.98.opm` with 227 payloads; all decoded payloads match their current package sources.
+- GovernanceDB `0.1.98` SHA256: `C2D655B7624CA9D860EF5966AA8B3B478EFA6F709E0FBC16025665CAF0AF782F`.
+- `git diff --check` passed.
+
+### Runtime follow-up
+
+- Upgrade to `0.1.98`, deploy SysConfig, clear loader/application caches, and retest `Action=AgentITSMConfigItem`.
+- In the browser console, confirm both `Core.Config.Get('ITSMConfigItemActionRow')` and `Core.Config.Get('ITSMConfigItem').ConfigItemActionRow` return objects.
+
+## 2026-08-11 ConfigItem YAML Actions and Overview Recovery 0.1.97
+
+### Completed work
+
+- Traced the earlier CMDB implementation through Git history, including the pre-Governance migration source, and confirmed that ConfigItem class governance uses the established `AdminITSMConfigItem` `ClassImport` / `ClassExport` YAML workflow.
+- Added the original `AdminITSMConfigItem` module and template to the GovernanceDB runtime overlay and authoritative SOPM file list. Upgrade installation now restores the ConfigItem class export selector, YAML export action, and Ready2Import YAML class import action under `Custom/`.
+- Kept the recovery aligned with the historical implementation; no parallel or speculative ConfigItem upload format was introduced.
+- Hardened the existing agent ConfigItem overview guard so `ITSMConfigItemActionRow` is created synchronously before OTOBO registers or executes its overview initializer.
+- Preserved the custom overview backend behavior that publishes one action-row hash keyed by ConfigItemID and includes empty arrays for ConfigItems without actions.
+
+### Architectural decisions
+
+- ConfigItem class definitions remain YAML and continue to use OTOBO's authoritative `ClassImport()` / `ClassExport()` APIs.
+- Runtime recovery is delivered through GovernanceDB's upgrade-safe `Custom/` overlay rather than by relying on mutable core files surviving an OTOBO or MELT package installation.
+- GovernanceObject YAML/JSON document tooling and ConfigItem class YAML tooling remain separate because they govern different object models.
+
+### Validation
+
+- Root and runtime-overlay `AdminITSMConfigItem.pm` files have identical hashes; the corresponding templates also have identical hashes.
+- The restored files match the historical implementation and the root source without local behavioral divergence.
+- Built `Kernel/Package/GovernanceDB-0.1.97.opm` with 227 payloads; all decoded payloads match their current package sources.
+- GovernanceDB `0.1.97` SHA256: `1FC1F6B4D44EDC68F858F1207D7BBABF086006FFBF6E16C5D32AAB3BAD60FBC6`.
+- `git diff --check` passed. Node.js was unavailable in the desktop shell, so the small guard script was reviewed structurally but not parsed with Node.
+
+### Runtime follow-up
+
+- Install/upgrade `GovernanceDB-0.1.97.opm`, deploy configuration, clear the OTOBO caches, and confirm `Action=AgentITSMConfigItem` opens without `ConfigItemActionRow` errors.
+- Confirm Config Item Management again shows class YAML export and Ready2Import YAML import actions.
+
+## 2026-08-11 Initial ControlObjective Policy Engine 0.1.96
+
+### Completed work
+
+- Added the first fail-closed TESSERA policy interpreter in `Kernel::System::TESSERA::PolicyEngine`.
+- Added `Kernel::System::GenericAgent::ZRMPolicyEvaluator`, which discovers `ControlObjective` GovernanceObjects by class name, evaluates `ZRM-PolicyFilter` for ticket applicability, and then evaluates `ZRM-PolicyEvaluation`.
+- Policy outcomes are `SATISFIED`, `NOT_SATISFIED`, or `UNKNOWN`; missing fields, invalid conversions, ambiguous values, and unsupported grammar remain `UNKNOWN` and never establish control satisfaction.
+- Added initial typed grammar for `@TICKET` and `@CONTROLOBJECTIVE` fields, explicit `NUMBER`, `STRING`, `DATE`, and `DATETIME` conversion, multiplication/division, `PRODUCT OF`, comparisons, Boolean line joins, `NOW`, and relative day/week/month/year expressions.
+- Added an event-driven GenericAgent seed for ticket creation and Dynamic Field updates. Matching results are written as private ticket article evidence and deduplicated by evaluation digest.
+- Added a fresh-install/upgrade-safe `ControlObjective` class definition using the exact exported `ZRM-PolicyFilter` and `ZRM-PolicyEvaluation` Dynamic Fields.
+- Added `var/governancedb/policy/control_objective_examples.txt` containing separate applicability-filter and policy-evaluation samples.
+
+### Architectural decisions
+
+- Authored policy uses object, class, field, calendar, and catalog names; database IDs are not valid policy identity.
+- `ZRM-PolicyFilter` controls applicability only. `ZRM-PolicyEvaluation` determines the Control Objective result only after applicability is satisfied.
+- GenericAgent is the runtime trigger; ControlObjective remains governance truth and the ticket article remains execution evidence.
+- The initial grammar is deliberately bounded. Reserved traversal, collection, scheduling, variable, business-calendar, ITSMConfigItem, and MELT syntax must return `UNKNOWN` until implemented.
+
+### Validation
+
+- Policy engine and GenericAgent modules pass Perl syntax checks.
+- GenericAgent seed parses as YAML.
+- Default class model parses as JSON and contains exactly one `ControlObjective` with both authoritative policy fields.
+- Smoke evaluation passed for applicability, numeric `PRODUCT OF`, explicit conversion, and fail-closed missing-field behavior.
+- Built `Kernel/Package/GovernanceDB-0.1.96.opm` with 225 payloads; every decoded payload matches its current package source.
+- GovernanceDB `0.1.96` SHA256: `C85C6D665853D8F17FAB06B266A878D0665489F57F7345E167A51A10BBD48E53`.
+
+## 2026-08-04 ConfigItem Action-Row Root Fix 0.1.94
+
+### Completed work
+
+- Corrected the remaining OTOBO 11.1 `ConfigItemActionRow` JavaScript failure. `AddJSData()` stores keys literally, so dotted keys did not create the root object expected by `ITSM.Agent.ConfigItem.Overview`.
+- Agent and customer overview backends now publish one `ITSMConfigItemActionRow` hash keyed by ConfigItemID, including empty action arrays.
+- Extended the upgrade bootstrap to force `ITSMConfigItem::Frontend::Overview###Small` to the custom `ZTSMOverviewSmall` backend. Previously only the customer backend was enforced.
+- Bumped GovernanceDB to `0.1.94` and rebuilt `Kernel/Package/GovernanceDB-0.1.94.opm`.
+- SHA256: `D96D8249CBD047A2509B5F9DE9745D993DBA556087C5285B96715D223C164FFE`.
+
+### Validation
+
+- Perl syntax passed for both custom overview backends and the GovernanceDB bootstrap.
+- `CustomerConfigItemEntitlement.t`: 29 tests passed.
+- OPM version `0.1.94`, 221 payloads, no missing sources, and all payloads match current package source.
 
 ## Current Focus
 
@@ -27,6 +354,286 @@ Last Updated: 2026-08-04
 - Change Request plan orchestration for scheduled Pre-check, Implementation, Post-change, and Rollback child execution.
 
 ## Completed Work
+
+## 2026-08-04 Empty MELT Runtime Boundary 0.0.6
+
+- Confirmed that early MELT preview bootstrap code incorrectly copied existing ConfigItems into MELT object tables even though MELT is a separate, design-led repository that must begin empty.
+- Fresh MELT installs no longer execute any ConfigItem copy or ticket-reference migration path.
+- Added a one-time `0.0.6` upgrade cleanup that deletes MELT runtime objects, versions, links, and object history from both preview schemas while leaving CMDB ConfigItems, GovernanceDB records, MELT class definitions, and catalog metadata untouched.
+- The cleanup is version-gated and therefore does not delete MELT records created intentionally after this corrective upgrade.
+- Artifact: `Kernel/Package/MELT-0.0.6.opm`; SHA256 `6A013EF4C588C84AA3E403D54EA811E2855601C81B4EF707BA1D46A04E07B71D`.
+- Validation passed: Bootstrap Perl syntax, two expected CodeUpgrade blocks with cleanup gated to `0.0.6`, 96 byte-matching package payloads, and the existing targeted database migration retained.
+
+## 2026-08-04 MELT Database Upgrade and Status Repair 0.0.5
+
+- Removed stale MELT database upgrade definitions marked as future version `0.0.8`; these caused OTOBO to recreate existing tables during every current package upgrade.
+- Preserved the complete `DatabaseInstall` schema for fresh environments and reduced `DatabaseUpgrade` to one targeted `0.0.5` addition.
+- Renamed the over-30-character `melt_object_item_definition_sync` table to `melt_item_definition_sync` in fresh-install schema, upgrade schema, uninstall schema, and runtime SQL.
+- Added lifecycle `Functionality` preferences to all MELT statuses, preventing the empty GeneralCatalog preference result that generated malformed SQL ending in `IN ()`.
+- Removed automatic ConfigItem copying and ticket-reference repair from MELT installation, consistent with the package statement that installation does not migrate existing ConfigItem or GovernanceDB data.
+- Artifact: `Kernel/Package/MELT-0.0.5.opm`; SHA256 `6F3C357ACE964A367F55E22E5BE1CB9F871860D642F34EC166C56F56F1BC9339`.
+- Validation passed: 16 fresh-install tables, no table name over 30 characters, exactly one `0.0.5` upgrade table, 96 byte-matching Base64 payloads, and Perl syntax checks for both changed modules.
+
+## 2026-08-04 Asset Filter Navigation Fix and MELT Packaging Correction
+
+- GovernanceDB `0.1.92` removes the separate customer Asset Search button because that form was not usable or necessary for the entitled asset listing.
+- Name and generated asset-column text filters now submit against the browser's actual current listing URL, preserving the active page context and avoiding the malformed URL that triggered OTOBO's network-error dialog.
+- Number remains display/sort only; Name and the generated composite columns remain partial-text filters.
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.92.opm`; SHA256 `85FBB9589E535252107958C89C80510AD5F3A0E7D04D4D6C3924C04718A6C367`.
+- MELT `0.0.2` encoded its file payloads as Base64 without declaring `Encode="Base64"`, causing OTOBO to deploy encoded text as source code. MELT `0.0.3` corrects every package file declaration and supersedes `0.0.2`.
+- MELT artifact: `Kernel/Package/MELT-0.0.3.opm`; SHA256 `9E3FD56C5C6C9CC8A626E1A39B7F9ED795989F17CD7A2C96A399F4E45DBCD445`.
+- MELT validation passed for all 96 files: every embedded payload decodes byte-for-byte to its source and no file lacks the Base64 encoding declaration.
+- GovernanceDB JavaScript syntax and 29 customer ConfigItem regression tests passed; its 220-file OPM has no empty payloads and both changed payloads match source.
+
+## 2026-08-04 MELT Standalone Bootstrap Correction 0.0.4
+
+- Removed GovernanceDB runtime-prerequisite seeding from the standalone MELT installation path. MELT no longer attempts to load absent ticket/activity lifecycle or GenericAgent seed files.
+- Removed the unsupported `Kernel::System::Service->UpdateTypServiceACLs()` call from MELT installation; service/type ACL generation remains a GovernanceDB responsibility.
+- MELT `0.0.4` upgrades the successfully registered `0.0.3` package, so the existing tables created during the earlier partial installation are retained instead of recreated.
+- Artifact: `Kernel/Package/MELT-0.0.4.opm`; SHA256 `B0044EC96C32CE0BFD46773B017C16737245C44F27B45F1FCAA9C943BB1DDAA0`.
+- Bootstrap Perl syntax passed. All 96 OPM payloads declare Base64 encoding and decode byte-for-byte to current source.
+
+## 2026-08-04 Company Tickets Removal and MELT 11.1
+
+- GovernanceDB enables and deploys `Ticket::Frontend::CustomerDisableCompanyTicketAccess`, removing the customer Company Tickets navigation path.
+- GovernanceDB `0.1.91`: `Kernel/Package/GovernanceDB-0.1.91.opm`; SHA256 `882CC6D0764CDDEFC2AFD5783A1CBD2BF50897959B469BF58318E5075216AD51`.
+- MELT was updated from `0.0.1` / `11.0.x` to `0.0.2` / `11.1.x`.
+- MELT `0.0.2`: `Kernel/Package/MELT-0.0.2.opm`; SHA256 `709FCC7CAB14592F7256EEA14605A740A5399442BDAC5D46168344A8CAE38488`.
+- MELT validation passed: 96 files, no missing sources or empty payloads, and all embedded payloads match current source.
+- GovernanceDB Bootstrap syntax and 29 customer ConfigItem regression tests passed.
+
+## 2026-08-04 Functional Partial-Match Asset Filters 0.1.90
+
+- Fixed free-text asset filters that accepted typing but did not apply on Enter in upgraded environments.
+- Bootstrap now appends `ZTSM.Customer.AssetFilters.js` to the effective customer ConfigItem loader setting and forces its SysConfig deployment.
+- Generated-column filtering now uses case-insensitive substring matching, so `IaaS` matches `Application: IaaS Extension`.
+- Name uses the same free-text partial-match path; Number remains display/sort only because it is system generated.
+- Artifact: `Kernel/Package/GovernanceDB-0.1.90.opm`
+- SHA256: `B939BC1F97F37EF4C22BA0C9ED603CF9F5B48B249B1DF92FD7946A52DC7E0D4B`
+- Perl and JavaScript syntax checks passed; 29 regression tests passed.
+
+## 2026-08-04 Free-Text Generated Asset Filters 0.1.89
+
+- Replaced dropdown filtering for the generated customer asset columns with explicit free-text inputs: Asset Tag, Product / Model, Application, Environment, Location, Domain, and Function Profile.
+- The user opens the column filter, types a partial value, and presses Enter; the existing backend virtual-filter logic applies the case-insensitive text match.
+- Class and State retain native selection filters because they have stable enumerated values.
+- Added the TESSERA-owned `ZTSM.Customer.AssetFilters.js` loader asset and retained a hidden native select solely for compatibility with the existing OTOBO column-filter refresh path.
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.89.opm`
+- SHA256: `E3720A26E25CED92502E15C326478D63113B05E370BA2FF707ABFA32CB4B8FF4`
+- Perl and JavaScript syntax checks passed; customer ConfigItem regression suite passed 26 tests.
+- OPM validation passed: 220 files, no empty payloads, and one packaged text-filter JavaScript asset.
+
+## 2026-08-04 Labeled Customer Asset Search 0.1.88
+
+- Replaced the unusable unlabeled customer ConfigItem search presentation with the TESSERA-owned `ZTSMCustomerITSMConfigItemSearch.tt` template.
+- Renamed the page to `Asset Search` and placed each visible label before its control so the customer theme no longer layers blank controls over their labels.
+- Added explicit label/control associations for Number and Name, shortened Deployment State to State, and corrected DynamicField label ordering.
+- Kept the existing server-side customer entitlement and `ASSET` role filtering in `CustomerITSMConfigItemSearch.pm`.
+- Used a uniquely named template deployed through the runtime overlay rather than packaging the vendor-owned ITSM search template path.
+
+### Package and validation
+
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.88.opm`
+- SHA256: `F2661C2E1B7868F604C83FBE517901632C84A5EC91113998A93EDAE5788E0353`
+- Both customer search module copies passed Perl syntax checks.
+- Customer ConfigItem regression suite passed: 26 tests.
+- OPM validation passed: 219 files, no empty payloads, and one uniquely named search template entry.
+
+## 2026-08-04 Entitled Asset Export and Navigation Contrast 0.1.87
+
+- Added an export-only action to the customer Assets page; no customer import or write path was introduced.
+- Export scope is the complete currently filtered ConfigItem set after server-side customer entitlement and `ASSET` role enforcement, rather than only the visible page.
+- The XLSX contains core identity columns plus the union of DynamicFields used by the exported ConfigItem classes.
+- DynamicField Set, DynamicField Group, multivalue, and other structured values are serialized as JSON within one spreadsheet cell; scalar values use their readable display form.
+- Increased the inactive Assets navigation SVG fill contrast from `#7f82ab` to `#b8bad5`.
+- Recorded the future governed SR import and duplicate/merge review design in `PROJECT_NEXT.md`.
+
+### Package and validation
+
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.87.opm`
+- SHA256: `DE509CA88764D9732B4D2CEDA4DBF2DA8EB90930C54682CF173233589BD5A043`
+- Both customer ConfigItem module copies passed Perl syntax checks.
+- Customer ConfigItem entitlement/export regression suite passed: 26 tests.
+- OPM validation passed: 218 files, no empty payloads, and all three changed runtime payloads match their sources.
+
+## 2026-08-04 Searchable Asset Column Filters 0.1.86
+
+- Corrected customer asset column filters that opened as non-editable plain selections.
+- Added OTOBO's `Modernize` class to both the initial filter selection and its AJAX-refreshed replacement, enabling the searchable/typeable selection control consistently.
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.86.opm`
+- SHA256: `3065E58273039110AA9554D9B8BBCB4B17ACA500972D08BE90B7C18B2E8C1FD1`
+- Custom backend syntax check and all 22 customer ConfigItem entitlement regression tests passed.
+
+## 2026-08-04 Compact Asset State Header 0.1.85
+
+- Shortened the customer asset-list column heading from `Current Deployment State` to `State` without changing its values, filtering, or underlying `CurDeplState` field.
+- GovernanceDB artifact: `Kernel/Package/GovernanceDB-0.1.85.opm`
+- SHA256: `EC0D7ECB215FEE642267D4097E185B9D53B13AA2918587FA644448A273EC7ABA`
+- Custom backend syntax check and all 22 customer ConfigItem entitlement regression tests passed.
+
+## 2026-08-04 Class-Aware Asset Listing Values 0.1.84
+
+### Completed work
+
+- Fixed empty Product/Product Model, Application, Environment, Location, Asset Tag, Domain, and Function Profile values in the customer asset listing.
+- These are now virtual listing columns resolved from each ConfigItem class definition's `DynamicFieldRef`, matching the exported field name or label and rendering the value for the current ConfigItem version.
+- Kept the native filterable OTOBO table and the requested column order; Deployment State remains and Incident State/Created remain excluded.
+- Updated both SysConfig defaults and upgrade-time deployed settings so existing and fresh installations use the class-aware columns.
+
+### Package and validation
+
+- GovernanceDB version: `0.1.84`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.84.opm`
+- SHA256: `62B9F83AE6AA87B0BA21EE644381DD9F36AF2533710F84426648D65F5C08855B`
+- Perl syntax checks passed for the custom overview backend, customer list module and its package mirror, and Bootstrap.
+- Customer ConfigItem entitlement regression suite passed: 22 tests.
+- OPM XML validation passed: 218 files, no empty payloads, and all four changed embedded payloads match their authoritative sources.
+- `git diff --check` passed.
+
+## 2026-08-04 Custom Asset Backend Runtime Label Fix 0.1.83
+
+### Completed work
+
+- Diagnosed the customer portal HTTP 500 as `Label not found for next DYNAMICFIELD` in the activated custom overview backend.
+- Corrected the unavailable-Dynamic-Field branch to continue through its actual `DYNAMICFIELDNAME` loop.
+- Recorded the `Layout.pm` subroutine redefinition messages as unrelated warnings; the undefined loop label was the fatal request error.
+
+### Package
+
+- GovernanceDB version: `0.1.83`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.83.opm`
+- SHA256: `DE5B50527D68C9808867C02CAD0EE79ADEAF5CA6C6C8582CF523AAEE74657B26`
+
+## 2026-08-04 Asset Overview SysConfig Deployment 0.1.82
+
+### Completed work
+
+- Diagnosed why `0.1.81` still rendered the stock backend: the settings were written but omitted from `_SysConfigDeploy()` `DirtySettings`, so OTOBO did not publish them into active configuration.
+- Added the custom overview backend and both governed column settings to the forced SysConfig deployment list.
+
+### Package
+
+- GovernanceDB version: `0.1.82`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.82.opm`
+- SHA256: `DE84CEC832259E35FC5D38E8825FB9C8B3FFFCFCE4B885F56A429749672C192C`
+
+## 2026-08-04 Existing-System Asset Overview Activation 0.1.81
+
+### Completed work
+
+- Confirmed `0.1.80` installed the custom overview backend but left existing effective SysConfig values pointing to the stock backend and stock columns.
+- Added an idempotent bootstrap migration that activates `Kernel::Output::HTML::ITSMConfigItem::ZTSMCustomerOverviewSmall` in `ITSMConfigItem::Frontend::CustomerOverview###Small`.
+- Explicitly deploys the governed asset column list to both the default and active `01` customer permission-condition column settings during package upgrade.
+
+### Package
+
+- GovernanceDB version: `0.1.81`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.81.opm`
+- SHA256: `D83DD8A9B2C936F877826CCA8437FD4D9E8157C80CD47B534FE74780BD5F8FFD`
+
+## 2026-08-04 Conflict-Free Custom Asset Overview Backend 0.1.80
+
+### Completed work
+
+- Rejected the `0.1.79` artifact because it attempted to package vendor-owned `Kernel/Output/HTML/ITSMConfigItem/CustomerOverviewSmall.pm`, which conflicts with `ITSMConfigurationManagement-11.1.2`.
+- Restored the vendor-owned source module unchanged.
+- Moved the filterable asset-register implementation into the uniquely named `Kernel::Output::HTML::ITSMConfigItem::ZTSMCustomerOverviewSmall` backend.
+- Pointed the customer Small ConfigItem overview configuration to the custom backend without replacing any file owned by ITSMConfigurationManagement.
+
+### Package
+
+- GovernanceDB version: `0.1.80`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.80.opm`
+- SHA256: `9447565CC8C0B4B341ADF7C15996BD1359242BDDC9F6230BE749FEA464477960`
+
+## 2026-08-04 Filterable Customer Asset Register 0.1.79
+
+### Completed work
+
+- Replaced the custom asset-card renderer with OTOBO's native customer ConfigItem overview table, preserving one ConfigItem per row and native column filters.
+- Set the governed customer asset columns to Number, Name, Asset Tag, Class, Product / Model, Application, Environment, Location, Domain, Function Profile, and Current Deployment State.
+- Added class-aware `Product / Model` resolution from `ProductModel` then `Product`.
+- Added class-aware `Domain` resolution from ParentWorkloadDomain, ParentNetworkDomain, ParentStorageDomain, WorkloadDomain, NetworkDomain, then StorageDomain.
+- Added server-side dropdown filtering for the two combined class-aware columns; all direct Dynamic Field columns retain their native OTOBO filters.
+- Removed the obsolete asset-card template and stylesheet from the current package definition.
+
+### Package
+
+- GovernanceDB version: `0.1.79`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.79.opm`
+- SHA256: `09BD2EB343CB79DA11DF2AC564C7B3257C73EACB7A9BF88FF127ACDE39F63165`
+
+## 2026-08-04 Active Asset Stylesheet Registration 0.1.78
+
+### Completed work
+
+- Confirmed from the rendered DOM that asset-card markup and vertical card structure were correct, while the stylesheet was absent from the active loader.
+- Installed `ZTSM.Customer.AssetCards.css` directly into the customer skin instead of relying on runtime-overlay copying.
+- Added an idempotent bootstrap update to the effective `Loader::Module::CustomerITSMConfigItem###003-ITSMConfigItem` CSS array, following the existing proven TESSERA customer-branding loader pattern.
+
+### Package
+
+- GovernanceDB version: `0.1.78`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.78.opm`
+- SHA256: `9CE5EE79556BB64920844C3FF4BBCFAC264D6C5BC0EDB9F2C461FB29CBC53BA7`
+
+## 2026-08-04 Asset Card Loader and Reference Warning Fix 0.1.77
+
+### Completed work
+
+- Moved asset-card styling from the customer template into a dedicated customer skin stylesheet loaded by `Loader::Module::CustomerITSMConfigItem`.
+- Fixed ContractEntitlement reference fallback so a potential VersionID is resolved through `VersionConfigItemIDGet` before calling `ConfigItemGet`; `ConfigItemGet` is no longer called with an unsupported VersionID-only argument.
+- Eliminated repeated `No such ConfigItemID ()` warnings while retaining support for ConfigItemID- and VersionID-backed reference values.
+
+### Package
+
+- GovernanceDB version: `0.1.77`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.77.opm`
+- SHA256: `4C9CF7C94E7818B9E235539F90A68871FEA6BDCDB0EFFA9202C2412DE6589785`
+
+## 2026-08-04 Customer Asset Cards and Full Detail 0.1.76
+
+### Completed work
+
+- Replaced the generic customer ConfigItem table with responsive, fully clickable asset cards.
+- Removed the Created and Incident State columns; retained Deployment State as a compact status badge.
+- Added class-aware summary fields for Asset Tag, Product/ProductModel, Domain, Application, Environment, and Location, omitting fields that are empty.
+- Domain resolution uses the confirmed exported fields in priority order: `ParentWorkloadDomain`, `ParentNetworkDomain`, `ParentStorageDomain`, `WorkloadDomain`, `NetworkDomain`, and `StorageDomain`.
+- Enabled existing class-specific ConfigItem definition pages in the customer zoom after the centralized backend `ASSET` detail permission succeeds, so the detail view is no longer empty.
+- Preserved the ContractEntitlement-only plus `ASSET` SupportAssignment access boundary for list and detail access.
+
+### Package
+
+- GovernanceDB version: `0.1.76`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.76.opm`
+- SHA256: `1B6F3FF367477FBB21299849AAED64BBA9E6EE776B6D5C78DAFA277AC5962F20`
+
+### Verification
+
+- Customer list and zoom module source/package mirrors pass Perl syntax checking and are byte-identical.
+- The OPM contains 218 Base64-encoded files with no empty payloads; both customer templates and both changed customer modules match their embedded payloads byte-for-byte.
+- Customer entitlement regression suite: 21/21 assertions passed.
+
+## 2026-08-04 ContractEntitlement-Only Asset Visibility 0.1.75
+
+### Completed work
+
+- Simplified customer ConfigItem visibility to the confirmed access contract: the ConfigItem must reference exactly one valid `ContractEntitlement`, and the customer must hold an `ASSET` SupportAssignment for detail/list visibility.
+- Removed filtering through ConfigItem `ZTAM-SupportProfile`, ContractEntitlement `Contract-SupportProfie`, and SupportAssignment `ZTSMSupportAssignment-SupportProfile`.
+- Preserved fail-closed validation of the ConfigItem, its `ZTAM-ContractEntitlement` reference, the referenced `ContractEntitlement`, the customer identity, and the required `ASSET` role.
+
+### Package
+
+- GovernanceDB version: `0.1.75`
+- Artifact: `Kernel/Package/GovernanceDB-0.1.75.opm`
+- SHA256: `F0E653438DAB34C11869BD9AC7E326B369287B25D09063ED4D92CCFC1E66DAA0`
+
+### Verification
+
+- Both centralized permission-service mirrors are byte-identical (`20C474538C65AC68FF954A699BE6F5B0D14BB54E4B7E998E2D8A1F3B52F5748B`) and pass Perl syntax checking.
+- The OPM contains 216 Base64-encoded files with no empty payloads.
+- The permission service embedded in the OPM matches the source byte-for-byte.
+- `scripts/test/TESSERA/CustomerConfigItemEntitlement.t`: 21/21 assertions passed, including explicit checks that no SupportProfile field participates in ConfigItem access.
 
 ## 2026-08-04 Idempotent Mutation Normalization 0.1.74
 
@@ -13145,3 +13752,76 @@ PurpleBook completion must not:
 
 - After upgrading to `0.0.128`, retry submit and check the OTOBO log for `TESSERA GenericAgent search guard sanitized empty TicketSearch arrays for Job='...'`.
 - Once the offending GenericAgent job is identified and corrected at source, consider removing the runtime guard or reducing its log level.
+## 2026-08-04 ConfigItem Overview and Customer Filter Fix 0.1.93
+
+### Completed work
+
+- Added the uniquely named agent overview backend `Kernel::Output::HTML::ITSMConfigItem::ZTSMOverviewSmall` and configured `ITSMConfigItem::Frontend::Overview###Small` to use it, avoiding ownership conflicts with OTOBO's `OverviewSmall.pm`.
+- Both agent and customer overview backends now publish `ITSMConfigItemActionRow.<ConfigItemID>` for every visible row, using an empty array when no actions exist. This satisfies the OTOBO 11.1 JavaScript initializer without disclosing or inventing actions.
+- Fixed the customer Name column filter HTTP 500. Name is resolved as a free-text ConfigItem value instead of calling the nonexistent `NameFilterValuesGet` method.
+- Hardened customer saved-filter loading so an absent or invalid preference resolves to an empty filter hash.
+- Bumped GovernanceDB to `0.1.93` and rebuilt `Kernel/Package/GovernanceDB-0.1.93.opm`.
+- SHA256: `9B63E8937973C312F7ABD81387BDDB18E678BDFDD44285A201D280AE9CE13205`.
+
+### Validation
+
+- Perl syntax passed for `ZTSMOverviewSmall.pm`, `ZTSMCustomerOverviewSmall.pm`, and `CustomerITSMConfigItem.pm`.
+- `CustomerConfigItemEntitlement.t`: 29 tests passed.
+- OPM parsed as version `0.1.93` with 221 file payloads; all 221 payloads match current package source.
+
+### Runtime verification
+
+- Upgrade GovernanceDB to `0.1.93`, rebuild configuration and loader caches, restart PSGI/web workers if required, and hard-refresh the browser.
+- Verify agent CMDB Overview opens without the `ConfigItemActionRow` JavaScript error.
+- Verify customer Name and composite-column filters open without HTTP 500 and filter after entering text and pressing Enter.
+## 2026-08-04 MELT ConfigItem Definition Isolation 0.0.7
+
+- Forensic review of MELT `0.0.2` through `0.0.6` found no deletion of `configitem`, `configitem_version`, or `configitem_definition` records. Preview builds copied ConfigItems into MELT tables; `0.0.6` cleanup deletes only MELT-owned runtime tables.
+- Found an invalid cross-package mutation in every MELT bootstrap through `0.0.6`: `_ITSMConfigItemLifecycleDateDynamicFieldsEnsure()` updated five ITSM ConfigItem Date DynamicFields and forced `DefinitionSetOutOfSync()` plus `DefinitionSync()` for affected classes.
+- OTOBO `DefinitionSync()` preserves the prior class definition and inserts a new version through `DefinitionAdd()`; it does not delete the earlier JSON/YAML definition. The missing Overview content is therefore tracked as a rendering/runtime failure, not proven data destruction.
+- Removed the lifecycle-date ConfigItem mutation and its helper from MELT. MELT install and upgrade no longer call ITSM ConfigItem definition synchronization or clean the ConfigItem definition cache.
+- Built `Kernel/Package/MELT-0.0.7.opm`; SHA256 `EE5485057C07729E234274BE3F3CF6589CED11FD0BC8F97A656CF3A19D7C356C`.
+- Validation passed: Bootstrap Perl syntax, 96 byte-matching OPM payloads, and the packaged Bootstrap contains no lifecycle ConfigItem sync/cache mutation.
+## 2026-08-11 GovernanceObject and MELT Excel Workbooks 0.1.107 / 0.0.13
+
+### Completed work
+
+- Added separate preview-first XLSX import/export modules for GovernanceObject and MELTObject.
+- Both workbooks generate their template and export at click time from the selected class page and its effective role-expanded definition.
+- Every object remains one workbook row; structured and multi-value Dynamic Fields use JSON in one cell.
+- Import resolves through each repository's native document adapter, preserving separate GovernanceObject and MELT storage, class definitions, reference resolution, permissions, and event/activity recording.
+- Number is the authoritative update identity. When Number is absent, class plus name is compared case-insensitively and presented as `REVIEW_SAME_OBJECT`; the user must explicitly choose create, update, or skip.
+- Updates that would clear populated values require the separate `UPDATE_CLEAR` choice and browser confirmation.
+- Added `Excel Import/Export` to the GovernanceObject and MELT overview action rows.
+- Ticket table export now converts article HTML and Ticket RichText service fields to readable text. ConfigItem, GovernanceObject, and MELT document exports already apply the same CKEditor cleanup.
+- Built `Kernel/Package/GovernanceDB-0.1.107.opm` (SHA256 `5DC9D6C3DE0918D24D178420AFFCEFF550EA423F86AD3C2A2AE4105A1D66B0C5`).
+- Built `Kernel/Package/MELT-0.0.13.opm` (SHA256 `DEEB028E5FD8190B73388137541D602333B6BF9583DC7A07B0562AADA99A9B30`).
+
+### Validation
+
+- Perl syntax passed for both new workbook controllers and `Kernel::System::TESSERA::TicketTable`.
+- JavaScript syntax passed for both workbook clients using the bundled Node runtime.
+- GovernanceDB/MELT SysConfig XML and SOPM files parse successfully.
+- Both OPMs contain Base64-encoded payloads for every declared file.
+## 2026-08-11 GovernanceObject/MELT Class-and-Name Duplicate Choice 0.1.108 / 0.0.14
+
+- GovernanceObject and MELT workbook imports use only case-insensitive `Class + Name` duplicate detection when Number is empty; they do not use ConfigItem Application, Environment, or Location fields.
+- A duplicate is presented for explicit confirmation: Update merges into the selected numbered object, Skip leaves it unchanged, and Create makes a separate object.
+- When Create is selected for an occupied class/name, the importer assigns the next available name using `Name - 2`, `Name - 3`, and so on.
+- Built `Kernel/Package/GovernanceDB-0.1.108.opm`; SHA256 `2401E1A60CB6DB8F575801D3ACD19D8CC160BE36ABB306C1AAFF750989CA3EF5`.
+- Built `Kernel/Package/MELT-0.0.14.opm`; SHA256 `6596C34DAEC347CE1C1FE21BBF9D51B57D37F04290581A5FB18B5D9FED890576`.
+- Perl and JavaScript syntax validation passed, and `git diff --check` reported no errors.
+## 2026-08-11 CMDB Best-Effort Duplicate Identity 0.1.109
+
+- CMDB workbook duplicate matching always uses case-insensitive ConfigItem `Class + Name`.
+- It additionally compares only identity fields actually present in the selected class's effective definition: `ZTAM-Application`, `ZTAM-Environment`, and `ZTAM-Location`.
+- Classes defining none of those fields fall back to `Class + Name`; classes defining a subset use only that subset.
+- Empty incoming identity values are treated as unavailable matching evidence rather than as proof of difference. A possible match is therefore still shown, and clearing existing populated data requires the existing `UPDATE_CLEAR` confirmation.
+- Built `Kernel/Package/GovernanceDB-0.1.109.opm`; SHA256 `12005538E81F49644F60E84F2BF1ED4199757923E6F0F4AD43481090C59E5EF8`.
+## 2026-08-11 CMDB Asset-Tag Differentiation 0.1.110
+
+- Added `ZTAM-AssetTag` as a strong negative duplicate signal for workbook import.
+- When both the existing ConfigItem and incoming row have non-empty asset tags and the values differ case-insensitively, they are treated as different assets and no merge candidate is offered.
+- When either asset tag is empty, matching continues using the class-defined best-effort identity criteria.
+- An explicit CMDB Number remains authoritative for intentional updates.
+- Built `Kernel/Package/GovernanceDB-0.1.110.opm`; SHA256 `56C5226F82B086BDF35DB10DC3DF1193AE389B91C6A1C7D3AB573F9D557CCD40`.

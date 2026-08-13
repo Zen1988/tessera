@@ -305,6 +305,16 @@ sub ActionRow {
         Data => {
             %Param,
             CSS  => 'AlwaysPresent',
+            Name => Translatable('Excel Import/Export'),
+            Link => 'Action=AgentGovernanceObjectWorkbook',
+        },
+    );
+
+    $LayoutObject->Block(
+        Name => 'DocumentActionRowItem',
+        Data => {
+            %Param,
+            CSS  => 'AlwaysPresent',
             Name => Translatable('General Catalog YAML/JSON'),
             Link => 'Action=AgentGeneralCatalogDocument',
         },

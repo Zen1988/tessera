@@ -834,7 +834,7 @@ sub Run {
     }
 
     $Output .= $LayoutObject->Output(
-        TemplateFile => 'CustomerITSMConfigItemSearch',
+        TemplateFile => 'ZTSMCustomerITSMConfigItemSearch',
         Data         => {
             %PageNav,
         },

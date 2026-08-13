@@ -1,0 +1,29 @@
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header">
+        <h1>[% Translate("CMDB as Code") | html %][% IF Data.Number %]: [% Data.Number | html %] - [% Data.Name | html %][% END %]</h1>
+        <p><a href="[% Env("Baselink") %]Action=AgentITSMConfigItem">[% Translate("Cancel & close") | html %]</a></p>
+    </div>
+    <div class="Content">
+[% IF Data.Message %]
+        <div class="MessageBox [% Data.MessageClass | html %]"><p>[% Translate(Data.Message) | html %]</p></div>
+[% END %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="Subaction" value="Import"/>
+            <fieldset class="TableLike">
+                <label for="Format">[% Translate("Format") | html %]:</label>
+                <div class="Field"><select id="Format" name="Format">
+                    <option value="yaml"[% IF Data.Format == "yaml" %] selected="selected"[% END %]>YAML</option>
+                    <option value="json"[% IF Data.Format == "json" %] selected="selected"[% END %]>JSON</option>
+                </select></div><div class="Clear"></div>
+                <label class="Mandatory" for="Document"><span class="Marker">*</span> [% Translate("Document") | html %]:</label>
+                <div class="Field"><textarea id="Document" name="Document" class="W100pc Validate_Required" rows="28" spellcheck="false">[% Data.Document | html %]</textarea></div>
+                <div class="Clear"></div>
+            </fieldset>
+            <fieldset class="TableLike"><div class="Field SpacingTop">
+                <button class="CallForAction Primary" type="submit"><span>[% Translate("Import") | html %]</span></button>
+                [% Translate("or") | html %] <a href="[% Env("Baselink") %]Action=AgentITSMConfigItem">[% Translate("Cancel") | html %]</a>
+            </div></fieldset>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,45 @@
+TESSERA ControlObjective policy examples
+=========================================
+
+The object and field names below are authored names. Internal database IDs must
+never be placed in a policy. A missing field, failed conversion, or unsupported
+expression evaluates to UNKNOWN and never silently satisfies a control.
+
+ZRM-PolicyFilter
+----------------
+
+# This control applies only to active Change tickets.
+APPLIES WHEN
+    @TICKET.Type EQUALS "Change"
+AND @TICKET.StateType DOES NOT EQUAL "closed"
+
+ZRM-PolicyEvaluation
+--------------------
+
+# Actual execution must have started within the last calendar month interval.
+REQUIRE
+    @TICKET.ZTicket-ActualStart IS NOT EMPTY
+AND DATETIME(@TICKET.ZTicket-ActualStart) IS ON OR AFTER 1 MONTH AGO
+
+Numeric example
+---------------
+
+REQUIRE
+    PRODUCT OF [NUMBER(@TICKET.ZRM-LikelihoodFactor), NUMBER(@TICKET.ZRM-ImpactFactor)] IS AT MOST 9
+
+Initial executable grammar
+--------------------------
+
+- Roots: @TICKET and @CONTROLOBJECTIVE.
+- Fields: native fields or exact Dynamic Field names.
+- Logic: AND and OR at the start of a condition line.
+- Comparison: EQUALS, DOES NOT EQUAL, IS EMPTY, IS NOT EMPTY,
+  IS GREATER THAN, IS LESS THAN, IS AT LEAST, IS AT MOST,
+  IS ON OR AFTER, IS ON OR BEFORE, CONTAINS, STARTS WITH, ENDS WITH.
+- Conversion: NUMBER(...), STRING(...), DATE(...), DATETIME(...).
+- Arithmetic: multiplication, division, and PRODUCT OF [...].
+- Time: NOW and N DAYS/WEEKS/MONTHS/YEARS AGO.
+
+Recursive GovernanceObject, ITSMConfigItem, and MELT traversal, named object
+selection, collections, schedules, business calendars, and LET variables remain
+reserved grammar. Until implemented, using them returns UNKNOWN.

@@ -1,5 +1,56 @@
 ---
 GenericAgents:
+  TESSERA-CONTROL-OBJECTIVE-POLICY-EVALUATOR:
+    ChangeTimeSearchType: ''
+    CloseTimeSearchType: ''
+    CustomerID: ''
+    CustomerUserLogin: ''
+    EscalationResponseTimeSearchType: ''
+    EscalationSolutionTimeSearchType: ''
+    EscalationTimeSearchType: ''
+    EscalationUpdateTimeSearchType: ''
+    EventValues:
+    - TicketCreate
+    - TicketDynamicFieldUpdate
+    LastChangeTimeSearchType: ''
+    LastCloseTimeSearchType: ''
+    MIMEBase_Body: ''
+    MIMEBase_Cc: ''
+    MIMEBase_From: ''
+    MIMEBase_Subject: ''
+    MIMEBase_To: ''
+    Name: TESSERA-CONTROL-OBJECTIVE-POLICY-EVALUATOR
+    NewCustomerID: ''
+    NewCustomerUserLogin: ''
+    NewDelete: '0'
+    NewModule: Kernel::System::GenericAgent::ZRMPolicyEvaluator
+    NewNoteBody: ''
+    NewNoteFrom: ''
+    NewNoteSubject: ''
+    NewNoteTimeUnits: ''
+    NewParamKey1: ''
+    NewParamKey2: ''
+    NewParamKey3: ''
+    NewParamKey4: ''
+    NewParamKey5: ''
+    NewParamKey6: ''
+    NewParamValue1: ''
+    NewParamValue2: ''
+    NewParamValue3: ''
+    NewParamValue4: ''
+    NewParamValue5: ''
+    NewParamValue6: ''
+    NewPendingTime: ''
+    NewPendingTimeType: '60'
+    NewSendNoNotification: '1'
+    NewTitle: ''
+    ScheduleLastRun: 2026-08-11 00:00:00
+    ScheduleLastRunUnixTime: '1786377600'
+    TicketNumber: ''
+    TimePendingSearchType: ''
+    TimeSearchType: ''
+    Title: ''
+    Valid: '1'
   TESSERA-CHANGE-TASK-READER-EVENT:
     ChangeTimeSearchType: ''
     CloseTimeSearchType: ''

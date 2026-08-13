@@ -143,6 +143,9 @@
                     <Array>
                         <Item>Core.UI.AllocationList.js</Item>
                         <Item>Core.Agent.TableFilters.js</Item>
+                        <Item>ITSM.UI.ConfigItemActionRow.js</Item>
+                        <Item>ZTSM.Agent.ConfigItem.OverviewGuard.js</Item>
+                        <Item>ZTSM.Agent.ConfigItem.DataActions.js</Item>
                         <Item>ITSM.Agent.ConfigItem.Overview.js</Item>
                     </Array>
                 </Item>
@@ -237,6 +240,7 @@
                         <Item>ITSM.Agent.ConfigItem.Search.js</Item>
                         <Item>ITSM.Customer.ConfigItemList.js</Item>
                         <Item>ITSM.Customer.ConfigItem.Overview.js</Item>
+                        <Item>ZTSM.Customer.AssetFilters.js</Item>
                         <Item>Core.Customer.Search.js</Item>
                         <!-- TODO relevant for column settings
                         <Item>Core.UI.AllocationList.js</Item>
@@ -1682,7 +1686,7 @@
         <Navigation>Frontend::Agent::ITSMConfigItemOverview</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::OverviewSmall</Item>
+                        <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::ZTSMOverviewSmall</Item>
                 <Item Key="Name">Small</Item>
                 <Item Key="NameShort">S</Item>
                 <Item Key="PageShown">25</Item>
@@ -1694,7 +1698,7 @@
         <Navigation>Frontend::Customer::ITSMConfigItemOverview</Navigation>
         <Value>
             <Hash>
-                <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::CustomerOverviewSmall</Item>
+                <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::ZTSMCustomerOverviewSmall</Item>
                 <Item Key="Name">Small</Item>
                 <Item Key="NameShort">S</Item>
                 <Item Key="PageShown">25</Item>
@@ -2479,10 +2483,15 @@
             <Array>
                 <Item>Number</Item>
                 <Item>Name</Item>
+                <Item>ZTSMAssetTag</Item>
                 <Item>Class</Item>
-                <Item>InciState</Item>
-                <Item>DeplState</Item>
-                <Item>Created</Item>
+                <Item>ZTSMProductModel</Item>
+                <Item>ZTSMApplication</Item>
+                <Item>ZTSMEnvironment</Item>
+                <Item>ZTSMLocation</Item>
+                <Item>ZTSMDomain</Item>
+                <Item>ZTSMFunctionProfile</Item>
+                <Item>CurDeplState</Item>
             </Array>
         </Value>
     </Setting>

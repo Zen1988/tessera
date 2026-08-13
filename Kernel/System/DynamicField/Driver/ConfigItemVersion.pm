@@ -137,32 +137,10 @@ sub ObjectDescriptionGet {
         $ClassNameStrg = $Param{LayoutObject}{LanguageObject}->Translate($ClassNameStrg);
     }
 
-    my %Descriptions;
-    if ( $Param{DynamicFieldConfig} && $Param{DynamicFieldConfig}{Config}{DisplayType} ) {
-
-        # prepare string as configured
-        my $DisplayType = $Param{DynamicFieldConfig}{Config}{DisplayType};
-        if ( $DisplayType eq 'ConfigItemNumber' ) {
-            $Descriptions{Normal} = "$ConfigItem->{ConfigItemNumber}";
-            $Descriptions{Long}   = "$ConfigItem->{ConfigItemNumber}";
-        }
-        elsif ( $DisplayType eq 'ConfigItemName' ) {
-            $Descriptions{Normal} = "$ConfigItem->{Name}";
-            $Descriptions{Long}   = "$ConfigItem->{Name}";
-        }
-        elsif ( $DisplayType eq 'ClassConfigItemNumber' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $ConfigItem->{Number}";
-            $Descriptions{Long}   = "$ClassNameStrg: $ConfigItem->{Number}";
-        }
-        elsif ( $DisplayType eq 'ClassConfigItemName' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $ConfigItem->{Name}";
-            $Descriptions{Long}   = "$ClassNameStrg: $ConfigItem->{Name}";
-        }
-    }
-    else {
-        $Descriptions{Normal} = "$ConfigItem->{Name}";
-        $Descriptions{Long}   = "$ClassNameStrg: $ConfigItem->{Name}";
-    }
+    my %Descriptions = (
+        Normal => "$ClassNameStrg: $ConfigItem->{Name}",
+        Long   => "$ClassNameStrg: $ConfigItem->{Name}",
+    );
 
     my $Link;
     if ( $Param{Link} && $Param{LayoutObject}{SessionSource} ) {

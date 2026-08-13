@@ -27,6 +27,7 @@ our @ObjectDependencies = (
     'Kernel::System::CSV',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::HTMLUtils',
     'Kernel::System::JSON',
     'Kernel::System::Log',
     'Kernel::System::Service',
@@ -385,7 +386,7 @@ sub _DescriptionGet {
     my $Body = $Article{Body} // '';
     $Body =~ s{\r\n}{\n}g;
 
-    return $Body;
+    return $Self->_RichTextToText($Body);
 }
 
 sub _ServicePayloadJSON {
@@ -404,7 +405,12 @@ sub _ServicePayloadJSON {
         next FIELD if !exists $Ticket->{$Key};
         next FIELD if !defined $Ticket->{$Key};
 
-        $Payload{$FieldName} = $Ticket->{$Key};
+        my $Value = $Ticket->{$Key};
+        my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $FieldName );
+        if ( IsHashRefWithData($Config) && ( $Config->{FieldType} || '' ) eq 'RichText' ) {
+            $Value = $Self->_RichTextToText($Value);
+        }
+        $Payload{$FieldName} = $Value;
     }
 
     return $Kernel::OM->Get('Kernel::System::JSON')->Encode( Data => \%Payload ) || '{}';
@@ -530,6 +536,20 @@ sub _ScalarValueNormalize {
 
     $Value =~ s{\A\s+|\s+\z}{}g;
     return $Value;
+}
+
+sub _RichTextToText {
+    my ( $Self, $Value ) = @_;
+    return '' if !defined $Value;
+    return $Value if ref $Value;
+    my $Text = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii( String => $Value );
+    $Text //= '';
+    $Text =~ s{\x{00a0}}{ }g;
+    $Text =~ s{\r\n}{\n}g;
+    $Text =~ s{[ \t]+\n}{\n}g;
+    $Text =~ s{\n{3,}}{\n\n}g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+    return $Text;
 }
 
 1;

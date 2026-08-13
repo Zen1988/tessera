@@ -1,0 +1,26 @@
+# --
+# Customer asset overview template installed by GovernanceDB.
+# --
+<div id='oooContent' class="ZTSMAssetOverview">
+    <div id='oooHeader'>
+        <h1>[% Translate("Your Assets") | html %]</h1>
+        <a class="ZTSMAssetExportButton" href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Export Assets") | html %]"><button><i class="fa fa-download" aria-hidden="true"></i><span> [% Translate("Export Assets") | html %]</span></button></a>
+    </div>
+    <div id='oooMainBox'>
+        <div id='oooITSMConfigItemListHeader'>
+[% IF Env("Subaction") == 'Search' %]
+            <p class="ooo12 oool Selected">[% Translate("Search") | html %]: "[% Data.Fulltext | html %]"</p>
+[% END %]
+[% RenderBlockStart("FilterHeader") %]
+            <a class="[% Data.ClassA | html %] ooo12g oool" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=[% Env("Subaction") %];Filter=[% Data.Filter | uri %];SortBy=[% Data.SortBy | uri %];OrderBy=[% Data.OrderBy | uri %][% Data.CustomerIDs %];Fulltext=[% Data.Fulltext | uri %]">[% Translate(Data.Name) | html %] ([% Data.Count | html %])</a>
+[% RenderBlockEnd("FilterHeader") %]
+[% IF Data.SiteNavBar %]
+            <div class="ooo12g ooor"><p>[% Translate("Page") | html %]</p>[% Data.SiteNavBar %]</div>
+[% END %]
+[% RenderBlockStart("FilterDelete") %]
+            <div id="oooITSMConfigItemFilterDelete"><a href="[% Env("Baselink") %]Action=[% Env("Action") %];Filter=[% Data.Filter | uri %];DeleteFilters=DeleteFilters">[% Translate("Reset overview") | html %] <i class="ooofo ooofo-delete_outl"></i></a></div>
+[% RenderBlockEnd("FilterDelete") %]
+        </div>
+        [% Data.ITSMConfigItemListHTML %]
+    </div>
+</div>

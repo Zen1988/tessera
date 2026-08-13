@@ -1147,7 +1147,7 @@ sub DefinitionNeedSync {
     }
 
     $DBObject->Prepare(
-        SQL => 'SELECT class_id, field_id FROM melt_object_item_definition_sync',
+        SQL => 'SELECT class_id, field_id FROM melt_item_definition_sync',
     );
 
     my %OutOfSync;
@@ -1220,7 +1220,7 @@ sub DefinitionSetOutOfSync {
 
             # insert new out of sync relations
             $Success = $DBObject->Do(
-                SQL  => 'INSERT INTO melt_object_item_definition_sync (class_id, field_id) VALUES (?, ?)',
+                SQL  => 'INSERT INTO melt_item_definition_sync (class_id, field_id) VALUES (?, ?)',
                 Bind => [ \$ClassID, \$FieldID ],
             ) ? $Success : 0;
         }
@@ -1258,7 +1258,7 @@ sub DefinitionSetSynced {
     }
 
     my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => 'DELETE FROM melt_object_item_definition_sync WHERE class_id = ?',
+        SQL  => 'DELETE FROM melt_item_definition_sync WHERE class_id = ?',
         Bind => [ \$Param{ClassID} ],
     );
 
@@ -2332,6 +2332,7 @@ sub _DefinitionDynamicFieldGet {
             # only return valid dynamic fields
             next DYNAMICFIELD unless $DynamicField;
             next DYNAMICFIELD unless $DynamicField->{ValidID} eq '1';
+            next DYNAMICFIELD unless ( $DynamicField->{ObjectType} || '' ) eq 'MELTObject';
 
             # for set fields also the contained dynamic fields have to be versioned
             if ( $DynamicField->{FieldType} eq 'Set' ) {
@@ -2342,6 +2343,8 @@ sub _DefinitionDynamicFieldGet {
                     next INCLUDED unless $IncludedDF->{DF};
 
                     my $IncludedDFConfig = $DynamicFieldObject->DynamicFieldGet( Name => $IncludedDF->{DF} );
+                    next INCLUDED unless $IncludedDFConfig;
+                    next INCLUDED unless ( $IncludedDFConfig->{ObjectType} || '' ) eq 'MELTObject';
 
                     $IncludedDF->{Definition} = {
                         ID         => $IncludedDFConfig->{ID},

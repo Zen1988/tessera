@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.1.74</Version>
+    <Version>0.1.111</Version>
     <Framework>11.1.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -19,12 +19,18 @@
         <File Location="Kernel/Modules/AdminGovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/Modules/AdminGovernanceObjectDefinition.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGeneralCatalogDocument.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentITSMConfigItemDocument.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentITSMConfigItemActivity.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentITSMConfigItemWorkbook.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObject.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectWorkbook.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceOSCALImport.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectAdd.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectAttachment.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectBulk.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectDelete.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectDocument.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentGovernanceObjectActivity.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectEdit.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectHistory.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectLabelPrint.pm" Permission="660"/>
@@ -56,11 +62,17 @@
         <File Location="Kernel/Output/HTML/Templates/Standard/AdminGovernanceObjectDefinition.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AdminGovernanceObject.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGeneralCatalogDocument.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemDocument.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemActivity.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentITSMConfigItemWorkbook.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObject.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectAdd.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectBulk.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectDelete.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectDocument.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectWorkbook.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceOSCALImport.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentObjectActivity.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectEdit.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectHistory.tt" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AgentGovernanceObjectOverviewNavBar.tt" Permission="660"/>
@@ -84,10 +96,16 @@
         <File Location="Kernel/System/GovernanceDB/Bootstrap.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceDB/Number/GOID.pm" Permission="660"/>
         <File Location="Kernel/System/ITSMConfigItem/CustomerEntitlement.pm" Permission="660"/>
+        <File Location="Kernel/System/ITSMConfigItem/Activity.pm" Permission="660"/>
+        <File Location="Kernel/System/ITSMConfigItem/Event/ActivityRecorder.pm" Permission="660"/>
+        <File Location="Kernel/System/ITSMConfigItem/Document.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/ColumnFilter.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Definition.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Activity.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/Event/ActivityRecorder.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Document.pm" Permission="660"/>
+        <File Location="Kernel/System/GovernanceObject/OSCALImport.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/DefinitionGovernanceObjectUpdate.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/DoHistory.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/Event/EvaluateScriptFields.pm" Permission="660"/>
@@ -114,11 +132,13 @@
         <File Location="Kernel/System/Stats/Dynamic/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/SysConfig/ValueType/Entity/GovernanceObjectClass.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/TicketTable.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/PolicyEngine.pm" Permission="660"/>
         <File Location="Kernel/System/Ticket/Number/TESSERAIdentity.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
         <File Location="var/governancedb/default_general_catalog.yml" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/generic_agents.yml" Permission="660"/>
+        <File Location="var/governancedb/policy/control_objective_examples.txt" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/ztsm-activity-lifecycle-orchestration.yml" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/ztsm-ticket-lifecycle-orchestration.yml" Permission="660"/>
 
@@ -134,6 +154,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldScreen.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldGroup.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldSet.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminITSMConfigItem.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminServiceImportExport.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AdminSLAImportExport.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/AgentReferenceSearch.pm" Permission="660"/>
@@ -148,8 +169,15 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerITSMConfigItemAttachment.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerITSMConfigItemSearch.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerITSMConfigItemZoom.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/ITSMConfigItem/ZTSMCustomerOverviewSmall.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/ITSMConfigItem/ZTSMOverviewSmall.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerITSMConfigItem.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerITSMConfigItemSearch.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Config/Files/XML/ITSMConfigItem.xml" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Customer/default/img/ztsm_assets.svg" Permission="644"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Customer.AssetFilters.js" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.OverviewGuard.js" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.DataActions.js" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Layout.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileServiceCatalog.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileFeaturedFAQ.pm" Permission="660"/>
@@ -157,6 +185,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Preferences/ZTSMCustomerDefaults.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldDB.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldSet.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminITSMConfigItem.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminServiceImportExport.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminSLAImportExport.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AgentTicketDecision.tt" Permission="660"/>
@@ -196,6 +225,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicField/ObjectType/Service.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/DynamicFieldDB.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMChangeTaskReader.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZRMPolicyEvaluator.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMParentCloseCascade.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMProcessAutoWalk.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMPurpleBookReader.pm" Permission="660"/>
@@ -232,6 +262,8 @@
         <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Branding.css" Permission="660"/>
         <File Location="var/httpd/htdocs/js/Core.Agent.Admin.GeneralCatalogDocument.js" Permission="660"/>
         <File Location="var/httpd/htdocs/js/thirdparty/sheetjs-0.20.3/xlsx.full.min.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/ZTSM.Agent.Object.Workbook.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.Workbook.js" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
@@ -245,6 +277,22 @@
     ]]></CodeUpgrade>
 
     <DatabaseInstall Type="post">
+        <TableCreate Type="post" Name="ztsm_configitem_activity">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="configitem_id" Required="false" Type="BIGINT"/>
+            <Column Name="configitem_number" Required="false" Size="100" Type="VARCHAR"/>
+            <Column Name="event_type" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="source" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="subject" Required="true" Size="255" Type="VARCHAR"/>
+            <Column Name="body" Required="true" Type="LONGBLOB"/>
+            <Column Name="payload" Required="false" Type="LONGBLOB"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="create_by" Required="true" Type="INTEGER"/>
+            <Index Name="ztsm_configitem_activity_ci"><IndexColumn Name="configitem_id"/></Index>
+        </TableCreate>
+        <TableCreate Type="post" Name="governance_object_activity">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/><Column Name="governance_object_id" Required="false" Type="BIGINT"/><Column Name="object_number" Required="false" Size="100" Type="VARCHAR"/><Column Name="event_type" Required="true" Size="100" Type="VARCHAR"/><Column Name="source" Required="true" Size="100" Type="VARCHAR"/><Column Name="subject" Required="true" Size="255" Type="VARCHAR"/><Column Name="body" Required="true" Type="LONGBLOB"/><Column Name="payload" Required="false" Type="LONGBLOB"/><Column Name="create_time" Required="true" Type="DATE"/><Column Name="create_by" Required="true" Type="INTEGER"/><Index Name="governance_activity_object"><IndexColumn Name="governance_object_id"/></Index>
+        </TableCreate>
         <Insert Type="post" Table="groups_table">
             <Data Key="name" Type="Quote">governance-db</Data>
             <Data Key="comments" Type="Quote">GovernanceDB access group.</Data>
@@ -846,6 +894,8 @@
         </TableCreate>
     </DatabaseUpgrade>
     <DatabaseUninstall Type="pre">
+        <TableDrop Type="pre" Name="ztsm_configitem_activity"/>
+        <TableDrop Type="pre" Name="governance_object_activity"/>
         <TableDrop Type="pre" Name="governance_object_item"/>
         <TableDrop Type="pre" Name="governance_object_item_definition"/>
         <TableDrop Type="pre" Name="governance_object_item_version"/>

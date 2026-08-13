@@ -461,36 +461,10 @@ sub ObjectDescriptionGet {
         $ClassNameStrg = $Param{LayoutObject}{LanguageObject}->Translate($ClassNameStrg);
     }
 
-    my $DFConfig = $Param{DynamicFieldConfig} || {};
-    my $DFDetails = $DFConfig->{Config} || $DFConfig;
-
-    my %Descriptions;
-    if ( $DFDetails->{DisplayType} ) {
-
-        # prepare string as configured
-        my $DisplayType = $DFDetails->{DisplayType};
-        if ( $DisplayType eq 'MELTID' || $DisplayType eq 'ConfigItemNumber' ) {
-            $Descriptions{Normal} = "$MELTObject->{Number}";
-            $Descriptions{Long}   = "$MELTObject->{Number}";
-        }
-        elsif ( $DisplayType eq 'MELTObjectName' || $DisplayType eq 'ConfigItemName' ) {
-            $Descriptions{Normal} = "$MELTObject->{Name}";
-            $Descriptions{Long}   = "$MELTObject->{Name}";
-        }
-        elsif ( $DisplayType eq 'ClassMELTID' || $DisplayType eq 'ClassConfigItemNumber' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $MELTObject->{Number}";
-            $Descriptions{Long}   = "$ClassNameStrg: $MELTObject->{Number}";
-        }
-        elsif ( $DisplayType eq 'ClassMELTObjectName' || $DisplayType eq 'ClassConfigItemName' ) {
-            $Descriptions{Normal} = "$ClassNameStrg: $MELTObject->{Name}";
-            $Descriptions{Long}   = "$ClassNameStrg: $MELTObject->{Name}";
-        }
-    }
-
-    if ( !$Descriptions{Long} ) {
-        $Descriptions{Normal} = "$MELTObject->{Name}";
-        $Descriptions{Long}   = "$ClassNameStrg: $MELTObject->{Name}";
-    }
+    my %Descriptions = (
+        Normal => "$ClassNameStrg: $MELTObject->{Name}",
+        Long   => "$ClassNameStrg: $MELTObject->{Name}",
+    );
 
     my $Link;
     if ( $Param{Link} && $Param{LayoutObject}{SessionSource} ) {

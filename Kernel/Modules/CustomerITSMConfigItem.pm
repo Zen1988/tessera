@@ -109,6 +109,7 @@ sub Run {
     # get the column filters from the web request or user preferences
     my %ColumnFilter;
     my %GetColumnFilter;
+    my %ZTSMVirtualFilter;
     COLUMNNAME:
     for my $ColumnName (
         qw(DeplState CurDeplState InciState CurInciState Class)
@@ -127,6 +128,16 @@ sub Run {
 
         push @{ $ColumnFilter{ $ColumnName . 'IDs' } }, $FilterValue;
         $GetColumnFilter{$ColumnName} = $FilterValue;
+    }
+
+    for my $ColumnName (qw(Name ZTSMAssetTag ZTSMProductModel ZTSMApplication ZTSMEnvironment ZTSMLocation ZTSMDomain ZTSMFunctionProfile)) {
+        my $FilterValue = $ParamObject->GetParam( Param => 'ColumnFilter' . $ColumnName ) || '';
+        if ( $FilterValue eq '' ) {
+            $FilterValue = $StoredFilters->{ $ColumnName . 'IDs' }->[0] || '';
+        }
+        next if $FilterValue eq '' || $FilterValue eq 'DeleteFilter';
+        $ZTSMVirtualFilter{$ColumnName} = $FilterValue;
+        $GetColumnFilter{$ColumnName}   = $FilterValue;
     }
 
     # get all dynamic fields
@@ -349,10 +360,13 @@ sub Run {
                     Result => 'ARRAY',
                 );
                 $Count = scalar @{
-                    $CustomerEntitlementObject->ConfigItemIDsFilter(
+                    $Self->_ZTSMVirtualFilterApply(
+                        ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                         CustomerUserID   => $Self->{UserID},
                         ConfigItemIDs    => \@CountConfigItemIDs,
                         RequireAssetRole => 1,
+                        ),
+                        Filters => \%ZTSMVirtualFilter,
                     )
                 };
             }
@@ -506,10 +520,13 @@ sub Run {
                 Result => 'ARRAY',
             );
             @OriginalViewableConfigItems = @{
-                $CustomerEntitlementObject->ConfigItemIDsFilter(
+                $Self->_ZTSMVirtualFilterApply(
+                    ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@OriginalViewableConfigItems,
                     RequireAssetRole => 1,
+                    ),
+                    Filters => \%ZTSMVirtualFilter,
                 )
             };
 
@@ -568,10 +585,20 @@ sub Run {
             NoCache     => 1,
         );
     }
+    elsif ( $Self->{Subaction} eq 'Export' ) {
+        return $Self->_ZTSMAssetExport(
+            ConfigItemIDs => \@OriginalViewableConfigItems,
+            Filter        => $Filter,
+        );
+    }
     else {
 
         # store column filters
-        my $StoredFilters = \%ColumnFilter;
+        my %StoredFilterValues = %ColumnFilter;
+        for my $ColumnName ( keys %ZTSMVirtualFilter ) {
+            $StoredFilterValues{ $ColumnName . 'IDs' } = [ $ZTSMVirtualFilter{$ColumnName} ];
+        }
+        my $StoredFilters = \%StoredFilterValues;
 
         my $StoredFiltersKey = 'UserStoredFilterColumns-' . $Self->{Action} . '-' . $Self->{Filter};
 
@@ -593,10 +620,13 @@ sub Run {
                 Result => 'ARRAY',
             );
             $Count = scalar @{
-                $CustomerEntitlementObject->ConfigItemIDsFilter(
+                $Self->_ZTSMVirtualFilterApply(
+                    ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@CountConfigItemIDs,
                     RequireAssetRole => 1,
+                    ),
+                    Filters => \%ZTSMVirtualFilter,
                 )
             };
         }
@@ -612,7 +642,6 @@ sub Run {
         };
     }
 
-    # show config items
     my $ConfigItemListHTML = $LayoutObject->ITSMConfigItemListShow(
         Filter                => $Filter,
         Filters               => \%NavBarFilter,
@@ -633,13 +662,9 @@ sub Run {
         OrderBy               => $OrderBy,
         SortBy                => $SortBy,
         EnableColumnFilters   => 1,
-        ColumnFilterForm      => {
-            Filter => $Filter || '',
-        },
-        Frontend => 'Customer',
-
-        # do not print the result earlier, but return complete content
-        Output => 1,
+        ColumnFilterForm      => { Filter => $Filter || '' },
+        Frontend              => 'Customer',
+        Output                => 1,
     );
 
     if ( defined $ConfigObject->Get("CustomerFrontend::Module")->{"CustomerITSMConfigItemSearch"} ) {
@@ -652,6 +677,7 @@ sub Run {
         TemplateFile => 'CustomerITSMConfigItem',
         Data         => {
             ITSMConfigItemListHTML => $ConfigItemListHTML,
+            ExportLink             => 'Action=CustomerITSMConfigItem;Subaction=Export;' . $LinkPage,
             %PageNav,
         },
     );
@@ -663,6 +689,184 @@ sub Run {
     $Output .= $LayoutObject->CustomerFooter();
 
     return $Output;
+}
+
+sub _ZTSMAssetExport {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $BackendObject    = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $LayoutObject     = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $JSONObject       = $Kernel::OM->Get('Kernel::System::JSON');
+
+    my @Items;
+    my %FieldNames;
+    for my $ConfigItemID ( @{ $Param{ConfigItemIDs} || [] } ) {
+        my $ConfigItem = $ConfigItemObject->ConfigItemGet(
+            ConfigItemID => $ConfigItemID,
+            DynamicFields => 1,
+        );
+        next if !IsHashRefWithData($ConfigItem);
+
+        my $Definition = $ConfigItemObject->DefinitionGet(
+            DefinitionID => $ConfigItem->{DefinitionID},
+        );
+        my %Fields;
+        if ( IsHashRefWithData($Definition) && IsHashRefWithData( $Definition->{DynamicFieldRef} ) ) {
+            for my $FieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
+                next if !IsHashRefWithData($FieldConfig) || !$FieldConfig->{Name};
+                $Fields{ $FieldConfig->{Name} } = $FieldConfig;
+                $FieldNames{ $FieldConfig->{Name} } = 1;
+            }
+        }
+        push @Items, { ConfigItem => $ConfigItem, Fields => \%Fields };
+    }
+
+    my @DynamicFieldNames = sort { lc $a cmp lc $b } keys %FieldNames;
+    my @Head = ( 'Number', 'Name', 'Class', 'State', @DynamicFieldNames );
+    my @Rows;
+    for my $Item (@Items) {
+        my $ConfigItem = $Item->{ConfigItem};
+        my @Values;
+        for my $FieldName (@DynamicFieldNames) {
+            my $FieldConfig = $Item->{Fields}{$FieldName};
+            if ( !IsHashRefWithData($FieldConfig) ) {
+                push @Values, '';
+                next;
+            }
+
+            my $Value = $BackendObject->ValueGet(
+                DynamicFieldConfig => $FieldConfig,
+                ObjectID           => $ConfigItem->{VersionID},
+            );
+            if ( !defined $Value || ( !ref $Value && $Value eq '' ) ) {
+                push @Values, '';
+                next;
+            }
+
+            my $IsStructured = ref $Value
+                || ( $FieldConfig->{FieldType} || '' ) eq 'Set'
+                || ( $FieldConfig->{FieldType} || '' ) eq 'DynamicFieldGroup'
+                || $FieldConfig->{Config}{MultiValue};
+            if ($IsStructured) {
+                push @Values, $JSONObject->Encode( Data => $Value );
+                next;
+            }
+
+            my $Display = $BackendObject->DisplayValueRender(
+                DynamicFieldConfig => $FieldConfig,
+                Value              => $Value,
+                ValueMaxChars      => 0,
+                LayoutObject       => $LayoutObject,
+            );
+            my $Text = $Display->{Title} || $Display->{Value} || $Value;
+            $Text =~ s{<[^>]+>}{}g;
+            $Text =~ s{&nbsp;}{ }g;
+            $Text =~ s{&amp;}{&}g;
+            push @Values, $Text;
+        }
+
+        push @Rows, [
+            $ConfigItem->{Number}       || '',
+            $ConfigItem->{Name}         || '',
+            $ConfigItem->{Class}        || '',
+            $ConfigItem->{CurDeplState} || '',
+            @Values,
+        ];
+    }
+
+    my $Excel = $Kernel::OM->Get('Kernel::System::CSV')->Array2CSV(
+        Head   => \@Head,
+        Data   => \@Rows,
+        Format => 'Excel',
+    );
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $Filename = 'asset_export_' . $DateTimeObject->Format( Format => '%Y-%m-%d_%H-%M' ) . '.xlsx';
+
+    return $LayoutObject->Attachment(
+        Filename    => $Filename,
+        ContentType => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        Content     => $Excel,
+    );
+}
+
+sub _ZTSMVirtualFilterApply {
+    my ( $Self, %Param ) = @_;
+
+    my $IDs     = $Param{ConfigItemIDs} || [];
+    my $Filters = $Param{Filters} || {};
+    return $IDs if !%{$Filters};
+
+    my %Candidates = (
+        ZTSMAssetTag     => [ 'AssetTag', 'Asset Tag' ],
+        ZTSMProductModel => [ 'ProductModel', 'Product' ],
+        ZTSMApplication  => [ 'Application', 'ApplicationSystem', 'Application System' ],
+        ZTSMEnvironment  => ['Environment'],
+        ZTSMLocation     => ['Location'],
+        ZTSMDomain       => [
+            'ParentWorkloadDomain', 'ParentNetworkDomain', 'ParentStorageDomain',
+            'WorkloadDomain',       'NetworkDomain',       'StorageDomain',
+        ],
+        ZTSMFunctionProfile => [ 'FunctionProfile', 'Function Profile' ],
+    );
+    my @Filtered;
+    ID:
+    for my $ID ( @{$IDs} ) {
+        my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+            ConfigItemID => $ID, DynamicFields => 1,
+        );
+        next ID if !IsHashRefWithData($ConfigItem);
+        for my $Column ( keys %{$Filters} ) {
+            my $Value = $Column eq 'Name'
+                ? ( $ConfigItem->{$Column} || '' )
+                : $Self->_ZTSMVirtualValueGet(
+                    ConfigItem => $ConfigItem,
+                    Candidates => $Candidates{$Column},
+                );
+            next ID if index( lc $Value, lc $Filters->{$Column} ) < 0;
+        }
+        push @Filtered, $ID;
+    }
+    return \@Filtered;
+}
+
+sub _ZTSMVirtualValueGet {
+    my ( $Self, %Param ) = @_;
+    my $ConfigItem = $Param{ConfigItem};
+    return '' if !IsHashRefWithData($ConfigItem) || !$ConfigItem->{VersionID};
+    my $Backend  = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $Definition = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->DefinitionGet(
+        DefinitionID => $ConfigItem->{DefinitionID},
+    );
+    my @Configs = IsHashRefWithData($Definition) && IsHashRefWithData( $Definition->{DynamicFieldRef} )
+        ? values $Definition->{DynamicFieldRef}->%*
+        : ();
+    for my $Candidate ( @{ $Param{Candidates} || [] } ) {
+        my $Wanted = lc $Candidate;
+        $Wanted =~ s{[^a-z0-9]}{}g;
+        my ($Config) = grep {
+            IsHashRefWithData($_)
+                && grep {
+                    my $Comparable = lc( $_ || '' );
+                    $Comparable =~ s{[^a-z0-9]}{}g;
+                    $Comparable eq $Wanted;
+                } ( $_->{Name}, $_->{Label} )
+        } @Configs;
+        next if !IsHashRefWithData($Config);
+        my $Value = $Backend->ValueGet( DynamicFieldConfig => $Config, ObjectID => $ConfigItem->{VersionID} );
+        next if !defined $Value || ( !ref $Value && $Value eq '' ) || ( ref $Value eq 'ARRAY' && !@{$Value} );
+        my $Display = $Backend->DisplayValueRender(
+            DynamicFieldConfig => $Config, Value => $Value, ValueMaxChars => 160,
+            LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
+        );
+        my $Text = $Display->{Title} || $Display->{Value} || '';
+        $Text =~ s{<[^>]+>}{}g;
+        $Text =~ s{&nbsp;}{ }g;
+        $Text =~ s{&amp;}{&}g;
+        $Text =~ s{\A\s+|\s+\z}{}g;
+        return $Text if $Text ne '';
+    }
+    return '';
 }
 
 1;

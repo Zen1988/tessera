@@ -163,6 +163,60 @@
             "Governance"
          ],
          "Category": "Governance",
+         "Definition": "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::ControlObjective\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\nRoles:\r\n  General Fields:\r\n    Name: ZRM ControlObjective\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
+         "DynamicFields": {
+            "ZRM-PolicyEvaluation": {
+               "Config": {
+                  "Cols": "100",
+                  "DefaultValue": "",
+                  "MultiValue": "0",
+                  "RegExList": [],
+                  "Rows": "5",
+                  "Tooltip": "Policy Evaluation in order to determine control success or fail"
+               },
+               "FieldOrder": "539",
+               "FieldType": "TextArea",
+               "InternalField": "0",
+               "Label": "Policy Evaluation",
+               "Name": "ZRM-PolicyEvaluation",
+               "ObjectType": "GovernanceObject",
+               "ValidID": "1"
+            },
+            "ZRM-PolicyFilter": {
+               "Config": {
+                  "Cols": "100",
+                  "DefaultValue": "",
+                  "MultiValue": "0",
+                  "RegExList": [],
+                  "Rows": "5",
+                  "Tooltip": "Control Policy Filter / Filter - it should be in control language"
+               },
+               "FieldOrder": "538",
+               "FieldType": "TextArea",
+               "InternalField": "0",
+               "Label": "Policy Requirement / Filter",
+               "Name": "ZRM-PolicyFilter",
+               "ObjectType": "GovernanceObject",
+               "ValidID": "1"
+            }
+         },
+         "Name": "ControlObjective",
+         "NumberModule": "GOID",
+         "PermissionGroup": "governance-db",
+         "SourceName": "ControlObjective",
+         "VersionStringModule": "Incremental",
+         "VersionTrigger": [
+            "DefinitionUpdate",
+            "Description",
+            "Name",
+            "ZTSMStatusID"
+         ]
+      },
+      {
+         "Categories": [
+            "Governance"
+         ],
+         "Category": "Governance",
          "Definition": "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Blue Book\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields": {
             "ZBlue-Record": {
@@ -3511,6 +3565,10 @@
       {
          "Definition": "---\r\nSections:\r\n  RiskStatement:\r\n    Content:\r\n    - Header: General Information\r\n    - DF: ZRM-RiskCategoryGO\r\n    - DF: ZRM-ImpactCategoryGO\r\n    - DF: ZRM-BaseLikelihood\r\n    - DF: ZRM-BaseImpact\r\n    - DF: ZRM-AdvisoryStatus\r\n    - DF: ZRM-SupersededRS",
          "Name": "ZRM RiskStatement"
+      },
+      {
+         "Definition": "---\r\nSections:\r\n  ControlObjective:\r\n    Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation",
+         "Name": "ZRM ControlObjective"
       },
       {
          "Definition": "---\r\nSections:\r\n  Template:\r\n    Content:\r\n    - Header: Template\r\n    - DF: ZTemplate-RiskAssessment",

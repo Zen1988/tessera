@@ -1,0 +1,118 @@
+{
+  "profile": {
+    "uuid": "f105a061-5ab0-4f92-b4d6-8a6827d3cb53",
+    "metadata": {
+      "title": "Medium-Risk - Level 2",
+      "last-modified": "2025-05-13T18:00:00+08:00",
+      "version": "2025.05.13",
+      "oscal-version": "1.1.2",
+      "props": [
+        {
+          "name": "label",
+          "value": "medium-risk-level-2"
+        },
+        {
+          "name": "risk",
+          "value": "medium-risk"
+        },
+        {
+          "name": "level",
+          "value": "2"
+        }
+      ],
+      "roles": [
+        {
+          "id": "creator",
+          "title": "Creator"
+        },
+        {
+          "id": "contact",
+          "title": "Contact"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "d42526af-0b2b-4b27-82b3-2a2f24db5f07",
+          "type": "organization",
+          "name": "IM8-reform Medium Risk Working Group",
+          "email-addresses": [
+            "kevin_kb_ng@tech.gov.sg",
+            "hunter_nield@tech.gov.sg",
+            "goh_sheen_an@tech.gov.sg",
+            "alex_ng@tech.gov.sg",
+            "nitya@open.gov.sg",
+            "andy_hh_chua@tech.gov.sg",
+            "nicholas_tan_from.persolkelly@tech.gov.sg",
+            "ivan_leong@htx.gov.sg",
+            "samuel_huang@tech.gov.sg",
+            "eileen_goh@tech.gov.sg",
+            "eugene_lim@tech.gov.sg"
+          ]
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "creator",
+          "party-uuids": [
+            "d42526af-0b2b-4b27-82b3-2a2f24db5f07"
+          ]
+        },
+        {
+          "role-id": "contact",
+          "party-uuids": [
+            "d42526af-0b2b-4b27-82b3-2a2f24db5f07"
+          ]
+        }
+      ],
+      "remarks": "The Level 2 baseline includes controls that extend the security and maturity of a system. Agencies do not need to seek approval for deviations from controls in this baseline in any default system security plan. Deviations must be documented in a custom System Security Plan with explanations for each deviation and submitted centrally."
+    },
+    "imports": [
+      {
+        "href": "trestle://profiles/medium-risk-level-1.json",
+        "include-all": {}
+      },
+      {
+        "href": "trestle://catalogs/im8-reform.json",
+        "include-controls": [
+          {
+            "with-ids": [
+              "ac-10",
+              "ac-11",
+              "ac-13",
+              "as-10",
+              "as-12",
+              "as-13",
+              "as-14",
+              "sc-9",
+              "cs-1",
+              "cs-2",
+              "cs-5",
+              "cs-6",
+              "cs-11",
+              "is-8",
+              "dp-6",
+              "ns-11",
+              "lm-11",
+              "lm-13",
+              "lm-14",
+              "lm-15",
+              "lm-16",
+              "lm-17",
+              "sc-2",
+              "sc-7",
+              "sc-8"
+            ]
+          }
+        ]
+      }
+    ],
+    "merge": {
+      "combine": {
+        "method": "merge"
+      },
+      "as-is": true
+    },
+    "modify": {
+    }
+  }
+}

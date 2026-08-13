@@ -66,10 +66,14 @@ sub Run {
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my $UserObject       = $Kernel::OM->Get('Kernel::System::User');
 
-    my @ExampleClasses = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
-        Directory => $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/var/governancedb/classes',
-        Filter    => '*.yml',
-    );
+    my $ExampleClassDirectory = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/var/governancedb/classes';
+    my @ExampleClasses;
+    if ( -d $ExampleClassDirectory ) {
+        @ExampleClasses = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+            Directory => $ExampleClassDirectory,
+            Filter    => '*.yml',
+        );
+    }
 
     # load the Ready2Import selection list with example classes (for Ready2Import feature)
     my %ExampleClassData;

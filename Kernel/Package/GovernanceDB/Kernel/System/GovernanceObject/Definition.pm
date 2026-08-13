@@ -2406,7 +2406,9 @@ sub _DynamicFieldConfigTransform {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
 
-    if ( grep { $Param{DynamicFieldConfig}{FieldType} eq $_ } qw(Agent GovernanceObject GovernanceObjectVersion CustomerCompany CustomerUser FAQ Ticket) ) {
+    my $FieldType = $Param{DynamicFieldConfig}{FieldType} // '';
+
+    if ( grep { $FieldType eq $_ } qw(Agent GovernanceObject GovernanceObjectVersion CustomerCompany CustomerUser FAQ Ticket) ) {
 
         # needed transformation: Name -> ID
         if ( $Param{Action} eq 'Import' ) {
@@ -2431,7 +2433,7 @@ sub _DynamicFieldConfigTransform {
                         Class => 'ZTSM::GovernanceObject::Class',
                     )
                 };
-                my @ClassIDs = map
+                my @ClassIDs = grep { defined $_ && $_ ne '' } map
                     { $ClassName2ID{$_} }
                     $DynamicFieldConfig->{Config}->{ClassIDs}->@*;
                 $DynamicFieldConfig->{Config}{ClassIDs} = \@ClassIDs;
@@ -2461,14 +2463,14 @@ sub _DynamicFieldConfigTransform {
                         Class => 'ZTSM::GovernanceObject::Class',
                     )
                 };
-                my @ClassNames = map
+                my @ClassNames = grep { defined $_ && $_ ne '' } map
                     { $ClassID2Name{$_} }
                     $DynamicFieldConfig->{Config}->{ClassIDs}->@*;
                 $DynamicFieldConfig->{Config}{ClassIDs} = \@ClassNames;
             }
         }
     }
-    elsif ( $Param{DynamicFieldConfig}{FieldType} eq 'Lens' ) {
+    elsif ( $FieldType eq 'Lens' ) {
 
         my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 

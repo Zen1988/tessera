@@ -27,7 +27,9 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::HTMLUtils',
     'Kernel::System::GovernanceObject',
+    'Kernel::System::ITSMConfigItem',
     'Kernel::System::JSON',
     'Kernel::System::Log',
     'Kernel::System::YAML',
@@ -113,7 +115,9 @@ sub Export {
         name        => $GovernanceObject->{Name},
         version     => $GovernanceObject->{VersionString},
         ztsm_status => $GovernanceObject->{ZTSMStatus},
-        description => $GovernanceObject->{Description} // '',
+        description => $Self->_RichTextValueForDocument(
+            Value => $GovernanceObject->{Description} // '',
+        ),
         fields      => \%Fields,
     };
 
@@ -336,11 +340,15 @@ sub _ValueForDocument {
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Value              = $Param{Value};
 
+    if ( $DynamicFieldConfig->{FieldType} eq 'RichText' ) {
+        return $Self->_RichTextValueForDocument( Value => $Value );
+    }
+
     if ( $DynamicFieldConfig->{FieldType} eq 'Set' ) {
         return $Self->_SetValueForDocument(%Param);
     }
 
-    if ( $Self->_IsGovernanceObjectReference($DynamicFieldConfig) ) {
+    if ( $Self->_IsPortableObjectReference($DynamicFieldConfig) ) {
         return $Self->_ReferenceValueForDocument(%Param);
     }
 
@@ -349,6 +357,23 @@ sub _ValueForDocument {
     }
 
     return $Value;
+}
+
+sub _RichTextValueForDocument {
+    my ( $Self, %Param ) = @_;
+    my $Value = $Param{Value};
+    return $Value if !defined $Value || ref $Value;
+
+    # RichText storage contains CKEditor HTML. Export the authored information,
+    # not editor markup, attributes, widgets, or CK-specific wrapper state.
+    my $Text = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
+        String => $Value,
+    );
+    $Text //= '';
+    $Text =~ s{\x{00A0}}{ }g;
+    $Text =~ s{[ \t]+\n}{\n}g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+    return $Text;
 }
 
 sub _ValueFromDocument {
@@ -360,7 +385,7 @@ sub _ValueFromDocument {
         return $Self->_SetValueFromDocument(%Param);
     }
 
-    if ( $Self->_IsGovernanceObjectReference($DynamicFieldConfig) ) {
+    if ( $Self->_IsPortableObjectReference($DynamicFieldConfig) ) {
         return $Self->_ReferenceValueFromDocument(%Param);
     }
 
@@ -418,6 +443,10 @@ sub _SingleReferenceForDocument {
 
     return $Param{Value} if !defined $Param{Value} || $Param{Value} eq '';
 
+    if ( $Param{DynamicFieldConfig}->{FieldType} =~ m{\AConfigItem(?:Version)?\z}xms ) {
+        return $Self->_SingleConfigItemReferenceForDocument(%Param);
+    }
+
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my %GetParam = $Param{DynamicFieldConfig}->{FieldType} eq 'GovernanceObjectVersion'
         ? ( VersionID => $Param{Value} )
@@ -429,12 +458,12 @@ sub _SingleReferenceForDocument {
         Silent        => 1,
     );
 
-    return $Param{Value} if !IsHashRefWithData($GovernanceObject);
+    return if !IsHashRefWithData($GovernanceObject);
 
-    return $GovernanceObject->{'DynamicField_ZTSM-Code'}
-        || $GovernanceObject->{Name}
-        || $GovernanceObject->{Number}
-        || $Param{Value};
+    return ( $GovernanceObject->{Class} && $GovernanceObject->{Name} )
+        ? "$GovernanceObject->{Class}: $GovernanceObject->{Name}"
+        : $GovernanceObject->{Name}
+        || $GovernanceObject->{Number};
 }
 
 sub _SingleReferenceFromDocument {
@@ -446,6 +475,10 @@ sub _SingleReferenceFromDocument {
 
     if ( $Value =~ m{\A.*::(?<ID>\d+)\z}xms ) {
         return $+{ID};
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} =~ m{\AConfigItem(?:Version)?\z}xms ) {
+        return $Self->_ConfigItemReferenceIDResolve(%Param);
     }
 
     my $ID = $Self->_GovernanceReferenceIDResolve(
@@ -464,16 +497,81 @@ sub _SingleReferenceFromDocument {
     return;
 }
 
+sub _SingleConfigItemReferenceForDocument {
+    my ( $Self, %Param ) = @_;
+
+    my %GetParam = $Param{DynamicFieldConfig}->{FieldType} eq 'ConfigItemVersion'
+        ? ( VersionID => $Param{Value} )
+        : ( ConfigItemID => $Param{Value} );
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        %GetParam,
+        DynamicFields => 0,
+        Silent        => 1,
+    );
+
+    return if !IsHashRefWithData($ConfigItem);
+    return if !$ConfigItem->{Class} || !$ConfigItem->{Name};
+    return "$ConfigItem->{Class}: $ConfigItem->{Name}";
+}
+
+sub _ConfigItemReferenceIDResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+    my ( $ClassName, $Name ) = $Value =~ m{\A\s*([^:]+?)\s*:\s*(.+?)\s*\z}xms;
+    return if !$ClassName || !$Name;
+
+    my $Classes = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::ConfigItem::Class',
+    ) || {};
+    my ($ClassID) = grep { lc( $Classes->{$_} // '' ) eq lc $ClassName } keys %{$Classes};
+    return if !$ClassID;
+
+    my @AllowedClassIDs = @{ $Param{DynamicFieldConfig}->{Config}->{ClassIDs} || [] };
+    return if @AllowedClassIDs && !grep { $_ == $ClassID } @AllowedClassIDs;
+
+    my @IDs = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemSearch(
+        Result     => 'ARRAY',
+        Limit      => 2,
+        ClassIDs   => [$ClassID],
+        Name       => $Name,
+        Permission => 'ro',
+        UserID     => $Param{UserID} || 1,
+    );
+    return if @IDs != 1;
+
+    return $IDs[0] if $Param{DynamicFieldConfig}->{FieldType} eq 'ConfigItem';
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID => $IDs[0],
+        DynamicFields => 0,
+        Silent        => 1,
+    );
+    return IsHashRefWithData($ConfigItem) ? $ConfigItem->{VersionID} : undef;
+}
+
 sub _GovernanceReferenceIDResolve {
     my ( $Self, %Param ) = @_;
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Value              = $Param{Value};
+    my $ClassName;
+    if ( $Value =~ m{\A\s*([^:]+?)\s*:\s*(.+)\z}xms ) {
+        ( $ClassName, $Value ) = ( $1, $2 );
+    }
 
     my @ClassIDs = $Self->_GeneralCatalogRestrictionIDsGet(
         Class  => 'ZTSM::GovernanceObject::Class',
         Values => $DynamicFieldConfig->{Config}{ClassIDs},
     );
+    if ($ClassName) {
+        my $Classes = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ZTSM::GovernanceObject::Class',
+        ) || {};
+        my ($NamedClassID) = grep { lc( $Classes->{$_} // '' ) eq lc $ClassName } keys %{$Classes};
+        return if !$NamedClassID;
+        return if @ClassIDs && !grep { $_ == $NamedClassID } @ClassIDs;
+        @ClassIDs = ($NamedClassID);
+    }
 
     my @Attempts = (
         { Name   => $Value },
@@ -845,6 +943,15 @@ sub _IsGovernanceObjectReference {
 
     return $DynamicFieldConfig->{FieldType} eq 'GovernanceObject'
         || $DynamicFieldConfig->{FieldType} eq 'GovernanceObjectVersion';
+}
+
+sub _IsPortableObjectReference {
+    my ( $Self, $DynamicFieldConfig ) = @_;
+
+    return if !IsHashRefWithData($DynamicFieldConfig);
+    return 1 if $Self->_IsGovernanceObjectReference($DynamicFieldConfig);
+    return 1 if ( $DynamicFieldConfig->{FieldType} // '' ) =~ m{\AConfigItem(?:Version)?\z}xms;
+    return;
 }
 
 1;

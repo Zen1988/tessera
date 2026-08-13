@@ -1,5 +1,20 @@
 # TESSERA Project Next Focus
 
+## Asset Import Through Service Request
+
+### Confirmed boundary
+
+- The customer Assets page provides export only; it must not directly import, create, overwrite, or merge ConfigItems.
+- Asset import will be introduced later through a governed Service Request workflow with reviewable execution evidence.
+- DynamicField Set and DynamicField Group payloads use JSON within their spreadsheet cells so repeated and nested values remain intact.
+
+### Identity reconciliation
+
+- Prefer a defined Asset Tag as the strongest business identity check.
+- Then evaluate ConfigItem number and other class-appropriate identifiers.
+- A likely match must produce a duplicate/merge suggestion for review; it must not silently create a second asset or overwrite/merge the existing asset.
+- The eventual SR must record the match evidence, selected resolution, and merge/update result.
+
 ## Incident Diagnosis Loop and Iteration Runtime
 
 ### Objective
@@ -802,3 +817,12 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
    Module: Plack::Sandbox::_2fopt_2fotobo_2fbin_2fpsgi_2dbin_2fotobo_2epsgi::__ANON__ Line: 159
    Module: Plack::Sandbox::_2fopt_2fotobo_2fbin_2fpsgi_2dbin_2fotobo_2epsgi::__ANON__ Line: 145
    Module: Plack::Middleware::HTTPExceptions::try {...}  Line: 20
+# ControlObjective Policy Language Next Increment
+
+- Add name-based `@GovernanceObject[Class][Name = "..."]`, `@ITSMConfigItem[Class][Name = "..."]`, and `@MELT[Class][Name = "..."]` root resolution.
+- Add walkable reference paths, including fixed traversal (`.Field.Field`) and cycle-safe recursive traversal (`..Field`) with explicit maximum depth.
+- Add `LET`, `STATIC`, and runtime variable support plus typed collections and `ALL` / `ANY` / `NONE` quantifiers.
+- Add calendar ranges, recurring schedules, named business calendars, and explicit timezone semantics.
+- Add catalog-name-to-score mappings without exposing GeneralCatalog IDs in authored policy or evidence.
+- Add parser diagnostics with source line/column and authoring-time validation on ControlObjective save.
+- Add focused automated tests for temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.

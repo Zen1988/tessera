@@ -27,6 +27,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::HTMLUtils',
     'Kernel::System::MELTObject',
     'Kernel::System::JSON',
     'Kernel::System::Log',
@@ -113,7 +114,9 @@ sub Export {
         name        => $MELTObject->{Name},
         version     => $MELTObject->{VersionString},
         ztsm_status => $MELTObject->{ZTSMStatus},
-        description => $MELTObject->{Description} // '',
+        description => $Self->_RichTextValueForDocument(
+            Value => $MELTObject->{Description} // '',
+        ),
         fields      => \%Fields,
     };
 
@@ -336,6 +339,10 @@ sub _ValueForDocument {
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Value              = $Param{Value};
 
+    if ( $DynamicFieldConfig->{FieldType} eq 'RichText' ) {
+        return $Self->_RichTextValueForDocument( Value => $Value );
+    }
+
     if ( $DynamicFieldConfig->{FieldType} eq 'Set' ) {
         return $Self->_SetValueForDocument(%Param);
     }
@@ -349,6 +356,20 @@ sub _ValueForDocument {
     }
 
     return $Value;
+}
+
+sub _RichTextValueForDocument {
+    my ( $Self, %Param ) = @_;
+    my $Value = $Param{Value};
+    return $Value if !defined $Value || ref $Value;
+    my $Text = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
+        String => $Value,
+    );
+    $Text //= '';
+    $Text =~ s{\x{00A0}}{ }g;
+    $Text =~ s{[ \t]+\n}{\n}g;
+    $Text =~ s{\A\s+|\s+\z}{}g;
+    return $Text;
 }
 
 sub _ValueFromDocument {
@@ -429,12 +450,12 @@ sub _SingleReferenceForDocument {
         Silent        => 1,
     );
 
-    return $Param{Value} if !IsHashRefWithData($MELTObject);
+    return if !IsHashRefWithData($MELTObject);
 
-    return $MELTObject->{'DynamicField_ZTSM-Code'}
-        || $MELTObject->{Name}
-        || $MELTObject->{Number}
-        || $Param{Value};
+    return ( $MELTObject->{Class} && $MELTObject->{Name} )
+        ? "$MELTObject->{Class}: $MELTObject->{Name}"
+        : $MELTObject->{Name}
+        || $MELTObject->{Number};
 }
 
 sub _SingleReferenceFromDocument {
@@ -469,11 +490,24 @@ sub _GovernanceReferenceIDResolve {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Value              = $Param{Value};
+    my $ClassName;
+    if ( $Value =~ m{\A\s*([^:]+?)\s*:\s*(.+)\z}xms ) {
+        ( $ClassName, $Value ) = ( $1, $2 );
+    }
 
     my @ClassIDs = $Self->_GeneralCatalogRestrictionIDsGet(
         Class  => 'ZTSM::MELT::Class',
         Values => $DynamicFieldConfig->{Config}{ClassIDs},
     );
+    if ($ClassName) {
+        my $Classes = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+            Class => 'ZTSM::MELT::Class',
+        ) || {};
+        my ($NamedClassID) = grep { lc( $Classes->{$_} // '' ) eq lc $ClassName } keys %{$Classes};
+        return if !$NamedClassID;
+        return if @ClassIDs && !grep { $_ == $NamedClassID } @ClassIDs;
+        @ClassIDs = ($NamedClassID);
+    }
 
     my @Attempts = (
         { Name   => $Value },

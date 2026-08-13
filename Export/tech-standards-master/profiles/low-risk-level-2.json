@@ -1,0 +1,121 @@
+{
+  "profile": {
+    "uuid": "2d8d4144-8d64-4e39-8749-294291500f92",
+    "metadata": {
+      "title": "Low-Risk - Level 2",
+      "last-modified": "2025-05-13T18:00:00+08:00",
+      "version": "2025.05.13",
+      "oscal-version": "1.1.2",
+      "props": [
+        {
+          "name": "label",
+          "value": "low-risk-level-2"
+        },
+        {
+          "name": "risk",
+          "value": "low-risk"
+        },
+        {
+          "name": "level",
+          "value": "2"
+        }
+      ],
+      "roles": [
+        {
+          "id": "creator",
+          "title": "Creator"
+        },
+        {
+          "id": "contact",
+          "title": "Contact"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "e738ab7c-ed26-4fe6-a1e7-f485265d50cc",
+          "type": "organization",
+          "name": "IM8-reform Executive Committee",
+          "email-addresses": [
+            "kevin_kb_ng@tech.gov.sg",
+            "hunter_nield@tech.gov.sg",
+            "eugene_lim@tech.gov.sg",
+            "loke_yew_leong@moe.gov.sg"
+          ]
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "creator",
+          "party-uuids": [
+            "e738ab7c-ed26-4fe6-a1e7-f485265d50cc"
+          ]
+        },
+        {
+          "role-id": "contact",
+          "party-uuids": [
+            "e738ab7c-ed26-4fe6-a1e7-f485265d50cc"
+          ]
+        }
+      ],
+      "remarks": "The Level 2 baseline includes controls that extend the security and maturity of a system. Agencies do not need to seek approval for deviations from controls in this baseline in any default system security plan. Deviations must be documented in a custom System Security Plan with explanations for each deviation and submitted centrally."
+    },
+    "imports": [
+      {
+        "href": "trestle://profiles/low-risk-level-1.json",
+        "include-all": {}
+      },
+      {
+        "href": "trestle://catalogs/im8-reform.json",
+        "include-controls": [
+          {
+            "with-ids": [
+              "ac-10",
+              "ac-11",
+              "ac-13",
+              "as-10",
+              "as-12",
+              "as-13",
+              "as-14",
+              "br-2",
+              "sc-7",
+              "sc-8",
+              "sc-9",
+              "sd-3",
+              "cs-1",
+              "cs-2",
+              "cs-5",
+              "cs-6",
+              "cs-8",
+              "cs-11",
+              "is-8",
+              "is-12",
+              "is-13",
+              "dp-6",
+              "ck-1",
+              "ck-2",
+              "ns-11",
+              "lm-5",
+              "lm-11",
+              "lm-13",
+              "lm-14",
+              "lm-15",
+              "lm-16",
+              "lm-17",
+              "lm-19",
+              "lm-20",
+              "sc-2"
+            ]
+          }
+        ]
+      }
+    ],
+    "merge": {
+      "combine": {
+        "method": "merge"
+      },
+      "as-is": true
+    },
+    "modify": {
+    }
+  }
+}

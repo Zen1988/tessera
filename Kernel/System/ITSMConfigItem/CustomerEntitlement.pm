@@ -79,12 +79,6 @@ sub _ConfigItemAccessCheck {
     );
     return $Self->_Denied(%Param) if !$ConfigItem || !$ConfigItem->{ConfigItemID};
 
-    my @AssetProfiles = $Self->_ReferenceAliasSets(
-        Value => $ConfigItem->{'DynamicField_ZTAM-SupportProfile'},
-        Class => 'SupportProfile',
-    );
-    return $Self->_Denied(%Param) if @AssetProfiles != 1;
-
     my @EntitlementIDs = $Self->_ScalarValues(
         $ConfigItem->{'DynamicField_ZTAM-ContractEntitlement'}
     );
@@ -96,29 +90,11 @@ sub _ConfigItemAccessCheck {
     );
     return $Self->_Denied(%Param) if !$Entitlement;
 
-    my @EntitlementProfiles = $Self->_ReferenceAliasSets(
-        Value => $Entitlement->{'DynamicField_Contract-SupportProfie'},
-        Class => 'SupportProfile',
-    );
-    return $Self->_Denied(%Param) if @EntitlementProfiles != 1;
-    return $Self->_Denied(%Param) if !$Self->_AliasSetsIntersect( $AssetProfiles[0], $EntitlementProfiles[0] );
-
     my $Assignments = $Self->_AssignmentsGet(
         CustomerUserID => $Param{CustomerUserID},
         RequireRole    => $Param{RequireAssetRole} ? 'ASSET' : undef,
     );
-
-    ASSIGNMENT:
-    for my $Assignment ( @{$Assignments} ) {
-        my @AssignmentProfiles = $Self->_ReferenceAliasSets(
-            Value => $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'},
-            Class => 'SupportProfile',
-        );
-        next ASSIGNMENT if @AssignmentProfiles != 1;
-        return 1 if $Self->_AliasSetsIntersect( $AssetProfiles[0], $AssignmentProfiles[0] );
-    }
-
-    return $Self->_Denied(%Param);
+    return @{$Assignments} ? 1 : $Self->_Denied(%Param);
 }
 
 sub _AssignmentsGet {
@@ -202,14 +178,16 @@ sub _ConfigItemReferenceGet {
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my @Candidates;
-    for my $Lookup (
-        { ConfigItemID => $Values[0] },
-        { VersionID    => $Values[0] },
-        )
-    {
+    my @ConfigItemIDs = ( $Values[0] );
+    my $VersionConfigItemID = $ConfigItemObject->VersionConfigItemIDGet(
+        VersionID => $Values[0],
+    );
+    push @ConfigItemIDs, $VersionConfigItemID if $VersionConfigItemID;
+
+    for my $ConfigItemID (@ConfigItemIDs) {
         my $Object = eval {
             $ConfigItemObject->ConfigItemGet(
-                %{$Lookup},
+                ConfigItemID  => $ConfigItemID,
                 DynamicFields => 1,
             );
         };
@@ -220,17 +198,6 @@ sub _ConfigItemReferenceGet {
         grep { ( $_->{Class} || '' ) eq $Param{Class} && $_->{ConfigItemID} } @Candidates;
     return if keys %Unique != 1;
     return ( values %Unique )[0];
-}
-
-sub _ReferenceAliasSets {
-    my ( $Self, %Param ) = @_;
-    my @Objects = $Self->_ReferenceObjects(%Param);
-    return map {
-        +{
-            map { defined $_ && $_ ne '' ? ( $_ => 1 ) : () }
-                ( $_->{GovernanceObjectID}, $_->{VersionID}, $_->{LastVersionID}, $_->{Name}, $_->{Number} )
-        }
-    } @Objects;
 }
 
 sub _ReferenceObjects {
@@ -294,12 +261,6 @@ sub _ScalarValues {
         return;
     }
     return $Value eq '' ? () : ($Value);
-}
-
-sub _AliasSetsIntersect {
-    my ( $Self, $Left, $Right ) = @_;
-    return if ref $Left ne 'HASH' || ref $Right ne 'HASH';
-    return scalar grep { $Right->{$_} } keys %{$Left};
 }
 
 sub _Denied {

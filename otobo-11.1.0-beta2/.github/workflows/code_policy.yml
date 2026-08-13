@@ -1,0 +1,120 @@
+%YAML 1.1
+---
+name: 'CodePolicy'
+on: ['pull_request']
+# on: ['push', 'pull_request']
+jobs:
+    CodePolicy:
+        runs-on: 'ubuntu-latest'
+        container:
+            # Previously the tag 5.24 was used, but that used Debian 10 (Buster) which fell out of the support window
+            # Found no images for Debian 11 (Bullseye)
+            # Perl 5.36 seems to be the oldest Perl for Debian 12 (Bookworm), so let's use that
+            image: perldocker/perl-tester:5.36-bookworm
+        env:
+            PERL5LIB: local/lib/perl5
+        steps:
+
+            # list of added or changed files will be used in the 'compile-check' step
+            - id: changed-files
+              uses: tj-actions/changed-files@v47
+
+            - name: 'install dependencies'
+              run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install libxml2-utils libxslt-dev graphviz libqrencode-dev odbcinst1debian2 libodbc1 odbcinst unixodbc-dev unixodbc gettext npm
+
+            # check out the merge commit of the pull request that triggerd this workflow
+            - name: 'check out OTOBO'
+              uses: actions/checkout@v6
+
+            # some diagnostics
+            - name: diagnostics
+              run: |
+                pwd
+                perl -v
+                printenv | sort
+
+            # Use caching for not needing to reinstall modules from CPAN for every check.
+            # Packages are reinstalled when cpanfile.docker.snapshot changes
+            # or when the cache key is manually changed.
+            # Set current date for forcing a rebuild. In this case, make sure that
+            # code_policy.yml, and cache_local_lib.yml are kept in sync.
+            # The rules where the cache is visible are not obvious. Essentially the cache must be created on an ancestor branch.
+            # For that there is cache_local_lib.yml.
+            # See https://docs.github.com/en/actions/advanced-guides/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache
+
+            - name: 'Get SHA of cpanfile.docker.snapshot'
+              id: get-sha
+              run: |
+                 echo "sha=$(git rev-parse :cpanfile.docker.snapshot)" >> $GITHUB_OUTPUT
+
+            - name: 'Print SHA of cpanfile.docker.snapshot'
+              run: |
+                echo '${{steps.get-sha.outputs.sha}}'
+
+            -
+              # The cache key contains the checksum of cpanfile.docker.snapshot.
+              # Therefore the branch does not have to be included in the key.
+              name: 'check cache for CPAN modules'
+              uses: actions/cache@v6
+              id: cache_local_lib
+              with:
+                path: local
+                key: ${{ runner.os }}-${{steps.get-sha.outputs.sha}}-local_lib-20260716a
+
+            # for debugging when there a problems installing a module
+            # - name: 'XML::LibXSLT'
+            #   run: |
+            #     sudo apt install -y cpanminus
+            #     cpanm -l local --notest XML::LibXSLT || sh -xc 'cat ~/.cpanm/work/*/build.log'
+
+            - name: 'install App::perlimports from CPAN with App::cpm'
+              if: steps.cache_local_lib.outputs.cache-hit != 'true'
+              uses: perl-actions/install-with-cpm@stable
+              with:
+                install: |
+                  App::perlimports
+                global: false
+                tests: false
+                sudo: false
+
+            - name: 'move cpanfile in place'
+              if: steps.cache_local_lib.outputs.cache-hit != 'true'
+              run: |
+                cp cpanfile.docker cpanfile
+
+            - name: 'install Perl modules from CPAN with App::cpm'
+              if: steps.cache_local_lib.outputs.cache-hit != 'true'
+              uses: perl-actions/install-with-cpm@stable
+              with:
+                args: '--verbose'
+                global: false
+                tests: false
+                sudo: false
+
+            # the setup is just like otobo.web.dockerfile and .dockerignore
+            - name: set up config
+              run: |
+                cp --no-clobber Kernel/Config.pm.docker.dist Kernel/Config.pm
+                perl -pi -e 's/^use lib /# disabled by syntax_check.yml: use lib/' Kernel/Config/Defaults.pm
+
+            # The actual test steps. Check syntax and the CodePolicy.
+
+            # There are situations where there are no added or changed files. But with an empty
+            # argument list all files would be checked, which can easily lead to errors with missing dependencies.
+            # Therefore make sure that at least one argument is passed.
+            # :: tells prove that whatever follows should be passed to the test script
+            - name: compile-check
+              run: 'prove -I . -I Kernel/cpan-lib -I Custom --verbose scripts/test/Compile.t :: Kernel/Config.pm ${{ steps.changed-files.outputs.all_changed_files }}'
+
+            - name: 'checkout CodePolicy'
+              uses: actions/checkout@v6
+              with:
+                repository: RotherOSS/codepolicy
+                ref: master
+                path: codepolicy
+
+            - name: 'install eslint'
+              run: cd codepolicy && npm install eslint && npm install @eslint/js && npm install globals
+
+            - name: 'run CodePolicy'
+              run: codepolicy/bin/otobo.CodePolicy.pl -l ${{ steps.changed-files.outputs.all_changed_files }}

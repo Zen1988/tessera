@@ -1,0 +1,18 @@
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header"><h1>[% Translate("MELTObject Excel Import/Export") | html %]</h1><p><a href="[% Env("Baselink") %]Action=AgentMELTObject">[% Translate("Cancel & close") | html %]</a></p></div>
+    <div class="Content">
+[% IF Data.Message %]<div class="MessageBox [% Data.MessageClass | html %]"><p>[% Data.Message | html %]</p></div>[% END %]
+        <fieldset class="TableLike"><legend>[% Translate("Export") | html %]</legend>
+            <p>[% Translate("The template is generated from the selected MELTObject class page and expanded role definitions. Structured and multi-value fields use one JSON cell.") | html %]</p>
+            <label for="ZTSMWorkbookClassID">[% Translate("MELTObject class") | html %]:</label><div class="Field">[% Data.ClassSelection %]</div><div class="Clear"></div>
+            <div class="Field SpacingTop"><button type="button" id="ZTSMWorkbookTemplate" class="CallForAction"><span>[% Translate("Download empty template") | html %]</span></button> <button type="button" id="ZTSMWorkbookExport" class="CallForAction Primary"><span>[% Translate("Export class objects") | html %]</span></button></div>
+        </fieldset>
+        <form id="ZTSMWorkbookPreviewForm" action="[% Env("CGIHandle") %]" method="post"><input type="hidden" name="Action" value="[% Env("Action") %]"/><input type="hidden" name="Subaction" value="Preview"/><input type="hidden" name="ClassID" value="[% Data.ClassID | html %]"/><input type="hidden" id="ZTSMWorkbookPayload" name="WorkbookPayload" value=""/>
+            <fieldset class="TableLike"><legend>[% Translate("Import preview") | html %]</legend><label for="ZTSMWorkbookFile">[% Translate("Excel workbook") | html %]:</label><div class="Field"><input id="ZTSMWorkbookFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/></div><div class="Clear"></div><div class="Field SpacingTop"><button type="button" id="ZTSMWorkbookPreview" class="CallForAction"><span>[% Translate("Preview XLSX") | html %]</span></button></div></fieldset>
+        </form>
+[% IF Data.PreviewToken %]
+        <form id="ZTSMWorkbookCommitForm" action="[% Env("CGIHandle") %]" method="post"><input type="hidden" name="Action" value="[% Env("Action") %]"/><input type="hidden" name="Subaction" value="Commit"/><input type="hidden" name="ClassID" value="[% Data.ClassID | html %]"/><input type="hidden" name="WorkbookPayload" value="[% Data.WorkbookPayload | html %]"/><input type="hidden" name="PreviewToken" value="[% Data.PreviewToken | html %]"/><input type="hidden" id="ZTSMWorkbookDecisions" name="Decisions" value=""/><div id="ZTSMWorkbookPreviewTable"></div><button type="button" id="ZTSMWorkbookCommit" class="CallForAction Primary"><span>[% Translate("Commit selected operations") | html %]</span></button></form>
+[% END %]
+    </div>
+</div>
+

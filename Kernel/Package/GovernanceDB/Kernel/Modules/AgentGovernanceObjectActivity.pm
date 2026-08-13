@@ -1,0 +1,5 @@
+package Kernel::Modules::AgentGovernanceObjectActivity;
+use v5.24; use strict; use warnings; use namespace::autoclean; use Kernel::Language qw(Translatable);
+our $ObjectManagerDisabled=1; sub new { my($Type,%Param)=@_; bless {%Param},$Type }
+sub Run { my($Self,%Param)=@_; my $R=$Kernel::OM->Get('Kernel::System::Web::Request'); my $L=$Kernel::OM->Get('Kernel::Output::HTML::Layout'); my $ID=$R->GetParam(Param=>'GovernanceObjectID')||0; my $O=$ID?$Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(GovernanceObjectID=>$ID):undef; return $L->ErrorScreen(Message=>Translatable('No Governance Object found!')) if !$O; my $Rows=$Kernel::OM->Get('Kernel::System::GovernanceObject::Activity')->ActivityList(GovernanceObjectID=>$ID); return join '',$L->Header(Type=>'Small',Title=>Translatable('Governance Activity Articles')),$L->Output(TemplateFile=>'AgentObjectActivity',Data=>{%Param,ObjectType=>'GovernanceObject',ObjectID=>$ID,Number=>$O->{Number},Name=>$O->{Name},Activities=>$Rows,ReturnAction=>'AgentGovernanceObjectZoom;GovernanceObjectID='.$ID}),$L->Footer(Type=>'Small'); }
+1;

@@ -1,0 +1,121 @@
+/* OTOBO is a web-based ticketing system for service organisations.
+
+Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @package     Skin "Default"
+ * @section     Forms
+ */
+
+@media screen,projection,tv,handheld {
+
+/**
+ * @subsection  Input focus
+ * @note        Does not work in IE6, only partially in IE7 (no focus)
+ */
+
+.DynamicFieldDBContainer {
+    background-color: #F2F2F2;
+    -moz-box-shadow: inset 1px 1px 5px #ccc;
+    -webkit-box-shadow: inset 1px 1px 5px #ccc;
+    box-shadow: inset 1px 1px 5px #ccc;
+    padding: 4px 12px 8px 8px;
+    position: relative;
+    border-radius: 10px;
+    margin: 4px 0 0 33%;
+    box-sizing: border-box;
+}
+
+.MultiValue .DynamicFieldDBContainer {
+    margin: -44px 24px 0 24px;
+    height: 32px;
+    padding-left: 15px;
+    padding-right: 16px;
+    box-shadow: none;
+}
+
+.MultiValue .DynamicFieldDBContainer input {
+  font-size: 12px;
+  font-weight: 500;
+  font-stretch: normal;
+  font-style: normal;
+  letter-spacing: 0.3px;
+}
+
+.DynamicFieldDBContainer input,
+.DynamicFieldDBContainer input:hover {
+  border: none;
+  background: inherit;
+  transition: none;
+}
+
+.DynamicFieldDBContainer > div {
+    margin-top: 5px;
+}
+
+.MultiValue .DynamicFieldDBContainer > div {
+    margin-top: 2px;
+}
+
+.DynamicFieldDBContainer .ResultElementText {
+    width: 89%;
+    margin-left: 7px;
+}
+
+.DynamicFieldDBContainer .ResultElementText {
+    transition: background-color 1s ease, border 1s ease;
+}
+
+.DynamicFieldDBContainer .ResultElementText.MainCustomer {
+    background-color: #F7ECC3;
+    border: 1px solid #E8CC8B;
+}
+
+.DynamicFieldDBContainer .ResultElementText.Radio {
+    width: calc( 100% - 40px );
+    margin-left: 0px;
+    padding: 4px 8px;
+    font-size: var(--DefaultFontSize);
+}
+
+.DynamicFieldDBContainerProcess {
+    margin: 5px 0 0 235px;
+}
+
+.DynamicFieldDB + a {
+    display: inline-block;
+    position: absolute;
+    width: 14px;
+}
+
+.DynamicFieldDB + a.RemoveButton {
+    left: 0px;
+}
+
+.DynamicFieldDB + a.oooWithTT {
+    left: -78px;
+}
+
+.DynamicFieldDB[readonly] ~ label {
+    left: calc( -100% + 24px );
+}
+
+@media only screen and (min-width: 0px) and (max-width: 1024px) {
+
+    .DynamicFieldDBContainer {
+        margin: 4px 0 0 8px;
+    }
+} 
+
+} /* end @media */

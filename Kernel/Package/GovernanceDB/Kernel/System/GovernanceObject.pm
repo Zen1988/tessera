@@ -129,7 +129,7 @@ sub GovernanceObjectCount {
         },
     );
 
-    return 0 if !%{$StateList};
+    return 0 if ref $StateList ne 'HASH' || !%{$StateList};
 
     # create state string
     my $ZTSMStatusString = join q{, }, keys %{$StateList};
@@ -176,6 +176,10 @@ sub GovernanceObjectResultList {
             Functionality => [ 'preproductive', 'productive' ],
         },
     );
+
+    # An installation may temporarily have no productive status catalog items
+    # during bootstrap or repair. Never generate an invalid SQL IN () clause.
+    return [] if ref $StateList ne 'HASH' || !%{$StateList};
 
     # create state string
     my $ZTSMStatusString = join q{, }, keys %{$StateList};

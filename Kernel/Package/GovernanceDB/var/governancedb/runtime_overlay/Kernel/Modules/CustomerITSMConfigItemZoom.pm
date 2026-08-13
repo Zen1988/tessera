@@ -201,9 +201,6 @@ sub Run {
         my $PageRequested = $ParamObject->GetParam( Param => 'Page' );
         PAGE:
         for my $Page ( $Definition->{DefinitionRef}{Pages}->@* ) {
-            next PAGE unless $Page->{Interfaces};
-            next PAGE unless any { $_ eq 'Customer' } $Page->{Interfaces}->@*;
-
             # restriction by Groups is optional
             if ( $Page->{Groups} ) {
 

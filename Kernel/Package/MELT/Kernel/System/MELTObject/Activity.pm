@@ -1,0 +1,7 @@
+package Kernel::System::MELTObject::Activity;
+use v5.24; use strict; use warnings; use namespace::autoclean;
+our @ObjectDependencies=('Kernel::System::DB','Kernel::System::MELTObject','Kernel::System::JSON');
+sub new {my($Type,%Param)=@_;bless {},$Type}
+sub ActivityAdd {my($Self,%P)=@_;return if !$P{EventType}||!$P{Subject}||!$P{Body}||!$P{UserID};my$N=$P{ObjectNumber}//'';if(!$N&&$P{MELTObjectID}){my$O=$Kernel::OM->Get('Kernel::System::MELTObject')->MELTObjectGet(MELTObjectID=>$P{MELTObjectID});$N=$O->{Number}//'' if$O}my$J=ref$P{Payload}?$Kernel::OM->Get('Kernel::System::JSON')->Encode(Data=>$P{Payload},SortKeys=>1,Pretty=>1):($P{Payload}//'');return $Kernel::OM->Get('Kernel::System::DB')->Do(SQL=>'INSERT INTO melt_object_activity_article (melt_object_id, object_number, event_type, source, subject, body, payload, create_time, create_by) VALUES (?, ?, ?, ?, ?, ?, ?, current_timestamp, ?)',Bind=>[\$P{MELTObjectID},\$N,\$P{EventType},\($P{Source}//'OTOBO Event'),\$P{Subject},\$P{Body},\$J,\$P{UserID}])}
+sub ActivityList {my($Self,%P)=@_;return[]if!$P{MELTObjectID};my$R=$Kernel::OM->Get('Kernel::System::DB')->SelectAll(SQL=>'SELECT id, object_number, event_type, source, subject, body, payload, create_time, create_by FROM melt_object_activity_article WHERE melt_object_id = ? ORDER BY id DESC',Bind=>[\$P{MELTObjectID}],Limit=>$P{Limit}||500)||[];return[map{{ActivityID=>$_->[0],ObjectNumber=>$_->[1],EventType=>$_->[2],Source=>$_->[3],Subject=>$_->[4],Body=>$_->[5],Payload=>$_->[6],CreateTime=>$_->[7],CreateBy=>$_->[8]}}@$R]}
+1;

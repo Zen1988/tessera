@@ -1,0 +1,873 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+package Kernel::Modules::AdminProcessManagementTransition;
+
+use strict;
+use warnings;
+
+use Kernel::System::VariableCheck qw(:all);
+use Kernel::Language              qw(Translatable);
+
+our $ObjectManagerDisabled = 1;
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {%Param};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    $Self->{Subaction} = $ParamObject->GetParam( Param => 'Subaction' ) || '';
+
+    my $TransitionID    = $ParamObject->GetParam( Param => 'ID' )              || '';
+    my $EntityID        = $ParamObject->GetParam( Param => 'EntityID' )        || '';
+    my $ProcessEntityID = $ParamObject->GetParam( Param => 'ProcessEntityID' ) || '';
+
+    my %SessionData = $Kernel::OM->Get('Kernel::System::AuthSession')->GetSessionIDData(
+        SessionID => $Self->{SessionID},
+    );
+
+    # convert JSON string to array
+    $Self->{ScreensPath} = $Kernel::OM->Get('Kernel::System::JSON')->Decode(
+        Data => $SessionData{ProcessManagementScreensPath}
+    );
+
+    # get needed objects
+    my $LayoutObject     = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $EntityObject     = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Entity');
+    my $TransitionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Transition');
+
+    # ------------------------------------------------------------ #
+    # TransitionNew
+    # ------------------------------------------------------------ #
+    if ( $Self->{Subaction} eq 'TransitionNew' ) {
+
+        # check for ProcessEntityID
+        if ( !$ProcessEntityID ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('Need ProcessEntityID!'),
+            );
+        }
+
+        return $Self->_ShowEdit(
+            %Param,
+            ProcessEntityID => $ProcessEntityID,
+            Action          => 'New',
+        );
+    }
+
+    # ------------------------------------------------------------ #
+    # TransitionNewAction
+    # ------------------------------------------------------------ #
+    elsif ( $Self->{Subaction} eq 'TransitionNewAction' ) {
+
+        # challenge token check for write action
+        $LayoutObject->ChallengeTokenCheck();
+
+        # get transition action data
+        my $TransitionData;
+
+        # get parameter from web browser
+        my $GetParam = $Self->_GetParams();
+
+        # set new configuration
+        $TransitionData->{Name}      = $GetParam->{Name};
+        $TransitionData->{Namespace} = $GetParam->{Namespace};
+        $TransitionData->{Global}    = $GetParam->{Global};
+        $TransitionData->{Config}    = $GetParam->{Config};
+
+        # check required parameters
+        my %Error;
+        if ( !$GetParam->{Name} ) {
+
+            # add server error error class
+            $Error{NameServerError}        = 'ServerError';
+            $Error{NameServerErrorMessage} = Translatable('This field is required');
+        }
+
+        # if there is an error return to edit screen
+        if ( IsHashRefWithData( \%Error ) ) {
+            return $Self->_ShowEdit(
+                %Error,
+                %Param,
+                ProcessEntityID => $ProcessEntityID,
+                TransitionData  => $TransitionData,
+                Action          => 'New',
+            );
+        }
+
+        # generate entity ID
+        my $EntityID = $EntityObject->EntityIDGenerate(
+            EntityType => 'Transition',
+            UserID     => $Self->{UserID},
+        );
+
+        # show error if can't generate a new EntityID
+        if ( !$EntityID ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('There was an error generating a new EntityID for this Transition'),
+            );
+        }
+
+        # otherwise save configuration and return process screen
+        my $TransitionID = $TransitionObject->TransitionAdd(
+            Name            => $TransitionData->{Name},
+            Namespace       => $TransitionData->{Namespace},
+            EntityID        => $EntityID,
+            Config          => $TransitionData->{Config},
+            UserID          => $Self->{UserID},
+            ProcessEntityID => $TransitionData->{Global} ? undef : $ProcessEntityID,
+        );
+
+        # show error if can't create
+        if ( !$TransitionID ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('There was an error creating the Transition'),
+            );
+        }
+
+        # set entity sync state
+        my $Success = $EntityObject->EntitySyncStateSet(
+            EntityType => 'Transition',
+            EntityID   => $EntityID,
+            SyncState  => 'not_sync',
+            UserID     => $Self->{UserID},
+        );
+
+        # show error if can't set
+        if ( !$Success ) {
+            return $LayoutObject->ErrorScreen(
+                Message => $LayoutObject->{LanguageObject}->Translate(
+                    'There was an error setting the entity sync status for Transition entity: %s',
+                    $EntityID
+                ),
+            );
+        }
+
+        # remove this screen from session screen path
+        $Self->_PopSessionScreen( OnlyCurrent => 1 );
+
+        my $Redirect = $ParamObject->GetParam( Param => 'PopupRedirect' ) || '';
+
+        # get latest config data to send it back to main window
+        my $TransitionConfig = $Self->_GetTransitionConfig(
+            EntityID => $EntityID,
+        );
+
+        # check if needed to open another window or if popup should go back
+        if ( $Redirect && $Redirect eq '1' ) {
+
+            $Self->_PushSessionScreen(
+                ID              => $TransitionID,
+                EntityID        => $EntityID,
+                ProcessEntityID => $ProcessEntityID,
+                Subaction       => 'TransitionEdit'    # always use edit screen
+            );
+
+            my $RedirectAction          = $ParamObject->GetParam( Param => 'PopupRedirectAction' )          || '';
+            my $RedirectSubaction       = $ParamObject->GetParam( Param => 'PopupRedirectSubaction' )       || '';
+            my $RedirectID              = $ParamObject->GetParam( Param => 'PopupRedirectID' )              || '';
+            my $RedirectEntityID        = $ParamObject->GetParam( Param => 'PopupRedirectEntityID' )        || '';
+            my $RedirectProcessEntityID = $ParamObject->GetParam( Param => 'PopupRedirectProcessEntityID' ) || '';
+
+            # redirect to another popup window
+            return $Self->_PopupResponse(
+                Redirect => 1,
+                Screen   => {
+                    Action          => $RedirectAction,
+                    Subaction       => $RedirectSubaction,
+                    ID              => $RedirectID,
+                    EntityID        => $RedirectEntityID,
+                    ProcessEntityID => $RedirectProcessEntityID,
+                },
+                ConfigJSON => $TransitionConfig,
+            );
+        }
+        else {
+
+            # remove last screen
+            my $LastScreen = $Self->_PopSessionScreen();
+
+            # check if needed to return to main screen or to be redirected to last screen
+            if ( $LastScreen->{Action} eq 'AdminProcessManagement' ) {
+
+                # close the popup
+                return $Self->_PopupResponse(
+                    ClosePopup => 1,
+                    ConfigJSON => $TransitionConfig,
+                );
+            }
+            else {
+
+                # redirect to last screen
+                return $Self->_PopupResponse(
+                    Redirect   => 1,
+                    Screen     => $LastScreen,
+                    ConfigJSON => $TransitionConfig,
+                );
+            }
+        }
+    }
+
+    # ------------------------------------------------------------ #
+    # TransitionEdit
+    # ------------------------------------------------------------ #
+    elsif ( $Self->{Subaction} eq 'TransitionEdit' ) {
+
+        # check for TransitionID and ProcessEntityID
+        if ( !$TransitionID || !$ProcessEntityID ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('Need TransitionID and ProcessEntityID!'),
+            );
+        }
+
+        # remove this screen from session screen path
+        $Self->_PopSessionScreen( OnlyCurrent => 1 );
+
+        # get Transition data
+        my $TransitionData = $TransitionObject->TransitionGet(
+            ID     => $TransitionID,
+            UserID => $Self->{UserID},
+        );
+
+        # check for valid Transition data
+        if ( !IsHashRefWithData($TransitionData) ) {
+            return $LayoutObject->ErrorScreen(
+                Message => $LayoutObject->{LanguageObject}->Translate(
+                    'Could not get data for TransitionID %s',
+                    $TransitionID
+                ),
+            );
+        }
+
+        # check if Transition is part of the current Process
+        if ( $TransitionData->{ProcessEntityID} && $TransitionData->{ProcessEntityID} ne $ProcessEntityID ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('This Transition is not available to the current Process!'),
+            );
+        }
+
+        # preserve Global if ProcessEntityID already exists in db
+        if ( !$TransitionData->{ProcessEntityID} ) {
+            $TransitionData->{Global} = 'checked';
+        }
+
+        return $Self->_ShowEdit(
+            %Param,
+            TransitionID    => $TransitionID,
+            TransitionData  => $TransitionData,
+            ProcessEntityID => $ProcessEntityID,
+            Action          => 'Edit',
+        );
+
+    }
+
+    # ------------------------------------------------------------ #
+    # TransitionEditAction
+    # ------------------------------------------------------------ #
+    elsif ( $Self->{Subaction} eq 'TransitionEditAction' ) {
+
+        # challenge token check for write action
+        $LayoutObject->ChallengeTokenCheck();
+
+        # get transition action data
+        my $TransitionData;
+
+        # get parameter from web browser
+        my $GetParam = $Self->_GetParams();
+
+        # set new configuration
+        $TransitionData->{Name}      = $GetParam->{Name};
+        $TransitionData->{Namespace} = $GetParam->{Namespace};
+        $TransitionData->{EntityID}  = $EntityID;
+        $TransitionData->{Global}    = $GetParam->{Global};
+        $TransitionData->{Config}    = $GetParam->{Config};
+
+        # check required parameters
+        my %Error;
+        if ( !$GetParam->{Name} ) {
+
+            # add server error error class
+            $Error{NameServerError}        = 'ServerError';
+            $Error{NameServerErrorMessage} = Translatable('This field is required');
+        }
+
+        # prevent updating to non-global if necessary
+        if ( !$TransitionData->{Global} ) {
+
+            my $AffectedProcesses = $TransitionObject->TransitionUsage(
+                EntityID => $TransitionData->{EntityID},
+            );
+
+            for my $AffectedProcessEntityID ( sort keys %{$AffectedProcesses} ) {
+
+                if ( $AffectedProcessEntityID ne $ProcessEntityID ) {
+
+                    $Error{GlobalServerError}        = 'ServerError';
+                    $Error{GlobalServerErrorMessage} = Translatable('Transitions currently shared by other Processes may not be set to non-global!');
+                }
+            }
+        }
+
+        # if there is an error return to edit screen
+        if ( IsHashRefWithData( \%Error ) ) {
+            return $Self->_ShowEdit(
+                %Error,
+                %Param,
+                ProcessEntityID => $ProcessEntityID,
+                TransitionData  => $TransitionData,
+                Action          => 'Edit',
+            );
+        }
+
+        # otherwise save configuration and return to overview screen
+        my $Success = $TransitionObject->TransitionUpdate(
+            ID              => $TransitionID,
+            EntityID        => $EntityID,
+            Name            => $TransitionData->{Name},
+            Namespace       => $TransitionData->{Namespace},
+            Config          => $TransitionData->{Config},
+            UserID          => $Self->{UserID},
+            ProcessEntityID => $TransitionData->{Global} ? undef : $ProcessEntityID,
+        );
+
+        # show error if can't update
+        if ( !$Success ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('There was an error updating the Transition'),
+            );
+        }
+
+        # set entity sync state
+        $Success = $EntityObject->EntitySyncStateSet(
+            EntityType => 'Transition',
+            EntityID   => $EntityID,
+            SyncState  => 'not_sync',
+            UserID     => $Self->{UserID},
+        );
+
+        # show error if can't set
+        if ( !$Success ) {
+            return $LayoutObject->ErrorScreen(
+                Message => $LayoutObject->{LanguageObject}->Translate(
+                    'There was an error setting the entity sync status for Transition entity: %s',
+                    $TransitionData->{EntityID}
+                ),
+            );
+        }
+
+        # remove this screen from session screen path
+        $Self->_PopSessionScreen( OnlyCurrent => 1 );
+
+        my $Redirect = $ParamObject->GetParam( Param => 'PopupRedirect' ) || '';
+
+        # get latest config data to send it back to main window
+        my $TransitionConfig = $Self->_GetTransitionConfig(
+            EntityID => $TransitionData->{EntityID},
+        );
+
+        # check if needed to open another window or if popup should go back
+        if ( $Redirect && $Redirect eq '1' ) {
+
+            $Self->_PushSessionScreen(
+                ID              => $TransitionID,
+                EntityID        => $TransitionData->{EntityID},
+                ProcessEntityID => $ProcessEntityID,
+                Subaction       => 'TransitionEdit'               # always use edit screen
+            );
+
+            my $RedirectAction          = $ParamObject->GetParam( Param => 'PopupRedirectAction' )          || '';
+            my $RedirectSubaction       = $ParamObject->GetParam( Param => 'PopupRedirectSubaction' )       || '';
+            my $RedirectID              = $ParamObject->GetParam( Param => 'PopupRedirectID' )              || '';
+            my $RedirectEntityID        = $ParamObject->GetParam( Param => 'PopupRedirectEntityID' )        || '';
+            my $RedirectProcessEntityID = $ParamObject->GetParam( Param => 'PopupRedirectProcessEntityID' ) || '';
+
+            # redirect to another popup window
+            return $Self->_PopupResponse(
+                Redirect => 1,
+                Screen   => {
+                    Action          => $RedirectAction,
+                    Subaction       => $RedirectSubaction,
+                    ID              => $RedirectID,
+                    EntityID        => $RedirectEntityID,
+                    ProcessEntityID => $RedirectProcessEntityID,
+                },
+                ConfigJSON => $TransitionConfig,
+            );
+        }
+        else {
+
+            # remove last screen
+            my $LastScreen = $Self->_PopSessionScreen();
+
+            # check if needed to return to main screen or to be redirected to last screen
+            if ( $LastScreen->{Action} eq 'AdminProcessManagement' ) {
+
+                # close the popup
+                return $Self->_PopupResponse(
+                    ClosePopup => 1,
+                    ConfigJSON => $TransitionConfig,
+                );
+            }
+            else {
+
+                # redirect to last screen
+                return $Self->_PopupResponse(
+                    Redirect   => 1,
+                    Screen     => $LastScreen,
+                    ConfigJSON => $TransitionConfig,
+                );
+            }
+        }
+
+    }
+
+    # ------------------------------------------------------------ #
+    # Close popup
+    # ------------------------------------------------------------ #
+    elsif ( $Self->{Subaction} eq 'ClosePopup' ) {
+
+        # close the popup
+        return $Self->_PopupResponse(
+            ClosePopup => 1,
+            ConfigJSON => '',
+        );
+    }
+
+    # ------------------------------------------------------------ #
+    # Error
+    # ------------------------------------------------------------ #
+    else {
+        return $LayoutObject->ErrorScreen(
+            Message => Translatable('This subaction is not valid'),
+        );
+    }
+}
+
+sub _GetTransitionConfig {
+    my ( $Self, %Param ) = @_;
+
+    # Get new Transition Config as JSON
+    my $ProcessDump = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process')->ProcessDump(
+        ResultType => 'HASH',
+        UserID     => $Self->{UserID},
+    );
+
+    my %TransitionConfig;
+    $TransitionConfig{Transition} = ();
+    $TransitionConfig{Transition}->{ $Param{EntityID} } = $ProcessDump->{Transition}->{ $Param{EntityID} };
+
+    return \%TransitionConfig;
+}
+
+sub _ShowEdit {
+    my ( $Self, %Param ) = @_;
+
+    # get Transition information
+    my $TransitionData = $Param{TransitionData} || {};
+
+    my $LayoutObject     = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $TransitionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Transition');
+
+    # check if last screen action is main screen
+    if ( $Self->{ScreensPath}->[-1]->{Action} eq 'AdminProcessManagement' ) {
+
+        # show close popup link
+        $LayoutObject->Block(
+            Name => 'ClosePopup',
+            Data => {},
+        );
+    }
+    else {
+
+        # show go back link
+        $LayoutObject->Block(
+            Name => 'GoBack',
+            Data => {
+                Action          => $Self->{ScreensPath}->[-1]->{Action}          || '',
+                Subaction       => $Self->{ScreensPath}->[-1]->{Subaction}       || '',
+                ID              => $Self->{ScreensPath}->[-1]->{ID}              || '',
+                EntityID        => $Self->{ScreensPath}->[-1]->{EntityID}        || '',
+                ProcessEntityID => $Self->{ScreensPath}->[-1]->{ProcessEntityID} || '',
+                StartActivityID => $Self->{ScreensPath}->[-1]->{StartActivityID} || '',
+            },
+        );
+    }
+
+    if ( defined $Param{Action} && $Param{Action} eq 'Edit' ) {
+        $Param{Title} = $LayoutObject->{LanguageObject}->Translate(
+            'Edit Transition "%s"',
+            $TransitionData->{Name}
+        );
+    }
+    else {
+        $Param{Title} = Translatable('Create New Transition');
+        $TransitionData->{Global} = 0;
+    }
+
+    # get available namespaces
+    my @ProcessNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'ProcessManagement',
+    );
+
+    # create namespace selection
+    if (@ProcessNamespaces) {
+        my $NamespaceSelectionHTML = $LayoutObject->BuildSelection(
+            Data         => \@ProcessNamespaces,
+            Name         => 'Namespace',
+            ID           => 'Namespace',
+            SelectedID   => $TransitionData->{Namespace} || '',
+            Sort         => 'AlphanumericKey',
+            Translation  => 0,
+            PossibleNone => 1,
+            Class        => 'Modernize',
+        );
+
+        $LayoutObject->Block(
+            Name => 'NamespaceSelection',
+            Data => {
+                NamespaceSelectionHTML => $NamespaceSelectionHTML,
+            },
+        );
+    }
+
+    my $Output = $LayoutObject->Header(
+        Value => $Param{Title},
+        Type  => 'Small',
+    );
+
+    $Param{FreshConditionLinking} = $LayoutObject->BuildSelection(
+        Data => {
+            'and' => Translatable('and'),
+            'or'  => Translatable('or'),
+            'xor' => Translatable('xor')
+        },
+        Name        => "ConditionLinking[_INDEX_]",
+        Sort        => 'AlphanumericKey',
+        Translation => 1,
+        Class       => 'W20pc Modernize',
+    );
+
+    $Param{FreshConditionFieldType} = $LayoutObject->BuildSelection(
+        Data => {
+            'String'    => Translatable('Exact match'),
+            'AllString' => Translatable('Exact match - all'),
+            'NotString' => Translatable('Exact match - negated'),
+            'Regexp'    => Translatable('Regular expression'),
+            'AllRegexp' => Translatable('Regular expression - all'),
+            'NotRegexp' => Translatable('Regular expression - negated'),
+            'Module'    => Translatable('Transition validation module'),
+        },
+        SelectedID   => 'String',
+        Name         => "ConditionFieldType[_INDEX_][_FIELDINDEX_]",
+        Sort         => 'AlphanumericValue',
+        PossibleNone => 1,
+        Class        => 'Validate_Required Modernize',
+        Translation  => 1,
+    );
+
+    if ( defined $Param{Action} && $Param{Action} eq 'Edit' ) {
+
+        $Param{OverallConditionLinking} = $LayoutObject->BuildSelection(
+            Data => {
+                'and' => Translatable('and'),
+                'or'  => Translatable('or'),
+                'xor' => Translatable('xor')
+            },
+            Name        => 'OverallConditionLinking',
+            ID          => 'OverallConditionLinking',
+            Sort        => 'AlphanumericKey',
+            Translation => 1,
+            Class       => 'W20pc Modernize',
+            SelectedID  => $TransitionData->{Config}->{ConditionLinking},
+        );
+
+        my @Conditions = sort { ( $a =~ m/^(\d+)/ )[0] <=> ( $b =~ m/^(\d+)/ )[0] }
+            keys %{ $TransitionData->{Config}->{Condition} };
+
+        for my $Condition (@Conditions) {
+
+            my %ConditionData = %{ $TransitionData->{Config}->{Condition}->{$Condition} };
+
+            my $ConditionLinking = $LayoutObject->BuildSelection(
+                Data => {
+                    'and' => Translatable('and'),
+                    'or'  => Translatable('or'),
+                    'xor' => Translatable('xor')
+                },
+                Name        => "ConditionLinking[$Condition]",
+                Sort        => 'AlphanumericKey',
+                Translation => 1,
+                Class       => 'W20pc Modernize',
+                SelectedID  => $ConditionData{Type},
+            );
+
+            $LayoutObject->Block(
+                Name => 'ConditionItemEditRow',
+                Data => {
+                    ConditionLinking => $ConditionLinking,
+                    Index            => $Condition,
+                },
+            );
+
+            my @Fields = sort keys %{ $ConditionData{Fields} };
+            for my $Field (@Fields) {
+
+                my %FieldData          = %{ $ConditionData{Fields}->{$Field} };
+                my $ConditionFieldType = $LayoutObject->BuildSelection(
+                    Data => {
+                        'String'    => Translatable('Exact match'),
+                        'AllString' => Translatable('Exact match - all'),
+                        'NotString' => Translatable('Exact match - negated'),
+                        'Regexp'    => Translatable('Regular expression'),
+                        'AllRegexp' => Translatable('Regular expression - all'),
+                        'NotRegexp' => Translatable('Regular expression - negated'),
+                        'Module'    => Translatable('Transition validation module'),
+                    },
+                    Name         => "ConditionFieldType[$Condition][$Field]",
+                    Sort         => 'AlphanumericValue',
+                    Translation  => 1,
+                    PossibleNone => 1,
+                    Class        => 'Validate_Required Modernize',
+                    SelectedID   => $FieldData{Type},
+                );
+
+                # show fields
+                $LayoutObject->Block(
+                    Name => "ConditionItemEditRowField",
+                    Data => {
+                        Index              => $Condition,
+                        FieldIndex         => $Field,
+                        ConditionFieldType => $ConditionFieldType,
+                        %FieldData,
+                    },
+                );
+            }
+        }
+
+        # display other affected processes by editing this activity (if applicable)
+        my $AffectedProcesses = $TransitionObject->TransitionUsage(
+            EntityID => $TransitionData->{EntityID},
+        );
+
+        if ( values %{$AffectedProcesses} ) {
+
+            $LayoutObject->Block(
+                Name => 'EditWarning',
+                Data => {
+                    ProcessList => join( ', ', values %{$AffectedProcesses} ),
+                }
+            );
+        }
+    }
+    else {
+
+        $Param{OverallConditionLinking} = $LayoutObject->BuildSelection(
+            Data => {
+                'and' => Translatable('and'),
+                'or'  => Translatable('or'),
+                'xor' => Translatable('xor')
+            },
+            Name        => 'OverallConditionLinking',
+            ID          => 'OverallConditionLinking',
+            Sort        => 'AlphanumericKey',
+            Translation => 1,
+            Class       => 'W20pc Modernize',
+        );
+
+        $Param{ConditionLinking} = $LayoutObject->BuildSelection(
+            Data => {
+                'and' => Translatable('and'),
+                'or'  => Translatable('or'),
+                'xor' => Translatable('xor')
+            },
+            Name        => 'ConditionLinking[_INDEX_]',
+            Sort        => 'AlphanumericKey',
+            Translation => 1,
+            Class       => 'W20pc Modernize',
+        );
+
+        $Param{ConditionFieldType} = $LayoutObject->BuildSelection(
+            Data => {
+                'String'    => Translatable('Exact match'),
+                'AllString' => Translatable('Exact match - all'),
+                'NotString' => Translatable('Exact match - negated'),
+                'Regexp'    => Translatable('Regular expression'),
+                'AllRegexp' => Translatable('Regular expression - all'),
+                'NotRegexp' => Translatable('Regular expression - negated'),
+                'Module'    => Translatable('Transition validation module'),
+            },
+            Name        => 'ConditionFieldType[_INDEX_][_FIELDINDEX_]',
+            Sort        => 'AlphanumericValue',
+            Class       => 'Modernize',
+            Translation => 1,
+        );
+
+        $LayoutObject->Block(
+            Name => 'ConditionItemInitRow',
+            Data => {
+                %Param,
+            },
+        );
+    }
+
+    $Output .= $LayoutObject->Output(
+        TemplateFile => "AdminProcessManagementTransition",
+        Data         => {
+            %Param,
+            %{$TransitionData},
+            ProcessEntityID => $Param{ProcessEntityID},
+        },
+    );
+
+    $Output .= $LayoutObject->Footer();
+
+    return $Output;
+}
+
+sub _GetParams {
+    my ( $Self, %Param ) = @_;
+
+    my $GetParam;
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    # get parameters from web browser
+    for my $ParamName (
+        qw( Name Namespace ConditionConfig Global )
+        )
+    {
+        $GetParam->{$ParamName} = $ParamObject->GetParam( Param => $ParamName ) || '';
+    }
+
+    my $Config = $Kernel::OM->Get('Kernel::System::JSON')->Decode(
+        Data => $GetParam->{ConditionConfig}
+    );
+    $GetParam->{Config}                     = {};
+    $GetParam->{Config}->{Condition}        = $Config;
+    $GetParam->{Config}->{ConditionLinking} = $ParamObject->GetParam( Param => 'OverallConditionLinking' ) || '';
+
+    return $GetParam;
+}
+
+sub _PopSessionScreen {
+    my ( $Self, %Param ) = @_;
+
+    my $LastScreen;
+
+    if ( defined $Param{OnlyCurrent} && $Param{OnlyCurrent} == 1 ) {
+
+        # check if last screen action is current screen action
+        if ( $Self->{ScreensPath}->[-1]->{Action} eq $Self->{Action} ) {
+
+            # remove last screen
+            $LastScreen = pop @{ $Self->{ScreensPath} };
+        }
+    }
+    else {
+
+        # remove last screen
+        $LastScreen = pop @{ $Self->{ScreensPath} };
+    }
+
+    # convert screens path to string (JSON)
+    my $JSONScreensPath = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->JSONEncode(
+        Data => $Self->{ScreensPath},
+    );
+
+    # update session
+    $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+        SessionID => $Self->{SessionID},
+        Key       => 'ProcessManagementScreensPath',
+        Value     => $JSONScreensPath,
+    );
+
+    return $LastScreen;
+}
+
+sub _PushSessionScreen {
+    my ( $Self, %Param ) = @_;
+
+    # add screen to the screen path
+    push @{ $Self->{ScreensPath} }, {
+        Action          => $Self->{Action} || '',
+        Subaction       => $Param{Subaction},
+        ID              => $Param{ID},
+        EntityID        => $Param{EntityID},
+        ProcessEntityID => $Param{ProcessEntityID},
+    };
+
+    # convert screens path to string (JSON)
+    my $JSONScreensPath = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->JSONEncode(
+        Data => $Self->{ScreensPath},
+    );
+
+    # update session
+    $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+        SessionID => $Self->{SessionID},
+        Key       => 'ProcessManagementScreensPath',
+        Value     => $JSONScreensPath,
+    );
+
+    return 1;
+}
+
+sub _PopupResponse {
+    my ( $Self, %Param ) = @_;
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    if ( $Param{Redirect} && $Param{Redirect} eq 1 ) {
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'Redirect',
+            Value => {
+                ConfigJSON => $Param{ConfigJSON},
+                %{ $Param{Screen} },
+            }
+        );
+    }
+    elsif ( $Param{ClosePopup} && $Param{ClosePopup} eq 1 ) {
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'ClosePopup',
+            Value => {
+                ConfigJSON => $Param{ConfigJSON},
+            }
+        );
+    }
+
+    my $Output = $LayoutObject->Header( Type => 'Small' );
+    $Output .= $LayoutObject->Output(
+        TemplateFile => "AdminProcessManagementPopupResponse",
+        Data         => {},
+    );
+    $Output .= $LayoutObject->Footer( Type => 'Small' );
+
+    return $Output;
+}
+
+1;

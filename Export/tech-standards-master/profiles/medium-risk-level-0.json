@@ -1,0 +1,115 @@
+{
+  "profile": {
+    "uuid": "ae80675f-94e8-4dc2-9839-9e48fc5a4e8a",
+    "metadata": {
+      "title": "Medium-Risk - Level 0",
+      "last-modified": "2025-05-13T18:00:00+08:00",
+      "version": "2025.05.13",
+      "oscal-version": "1.1.2",
+      "props": [
+        {
+          "name": "label",
+          "value": "medium-risk-level-0"
+        },
+        {
+          "name": "risk",
+          "value": "medium-risk"
+        },
+        {
+          "name": "level",
+          "value": "0"
+        }
+      ],
+      "roles": [
+        {
+          "id": "creator",
+          "title": "Creator"
+        },
+        {
+          "id": "contact",
+          "title": "Contact"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "d42526af-0b2b-4b27-82b3-2a2f24db5f07",
+          "type": "organization",
+          "name": "IM8-reform Medium Risk Working Group",
+          "email-addresses": [
+            "kevin_kb_ng@tech.gov.sg",
+            "hunter_nield@tech.gov.sg",
+            "goh_sheen_an@tech.gov.sg",
+            "alex_ng@tech.gov.sg",
+            "nitya@open.gov.sg",
+            "andy_hh_chua@tech.gov.sg",
+            "nicholas_tan_from.persolkelly@tech.gov.sg",
+            "ivan_leong@htx.gov.sg",
+            "samuel_huang@tech.gov.sg",
+            "eileen_goh@tech.gov.sg",
+            "eugene_lim@tech.gov.sg"
+          ]
+        }
+      ],
+      "responsible-parties": [
+        {
+          "role-id": "creator",
+          "party-uuids": [
+            "d42526af-0b2b-4b27-82b3-2a2f24db5f07"
+          ]
+        },
+        {
+          "role-id": "contact",
+          "party-uuids": [
+            "d42526af-0b2b-4b27-82b3-2a2f24db5f07"
+          ]
+        }
+      ],
+      "remarks": "The Level 0 baseline includes controls that provide central oversight of systems' security. Agencies cannot deviate from controls in this baseline."
+    },
+    "imports": [
+      {
+        "href": "trestle://catalogs/im8-reform.json",
+        "include-controls": [
+          {
+            "with-ids": [
+              "ac-2",
+              "ac-3",
+              "ac-5",
+              "ac-6",
+              "as-1",
+              "as-3",
+              "as-7",
+              "as-8",
+              "br-1",
+              "dp-1",
+              "ns-1",
+              "ns-5",
+              "pm-3",
+              "pm-4",
+              "pm-5",
+              "is-11",
+              "is-14",
+              "lm-3",
+              "lm-4",
+              "lm-6",
+              "lm-9",
+              "lm-12",
+              "sd-8",
+              "st-1",
+              "st-3",
+              "st-4"
+            ]
+          }
+        ]
+      }
+    ],
+    "merge": {
+      "combine": {
+        "method": "merge"
+      },
+      "as-is": true
+    },
+    "modify": {
+    }
+  }
+}

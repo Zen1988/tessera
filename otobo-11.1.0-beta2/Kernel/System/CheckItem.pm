@@ -1,0 +1,631 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+package Kernel::System::CheckItem;
+
+use strict;
+use warnings;
+
+# core modules
+
+# CPAN modules
+use Email::Valid                  ();
+use Kernel::System::VariableCheck qw(:all);
+
+# OTOBO modules
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+);
+
+=for stopwords validator
+
+=head1 NAME
+
+Kernel::System::CheckItem - check items
+
+=head1 DESCRIPTION
+
+All item check functions.
+
+=head1 PUBLIC INTERFACE
+
+=head2 new()
+
+Don't use the constructor directly, use the ObjectManager instead:
+
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+=cut
+
+sub new {
+    my ($Type) = @_;
+
+    my $Validators = {
+
+        # validate a string
+        string => sub {
+            my (%Param) = @_;
+
+            my $Key   = $Param{Key};
+            my $Value = $Param{Value};
+
+            my $CheckResult = Kernel::System::VariableCheck::IsString($Value);
+            if ( !$CheckResult ) {
+
+                my $ErrorMsg = "Invalid value for Parameter $Key', not a string.";
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $ErrorMsg,
+                );
+
+                return {
+                    Success => 0,
+                    Error   => $ErrorMsg,
+                };
+            }
+            return {
+                Success => 1,
+                Value   => $Value,
+            };
+        },
+
+        # validate a number
+        number => sub {
+            my (%Param) = @_;
+
+            my $Key   = $Param{Key};
+            my $Value = $Param{Value};
+
+            my $CheckResult = Kernel::System::VariableCheck::IsNumber($Value);
+            if ( !$CheckResult ) {
+
+                my $ErrorMsg = "Invalid value for Parameter $Key', not a number.";
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $ErrorMsg,
+                );
+
+                return {
+                    Success => 0,
+                    Error   => $ErrorMsg,
+                };
+            }
+            return {
+                Success => 1,
+                Value   => $Value,
+            };
+        },
+
+        # validate an integer
+        integer => sub {
+            my (%Param) = @_;
+
+            my $Key   = $Param{Key};
+            my $Value = $Param{Value};
+
+            my $CheckResult = Kernel::System::VariableCheck::IsInteger($Value);
+            if ( !$CheckResult ) {
+
+                my $ErrorMsg = "Invalid value for Parameter $Key', not an integer.";
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $ErrorMsg,
+                );
+
+                return {
+                    Success => 0,
+                    Error   => $ErrorMsg,
+                };
+            }
+            return {
+                Success => 1,
+                Value   => $Value,
+            };
+        },
+
+        # validate a positive integer
+        positive_integer => sub {
+            my (%Param) = @_;
+
+            my $Key   = $Param{Key};
+            my $Value = $Param{Value};
+
+            my $CheckResult = Kernel::System::VariableCheck::IsPositiveInteger($Value);
+            if ( !$CheckResult ) {
+
+                my $ErrorMsg = "Invalid value for Parameter $Key', not a positive integer.";
+
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $ErrorMsg,
+                );
+
+                return {
+                    Success => 0,
+                    Error   => $ErrorMsg,
+                };
+            }
+
+            return {
+                Success => 1,
+                Value   => $Value,
+            };
+        },
+
+        # do no validation at all
+        anything => sub {
+            my (%Param) = @_;
+
+            my $Value = $Param{Value};
+
+            return {
+                Success => 1,
+                Value   => $Value,
+            };
+        },
+    };
+
+    my $StandardParameters = {
+
+        QueueID => {
+            Check => 'positive_integer',
+
+            # Default => 1
+            # Default => -1  # not defining an default will make it throw
+        },
+        TicketID => {
+            Check => 'positive_integer',
+
+            #Default => 1
+        },
+        ArticleID => {
+            Check => 'positive_integer',
+        },
+
+    };
+
+    return bless {
+        Error              => undef,                 # only used in CheckEmail()
+        ErrorType          => undef,                 # only used in CheckEmail()
+        Validators         => $Validators,
+        StandardParameters => $StandardParameters,
+    }, $Type;
+}
+
+=head2 CheckError()
+
+gets the error from the last execution of  F<CheckEmail()>
+
+    my $Error = $CheckItemObject->CheckError();
+
+=cut
+
+sub CheckError {
+    my $Self = shift;
+
+    return $Self->{Error};
+}
+
+=head2 CheckErrorType()
+
+gets the error type from the last execution of  F<CheckEmail()>
+
+    my $ErrorType = $CheckItemObject->CheckErrorType();
+
+=cut
+
+sub CheckErrorType {
+    my $Self = shift;
+
+    return $Self->{ErrorType};
+}
+
+=head2 CheckEmail()
+
+checks the address using Email::Valid. Depending on the SysConfig setting I<CheckMXRecord>
+check the mail exchange record.
+
+Returns true if check was successful, if it's false, get the error message
+from CheckError()
+
+    my $Valid = $CheckItemObject->CheckEmail(
+        Address => 'info@example.com',
+    );
+
+The methods also accepts an instance of Email::Address::XS. In this case only the bare address is checked.
+
+    my $AddressObject = Email::Address::XS->new(
+        'August Ausprobierer',
+        'gustl@testanything.org'
+    );
+
+    my $Valid = $CheckItemObject->CheckEmail(
+        AddressObject => $AddressObject,
+    );
+
+No cleanup of the address is done.
+
+The error message and the error type can be retrieved with F<CheckError()> and F<ErrorType()>.
+
+=cut
+
+sub CheckEmail {
+    my ( $Self, %Param ) = @_;
+
+    # reset error that was possibly set in the last call to CheckEmail()
+    undef $Self->{Error};
+    undef $Self->{ErrorType};
+
+    # check needed stuff, existence is used here as Email::Address::XS overrides stringification and boolification
+    if ( ( !exists $Param{Address} ) && ( !exists $Param{AddressObject} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need either Address or AddressObject!'
+        );
+
+        return;
+    }
+    if ( ( exists $Param{Address} ) && ( exists $Param{AddressObject} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need only one of Address or AddressObject!'
+        );
+
+        return;
+    }
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # check if it's to do
+    return 1 unless $ConfigObject->Get('CheckEmailAddresses');
+
+    # Traditionally this check is only looking a the bare address
+    my $Address = exists $Param{Address} ? $Param{Address} : $Param{AddressObject}->address;
+
+    # exempt some addresses from further checks
+    my $RegExp = $ConfigObject->Get('CheckEmailValidAddress');
+
+    return 1 if ( $RegExp && ( $Address // '' ) =~ /$RegExp/i );
+
+    my $Error = '';
+
+    # Workaround for https://github.com/Perl-Email-Project/Email-Valid/issues/36:
+    # remove comment from address when checking.
+    if ( $Param{Address} ) {
+        $Address =~ s{ \s* \( [^()]* \) \s* $ }{}smxg;
+    }
+
+    # email address syntax check
+    #
+    # The address, e.g. q{Philipp Weber <p.weber@air.com> (Philipp)}. must exist.
+    # The address part must conform to RFC822, checked with a regexp.
+    # The address must be parsable by Mail::Address.
+    # The address part, e.g. q{p.weber@air.com}, may be up to 254 characters long.
+    # The user part, e.g. q{p.weber}, may be up to 64 characters long.
+    # Domain literals, like in peter@[10.11.12.13], are allowed.
+    # When the host part is not a domain literal, e.g. q{air.com}, then it must be a fully qualified domain name.
+    if ( !Email::Valid->address($Address) ) {
+        $Error = 'Invalid syntax';
+        $Self->{ErrorType} = 'InvalidSyntax';
+    }
+
+    # period (".") may not be used to end the local part,
+    # nor may two or more consecutive periods appear
+    elsif ( $Address =~ /(\.\.)|(\.@)/ ) {
+        $Error = 'Invalid syntax';
+        $Self->{ErrorType} = 'InvalidSyntax';
+    }
+
+    # mx check
+    elsif (
+        $ConfigObject->Get('CheckMXRecord')
+        && eval { require Net::DNS }
+        )
+    {
+
+        # get host
+        # TODO: use the Mail::Address object returned from Email::Valid
+        my $Host = $Address;
+        $Host =~ s/^.*@(.*)$/$1/;
+        $Host =~ s/\s+//g;
+        $Host =~ s/(^\[)|(\]$)//g;
+
+        # do dns query
+        my $Resolver = Net::DNS::Resolver->new();
+        if ($Resolver) {
+
+            # it's no fun to have this hanging in the web interface
+            $Resolver->tcp_timeout(3);
+            $Resolver->udp_timeout(3);
+
+            # check if we need to use a specific name server
+            my $Nameserver = $ConfigObject->Get('CheckMXRecord::Nameserver');
+            if ($Nameserver) {
+                $Resolver->nameservers($Nameserver);
+            }
+
+            # A-record lookup to verify proper DNS setup
+            my $Packet = $Resolver->send( $Host, 'A' );
+            if ( !$Packet ) {
+                $Self->{ErrorType} = 'InvalidDNS';
+                $Error = "DNS problem: " . $Resolver->errorstring();
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $Error,
+                );
+            }
+
+            else {
+                # RFC 5321: first check MX record and fallback to A record if present.
+                # mx record lookup
+                my @MXRecords = Net::DNS::mx( $Resolver, $Host );
+
+                if ( !@MXRecords ) {
+
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'debug',
+                        Message  =>
+                            "$Host has no mail exchanger (MX) defined, trying A resource record instead.",
+                    );
+
+                    # see if our previous A-record lookup returned a RR
+                    if ( scalar $Packet->answer() eq 0 ) {
+
+                        $Self->{ErrorType} = 'InvalidMX';
+                        $Error = "$Host has no mail exchanger (MX) or A resource record defined.";
+
+                        $Kernel::OM->Get('Kernel::System::Log')->Log(
+                            Priority => 'debug',
+                            Message  => $Error,
+                        );
+                    }
+                }
+            }
+        }
+    }
+    elsif ( $ConfigObject->Get('CheckMXRecord') ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't load Net::DNS, no mx lookups possible",
+        );
+    }
+
+    # check address
+    if ( !$Error ) {
+
+        # check special stuff
+        my $RegExp = $ConfigObject->Get('CheckEmailInvalidAddress');
+        if ( $RegExp && $Address =~ m/$RegExp/i ) {
+            $Self->{Error}     = "invalid $Address (config)!";
+            $Self->{ErrorType} = 'InvalidConfig';
+
+            return;
+        }
+
+        return 1;
+    }
+    else {
+
+        # remember error
+        $Self->{Error} = "invalid $Address ($Error)! ";
+
+        return;
+    }
+}
+
+=head2 StringClean()
+
+clean a given string. Per default left and right white space is trimmed.
+The exact way how white space is handled can be specified by the options.
+
+    my $StringRef = $CheckItemObject->StringClean(
+        StringRef         => \'String',
+        TrimLeft          => 0,  # (optional) default 1
+        TrimRight         => 0,  # (optional) default 1
+        RemoveAllNewlines => 1,  # (optional) default 0
+        RemoveAllTabs     => 1,  # (optional) default 0
+        RemoveAllSpaces   => 1,  # (optional) default 0
+    );
+
+Note that the options C<TrimLeft> and C<TrimRight> also remove non-ASCII whitespace
+like C<U+03000 IDEOGRAPHIC SPACE>. The other options only remove the characters
+that are in the ASCII range.
+
+=cut
+
+sub StringClean {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{StringRef} || ref $Param{StringRef} ne 'SCALAR' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need a scalar reference!'
+        );
+        return;
+    }
+
+    return $Param{StringRef} if !defined ${ $Param{StringRef} };
+    return $Param{StringRef} if ${ $Param{StringRef} } eq '';
+
+    # check for invalid utf8 characters and remove invalid strings
+    if ( !utf8::valid( ${ $Param{StringRef} } ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Removed string containing invalid utf8: '${ $Param{StringRef} }'!",
+        );
+        ${ $Param{StringRef} } = '';
+        return;
+    }
+
+    # set default values
+    $Param{TrimLeft}  //= 1;
+    $Param{TrimRight} //= 1;
+
+    my %TrimAction = (
+        RemoveAllNewlines => qr{ [\n\r\f] }xms,
+        RemoveAllTabs     => qr{ \t       }xms,
+        RemoveAllSpaces   => qr{ [ ]      }xms,
+        TrimLeft          => qr{ \A \s+   }xms,
+        TrimRight         => qr{ \s+ \z   }xms,
+    );
+
+    ACTION:
+    for my $Action ( sort keys %TrimAction ) {
+        next ACTION unless $Param{$Action};
+
+        ${ $Param{StringRef} } =~ s{ $TrimAction{$Action} }{}xmsg;
+    }
+
+    return $Param{StringRef};
+}
+
+=head2 Validate()
+
+Validate incoming request parameters. This is used from K/S/W/Request.pm.
+
+    my $Result = $CheckItemObject->Validate(
+        Key       => $Key,                 # web request param name
+        Value     => $Value,               # the Value as provided by Plack::Request
+        Validator => $Validator            # (Optional) which validation strategy to apply,
+
+    );
+
+The validator is one of:
+
+=over 4
+
+=item predefined rules like 'positive_integer' or 'anything'
+
+These rules are defined in C<Kernel::System::CheckItem>
+
+=item a regex like C<qr{\d px}>
+
+This checks whether the value matches the regex.
+
+=item an anonymous subroutine
+
+The subroutine is expected to take the parameters C<Key> and C<Value> and to return a result like given below.
+
+=back
+
+The validation result is reported as a hashref:
+
+    $Result = {
+        Success => 0|1,
+        Error   => 'Some Message',         # if Success == 0
+        Value   => validate value          # if Success == 1
+    }
+
+Validators may return a different value as was given as input.
+
+=cut
+
+sub Validate {
+    my ( $Self, %Param ) = @_;
+
+    my $Validator = $Param{Validator};
+
+    return $Self->ValidateRegex(%Param) if ref $Validator eq 'Regexp';
+
+    my $ValidationSub;
+    if ( ref $Validator eq 'CODE' ) {
+        $ValidationSub = $Validator;
+    }
+    else {
+        $ValidationSub = $Self->{Validators}->{$Validator};
+    }
+
+    return {
+        Success => 0,
+        Error   => "Invalid Validator, Validator sub '$Validator' does not exist .",
+    } unless $ValidationSub;
+
+    # This allows to pass any parameters to the validator. This has up- and downsides.
+    return $ValidationSub->(%Param);
+}
+
+=head2 ValidateRegex()
+
+Validate incoming request parameters against a regex.
+
+    my $Value = $CheckItemObject->ValidateRegex(
+        Key       => $Key,                 # web request param name
+        Value     => $Value,               # the Value as provided by Plack::Request
+        Validator => $Validator            # a regex specified as qr/^MatchMe$/
+    );
+
+returns the validated value if validation has passed, otherwise returns
+the default value if specified, or throws an exception.
+
+=cut
+
+sub ValidateRegex {
+
+    my ( $Self, %Param ) = @_;
+
+    my $Key   = $Param{Key};
+    my $Value = $Param{Value} // '';
+    my $RegEx = $Param{Validator};
+
+    my $CheckResult = $Value =~ m/$RegEx/;    # make it anchored by default, eg surround with ^..$ ?
+    if ( !$CheckResult ) {
+
+        my $ErrorMsg = "Invalid value for Parameter $Key', does not match regex.";
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $ErrorMsg,
+        );
+
+        return {
+            Success => 0,
+            Error   => $ErrorMsg,
+        };
+    }
+
+    return {
+        Success => 1,
+        Value   => $Value,
+    };
+}
+
+=head2 GetDefaultValidator()
+
+Get default validator for given known Web Request parameter (e.g. TicketID).
+
+    my $Validator = $CheckItemObject->GetDefaultValidator(
+        Key       => $Key,                 # web request param name
+    );
+
+=cut
+
+sub GetDefaultValidator {
+
+    my ( $Self, %Param ) = @_;
+
+    my $Key = $Param{Key};
+
+    return $Self->{StandardParameters}->{$Key};
+}
+
+1;

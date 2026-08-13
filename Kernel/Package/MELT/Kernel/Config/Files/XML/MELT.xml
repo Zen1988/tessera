@@ -482,6 +482,14 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="Frontend::Module###AgentMELTObjectWorkbook" Required="0" Valid="1">
+        <Description Translatable="1">Preview-first MELTObject XLSX import and export.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>melt</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>melt</Item><Item>admin</Item></Array></Item><Item Key="Description">MELTObject Excel import and export.</Item><Item Key="Title">MELTObject Excel Import/Export</Item><Item Key="NavBarName">MELT</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentMELTObjectWorkbook###003-MELT" Required="0" Valid="1">
+        <Description Translatable="1">Loader for MELTObject XLSX.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.MELTObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array><Item>thirdparty/melt-sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.MELTObject.Workbook.js</Item></Array></Item></Hash></Value>
+    </Setting>
     <Setting Name="Frontend::Module###AgentMELTObjectDocument" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for MELT Object YAML/JSON import and export.</Description>
         <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
@@ -1057,6 +1065,10 @@
     </Setting>
 
     <!-- event settings -->
+    <Setting Name="Frontend::Module###AgentMELTObjectActivity" Required="0" Valid="1"><Description Translatable="1">MELT activity articles.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation><Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>melt</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>melt</Item><Item>admin</Item></Array></Item><Item Key="Description">MELT activity articles.</Item><Item Key="Title">MELT Activity Articles</Item><Item Key="NavBarName">MELT</Item></Hash></Item></Value></Setting>
+    <Setting Name="MELTObject::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1"><Description Translatable="1">Shows MELT activity articles.</Description><Navigation>Frontend::Agent::MELTObject::MenuModule</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::MELTObject::MenuGeneric</Item><Item Key="Name">Activity Articles</Item><Item Key="Description">Every recorded activity</Item><Item Key="Action">AgentMELTObjectActivity</Item><Item Key="Link">Action=AgentMELTObjectActivity;MELTObjectID=[% Data.MELTObjectID | html %]</Item><Item Key="Target">PopUp</Item></Hash></Value></Setting>
+    <Setting Name="MELTObject::EventModulePost###110-TESSERAActivityArticles" Required="0" Valid="1"><Description Translatable="1">Records every MELT event as an immutable activity article.</Description><Navigation>Core::Event::MELTObject</Navigation><Value><Hash><Item Key="Module">Kernel::System::MELTObject::Event::ActivityRecorder</Item><Item Key="Event">(MELTObjectCreate|MELTObjectUpdate|VersionCreate|VersionUpdate|MELTObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|MELTObjectDynamicField.*)</Item><Item Key="Transaction">0</Item></Hash></Value></Setting>
+    <Setting Name="Loader::Module::AgentMELTObjectActivity###003-MELT" Required="0" Valid="1"><Description Translatable="1">Loader.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation><Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.Default.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value></Setting>
     <Setting Name="MELTObject::EventModulePost###100-History" Required="0" Valid="1">
         <Description Translatable="1">MELT Object event module that enables logging to history in the agent interface.</Description>
         <Navigation>Core::Event::MELTObject</Navigation>

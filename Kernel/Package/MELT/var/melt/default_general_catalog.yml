@@ -794,23 +794,33 @@ classes:
   items:
   - comment: ''
     name: Active
-    preferences: {}
+    preferences:
+      Functionality:
+      - productive
     valid: valid
   - comment: ''
     name: Approved
-    preferences: {}
+    preferences:
+      Functionality:
+      - productive
     valid: valid
   - comment: ''
     name: Draft
-    preferences: {}
+    preferences:
+      Functionality:
+      - preproductive
     valid: valid
   - comment: ''
     name: Retired
-    preferences: {}
+    preferences:
+      Functionality:
+      - postproductive
     valid: valid
   - comment: ''
     name: Review
-    preferences: {}
+    preferences:
+      Functionality:
+      - preproductive
     valid: valid
 - class: ZTSM::Type
   items:
