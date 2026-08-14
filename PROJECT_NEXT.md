@@ -821,8 +821,9 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
 
 - Add name-based `@GovernanceObject[Class][Name = "..."]`, `@ITSMConfigItem[Class][Name = "..."]`, and `@MELT[Class][Name = "..."]` root resolution.
 - Add walkable reference paths, including fixed traversal (`.Field.Field`) and cycle-safe recursive traversal (`..Field`) with explicit maximum depth.
-- Add `LET`, `STATIC`, and runtime variable support plus typed collections and `ALL` / `ANY` / `NONE` quantifiers.
-- Add calendar ranges, recurring schedules, named business calendars, and explicit timezone semantics.
+- Extend the implemented ticket-assignment `LET` syntax with local `STATIC`/runtime variables, typed collections, and `ALL` / `ANY` / `NONE` quantifiers.
+- Extend the implemented simple Control cycle frequencies with calendar ranges, named business calendars, calendar-exact month/year arithmetic, and explicit timezone semantics.
 - Add catalog-name-to-score mappings without exposing GeneralCatalog IDs in authored policy or evidence.
 - Add parser diagnostics with source line/column and authoring-time validation on ControlObjective save.
+- Add explicit conditional action blocks such as `IF FAIL THEN NEW @TICKET ... SUBMIT`; a Fail result alone must never create remediation work.
 - Add focused automated tests for temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.

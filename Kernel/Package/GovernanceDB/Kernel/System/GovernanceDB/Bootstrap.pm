@@ -129,6 +129,8 @@ sub InstallDefaults {
 
     $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
 
+    $Self->_ITSMControlDefaultsEnsure();
+
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
@@ -247,6 +249,16 @@ sub _DefinitionEnsure {
 
         return 1 if $Current eq $Wanted;
 
+        # Existing definitions may have been customized by the customer. Merge
+        # only missing packaged structure; existing values, order, and additions
+        # remain authoritative and are never replaced by a reinstall/upgrade.
+        my $Merged = $Self->_DefinitionMerge(
+            Current => $CurrentDefinition->{Definition} || '',
+            Wanted  => $Definition,
+        );
+        return 1 if !$Merged || $Self->_DefinitionNormalize($Merged) eq $Current;
+
+        $AddParam{Definition} = $Merged;
         $AddParam{Force} = 1;
     }
 
@@ -272,6 +284,63 @@ sub _DefinitionNormalize {
     $Definition =~ s{\s+\z}{}xms;
 
     return $Definition;
+}
+
+sub _DefinitionMerge {
+    my ( $Self, %Param ) = @_;
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+    my $Current = $YAMLObject->Load( Data => $Param{Current} );
+    my $Wanted  = $YAMLObject->Load( Data => $Param{Wanted} );
+    return if ref $Current ne 'HASH' || ref $Wanted ne 'HASH';
+    my $Merged = $Self->_StructureMerge( Current => $Current, Wanted => $Wanted );
+    return $YAMLObject->Dump( Data => $Merged );
+}
+
+sub _StructureMerge {
+    my ( $Self, %Param ) = @_;
+    my $Current = $Param{Current};
+    my $Wanted  = $Param{Wanted};
+
+    if ( ref $Current eq 'HASH' && ref $Wanted eq 'HASH' ) {
+        my %Merged = %{$Current};
+        for my $Key ( keys %{$Wanted} ) {
+            if ( !exists $Merged{$Key} ) { $Merged{$Key} = $Wanted->{$Key}; next }
+            $Merged{$Key} = $Self->_StructureMerge( Current => $Merged{$Key}, Wanted => $Wanted->{$Key} );
+        }
+        return \%Merged;
+    }
+    if ( ref $Current eq 'ARRAY' && ref $Wanted eq 'ARRAY' ) {
+        my @Merged = @{$Current};
+        WANTED:
+        for my $WantedItem ( @{$Wanted} ) {
+            my $Identity = $Self->_ArrayItemIdentity($WantedItem);
+            if ( defined $Identity ) {
+                for my $Index ( 0 .. $#Merged ) {
+                    next if ( $Self->_ArrayItemIdentity( $Merged[$Index] ) // '' ) ne $Identity;
+                    $Merged[$Index] = $Self->_StructureMerge( Current => $Merged[$Index], Wanted => $WantedItem );
+                    next WANTED;
+                }
+            }
+            else {
+                for my $Existing (@Merged) {
+                    next WANTED if !ref $Existing && !ref $WantedItem && defined $Existing
+                        && defined $WantedItem && $Existing eq $WantedItem;
+                }
+            }
+            push @Merged, $WantedItem;
+        }
+        return \@Merged;
+    }
+    return $Current;
+}
+
+sub _ArrayItemIdentity {
+    my ( $Self, $Item ) = @_;
+    return if ref $Item ne 'HASH';
+    for my $Key (qw(Name Section DF Header)) {
+        return "$Key=$Item->{$Key}" if defined $Item->{$Key} && !ref $Item->{$Key};
+    }
+    return;
 }
 
 sub _RuntimeOverlayInstall {
@@ -1185,6 +1254,77 @@ sub _DefaultsLoad {
     );
 }
 
+sub _ITSMControlDefaultsEnsure {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $File = "$Home/var/governancedb/default_control_configitem.json";
+    my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+        Location => $File,
+        Mode     => 'utf8',
+    );
+    return 1 if !$ContentRef;
+
+    my $JSON = $Kernel::OM->Get('Kernel::System::JSON');
+    my $Seed = $JSON->Decode( Data => ${$ContentRef} );
+    return if ref $Seed ne 'ARRAY';
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $ImportSeed = $JSON->Decode( Data => ${$ContentRef} );
+    my $Import = $ConfigItemObject->ClassImport(
+        Content     => $ImportSeed,
+        ClassExists => 'IGNORE',
+    );
+    if ( !$Import || !$Import->{Success} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'GovernanceDB could not ensure the ConfigItem Control model: '
+                . ( $Import->{ErrorMessage} || 'unknown import error' ),
+        );
+        return;
+    }
+
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %ClassID = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Class', Valid => 0 ) || {} };
+    my %RoleID  = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Role',  Valid => 0 ) || {} };
+    my $YAML = $Kernel::OM->Get('Kernel::System::YAML');
+
+    ITEM:
+    for my $Item ( @{$Seed} ) {
+        next ITEM if ref $Item ne 'HASH' || !defined $Item->{Definition};
+        my ( $ID, $Current, $Add );
+        if ( $Item->{RoleName} ) {
+            $ID = $RoleID{ $Item->{RoleName} } || next ITEM;
+            $Current = $ConfigItemObject->RoleDefinitionGet( RoleID => $ID ) || {};
+            $Add = sub { $ConfigItemObject->RoleDefinitionAdd( RoleID => $ID, Definition => $_[0], UserID => 1 ) };
+        }
+        elsif ( ref $Item->{Class} eq 'HASH' && $Item->{Class}{Name} ) {
+            $ID = $ClassID{ $Item->{Class}{Name} } || next ITEM;
+            $Current = $ConfigItemObject->DefinitionGet( ClassID => $ID ) || {};
+            $Add = sub { $ConfigItemObject->DefinitionAdd( ClassID => $ID, Definition => $_[0], UserID => 1 ) };
+        }
+        else {
+            next ITEM;
+        }
+
+        my $WantedRef  = $YAML->Load( Data => $Item->{Definition} ) || {};
+        my $CurrentRef = $YAML->Load( Data => $Current->{Definition} || '--- {}' ) || {};
+        my $Merged = $Self->_StructureMerge( Current => $CurrentRef, Wanted => $WantedRef );
+        next ITEM if $JSON->Encode( Data => $Merged ) eq $JSON->Encode( Data => $CurrentRef );
+
+        my $Result = $Add->( $YAML->Dump( Data => $Merged ) );
+        if ( !$Result || !$Result->{Success} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'GovernanceDB could not merge missing ConfigItem Control definition structure.',
+            );
+            return;
+        }
+    }
+
+    return 1;
+}
+
 sub _GeneralCatalogSeedEnsure {
     my ( $Self, %Param ) = @_;
 
@@ -1457,12 +1597,12 @@ sub _DynamicFieldsEnsure {
                 Config         => $Existing->{Config} || {},
                 AllowedClasses => \%AllowedClasses,
             );
-            my $NeedsClassIDRepair = $Self->_DynamicFieldClassIDsNeedRepair(
-                Config       => $Existing->{Config} || {},
-                WantedConfig => $Config,
+            my $MergedConfig = $Self->_StructureMerge(
+                Current => $CurrentConfig,
+                Wanted  => $Config,
             );
 
-            next FIELD if !$NeedsClassIDRepair && $Self->_DynamicFieldConfigEqual(
+            next FIELD if $Self->_DynamicFieldConfigEqual(
                 Left  => {
                     Name       => $Existing->{Name},
                     Label      => $Existing->{Label},
@@ -1471,22 +1611,22 @@ sub _DynamicFieldsEnsure {
                     Config     => $CurrentConfig,
                 },
                 Right => {
-                    Name       => $FieldName,
-                    Label      => $Label,
-                    FieldType  => $FieldType,
-                    ObjectType => 'GovernanceObject',
-                    Config     => $Config,
+                    Name       => $Existing->{Name},
+                    Label      => $Existing->{Label},
+                    FieldType  => $Existing->{FieldType},
+                    ObjectType => $Existing->{ObjectType},
+                    Config     => $MergedConfig,
                 },
             );
 
             $Self->_DynamicFieldUpdateForce(
                 ID          => $Existing->{ID},
-                Name        => $FieldName,
-                Label       => $Label,
+                Name        => $Existing->{Name},
+                Label       => $Existing->{Label},
                 FieldOrder  => $Existing->{FieldOrder},
-                FieldType   => $FieldType,
-                ObjectType  => 'GovernanceObject',
-                Config      => $Config,
+                FieldType   => $Existing->{FieldType},
+                ObjectType  => $Existing->{ObjectType},
+                Config      => $MergedConfig,
                 ValidID     => $Existing->{ValidID} || 1,
                 UserID      => 1,
                 Reorder     => 0,
@@ -1525,6 +1665,49 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     my @Fields = (
+        {
+            Name       => 'ZRM-Query',
+            Label      => 'Attestation Query',
+            FieldOrder => 530,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Attestation Query',
+            },
+        },
+        {
+            Name       => 'ZRM-Response',
+            Label      => 'Response',
+            FieldOrder => 531,
+            FieldType  => 'Text',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                RegExList    => [],
+                Tooltip      => 'Attestation Response',
+            },
+        },
+        {
+            Name       => 'Attestation',
+            Label      => 'Attestation',
+            FieldOrder => 532,
+            FieldType  => 'Set',
+            Config     => {
+                Include => [
+                    { DF => 'ZRM-Query' },
+                    { DF => 'ZRM-Response' },
+                ],
+                MultiValue   => 1,
+                RenderLayout => 'Vertical',
+                Tooltip      => undef,
+            },
+        },
         {
             Name       => 'ZTicket-HoldState',
             Label      => 'Requester Hold State',

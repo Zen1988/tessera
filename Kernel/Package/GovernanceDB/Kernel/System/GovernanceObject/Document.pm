@@ -238,6 +238,7 @@ sub Import {
         ClassID => $ClassID,
         Number  => $ObjectData{Number},
         Name    => $ObjectData{Name},
+        MatchByName => exists $Param{MatchByName} ? $Param{MatchByName} : 1,
     );
 
     if ($GovernanceObjectID) {
@@ -879,7 +880,7 @@ sub _ExistingObjectIDResolve {
         return $ID if $ID;
     }
 
-    return if !IsStringWithData( $Param{Name} );
+    return if !$Param{MatchByName} || !IsStringWithData( $Param{Name} );
 
     my @IDs = $GovernanceObjectObject->GovernanceObjectSearch(
         Result   => 'ARRAY',

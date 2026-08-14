@@ -18,6 +18,136 @@ sub new {
     return bless {}, $Type;
 }
 
+sub ProgramParse {
+    my ( $Self, %Param ) = @_;
+
+    my $Source = defined $Param{Source} ? $Param{Source} : '';
+    $Source =~ s{\r\n?}{\n}g;
+
+    my $Program = {
+        TicketRequested => $Source =~ m{(?:\A|\n)\s*(?:NEW\s+\@TICKET|CREATE\s+TICKET)\s*(?:\n|\z)}i ? 1 : 0,
+        SubmitRequested => $Source =~ m{(?:\A|\n)\s*SUBMIT\s*(?:\n|\z)}i ? 1 : 0,
+        Ticket          => {},
+        Assignments     => {},
+        Attestation     => [],
+        ExpectSource    => '',
+        PassResult      => 'Pass',
+        ElseResult      => 'Fail',
+    };
+
+    while ( $Source =~ m{(?:LET|SET)\s+\@TICKET\.([A-Za-z][A-Za-z0-9_-]*)\s*=\s*("(?:\\.|[^"])*"|[-+]?\d+(?:\.\d+)?|TRUE|FALSE|EMPTY)\s*;?}gis ) {
+        my ( $Field, $Literal ) = ( $1, $2 );
+        my $Value;
+        if ( $Literal =~ m{\A"(.*)"\z}s ) {
+            $Value = $1;
+            $Value =~ s{\\"}{"}g;
+            $Value =~ s{\\n}{\n}g;
+            $Value =~ s{\\\\}{\\}g;
+        }
+        elsif ( uc($Literal) eq 'TRUE' )  { $Value = 1; }
+        elsif ( uc($Literal) eq 'FALSE' ) { $Value = 0; }
+        elsif ( uc($Literal) eq 'EMPTY' ) { $Value = ''; }
+        else                              { $Value = 0 + $Literal; }
+        $Program->{Assignments}{$Field} = $Value;
+    }
+
+    for my $Declaration (
+        [ 'TITLE',         'Title' ],
+        [ 'QUEUE',         'Queue' ],
+        [ 'TYPE',          'Type' ],
+        [ 'STATE',         'State' ],
+        [ 'PRIORITY',      'Priority' ],
+        [ 'OWNER',         'Owner' ],
+        [ 'RESPONSIBLE',   'Responsible' ],
+        [ 'CUSTOMER USER', 'CustomerUser' ],
+    ) {
+        my ( $Keyword, $Key ) = @{$Declaration};
+        if ( $Source =~ m{(?:\A|\n)\s*\Q$Keyword\E\s+"((?:\\.|[^"])*)"\s*;?}i ) {
+            my $Value = $1;
+            $Value =~ s{\\"}{"}g;
+            $Value =~ s{\\n}{\n}g;
+            $Value =~ s{\\\\}{\\}g;
+            $Program->{Ticket}{$Key} = $Value;
+        }
+    }
+
+    if ( $Source =~ m{SET\s+\@TICKET\.Attestation\s*=\s*\[(.*?)\]\s*;?}is ) {
+        my $Rows = $1;
+        while ( $Rows =~ m{\{(.*?)\}}gs ) {
+            my %Row;
+            my $Body = $1;
+            while ( $Body =~ m{(?:\A|,)\s*(ZRM-(?:Query|Response))\s*=\s*"((?:\\.|[^"])*)"\s*}g ) {
+                my ( $Field, $Value ) = ( $1, $2 );
+                $Value =~ s{\\"}{"}g;
+                $Value =~ s{\\n}{\n}g;
+                $Value =~ s{\\\\}{\\}g;
+                $Row{$Field} = $Value;
+            }
+            push @{ $Program->{Attestation} }, \%Row if defined $Row{'ZRM-Query'};
+        }
+    }
+
+    # Positional declarations are accepted as a compact authoring form. They
+    # materialize into the same exported Attestation Dynamic Field Set.
+    while ( $Source =~ m{(?:LET|SET)\s+\@TICKET\.Attestation\[(\d+)\]\.(ZRM-(?:Query|Response))\s*=\s*"((?:\\.|[^"])*)"\s*;?}gis ) {
+        my ( $Index, $Field, $Value ) = ( $1, $2, $3 );
+        $Value =~ s{\\"}{"}g;
+        $Value =~ s{\\n}{\n}g;
+        $Value =~ s{\\\\}{\\}g;
+        $Program->{Attestation}->[$Index] ||= {};
+        $Program->{Attestation}->[$Index]{$Field} = $Value;
+    }
+
+    if ( $Source =~ m{(?:\A|\n)\s*EXPECT\s*:?[ \t]*\n(.*?)(?:\n\s*THEN\s+(PASS|FAIL|N/A)\b)(?:.*?\n\s*ELSE\s+(PASS|FAIL|N/A)\b)?}is ) {
+        my ( $Expect, $Pass, $Else ) = ( $1, $2, $3 );
+        $Expect =~ s{\A\s+|\s+\z}{}g;
+        $Program->{ExpectSource} = $Expect;
+        $Program->{PassResult}   = _ResultNormalize($Pass);
+        $Program->{ElseResult}   = _ResultNormalize( $Else || 'Fail' );
+    }
+
+    return {
+        Success => 0,
+        Error   => 'An attestation program requires a non-empty EXPECT block.',
+        Program => $Program,
+    } if @{ $Program->{Attestation} } && !$Program->{ExpectSource};
+
+    return {
+        Success => 0,
+        Error   => 'NEW @TICKET requires SUBMIT after its assignments.',
+        Program => $Program,
+    } if $Program->{TicketRequested} && !$Program->{SubmitRequested};
+
+    return { Success => 1, Program => $Program };
+}
+
+sub ProgramEvaluate {
+    my ( $Self, %Param ) = @_;
+
+    my $Parsed = $Param{Program};
+    $Parsed = $Self->ProgramParse( Source => $Param{Source} ) if ref $Parsed ne 'HASH';
+    return $Parsed if !$Parsed->{Success};
+
+    my $Program = $Parsed->{Program};
+    my $Evaluation = $Self->Evaluate(
+        Source  => $Program->{ExpectSource},
+        Label   => 'EXPECT',
+        Context => $Param{Context},
+    );
+    my $Result = $Evaluation->{Status} eq 'SATISFIED'
+        ? $Program->{PassResult}
+        : $Evaluation->{Status} eq 'NOT_SATISFIED'
+            ? $Program->{ElseResult}
+            : undef;
+
+    return {
+        Success    => defined $Result ? 1 : 0,
+        Result     => $Result,
+        Evaluation => $Evaluation,
+        Error      => defined $Result ? undef : 'EXPECT could not be evaluated; result remains UNKNOWN.',
+    };
+}
+
 sub Evaluate {
     my ( $Self, %Param ) = @_;
 
@@ -205,17 +335,34 @@ sub _Value {
         return { Known => 1, Value => $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch() };
     }
 
-    if ( $Expression =~ m{\A\@([A-Za-z][A-Za-z0-9]*)(?:\.([A-Za-z][A-Za-z0-9_-]*))\z} ) {
-        my ( $Root, $Field ) = ( uc $1, $2 );
+    if ( $Expression =~ m{\A\@([A-Za-z][A-Za-z0-9]*)(\..+)\z} ) {
+        my ( $Root, $Path ) = ( uc $1, $2 );
         my $Object = $Param{Context}->{$Root};
         return { Known => 0, Reason => "Object root \@$Root is unavailable." }
             if ref $Object ne 'HASH';
-        my $Key = exists $Object->{$Field} ? $Field : 'DynamicField_' . $Field;
-        return { Known => 0, Reason => "Field \@$Root.$Field is unavailable." }
-            if !exists $Object->{$Key};
-        my $Value = $Object->{$Key};
+
+        my $Value = $Object;
+        my @Segments = $Path =~ m{\.([A-Za-z][A-Za-z0-9_-]*)(?:\[(\d+)\])?}g;
+        # The regex capture list is flattened into field/index pairs.
+        while (@Segments) {
+            my $Field = shift @Segments;
+            my $Index = shift @Segments;
+            return { Known => 0, Reason => "Field path $Expression cannot traverse a non-object value." }
+                if ref $Value ne 'HASH';
+            my $Key = exists $Value->{$Field} ? $Field : 'DynamicField_' . $Field;
+            return { Known => 0, Reason => "Field $Expression is unavailable." }
+                if !exists $Value->{$Key};
+            $Value = $Value->{$Key};
+            if ( defined $Index && $Index ne '' ) {
+                return { Known => 0, Reason => "Field $Expression is not a row collection." }
+                    if ref $Value ne 'ARRAY';
+                return { Known => 0, Reason => "Row $Index in $Expression is unavailable." }
+                    if !defined $Value->[$Index];
+                $Value = $Value->[$Index];
+            }
+        }
         $Value = $Value->[0] if ref $Value eq 'ARRAY' && @{$Value} == 1;
-        return { Known => 0, Reason => "Field \@$Root.$Field contains multiple values." } if ref $Value;
+        return { Known => 0, Reason => "Field $Expression contains a structured or multiple value." } if ref $Value;
         return { Known => 1, Value => $Value };
     }
 
@@ -275,6 +422,12 @@ sub _Boolean {
 sub _Unknown {
     my ($Value) = @_;
     return { Status => 'UNKNOWN', Value => undef, Reason => $Value->{Reason} || 'Value is unknown.' };
+}
+
+sub _ResultNormalize {
+    my ($Value) = @_;
+    return 'N/A' if uc($Value) eq 'N/A';
+    return ucfirst lc $Value;
 }
 
 sub _TruthAnd {

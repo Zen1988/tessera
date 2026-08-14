@@ -43,3 +43,54 @@ Initial executable grammar
 Recursive GovernanceObject, ITSMConfigItem, and MELT traversal, named object
 selection, collections, schedules, business calendars, and LET variables remain
 reserved grammar. Until implemented, using them returns UNKNOWN.
+
+Manual control attestation
+--------------------------
+
+The Service is not declared in policy text. The existing Service Request
+workflow is selected through the ControlObjective's ZRM-Service field and owns
+ticket creation, routing, assignment, and lifecycle.
+
+NEW @TICKET
+SET @TICKET.Title = "Annual input-validation attestation"
+SET @TICKET.Queue = "Governance"
+SET @TICKET.CustomerUser = "customer.login"
+SET @TICKET.Attestation = [
+  { ZRM-Query = "Confirm server-side validation is applied to every untrusted input.", ZRM-Response = "" },
+  { ZRM-Query = "Confirm invalid input is rejected and recorded.", ZRM-Response = "" }
+]
+SUBMIT
+
+EXPECT:
+@TICKET.Attestation[0].ZRM-Response EQUALS "Yes"
+AND @TICKET.Attestation[1].ZRM-Response EQUALS "Yes"
+THEN PASS
+ELSE FAIL
+
+The equivalent indexed authoring form is:
+
+LET @TICKET.Attestation[0].ZRM-Query = "Confirm server-side validation is applied."
+LET @TICKET.Attestation[0].ZRM-Response = ""
+
+NEW @TICKET creates a service-backed draft. SET/LET assignments populate it.
+SUBMIT hands it to the existing Service Request workflow. No queue, requester,
+owner, or process routing is hardcoded by the control policy.
+
+EXPECT is evaluated by the service workflow's ZRMControlEvaluate transition
+action at the workflow's configured completion point. The action receives the exact
+ConfigItem Control ID being executed; ZRM-TKInstance remains a control target,
+not a pointer to an attestation ticket.
+UNKNOWN never becomes Pass. The linked ConfigItem Control receives ZRM-Result
+and ZRM-LastRun; the reusable ControlObjective does not store runtime history.
+
+FAIL records the result only. It does not implicitly create remediation work.
+A separate authored conditional action such as `IF FAIL THEN ...` is required
+before a future action executor may submit a follow-up ticket.
+
+Control cycle examples
+----------------------
+
+- 1 year 1 time
+- 1 year 2 times
+- 3 months 1 time
+- daily, weekly, monthly, quarterly, annually

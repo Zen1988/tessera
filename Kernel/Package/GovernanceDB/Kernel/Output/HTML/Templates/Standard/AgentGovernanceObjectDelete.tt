@@ -13,6 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
+[% IF Data.FullPage %]
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header"><h1>[% Translate("Delete Governance Object") | html %]</h1></div>
+    <div class="Content">
+[% END %]
 <fieldset class="TableLike W300px">
 
     <label>[% Translate("Name") | html %]:</label>
@@ -32,3 +37,15 @@
 <p class="SpacingTop Center">
     [% Translate("Do you really want to delete this Governance Object?") | html %]
 </p>
+[% IF Data.FullPage %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Center SpacingTop">
+            <input type="hidden" name="Action" value="AgentGovernanceObjectDelete"/>
+            <input type="hidden" name="Subaction" value="GovernanceObjectDelete"/>
+            <input type="hidden" name="GovernanceObjectID" value="[% Data.GovernanceObjectID | html %]"/>
+            <input type="hidden" name="ChallengeToken" value="[% Env("ChallengeToken") | html %]"/>
+            <button class="CallForAction Primary" type="submit"><span>[% Translate("Delete") | html %]</span></button>
+            <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]"><span>[% Translate("Cancel") | html %]</span></a>
+        </form>
+    </div>
+</div>
+[% END %]

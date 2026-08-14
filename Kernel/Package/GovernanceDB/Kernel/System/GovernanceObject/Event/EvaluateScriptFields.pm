@@ -58,6 +58,11 @@ sub Run {
 
     return if !$Param{Data}{GovernanceObjectID};
 
+    # Delete events are handled at transaction shutdown, after the object row
+    # and its versions are already gone. Script fields have no remaining target
+    # to evaluate or store and must not attempt to reload the deleted object.
+    return 1 if $Param{Event} eq 'GovernanceObjectDelete';
+
     my $Events = $Kernel::OM->Get('Kernel::System::DynamicField::Driver::BaseScript')->GetUpdateEvents();
 
     return 1 if !IsHashRefWithData($Events);
@@ -69,13 +74,19 @@ sub Run {
     my $GovernanceObject = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
         GovernanceObjectID  => $Param{Data}{GovernanceObjectID},
         DynamicFields => 1,
+        Silent        => 1,
     );
+
+    # The object may also disappear earlier in the same transaction through a
+    # cascading operation. Missing objects are a valid terminal condition.
+    return 1 if !IsHashRefWithData($GovernanceObject) || !$GovernanceObject->{VersionID};
 
     for my $FieldID ( $Events->{ $Param{Event} }->@* ) {
 
         my $DynamicField = $DynamicFieldObject->DynamicFieldGet(
             ID => $FieldID,
         );
+        next if !IsHashRefWithData($DynamicField);
 
         # if we store set values, store as many values as there are in ticket data for the set
         my $Value;
@@ -85,7 +96,10 @@ sub Run {
                 ID => $DynamicField->{Config}{PartOfSet},
             );
 
-            for my $SetValue ( $GovernanceObject->{"DynamicField_$SetConfig->{Name}"}->@* ) {
+            next if !IsHashRefWithData($SetConfig);
+            my $SetValues = $GovernanceObject->{"DynamicField_$SetConfig->{Name}"};
+            next if ref $SetValues ne 'ARRAY';
+            for my $SetValue ( $SetValues->@* ) {
                 my %SetValuesMapped = map { ( "DynamicField_$_" => $SetValue->{$_} ) } keys $SetValue->%*;
                 push @Values, $DynamicFieldBackendObject->Evaluate(
                     DynamicFieldConfig => $DynamicField,

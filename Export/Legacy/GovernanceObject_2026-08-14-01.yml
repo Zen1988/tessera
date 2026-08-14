@@ -42,11 +42,11 @@
       Name: ZTSM-Code
       ObjectType: ITSMConfigItem
     ZTSMAppSystem-CriticalityProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - CriticalityProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -66,11 +66,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-DataClassificationProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - DataClassification
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -90,11 +90,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-DefaultApprovalModel:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ApprovalModel
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -116,11 +116,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-DefaultApprovalProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - SupportProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -142,11 +142,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-Environment:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Environment
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -168,11 +168,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-ExposureProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ExposureProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -192,11 +192,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-Location:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Location
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -218,11 +218,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-Owner:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Organization
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -244,11 +244,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-Parent:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Application
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -270,11 +270,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-Platform:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Platform
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -296,11 +296,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMAppSystem-ServiceTier:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ServiceTier
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -384,13 +384,17 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMApprovalModel-ApprovelTimeout:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '72'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
         - ErrorMessage: Approval Timeout must be in number of hours only
           Value: ^[0-9]+$
         Tooltip: Approval Timeout (Hours)
@@ -403,7 +407,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-FinalAction:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Reject with Timeout
         Link: ''
@@ -428,12 +432,12 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-L2Escalation:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - GovernanceRole
         - SupportProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -455,13 +459,17 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-L2Timeout:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '72'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
         - ErrorMessage: Approval Timeout must be in number of hours only
           Value: ^[0-9]+$
         Tooltip: Approval Timeout in hours
@@ -474,12 +482,12 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-L3Escalation:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - GovernanceRole
         - SupportProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -501,13 +509,17 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-L3Timeout:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '72'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
+        - ErrorMessage: Approval Timeout must be in number of hours only
+          Value: ^[0-9]+$
         - ErrorMessage: Approval Timeout must be in number of hours only
           Value: ^[0-9]+$
         Tooltip: Approval Timeout in hours
@@ -520,7 +532,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-Mode:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Escalation
         Link: ''
@@ -544,13 +556,17 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMApprovalModel-RequiredWeightage:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '1'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Approval Weightage must be in number only
+          Value: ^[0-9]+$
+        - ErrorMessage: Approval Weightage must be in number only
+          Value: ^[0-9]+$
         - ErrorMessage: Approval Weightage must be in number only
           Value: ^[0-9]+$
         Tooltip: Required Approval Weightage
@@ -592,7 +608,7 @@
     \   Name: GovernanceDB Description"
   DynamicFields:
     ZBlue-Record:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Include:
         - DF: ZBlue-Chapter
@@ -671,7 +687,6 @@
   RoleName: CMDB Description
 - Class:
     Categories:
-    - All
     - Governance
     Name: ControlObjective
     NumberModule: GOID
@@ -682,19 +697,39 @@
     - Description
     - Name
     - ZTSMStatusID
-  Definition: "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns:
-    2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n
-    \     - Section: General Fields::ControlIdentity\r\n        RowStart: 1\r\n        ColumnStart:
-    1\r\n      - Section: General Fields::ControlObjective\r\n        RowStart: 2\r\n
-    \       ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n
-    \       RowStart: 3\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB
-    Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart:
-    2\r\nRoles:\r\n  General Fields:\r\n    Name: ZRM ControlObjective\r\n  GovernanceDB
-    Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n
-    \   Name: GovernanceDB Description"
+  Definition: |
+    ---
+    Pages:
+    - Content:
+      - ColumnStart: 1
+        RowStart: 1
+        Section: General Fields::ControlObjective
+      - ColumnStart: 1
+        RowStart: 2
+        Section: GovernanceDB Backlinks::Backlinks
+      - ColumnStart: 2
+        RowSpan: 2
+        RowStart: 1
+        Section: GovernanceDB Description::Description
+      - ColumnStart: 1
+        RowStart: 1
+        Section: General Fields::ControlIdentity
+      Interfaces:
+      - Agent
+      Layout:
+        ColumnWidth: 1fr 1fr
+        Columns: 2
+      Name: Summary
+    Roles:
+      General Fields:
+        Name: ZRM ControlObjective
+      GovernanceDB Backlinks:
+        Name: GovernanceDB Backlinks
+      GovernanceDB Description:
+        Name: GovernanceDB Description
   DynamicFields:
     ZRM-Annex:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config: &1
         DefaultValue: ''
         Link: ''
@@ -711,7 +746,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ControlCategory:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -735,7 +770,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ControlClass:
-      ChangeTime: 2026-08-12 08:17:47
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -752,7 +787,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ControlType:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -775,13 +810,15 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: &2
         DefaultValue: '1'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Factor should be 0 to 1 only
+          Value: ^(?:0(?:\.\d+)?|1(?:\.0+)?)$
         - ErrorMessage: Factor should be 0 to 1 only
           Value: ^(?:0(?:\.\d+)?|1(?:\.0+)?)$
         Tooltip: Impact Factor
@@ -794,13 +831,15 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: &3
         DefaultValue: '1'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Factor should be 0 to 1 only
+          Value: ^(?:0(?:\.\d+)?|1(?:\.0+)?)$
         - ErrorMessage: Factor should be 0 to 1 only
           Value: ^(?:0(?:\.\d+)?|1(?:\.0+)?)$
         Tooltip: Likelihood Factor
@@ -813,11 +852,10 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Policy:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config: &4
-        ClassIDs:
-        - ~
-        DisplayType: ''
+        ClassIDs: []
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -829,7 +867,6 @@
         SearchAttribute: Name
         Tooltip: Policy Reference
         TreeView: '0'
-        ZTSMStatusIDs: []
       CreateTime: 2026-08-12 03:26:17
       FieldOrder: 496
       FieldType: GovernanceObject
@@ -839,7 +876,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicyEvaluation:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Cols: '100'
         DefaultValue: ''
@@ -856,7 +893,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicyFilter:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Cols: '100'
         DefaultValue: ''
@@ -872,12 +909,29 @@
       Name: ZRM-PolicyFilter
       ObjectType: GovernanceObject
       ValidID: 1
+    ZRM-PolicyReference:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: &5
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Policy Reference
+      CreateTime: 2026-08-13 05:51:41
+      FieldOrder: 512
+      FieldType: Text
+      InternalField: 0
+      Label: Reference
+      Name: ZRM-PolicyReference
+      ObjectType: GovernanceObject
+      ValidID: 1
     ZRM-RiskStmt:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - RiskStatement
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -889,7 +943,6 @@
         SearchAttribute: Name
         Tooltip: Risk Statement
         TreeView: '0'
-        ZTSMStatusIDs: []
       CreateTime: 2026-08-12 03:31:41
       FieldOrder: 497
       FieldType: GovernanceObject
@@ -899,7 +952,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Service:
-      ChangeTime: 2026-08-12 08:41:12
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
@@ -918,8 +971,8 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Version:
-      ChangeTime: 2026-08-12 05:13:40
-      Config: &5
+      ChangeTime: 2026-08-14 02:21:33
+      Config: &6
         DefaultValue: ''
         Link: ''
         LinkPreview: ''
@@ -934,28 +987,6 @@
       Name: ZRM-Version
       ObjectType: GovernanceObject
       ValidID: 1
-    ZTSM-Status:
-      CIClass: ControlObjective
-      Config:
-        DefaultValue: Draft
-        Link: ''
-        LinkPreview: ''
-        MultiValue: '0'
-        PossibleNone: '0'
-        PossibleValues:
-          Active: Active
-          Archived: Archived
-          Draft: Draft
-          Inactive: Inactive
-          Retired: Retired
-          Suspended: Suspended
-        Tooltip: Governance / operational validity
-        TranslatableValues: '0'
-        TreeView: '0'
-      FieldType: Dropdown
-      Label: Status
-      Name: ZTSM-Status
-      ObjectType: ITSMConfigItem
 - Class:
     Categories:
     - All
@@ -987,7 +1018,7 @@
     Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -998,7 +1029,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -1038,7 +1069,7 @@
     Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -1049,7 +1080,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -1090,7 +1121,7 @@
     Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -1101,7 +1132,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -1112,7 +1143,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMEnvironment-Criticality:
-      ChangeTime: 2026-08-12 05:06:41
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Critical
         Link: ''
@@ -1136,7 +1167,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMEnvironment-Type:
-      ChangeTime: 2026-08-12 05:06:41
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Production
         Link: ''
@@ -1165,6 +1196,9 @@
       Name: ZTSMEnvironment-Type
       ObjectType: GovernanceObject
       ValidID: 1
+- Definition: "---\r\nSections:\r\n  Sev:\r\n    Content:\r\n    - Header: Severity\r\n
+    \   - DF: ZRM-BaseLikelihood\r\n    - DF: ZRM-BaseImpact\r\n    - DF: ZTSM-ColorHex"
+  RoleName: EventSeverity
 - Class:
     Categories:
     - All
@@ -1186,8 +1220,8 @@
     Description"
   DynamicFields:
     ZRM-BaseImpact:
-      ChangeTime: 2026-08-12 05:10:51
-      Config:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: &7
         Class: ZRM::Impact
         MultiValue: '0'
         Multiselect: ~
@@ -1202,8 +1236,8 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-BaseLikelihood:
-      ChangeTime: 2026-08-12 05:10:51
-      Config:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: &8
         Class: ZRM::Likelihood
         MultiValue: '0'
         Multiselect: ~
@@ -1218,7 +1252,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSM-ColorHex:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -1234,9 +1268,6 @@
       Name: ZTSM-ColorHex
       ObjectType: GovernanceObject
       ValidID: 1
-- Definition: "---\r\nSections:\r\n  Sev:\r\n    Content:\r\n    - Header: Severity\r\n
-    \   - DF: ZRM-BaseLikelihood\r\n    - DF: ZRM-BaseImpact\r\n    - DF: ZTSM-ColorHex"
-  RoleName: EventSeverity
 - Class:
     Categories:
     - All
@@ -1268,7 +1299,7 @@
     Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -1279,7 +1310,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -1320,7 +1351,7 @@
     Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -1331,7 +1362,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -1441,11 +1472,11 @@
     \   Name: GovernanceDB Description"
   DynamicFields:
     ZTSMLocation-Address:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Location
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1531,11 +1562,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMOrganization-DefaultApprovalModel:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ApprovalModel
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1557,11 +1588,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMOrganization-DefaultApprovalProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - SupportProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1583,11 +1614,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMOrganization-Parent:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Organization
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1609,7 +1640,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMOrganization-Tier:
-      ChangeTime: 2026-08-12 05:02:25
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '3'
         Link: ''
@@ -1632,7 +1663,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMOrganization-Type:
-      ChangeTime: 2026-08-11 07:10:43
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Vendor
         Link: ''
@@ -1719,11 +1750,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMPlatform-Location:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Location
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1745,11 +1776,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMPlatform-Owner:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Organization
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1771,11 +1802,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMPlatform-ServiceSupportMap:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ServiceSupportMap
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -1797,7 +1828,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMPlatform-Type:
-      ChangeTime: 2026-08-12 05:06:30
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Virtualization
         Link: ''
@@ -1822,6 +1853,13 @@
       Name: ZTSMPlatform-Type
       ObjectType: GovernanceObject
       ValidID: 1
+- Definition: "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF:
+    ZRM-Annex\r\n    - DF: ZRM-Version\r\n  Policy:\r\n    Content:\r\n    - Header:
+    Policy Detail\r\n    - DF: ZRM-Parent\r\n    - DF: ZRM-PolicyType\r\n    - DF:
+    ZRM-PolicySource\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-PolicyOwner\r\n
+    \   - DF: ZRM-PublishedDate\r\n    - DF: ZRM-ReviewStateBook\r\n    - DF: ZRM-ReviewCycle\r\n
+    \   - DF: ZRM-LastReviewed"
+  RoleName: Policy
 - Class:
     Categories:
     - Governance
@@ -1846,7 +1884,7 @@
     Description"
   DynamicFields:
     ZRM-Annex:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config: *1
       CreateTime: 2026-08-12 01:48:07
       FieldOrder: 494
@@ -1857,7 +1895,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LastReviewed:
-      ChangeTime: 2026-08-12 05:10:51
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DateRestriction: ''
         DefaultValue: '0'
@@ -1877,12 +1915,12 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Parent:
-      ChangeTime: 2026-08-13 05:47:44
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Framework
         - Policy
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -1894,7 +1932,6 @@
         SearchAttribute: Name
         Tooltip: Policy / Framework
         TreeView: '0'
-        ZTSMStatusIDs: []
       CreateTime: 2026-08-13 05:47:44
       FieldOrder: 510
       FieldType: GovernanceObject
@@ -1904,11 +1941,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicyOwner:
-      ChangeTime: 2026-08-13 07:55:12
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Organization
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -1920,7 +1957,6 @@
         SearchAttribute: Name
         Tooltip: Owner
         TreeView: '0'
-        ZTSMStatusIDs: []
       CreateTime: 2026-08-13 07:55:12
       FieldOrder: 515
       FieldType: GovernanceObject
@@ -1930,14 +1966,8 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicyReference:
-      ChangeTime: 2026-08-13 05:51:41
-      Config:
-        DefaultValue: ''
-        Link: ''
-        LinkPreview: ''
-        MultiValue: '0'
-        RegExList: []
-        Tooltip: Policy Reference
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *5
       CreateTime: 2026-08-13 05:51:41
       FieldOrder: 512
       FieldType: Text
@@ -1947,7 +1977,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicySource:
-      ChangeTime: 2026-08-13 05:51:00
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -1964,7 +1994,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PolicyType:
-      ChangeTime: 2026-08-13 05:54:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -1990,7 +2020,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-PublishedDate:
-      ChangeTime: 2026-08-13 07:52:02
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DateRestriction: ''
         DefaultValue: '0'
@@ -2010,7 +2040,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ReviewCycle:
-      ChangeTime: 2026-08-13 08:09:51
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: ''
         Link: ''
@@ -2027,11 +2057,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ReviewStateBook:
-      ChangeTime: 2026-08-13 08:13:38
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - StateBook
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -2043,7 +2073,6 @@
         SearchAttribute: ''
         Tooltip: Review Workflow/Statebook
         TreeView: '0'
-        ZTSMStatusIDs: []
       CreateTime: 2026-08-13 08:13:38
       FieldOrder: 517
       FieldType: GovernanceObject
@@ -2053,8 +2082,8 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Version:
-      ChangeTime: 2026-08-12 05:13:40
-      Config: *5
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *6
       CreateTime: 2026-08-12 02:08:22
       FieldOrder: 495
       FieldType: Text
@@ -2063,35 +2092,6 @@
       Name: ZRM-Version
       ObjectType: GovernanceObject
       ValidID: 1
-    ZTSM-Status:
-      CIClass: Policy
-      Config:
-        DefaultValue: Draft
-        Link: ''
-        LinkPreview: ''
-        MultiValue: '0'
-        PossibleNone: '0'
-        PossibleValues:
-          Active: Active
-          Archived: Archived
-          Draft: Draft
-          Inactive: Inactive
-          Retired: Retired
-          Suspended: Suspended
-        Tooltip: Governance / operational validity
-        TranslatableValues: '0'
-        TreeView: '0'
-      FieldType: Dropdown
-      Label: Status
-      Name: ZTSM-Status
-      ObjectType: ITSMConfigItem
-- Definition: "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF:
-    ZRM-Annex\r\n    - DF: ZRM-Version\r\n    - DF: ZTSM-Status\r\n  Policy:\r\n    Content:\r\n
-    \   - Header: Policy Detail\r\n    - DF: ZRM-Parent\r\n    - DF: ZRM-PolicyType\r\n
-    \   - DF: ZRM-PolicySource\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-PolicyOwner\r\n
-    \   - DF: ZRM-PublishedDate\r\n    - DF: ZRM-ReviewStateBook\r\n    - DF: ZRM-ReviewCycle\r\n
-    \   - DF: ZRM-LastReviewed"
-  RoleName: Policy
 - Class:
     Categories:
     - Governance
@@ -2104,18 +2104,39 @@
     - Description
     - Name
     - ZTSMStatusID
-  Definition: "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns:
-    2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n
-    \     - Section: General Fields::RiskStatement\r\n        RowStart: 1\r\n        ColumnStart:
-    1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n
-    \       ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n
-    \       RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\nRoles:\r\n
-    \ General Fields:\r\n    Name: ZRM RiskStatement\r\n  GovernanceDB Backlinks:\r\n
-    \   Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB
-    Description"
+  Definition: |
+    ---
+    Pages:
+    - Content:
+      - ColumnStart: 1
+        RowStart: 1
+        Section: General Fields::RiskStatement
+      - ColumnStart: 1
+        RowStart: 2
+        Section: GovernanceDB Backlinks::Backlinks
+      - ColumnStart: 2
+        RowSpan: 2
+        RowStart: 1
+        Section: GovernanceDB Description::Description
+      - ColumnStart: 1
+        RowStart: 1
+        Section: General Fields::RiskIdentity
+      Interfaces:
+      - Agent
+      Layout:
+        ColumnWidth: 1fr 1fr
+        Columns: 2
+      Name: Summary
+    Roles:
+      General Fields:
+        Name: ZRM RiskStatement
+      GovernanceDB Backlinks:
+        Name: GovernanceDB Backlinks
+      GovernanceDB Description:
+        Name: GovernanceDB Description
   DynamicFields:
     ZRM-AdvisoryStatus:
-      ChangeTime: 2026-08-12 05:10:51
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Current
         Link: ''
@@ -2140,7 +2161,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Annex:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config: *1
       CreateTime: 2026-08-12 01:48:07
       FieldOrder: 494
@@ -2150,8 +2171,30 @@
       Name: ZRM-Annex
       ObjectType: GovernanceObject
       ValidID: 1
+    ZRM-BaseImpact:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *7
+      CreateTime: 2026-06-12 03:45:25
+      FieldOrder: 224
+      FieldType: GeneralCatalog
+      InternalField: 0
+      Label: Base Impact Score
+      Name: ZRM-BaseImpact
+      ObjectType: GovernanceObject
+      ValidID: 1
+    ZRM-BaseLikelihood:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *8
+      CreateTime: 2026-06-12 03:44:34
+      FieldOrder: 223
+      FieldType: GeneralCatalog
+      InternalField: 0
+      Label: Base Likelihood Score
+      Name: ZRM-BaseLikelihood
+      ObjectType: GovernanceObject
+      ValidID: 1
     ZRM-ImpactCategoryGO:
-      ChangeTime: 2026-08-12 05:10:51
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Class: ZRM::ImpactCategory
         MultiValue: '0'
@@ -2167,7 +2210,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -2178,7 +2221,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -2189,7 +2232,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Policy:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config: *4
       CreateTime: 2026-08-12 03:26:17
       FieldOrder: 496
@@ -2199,8 +2242,19 @@
       Name: ZRM-Policy
       ObjectType: GovernanceObject
       ValidID: 1
+    ZRM-PolicyReference:
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *5
+      CreateTime: 2026-08-13 05:51:41
+      FieldOrder: 512
+      FieldType: Text
+      InternalField: 0
+      Label: Reference
+      Name: ZRM-PolicyReference
+      ObjectType: GovernanceObject
+      ValidID: 1
     ZRM-RiskCategoryGO:
-      ChangeTime: 2026-08-12 05:11:04
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Class: ZRM::RiskCategory
         MultiValue: '0'
@@ -2216,11 +2270,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-SupersededRS:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - RiskStatement
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
         LinkReferencingType: Dynamic
@@ -2240,8 +2294,8 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-Version:
-      ChangeTime: 2026-08-12 05:13:40
-      Config: *5
+      ChangeTime: 2026-08-14 02:21:33
+      Config: *6
       CreateTime: 2026-08-12 02:08:22
       FieldOrder: 495
       FieldType: Text
@@ -2315,7 +2369,7 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMServiceProfile-Category:
-      ChangeTime: 2026-08-12 05:03:23
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Managed Service
         Link: ''
@@ -2342,11 +2396,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceProfile-Contract:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ServiceProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2368,11 +2422,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceProfile-Owner:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Organization
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2445,11 +2499,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMServiceSupportMap-Application:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Application
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2471,11 +2525,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-ApprovalModel:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ApprovalModel
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2497,11 +2551,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-Environment:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Environment
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2523,11 +2577,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-Location:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Location
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2549,7 +2603,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-Service:
-      ChangeTime: 2026-08-12 05:03:23
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
@@ -2569,11 +2623,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-ServiceProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ServiceProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2595,11 +2649,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMServiceSupportMap-StateBook:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - StateBook
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2650,7 +2704,7 @@
     Description"
   DynamicFields:
     ZRM-ImpactFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *2
       CreateTime: 2026-06-19 02:48:21
       FieldOrder: 275
@@ -2661,7 +2715,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZRM-LikelihoodFactor:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config: *3
       CreateTime: 2026-06-19 02:52:42
       FieldOrder: 276
@@ -2679,6 +2733,10 @@
     NumberModule: GOID
     PermissionGroup: governance-db
     VersionStringModule: Incremental
+    VersionTrigger:
+    - Name
+    - Description
+    - DefinitionUpdate
   Definition: "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom
     are called Pages.\r\n  # The fields to be displayed there are defined in the roles
     \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n
@@ -2724,7 +2782,7 @@
     \   Name: GovernanceDB Description"
   DynamicFields:
     ZState-StateRecord:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Include:
         - DF: ZState-Seq
@@ -2820,11 +2878,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMSupportAssignment-Application:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Application
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2846,11 +2904,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-Environment:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Environment
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2872,11 +2930,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-Location:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - Location
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2898,11 +2956,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-Role:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - GovernanceRole
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2924,11 +2982,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-SupportProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - SupportProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -2950,7 +3008,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-Type:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Primary
         Link: ''
@@ -2974,7 +3032,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-UserAccount:
-      ChangeTime: 2026-08-12 05:02:37
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         EditFieldMode: AutoComplete
         ImportSearchAttribute: ''
@@ -2992,13 +3050,17 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportAssignment-Weightage:
-      ChangeTime: 2026-08-12 05:10:26
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: '1'
         Link: ''
         LinkPreview: ''
         MultiValue: '0'
         RegExList:
+        - ErrorMessage: Weightage must be number format
+          Value: ^[0-9\.]+$
+        - ErrorMessage: Weightage must be number format
+          Value: ^[0-9\.]+$
         - ErrorMessage: Weightage must be number format
           Value: ^[0-9\.]+$
         Tooltip: Weightage
@@ -3075,11 +3137,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMSupportProfile-ServiceProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - ServiceProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -3101,11 +3163,11 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportProfile-TechnologyProfile:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - TechnologyProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -3127,7 +3189,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMSupportProfile-Type:
-      ChangeTime: 2026-08-12 05:02:37
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Support
         Link: ''
@@ -3216,11 +3278,11 @@
       Name: ZTSM-Status
       ObjectType: ITSMConfigItem
     ZTSMTechnologyProfile-Parent:
-      ChangeTime: 2026-08-12 05:13:40
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         ClassIDs:
         - TechnologyProfile
-        DisplayType: ''
+        DisplayType: ClassGovernanceObjectName
         EditFieldMode: Dropdown
         ImportSearchAttribute: ''
         LinkDirection: ReferencingIsSource
@@ -3242,7 +3304,7 @@
       ObjectType: GovernanceObject
       ValidID: 1
     ZTSMTechnologyProfile-Type:
-      ChangeTime: 2026-08-12 05:06:47
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         DefaultValue: Server Infrastructure
         Link: ''
@@ -3302,7 +3364,7 @@
     Description"
   DynamicFields:
     ZTemplate-RiskAssessment:
-      ChangeTime: 2026-08-12 05:13:39
+      ChangeTime: 2026-08-14 02:21:33
       Config:
         Include:
         - DF: ZTemplate-RiskStatement
@@ -3351,12 +3413,14 @@
       ValidID: 1
 - Definition: ~
   RoleName: ~
+- Definition: ~
+  RoleName: ~
 - Definition: "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF:
-    ZRM-Annex\r\n    - DF: ZRM-Version\r\n    - DF: ZTSM-Status\r\n  ControlObjective:\r\n
-    \   Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-Policy\r\n    -
-    DF: ZRM-RiskStmt\r\n    - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n
-    \   - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n
-    \   - DF: ZRM-Service\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation"
+    ZRM-Annex\r\n    - DF: ZRM-Version\r\n  ControlObjective:\r\n    Content:\r\n
+    \   - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation\r\n
+    \   - DF: ZRM-Policy\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-RiskStmt\r\n
+    \   - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n    - DF: ZRM-LikelihoodFactor\r\n
+    \   - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n    - DF: ZRM-Service"
   RoleName: ZRM ControlObjective
 - Definition: ~
   RoleName: ~
@@ -3367,9 +3431,10 @@
   RoleName: ~
 - Definition: "---\r\nSections:\r\n  RiskIdentity:\r\n    Content:\r\n    - Header:
     Identity\r\n    - DF: ZRM-Annex\r\n    - DF: ZRM-Version\r\n  RiskStatement:\r\n
-    \   Content:\r\n    - Header: General Information\r\n    - DF: ZRM-Policy\r\n
-    \   - DF: ZRM-RiskCategoryGO\r\n    - DF: ZRM-ImpactCategoryGO\r\n    - DF: ZRM-LikelihoodFactor\r\n
-    \   - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-AdvisoryStatus\r\n    - DF: ZRM-SupersededRS"
+    \   Content:\r\n    - Header: General Information\r\n    - DF: ZRM-RiskCategoryGO\r\n
+    \   - DF: ZRM-ImpactCategoryGO\r\n    - DF: ZRM-BaseLikelihood\r\n    - DF: ZRM-BaseImpact\r\n
+    \   - DF: ZRM-PolicyReference\r\n    - DF: ZRM-AdvisoryStatus\r\n    - DF: ZRM-SupersededRS\r\n
+    \   - DF: ZRM-Policy\r\n    - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor"
   RoleName: ZRM RiskStatement
 - Definition: "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header:
     Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSMAppSystem-ServiceTier\r\n

@@ -626,9 +626,32 @@
                     <Item Key="Description" Translatable="1">OSCAL policy catalog ingestion.</Item>
                     <Item Key="Title" Translatable="1">OSCAL Policy Import</Item>
                     <Item Key="NavBarName">GovernanceDB</Item>
-                    <Item Key="NavBar"><Array><Item><Hash><Item Key="AccessKey">o</Item><Item Key="Block">ItemArea</Item><Item Key="Description" Translatable="1">Import OSCAL policy catalogs</Item><Item Key="Link">Action=AgentGovernanceOSCALImport</Item><Item Key="LinkOption">onclick=\"return false;\"</Item><Item Key="Name" Translatable="1">OSCAL Import</Item><Item Key="NavBar">GovernanceDB</Item><Item Key="Prio">950</Item><Item Key="Type">Menu</Item></Hash></Item></Array></Item>
                 </Hash>
             </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceOSCALImport###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">GovernanceDB OSCAL policy import menu item.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation"><Hash></Hash></DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group"><Array></Array></Item>
+                        <Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item>
+                        <Item Key="AccessKey">o</Item>
+                        <Item Key="Block"/>
+                        <Item Key="Description" Translatable="1">Import an OSCAL catalog JSON file into Policies, Risk Statements, and Control Objectives.</Item>
+                        <Item Key="Link">Action=AgentGovernanceOSCALImport</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="Name" Translatable="1">OSCAL Import</Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Prio">400</Item>
+                        <Item Key="Type"/>
+                    </Hash>
+                </Item>
+            </Array>
         </Value>
     </Setting>
     <Setting Name="Loader::Module::AgentGovernanceOSCALImport###003-GovernanceObject" Required="0" Valid="1">
@@ -1093,7 +1116,7 @@
                 <Item Key="Link">Action=AgentGovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
                 <Item Key="Target">ConfirmDialog</Item>
                 <Item Key="ElementSelector">#Menu[% Data.MenuID | html %]</Item>
-                <Item Key="DialogContentQueryString">Action=AgentGovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="DialogContentQueryString">Action=AgentGovernanceObjectDelete;AJAX=1;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
                 <Item Key="ConfirmedActionQueryString">Action=AgentGovernanceObjectDelete;Subaction=GovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
                 <Item Key="DialogTitle">[% Translate("Delete") | html %] [% Config("GovernanceObject::Hook") %] [% Data.Number | html %]</Item>
             </Hash>

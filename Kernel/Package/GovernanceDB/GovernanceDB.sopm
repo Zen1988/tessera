@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>GovernanceDB</Name>
-    <Version>0.1.111</Version>
+    <Version>0.1.122</Version>
     <Framework>11.1.x</Framework>
     <Vendor>TESSERA</Vendor>
     <URL>https://tessera.local/</URL>
@@ -125,17 +125,21 @@
         <File Location="Kernel/System/GovernanceObject/Version.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/VersionString/Incremental.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/VersionString/TemplateToolkit.pm" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Maint/TESSERA/ControlDispatch.pm" Permission="660"/>
         <File Location="Kernel/System/ImportExport/ObjectBackend/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/LinkObject/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectAdd.pm" Permission="660"/>
         <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectUpdate.pm" Permission="660"/>
+        <File Location="Kernel/System/ProcessManagement/TransitionAction/ZRMControlEvaluate.pm" Permission="660"/>
         <File Location="Kernel/System/Stats/Dynamic/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/SysConfig/ValueType/Entity/GovernanceObjectClass.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/TicketTable.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/PolicyEngine.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ControlRuntime.pm" Permission="660"/>
         <File Location="Kernel/System/Ticket/Number/TESSERAIdentity.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
+        <File Location="var/governancedb/default_control_configitem.json" Permission="660"/>
         <File Location="var/governancedb/default_general_catalog.yml" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/generic_agents.yml" Permission="660"/>
         <File Location="var/governancedb/policy/control_objective_examples.txt" Permission="660"/>

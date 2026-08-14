@@ -36,7 +36,9 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # get needed GovernanceObjectID
-    my $GovernanceObjectID = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => 'GovernanceObjectID' );
+    my $RequestObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $GovernanceObjectID = $RequestObject->GetParam( Param => 'GovernanceObjectID' );
+    my $AJAX = $RequestObject->GetParam( Param => 'AJAX' );
 
     # get layout object
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -130,8 +132,19 @@ sub Run {
         Data         => {
             %Param,
             %{$GovernanceObject},
+            FullPage => $AJAX ? 0 : 1,
         },
     );
+
+    # ConfirmDialog normally requests this action through AJAX. Keep a complete
+    # accessible fallback page for missing/stale JavaScript so JSON is never
+    # exposed as a raw browser document.
+    if ( !$AJAX ) {
+        return join '',
+            $LayoutObject->Header( Title => Translatable('Delete Governance Object') ),
+            $Output,
+            $LayoutObject->Footer();
+    }
 
     # build the returned data structure
     my %Data = (

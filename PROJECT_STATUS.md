@@ -1,6 +1,129 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-13
+Last Updated: 2026-08-14
+
+## 2026-08-14 Control Instance Cycle and Service Attestation Runtime 0.1.122
+
+- Synchronized the GovernanceObject bootstrap baseline from `GovernanceObject_2026-08-14-02.yml`, including ControlObjective `ZRM-ControlCycle` and `ZRM-Service`.
+- Added an authoritative ConfigItem `Control` seed derived from `ConfigItem_2026-08-14-01.yml`. Bootstrap imports missing structure and merges only missing class/role definition structure; existing customer values and layout win.
+- Added the exported Ticket Dynamic Fields `ZRM-Query`, `ZRM-Response`, and multi-row Set `Attestation` non-destructively.
+- ControlObjective holds reusable frequency/service/program truth. ConfigItem `Control` holds runtime `ZRM-LastRun`, `ZRM-Result`, its ControlObjective reference, and its CI/GO/Ticket/MELT target reference.
+- Added `NEW @TICKET`, ticket assignments, Attestation list/index assignments, `SUBMIT`, and deferred `EXPECT ... THEN PASS|FAIL|N/A ELSE ...` parsing.
+- `NEW @TICKET` injects ServiceID exclusively from ControlObjective `ZRM-Service`; policy assignments populate the initial request and `SUBMIT` hands it to the existing Service Request workflow. No service is hardcoded in policy or runtime.
+- Added `ZRMControlEvaluate` TransitionAction. The service workflow passes its current Ticket and exact ConfigItem Control ID; the action evaluates `EXPECT` and writes Pass/Fail/N/A directly to that Control instance.
+- `ZRM-TKInstance` remains a control target reference and is not repurposed as an attestation-ticket link.
+- Pass/Fail/N/A is result recording, not implicit remediation. Fail creates no additional work unless the policy explicitly defines a separate conditional failure action; automatic fail-ticket routing was rejected.
+- Added cycle parsing for `N day/week/month/year N time(s)` and daily/weekly/monthly/quarterly/annual names. Missing or unsupported cycles remain UNKNOWN/fail-closed.
+- Added parser/evaluation, cycle, and non-destructive merge regression tests.
+- Built `Kernel/Package/GovernanceDB-0.1.122.opm` with 252 byte-matching payloads; SHA256 `367F791C162B9C5B2E9F3B02D3B96689B3570793F3D51B8B4FE77E98A9B475AC`.
+
+## 2026-08-14 OSCAL Control Target Programming Boundary 0.1.121
+
+- Stopped mapping the OSCAL domain/category into `ZRM-ControlClass`.
+- `ZRM-ControlClass` is customer-authored executable target language, for example `@TICKET` or `@GovernanceObject.ControlObjective`, rather than descriptive OSCAL metadata.
+- OSCAL leaves the field empty for a new Annex. Same-version re-import preserves it, and a different Version inherits it from the latest prior ControlObjective together with `ZRM-PolicyFilter` and `ZRM-PolicyEvaluation`.
+- This supersedes the historical OSCAL domain-to-ControlClass mapping recorded under `0.1.112`.
+- Bumped GovernanceDB to `0.1.121`; supersedes `0.1.120`.
+- Validation passed: 33 OSCAL assertions, 11 bootstrap merge assertions, and the delete-event regression test; all 248 OPM payloads match package source.
+- SHA256: `18AB6B4DB48E15A4F123DFBC99D0238009CCE194C1236EA2CDA753F2A7CD53E4`.
+
+## 2026-08-14 GovernanceObject Export Resync and OSCAL Reference Mapping 0.1.120
+
+- Synchronized the non-destructive bootstrap baseline from authoritative `GovernanceObject_2026-08-14-01.yml`: 25 classes and 25 roles.
+- The exported RiskStatement and ControlObjective definitions now both contain `ZRM-PolicyReference`; their identity sections contain Annex and Version without a duplicate `ZTSM-Status` Dynamic Field.
+- OSCAL control links now map into `ZRM-PolicyReference` on both the generated RiskStatement and ControlObjective, separated by semicolons, and remain outside the description.
+- Native GovernanceObject `ZTSMStatus` remains the sole lifecycle/status value and imports continue to initialize it as Draft.
+- Bumped GovernanceDB to `0.1.120`; supersedes `0.1.119`.
+- Validation passed: the authoritative export has 54 entries; the seed contains 25 classes and 25 roles; 44 regression assertions pass; all 248 OPM payloads match package source.
+- SHA256: `0D21D26AFAE2517DF3EDA9A100AD60A0462A237239E600F24A7F137C5049D4A4`.
+
+## 2026-08-14 OSCAL Control Description and Reference Boundary 0.1.119
+
+- Removed OSCAL control-link reference prose from imported ControlObjective descriptions. The authoritative export has no dedicated ControlObjective reference field; `ZRM-PolicyReference` belongs to Policy, and `ZRM-Annex` remains the control identity such as `AS-1`.
+- Control descriptions now render as distinct `Control Statement: ...` and `Control Recommendation: ...` paragraphs.
+- Did not invent a new Dynamic Field or misuse an existing identity/policy field.
+- Bumped GovernanceDB to `0.1.119`; supersedes `0.1.118`.
+- Validation passed: 30 OSCAL assertions, 11 bootstrap merge assertions, and the delete-event regression test; all 248 OPM payloads match package source.
+- SHA256: `F9447BD035660DBEB0A7E9EF01F0CF5D1520834BB8F20167F5BCAB9B10A67839`.
+
+## 2026-08-14 OSCAL Control Version Inheritance 0.1.118
+
+- Retained idempotent matching by GovernanceObject class plus Annex plus Version: an identical identity updates the existing record, while a different Version creates a distinct GovernanceObject with its own GovernanceID.
+- When a new ControlObjective version is created for an existing Annex, it copies only `ZRM-PolicyFilter` and `ZRM-PolicyEvaluation` from the latest prior ControlObjective. OSCAL prose still never populates these programmable fields.
+- A same-Annex, same-Version re-import explicitly carries forward the existing `ZRM-PolicyFilter` and `ZRM-PolicyEvaluation`; repeated imports cannot blank customer-authored programming.
+- ControlObjective relationship resolution remains mandatory: `ZRM-RiskStmt` targets the same-Annex, same-version RiskStatement, while `ZRM-Policy` targets the versioned domain Policy and all recursively effective profile Policies.
+- Bumped GovernanceDB to `0.1.118`; supersedes `0.1.117`.
+- Added regression coverage for new-version programming inheritance, same-version non-destructive re-import, and explicit versioned RiskStatement/Policy identities.
+- Validation passed: 27 OSCAL assertions, 11 bootstrap merge assertions, and the delete-event regression test; all 248 OPM payloads match package source.
+- SHA256: `F293649313C6F3541D6A07C66F2A025668E669302CD16E5B16493697D2EDBCA0`.
+
+## 2026-08-14 OSCAL Programmable Policy Field Boundary 0.1.117
+
+- Stopped OSCAL import from populating `ZRM-PolicyFilter` and `ZRM-PolicyEvaluation` on ControlObjective records.
+- These fields contain customer-authored executable/programming logic, so catalog prose must never be treated as runnable policy logic.
+- OSCAL control statements and recommendations remain available in the GovernanceObject description.
+- Bumped GovernanceDB to `0.1.117`; supersedes `0.1.116`.
+- Validation passed: 23 OSCAL mapping assertions, 11 non-destructive bootstrap assertions, and the GovernanceObject delete-event regression test; all 248 OPM payloads match package source.
+- SHA256: `1874D0A5048AAD7D3268BF1E1F2AFF09DB79BAC0D47C03A8B476FC2FEEBC4CDD`.
+
+## 2026-08-14 GovernanceObject Delete Transaction Guard 0.1.116
+
+- Diagnosed intermittent `Need Object`, `Either ObjectID or ObjectName hast to be given`, and `No such GovernanceObjectID` errors during transaction shutdown after GovernanceObject deletion.
+- `EvaluateScriptFields` was subscribed to all GovernanceObject events and attempted to reload/evaluate/store script fields after `GovernanceObjectDelete` had already removed the object/version.
+- Added an explicit delete-event terminal guard, silent missing-object handling for cascade races, VersionID validation, and defensive Dynamic Field/set validation.
+- Bumped GovernanceDB to `0.1.116`; supersedes `0.1.115`.
+- Added a regression test proving GovernanceObjectDelete exits before object reload, script evaluation, or Dynamic Field ValueSet. Bootstrap merge (11 assertions) and OSCAL mapping (21 assertions) remain green.
+- Built `Kernel/Package/GovernanceDB-0.1.116.opm` with 248 verified payloads and zero mismatches.
+- SHA256: `4AF5E8A98A3E9818AC00D5CC5CF367A5ECD07E1730664BF8A7D6E0CC1AB75BEB`.
+
+## 2026-08-14 Governance Identity, Non-Destructive Bootstrap, and Delete Fallback 0.1.115
+
+- Updated the authoritative `GovernanceObject_2026-08-13-1.yml` RiskStatement layout to place `General Fields::RiskIdentity` before `General Fields::RiskStatement`; Annex and Version now render consistently for Policy, RiskStatement, and ControlObjective.
+- Resynchronized the packaged GovernanceObject baseline from the updated authoritative export: 25 classes and 25 roles.
+- Retains the `0.1.114` non-destructive bootstrap contract: existing customer definitions/configuration win and only missing packaged structure is merged.
+- Fixed GovernanceObject delete confirmation routing. ConfirmDialog AJAX requests are now explicit; ordinary navigation receives a complete confirmation page with Delete and Cancel rather than raw JSON.
+- Bumped GovernanceDB to `0.1.115`; supersedes `0.1.114`.
+- Validation passed: authoritative YAML parses with 53 entries; packaged seed contains the RiskIdentity section; SysConfig/SOPM XML parse; Bootstrap and delete controller syntax pass; 11 non-destructive merge and 21 OSCAL mapping assertions pass; all 248 OPM payloads match package source.
+- SHA256: `65E17B3EBEBB2DB577383594FAA0CB3FE9F859750CE7082F935F0BADB4813EDB`.
+
+## 2026-08-14 OSCAL Exported Identity Alignment 0.1.114
+
+- Diagnosed the class-layout regression after installing `0.1.112`/`0.1.113`: GovernanceDB bootstrap force-applies packaged `var/governancedb/default_classes.json`, but that seed had fallen behind the authoritative `Export/GovernanceObject_2026-08-13-1.yml`.
+- Regenerated `default_classes.json` from the authoritative 2026-08-13 export: 25 GovernanceObject classes and 25 non-empty roles. It is now the source for adding missing definitions, Dynamic Fields, and role-layout structure, including ControlIdentity and RiskIdentity with `ZRM-Annex` and `ZRM-Version`; it does not overwrite existing customer values.
+- Added `scripts/sync_governance_defaults.pl` as the repeatable export-to-package synchronization utility so future package builds can keep the bundled seed aligned with the latest GovernanceObject export.
+- Changed reinstall/upgrade reconciliation from force replacement to customer-preserving merge. Existing class/role definition values, ordering, pages, sections, fields, and customer additions remain authoritative; only missing packaged structure is added.
+- Existing GovernanceObject Dynamic Fields now preserve their label, type, object type, order, and customized configuration. Bootstrap adds only missing packaged configuration keys/options; missing fields are still created idempotently.
+- Added `GovernanceBootstrapMerge.t` coverage for customer layout, role, page, Dynamic Field option, and configuration preservation together with missing packaged additions.
+- Corrected the OSCAL release implementation to follow the latest GovernanceObject export: object Name remains the clean OSCAL title, while Annex and Version remain in the existing `ZRM-Annex` and `ZRM-Version` fields displayed by the exported ControlIdentity section.
+- Removed Annex/Version suffixes from generated Policy, RiskStatement, and ControlObjective names.
+- OSCAL re-import matching now uses class plus `ZRM-Annex` plus `ZRM-Version` and explicitly disables the document importer's name fallback. GovernanceID remains the database primary key, so same-name records from multiple releases can coexist.
+- Relationship values are resolved to the matched/created GovernanceID's GOID during confirmed import, avoiding ambiguous same-name references while keeping names clean in the UI.
+- Supersedes `0.1.113`; do not use `0.1.113` for OSCAL import.
+- Built `Kernel/Package/GovernanceDB-0.1.114.opm` with 248 verified Base64 payloads and zero mismatches. Perl syntax passes for Bootstrap, GovernanceObject Document, and OSCALImport; 11 merge-preservation assertions and 21 OSCAL mapping assertions pass.
+- SHA256: `84B2A022A9046C51726C18EBC1122569CFB8ED7D69C8FAA96D7B03A4CF660BF1`.
+
+## 2026-08-14 GovernanceDB OSCAL Import Exit Actions 0.1.113
+
+- Added a persistent `Back to GovernanceDB` link to the OSCAL import header.
+- Added `Cancel` actions beside both Preview and confirmed Import actions so the popup-style import workspace always has an explicit exit path.
+- Bumped GovernanceDB to `0.1.113`; this supersedes `0.1.112` for installation testing.
+- Built `Kernel/Package/GovernanceDB-0.1.113.opm` with 248 verified Base64 payloads and zero payload mismatches. The OSCAL mapping suite still passes all 19 assertions.
+- SHA256: `8B1337624FFC6EB82FFE10131A5B48F4E05EDB98930275F1BC644A54F478542C`.
+
+## 2026-08-14 GovernanceDB OSCAL Navigation Fix 0.1.112
+
+- Corrected the OSCAL importer navigation registration so `OSCAL Import` appears as a normal, clickable item in the GovernanceDB dropdown alongside Overview, New, and Search.
+- Removed the inert nested module navigation definition and registered the entry through `Frontend::Agent::ModuleRegistration::MainMenu`, consistent with the existing GovernanceDB navigation model.
+- Added ZIP-bundle ingestion for OSCAL exports containing `catalogs/` and `profiles/`; single catalog JSON and pasted JSON remain supported for catalog-only imports.
+- The bundle importer resolves recursive OSCAL profile imports and expands effective membership. For the supplied GovTech bundle, Level 1 includes Level 0 and Level 2 includes Levels 0 and 1 for each risk family.
+- Catalog, domain, and profile containers are all represented as Policy Governance Objects. Each ControlObjective and RiskStatement is created once and uses the existing multi-value `ZRM-Policy` field for its domain plus every effective low/medium risk profile.
+- Portable release identity is `Annex + Version`. GovernanceID remains internal, Policy relationships represent containment/applicability, and free-text `ZRM-PolicySource` is metadata only. Generated portable names include Annex and Version so a newer Draft release coexists with the currently active release.
+- OSCAL import creates Draft objects only. It does not activate a Policy, deactivate an existing release, migrate applications, or replace active controls; the next Policy release can be used to identify outdated control coverage before deliberate activation.
+- ZIP handling rejects unsafe traversal paths and limits JSON entry count and total expanded JSON size.
+- The importer remains restricted to agents in `governance-db` or `admin`.
+- Built `Kernel/Package/GovernanceDB-0.1.112.opm` with 248 Base64 payloads; zero source files are missing, every payload is encoded, and every decoded payload matches package source byte-for-byte.
+- Validation passed: GovernanceDB SOPM and SysConfig XML parse; OSCAL service and controller Perl syntax pass; the GovTech catalog/bundle mapping suite passes all 19 assertions; `git diff --check` reports no whitespace errors.
+- SHA256: `73E646BEA53A6D4E3BC44393038737CA9A6FFF60742F44697E1017FF448B942E`.
 
 ## 2026-08-13 GovernanceDB 0.1.111 Test Package
 

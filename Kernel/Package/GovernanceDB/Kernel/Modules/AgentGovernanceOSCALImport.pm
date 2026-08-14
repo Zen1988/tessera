@@ -25,7 +25,10 @@ sub Run {
     if ( $Subaction eq 'Preview' ) {
         my %Upload = $Request->GetUploadAll( Param => 'OSCALFile' );
         my $Content = $Upload{Content} || $Request->GetParam( Param => 'OSCALDocument' ) || '';
-        $Plan = $Importer->Plan( Content => $Content );
+        my $Filename = $Upload{Filename} || '';
+        $Plan = $Filename =~ m{\.zip\z}i
+            ? $Importer->PlanBundle( Content => $Content, Filename => $Filename )
+            : $Importer->Plan( Content => $Content );
         if ( IsHashRefWithData($Plan) && $Plan->{Success} ) {
             $Cache->Set( Type => 'AgentGovernanceOSCALImport', Key => $CacheKey, Value => $Plan, TTL => 60 * 60 );
             $MessageClass = 'Success';

@@ -1,26 +1,28 @@
 <div class="LayoutPopup ARIARoleMain">
-    <div class="Header"><h1>[% Translate("OSCAL Policy Import") | html %]</h1></div>
+    <div class="Header"><h1>[% Translate("OSCAL Policy Import") | html %]</h1><p><a href="[% Env("Baselink") %]Action=AgentGovernanceObject">[% Translate("Back to GovernanceDB") | html %]</a></p></div>
     <div class="Content">
 [% IF Data.Message %]<div class="MessageBox [% Data.MessageClass | html %]"><p>[% Data.Message | html %]</p></div>[% END %]
 [% IF Data.ImportErrors %]<div class="MessageBox Error"><ul>[% FOREACH Error IN Data.ImportErrors %]<li>[% Error | html %]</li>[% END %]</ul></div>[% END %]
         <form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" class="Validate PreventMultipleSubmits">
             <input type="hidden" name="Action" value="[% Env("Action") %]"/>
             <fieldset class="TableLike">
-                <label for="OSCALFile">[% Translate("OSCAL catalog JSON") | html %]:</label>
-                <div class="Field"><input id="OSCALFile" name="OSCALFile" type="file" accept="application/json,.json"/></div><div class="Clear"></div>
+                <label for="OSCALFile">[% Translate("OSCAL export bundle") | html %]:</label>
+                <div class="Field"><input id="OSCALFile" name="OSCALFile" type="file" accept="application/zip,.zip,application/json,.json"/></div><div class="Clear"></div>
+                <div class="Field"><p class="FieldExplanation">[% Translate("Select the exported ZIP containing catalogs/ and profiles/. A single catalog JSON is accepted for catalog-only imports.") | html %]</p></div><div class="Clear"></div>
                 <label for="OSCALDocument">[% Translate("or paste JSON") | html %]:</label>
                 <div class="Field"><textarea id="OSCALDocument" name="OSCALDocument" class="W100pc" rows="8" spellcheck="false"></textarea></div><div class="Clear"></div>
-                <div class="Field SpacingTop"><button class="CallForAction Primary" type="submit" name="Subaction" value="Preview"><span>[% Translate("Preview import") | html %]</span></button></div>
+                <div class="Field SpacingTop"><button class="CallForAction Primary" type="submit" name="Subaction" value="Preview"><span>[% Translate("Preview import") | html %]</span></button> <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObject"><span>[% Translate("Cancel") | html %]</span></a></div>
             </fieldset>
         </form>
 [% IF Data.Plan.Success %]
         <div class="WidgetSimple"><div class="Header"><h2>[% Data.Plan.Catalog | html %] — [% Data.Plan.Version | html %]</h2></div><div class="Content">
             <p>[% Translate("Policy") | html %]: [% Data.Plan.Counts.Policy | html %] · [% Translate("Risk Statements") | html %]: [% Data.Plan.Counts.RiskStatement | html %] · [% Translate("Control Objectives") | html %]: [% Data.Plan.Counts.ControlObjective | html %]</p>
+[% IF Data.Plan.Profiles.size %]<p>[% Translate("Resolved profiles") | html %]: [% Data.Plan.Profiles.join(", ") | html %]</p>[% END %]
 [% IF Data.Plan.Warnings.size %]<div class="MessageBox Notice"><ul>[% FOREACH Warning IN Data.Plan.Warnings %]<li>[% Warning | html %]</li>[% END %]</ul></div>[% END %]
             <div class="Table"><table><thead><tr><th>[% Translate("Annex") | html %]</th><th>[% Translate("Name") | html %]</th><th>[% Translate("Category") | html %]</th><th>[% Translate("Risk Statement") | html %]</th></tr></thead><tbody>
 [% FOREACH Item IN Data.Plan.Preview %]<tr><td>[% Item.Annex | html %]</td><td>[% Item.Name | html %]</td><td>[% Item.Category | html %]</td><td>[% IF Item.HasRisk %][% Translate("Yes") | html %][% ELSE %][% Translate("No") | html %][% END %]</td></tr>[% END %]
             </tbody></table></div>
-            <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits"><input type="hidden" name="Action" value="[% Env("Action") %]"/><button class="CallForAction Primary" type="submit" name="Subaction" value="Import"><span>[% Translate("Import or update all objects") | html %]</span></button></form>
+            <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits"><input type="hidden" name="Action" value="[% Env("Action") %]"/><button class="CallForAction Primary" type="submit" name="Subaction" value="Import"><span>[% Translate("Import or update all objects") | html %]</span></button> <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObject"><span>[% Translate("Cancel") | html %]</span></a></form>
         </div></div>
 [% END %]
     </div>

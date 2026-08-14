@@ -1,0 +1,578 @@
+---
+classes:
+- class: ZTSM::GovernanceObject::Class
+  items:
+  - comment: ''
+    name: Application
+    preferences:
+      Categories:
+      - Business
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+    valid: valid
+  - comment: ''
+    name: ApprovalModel
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - GOID
+      Permission:
+      - '2'
+      - '17'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: BlueBook
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Book
+    preferences:
+      Categories:
+      - All
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+    valid: valid
+  - comment: Catalog
+    name: Catalog
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: Control
+    name: Control
+    preferences:
+      Categories:
+      - All
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+    valid: invalid
+  - comment: ControlObjective
+    name: ControlObjective
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: ControlRecommendation
+    name: ControlRecommendation
+    preferences:
+      Categories:
+      - All
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+    valid: invalid
+  - comment: System Criticality
+    name: CriticalityProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Data Classification
+    name: DataClassification
+    preferences:
+      Categories:
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Environment
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: EventSeverity
+    preferences:
+      Categories:
+      - All
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
+  - comment: Exposure Profile
+    name: ExposureProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Framework
+    name: Framework
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+    valid: valid
+  - comment: ''
+    name: FunctionProfile
+    preferences:
+      Categories:
+      - All
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: GovernanceConfigItem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: GovernanceRole
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Location
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Organization
+    preferences:
+      Categories:
+      - Business
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Platform
+    preferences:
+      Categories:
+      - Context
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Policy
+    name: Policy
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: RiskStatement
+    name: RiskStatement
+    preferences:
+      Categories:
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+      - Description
+      - Name
+      - ZTSMStatusID
+    valid: valid
+  - comment: ''
+    name: ServiceProfile
+    preferences:
+      Categories:
+      - Service
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: ServiceSupportMap
+    preferences:
+      Categories:
+      - Service
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: Service Tiering
+    name: ServiceTier
+    preferences:
+      Categories:
+      - Context
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Severity
+    preferences:
+      Categories:
+      - All
+      - Service
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: StateBook
+    preferences:
+      Categories:
+      - Governance
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: SupportAssignment
+    preferences:
+      Categories:
+      - Assignment
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: SupportProfile
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: TechnologyProfile
+    preferences:
+      Categories:
+      - Profile
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Template
+    preferences:
+      Categories:
+      - Reference
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+object_type: GeneralCatalog
