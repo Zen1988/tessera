@@ -44,48 +44,26 @@ Recursive GovernanceObject, ITSMConfigItem, and MELT traversal, named object
 selection, collections, schedules, business calendars, and LET variables remain
 reserved grammar. Until implemented, using them returns UNKNOWN.
 
-Manual control attestation
---------------------------
+Failure-to-risk behavior
+------------------------
 
-The Service is not declared in policy text. The existing Service Request
-workflow is selected through the ControlObjective's ZRM-Service field and owns
-ticket creation, routing, assignment, and lifecycle.
+Control failure does not create a service or workflow ticket. ZRM-CreateRisk on
+the ControlObjective explicitly enables risk creation. ZRM-RiskClass selects the
+target using ObjectType.Class syntax, normally MELTObject.Risk.
 
-NEW @TICKET
-SET @TICKET.Title = "Annual input-validation attestation"
-SET @TICKET.Queue = "Governance"
-SET @TICKET.CustomerUser = "customer.login"
-SET @TICKET.Attestation = [
-  { ZRM-Query = "Confirm server-side validation is applied to every untrusted input.", ZRM-Response = "" },
-  { ZRM-Query = "Confirm invalid input is rejected and recorded.", ZRM-Response = "" }
-]
-SUBMIT
+The ConfigItem Control's ZRM-FieldAssignment contains programmable assignments:
 
-EXPECT:
-@TICKET.Attestation[0].ZRM-Response EQUALS "Yes"
-AND @TICKET.Attestation[1].ZRM-Response EQUALS "Yes"
-THEN PASS
-ELSE FAIL
+SET @MELTObject.Risk.MELT-Control THIS
+SET @MELTObject.Risk.MELT-RiskStmt @CONTROLOBJECTIVE.ZRM-RiskStmt
 
-The equivalent indexed authoring form is:
+THIS is the current ConfigItem Control ID. Every target Dynamic Field is checked
+against the selected object type. Values may be literals or expressions supported
+by the policy value grammar. The Control link makes repeated failed evaluation
+idempotent: an existing risk for the same Control and class is reused.
 
-LET @TICKET.Attestation[0].ZRM-Query = "Confirm server-side validation is applied."
-LET @TICKET.Attestation[0].ZRM-Response = ""
-
-NEW @TICKET creates a service-backed draft. SET/LET assignments populate it.
-SUBMIT hands it to the existing Service Request workflow. No queue, requester,
-owner, or process routing is hardcoded by the control policy.
-
-EXPECT is evaluated by the service workflow's ZRMControlEvaluate transition
-action at the workflow's configured completion point. The action receives the exact
-ConfigItem Control ID being executed; ZRM-TKInstance remains a control target,
-not a pointer to an attestation ticket.
-UNKNOWN never becomes Pass. The linked ConfigItem Control receives ZRM-Result
-and ZRM-LastRun; the reusable ControlObjective does not store runtime history.
-
-FAIL records the result only. It does not implicitly create remediation work.
-A separate authored conditional action such as `IF FAIL THEN ...` is required
-before a future action executor may submit a follow-up ticket.
+Manual controls become AWAITING_EVIDENCE when due. They never create a ticket
+automatically. An existing process may still invoke ZRMControlEvaluate with its
+ticket as execution evidence; a Fail result then follows the same opt-in risk rule.
 
 Control cycle examples
 ----------------------

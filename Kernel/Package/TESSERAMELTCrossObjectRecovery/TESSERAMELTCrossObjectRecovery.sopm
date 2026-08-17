@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_package version="1.1">
+    <Name>TESSERAMELTCrossObjectRecovery</Name>
+    <Version>0.0.1</Version>
+    <Framework>11.1.x</Framework>
+    <Vendor>TESSERA</Vendor>
+    <URL>https://tessera.local/</URL>
+    <License>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</License>
+    <Description Lang="en">One-time recovery of GovernanceObject values preserved in MELT-contaminated *Old Dynamic Fields.</Description>
+    <IntroInstall Type="post" Lang="en" Title="TESSERA MELT Cross-Object Recovery">
+        Install only after GovernanceDB 0.1.125 and MELT 0.0.15. The installer copies safe missing values from the known *Old fields and never deletes preserved data.
+    </IntroInstall>
+    <IntroUninstall Type="pre" Lang="en" Title="TESSERA MELT Cross-Object Recovery">
+        Uninstalling removes only this repair module. Recovered GovernanceObject values and preserved *Old values remain unchanged.
+    </IntroUninstall>
+
+    <PackageRequired Version="0.1.125">GovernanceDB</PackageRequired>
+    <PackageRequired Version="0.0.15">MELT</PackageRequired>
+
+    <Filelist>
+        <File Location="Kernel/System/TESSERA/MELTCrossObjectRecovery.pm" Permission="660"/>
+    </Filelist>
+
+    <CodeInstall Type="post"><![CDATA[
+        my $RecoveryObject = $Kernel::OM->Get('Kernel::System::TESSERA::MELTCrossObjectRecovery');
+        $RecoveryObject->Run();
+    ]]></CodeInstall>
+</otobo_package>

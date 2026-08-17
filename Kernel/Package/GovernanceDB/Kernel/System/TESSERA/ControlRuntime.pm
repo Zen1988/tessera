@@ -11,6 +11,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::DateTime',
+    'Kernel::System::GeneralCatalog',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Log',
@@ -69,20 +70,11 @@ sub DispatchDueControls {
 
         my $ControlType = _Scalar( $Objective->{'DynamicField_ZRM-ControlType'} ) || '';
         if ( lc($ControlType) eq 'manual' ) {
-            my $Source = _Scalar( $Objective->{'DynamicField_ZRM-PolicyEvaluation'} ) || '';
-            my $Parsed = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ProgramParse( Source => $Source );
-            my $ServiceID = _Scalar( $Objective->{'DynamicField_ZRM-Service'} );
-            push @Results, !$Parsed->{Success}
-                ? { ConfigItemID => $ConfigItemID, Status => 'UNKNOWN', Reason => $Parsed->{Error} }
-                : !$ServiceID
-                    ? { ConfigItemID => $ConfigItemID, Status => 'UNKNOWN', Reason => 'ControlObjective ZRM-Service is missing.' }
-                    : $Self->_ManualRequestSubmit(
-                        ConfigItemID => $ConfigItemID,
-                        ObjectiveID  => $ObjectiveID,
-                        ServiceID    => $ServiceID,
-                        Program      => $Parsed->{Program},
-                        UserID       => $UserID,
-                    );
+            push @Results, {
+                ConfigItemID => $ConfigItemID,
+                Status       => 'AWAITING_EVIDENCE',
+                Reason       => 'Manual control is due; no service or workflow ticket is created automatically.',
+            };
             next CONTROL;
         }
 
@@ -161,7 +153,11 @@ sub EvaluateCompletedTicket {
     return { Success => 0, Status => 'UNKNOWN', Reason => $Result->{Error} } if !$Result->{Success};
 
     $Self->_ConfigItemFieldSet( ConfigItemID => $ControlIDs[0], FieldName => 'ZRM-Result', Value => $Result->{Result}, UserID => $UserID );
-    return { Success => 1, Status => $Result->{Result}, ConfigItemID => $ControlIDs[0] };
+    my $Risk = $Self->_RiskCreateOnFailure(
+        Result => $Result->{Result}, Control => $Control, Objective => $Objective,
+        ConfigItemID => $ControlIDs[0], Ticket => \%Ticket, UserID => $UserID,
+    );
+    return { Success => $Risk->{Success}, Status => $Result->{Result}, ConfigItemID => $ControlIDs[0], %{$Risk} };
 }
 
 sub _AutomaticEvaluate {
@@ -180,74 +176,87 @@ sub _AutomaticEvaluate {
         ObjectParams => { Epoch => $Param{Now} },
     )->ToString();
     $Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-LastRun', Value => $Now, UserID => $Param{UserID} );
-    return { ConfigItemID => $Param{ConfigItemID}, Status => $ControlResult };
+    my $Risk = $Self->_RiskCreateOnFailure(
+        Result => $ControlResult, Control => $Param{Control}, Objective => $Param{Objective},
+        ConfigItemID => $Param{ConfigItemID}, UserID => $Param{UserID},
+    );
+    return { ConfigItemID => $Param{ConfigItemID}, Status => $ControlResult, %{$Risk} };
 }
 
-sub _ManualRequestSubmit {
+sub _RiskCreateOnFailure {
     my ( $Self, %Param ) = @_;
+    return { Success => 1, RiskCreated => 0 } if lc( $Param{Result} || '' ) ne 'fail';
+    return { Success => 1, RiskCreated => 0 } if !_Truthy( _Scalar( $Param{Objective}{'DynamicField_ZRM-CreateRisk'} ) );
 
-    my $Program = $Param{Program};
-    return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => 'NEW @TICKET is required.' }
-        if !$Program->{TicketRequested};
-    return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => 'SUBMIT is required.' }
-        if !$Program->{SubmitRequested};
-
-    my %Assignment = ( %{ $Program->{Assignments} || {} }, %{ $Program->{Ticket} || {} } );
-    my %AllowedNative = map { $_ => 1 } qw(Title Queue QueueID Lock Priority PriorityID State StateID
-        CustomerUser CustomerID Owner OwnerID Responsible ResponsibleID Type TypeID SLA SLAID);
-    my %Create = (
-        TN        => undef,
-        ServiceID => $Param{ServiceID},
-        UserID    => $Param{UserID},
+    my $Target = _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ) || '';
+    return { Success => 0, RiskCreated => 0, RiskError => 'ZRM-RiskClass is required when ZRM-CreateRisk is selected.' }
+        if $Target !~ m{\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z};
+    my ( $ObjectType, $Class ) = ( $1, $2 );
+    my $Source = _Scalar( $Param{Control}{'DynamicField_ZRM-FieldAssignment'} ) || '';
+    my $Assignments = $Self->_RiskAssignmentsParse(
+        Source => $Source, ObjectType => $ObjectType, Class => $Class,
+        Context => { CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective}, TICKET => $Param{Ticket} || {} },
+        ConfigItemID => $Param{ConfigItemID},
     );
-    for my $Field ( keys %Assignment ) {
-        $Create{$Field} = $Assignment{$Field} if $AllowedNative{$Field};
-    }
-    for my $Required (qw(Title)) {
-        return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => "NEW \@TICKET assignment '$Required' is required." }
-            if !defined $Create{$Required} || $Create{$Required} eq '';
-    }
+    return { Success => 0, RiskCreated => 0, RiskError => $Assignments->{Error} } if !$Assignments->{Success};
 
-    my $TicketID = $Kernel::OM->Get('Kernel::System::Ticket')->TicketCreate(%Create);
-    return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => 'Service Request submission failed.' }
-        if !$TicketID;
+    my $CatalogClass = $ObjectType eq 'MELTObject' ? 'ZTSM::MELT::Class' : 'ZTSM::GovernanceObject::Class';
+    my $StatusClass  = $ObjectType eq 'MELTObject' ? 'ZTSM::MELT::Status' : 'ZTSM::GovernanceObject::Status';
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %ClassID = reverse %{ $Catalog->ItemList( Class => $CatalogClass, Valid => 1 ) || {} };
+    my %StatusID = reverse %{ $Catalog->ItemList( Class => $StatusClass, Valid => 1 ) || {} };
+    return { Success => 0, RiskCreated => 0, RiskError => "Risk class '$Target' is unavailable or inactive." } if !$ClassID{$Class};
+    my $ActiveID = $StatusID{Active} || $StatusID{Production} || ( sort { $a <=> $b } values %StatusID )[0];
+    return { Success => 0, RiskCreated => 0, RiskError => "No active status is available for '$ObjectType'." } if !$ActiveID;
 
-    for my $Field ( keys %Assignment ) {
-        next if $AllowedNative{$Field};
-        my $Set = $Self->_TicketFieldSet(
-            TicketID => $TicketID, FieldName => $Field, Value => $Assignment{$Field}, UserID => $Param{UserID},
+    my $Object = eval { $Kernel::OM->Get("Kernel::System::$ObjectType") };
+    return { Success => 0, RiskCreated => 0, RiskError => "$ObjectType is not installed." } if !$Object;
+    my ($IdentityField) = grep {
+        defined $Assignments->{Values}{$_} && "$Assignments->{Values}{$_}" eq "$Param{ConfigItemID}"
+    } keys %{ $Assignments->{Values} };
+    if ($IdentityField) {
+        my $SearchMethod = $ObjectType . 'Search';
+        my @Existing = $Object->$SearchMethod(
+            Result => 'ARRAY', Limit => 1, Classes => [$Class],
+            "DynamicField_$IdentityField" => { Equals => $Param{ConfigItemID} },
         );
-        return { ConfigItemID => $Param{ConfigItemID}, TicketID => $TicketID, Status => 'UNKNOWN', Reason => "Ticket field '$Field' could not be assigned." }
-            if !$Set;
+        return {
+            Success => 1, RiskCreated => 0, RiskObjectType => $ObjectType,
+            RiskObjectID => $Existing[0], RiskClass => $Class,
+        } if @Existing;
     }
-    if ( @{ $Program->{Attestation} || [] } ) {
-        my $Set = $Self->_TicketFieldSet(
-            TicketID => $TicketID, FieldName => 'Attestation', Value => $Program->{Attestation}, UserID => $Param{UserID},
-        );
-        return { ConfigItemID => $Param{ConfigItemID}, TicketID => $TicketID, Status => 'UNKNOWN', Reason => 'Attestation rows could not be assigned.' }
-            if !$Set;
-    }
-
-    my $Now = $Kernel::OM->Create('Kernel::System::DateTime')->ToString();
-    my $RunRecorded = $Self->_ConfigItemFieldSet(
-        ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-LastRun', Value => $Now, UserID => $Param{UserID},
-    );
-    return { ConfigItemID => $Param{ConfigItemID}, TicketID => $TicketID, Status => 'UNKNOWN', Reason => 'Ticket submitted but ZRM-LastRun could not be recorded.' }
-        if !$RunRecorded;
-
-    return {
-        ConfigItemID => $Param{ConfigItemID}, ObjectiveID => $Param{ObjectiveID},
-        TicketID => $TicketID, ServiceID => $Param{ServiceID}, Status => 'SUBMITTED',
-    };
+    my $Name = 'Control failure: ' . ( $Param{Control}{Name} || $Param{Control}{Number} || $Param{ConfigItemID} );
+    my %Create = ( ClassID => $ClassID{$Class}, ZTSMStatusID => $ActiveID, Name => $Name, UserID => $Param{UserID} );
+    $Create{"DynamicField_$_"} = $Assignments->{Values}{$_} for keys %{ $Assignments->{Values} };
+    my $Method = $ObjectType . 'Add';
+    my $RiskID = $Object->$Method(%Create);
+    return { Success => 0, RiskCreated => 0, RiskError => "Failed to create '$Target'." } if !$RiskID;
+    return { Success => 1, RiskCreated => 1, RiskObjectType => $ObjectType, RiskObjectID => $RiskID, RiskClass => $Class };
 }
 
-sub _TicketFieldSet {
+sub _RiskAssignmentsParse {
     my ( $Self, %Param ) = @_;
-    my $Field = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Param{FieldName} );
-    return if !$Field || ( $Field->{ObjectType} || '' ) ne 'Ticket';
-    return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
-        DynamicFieldConfig => $Field, ObjectID => $Param{TicketID}, Value => $Param{Value}, UserID => $Param{UserID},
-    );
+    my %Values;
+    for my $Line ( split m{\r?\n}, $Param{Source} ) {
+        $Line =~ s{\s*#.*\z}{};
+        $Line =~ s{\A\s+|\s+\z}{}g;
+        next if $Line eq '';
+        return { Success => 0, Error => "Unsupported ZRM-FieldAssignment line: $Line" }
+            if $Line !~ m{\ASET\s+\@\Q$Param{ObjectType}\E\.\Q$Param{Class}\E\.([A-Za-z][A-Za-z0-9_-]*)\s*(?:=\s*)?(.+?)\s*;?\z}i;
+        my ( $FieldName, $Expression ) = ( $1, $2 );
+        my $IsThis = uc($Expression) eq 'THIS' ? 1 : 0;
+        my $Field = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $FieldName );
+        return { Success => 0, Error => "Dynamic Field '$FieldName' does not belong to $Param{ObjectType}." }
+            if !$Field || ( $Field->{ObjectType} || '' ) ne $Param{ObjectType};
+        my $Value = $IsThis
+            ? { Known => 1, Value => $Param{ConfigItemID} }
+            : $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ValueEvaluate(
+                Expression => $Expression, Context => $Param{Context},
+            );
+        return { Success => 0, Error => $Value->{Reason} || "Cannot calculate '$FieldName'." } if !$Value->{Known};
+        $Values{$FieldName} = $Value->{Value};
+    }
+    return { Success => 1, Values => \%Values };
 }
 
 sub _ConfigItemFieldSet {
@@ -264,6 +273,12 @@ sub _Scalar {
     $Value = $Value->[0] if ref $Value eq 'ARRAY' && @{$Value} == 1;
     return if ref $Value;
     return $Value;
+}
+
+sub _Truthy {
+    my ($Value) = @_;
+    return 0 if !defined $Value || $Value eq '' || $Value =~ m{\A(?:0|no|false|off)\z}i;
+    return 1;
 }
 
 sub _Epoch {

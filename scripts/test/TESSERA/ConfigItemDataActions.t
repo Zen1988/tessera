@@ -10,7 +10,7 @@ my %Expected = (
     ],
     'Kernel/Package/GovernanceDB/Kernel/Modules/AgentITSMConfigItemWorkbook.pm' => [
         'REVIEW_SAME_ASSET', 'ZTAM-Application', 'ZTAM-Environment', 'ZTAM-Location',
-        'lc( $_->{name}', '_CaseFold', 'UPDATE_CLEAR', '_ClearFields', 'destructive confirmation is required',
+        '_CaseFold', 'UPDATE_CLEAR', '_ClearFields', 'destructive confirmation is required',
         '_DefinitionFieldNames', 'DefinitionRef', 'ClassID', 'return {} if !$Param{ClassID}', "Subaction eq 'Model'",
     ],
     'Kernel/Package/GovernanceDB/Kernel/System/ITSMConfigItem/Document.pm' => [
@@ -25,8 +25,12 @@ my %Expected = (
         "Query.get('Filter')", 'CurrentClassID',
     ],
     'Kernel/Package/GovernanceDB/var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.Workbook.js' => [
-        'XLSX.writeFile', 'JSON.stringify(Value)', 'SheetNames', 'ZTSMWorkbookDecision', 'ZTSMWorkbookTemplate',
-        'fetch(ModelURL', 'Subaction=Model',
+        'SheetNames', 'ZTSMWorkbookDecision', 'ZTSMWorkbookTemplate',
+        'Subaction=Download', 'Instructions', '_Selections',
+    ],
+    'Kernel/Package/GovernanceDB/Kernel/System/ZTSMWorkbookXLSX.pm' => [
+        'data_validation', 'FieldMetadata', 'GeneralCatalog', 'Instructions', 'Allowed values', '_Selections',
+        "bg_color => '#E7E6E6'", "bg_color => '#A9D18E'", 'Structured',
     ],
 );
 

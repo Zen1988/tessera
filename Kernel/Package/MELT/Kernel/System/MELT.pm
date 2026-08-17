@@ -586,7 +586,7 @@ sub _GeneralCatalogClassName {
     return $Classes->{ $Param{Type} } if $Classes->{ $Param{Type} };
 
     my %Default = (
-        Category      => 'ZTSM::MELT::Category',
+        Category      => 'ZTSM::MELT::Class::Category',
         Class         => 'ZTSM::MELT::Class',
         ClassCategory => 'ZTSM::MELT::Class::Category',
         Definition    => 'ZTSM::MELT::Definition',

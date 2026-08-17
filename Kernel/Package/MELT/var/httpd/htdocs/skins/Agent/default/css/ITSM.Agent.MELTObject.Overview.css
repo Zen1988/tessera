@@ -1,0 +1,133 @@
+/*
+ * TESSERA object overview layout.
+ *
+ * This is the ITSM ConfigItem overview contract ported to the object-specific
+ * list class. Keep the DOM and responsive behavior aligned with the source UI.
+ */
+
+.MELTObjectList {
+    overflow: auto;
+}
+
+.MELTObjectList table {
+    border-collapse: separate;
+    position: relative;
+    overflow: hidden;
+}
+
+.MELTObjectList td {
+    line-height: 18px;
+}
+
+.MELTObjectList table td.Checkbox {
+    margin-left: 0;
+}
+
+.MELTObjectList table input.Checkbox {
+    margin-right: 7px;
+}
+
+.MELTObjectList td.From div,
+.MELTObjectList td.Subject div,
+.MELTObjectList td.Created a {
+    height: 20px;
+    overflow: hidden;
+    display: block;
+}
+
+.MELTObjectList .No {
+    width: 30px;
+    text-align: center;
+}
+
+.MELTObjectList .Attachments {
+    width: 20px;
+}
+
+#OverviewBody.Overview.MELTObjectList {
+    overflow-x: auto;
+    margin: 0;
+    border: 0;
+    grid-area: 1 / 2 / 2 / 3;
+}
+
+#OverviewBody.Overview.MELTObjectList table {
+    border-left: 1px solid #DDD;
+    border-right: 1px solid #DDD;
+}
+
+#OverviewBody.Overview.MELTObjectList table.TableSmall.NoCellspacing {
+    overflow: visible;
+}
+
+#OverviewContainer {
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) minmax(0, 7fr);
+    margin: 0 16px 8px 8px;
+}
+
+#OverviewContainer > #OverviewControl {
+    min-width: 0;
+    padding-right: 16px;
+    border-right: 1px solid var(--colBGMedium);
+    margin-right: 16px;
+}
+
+#OverviewContainer > #OverviewControl > ul > li {
+    border-radius: 15px;
+    padding: 4px 0 4px 8px;
+    margin-bottom: 5px;
+}
+
+#OverviewContainer > #OverviewControl > ul > li > a {
+    display: block;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    color: var(--colTextDark);
+}
+
+#OverviewContainer > #OverviewControl > ul > li.Active {
+    background-color: var(--colBGMediumDark);
+}
+
+#OverviewContainer > #OverviewControl > ul > li.Active > a {
+    color: var(--colTextDark);
+}
+
+.OverviewControl .ActionRow {
+    margin-left: 12.5%;
+    margin-top: 10px;
+    border-radius: 10px 10px 0 0;
+}
+
+div.Flag.Small {
+    display: inline-block;
+    width: 16px;
+    height: 14px;
+    margin: 2px 8px 0 0;
+    vertical-align: top;
+}
+
+div.Flag.Small > span {
+    display: inline-block;
+    border-radius: 5px;
+    width: 16px;
+    height: 12px;
+}
+
+.FlaggedName {
+    display: inline-block;
+}
+
+@media only screen and (min-width: 0) and (max-width: 1024px) {
+    #OverviewContainer {
+        grid-template-columns: minmax(160px, 1fr) minmax(0, 4fr);
+    }
+
+    #OverviewBody.Overview.MELTObjectList {
+        overflow-y: auto;
+    }
+}
+

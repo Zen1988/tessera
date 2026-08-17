@@ -54,17 +54,13 @@ sub InstallDefaults {
     my $ClassNamespace       = $Defaults->{ClassNamespace}       || 'ZTSM::MELT::Class';
     my $RoleNamespace        = $Defaults->{RoleNamespace}        || 'ZTSM::MELT::Role';
     my $DefinitionNamespace  = $Defaults->{DefinitionNamespace}  || 'ZTSM::MELT::Definition';
-    my $CategoryNamespace    = $Defaults->{CategoryNamespace}    || 'ZTSM::MELT::Category';
-    my $LegacyCategoryNS     = $Defaults->{CompatibilityCategoryNamespace};
-    my @CategoryNamespaces   = grep {$_} ( $CategoryNamespace, $LegacyCategoryNS );
+    my $CategoryNamespace = $Defaults->{CategoryNamespace} || 'ZTSM::MELT::Class::Category';
 
     for my $Category ( @{ $Defaults->{Categories} || [] } ) {
-        for my $Namespace (@CategoryNamespaces) {
-            $Self->_CatalogItemEnsure(
-                Class => $Namespace,
-                Name  => $Category,
-            );
-        }
+        $Self->_CatalogItemEnsure(
+            Class => $CategoryNamespace,
+            Name  => $Category,
+        );
     }
 
     $Self->_CatalogItemEnsure(
@@ -862,6 +858,7 @@ sub _GeneralCatalogSeedEnsure {
         Content => ${$ContentRef},
         Format  => 'yaml',
         UserID  => 1,
+        CreateOnly => 1,
     );
 
     if ( !$Result || !$Result->{Success} ) {

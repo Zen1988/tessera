@@ -929,6 +929,21 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
+            "ZRM-CreateRisk" : {
+               "Config" : {
+                  "DefaultValue" : "0",
+                  "MultiValue" : "0",
+                  "PossibleNone" : "0",
+                  "Tooltip" : "Create a risk record when this control fails"
+               },
+               "FieldOrder" : 533,
+               "FieldType" : "Checkbox",
+               "InternalField" : 0,
+               "Label" : "Create Risk When Control Failed",
+               "Name" : "ZRM-CreateRisk",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
             "ZRM-ControlType" : {
                "ChangeTime" : "2026-08-14 03:19:07",
                "Config" : {
@@ -1138,24 +1153,20 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
-            "ZRM-Service" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+            "ZRM-RiskClass" : {
                "Config" : {
-                  "EditFieldMode" : "AutoComplete",
-                  "ImportSearchAttribute" : "",
+                  "DefaultValue" : "MELTObject.Risk",
+                  "Link" : "",
+                  "LinkPreview" : "",
                   "MultiValue" : "0",
-                  "Multiselect" : "0",
-                  "PossibleNone" : "1",
-                  "ReferencedObjectType" : "Service",
-                  "Tooltip" : "Service Reference",
-                  "TreeView" : "0"
+                  "RegExList" : [],
+                  "Tooltip" : "Target object and class, for example MELTObject.Risk"
                },
-               "CreateTime" : "2026-08-12 08:41:12",
-               "FieldOrder" : 509,
-               "FieldType" : "Service",
+               "FieldOrder" : 534,
+               "FieldType" : "Text",
                "InternalField" : 0,
-               "Label" : "Service",
-               "Name" : "ZRM-Service",
+               "Label" : "Risk Class",
+               "Name" : "ZRM-RiskClass",
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
@@ -4079,7 +4090,7 @@
          "Name" : "Policy"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF: ZRM-Annex\r\n    - DF: ZRM-Version\r\n  ControlObjective:\r\n    Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation\r\n    - DF: ZRM-Policy\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-RiskStmt\r\n    - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n    - DF: ZRM-ControlCycle\r\n    - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n    - DF: ZRM-Service",
+         "Definition" : "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF: ZRM-Annex\r\n    - DF: ZRM-Version\r\n  ControlObjective:\r\n    Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation\r\n    - DF: ZRM-Policy\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-RiskStmt\r\n    - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n    - DF: ZRM-ControlCycle\r\n    - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n    - DF: ZRM-CreateRisk\r\n    - DF: ZRM-RiskClass",
          "Name" : "ZRM ControlObjective"
       },
       {

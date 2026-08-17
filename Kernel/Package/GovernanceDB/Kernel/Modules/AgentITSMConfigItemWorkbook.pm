@@ -35,6 +35,18 @@ sub Run {
             NoCache     => 1,
         );
     }
+    if ( $Subaction eq 'Download' ) {
+        my $Model = $Self->_ExportModel( ClassID => $ClassID );
+        return $Layout->ErrorScreen( Message => Translatable('Select a valid ConfigItem class first.') ) if !keys %{$Model};
+        my $ClassName = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList( Class => 'ITSM::ConfigItem::Class' )->{$ClassID};
+        my $Excel = $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->Build(
+            Model => $Model, Empty => ( $Request->GetParam( Param => 'Empty' ) || 0 ), JSON => $JSON,
+        );
+        $ClassName =~ s{[^A-Za-z0-9_-]+}{-}g;
+        my $Suffix = ( $Request->GetParam( Param => 'Empty' ) || 0 ) ? '-Template.xlsx' : '-Export.xlsx';
+        return $Layout->Attachment( Filename => 'TESSERA-' . $ClassName . $Suffix,
+            ContentType => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', Content => $Excel );
+    }
 
     if ( $Subaction eq 'Preview' ) {
         my $Rows = eval { $JSON->Decode( Data => $Payload ) };
@@ -162,12 +174,19 @@ sub _ExportModel {
         my $Definition = $CIObject->DefinitionGet( ClassID => $ClassID ) || {};
         my %EffectiveFields;
         $Self->_DefinitionFieldNames( Node => $Definition->{DefinitionRef}, Fields => \%EffectiveFields );
+        my %Metadata = map { $_ => $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->FieldMetadata( Name => $_ ) } keys %EffectiveFields;
+        $Metadata{Class} = { Type => 'Fixed', Fixed => 1, Options => [ $Classes->{$ClassID} ] };
+        $Metadata{Number} = { Type => 'Fixed', Fixed => 1 };
+        $Metadata{Version} = { Type => 'Fixed', Fixed => 1 };
+        $Metadata{DeploymentState} = { Type => 'GeneralCatalog', Options => $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->CatalogOptions( Class => 'ITSM::ConfigItem::DeploymentState' ) };
+        $Metadata{IncidentState} = { Type => 'GeneralCatalog', Options => $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->CatalogOptions( Class => 'ITSM::ConfigItem::IncidentState' ) };
         $Sheets{ $Classes->{$ClassID} } = {
             Headers => [
                 qw(Class Number Name Version DeploymentState IncidentState Description),
                 sort keys %EffectiveFields,
             ],
             Rows => [],
+            Fields => \%Metadata,
         };
     }
     my @IDs = $CIObject->ConfigItemSearch( Result => 'ARRAY', UserID => $Self->{UserID}, Permission => 'ro' );

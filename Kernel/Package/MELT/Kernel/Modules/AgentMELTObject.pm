@@ -272,6 +272,7 @@ sub Run {
 
         for my $Category ( $ClassPreferences{Categories}->@* ) {
             my $CategoryID = $ReverseCategoryList{ $LayoutObject->{LanguageObject}->Translate($Category) };
+            next if !defined $CategoryID;
             push @{ $Category2ClassID{$CategoryID} }, $ClassID;
         }
     }

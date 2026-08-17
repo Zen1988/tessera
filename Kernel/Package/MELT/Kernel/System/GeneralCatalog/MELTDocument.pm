@@ -197,6 +197,11 @@ sub Import {
 
             my $ItemID;
             if ( IsHashRefWithData($Existing) ) {
+                if ( $Param{CreateOnly} ) {
+                    $Skipped++;
+                    next ITEM;
+                }
+
                 my $Success = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemUpdate(
                     ItemID  => $Existing->{ItemID},
                     Name    => $Name,

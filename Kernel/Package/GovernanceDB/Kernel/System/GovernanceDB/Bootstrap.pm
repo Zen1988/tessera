@@ -1347,6 +1347,7 @@ sub _GeneralCatalogSeedEnsure {
         Content => ${$ContentRef},
         Format  => 'yaml',
         UserID  => 1,
+        CreateOnly => 1,
     );
 
     if ( !$Result || !$Result->{Success} ) {

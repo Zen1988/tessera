@@ -1,6 +1,6 @@
 [
    {
-      "Definition" : "---\r\nSections:\r\n  Instance:\r\n    Content:\r\n    - Header: General Information\r\n    - DF: ZRM-ControlObjective\r\n    - DF: ZRM-CIInstance\r\n    - DF: ZRM-GOInstance\r\n    - DF: ZRM-TKInstance\r\n    - DF: ZRM-MOInstance\r\n    - DF: ZRM-Result\r\n    - DF: ZRM-LastRun\r\n    - DF: ZTAM-ContractEntitlement",
+      "Definition" : "---\r\nSections:\r\n  Instance:\r\n    Content:\r\n    - Header: General Information\r\n    - DF: ZRM-ControlObjective\r\n    - DF: ZRM-CIInstance\r\n    - DF: ZRM-GOInstance\r\n    - DF: ZRM-TKInstance\r\n    - DF: ZRM-MOInstance\r\n    - DF: ZRM-Result\r\n    - DF: ZRM-LastRun\r\n    - DF: ZRM-FieldAssignment\r\n    - DF: ZTAM-ContractEntitlement",
       "RoleName" : "Control"
    },
    {
@@ -103,6 +103,21 @@
             "FieldType" : "DateTime",
             "Label" : "Last Run",
             "Name" : "ZRM-LastRun",
+            "ObjectType" : "ITSMConfigItem"
+         },
+         "ZRM-FieldAssignment" : {
+            "CIClass" : "Control",
+            "Config" : {
+               "Cols" : "100",
+               "DefaultValue" : "SET @MELTObject.Risk.MELT-Control THIS",
+               "MultiValue" : "0",
+               "Rows" : "3",
+               "Tooltip" : "Assign calculated values to the risk object"
+            },
+            "FieldOrder" : 548,
+            "FieldType" : "Textarea",
+            "Label" : "FieldAssignment",
+            "Name" : "ZRM-FieldAssignment",
             "ObjectType" : "ITSMConfigItem"
          },
          "ZRM-MOInstance" : {

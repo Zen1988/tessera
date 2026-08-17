@@ -32,6 +32,18 @@ sub Run {
             Type => 'inline', NoCache => 1,
         );
     }
+    if ( $Subaction eq 'Download' ) {
+        my $Model = $Self->_ExportModel( ClassID => $ClassID );
+        return $Layout->ErrorScreen( Message => Translatable('Select a valid GovernanceObject class first.') ) if !keys %{$Model};
+        my $ClassName = $Self->_Classes->{$ClassID};
+        my $Excel = $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->Build(
+            Model => $Model, Empty => ( $Request->GetParam( Param => 'Empty' ) || 0 ), JSON => $JSON,
+        );
+        $ClassName =~ s{[^A-Za-z0-9_-]+}{-}g;
+        my $Suffix = ( $Request->GetParam( Param => 'Empty' ) || 0 ) ? '-Template.xlsx' : '-Export.xlsx';
+        return $Layout->Attachment( Filename => 'TESSERA-GovernanceObject-' . $ClassName . $Suffix,
+            ContentType => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', Content => $Excel );
+    }
 
     if ( $Subaction eq 'Preview' ) {
         my $Rows = eval { $JSON->Decode( Data => $Payload ) };
@@ -119,7 +131,12 @@ sub _ExportModel {
     my $Definition = $Object->DefinitionGet( ClassID => $Param{ClassID} ) || {};
     my %Fields;
     $Self->_DefinitionFieldNames( Node => $Definition->{DefinitionRef}, Fields => \%Fields );
-    my $Sheet = { Headers => [ qw(Class Number Name Version ZTSMStatus Description), sort keys %Fields ], Rows => [] };
+    my %Metadata = map { $_ => $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->FieldMetadata( Name => $_ ) } keys %Fields;
+    $Metadata{Class} = { Type => 'Fixed', Fixed => 1, Options => [$ClassName] };
+    $Metadata{Number} = { Type => 'Fixed', Fixed => 1 };
+    $Metadata{Version} = { Type => 'Fixed', Fixed => 1 };
+    $Metadata{ZTSMStatus} = { Type => 'GeneralCatalog', Options => $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->CatalogOptions( Class => 'ZTSM::GovernanceObject::Status' ) };
+    my $Sheet = { Headers => [ qw(Class Number Name Version ZTSMStatus Description), sort keys %Fields ], Rows => [], Fields => \%Metadata };
     my @IDs = $Object->GovernanceObjectSearch( Result => 'ARRAY', UserID => $Self->{UserID}, Permission => 'ro', ClassIDs => [ $Param{ClassID} ] );
     for my $ID (@IDs) {
         my $Data = $Document->Export( GovernanceObjectID => $ID, UserID => $Self->{UserID} );

@@ -200,6 +200,15 @@ sub Evaluate {
     };
 }
 
+sub ValueEvaluate {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->_Value(
+        Expression => defined $Param{Expression} ? $Param{Expression} : '',
+        Context    => ref $Param{Context} eq 'HASH' ? $Param{Context} : {},
+    );
+}
+
 sub _PolicyLines {
     my ( $Self, $Source ) = @_;
 

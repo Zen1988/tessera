@@ -1553,6 +1553,29 @@ sub _GetIncludedFieldOrdered {
     return @Return;
 }
 
+sub _MergeValues {
+    my ( $Self, %Param ) = @_;
+
+    my @Return;
+    my $GetParamValue = ref $Param{GetParamValue} eq 'ARRAY' ? $Param{GetParamValue} : [];
+
+    SETINDEX:
+    for my $SetIndex ( 0 .. $#{$GetParamValue} ) {
+        next SETINDEX if ref $GetParamValue->[$SetIndex] ne 'HASH';
+
+        $Return[$SetIndex] = { %{ $GetParamValue->[$SetIndex] } };
+
+        next SETINDEX if ref $Param{NewValue} ne 'ARRAY';
+        next SETINDEX if ref $Param{NewValue}->[$SetIndex] ne 'HASH';
+
+        for my $NewValueKey ( keys %{ $Param{NewValue}->[$SetIndex] } ) {
+            $Return[$SetIndex]{$NewValueKey} = $Param{NewValue}->[$SetIndex]{$NewValueKey};
+        }
+    }
+
+    return \@Return;
+}
+
 sub _RenderContentGet {
     my ( $Self, %Param ) = @_;
 

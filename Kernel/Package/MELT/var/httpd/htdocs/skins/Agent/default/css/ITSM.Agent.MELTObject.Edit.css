@@ -1,0 +1,90 @@
+/* OTOBO is a web-based ticketing system for service organisations.
+
+Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @package     Skin "Default"
+ * @section     ITSM MELTObject
+ */
+
+@media screen,projection,tv,handheld {
+
+.Row_SectionHeader {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.Row_PageHeader {
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.Row_SectionHeader > h3,
+.Row_PageHeader > h2 {
+    margin-bottom: 4px;
+    margin-left: 30%;
+    padding-left: 10px;
+}
+
+.Row_SectionHeader > h3 {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.Row_PageHeader > hr {
+    border-top: 0.5px solid var(--colBGDark);
+    width: 80%;
+    margin-left: 20%;
+}
+
+fieldset.TableLike details > label {
+    display: block;
+    margin-left: 30%;
+    padding-left: 10px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    box-sizing: border-box;
+}
+
+/* Page Header Navigation */
+details summary {
+    list-style: none;
+    position: relative;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+details[open] summary .Toggle .fa-caret-right,
+details summary .Toggle .fa-caret-down {
+    display: none;
+}
+
+details[open] summary .Toggle .fa-caret-down {
+    display: block;
+}
+
+details summary .Row_PageHeader .Toggle {
+    display: inline-flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    height: 100%;
+    padding-bottom: 4px; /* to align with h2 */
+    left: 30%;
+    top: 0; 
+}
+
+} /* end @media */
+

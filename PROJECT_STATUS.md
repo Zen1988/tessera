@@ -1,6 +1,88 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-14
+Last Updated: 2026-08-17
+
+## 2026-08-17 Control Failure Risk Runtime 0.1.128 / MELT 0.0.19
+
+- Removed the Control runtime's automatic Service Request path. A due manual Control now reports `AWAITING_EVIDENCE`; it does not resolve `ZRM-Service`, create a ticket, or start a workflow.
+- Added the exact deployed fields `ZRM-CreateRisk`, `ZRM-RiskClass`, and `ZRM-FieldAssignment` to the non-destructive package baselines. `ZRM-Service` is no longer part of the ControlObjective definition.
+- A `Fail` creates a risk only when `ZRM-CreateRisk` is selected. Pass, N/A, UNKNOWN, and unchecked objectives create nothing.
+- `ZRM-RiskClass` uses explicit `ObjectType.Class` selection. The runtime currently supports `MELTObject.<Class>` and `GovernanceObject.<Class>` and fails closed for missing, inactive, uninstalled, or unsupported targets.
+- `ZRM-FieldAssignment` supports validated `SET @ObjectType.Class.DynamicField expression` lines. `THIS` resolves to the current ConfigItem Control ID; other values use the policy value evaluator so severity and assignment values can be calculated from runtime context.
+- Risk creation is idempotent when an assignment links the target back to the current Control: the matching object/class is reused instead of duplicated.
+- Existing process code may still call `ZRMControlEvaluate` with a ticket as execution evidence. Ticket evidence no longer implies ticket creation or Service ownership.
+- MELT's Risk baseline now includes the deployed `MELT-Control`, `MELT-EventSeverity`, and `MELT-RiskStmt` Dynamic Fields and a Risk display definition. Existing customer definitions and values remain authoritative during upgrades.
+- Rejected: treating a failed control as a workflow ticket, hardcoding service routing, or creating risks when the checkbox is not selected.
+- Perl syntax checks and the Control cycle/PolicyEngine test suites pass. GovernanceDB `0.1.128` contains 263 byte-exact payloads (SHA256 `D6555DD8DBB80C7D2866F7F873BE54B3198D64D1C3FB26D713A40647CB712B10`); MELT `0.0.19` contains 114 (SHA256 `F6896A685D762CE693F63E6E790A14D8E8D803EA09A351D003326F113A57A9FD`).
+
+## 2026-08-17 Non-Intrusive GovernanceDB Catalog Bootstrap 0.1.127
+
+- Confirmed GovernanceDB had the same intrusive bootstrap defect as MELT: package install/upgrade imported the bundled General Catalog through the normal update path, causing deliberately invalid GovernanceObject catalog entries to be reactivated.
+- Added create-only support to `Kernel::System::GeneralCatalog::Document` and enabled it only for GovernanceDB package bootstrap seeding.
+- Existing catalog items are now skipped before `ItemUpdate` and preference writes. Package upgrades may create genuinely missing seed items but cannot change the validity, comment, or preferences of an existing catalog item through the seed import.
+- Interactive/admin General Catalog imports retain their explicit update behavior because they do not request create-only mode.
+- No automated validity rollback is included for items previously reactivated by `0.1.126`; guessing customer intent during upgrade was rejected.
+- GovernanceDB `0.1.127` supersedes `0.1.126`; all 263 OPM payloads byte-match source. SHA256 `C2A6D1416960DEE3020888877F38CC4BD6940B782CB8B2028AFEAC221A07F787`.
+
+## 2026-08-17 Non-Intrusive MELT Catalog Bootstrap Correction 0.0.18
+
+- Corrected the intrusive `0.0.17` behavior: the bootstrap General Catalog import previously called `ItemUpdate` for existing items, which reset deliberately invalid MELT categories/classes to the exported valid state.
+- Added a create-only import mode and limited package bootstrap to that mode. Existing catalog items are skipped before validity, comments, or preferences are updated; only genuinely missing MELT seed items may be created.
+- Removed `ZTSM::MELT::Category` completely from the active MELT package source, seed YAML, semantic JSON, bootstrap compatibility path, and runtime `CategoryList` default.
+- `ZTSM::MELT::Class::Category` is now the single authoritative category namespace for MELT class categorization and overview navigation.
+- The package does not automatically invalidate items that `0.0.17` reactivated. An automatic blanket rollback was rejected because the package cannot distinguish the customer's intended disabled state from legitimately active catalog entries.
+- MELT `0.0.18` supersedes `0.0.17`; all 114 OPM payloads byte-match source. SHA256 `3467AC3648000D1009D31A681FB426546D424507C67CCF0659B9EE7EDB22E36B`.
+
+## 2026-08-17 MELT General Catalog Namespace and Event Navigation Repair 0.0.17
+
+- Confirmed the `Event` navigation omission against authoritative `Export/GeneralCatalog_2026-08-17-01.yml`: `Alert` and `Risk` use categories `All` and `Event`, while the packaged MELT baseline omitted `Event`, `Log`, `Metric`, and `Trace`.
+- Corrected the primary MELT category namespace to `ZTSM::MELT::Class::Category`, which is the namespace read by `AgentMELTObject`; the older `ZTSM::MELT::Category` is retained only as a compatibility namespace.
+- Resynchronized the packaged General Catalog seed from the latest export and restricted it to the six `ZTSM::MELT::*` namespaces. MELT installation no longer reimports or updates unrelated ConfigItem, GovernanceObject, risk, or global General Catalog classes.
+- Added `Alert` and `Risk` to the semantic JSON bootstrap so upgrades merge the required `admin` and `melt` permissions without overwriting definitions or existing values.
+- Added the four missing categories to the semantic bootstrap and retained non-destructive dual-namespace creation for upgraded environments.
+- The MELT overview now ignores unresolved legacy category labels rather than building an undefined navigation entry.
+- MELT `0.0.17` supersedes `0.0.16`; all 114 OPM payloads byte-match source. SHA256 `825D4CBCE91727FFD675B38B180E186AFD794BB25E89CFC2AF3D019D9C419803`.
+
+## 2026-08-17 ConfigItem-Parity UI Asset Repair 0.1.126 / 0.0.16
+
+- Diagnosed the broken GovernanceObject and MELTObject overview appearance as a package-asset failure rather than a template-layout divergence: both overview templates already retain the ITSM ConfigItem DOM contract, but their renamed CSS files were registered in SysConfig without being present in either package.
+- Ported the complete ConfigItem-derived stylesheet set for both object types: agent admin, edit, overview, tree view, zoom, high-contrast zoom, and customer search, zoom, list, and overview.
+- The agent overview styles preserve the ConfigItem two-column grid, styled class sidebar, scroll-safe main table, status flags, and responsive behavior while targeting `GovernanceObjectList` and `MELTObjectList` explicitly.
+- Every object-specific stylesheet referenced by GovernanceDB.xml and MELT.xml now resolves to a packaged file. Both SOPM files include all ten style assets.
+- GovernanceDB `0.1.126` contains 263 byte-matching payloads; SHA256 `2D327E422EAC31FAA49035676EE53F67D810841A85185EFC101AA7A0182E5A60`.
+- MELT `0.0.16` contains 114 byte-matching payloads; SHA256 `79DF70E87A06EC9526C0F6307CCC58421E838550EAFFBD0A2CE4483304E3C24A`.
+- These builds supersede GovernanceDB `0.1.125` and MELT `0.0.15`. The separate recovery package remains one-time and data-idempotent.
+
+## 2026-08-17 MELT Cross-Object Runtime Fix and Separate One-Time Recovery
+
+- Confirmed the earlier MELT cross-object Dynamic Field metadata rewrite and the resulting MELT-contaminated `*Old`/new GovernanceObject field pairs. Where preserved value rows remain attached to the original field IDs, newly recreated GovernanceObject fields can appear empty even though the recoverable values remain under `*Old`.
+- GovernanceDB `0.1.125` filters GovernanceObject script-field evaluation strictly to `ObjectType => GovernanceObject` and restores the missing Set driver `_MergeValues` implementation that caused the BlueBook editor HTTP 500.
+- MELT `0.0.15` filters MELT script-field evaluation strictly to `ObjectType => MELTObject`, preventing ConfigItem or GovernanceObject fields from being written with a MELT object/version identifier.
+- Historical repair is deliberately excluded from both normal bootstraps. It is shipped only as `TESSERAMELTCrossObjectRecovery-0.0.1.opm` and runs when that package is intentionally installed.
+- The one-time recovery covers only the confirmed pairs `ZBlue-Profile[Old]`, `ZBlue-PurpleBook[Old]`, `ZBlue-Role[Old]`, `ZBlue-Template[Old]`, and `ZState-Book[Old]`. It fills only empty current values, validates GovernanceObject references and allowed classes, and never deletes or modifies preserved `*Old` values.
+- Ambiguous, invalid, missing, or unexpected field pairs are skipped and logged. Reinstalling the recovery package is data-idempotent because populated current values are never overwritten.
+- Install order: MELT `0.0.15`, GovernanceDB `0.1.125`, then `TESSERAMELTCrossObjectRecovery` `0.0.1` once.
+- Perl syntax validation passed for the recovery module, both event filters, GovernanceDB bootstrap, and the Set driver overlay. All generated OPM payloads byte-match source.
+- SHA256: GovernanceDB `477A7D6E8FD794C5E837FCAEA680024F55737E0AA059D84E60040E4B5239C6F6`; MELT `2EA953C5C1C455619EA50CD998F860B3AB1D898E2372D2E502ABF1369D486522`; recovery `49FBCB650AE70940E5C250DF0628E90B7018F0BF872EA9799FC8897BB65DD21F`.
+
+## 2026-08-17 Excel Named-Range Repair 0.1.124
+
+- Corrected the generated dropdown named-range formula from the malformed `$A\$1:\$A\$2` form to the valid absolute Excel reference `$A$1:$A$2`.
+- The malformed reference caused Excel to report `Removed Records: Named range from /xl/workbook.xml part (Workbook)` while opening a `0.1.123` export.
+- Dropdown validation, hidden selection sheets, color coding, and import-sheet exclusion remain unchanged.
+- Supersedes GovernanceDB `0.1.123`.
+- Generated workbook XML verifies the valid named range `'_Selections'!$A$1:$A$2` with no literal backslashes.
+- GovernanceDB `0.1.124` contains 253 Base64 payloads, all byte-matching package source; SHA256 `B4CE6D13E698B2B900891B90935F1B0DAF02BB28B008CD96C437C91F65BF4885`.
+
+## 2026-08-17 Color-Coded Excel Guidance and Catalog Dropdowns 0.1.123
+
+- Replaced browser-only workbook generation with a server-side `Excel::Writer::XLSX` builder shared by ConfigItem and GovernanceObject Excel exports.
+- Color-coded exported columns: grey for autogenerated/system identity, blue for authored scalar input, green for fixed-value selection, and amber for structured/Set/multi-value JSON.
+- Dynamic Field metadata now drives Excel behavior. Dropdown and GeneralCatalog Dynamic Fields receive validated cell dropdowns populated with readable names from the current runtime configuration; GeneralCatalog IDs are not exposed.
+- Added dropdowns for ConfigItem deployment/incident states and GovernanceObject status, using their authoritative GeneralCatalog classes.
+- Added a visible Instructions sheet with the color legend and a class-specific field dictionary identifying Dynamic Fields, field types, and allowed values. The backing selection sheet is hidden and ignored on re-import.
+- Both populated exports and empty templates use the same formatting and validation contract. Upload continues to parse only object data sheets.
+- GovernanceDB `0.1.123` contains 253 Base64 payloads, all byte-matching package source; SHA256 `FD8F4DDD799C1D29CAE5433DD0389A4C6C55E15A49D65557B91E88EED85727A0`.
 
 ## 2026-08-14 Control Instance Cycle and Service Attestation Runtime 0.1.122
 

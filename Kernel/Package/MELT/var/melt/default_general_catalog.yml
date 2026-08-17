@@ -1,153 +1,26 @@
-﻿---
+---
 classes:
-- class: ZRM::Impact
-  items:
-  - comment: Not Applicable
-    name: '0'
-    preferences: {}
-    valid: valid
-  - comment: Negligible
-    name: '1'
-    preferences: {}
-    valid: valid
-  - comment: Minor
-    name: '2'
-    preferences: {}
-    valid: valid
-  - comment: Moderate
-    name: '3'
-    preferences: {}
-    valid: valid
-  - comment: Major
-    name: '4'
-    preferences: {}
-    valid: valid
-  - comment: Severe
-    name: '5'
-    preferences: {}
-    valid: valid
-- class: ZRM::ImpactCategory
-  items:
-  - comment: Business
-    name: Business
-    preferences: {}
-    valid: valid
-  - comment: Governance
-    name: Governance
-    preferences: {}
-    valid: valid
-  - comment: Technical
-    name: Technical
-    preferences: {}
-    valid: valid
-- class: ZRM::Likelihood
-  items:
-  - comment: Not Applicable
-    name: '0'
-    preferences: {}
-    valid: valid
-  - comment: Rare
-    name: '1'
-    preferences: {}
-    valid: valid
-  - comment: Unlikely
-    name: '2'
-    preferences: {}
-    valid: valid
-  - comment: Possible
-    name: '3'
-    preferences: {}
-    valid: valid
-  - comment: Likely
-    name: '4'
-    preferences: {}
-    valid: valid
-  - comment: Almost Certain
-    name: '5'
-    preferences: {}
-    valid: valid
-- class: ZRM::RiskCategory
-  items:
-  - comment: Business Continuity
-    name: Business Continuity
-    preferences: {}
-    valid: valid
-  - comment: Compliance
-    name: Compliance
-    preferences: {}
-    valid: valid
-  - comment: Cybersecurity
-    name: Cybersecurity
-    preferences: {}
-    valid: valid
-  - comment: Data
-    name: Data
-    preferences: {}
-    valid: valid
-  - comment: Financial
-    name: Financial
-    preferences: {}
-    valid: valid
-  - comment: Operational
-    name: Operational
-    preferences: {}
-    valid: valid
-  - comment: Resource
-    name: Resource
-    preferences: {}
-    valid: valid
-  - comment: Strategic
-    name: Strategic
-    preferences: {}
-    valid: valid
-  - comment: Technology
-    name: Technology
-    preferences: {}
-    valid: valid
-  - comment: Vendor
-    name: Vendor
-    preferences: {}
-    valid: valid
-- class: ZTSM::MELT::Category
-  items:
-  - comment: ''
-    name: All
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Assignment
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Business
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Context
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Governance
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Profile
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Reference
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Runtime
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Service
-    preferences: {}
-    valid: valid
 - class: ZTSM::MELT::Class
   items:
+  - comment: ''
+    name: Alert
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '21'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
   - comment: ''
     name: Application
     preferences:
@@ -160,6 +33,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -174,11 +48,16 @@ classes:
     preferences:
       Categories:
       - Governance
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '2'
       - '17'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -191,11 +70,16 @@ classes:
     preferences:
       Categories:
       - Governance
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -205,7 +89,20 @@ classes:
     valid: valid
   - comment: ''
     name: Book
-    preferences: {}
+    preferences:
+      Categories:
+      - All
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
     valid: valid
   - comment: Catalog
     name: Catalog
@@ -230,7 +127,19 @@ classes:
     valid: valid
   - comment: Control
     name: Control
-    preferences: {}
+    preferences:
+      Categories:
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
     valid: valid
   - comment: ControlObjective
     name: ControlObjective
@@ -255,7 +164,20 @@ classes:
     valid: valid
   - comment: ControlRecommendation
     name: ControlRecommendation
-    preferences: {}
+    preferences:
+      Categories:
+      - Metric
+      - Profile
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
     valid: valid
   - comment: System Criticality
     name: CriticalityProfile
@@ -270,6 +192,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -291,6 +214,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -305,11 +229,16 @@ classes:
     preferences:
       Categories:
       - Context
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -330,6 +259,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -372,6 +302,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -383,18 +314,35 @@ classes:
     valid: valid
   - comment: ''
     name: GovernanceConfigItem
-    preferences: {}
+    preferences:
+      Categories:
+      - Metric
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - ''
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
     valid: valid
   - comment: ''
     name: GovernanceRole
     preferences:
       Categories:
       - Profile
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -407,11 +355,16 @@ classes:
     preferences:
       Categories:
       - Context
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -424,11 +377,16 @@ classes:
     preferences:
       Categories:
       - Business
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -441,11 +399,16 @@ classes:
     preferences:
       Categories:
       - Context
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -474,6 +437,25 @@ classes:
       - Name
       - ZTSMStatusID
     valid: valid
+  - comment: ''
+    name: Risk
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      Permission:
+      - '21'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
   - comment: RiskStatement
     name: RiskStatement
     preferences:
@@ -486,6 +468,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -501,11 +484,16 @@ classes:
     preferences:
       Categories:
       - Service
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -518,11 +506,16 @@ classes:
     preferences:
       Categories:
       - Service
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -542,6 +535,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -556,11 +550,16 @@ classes:
     preferences:
       Categories:
       - Governance
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -573,11 +572,16 @@ classes:
     preferences:
       Categories:
       - Assignment
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -590,11 +594,16 @@ classes:
     preferences:
       Categories:
       - Profile
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -607,11 +616,16 @@ classes:
     preferences:
       Categories:
       - Profile
+      NameModule:
+      - ''
       NumberModule:
       - MELTID
       Permission:
       - '17'
       - '2'
+      - '21'
+      VersionStringExpression:
+      - ''
       VersionStringModule:
       - Incremental
       VersionTrigger:
@@ -631,6 +645,7 @@ classes:
       Permission:
       - '17'
       - '2'
+      - '21'
       VersionStringExpression:
       - ''
       VersionStringModule:
@@ -659,7 +674,19 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
+    name: Event
+    preferences: {}
+    valid: valid
+  - comment: ''
     name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Log
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Metric
     preferences: {}
     valid: valid
   - comment: Profile
@@ -678,6 +705,10 @@ classes:
     name: Service
     preferences: {}
     valid: valid
+  - comment: ''
+    name: Trace
+    preferences: {}
+    valid: valid
 - class: ZTSM::MELT::Definition
   items:
   - comment: ''
@@ -686,6 +717,10 @@ classes:
     valid: valid
 - class: ZTSM::MELT::Role
   items:
+  - comment: ''
+    name: Alert
+    preferences: {}
+    valid: valid
   - comment: ''
     name: CMDB Backlinks
     preferences: {}
@@ -700,6 +735,10 @@ classes:
     valid: valid
   - comment: ''
     name: MELT Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Risk
     preferences: {}
     valid: valid
   - comment: ZRM Catalog
@@ -795,20 +834,72 @@ classes:
   - comment: ''
     name: Active
     preferences:
+      Color:
+      - ''
       Functionality:
       - productive
     valid: valid
   - comment: ''
+    name: Aged-out
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
     name: Approved
     preferences:
+      Color:
+      - ''
       Functionality:
       - productive
+    valid: valid
+  - comment: ''
+    name: Closed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
     valid: valid
   - comment: ''
     name: Draft
     preferences:
       Functionality:
       - preproductive
+    valid: valid
+  - comment: ''
+    name: Duplicate
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Escalated
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: False Positive
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Resolved
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
     valid: valid
   - comment: ''
     name: Retired
@@ -822,51 +913,12 @@ classes:
       Functionality:
       - preproductive
     valid: valid
-- class: ZTSM::Type
-  items:
   - comment: ''
-    name: Approval
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Assessment
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Change
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Endorsement
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Incident
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Incident::Major
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Problem
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ServiceRequest
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Task
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Unclassified
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Verification
-    preferences: {}
+    name: Suppressed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
     valid: valid
 object_type: GeneralCatalog
-

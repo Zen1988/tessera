@@ -87,6 +87,7 @@ sub Run {
             ID => $FieldID,
         );
         next if !IsHashRefWithData($DynamicField);
+        next if ( $DynamicField->{ObjectType} || '' ) ne 'GovernanceObject';
 
         # if we store set values, store as many values as there are in ticket data for the set
         my $Value;

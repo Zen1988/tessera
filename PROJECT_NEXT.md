@@ -825,5 +825,5 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
 - Extend the implemented simple Control cycle frequencies with calendar ranges, named business calendars, calendar-exact month/year arithmetic, and explicit timezone semantics.
 - Add catalog-name-to-score mappings without exposing GeneralCatalog IDs in authored policy or evidence.
 - Add parser diagnostics with source line/column and authoring-time validation on ControlObjective save.
-- Add explicit conditional action blocks such as `IF FAIL THEN NEW @TICKET ... SUBMIT`; a Fail result alone must never create remediation work.
+- Extend failure field-assignment authoring with line/column diagnostics and richer calculated-value functions while retaining explicit `ZRM-CreateRisk` gating.
 - Add focused automated tests for temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.

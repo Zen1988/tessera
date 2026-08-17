@@ -4,15 +4,103 @@
       "Assignment",
       "Business",
       "Context",
+      "Event",
       "Governance",
+      "Log",
+      "Metric",
       "Profile",
       "Reference",
       "Runtime",
-      "Service"
+      "Service",
+      "Trace"
    ],
-   "CategoryNamespace": "ZTSM::MELT::Category",
+   "CategoryNamespace": "ZTSM::MELT::Class::Category",
    "ClassNamespace": "ZTSM::MELT::Class",
    "Classes": [
+      {
+         "Categories": [
+            "All",
+            "Event"
+         ],
+         "Category": "Event",
+         "Name": "Alert",
+         "NumberModule": "MELTID",
+         "PermissionGroup": "melt",
+         "SourceName": "Alert",
+         "VersionStringModule": "Incremental",
+         "VersionTrigger": [
+            "DefinitionUpdate"
+         ]
+      },
+      {
+         "Categories": [
+            "All",
+            "Event"
+         ],
+         "Category": "Event",
+         "Definition": "---\r\nPages:\r\n- Name: Summary\r\n  Layout:\r\n    Columns: 2\r\n    ColumnWidth: 1fr 1fr\r\n  Interfaces:\r\n  - Agent\r\n  Content:\r\n  - Section: General Fields::Risk\r\n    RowStart: 1\r\n    ColumnStart: 1\r\n  - Section: MELT Backlinks::Backlinks\r\n    RowStart: 2\r\n    ColumnStart: 1\r\n  - Section: MELT Description::Description\r\n    RowStart: 1\r\n    RowSpan: 2\r\n    ColumnStart: 2\r\nRoles:\r\n  General Fields:\r\n    Name: MELT Risk\r\n  MELT Backlinks:\r\n    Name: MELT Backlinks\r\n  MELT Description:\r\n    Name: MELT Description",
+         "DynamicFields": {
+            "MELT-Control": {
+               "Config": {
+                  "ClassIDs": [ "Control" ],
+                  "DisplayType": "ClassConfigItemName",
+                  "EditFieldMode": "AutoComplete",
+                  "MultiValue": "0",
+                  "PossibleNone": "1",
+                  "ReferencedObjectType": "ITSMConfigItem",
+                  "Tooltip": "Related Control"
+               },
+               "FieldOrder": 540,
+               "FieldType": "ConfigItem",
+               "Label": "Related Control",
+               "Name": "MELT-Control",
+               "ObjectType": "MELTObject",
+               "ValidID": 1
+            },
+            "MELT-EventSeverity": {
+               "Config": {
+                  "ClassIDs": [ "EventSeverity" ],
+                  "DisplayType": "ClassGovernanceObjectName",
+                  "EditFieldMode": "AutoComplete",
+                  "MultiValue": "0",
+                  "PossibleNone": "1",
+                  "ReferencedObjectType": "GovernanceObject",
+                  "Tooltip": "Calculated severity"
+               },
+               "FieldOrder": 535,
+               "FieldType": "GovernanceObject",
+               "Label": "Severity",
+               "Name": "MELT-EventSeverity",
+               "ObjectType": "MELTObject",
+               "ValidID": 1
+            },
+            "MELT-RiskStmt": {
+               "Config": {
+                  "ClassIDs": [ "RiskStatement" ],
+                  "DisplayType": "ClassGovernanceObjectName",
+                  "EditFieldMode": "AutoComplete",
+                  "MultiValue": "0",
+                  "PossibleNone": "1",
+                  "ReferencedObjectType": "GovernanceObject",
+                  "Tooltip": "Related Risk Statement"
+               },
+               "FieldOrder": 539,
+               "FieldType": "GovernanceObject",
+               "Label": "Related Risk Statement",
+               "Name": "MELT-RiskStmt",
+               "ObjectType": "MELTObject",
+               "ValidID": 1
+            }
+         },
+         "Name": "Risk",
+         "NumberModule": "MELTID",
+         "PermissionGroup": "melt",
+         "SourceName": "Risk",
+         "VersionStringModule": "Incremental",
+         "VersionTrigger": [
+            "DefinitionUpdate"
+         ]
+      },
       {
          "Categories": [
             "Governance"
@@ -3440,7 +3528,6 @@
          "VersionStringModule": "Incremental"
       }
    ],
-   "CompatibilityCategoryNamespace": "ZTSM::MELT::Class::Category",
    "DefinitionNamespace": "ZTSM::MELT::Definition",
    "RoleNamespace": "ZTSM::MELT::Role",
    "Roles": [

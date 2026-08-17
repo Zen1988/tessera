@@ -5,10 +5,6 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
 (function (TargetNS) {
     'use strict';
 
-    function CellValue(Value) {
-        return Value !== null && typeof Value === 'object' ? JSON.stringify(Value) : Value;
-    }
-
     function ParseCell(Value) {
         if (typeof Value !== 'string') { return Value; }
         var Text = Value.trim();
@@ -19,7 +15,6 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
     }
 
     TargetNS.Init = function () {
-        var Model = Core.Config.Get('ZTSMConfigItemWorkbookModel') || {};
         var Preview = Core.Config.Get('ZTSMConfigItemWorkbookPreview') || [];
         var ExportButton = document.getElementById('ZTSMWorkbookExport');
         var TemplateButton = document.getElementById('ZTSMWorkbookTemplate');
@@ -33,37 +28,9 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
                 window.alert('Select a ConfigItem class first.');
                 return;
             }
-            var ModelURL = (Core.Config.Get('Baselink') || 'index.pl?')
-                + 'Action=AgentITSMConfigItemWorkbook;Subaction=Model;ClassID=' + encodeURIComponent(SelectedClassID);
-            fetch(ModelURL, { credentials: 'same-origin', cache: 'no-store' })
-                .then(function (Response) {
-                    if (!Response.ok) { throw new Error('Workbook model request failed.'); }
-                    return Response.json();
-                })
-                .then(function (LiveModel) {
-                    if (!Object.keys(LiveModel || {}).length) {
-                        throw new Error('The selected ConfigItem class could not be loaded.');
-                    }
-                    var Workbook = XLSX.utils.book_new();
-                    Object.keys(LiveModel).sort().forEach(function (ClassName) {
-                        var SheetModel = LiveModel[ClassName];
-                        var Rows = (EmptyTemplate ? [] : SheetModel.Rows).map(function (Row) {
-                        var Result = {};
-                        Object.keys(Row).forEach(function (Key) { Result[Key] = CellValue(Row[Key]); });
-                        return Result;
-                        });
-                        var Sheet = XLSX.utils.json_to_sheet(Rows, { header: SheetModel.Headers });
-                        XLSX.utils.book_append_sheet(Workbook, Sheet, ClassName.substring(0, 31));
-                    });
-                    var ClassName = Select.options[Select.selectedIndex]
-                        ? Select.options[Select.selectedIndex].text : 'CMDB';
-                    XLSX.writeFile(
-                        Workbook,
-                        'TESSERA-' + ClassName.replace(/[^A-Za-z0-9_-]+/g, '-')
-                            + (EmptyTemplate ? '-Template.xlsx' : '-Export.xlsx')
-                    );
-                })
-                .catch(function (Error) { window.alert(Error.message); });
+            window.location.href = (Core.Config.Get('Baselink') || 'index.pl?')
+                + 'Action=AgentITSMConfigItemWorkbook;Subaction=Download;ClassID=' + encodeURIComponent(SelectedClassID)
+                + ';Empty=' + (EmptyTemplate ? '1' : '0');
         }
 
         if (ExportButton) {
@@ -88,6 +55,7 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
                     var Workbook = XLSX.read(Buffer, { type: 'array', cellDates: true });
                     var Rows = [];
                     Workbook.SheetNames.forEach(function (SheetName) {
+                        if (SheetName === 'Instructions' || SheetName === '_Selections') { return; }
                         XLSX.utils.sheet_to_json(Workbook.Sheets[SheetName], { defval: '' }).forEach(function (Row) {
                             var Parsed = { Class: Row.Class || SheetName };
                             Object.keys(Row).forEach(function (Key) { Parsed[Key] = ParseCell(Row[Key]); });
