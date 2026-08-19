@@ -829,7 +829,7 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
 - Add a future-safe `CALL` capability for registered external connectors. Define connector manifests, typed request/response schemas, authentication references, permission scopes, timeouts, retry/idempotency rules, secret redaction, audit evidence, and fail-closed error results before enabling any external endpoint.
 - Keep `CALL` declarative and allowlisted; scripts must never supply arbitrary URLs, credentials, Perl, SQL, shell commands, or dynamically selected runtime modules.
 - Migrate the remaining permission consumers behind the synchronous ScriptEngine-backed GovernanceRole resolver. GenericAgent and TransitionAction RoleDirector now share its typed return contract.
-- Implement the ENDORSER parent/child aggregation after bounded iteration and typed collections exist: search children where `ZTicket-Parent EQUALS CURRENT TICKET` and `TicketType EQUALS "Endorsement"`, select `ZTicket-OwnerGroup` or individual owner fallback, deduplicate, and return a verified typed collection.
+- Generalize the implemented bounded evidence-assignment operation into composable `FOR EACH` and collection `SELECT` grammar. Preserve the 0.0.4 behavior for semantic parent references, current/previous/empty iteration selection, typed assignment DTOs, and deduplication.
 - Extend the implemented simple Control cycle frequencies with calendar ranges, named business calendars, calendar-exact month/year arithmetic, and explicit timezone semantics.
 - Add catalog-name-to-score mappings without exposing GeneralCatalog IDs in authored policy or evidence.
 - Add YAML parser diagnostics with source line/column and authoring-time validation on GovernanceRole and ControlObjective save.

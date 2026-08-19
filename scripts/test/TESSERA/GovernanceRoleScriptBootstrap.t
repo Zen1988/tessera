@@ -24,9 +24,26 @@ for my $Role (qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPOR
 }
 like( $Bootstrap, qr/my \$RequesterScript = <<'END_REQUESTER_SCRIPT'/, 'requester script is embedded in bootstrap' );
 like( $Bootstrap, qr/my \$DynamicResolverScript = <<'END_DYNAMIC_RESOLVER_SCRIPT'/, 'dynamic resolver is embedded in bootstrap' );
+for my $Mapping (
+    [ 'ASSESSOR',    'Assessment' ],
+    [ 'ENDORSER',    'Endorsement' ],
+    [ 'APPROVER',    'Approval' ],
+    [ 'IMPLEMENTER', 'Implementation' ],
+    [ 'VERIFIER',    'Verification' ],
+    )
+{
+    like( $Bootstrap, qr/\Q$Mapping->[0]\E\s*=>\s*'\Q$Mapping->[1]\E'/, "$Mapping->[0] uses $Mapping->[1] evidence" );
+}
+like( $Bootstrap, qr/ZTSMAppSystem-DefaultApprovalProfile/, 'SUPPORT uses the application default approval profile' );
+like( $Bootstrap, qr/Collection<SupportAssignment>/, 'evidence roles return typed assignment collections' );
+like( $Bootstrap, qr/\$NormalizedCurrent ne \$NormalizedLegacy/, 'only an unchanged prior TESSERA default is upgraded' );
+like( $Bootstrap, qr/sub _GovernanceRoleScriptValueSet/, 'bootstrap has a dedicated GovernanceRole script writer' );
+like( $Bootstrap, qr/ObjectID\s*=>\s*\$GovernanceObject->\{VersionID\}/, 'script value is stored against the GovernanceObject VersionID' );
+like( $Bootstrap, qr/DynamicField::Backend'\)->ValueSet/, 'script writer uses the DynamicField backend' );
+like( $Bootstrap, qr/DynamicField::Backend'\)->ValueGet/, 'script writer verifies the persisted value' );
 like(
     $Bootstrap,
-    qr/next ROLE if \$Self->_BootstrapValueHasContent\(\$CurrentScript\)/,
+    qr/if \( \$Self->_BootstrapValueHasContent\(\$CurrentScript\) \)/,
     'bootstrap preserves every existing non-empty GovernanceRole script regardless of value shape',
 );
 like( $Bootstrap, qr/Unknown reference shapes are treated as authored content/, 'bootstrap fails closed against intrusive script replacement' );
@@ -46,6 +63,7 @@ for my $RoleDirectorPath (
     close $RoleDirectorFH;
     like( $RoleDirector, qr/eq 'GovernanceObject\.SupportProfile'/, "$RoleDirectorPath recognizes typed SupportProfile results" );
     like( $RoleDirector, qr/eq 'CustomerUser'/, "$RoleDirectorPath recognizes typed CustomerUser results" );
+    like( $RoleDirector, qr/eq 'Collection<SupportAssignment>'/, "$RoleDirectorPath recognizes typed assignment collections" );
     like( $RoleDirector, qr/FieldName\s*=>\s*'ZTicket-OwnerGroup'/, "$RoleDirectorPath retains the OwnerGroup assignment path" );
     like( $RoleDirector, qr/FieldName\s*=>\s*'ZTicket-Owner'/, "$RoleDirectorPath retains the individual owner assignment path" );
 }

@@ -789,6 +789,26 @@ sub Run {
             elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'CustomerUser' ) {
                 $RequesterOwnerUserID = $ScriptResult->{Value};
             }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'Collection<SupportAssignment>' ) {
+                my $Assignments = $ScriptResult->{Value};
+                my @Targets = ref $Assignments eq 'ARRAY'
+                    ? grep { ref $_ eq 'HASH' && $_->{Type} && defined $_->{Value} } @{$Assignments}
+                    : ();
+                if ( @Targets != 1 ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: TransitionAction requires one SupportAssignment target; found " . scalar(@Targets) . " TicketID=$TicketID" );
+                    return 1;
+                }
+                if ( $Targets[0]->{Type} eq 'GovernanceObject.SupportProfile' ) {
+                    $ResolvedSupportProfile = $Targets[0]->{Value};
+                }
+                elsif ( $Targets[0]->{Type} eq 'CustomerUser' ) {
+                    $RequesterOwnerUserID = $Targets[0]->{Value};
+                }
+                else {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: unsupported SupportAssignment target type $Targets[0]->{Type} TicketID=$TicketID" );
+                    return 1;
+                }
+            }
             else {
                 $LogObject->Log(
                     Priority => 'error',

@@ -14,6 +14,7 @@ our @ObjectDependencies = (
     'Kernel::System::Cache',
     'Kernel::System::DB',
     'Kernel::System::DynamicField',
+    'Kernel::System::DynamicField::Backend',
     'Kernel::System::GenericAgent',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::GeneralCatalog::Document',
@@ -1007,6 +1008,28 @@ RETURN:
   AS: GovernanceObject.SupportProfile
 END_DYNAMIC_RESOLVER_SCRIPT
 
+    my %EvidenceTicketTypeFor = (
+        ASSESSOR    => 'Assessment',
+        ENDORSER    => 'Endorsement',
+        APPROVER    => 'Approval',
+        IMPLEMENTER => 'Implementation',
+        VERIFIER    => 'Verification',
+    );
+    my %EvidenceScriptFor = map {
+        my $Role       = $_;
+        my $TicketType = $EvidenceTicketTypeFor{$Role};
+        $Role => "---\nSCRIPT: Resolve $Role From Execution Evidence\nVERSION: 1\nRETURN:\n  ASSIGNMENTS:\n    TICKET TYPE: $TicketType\n    ITERATION: TICKET.ZIN-Iteration\n    FALLBACK: PREVIOUS ITERATION\n  AS: Collection<SupportAssignment>\n";
+    } keys %EvidenceTicketTypeFor;
+
+    my $SupportScript = <<'END_SUPPORT_SCRIPT';
+---
+SCRIPT: Resolve Application Default Support Profile
+VERSION: 1
+RETURN:
+  VALUE: TICKET.ZTicket-Application.ZTSMAppSystem-DefaultApprovalProfile
+  AS: GovernanceObject.SupportProfile
+END_SUPPORT_SCRIPT
+
     my %ScriptFor = (
         REQUESTER                 => $RequesterScript,
         'REQUESTER-DEFAULT'       => $RequesterScript,
@@ -1014,6 +1037,8 @@ END_DYNAMIC_RESOLVER_SCRIPT
         map { $_ => $DynamicResolverScript }
             qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION),
     );
+    @ScriptFor{ keys %EvidenceScriptFor } = values %EvidenceScriptFor;
+    $ScriptFor{SUPPORT} = $SupportScript;
 
     ROLE:
     for my $Role (@Roles) {
@@ -1031,12 +1056,21 @@ END_DYNAMIC_RESOLVER_SCRIPT
             );
             next ROLE if !$Existing || ref $Existing ne 'HASH';
             my $CurrentScript = $Existing->{'DynamicField_ZTSM-ScriptEngine'};
-            next ROLE if $Self->_BootstrapValueHasContent($CurrentScript);
+            if ( $Self->_BootstrapValueHasContent($CurrentScript) ) {
+                my $CurrentScalar = $Self->_BootstrapValueScalar($CurrentScript);
+                next ROLE if !defined $CurrentScalar;
+                my $NormalizedCurrent = $CurrentScalar;
+                my $NormalizedLegacy  = $DynamicResolverScript;
+                $NormalizedCurrent =~ s{\r\n?}{\n}g;
+                $NormalizedLegacy  =~ s{\r\n?}{\n}g;
+                $NormalizedCurrent =~ s{\s+\z}{};
+                $NormalizedLegacy  =~ s{\s+\z}{};
+                next ROLE if $NormalizedCurrent ne $NormalizedLegacy;
+            }
 
-            my $Updated = $GovernanceObjectObject->GovernanceObjectUpdate(
-                GovernanceObjectID                 => $ExistingID,
-                'DynamicField_ZTSM-ScriptEngine'   => $ScriptFor{$Role},
-                UserID                             => 1,
+            my $Updated = $Self->_GovernanceRoleScriptValueSet(
+                GovernanceObjectID => $ExistingID,
+                Value              => $ScriptFor{$Role},
             );
             if ( !$Updated ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -1071,8 +1105,58 @@ END_DYNAMIC_RESOLVER_SCRIPT
                 Message  => "TESSERA bootstrap could not create default GovernanceRole $Role.",
             );
         }
+        elsif ( $ScriptFor{$Role} ) {
+            my $Seeded = $Self->_GovernanceRoleScriptValueSet(
+                GovernanceObjectID => $CreatedID,
+                Value              => $ScriptFor{$Role},
+            );
+            if ( !$Seeded ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "TESSERA bootstrap created GovernanceRole $Role but could not seed ZTSM-ScriptEngine ($CreatedID).",
+                );
+            }
+        }
     }
 
+    return 1;
+}
+
+sub _GovernanceRoleScriptValueSet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{GovernanceObjectID};
+    return if !defined $Param{Value} || $Param{Value} eq '';
+
+    my $GovernanceObject = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $Param{GovernanceObjectID},
+        DynamicFields      => 0,
+        Silent             => 1,
+    );
+    return if ref $GovernanceObject ne 'HASH' || !$GovernanceObject->{VersionID};
+
+    my $DynamicField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+        Name => 'ZTSM-ScriptEngine',
+    );
+    return if ref $DynamicField ne 'HASH' || !$DynamicField->{ID};
+
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
+        DynamicFieldConfig      => $DynamicField,
+        ObjectID                => $GovernanceObject->{VersionID},
+        Value                   => $Param{Value},
+        UserID                  => 1,
+        GovernanceObjectHandled => 1,
+        ConfigItemHandled       => 1,
+    );
+    return if !$Success;
+
+    my $Stored = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+        DynamicFieldConfig => $DynamicField,
+        ObjectID           => $GovernanceObject->{VersionID},
+    );
+    return if !$Self->_BootstrapValueHasContent($Stored);
+
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp( Type => 'GovernanceDB' );
     return 1;
 }
 
@@ -1101,6 +1185,18 @@ sub _BootstrapValueHasContent {
     # Unknown reference shapes are treated as authored content. Bootstrap must
     # not overwrite a value it cannot safely prove to be empty.
     return 1;
+}
+
+sub _BootstrapValueScalar {
+    my ( $Self, $Value ) = @_;
+
+    return $Value if defined $Value && !ref $Value;
+    return if !defined $Value;
+    return $Self->_BootstrapValueScalar( $Value->[0] )
+        if ref $Value eq 'ARRAY' && @{$Value} == 1;
+    return $Self->_BootstrapValueScalar( $Value->{Content} )
+        if ref $Value eq 'HASH' && exists $Value->{Content};
+    return;
 }
 
 sub _GovernanceObjectNameExists {
@@ -2796,6 +2892,10 @@ sub _SysConfigDeploy {
         Driver     => 'Set',
         ObjectType => 'GovernanceObject',
     );
+    $Self->_DynamicFieldDriverObjectTypeEnsure(
+        Driver     => 'FAQ',
+        ObjectType => 'GovernanceObject',
+    );
 
     my @DirtySettings   = (
         'DynamicFields::ObjectType###GovernanceObject',
@@ -2808,6 +2908,7 @@ sub _SysConfigDeploy {
         'DynamicFields::Driver###CustomerUser',
         'DynamicFields::Driver###Service',
         'DynamicFields::Driver###Set',
+        'DynamicFields::Driver###FAQ',
         'DynamicFields::Driver###GovernanceObject',
         'DynamicFields::Driver###GovernanceObjectVersion',
         'GovernanceObject::Frontend::AgentGovernanceObject###DefaultCategory',

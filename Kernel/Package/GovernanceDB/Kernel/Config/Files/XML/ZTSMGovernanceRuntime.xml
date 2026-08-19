@@ -99,6 +99,22 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="DynamicFields::Driver###FAQ" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">FAQ</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::FAQ</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>GovernanceObject</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
     <Setting Name="DynamicFields::Driver###Set" Required="0" Valid="1">
         <Description Translatable="1">DynamicField backend registration.</Description>
         <Navigation>Core::DynamicFields::DriverRegistration</Navigation>

@@ -69,7 +69,7 @@ local $/;
 my $SOPMContent = <$SOPMFH>;
 close $SOPMFH;
 like( $SOPMContent, qr{<Name>TESSERA-Base</Name>}, 'package identity is TESSERA-Base' );
-like( $SOPMContent, qr{<Version>0\.0\.3</Version>}, 'TESSERA-Base package version is 0.0.3' );
+like( $SOPMContent, qr{<Version>0\.0\.8</Version>}, 'TESSERA-Base package version is 0.0.8' );
 my $AssetOverviewPath = "$Root/Kernel/Package/GovernanceDB/Kernel/Output/HTML/ITSMConfigItem/ZTSMCustomerOverviewSmall.pm";
 open my $AssetOverviewFH, '<:raw', $AssetOverviewPath or die "Cannot read $AssetOverviewPath: $!";
 local $/;

@@ -1635,10 +1635,4 @@ sub _JobUpdateRunTime {
 
 =cut
 
-# ImportExportStandardObjects historically injects these methods through the
-# AutoloadPerlPackages setting. Explicitly load the extension as well so the
-# admin import/export screen remains functional when that legacy autoload hook
-# is unavailable or has not yet been deployed in the current process.
-require Kernel::Autoload::GenericAgentImportExport;
-
 1;

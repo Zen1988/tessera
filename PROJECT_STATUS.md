@@ -2,6 +2,25 @@
 
 Last Updated: 2026-08-19
 
+## 2026-08-19 TESSERA-Base 0.0.5 / GovernanceRole Script Persistence Repair
+
+- Diagnosed the empty role scripts after 0.0.4: `GovernanceObjectUpdate` silently filters fields absent from the class's resolved `DynamicFieldRef`, even though `ZTSM-ScriptEngine` is exposed by the GovernanceRole UI role definition.
+- Replaced bootstrap script persistence with the supported DynamicField backend path used by GovernanceObject versions. Values are written against the role's current `VersionID`, then read back and verified before bootstrap reports success.
+- Non-intrusive behavior is unchanged: empty scripts are seeded, an exact earlier TESSERA generic default may be upgraded, and every other existing script is preserved.
+- Bootstrap syntax and complete TESSERA suite pass: 10 files, 207 tests.
+- `TESSERA-Base 0.0.5` contains 267 Base64 payloads. SHA256: `08FB768C7C9A9DF6E5988C13B38923C723452308E75036049D196C16E0C8B15F`.
+
+## 2026-08-19 TESSERA-Base 0.0.4 / Evidence-Based Role Resolution
+
+- Moved the default `ASSESSOR`, `ENDORSER`, `APPROVER`, `IMPLEMENTER`, and `VERIFIER` strategies into executable ScriptEngine assignments using ticket types `Assessment`, `Endorsement`, `Approval`, `Implementation`, and `Verification` respectively.
+- Added semantic child-ticket evidence lookup through `ZTicket-Parent`. Resolution prefers `ZIN-Iteration` from the current execution ticket, falls back to the preceding numeric iteration when no assignments resolve, and treats an empty iteration as the initial unnumbered iteration without unsafe arithmetic.
+- Added typed `Collection<SupportAssignment>` returns. Each deduplicated DTO contains either a `GovernanceObject.SupportProfile` sourced from `ZTicket-OwnerGroup` or a `CustomerUser` sourced from `ZTicket-Owner` when the group is empty.
+- GenericAgent RoleDirector consumes collection results and uses its existing idempotent ticket fan-out for additional SupportProfiles. TransitionAction RoleDirector accepts an unambiguous single collection target and fails closed when multiple targets require fan-out, leaving GenericAgent as the collection fan-out adapter.
+- Changed the default `SUPPORT` strategy to traverse `TICKET.ZTicket-Application` and return the exact exported `ZTSMAppSystem-DefaultApprovalProfile` as `GovernanceObject.SupportProfile`.
+- Upgrade remains non-intrusive: 0.0.4 replaces a role script only when it exactly matches the earlier TESSERA generic default. Empty fields receive defaults; all customer-edited or otherwise non-matching logic is preserved.
+- Syntax checks pass for ScriptEngine, bootstrap, and both RoleDirector forms. Complete TESSERA suite passes: 10 files, 203 tests.
+- `TESSERA-Base 0.0.4` contains 267 Base64 payloads. SHA256: `A67213276BFB1932C285F120DCFD967D9B621DD4CB04BBA1FFA91A990E4454A6`.
+
 ## 2026-08-19 TESSERA-Base 0.0.3 / Non-Intrusive Script Preservation
 
 - Hardened default GovernanceRole bootstrap seeding to preserve any existing non-empty `ZTSM-ScriptEngine` logic, including scalar, array, hash/`Content`, and unknown structured value shapes.
@@ -14073,3 +14092,61 @@ PurpleBook completion must not:
 - When either asset tag is empty, matching continues using the class-defined best-effort identity criteria.
 - An explicit CMDB Number remains authoritative for intentional updates.
 - Built `Kernel/Package/GovernanceDB-0.1.110.opm`; SHA256 `56C5226F82B086BDF35DB10DC3DF1193AE389B91C6A1C7D3AB573F9D557CCD40`.
+
+## 2026-08-19 GovernanceObject FAQ References — TESSERA-Base 0.0.6
+
+### Completed work
+
+- Registered the existing FAQ DynamicField driver for the `GovernanceObject` object type during the idempotent TESSERA bootstrap.
+- Added `DynamicFields::Driver###FAQ` to the bootstrap deployment set so the registration is active after package installation or upgrade.
+- Preserved existing driver object types and existing DynamicFields; bootstrap adds `GovernanceObject` only when missing.
+- Confirmed GovernanceObject definition import/export already supports the `FAQ` DynamicField type and the Set renderer can include Set-capable FAQ fields.
+- Did not invent or silently create a governance FAQ field. The existing exported `ZIN-KB` field is Ticket-scoped and cannot be reused inside a GovernanceObject Set. A GovernanceObject-scoped FAQ DynamicField must be created/exported under its intended authoritative name, after which it can be added to a GovernanceObject Set.
+- Built `Kernel/Package/TESSERA-Base-0.0.6.opm` with 267 Base64 payloads.
+- SHA256: `D852375A4B6079D92FCD0742DD477AEC6B63A451574803BFAD3E98AF739BF7D5`.
+
+### Validation
+
+- Full TESSERA test suite passed: 11 files, 211 tests.
+- Added `GovernanceFAQReference.t` coverage for FAQ driver registration, SysConfig deployment, Set rendering, and GovernanceObject FAQ definition support.
+
+### Architectural decision
+
+- FAQ references are first-class GovernanceObject data, but DynamicField object-type boundaries remain enforced. Ticket FAQ fields remain Ticket fields; governance FAQ fields must be explicitly modeled for `GovernanceObject`.
+
+## 2026-08-19 GovernanceObject-to-FAQ Driver Registration Fix — TESSERA-Base 0.0.7
+
+### Diagnosis and completed work
+
+- Confirmed the intended direction is a DynamicField owned by `GovernanceObject` that references an `FAQ` object.
+- The FAQ driver already declares `ReferencedObjectType => 'FAQ'` and `IsSetCapable => 1`; those parts were correct.
+- Diagnosed 0.0.6 as incomplete: bootstrap modified the effective driver setting, but the authoritative package SysConfig XML still inherited the FAQ package's empty `ObjectTypes` declaration. SysConfig deployment could therefore remove the bootstrap registration and keep FAQ hidden from the GovernanceObject Add DynamicField selector.
+- Added `DynamicFields::Driver###FAQ` to both packaged GovernanceDB SysConfig XML definitions with `GovernanceObject` as the permitted owning object type.
+- Retained the idempotent bootstrap merge as protection for upgraded systems and existing customized registrations.
+- Built `Kernel/Package/TESSERA-Base-0.0.7.opm` with 267 verified Base64 payloads.
+- SHA256: `CA529B09D296674B78F1C01EAF54D4C52EE9A699B34CB45642C3FE2DFD8D8C3E`.
+
+### Validation
+
+- Full TESSERA test suite passed: 11 files, 213 tests.
+- GovernanceDB XML, ZTSMGovernanceRuntime XML, and TESSERA-Base SOPM parsed successfully.
+- Every OPM payload matches its current package source; `git diff --check` passed.
+
+## 2026-08-19 GenericAgent Construction Fix — TESSERA-Base 0.0.8
+
+### Diagnosis and completed work
+
+- Diagnosed the Admin Generic Agent HTTP 500 from the supplied runtime trace: `Kernel::System::GenericAgent could not be loaded` was the fatal condition.
+- Removed the packaged GenericAgent overlay's eager `require Kernel::Autoload::GenericAgentImportExport`.
+- The eager load was invalid during ObjectManager construction because the autoload extension reopens the same `Kernel::System::GenericAgent` package and declares `Kernel::System::GenericAgent` among its dependencies, creating a circular self-dependency at construction time.
+- Restored OTOBO's normal `AutoloadPerlPackages###003-GenericAgentImportExport` lifecycle rather than loading the extension intrusively from GenericAgent itself.
+- The preceding DynamicField `ClassIDs` undefined-value messages are non-fatal warnings from existing malformed reference-field configuration and are tracked separately from this HTTP 500.
+- Built `Kernel/Package/TESSERA-Base-0.0.8.opm` with 267 verified Base64 payloads.
+- SHA256: `0C05CF68A1056196D37F14C1CB99005F0B9968EBAC780218D2DA414CF9DC596A`.
+
+### Validation
+
+- GenericAgent overlay Perl syntax passed.
+- Full TESSERA test suite passed: 11 files, 214 tests.
+- Added regression coverage preventing eager same-package GenericAgent autoload.
+- SysConfig XML and SOPM parsing passed; all OPM payloads match source; `git diff --check` passed.

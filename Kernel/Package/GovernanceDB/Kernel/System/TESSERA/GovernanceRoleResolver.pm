@@ -51,6 +51,16 @@ sub Resolve {
         };
     }
 
+    my $ApplicationID = _Scalar( $Ticket->{'DynamicField_ZTicket-Application'} );
+    if ($ApplicationID) {
+        my $Application = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $ApplicationID,
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+        $Ticket->{'ZTicket-Application'} = $Application if ref $Application eq 'HASH';
+    }
+
     my $RoleReference = $Role->{GovernanceObjectID} || $Role->{LastVersionID} || $Param{GovernanceRole};
     return $Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine')->ScriptEvaluate(
         Source  => $Source,

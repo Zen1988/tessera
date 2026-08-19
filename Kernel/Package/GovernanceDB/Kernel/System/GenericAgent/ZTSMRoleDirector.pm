@@ -1127,6 +1127,33 @@ sub Run {
             elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'CustomerUser' ) {
                 $RequesterOwnerUserID = $ScriptResult->{Value};
             }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'Collection<SupportAssignment>' ) {
+                my $Assignments = $ScriptResult->{Value};
+                if ( ref $Assignments ne 'ARRAY' || !@{$Assignments} ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: empty SupportAssignment collection TicketID=$TicketID" );
+                    return 1;
+                }
+                my @SupportProfiles;
+                my @CustomerUsers;
+                my %Seen;
+                for my $Assignment ( @{$Assignments} ) {
+                    next if ref $Assignment ne 'HASH' || !$Assignment->{Type} || !defined $Assignment->{Value};
+                    next if $Seen{"$Assignment->{Type}\0$Assignment->{Value}"}++;
+                    push @SupportProfiles, $Assignment->{Value} if $Assignment->{Type} eq 'GovernanceObject.SupportProfile';
+                    push @CustomerUsers,   $Assignment->{Value} if $Assignment->{Type} eq 'CustomerUser';
+                }
+                if (@SupportProfiles) {
+                    $ResolvedSupportProfile = shift @SupportProfiles;
+                    push @DiagnosisFanoutOwnerGroups, @SupportProfiles;
+                }
+                elsif ( @CustomerUsers == 1 ) {
+                    $RequesterOwnerUserID = $CustomerUsers[0];
+                }
+                else {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: SupportAssignment collection has no unambiguous target TicketID=$TicketID" );
+                    return 1;
+                }
+            }
             else {
                 $LogObject->Log(
                     Priority => 'error',

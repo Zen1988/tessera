@@ -1,0 +1,370 @@
+---
+- Definition: ~
+  RoleName: ~
+- Definition: "---\r\nSections:\r\n  Backlinks:\r\n    Type: MELTObjectLinks\r\n    Header:
+    Backlinks\r\n    LinkedAs: Source"
+  RoleName: CMDB Backlinks
+- Definition: "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header:
+    Description"
+  RoleName: CMDB Description
+- Definition: "---\r\nSections:\r\n  Backlinks:\r\n    Type: MELTObjectLinks\r\n    Header:
+    Backlinks\r\n    LinkedAs: Source"
+  RoleName: MELT Backlinks
+- Definition: "---\r\nSections:\r\n  Description:\r\n    Type: Description\r\n    Header:
+    Description"
+  RoleName: MELT Description
+- Definition: "---\r\nSections:\r\n  EventSummary:\r\n    Content:\r\n    - Header:
+    Detail\r\n    - DF: MELT-EventSeverity\r\n    - DF: MELT-EventStart\r\n    - DF:
+    MELT-EventEnd\r\n    - DF: MELT-EventStatus\r\n  EventReference:\r\n    Content:\r\n
+    \   - Header: Reference\r\n    - DF: MELT-Source\r\n    - DF: MELT-Reference\r\n
+    \   - DF: MELT-RMF\r\n    - DF: MELT-RiskStmt\r\n    - DF: MELT-Control\r\n    -
+    DF: MELT-RelatedCI\r\n    - DF: MELT-RelatedGO\r\n    - DF: MELT-RelatedTicket\r\n
+    \   - DF: MELT-RelatedEvent\r\n    - DF: MELT-RelatedUser\r\n  EventAccess:\r\n
+    \   Content:\r\n    - DF: MELT-AccessPermission"
+  RoleName: Risk
+- Class:
+    Categories:
+    - All
+    - Event
+    Name: Risk
+    NumberModule: MELTID
+    PermissionGroup: melt
+    VersionStringModule: Incremental
+    VersionTrigger:
+    - DefinitionUpdate
+  Definition: "---\r\nPages:\r\n- Content:\r\n  - ColumnStart: 1\r\n    RowStart:
+    1\r\n    Section: RiskEvent::EventSummary\r\n  - ColumnStart: 1\r\n    RowStart:
+    2\r\n    Section: RiskEvent::EventReference\r\n  - ColumnStart: 1\r\n    RowStart:
+    3\r\n    Section: RiskEvent::EventAccess\r\n  - ColumnStart: 1\r\n    RowStart:
+    2\r\n    Section: MELT Backlinks::Backlinks\r\n  - ColumnStart: 2\r\n    RowSpan:
+    2\r\n    RowStart: 1\r\n    Section: MELT Description::Description\r\n  Interfaces:\r\n
+    \ - Agent\r\n  Layout:\r\n    ColumnWidth: 1fr 1fr\r\n    Columns: 2\r\n  Name:
+    Summary\r\nRoles:\r\n  RiskEvent:\r\n    Name: Risk\r\n  MELT Backlinks:\r\n    Name:
+    MELT Backlinks\r\n  MELT Description:\r\n    Name: MELT Description"
+  DynamicFields:
+    MELT-AccessPermission:
+      ChangeTime: 2026-08-19 08:48:39
+      Config:
+        ClassIDs:
+        - '495'
+        DeplStateIDs:
+        - '63'
+        DisplayType: ''
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Access Right / Permission
+        TreeView: '0'
+      CreateTime: 2026-08-19 08:48:39
+      FieldOrder: 563
+      FieldType: ConfigItem
+      InternalField: 0
+      Label: Access / Permission
+      Name: MELT-AccessPermission
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-Control:
+      ChangeTime: 2026-08-17 08:08:53
+      Config:
+        ClassIDs: []
+        DisplayType: ClassConfigItemName
+        EditFieldMode: AutoComplete
+        MultiValue: '0'
+        PossibleNone: '1'
+        ReferencedObjectType: ITSMConfigItem
+        Tooltip: Related Control
+      CreateTime: 2026-08-17 07:41:39
+      FieldOrder: 540
+      FieldType: ConfigItem
+      InternalField: 0
+      Label: Related Control
+      Name: MELT-Control
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-EventEnd:
+      ChangeTime: 2026-08-17 07:31:33
+      Config:
+        DateRestriction: ''
+        DefaultValue: '0'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: ~
+        Tooltip: End Time
+        YearsInFuture: '5'
+        YearsInPast: '5'
+        YearsPeriod: '0'
+      CreateTime: 2026-08-17 07:30:09
+      FieldOrder: 537
+      FieldType: DateTime
+      InternalField: 0
+      Label: End Time
+      Name: MELT-EventEnd
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-EventSeverity:
+      ChangeTime: 2026-08-19 08:34:35
+      Config:
+        ClassIDs:
+        - '629'
+        DisplayType: ClassGovernanceObjectName
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Calculated severity
+        TreeView: '0'
+        ZTSMStatusIDs: []
+      CreateTime: 2026-08-17 07:26:45
+      FieldOrder: 535
+      FieldType: GovernanceObject
+      InternalField: 0
+      Label: Severity
+      Name: MELT-EventSeverity
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-EventStart:
+      ChangeTime: 2026-08-17 07:31:13
+      Config:
+        DateRestriction: ''
+        DefaultValue: '0'
+        Link: ''
+        LinkPreview: ''
+        MultiValue: ~
+        Tooltip: Event Start Time
+        YearsInFuture: '5'
+        YearsInPast: '5'
+        YearsPeriod: '0'
+      CreateTime: 2026-08-17 07:29:25
+      FieldOrder: 536
+      FieldType: DateTime
+      InternalField: 0
+      Label: Start Time
+      Name: MELT-EventStart
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-EventStatus:
+      ChangeTime: 2026-08-17 07:35:34
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        PossibleNone: '0'
+        PossibleValues:
+          Acknowledged: Acknowledged
+          Active: Active
+          Closed: Closed
+        Tooltip: Event Status
+        TranslatableValues: '0'
+        TreeView: '0'
+      CreateTime: 2026-08-17 07:35:34
+      FieldOrder: 538
+      FieldType: Dropdown
+      InternalField: 0
+      Label: Status
+      Name: MELT-EventStatus
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RMF:
+      ChangeTime: 2026-08-19 08:41:50
+      Config:
+        ClassIDs:
+        - '392'
+        DisplayType: ''
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Risk Management Framework
+        TreeView: '0'
+        ZTSMStatusIDs: []
+      CreateTime: 2026-08-19 08:41:50
+      FieldOrder: 561
+      FieldType: GovernanceObject
+      InternalField: 0
+      Label: Framework
+      Name: MELT-RMF
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-Reference:
+      ChangeTime: 2026-08-17 07:45:19
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Referene
+      CreateTime: 2026-08-17 07:45:19
+      FieldOrder: 543
+      FieldType: Text
+      InternalField: 0
+      Label: Reference
+      Name: MELT-Reference
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RelatedCI:
+      ChangeTime: 2026-08-17 08:08:16
+      Config:
+        ClassIDs: []
+        DeplStateIDs: []
+        DisplayType: ClassConfigItemName
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: ITSMConfigItem
+        SearchAttribute: ''
+        Tooltip: Related CI
+        TreeView: '0'
+      CreateTime: 2026-08-17 07:48:32
+      FieldOrder: 546
+      FieldType: ConfigItem
+      InternalField: 0
+      Label: Related Config Item
+      Name: MELT-RelatedCI
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RelatedEvent:
+      ChangeTime: 2026-08-17 07:44:18
+      Config:
+        ClassIDs: []
+        DisplayType: ''
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        LinkReferencingType: Dynamic
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: MELTObject
+        SearchAttribute: ''
+        Tooltip: Related Events
+        TreeView: '0'
+        ZTSMStatusIDs: []
+      CreateTime: 2026-08-17 07:44:18
+      FieldOrder: 542
+      FieldType: MELTObject
+      InternalField: 0
+      Label: Related Events
+      Name: MELT-RelatedEvent
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RelatedGO:
+      ChangeTime: 2026-08-17 08:08:17
+      Config:
+        ClassIDs: []
+        DisplayType: ClassGovernanceObjectName
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '0'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferenceFilterList: []
+        ReferencedObjectType: GovernanceObject
+        SearchAttribute: ''
+        Tooltip: Related Governance Object
+        TreeView: '0'
+        ZTSMStatusIDs: []
+      CreateTime: 2026-08-17 07:47:24
+      FieldOrder: 545
+      FieldType: GovernanceObject
+      InternalField: 0
+      Label: Related Governance Object
+      Name: MELT-RelatedGO
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RelatedTicket:
+      ChangeTime: 2026-08-17 07:50:40
+      Config:
+        DisplayType: ''
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        Queue: []
+        ReferenceFilterList: []
+        ReferencedObjectType: Ticket
+        SearchAttribute: ''
+        TicketType: []
+        Tooltip: Related Ticket
+        TreeView: '0'
+      CreateTime: 2026-08-17 07:50:40
+      FieldOrder: 547
+      FieldType: Ticket
+      InternalField: 0
+      Label: Related Ticket
+      Name: MELT-RelatedTicket
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RelatedUser:
+      ChangeTime: 2026-08-17 07:46:17
+      Config:
+        EditFieldMode: AutoComplete
+        ImportSearchAttribute: ''
+        MultiValue: '1'
+        Multiselect: '0'
+        PossibleNone: '1'
+        ReferencedObjectType: CustomerUser
+        Tooltip: Related User
+        TreeView: '0'
+      CreateTime: 2026-08-17 07:46:17
+      FieldOrder: 544
+      FieldType: CustomerUser
+      InternalField: 0
+      Label: Related User
+      Name: MELT-RelatedUser
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-RiskStmt:
+      ChangeTime: 2026-08-17 08:08:53
+      Config:
+        ClassIDs:
+        - '577'
+        DisplayType: ClassGovernanceObjectName
+        EditFieldMode: AutoComplete
+        MultiValue: '0'
+        PossibleNone: '1'
+        ReferencedObjectType: GovernanceObject
+        Tooltip: Related Risk Statement
+      CreateTime: 2026-08-17 07:40:33
+      FieldOrder: 539
+      FieldType: GovernanceObject
+      InternalField: 0
+      Label: Related Risk Statement
+      Name: MELT-RiskStmt
+      ObjectType: MELTObject
+      ValidID: 1
+    MELT-Source:
+      ChangeTime: 2026-08-17 07:42:10
+      Config:
+        DefaultValue: ''
+        Link: ''
+        LinkPreview: ''
+        MultiValue: '0'
+        RegExList: []
+        Tooltip: Event / Log Source
+      CreateTime: 2026-08-17 07:42:10
+      FieldOrder: 541
+      FieldType: Text
+      InternalField: 0
+      Label: Source
+      Name: MELT-Source
+      ObjectType: MELTObject
+      ValidID: 1

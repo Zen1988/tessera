@@ -13,6 +13,7 @@ our @ObjectDependencies = (
     'Kernel::System::DateTime',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
+    'Kernel::System::Ticket',
     'Kernel::System::YAML',
 );
 
@@ -20,6 +21,7 @@ sub new {
     my ( $Type, %Param ) = @_;
     return bless {
         SearchProvider => $Param{SearchProvider},
+        TicketProvider => $Param{TicketProvider},
         MaxSearchLimit => $Param{MaxSearchLimit} || 1000,
     }, $Type;
 }
@@ -125,6 +127,7 @@ sub ScriptEvaluate {
         Return    => $Parsed->{Script}->{RETURN},
         Context   => $Context,
         Variables => \%Variables,
+        UserID    => $Param{UserID} || 1,
     );
     $Returned->{Trace} = \@Trace;
     return $Returned;
@@ -269,6 +272,14 @@ sub _ScriptReturn {
     return { Success => 0, Status => 'UNKNOWN', Error => $Return->{UNKNOWN} }
         if exists $Return->{UNKNOWN};
 
+    if ( exists $Return->{ASSIGNMENTS} ) {
+        return $Self->_TicketAssignmentsResolve(
+            Config  => $Return->{ASSIGNMENTS},
+            Context => $Param{Context},
+            UserID  => $Param{UserID} || 1,
+        );
+    }
+
     if ( exists $Return->{IF} ) {
         my $Condition = $Return->{IF};
         return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN IF must be a mapping.' }
@@ -297,6 +308,7 @@ sub _ScriptReturn {
             Return    => $Branch,
             Context   => $Param{Context},
             Variables => $Param{Variables},
+            UserID    => $Param{UserID},
         );
     }
 
@@ -333,6 +345,117 @@ sub _ScriptReturn {
             if !defined $Value || ref $Value;
     }
     return { Success => 1, Status => 'RETURNED', Value => $Value, ValueType => $Return->{AS} || 'Scalar' };
+}
+
+sub _TicketAssignmentsResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ASSIGNMENTS must be a mapping.' }
+        if ref $Config ne 'HASH';
+    my $TicketType = $Config->{'TICKET TYPE'} || '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ASSIGNMENTS requires TICKET TYPE.' }
+        if $TicketType eq '';
+
+    my $Ticket = $Param{Context}->{TICKET};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ASSIGNMENTS requires ticket context.' }
+        if ref $Ticket ne 'HASH';
+    my $CurrentTicketID = $Ticket->{TicketID};
+    my $ParentTicketID = $Ticket->{'DynamicField_ZTicket-Parent'};
+    $ParentTicketID = $ParentTicketID->[0]
+        if ref $ParentTicketID eq 'ARRAY' && @{$ParentTicketID} == 1;
+    my $LedgerTicketID = $ParentTicketID || $CurrentTicketID;
+    return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ASSIGNMENTS cannot resolve the parent ticket reference.' }
+        if !$LedgerTicketID;
+
+    my $Iteration = $Ticket->{'DynamicField_ZIN-Iteration'};
+    $Iteration = $Iteration->[0] if ref $Iteration eq 'ARRAY' && @{$Iteration} == 1;
+    my @Iterations = defined $Iteration && $Iteration ne '' ? ($Iteration) : ('');
+    push @Iterations, $Iteration - 1
+        if defined $Iteration && $Iteration =~ m{\A\d+\z} && $Iteration > 1;
+
+    ITERATION:
+    for my $CandidateIteration (@Iterations) {
+        my @FoundTickets;
+        if ( ref $Self->{TicketProvider} eq 'CODE' ) {
+            my $Provided = eval {
+                $Self->{TicketProvider}->(
+                    TicketType      => $TicketType,
+                    ParentTicketID  => $LedgerTicketID,
+                    Iteration       => $CandidateIteration,
+                    CurrentTicketID => $CurrentTicketID,
+                    UserID          => $Param{UserID} || 1,
+                );
+            };
+            return { Success => 0, Status => 'UNKNOWN', Error => "Ticket assignment provider failed: $@" } if $@;
+            return { Success => 0, Status => 'UNKNOWN', Error => 'Ticket assignment provider must return an array reference.' }
+                if ref $Provided ne 'ARRAY';
+            @FoundTickets = @{$Provided};
+        }
+        else {
+            my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+            my %Search = (
+                Result => 'ARRAY',
+                Types  => [$TicketType],
+                'DynamicField_ZTicket-Parent' => { Equals => $LedgerTicketID },
+                UserID => $Param{UserID} || 1,
+            );
+            $Search{'DynamicField_ZIN-Iteration'} = { Equals => $CandidateIteration }
+                if defined $CandidateIteration && $CandidateIteration ne '';
+            my @TicketIDs = sort { $a <=> $b } eval { $TicketObject->TicketSearch(%Search) };
+            return { Success => 0, Status => 'UNKNOWN', Error => "Ticket assignment search failed: $@" } if $@;
+            for my $TicketID (@TicketIDs) {
+                my %Found = $TicketObject->TicketGet(
+                    TicketID      => $TicketID,
+                    DynamicFields => 1,
+                    UserID        => $Param{UserID} || 1,
+                    Silent        => 1,
+                );
+                push @FoundTickets, \%Found if %Found;
+            }
+        }
+
+        my @Assignments;
+        my %Seen;
+        for my $FoundRef (@FoundTickets) {
+            next if ref $FoundRef ne 'HASH';
+            my %Found = %{$FoundRef};
+            my $TicketID = $Found{TicketID} || 0;
+            next if $CurrentTicketID && $TicketID == $CurrentTicketID;
+            if ( !defined $CandidateIteration || $CandidateIteration eq '' ) {
+                my $FoundIteration = $Found{'DynamicField_ZIN-Iteration'};
+                $FoundIteration = $FoundIteration->[0]
+                    if ref $FoundIteration eq 'ARRAY' && @{$FoundIteration} == 1;
+                next if defined $FoundIteration && !ref $FoundIteration && $FoundIteration ne '';
+            }
+            my $SupportProfile = $Found{'DynamicField_ZTicket-OwnerGroup'};
+            $SupportProfile = $SupportProfile->[0]
+                if ref $SupportProfile eq 'ARRAY' && @{$SupportProfile} == 1;
+            my ( $Type, $Value );
+            if ( defined $SupportProfile && !ref $SupportProfile && $SupportProfile ne '' ) {
+                ( $Type, $Value ) = ( 'GovernanceObject.SupportProfile', $SupportProfile );
+            }
+            else {
+                my $CustomerUser = $Found{'DynamicField_ZTicket-Owner'};
+                $CustomerUser = $CustomerUser->[0]
+                    if ref $CustomerUser eq 'ARRAY' && @{$CustomerUser} == 1;
+                next if !defined $CustomerUser || ref $CustomerUser || $CustomerUser eq '';
+                ( $Type, $Value ) = ( 'CustomerUser', $CustomerUser );
+            }
+            next if $Seen{"$Type\0$Value"}++;
+            push @Assignments, { Type => $Type, Value => $Value, TicketID => $TicketID };
+        }
+        next ITERATION if !@Assignments;
+        return {
+            Success   => 1,
+            Status    => 'RETURNED',
+            Value     => \@Assignments,
+            ValueType => 'Collection<SupportAssignment>',
+            Iteration => $CandidateIteration,
+        };
+    }
+
+    return { Success => 0, Status => 'UNKNOWN', Error => "No $TicketType assignments were found for the current or previous iteration." };
 }
 
 sub _ScriptValueResolve {

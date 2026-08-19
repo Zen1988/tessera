@@ -91,4 +91,37 @@ $RequesterResult = $Engine->ScriptEvaluate(
 is( $RequesterResult->{Value}, 'requester.login', 'REQUESTER falls back to the customer user' );
 is( $RequesterResult->{ValueType}, 'CustomerUser', 'REQUESTER fallback result is typed' );
 
+my @IterationCalls;
+my $AssignmentEngine = Kernel::System::TESSERA::ScriptEngine->new(
+    TicketProvider => sub {
+        my (%Param) = @_;
+        push @IterationCalls, $Param{Iteration};
+        return [] if $Param{Iteration} eq '3';
+        return [
+            { TicketID => 41, 'DynamicField_ZTicket-OwnerGroup' => 91 },
+            { TicketID => 42, 'DynamicField_ZTicket-OwnerGroup' => 91 },
+            { TicketID => 43, 'DynamicField_ZTicket-Owner'      => 'individual.user' },
+        ];
+    },
+);
+my $AssignmentResult = $AssignmentEngine->ScriptEvaluate(
+    Script => {
+        VERSION => 1,
+        RETURN  => { ASSIGNMENTS => { 'TICKET TYPE' => 'Endorsement' }, AS => 'Collection<SupportAssignment>' },
+    },
+    Context => { TICKET => { TicketID => 50, 'DynamicField_ZTicket-Parent' => 10, 'DynamicField_ZIN-Iteration' => 3 } },
+);
+is_deeply( \@IterationCalls, [ 3, 2 ], 'assignment resolution prefers current iteration then falls back to previous iteration' );
+is( $AssignmentResult->{ValueType}, 'Collection<SupportAssignment>', 'assignment collection has the declared DTO type' );
+is( scalar @{ $AssignmentResult->{Value} }, 2, 'assignment collection deduplicates typed targets' );
+is( $AssignmentResult->{Value}->[0]->{Type}, 'GovernanceObject.SupportProfile', 'OwnerGroup becomes a SupportProfile assignment' );
+is( $AssignmentResult->{Value}->[1]->{Type}, 'CustomerUser', 'Owner fallback becomes a CustomerUser assignment' );
+
+@IterationCalls = ();
+$AssignmentEngine->ScriptEvaluate(
+    Script => { VERSION => 1, RETURN => { ASSIGNMENTS => { 'TICKET TYPE' => 'Assessment' } } },
+    Context => { TICKET => { TicketID => 51, 'DynamicField_ZTicket-Parent' => 10, 'DynamicField_ZIN-Iteration' => '' } },
+);
+is_deeply( \@IterationCalls, [''], 'empty iteration is handled as the initial unnumbered iteration' );
+
 done_testing;
