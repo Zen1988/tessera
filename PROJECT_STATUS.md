@@ -1,6 +1,49 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-17
+Last Updated: 2026-08-19
+
+## 2026-08-19 TESSERA-Base 0.0.3 / Non-Intrusive Script Preservation
+
+- Hardened default GovernanceRole bootstrap seeding to preserve any existing non-empty `ZTSM-ScriptEngine` logic, including scalar, array, hash/`Content`, and unknown structured value shapes.
+- Bootstrap writes a TESSERA default only when it can safely prove that the existing field is empty. Unknown value structures fail closed and are never overwritten.
+- Complete TESSERA suite passes: 10 files, 187 tests. The package contains 267 Base64 payloads; SHA256: `39E50CC7EAA6136AE43E7A68CE5ECC514A1A473E93085352A355AC00E345A08F`.
+
+## 2026-08-19 TESSERA-Base 0.0.2 / GovernanceRole Script Seed Repair
+
+- Corrected the 0.0.1 default GovernanceRole bootstrap defect observed after installation: script defaults are now literal bootstrap data and no longer depend on reading separately installed YAML files during package setup.
+- Upgrade installation revisits all existing default roles and populates `ZTSM-ScriptEngine` only when it is empty. Existing non-empty administrator scripts remain authoritative and are preserved.
+- Added explicit error logging when a default GovernanceRole cannot be created or its script cannot be written, so installation failures are visible instead of silently leaving an empty field.
+- Bootstrap syntax and the complete TESSERA suite pass: 10 files, 186 tests.
+- `TESSERA-Base 0.0.2` contains 267 Base64 payloads. SHA256: `E73C79F75B546DE7CF5A5E8D2A1424548717B89FE2A14E993A4F63DED1BA37F3`.
+
+## 2026-08-19 TESSERA-Base 0.0.1 / Default Scripted GovernanceRoles
+
+- Promoted all twelve bootstrap GovernanceRoles to first-class TESSERA defaults. `REQUESTER`, `REQUESTER-DEFAULT`, and `REQUESTER-SUPPORT-GROUP` receive the requester resolver; `DIAGNOSE`, `ASSESSOR`, `ENDORSER`, `APPROVER`, `IMPLEMENTER`, `VERIFIER`, `SUPPORT`, `ASSET`, and `ESCALATION` receive the generic SupportAssignment resolver.
+- Bootstrap script seeding is upgrade-safe: it fills `ZTSM-ScriptEngine` only when the default role has no non-empty script and preserves administrator-authored script content on repeat install or upgrade.
+- Both GenericAgent and TransitionAction `ZTSMRoleDirector` paths now execute GovernanceRole scripts through the centralized resolver. A typed `GovernanceObject.SupportProfile` result follows the existing `ZTicket-OwnerGroup` assignment path; a typed `CustomerUser` result follows `ZTicket-Owner`. Unsupported types and script failures fail closed; roles without a script retain the legacy compatibility resolver.
+- The complex ENDORSER parent/child aggregation remains a planned collection-language increment. The 0.0.1 default ENDORSER script is deliberately the executable scalar SupportAssignment resolver rather than an unsupported pseudo-script.
+- Perl syntax checks pass for bootstrap and both TransitionAction package copies. The complete TESSERA suite passes: 10 files, 184 tests.
+- `TESSERA-Base 0.0.1` contains 267 Base64 payloads. SHA256: `385D8C30E5D04140373A49207491BDD980D4825F4A57B0FFF1EC7BF4B247787E`.
+
+## 2026-08-19 TESSERA-Base 0.0.0 / English YAML Script Engine Foundation
+
+- Ended the installable `GovernanceDB` package line at `0.1.128` and introduced the new package identity `TESSERA-Base` at `0.0.0`.
+- Kept the source under `Kernel/Package/GovernanceDB` and preserved all `Kernel::System::GovernanceDB` namespaces, database tables, SysConfig keys, `var/governancedb` paths, and the `governance-db` permission group as stable compatibility contracts.
+- Added OTOBO `PackageMerge` metadata so `TESSERA-Base 0.0.0` subsumes installed `GovernanceDB` versions through `0.1.128` without duplicate-file ownership or a destructive schema migration.
+- Added `Kernel::System::TESSERA::ScriptEngine` as the new typed runtime. Its first bounded YAML execution slice supports `SEARCH` over `GovernanceObject` and `ITSMConfigItem`, named collection variables, `WHERE` with `EQUALS`/`CONTAINS`, context resolution for `CURRENT OBJECT` and `TICKET.<Field>`, cardinality `REQUIRE`, and typed `RETURN` using `FIRST` or `EXACTLY ONE`.
+- Search limits are mandatory and capped; unsupported object types/operators, unavailable context, missing results, and ambiguous `EXACTLY ONE` results return `UNKNOWN` rather than broadening resolution.
+- Converted `Kernel::System::TESSERA::PolicyEngine` into a compatibility facade over `ScriptEngine`; existing ControlObjective expression/program APIs and callers remain valid.
+- Synchronized the 2026-08-19 GovernanceObject export into the package baseline, including the exact `ZTSM-ScriptEngine` field on `GovernanceRole`. Existing definitions remain protected by the non-destructive bootstrap merge rules.
+- Updated the current cross-object recovery package source to require `TESSERA-Base` rather than the retired GovernanceDB package identity. Historical OPM artifacts remain unchanged.
+- Rejected: renaming internal GovernanceDB namespaces/schema, repurposing `ZRM-Result` as a script return, allowing unbounded search, or embedding arbitrary Perl/SQL/shell execution.
+- Architectural decision: the ScriptEngine must support governed external calls in a future increment. External execution will use registered, allowlisted connectors with typed input/output contracts, explicit timeout and permission policies, redacted evidence, and fail-closed results; it will not expose arbitrary network, Perl, SQL, or shell execution.
+- `TESSERA-Base 0.0.0` contains 267 byte-exact payloads. SHA256: `A4F390FA40114174786909FABA3D544D5E51EF55CBF94CAB5BF3FEF3D7C7AFCE`.
+- Package presentation identifies the vendor as `Zen CHAN (NCS)` and describes TESSERA-Base as bringing Ticketing and Governance as Code capabilities to OTOBO. OTOBO's platform-level third-party package trust warning remains unchanged; branding is supplied through authoritative package metadata rather than a core Package Manager override.
+- Added packaged executable example `var/governancedb/script/governance_role_dynamic_resolver.yml`, translating the original GenericAgent dynamic GovernanceRole branch into TESSERA English YAML: search `SupportAssignment` by `CURRENT OBJECT` and `TICKET.ZTicket-Application`, require exactly one result, and return `ZTSMSupportAssignment-SupportProfile` as `GovernanceObject.SupportProfile`. `REQUESTER-DEFAULT` and `DIAGNOSE` remain explicit specialized runtime paths rather than being misrepresented as generic assignment lookup.
+- Corrected the GovernanceRole execution contract: each GovernanceRole's `ZTSM-ScriptEngine` defines its complete typed resolution strategy. Added conditional `RETURN IF`/`THEN`/`ELSE` and nested ticket/customer-user traversal. The packaged REQUESTER example returns `TICKET.CustomerUser.ZUser-SupportProfile` as `GovernanceObject.SupportProfile` when non-empty, otherwise `TICKET.CustomerUser` as `CustomerUser`.
+- Added centralized `Kernel::System::TESSERA::GovernanceRoleResolver`, which loads the GovernanceRole script, hydrates ticket and CustomerUser context, executes it, and returns the typed ScriptEngine result.
+- Updated GenericAgent `ZTSMRoleDirector` canonical and packaged runtime-overlay copies to invoke the centralized resolver for scripted GovernanceRoles. A `GovernanceObject.SupportProfile` result is written through the existing `ZTicket-OwnerGroup` path; a `CustomerUser` result is written through the existing `ZTicket-Owner` path. Roles without scripts retain the legacy resolver as a compatibility fallback; an invalid scripted result fails closed and does not fall through silently.
+- ScriptEngine, legacy PolicyEngine attestation, and Control runtime focused tests pass. Full TESSERA suite initially exposed only one stale package-version assertion, which was updated for the new package identity/version.
 
 ## 2026-08-17 Control Failure Risk Runtime 0.1.128 / MELT 0.0.19
 

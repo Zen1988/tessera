@@ -817,13 +817,21 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
    Module: Plack::Sandbox::_2fopt_2fotobo_2fbin_2fpsgi_2dbin_2fotobo_2epsgi::__ANON__ Line: 159
    Module: Plack::Sandbox::_2fopt_2fotobo_2fbin_2fpsgi_2dbin_2fotobo_2epsgi::__ANON__ Line: 145
    Module: Plack::Middleware::HTTPExceptions::try {...}  Line: 20
-# ControlObjective Policy Language Next Increment
+# TESSERA English YAML Script Engine Next Increment
 
-- Add name-based `@GovernanceObject[Class][Name = "..."]`, `@ITSMConfigItem[Class][Name = "..."]`, and `@MELT[Class][Name = "..."]` root resolution.
-- Add walkable reference paths, including fixed traversal (`.Field.Field`) and cycle-safe recursive traversal (`..Field`) with explicit maximum depth.
-- Extend the implemented ticket-assignment `LET` syntax with local `STATIC`/runtime variables, typed collections, and `ALL` / `ANY` / `NONE` quantifiers.
+- Add `MELTObject` as a native `SEARCH FOR` object type when MELT is installed, while retaining fail-closed behavior when it is absent.
+- Add class-definition-backed authoring validation so every `WHERE` and `RETURN FIELD` name is verified against the selected exported class before execution.
+- Make reference comparisons object-aware. For example, authored `ZTicket-Parent EQUALS CURRENT TICKET` must compare Ticket references semantically; scripts must not expose or require `TICKET.TicketID` merely because the Ticket reference driver persists an internal identifier.
+- Use `TicketType` as the canonical TESSERA ticket property in authored scripts. The ScriptEngine adapter maps `TicketType` to OTOBO's native `Type`/`Types` APIs internally; authors must not use the backend search parameter name as if it were a TESSERA field.
+- Add walkable reference paths with fixed traversal and cycle-safe recursive traversal using explicit maximum depth.
+- Add bounded `FOR EACH`, collection `SELECT`, and `ALL` / `ANY` / `NONE` quantifiers without permitting unrestricted writes inside iteration.
+- Add declared inputs, local `STATIC`/runtime variables, typed collections, and return-type verification against the actual returned object class.
+- Add a future-safe `CALL` capability for registered external connectors. Define connector manifests, typed request/response schemas, authentication references, permission scopes, timeouts, retry/idempotency rules, secret redaction, audit evidence, and fail-closed error results before enabling any external endpoint.
+- Keep `CALL` declarative and allowlisted; scripts must never supply arbitrary URLs, credentials, Perl, SQL, shell commands, or dynamically selected runtime modules.
+- Migrate the remaining permission consumers behind the synchronous ScriptEngine-backed GovernanceRole resolver. GenericAgent and TransitionAction RoleDirector now share its typed return contract.
+- Implement the ENDORSER parent/child aggregation after bounded iteration and typed collections exist: search children where `ZTicket-Parent EQUALS CURRENT TICKET` and `TicketType EQUALS "Endorsement"`, select `ZTicket-OwnerGroup` or individual owner fallback, deduplicate, and return a verified typed collection.
 - Extend the implemented simple Control cycle frequencies with calendar ranges, named business calendars, calendar-exact month/year arithmetic, and explicit timezone semantics.
 - Add catalog-name-to-score mappings without exposing GeneralCatalog IDs in authored policy or evidence.
-- Add parser diagnostics with source line/column and authoring-time validation on ControlObjective save.
+- Add YAML parser diagnostics with source line/column and authoring-time validation on GovernanceRole and ControlObjective save.
 - Extend failure field-assignment authoring with line/column diagnostics and richer calculated-value functions while retaining explicit `ZRM-CreateRisk` gating.
-- Add focused automated tests for temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.
+- Add focused automated tests for native backend permissions, invalid class fields, temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.

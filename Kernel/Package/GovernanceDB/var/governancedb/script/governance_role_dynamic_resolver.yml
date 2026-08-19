@@ -1,0 +1,28 @@
+---
+SCRIPT: Resolve Dynamic Governance Role
+VERSION: 1
+
+# CURRENT OBJECT is the GovernanceRole whose ZTSM-ScriptEngine is executing.
+# TICKET is the runtime ticket supplied by the caller.
+SEARCH:
+  FOR: GovernanceObject
+  CLASS: SupportAssignment
+  AS: Matching Assignments
+  WHERE:
+    ZTSMSupportAssignment-Role:
+      EQUALS: CURRENT OBJECT
+    ZTSMSupportAssignment-Application:
+      EQUALS: TICKET.ZTicket-Application
+  LIMIT: 2
+
+# LIMIT 2 is intentional: resolution only needs to distinguish zero, one,
+# or ambiguous matches.
+REQUIRE:
+  Matching Assignments:
+    HAS EXACTLY: 1
+  OTHERWISE: GovernanceRole and Application must resolve to exactly one SupportAssignment.
+
+RETURN:
+  FROM: EXACTLY ONE Matching Assignments
+  FIELD: ZTSMSupportAssignment-SupportProfile
+  AS: GovernanceObject.SupportProfile

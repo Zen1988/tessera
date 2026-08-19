@@ -63,12 +63,13 @@ my $BootstrapContent = <$BootstrapFH>;
 close $BootstrapFH;
 like( $BootstrapContent, qr/\n\s*ASSET\n/, 'bootstrap idempotently ensures ASSET GovernanceRole' );
 
-my $SOPM = "$Root/Kernel/Package/GovernanceDB/GovernanceDB.sopm";
+my $SOPM = "$Root/Kernel/Package/GovernanceDB/TESSERA-Base.sopm";
 open my $SOPMFH, '<:raw', $SOPM or die "Cannot read $SOPM: $!";
 local $/;
 my $SOPMContent = <$SOPMFH>;
 close $SOPMFH;
-like( $SOPMContent, qr{<Version>0\.1\.95</Version>}, 'package version is 0.1.95' );
+like( $SOPMContent, qr{<Name>TESSERA-Base</Name>}, 'package identity is TESSERA-Base' );
+like( $SOPMContent, qr{<Version>0\.0\.3</Version>}, 'TESSERA-Base package version is 0.0.3' );
 my $AssetOverviewPath = "$Root/Kernel/Package/GovernanceDB/Kernel/Output/HTML/ITSMConfigItem/ZTSMCustomerOverviewSmall.pm";
 open my $AssetOverviewFH, '<:raw', $AssetOverviewPath or die "Cannot read $AssetOverviewPath: $!";
 local $/;

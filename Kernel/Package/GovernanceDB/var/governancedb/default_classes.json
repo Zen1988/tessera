@@ -36,7 +36,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMAppSystem-CriticalityProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "CriticalityProfile"
@@ -63,7 +63,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-DataClassificationProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "DataClassification"
@@ -90,7 +90,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-DefaultApprovalModel" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ApprovalModel"
@@ -119,7 +119,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-DefaultApprovalProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "SupportProfile"
@@ -148,7 +148,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-Environment" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Environment"
@@ -177,7 +177,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-ExposureProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ExposureProfile"
@@ -204,7 +204,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-Location" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Location"
@@ -233,7 +233,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-Owner" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Organization"
@@ -262,7 +262,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-Parent" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Application"
@@ -291,7 +291,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-Platform" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Platform"
@@ -320,7 +320,7 @@
                "ValidID" : 1
             },
             "ZTSMAppSystem-ServiceTier" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ServiceTier"
@@ -405,13 +405,133 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMApprovalModel-ApprovelTimeout" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "72",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
                      {
                         "ErrorMessage" : "Approval Timeout must be in number of hours only",
                         "Value" : "^[0-9]+$"
@@ -449,7 +569,7 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-FinalAction" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Reject with Timeout",
                   "Link" : "",
@@ -477,7 +597,7 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-L2Escalation" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "GovernanceRole",
@@ -507,13 +627,133 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-L2Timeout" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "72",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
                      {
                         "ErrorMessage" : "Approval Timeout must be in number of hours only",
                         "Value" : "^[0-9]+$"
@@ -551,7 +791,7 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-L3Escalation" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "GovernanceRole",
@@ -581,13 +821,133 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-L3Timeout" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "72",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Timeout must be in number of hours only",
+                        "Value" : "^[0-9]+$"
+                     },
                      {
                         "ErrorMessage" : "Approval Timeout must be in number of hours only",
                         "Value" : "^[0-9]+$"
@@ -625,7 +985,7 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-Mode" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Escalation",
                   "Link" : "",
@@ -652,13 +1012,133 @@
                "ValidID" : 1
             },
             "ZTSMApprovalModel-RequiredWeightage" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Approval Weightage must be in number only",
+                        "Value" : "^[0-9]+$"
+                     },
                      {
                         "ErrorMessage" : "Approval Weightage must be in number only",
                         "Value" : "^[0-9]+$"
@@ -714,7 +1194,7 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::BlueBook\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Blue Book\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZBlue-Record" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Include" : [
                      {
@@ -846,7 +1326,7 @@
          "Definition" : "---\nPages:\n- Content:\n  - ColumnStart: 1\n    RowStart: 1\n    Section: General Fields::ControlObjective\n  - ColumnStart: 1\n    RowStart: 2\n    Section: GovernanceDB Backlinks::Backlinks\n  - ColumnStart: 2\n    RowSpan: 2\n    RowStart: 1\n    Section: GovernanceDB Description::Description\n  - ColumnStart: 1\n    RowStart: 1\n    Section: General Fields::ControlIdentity\n  Interfaces:\n  - Agent\n  Layout:\n    ColumnWidth: 1fr 1fr\n    Columns: 2\n  Name: Summary\nRoles:\n  General Fields:\n    Name: ZRM ControlObjective\n  GovernanceDB Backlinks:\n    Name: GovernanceDB Backlinks\n  GovernanceDB Description:\n    Name: GovernanceDB Description\n",
          "DynamicFields" : {
             "ZRM-Annex" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -865,7 +1345,7 @@
                "ValidID" : 1
             },
             "ZRM-ControlCategory" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -892,7 +1372,7 @@
                "ValidID" : 1
             },
             "ZRM-ControlClass" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -911,7 +1391,7 @@
                "ValidID" : 1
             },
             "ZRM-ControlCycle" : {
-               "ChangeTime" : "2026-08-14 05:48:04",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -929,23 +1409,8 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
-            "ZRM-CreateRisk" : {
-               "Config" : {
-                  "DefaultValue" : "0",
-                  "MultiValue" : "0",
-                  "PossibleNone" : "0",
-                  "Tooltip" : "Create a risk record when this control fails"
-               },
-               "FieldOrder" : 533,
-               "FieldType" : "Checkbox",
-               "InternalField" : 0,
-               "Label" : "Create Risk When Control Failed",
-               "Name" : "ZRM-CreateRisk",
-               "ObjectType" : "GovernanceObject",
-               "ValidID" : 1
-            },
             "ZRM-ControlType" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -970,14 +1435,130 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
+            "ZRM-CreateRisk" : {
+               "ChangeTime" : "2026-08-17 08:08:16",
+               "Config" : {
+                  "DefaultValue" : "0",
+                  "MultiValue" : null,
+                  "PossibleNone" : "0",
+                  "Tooltip" : "Create Risk When Control Failed"
+               },
+               "CreateTime" : "2026-08-17 06:27:04",
+               "FieldOrder" : 533,
+               "FieldType" : "Checkbox",
+               "InternalField" : 0,
+               "Label" : "Create Risk When Control Failed",
+               "Name" : "ZRM-CreateRisk",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
+            "ZRM-FieldAssignment" : {
+               "ChangeTime" : "2026-08-17 08:05:39",
+               "Config" : {
+                  "Cols" : "100",
+                  "DefaultValue" : "SET @MELTObject.Risk.MELT-Control THIS",
+                  "MultiValue" : "0",
+                  "RegExList" : [],
+                  "Rows" : "3",
+                  "Tooltip" : "Field Assignment"
+               },
+               "CreateTime" : "2026-08-17 08:04:09",
+               "FieldOrder" : 548,
+               "FieldType" : "TextArea",
+               "InternalField" : 0,
+               "Label" : "FieldAssignment",
+               "Name" : "ZRM-FieldAssignment",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1007,13 +1588,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1043,7 +1704,7 @@
                "ValidID" : 1
             },
             "ZRM-Policy" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [],
                   "DisplayType" : "ClassGovernanceObjectName",
@@ -1069,7 +1730,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyEvaluation" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Cols" : "100",
                   "DefaultValue" : "",
@@ -1088,7 +1749,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyFilter" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Cols" : "100",
                   "DefaultValue" : "",
@@ -1107,7 +1768,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyReference" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -1125,8 +1786,27 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
+            "ZRM-RiskClass" : {
+               "ChangeTime" : "2026-08-17 08:08:16",
+               "Config" : {
+                  "DefaultValue" : "@MELTObject.RiskEvent",
+                  "Link" : "",
+                  "LinkPreview" : "",
+                  "MultiValue" : "0",
+                  "RegExList" : [],
+                  "Tooltip" : "Risk Class object"
+               },
+               "CreateTime" : "2026-08-17 06:34:56",
+               "FieldOrder" : 534,
+               "FieldType" : "Text",
+               "InternalField" : 0,
+               "Label" : "Risk Class",
+               "Name" : "ZRM-RiskClass",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
             "ZRM-RiskStmt" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "RiskStatement"
@@ -1153,25 +1833,8 @@
                "ObjectType" : "GovernanceObject",
                "ValidID" : 1
             },
-            "ZRM-RiskClass" : {
-               "Config" : {
-                  "DefaultValue" : "MELTObject.Risk",
-                  "Link" : "",
-                  "LinkPreview" : "",
-                  "MultiValue" : "0",
-                  "RegExList" : [],
-                  "Tooltip" : "Target object and class, for example MELTObject.Risk"
-               },
-               "FieldOrder" : 534,
-               "FieldType" : "Text",
-               "InternalField" : 0,
-               "Label" : "Risk Class",
-               "Name" : "ZRM-RiskClass",
-               "ObjectType" : "GovernanceObject",
-               "ValidID" : 1
-            },
             "ZRM-Version" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -1210,13 +1873,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Factor::Factor\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1246,13 +1989,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1300,13 +2123,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Factor::Factor\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1336,13 +2239,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1390,13 +2373,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Environment\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: Factor::Factor\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 3\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 4\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Environment\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1426,13 +2489,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1462,7 +2605,7 @@
                "ValidID" : 1
             },
             "ZTSMEnvironment-Criticality" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Critical",
                   "Link" : "",
@@ -1489,7 +2632,7 @@
                "ValidID" : 1
             },
             "ZTSMEnvironment-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Production",
                   "Link" : "",
@@ -1541,7 +2684,7 @@
          "Definition" : "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Severity::Sev\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\nRoles:\r\n  Severity:\r\n    Name: EventSeverity\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-BaseImpact" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::Impact",
                   "MultiValue" : "0",
@@ -1559,7 +2702,7 @@
                "ValidID" : 1
             },
             "ZRM-BaseLikelihood" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::Likelihood",
                   "MultiValue" : "0",
@@ -1577,7 +2720,7 @@
                "ValidID" : 1
             },
             "ZTSM-ColorHex" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -1613,13 +2756,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Factor::Factor\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1649,13 +2872,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1704,13 +3007,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Factor::Factor\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1740,13 +3123,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -1808,30 +3271,24 @@
                "Name" : "ZTSM-Code",
                "ObjectType" : "ITSMConfigItem"
             },
-            "ZTSM-Status" : {
-               "CIClass" : "GovernanceRole",
+            "ZTSM-ScriptEngine" : {
+               "ChangeTime" : "2026-08-19 01:36:16",
                "Config" : {
-                  "DefaultValue" : "Draft",
-                  "Link" : "",
-                  "LinkPreview" : "",
+                  "Cols" : "100",
+                  "DefaultValue" : "",
                   "MultiValue" : "0",
-                  "PossibleNone" : "0",
-                  "PossibleValues" : {
-                     "Active" : "Active",
-                     "Archived" : "Archived",
-                     "Draft" : "Draft",
-                     "Inactive" : "Inactive",
-                     "Retired" : "Retired",
-                     "Suspended" : "Suspended"
-                  },
-                  "Tooltip" : "Governance / operational validity",
-                  "TranslatableValues" : "0",
-                  "TreeView" : "0"
+                  "RegExList" : [],
+                  "Rows" : "5",
+                  "Tooltip" : "Script Logic/Engineering"
                },
-               "FieldType" : "Dropdown",
-               "Label" : "Status",
-               "Name" : "ZTSM-Status",
-               "ObjectType" : "ITSMConfigItem"
+               "CreateTime" : "2026-08-19 01:36:16",
+               "FieldOrder" : 549,
+               "FieldType" : "TextArea",
+               "InternalField" : 0,
+               "Label" : "Script",
+               "Name" : "ZTSM-ScriptEngine",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
             }
          },
          "Name" : "GovernanceRole",
@@ -1852,7 +3309,7 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Address\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Location\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTSMLocation-Address" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Location"
@@ -1939,7 +3396,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMOrganization-DefaultApprovalModel" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ApprovalModel"
@@ -1968,7 +3425,7 @@
                "ValidID" : 1
             },
             "ZTSMOrganization-DefaultApprovalProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "SupportProfile"
@@ -1997,7 +3454,7 @@
                "ValidID" : 1
             },
             "ZTSMOrganization-Parent" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Organization"
@@ -2026,7 +3483,7 @@
                "ValidID" : 1
             },
             "ZTSMOrganization-Tier" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "3",
                   "Link" : "",
@@ -2052,7 +3509,7 @@
                "ValidID" : 1
             },
             "ZTSMOrganization-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Vendor",
                   "Link" : "",
@@ -2136,7 +3593,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMPlatform-Location" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Location"
@@ -2165,7 +3622,7 @@
                "ValidID" : 1
             },
             "ZTSMPlatform-Owner" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Organization"
@@ -2194,7 +3651,7 @@
                "ValidID" : 1
             },
             "ZTSMPlatform-ServiceSupportMap" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ServiceSupportMap"
@@ -2223,7 +3680,7 @@
                "ValidID" : 1
             },
             "ZTSMPlatform-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Virtualization",
                   "Link" : "",
@@ -2270,7 +3727,7 @@
          "Definition" : "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::ControlIdentity\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: General Fields::Policy\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 3\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\nRoles:\r\n  General Fields:\r\n    Name: Policy\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-Annex" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2289,7 +3746,7 @@
                "ValidID" : 1
             },
             "ZRM-LastReviewed" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DateRestriction" : "",
                   "DefaultValue" : "0",
@@ -2311,7 +3768,7 @@
                "ValidID" : 1
             },
             "ZRM-Parent" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Framework",
@@ -2340,7 +3797,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyOwner" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Organization"
@@ -2368,7 +3825,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyReference" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2387,7 +3844,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicySource" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2406,7 +3863,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyType" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2435,7 +3892,7 @@
                "ValidID" : 1
             },
             "ZRM-PublishedDate" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DateRestriction" : "",
                   "DefaultValue" : "0",
@@ -2457,7 +3914,7 @@
                "ValidID" : 1
             },
             "ZRM-ReviewCycle" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2476,7 +3933,7 @@
                "ValidID" : 1
             },
             "ZRM-ReviewStateBook" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "StateBook"
@@ -2504,7 +3961,7 @@
                "ValidID" : 1
             },
             "ZRM-Version" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2542,7 +3999,7 @@
          "Definition" : "---\nPages:\n- Content:\n  - ColumnStart: 1\n    RowStart: 1\n    Section: General Fields::RiskStatement\n  - ColumnStart: 1\n    RowStart: 2\n    Section: GovernanceDB Backlinks::Backlinks\n  - ColumnStart: 2\n    RowSpan: 2\n    RowStart: 1\n    Section: GovernanceDB Description::Description\n  - ColumnStart: 1\n    RowStart: 1\n    Section: General Fields::RiskIdentity\n  Interfaces:\n  - Agent\n  Layout:\n    ColumnWidth: 1fr 1fr\n    Columns: 2\n  Name: Summary\nRoles:\n  General Fields:\n    Name: ZRM RiskStatement\n  GovernanceDB Backlinks:\n    Name: GovernanceDB Backlinks\n  GovernanceDB Description:\n    Name: GovernanceDB Description\n",
          "DynamicFields" : {
             "ZRM-AdvisoryStatus" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Current",
                   "Link" : "",
@@ -2570,7 +4027,7 @@
                "ValidID" : 1
             },
             "ZRM-Annex" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2589,7 +4046,7 @@
                "ValidID" : 1
             },
             "ZRM-BaseImpact" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::Impact",
                   "MultiValue" : "0",
@@ -2607,7 +4064,7 @@
                "ValidID" : 1
             },
             "ZRM-BaseLikelihood" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::Likelihood",
                   "MultiValue" : "0",
@@ -2625,7 +4082,7 @@
                "ValidID" : 1
             },
             "ZRM-ImpactCategoryGO" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::ImpactCategory",
                   "MultiValue" : "0",
@@ -2643,13 +4100,93 @@
                "ValidID" : 1
             },
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -2679,13 +4216,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -2715,7 +4332,7 @@
                "ValidID" : 1
             },
             "ZRM-Policy" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [],
                   "DisplayType" : "ClassGovernanceObjectName",
@@ -2741,7 +4358,7 @@
                "ValidID" : 1
             },
             "ZRM-PolicyReference" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2760,7 +4377,7 @@
                "ValidID" : 1
             },
             "ZRM-RiskCategoryGO" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Class" : "ZRM::RiskCategory",
                   "MultiValue" : "0",
@@ -2778,7 +4395,7 @@
                "ValidID" : 1
             },
             "ZRM-SupersededRS" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "RiskStatement"
@@ -2805,7 +4422,7 @@
                "ValidID" : 1
             },
             "ZRM-Version" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "",
                   "Link" : "",
@@ -2883,7 +4500,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMServiceProfile-Category" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Managed Service",
                   "Link" : "",
@@ -2913,7 +4530,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceProfile-Contract" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ServiceProfile"
@@ -2942,7 +4559,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceProfile-Owner" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Organization"
@@ -3014,7 +4631,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMServiceSupportMap-Application" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Application"
@@ -3043,7 +4660,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-ApprovalModel" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ApprovalModel"
@@ -3072,7 +4689,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-Environment" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Environment"
@@ -3101,7 +4718,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-Location" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Location"
@@ -3130,7 +4747,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-Service" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "EditFieldMode" : "Dropdown",
                   "ImportSearchAttribute" : "",
@@ -3152,7 +4769,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-ServiceProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ServiceProfile"
@@ -3181,7 +4798,7 @@
                "ValidID" : 1
             },
             "ZTSMServiceSupportMap-StateBook" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "StateBook"
@@ -3228,13 +4845,93 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: Factor::Factor\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  Factor:\r\n    Name: ZRM Risk Factor\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZRM-ImpactFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -3264,13 +4961,93 @@
                "ValidID" : 1
             },
             "ZRM-LikelihoodFactor" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
+                     {
+                        "ErrorMessage" : "Factor should be 0 to 1 only",
+                        "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
+                     },
                      {
                         "ErrorMessage" : "Factor should be 0 to 1 only",
                         "Value" : "^(?:0(?:\\.\\d+)?|1(?:\\.0+)?)$"
@@ -3336,7 +5113,7 @@
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::StateMap\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM State Book\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZState-StateRecord" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Include" : [
                      {
@@ -3439,7 +5216,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMSupportAssignment-Application" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Application"
@@ -3468,7 +5245,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-Environment" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Environment"
@@ -3497,7 +5274,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-Location" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "Location"
@@ -3526,7 +5303,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-Role" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "GovernanceRole"
@@ -3555,7 +5332,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-SupportProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "SupportProfile"
@@ -3584,7 +5361,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Primary",
                   "Link" : "",
@@ -3611,7 +5388,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-UserAccount" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "EditFieldMode" : "AutoComplete",
                   "ImportSearchAttribute" : "",
@@ -3631,13 +5408,133 @@
                "ValidID" : 1
             },
             "ZTSMSupportAssignment-Weightage" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "1",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",
                   "RegExList" : [
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
+                     {
+                        "ErrorMessage" : "Weightage must be number format",
+                        "Value" : "^[0-9\\.]+$"
+                     },
                      {
                         "ErrorMessage" : "Weightage must be number format",
                         "Value" : "^[0-9\\.]+$"
@@ -3733,7 +5630,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMSupportProfile-ServiceProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "ServiceProfile"
@@ -3762,7 +5659,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportProfile-TechnologyProfile" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "TechnologyProfile"
@@ -3791,7 +5688,7 @@
                "ValidID" : 1
             },
             "ZTSMSupportProfile-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Support",
                   "Link" : "",
@@ -3877,7 +5774,7 @@
                "ObjectType" : "ITSMConfigItem"
             },
             "ZTSMTechnologyProfile-Parent" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "ClassIDs" : [
                      "TechnologyProfile"
@@ -3906,7 +5803,7 @@
                "ValidID" : 1
             },
             "ZTSMTechnologyProfile-Type" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "DefaultValue" : "Server Infrastructure",
                   "Link" : "",
@@ -3966,7 +5863,7 @@
          "Definition" : "---\r\nPages:\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Template\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\nRoles:\r\n  General Fields:\r\n    Name: ZTSM Template\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
             "ZTemplate-RiskAssessment" : {
-               "ChangeTime" : "2026-08-14 03:19:07",
+               "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
                   "Include" : [
                      {
@@ -4090,7 +5987,7 @@
          "Name" : "Policy"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF: ZRM-Annex\r\n    - DF: ZRM-Version\r\n  ControlObjective:\r\n    Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation\r\n    - DF: ZRM-Policy\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-RiskStmt\r\n    - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n    - DF: ZRM-ControlCycle\r\n    - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n    - DF: ZRM-CreateRisk\r\n    - DF: ZRM-RiskClass",
+         "Definition" : "---\r\nSections:\r\n  ControlIdentity:\r\n    Content:\r\n    - DF: ZRM-Annex\r\n    - DF: ZRM-Version\r\n  ControlObjective:\r\n    Content:\r\n    - Header: Policy Control\r\n    - DF: ZRM-PolicyFilter\r\n    - DF: ZRM-PolicyEvaluation\r\n    - DF: ZRM-Policy\r\n    - DF: ZRM-PolicyReference\r\n    - DF: ZRM-RiskStmt\r\n    - DF: ZRM-ControlCategory\r\n    - DF: ZRM-ControlType\r\n    - DF: ZRM-ControlCycle\r\n    - DF: ZRM-LikelihoodFactor\r\n    - DF: ZRM-ImpactFactor\r\n    - DF: ZRM-ControlClass\r\n    - DF: ZRM-CreateRisk\r\n    - DF: ZRM-RiskClass\r\n    - DF: ZRM-FieldAssignment",
          "Name" : "ZRM ControlObjective"
       },
       {
@@ -4122,7 +6019,7 @@
          "Name" : "ZTSM Environment"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  Role:\r\n    Content:\r\n    - Header: Role\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status",
+         "Definition" : "---\r\nSections:\r\n  Role:\r\n    Content:\r\n    - Header: Role\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-ScriptEngine",
          "Name" : "ZTSM GovernanceRole"
       },
       {

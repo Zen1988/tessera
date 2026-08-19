@@ -14,7 +14,7 @@
         Uninstalling removes only this repair module. Recovered GovernanceObject values and preserved *Old values remain unchanged.
     </IntroUninstall>
 
-    <PackageRequired Version="0.1.125">GovernanceDB</PackageRequired>
+    <PackageRequired Version="0.0.0">TESSERA-Base</PackageRequired>
     <PackageRequired Version="0.0.15">MELT</PackageRequired>
 
     <Filelist>

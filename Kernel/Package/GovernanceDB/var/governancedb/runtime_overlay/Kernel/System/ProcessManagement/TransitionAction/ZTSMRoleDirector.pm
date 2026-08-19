@@ -39,6 +39,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::CustomerUser',
+    'Kernel::System::TESSERA::GovernanceRoleResolver',
 );
 
 # ------------------------------------------------------------ #
@@ -773,7 +774,42 @@ sub Run {
     my $RequesterOwnerUserID;
     my $AffectedUserOwnerUserID;
 
+    my $ScriptResolutionHandled;
     if ($DynamicGovernanceRole) {
+        my $ScriptResult = $Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->Resolve(
+            GovernanceRole => $DynamicGovernanceRole,
+            Ticket         => $Ticket,
+            UserID         => 1,
+        );
+        if ( ( $ScriptResult->{Status} || '' ) eq 'RETURNED' ) {
+            $ResolutionCandidate = $ScriptResult->{Value};
+            if ( ( $ScriptResult->{ValueType} || '' ) eq 'GovernanceObject.SupportProfile' ) {
+                $ResolvedSupportProfile = $ScriptResult->{Value};
+            }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'CustomerUser' ) {
+                $RequesterOwnerUserID = $ScriptResult->{Value};
+            }
+            else {
+                $LogObject->Log(
+                    Priority => 'error',
+                    Message  => 'ZTSMRoleDirector: GovernanceRole script returned unsupported type '
+                        . ( $ScriptResult->{ValueType} || 'N/A' ) . " TicketID=$TicketID",
+                );
+                return 1;
+            }
+            $ScriptResolutionHandled = 1;
+        }
+        elsif ( ( $ScriptResult->{Status} || '' ) ne 'NO_SCRIPT' ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => 'ZTSMRoleDirector: GovernanceRole script resolution failed '
+                    . ( $ScriptResult->{Error} || 'UNKNOWN' ) . " TicketID=$TicketID",
+            );
+            return 1;
+        }
+    }
+
+    if ( $DynamicGovernanceRole && !$ScriptResolutionHandled ) {
         if ( _IsRequesterDefaultProfile($ProfileDisplay) ) {
             $ResolutionCandidate = _ResolveRequesterProfile(
 

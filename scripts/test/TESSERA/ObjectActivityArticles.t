@@ -6,13 +6,13 @@ use File::Slurp qw(read_file);
 
 my %Package = (
     ConfigItem => {
-        SOPM  => 'Kernel/Package/GovernanceDB/GovernanceDB.sopm',
+        SOPM  => 'Kernel/Package/GovernanceDB/TESSERA-Base.sopm',
         XML   => 'Kernel/Package/GovernanceDB/Kernel/Config/Files/XML/GovernanceDB.xml',
         Table => 'ztsm_configitem_activity',
         Event => 'ITSMConfigItem::EventModulePost###110-TESSERAActivityArticles',
     },
     GovernanceObject => {
-        SOPM  => 'Kernel/Package/GovernanceDB/GovernanceDB.sopm',
+        SOPM  => 'Kernel/Package/GovernanceDB/TESSERA-Base.sopm',
         XML   => 'Kernel/Package/GovernanceDB/Kernel/Config/Files/XML/GovernanceDB.xml',
         Table => 'governance_object_activity',
         Event => 'GovernanceObject::EventModulePost###110-TESSERAActivityArticles',

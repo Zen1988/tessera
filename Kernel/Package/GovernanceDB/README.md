@@ -1,10 +1,41 @@
-# GovernanceDB readiness scaffold
+# TESSERA-Base
 
-GovernanceDB is a separate ZTSM governance object store inspired by OTOBO ITSM
-ConfigItem, but it is not a drop-in reuse of the CMDB schema.
+TESSERA-Base is the installable foundation for the TESSERA governance object
+store, runtime orchestration, and typed English YAML Script Engine. The stable
+internal GovernanceDB namespaces and schema names are retained for upgrade and
+data compatibility.
+
+The package starts at version `0.0.0` and merges the former `GovernanceDB`
+package line through `0.1.128` using OTOBO's native package merge mechanism.
 
 ## Current intent
 
+- Install under the package identity `TESSERA-Base`.
+- Preserve `Kernel::System::GovernanceDB`, GovernanceDB SysConfig keys,
+  `var/governancedb`, the `governance-db` group, and existing database tables.
+- Provide `Kernel::System::TESSERA::ScriptEngine` for bounded typed YAML
+  searches and returns.
+- Keep `Kernel::System::TESSERA::PolicyEngine` as a compatibility facade.
+- Package `var/governancedb/script/governance_role_dynamic_resolver.yml` as
+  the executable reference content for a GovernanceRole's exact
+  `ZTSM-ScriptEngine` field.
+
+## Dynamic GovernanceRole script
+
+The packaged resolver translates the generic dynamic branch of
+`ZTSMRoleDirector`: search `SupportAssignment` using the current
+`GovernanceRole` and the ticket's `ZTicket-Application`, require exactly one
+assignment, and return its `ZTSMSupportAssignment-SupportProfile` as a typed
+`GovernanceObject.SupportProfile` result. `REQUESTER-DEFAULT` and `DIAGNOSE`
+remain specialized runtime behaviors and are not represented by this generic
+script.
+
+`governance_role_requester.yml` demonstrates typed conditional resolution. It
+returns the requester's exact exported `ZUser-SupportProfile` as
+`GovernanceObject.SupportProfile` when present; otherwise it returns the
+requester as `CustomerUser`. `ZTSMRoleDirector` dispatches the returned type:
+SupportProfile updates `ZTicket-OwnerGroup`, while CustomerUser updates
+`ZTicket-Owner`.
 - Keep existing ITSM ConfigItem records untouched.
 - Create a new package-owned schema under `governance_object*` tables.
 - Seed GovernanceDB GeneralCatalog namespaces:

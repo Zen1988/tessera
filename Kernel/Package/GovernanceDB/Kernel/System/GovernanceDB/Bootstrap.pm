@@ -971,12 +971,81 @@ sub _GovernanceRoleObjectsEnsure {
     my $StatusID = $StatusByName{Active} || $StatusByName{Approved} || $StatusByName{Draft};
     return if !$StatusID;
 
+    my $RequesterScript = <<'END_REQUESTER_SCRIPT';
+---
+SCRIPT: Resolve Requester Governance Role
+VERSION: 1
+RETURN:
+  IF:
+    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    IS NOT EMPTY: true
+  THEN:
+    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    AS: GovernanceObject.SupportProfile
+  ELSE:
+    VALUE: TICKET.CustomerUser
+    AS: CustomerUser
+END_REQUESTER_SCRIPT
+
+    my $DynamicResolverScript = <<'END_DYNAMIC_RESOLVER_SCRIPT';
+---
+SCRIPT: Resolve Dynamic Governance Role
+VERSION: 1
+SEARCH:
+  FOR: GovernanceObject.SupportAssignment
+  AS: MATCHING_ASSIGNMENTS
+  WHERE:
+    ZTSMSupportAssignment-Role:
+      EQUALS: CURRENT OBJECT
+    ZTSMSupportAssignment-Application:
+      EQUALS: TICKET.ZTicket-Application
+  LIMIT: 100
+RETURN:
+  FROM: MATCHING_ASSIGNMENTS
+  REQUIRE: EXACTLY ONE
+  FIELD: ZTSMSupportAssignment-SupportProfile
+  AS: GovernanceObject.SupportProfile
+END_DYNAMIC_RESOLVER_SCRIPT
+
+    my %ScriptFor = (
+        REQUESTER                 => $RequesterScript,
+        'REQUESTER-DEFAULT'       => $RequesterScript,
+        'REQUESTER-SUPPORT-GROUP' => $RequesterScript,
+        map { $_ => $DynamicResolverScript }
+            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION),
+    );
+
     ROLE:
     for my $Role (@Roles) {
-        next ROLE if $Self->_GovernanceObjectNameExists(
+        my $ExistingID = $Self->_GovernanceObjectNameExists(
             ClassID => $ClassID,
             Name    => $Role,
         );
+
+        if ($ExistingID) {
+            next ROLE if !$ScriptFor{$Role};
+            my $Existing = $GovernanceObjectObject->GovernanceObjectGet(
+                GovernanceObjectID => $ExistingID,
+                DynamicFields      => 1,
+                Silent             => 1,
+            );
+            next ROLE if !$Existing || ref $Existing ne 'HASH';
+            my $CurrentScript = $Existing->{'DynamicField_ZTSM-ScriptEngine'};
+            next ROLE if $Self->_BootstrapValueHasContent($CurrentScript);
+
+            my $Updated = $GovernanceObjectObject->GovernanceObjectUpdate(
+                GovernanceObjectID                 => $ExistingID,
+                'DynamicField_ZTSM-ScriptEngine'   => $ScriptFor{$Role},
+                UserID                             => 1,
+            );
+            if ( !$Updated ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "TESSERA bootstrap could not seed ZTSM-ScriptEngine for GovernanceRole $Role ($ExistingID).",
+                );
+            }
+            next ROLE;
+        }
 
         my $Number = 'TESSERA-ROLE-' . $Role;
         $Number =~ s{[^A-Za-z0-9-]}{-}g;
@@ -985,16 +1054,52 @@ sub _GovernanceRoleObjectsEnsure {
             GOID => $Number,
         );
 
-        $GovernanceObjectObject->GovernanceObjectAdd(
+        my $CreatedID = $GovernanceObjectObject->GovernanceObjectAdd(
             ClassID      => $ClassID,
             ZTSMStatusID => $StatusID,
             Number       => $Number,
             Name         => $Role,
             Description  => "Default governance role used by TESSERA runtime orchestration.",
+            ( $ScriptFor{$Role}
+                ? ( 'DynamicField_ZTSM-ScriptEngine' => $ScriptFor{$Role} )
+                : () ),
             UserID       => 1,
         );
+        if ( !$CreatedID ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "TESSERA bootstrap could not create default GovernanceRole $Role.",
+            );
+        }
     }
 
+    return 1;
+}
+
+sub _BootstrapValueHasContent {
+    my ( $Self, $Value ) = @_;
+
+    return if !defined $Value;
+    return $Value =~ m{\S} ? 1 : 0 if !ref $Value;
+
+    if ( ref $Value eq 'ARRAY' ) {
+        for my $Entry ( @{$Value} ) {
+            return 1 if $Self->_BootstrapValueHasContent($Entry);
+        }
+        return;
+    }
+
+    if ( ref $Value eq 'HASH' ) {
+        return $Self->_BootstrapValueHasContent( $Value->{Content} )
+            if exists $Value->{Content};
+        for my $Entry ( values %{$Value} ) {
+            return 1 if $Self->_BootstrapValueHasContent($Entry);
+        }
+        return;
+    }
+
+    # Unknown reference shapes are treated as authored content. Bootstrap must
+    # not overwrite a value it cannot safely prove to be empty.
     return 1;
 }
 
@@ -1006,7 +1111,7 @@ sub _GovernanceObjectNameExists {
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
     return if !$DBObject->Prepare(
         SQL => <<'END_SQL',
-SELECT v.id
+SELECT i.id
   FROM governance_object_item_version v
   INNER JOIN governance_object_item i
     ON i.last_version_id = v.id
