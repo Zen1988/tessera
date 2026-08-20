@@ -1,6 +1,92 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-19
+Last Updated: 2026-08-20
+
+## 2026-08-20 Installation-Aware FAQ Permissions — TESSERA-Base 0.0.22
+
+- Live 0.0.21 proved this OTOBO instance has no conventional `faq` group. Removed that invalid hard requirement.
+- The managed TESSERA category now inherits permission groups from the existing visible root `Misc` FAQ category, with configured approval-group and `users` fallbacks. Missing optional mapping no longer blocks article creation.
+- Full suite: 12 files, 289 tests. OPM: 279 byte-matching payloads. SHA256 `6D806E3AF83B521CB945D27DD68A365C83A9D6341B277E98482B52395B86578E`.
+
+## 2026-08-20 FAQ Root Cause and Bootstrap Abort Repair — TESSERA-Base 0.0.21
+
+- Live package output proved lifecycle code executed but `InstallDefaults()` aborted on nonexistent OTOBO 11.1 Service method `UpdateTypServiceACLs` before the standalone FAQ installer call.
+- FAQ installation now runs first for install, upgrade, and reinstall. Removed the duplicate Bootstrap FAQ path and reads the actual `/opt/otobo/var/...` destination without noisy missing-file probes.
+- Legacy service-ticket-type ACL regeneration now checks backend capability and skips with notice when unavailable instead of aborting package setup.
+- Full suite: 12 files, 286 tests. OPM: 279 byte-matching payloads. SHA256 `BE72D5397D49B40EC211AF3D1BC03999676181E2812B0023B5ECBB86E3C24B02`.
+
+## 2026-08-20 Complete Managed FAQ Package Lifecycle — TESSERA-Base 0.0.20
+
+- Removed the ineffective scheduler fallback and added the missing `CodeReinstall` path. Install, upgrade, and reinstall now invoke the same idempotent Bootstrap and built-in FAQ installer.
+- Full suite: 12 files, 282 tests. OPM: 279 byte-matching payloads. SHA256 `BE1CBECFA3FF6810F00CF23C61B3D2634859456315DCA77351EF4767233C38DF`.
+
+## 2026-08-20 Runtime-Backed Managed FAQ — TESSERA-Base 0.0.19
+
+- Live 0.0.18 evidence proved the package lifecycle hook was not executed. Added an independent every-minute daemon task that calls the idempotent built-in FAQ installer; the immediate install/upgrade path remains.
+- Current managed content exits without FAQ updates or repeated history. Missing or changed content uses `CategoryAdd`, `SetCategoryGroup`, `FAQAdd`, and `FAQUpdate` only.
+- Full suite: 12 files, 282 tests. OPM: 279 byte-matching payloads. SHA256 `BD3067ECF86EFC07105D717783EE786740639D3AB32B1917F5BB639DC18E0F85`.
+
+## 2026-08-20 Managed Script Engine FAQ Deployment Repair — TESSERA-Base 0.0.17
+
+- Live testing of `0.0.16` showed no TESSERA FAQ record. The package payload was present, but bootstrap looked only below `$Home/var`; TESSERA-Base deploys package resources below `$Home/Custom/var`.
+- The FAQ loader now checks the Custom package path first and retains the non-Custom path as a development fallback.
+- Corrected FAQ idempotency to find the managed article by stable `f_name`. OTOBO replaces the caller-provided FAQ number with its generated number after creation, so `f_number = TESSERA-API-REFERENCE` could not identify later upgrades.
+- The TESSERA category is now explicitly assigned to the standard `faq` permission group. This prevents a successfully created database record from remaining invisible in FAQ Explorer.
+- The Script Engine reference is intentionally authoritative and intrusive within only the managed `tessera-external-api-reference` record: install/upgrade creates it when absent and overwrites its packaged title, content, category, language, public state, validity, and approval when present. Unrelated FAQ records are untouched.
+- Replaced silent success paths with explicit error logging for missing FAQ tables/source/runtime, unresolved language/state, category permission failure, and article create/update failure.
+- The complete TESSERA suite passes: 12 files and 273 tests. `TESSERA-Base 0.0.17` contains 278 byte-matching Base64 payloads with zero mismatches. SHA256: `F9CFA308652AA47FCDE96676BC2B534BA7FD815622B475A42B0732EC1EB8AAE6`.
+
+## 2026-08-20 External API Foundation and Script Engine FAQ — TESSERA-Base 0.0.16
+
+Superseded by `0.0.17`; `0.0.16` deployed the FAQ source but could miss creating the live FAQ record.
+
+- Added the entitlement-aware external integration foundation for staged CMDB and MELT `Create`/`Update` commands, with external delete rejected and GovernanceDB retained as query-only.
+- Added API-only CustomerUser authentication using one-time-display, SHA-256-hashed API keys. Keys support expiry, immediate revocation, and renewal with a configurable overlap period and replacement lineage.
+- Added separate base/object capability groups, `CMDBAPI`, `MELTAPI`, and `GovernanceAPI` SupportAssignment roles, CMDB `ZTAM-ContractEntitlement` enforcement, and exact MELT Risk `MELT-AccessPermission` enforcement.
+- Added generic JSON staging, idempotency, immutable lifecycle history, ticket-article evidence support, version-conflict inputs, and compensating revert states. Production release/revert adapters and reviewer actions remain the next implementation slice; direct external production mutation is not enabled.
+- Added an idempotently installed TESSERA FAQ entry covering API identity/key rotation, staging, Ansible mapping, and the implemented English YAML Script Engine: bounded search, typed and conditional returns, conditions, scalar expressions, ControlObjective risk field assignments, attestation programs, and connector safety.
+- Documented `CALL` accurately as a reserved future allowlisted connector capability. Current scripts cannot supply arbitrary URLs, credentials, Perl, SQL, shell commands, or runtime module names.
+- Bumped TESSERA-Base to `0.0.16`. The complete TESSERA suite passes: 12 files and 269 tests. The SOPM and OPM parse successfully with 278 byte-matching Base64 payloads and zero mismatches. SHA256: `DC74E5A260C0A82CDD54543750A141ED15EBE24818DA892968017BCA685E5D34`.
+
+## 2026-08-20 Customer Default Preference Persistence — TESSERA-Base 0.0.14
+
+- Reproduced the customer preference failure against the OTOBO 11.1 DynamicField backend contract. `ValueSet` and `ValueGet` accept a CustomerUser `ObjectName`, but `ValueDelete` requires the resolved internal `ObjectID`.
+- Fixed `ZTSMCustomerDefaults` so clearing a preference resolves the existing CustomerUser DynamicField object mapping and calls `ValueDelete` with `ObjectID`. When no mapping exists, clearing an already-empty preference is an idempotent success.
+- This prevents an empty Application, Environment, or Location preference from aborting the entire form after a valid Support Profile was selected, allowing stored defaults to persist and load on the next request.
+- Confirmed package, runtime-overlay, and active `ZTSMArticleHelper.pm` copies are identical. The reported subroutine warning was persistent-worker package reload noise rather than competing implementations; the helper now suppresses Perl's expected redefine warning during that controlled reload without changing its functions.
+- Added regression coverage for ObjectID deletion, empty no-op behavior, unsupported ObjectName deletion, reload warnings, and package versioning.
+- Perl syntax and the complete TESSERA suite pass: 11 files and 238 tests. Built `TESSERA-Base 0.0.14` with 269 byte-matching Base64 payloads and zero mismatches. SHA256: `2455EE1BA9521956297CF8BA80F60F10978313D4E2AD8DFE00BFC2361C51F4F0`.
+
+## 2026-08-20 OTOBO 11.1 RichText Reflow and Non-Intrusive Ticket Types — TESSERA-Base 0.0.13
+
+- Traced the Change customer form overlap to the vertical `ZCH-Implementation` DynamicField Set and compared its TESSERA RichText enhancements with `Kernel-11.0` and the refreshed OTOBO 11.1 editor runtime.
+- Confirmed the 11.0 TESSERA template enhancement was carried forward, but its fixed `260px !important` CKEditor editable minimum conflicts with OTOBO 11.1. OTOBO 11.1 makes `RichTextHolder` user-resizable, writes the holder's live height, and dynamically calculates the editable height after label and toolbar space.
+- Removed the stale CKEditor minimum while retaining the plain-text textarea fallback height. The editor now follows the resizable holder's live height, so expanding or shrinking Description keeps Profile, Owner, Weightage, and following Set groups in normal layout flow.
+- Changed `_TicketTypesEnsure` to create-only behavior. Fresh installations still create missing TESSERA prerequisite types, while upgrades and reinstalls leave every existing type untouched, including an administrator-disabled `Change` type.
+- Added regression assertions for dynamic CKEditor sizing, create-only TicketType bootstrap behavior, and package versioning.
+- Perl syntax and the complete TESSERA suite pass: 11 files and 233 tests. Built `TESSERA-Base 0.0.13` with 269 byte-matching Base64 payloads and zero mismatches. SHA256: `DA63F874ED6B33A98949F34E7E630281DF17F04248003CDB13B16312ACF3B6AC`.
+
+## 2026-08-20 Control Failure Watcher and Scripted Risk Instructions — TESSERA-Base 0.0.12
+
+- Revalidated the Control failure path against the refreshed OTOBO 11.1 kernel and the latest ConfigItem, GovernanceObject, DynamicField, and MELT exports.
+- Confirmed the ownership contract: an individual ConfigItem `Control` records execution and must reference a parent `ControlObjective`; `ZRM-CreateRisk`, `ZRM-RiskClass`, and exact field `ZRM-FieldAssignment` remain ControlObjective governance instructions.
+- Fixed `ControlRuntime` incorrectly reading `ZRM-FieldAssignment` from the Control instance. All failure paths now use the parent ControlObjective and fail closed when that mandatory parent is missing, unresolved, mismatched, or not a ControlObjective.
+- Added the dedicated `ITSMConfigItem::Event::ControlFailureWatcher`. A `ConfigItemDynamicFieldUpdate_ZRM-Result` event whose Control result is `Fail` invokes the centralized `ProcessFailedControl` handler. Direct and automatic evaluation paths call the same handler.
+- Promoted risk field assignments to a typed TESSERA ScriptEngine result: `RETURN`, `AS: MELTObject.Risk`, and `FIELD ASSIGNMENTS`. Existing `SET @ObjectType.Class.Field ...` values remain supported as a compatibility input and execute through the same ScriptEngine API.
+- Removed the stale `ZRM-FieldAssignment` definition from the ConfigItem Control bootstrap baseline. The field is not owned by Control.
+- Corrected the default risk class from nonexistent `@MELTObject.RiskEvent` to exported class `@MELTObject.Risk`; `RiskEvent` is a MELT layout role, not a class.
+- The kernel refresh had replaced six active customer ConfigItem entitlement paths with upstream 11.1 files. Reapplied the byte-authoritative packaged 11.1 runtime overlays and verified source/destination hashes, restoring the server-side discovery and detail gates.
+- XML, JSON, YAML, Perl syntax, ScriptEngine, Control runtime, and complete TESSERA verification pass: 11 files and 229 tests.
+- Built `TESSERA-Base 0.0.12` with 269 byte-exact Base64 payloads. SHA256: `546E4E0BA2B8AE0943FC45A0F05FE8A570BA90174C4505EDBE0CCDE4877E962C`.
+
+## 2026-08-20 GenericAgent Import/Export Lifecycle Fix — TESSERA-Base 0.0.11
+
+- Live validation showed that 0.0.8 repaired `AdminGenericAgent` construction but left `AdminGenericAgentImportExport` without `ExportGenericAgents` and `ImportGenericAgents`, because this OTOBO 11.1 process does not consistently execute the legacy `AutoloadPerlPackages` hook.
+- Added public import/export wrappers that load the standard extension only on first API invocation, after the GenericAgent object has been constructed, and restore the authoritative `Kernel::System::GenericAgent` ObjectManager dependency list immediately afterward.
+- Rejected three incomplete earlier approaches: eager loading without restoring dependencies creates a circular same-package dependency; relying only on the legacy autoload lifecycle leaves the methods unavailable; and 0.0.9's construction-time load still regressed live ObjectManager construction even though isolated module loading passed.
+- Added regression coverage requiring lazy extension loading, both public API wrappers, and dependency restoration. Syntax and focused runtime validation confirm construction no longer loads the extension, while on-demand loading installs both standard methods without retaining a self-reference.
+- Live 0.0.10 validation exposed that the target OTOBO installation did not contain `Kernel/Autoload/GenericAgentImportExport.pm`; 0.0.11 now packages and deploys that required standard extension instead of assuming the framework installation provides it.
+- The live 0.0.8 deployment also demonstrated that a successfully staged runtime overlay may fail to replace an existing active `Custom` file; deployment verification must compare the staged and active hashes after upgrade.
 
 ## 2026-08-19 TESSERA-Base 0.0.5 / GovernanceRole Script Persistence Repair
 

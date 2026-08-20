@@ -23,4 +23,25 @@ ok( $Due->{Due}, 'named quarterly cycle is supported' );
 $Due = $Runtime->ControlDue( Cycle => 'whenever convenient', LastRun => '', Now => $Now );
 is( $Due->{Status}, 'UNKNOWN', 'unsupported free text fails closed' );
 
+for my $Path (
+    'Kernel/System/TESSERA/ControlRuntime.pm',
+    'Kernel/Package/GovernanceDB/Kernel/System/TESSERA/ControlRuntime.pm',
+) {
+    open my $FH, '<:raw', $Path or die "Cannot read $Path: $!";
+    local $/;
+    my $Source = <$FH>;
+    close $FH;
+    like( $Source, qr/Objective\}\{'DynamicField_ZRM-FieldAssignment'\}/, "$Path reads risk instructions from ControlObjective" );
+    unlike( $Source, qr/Control\}\{'DynamicField_ZRM-FieldAssignment'\}/, "$Path never reads risk instructions from the Control instance" );
+    like( $Source, qr/sub ProcessFailedControl/, "$Path exposes the centralized failed-Control handler" );
+}
+
+my $Watcher = 'Kernel/Package/GovernanceDB/Kernel/System/ITSMConfigItem/Event/ControlFailureWatcher.pm';
+open my $WatcherFH, '<:raw', $Watcher or die "Cannot read $Watcher: $!";
+local $/;
+my $WatcherSource = <$WatcherFH>;
+close $WatcherFH;
+like( $WatcherSource, qr/ConfigItemDynamicFieldUpdate.*ZRM-Result/, 'dedicated watcher listens for Control result changes' );
+like( $WatcherSource, qr/ProcessFailedControl/, 'dedicated watcher delegates to the centralized handler' );
+
 done_testing;

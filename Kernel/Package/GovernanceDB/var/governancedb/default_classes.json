@@ -1456,7 +1456,7 @@
                "ChangeTime" : "2026-08-17 08:05:39",
                "Config" : {
                   "Cols" : "100",
-                  "DefaultValue" : "SET @MELTObject.Risk.MELT-Control THIS",
+                  "DefaultValue" : "VERSION: 1\r\nRETURN:\r\n  AS: MELTObject.Risk\r\n  FIELD ASSIGNMENTS:\r\n    MELT-Control: THIS",
                   "MultiValue" : "0",
                   "RegExList" : [],
                   "Rows" : "3",
@@ -1789,7 +1789,7 @@
             "ZRM-RiskClass" : {
                "ChangeTime" : "2026-08-17 08:08:16",
                "Config" : {
-                  "DefaultValue" : "@MELTObject.RiskEvent",
+                  "DefaultValue" : "@MELTObject.Risk",
                   "Link" : "",
                   "LinkPreview" : "",
                   "MultiValue" : "0",

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.8</Version>
+    <Version>0.0.22</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -17,6 +17,10 @@
 
     <Filelist>
         <File Location="Kernel/Config/Files/XML/GovernanceDB.xml" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/ZTSMExternalAPI.xml" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Operation/TESSERA/Common.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Operation/TESSERA/Stage.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Operation/TESSERA/Status.pm" Permission="660"/>
         <File Location="Kernel/Modules/AdminGovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/Modules/AdminGovernanceObjectDefinition.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGeneralCatalogDocument.pm" Permission="660"/>
@@ -127,7 +131,9 @@
         <File Location="Kernel/System/GovernanceObject/Version.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/VersionString/Incremental.pm" Permission="660"/>
         <File Location="Kernel/System/GovernanceObject/VersionString/TemplateToolkit.pm" Permission="660"/>
+        <File Location="Kernel/System/ITSMConfigItem/Event/ControlFailureWatcher.pm" Permission="660"/>
         <File Location="Kernel/System/Console/Command/Maint/TESSERA/ControlDispatch.pm" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Admin/TESSERA/APIKey.pm" Permission="660"/>
         <File Location="Kernel/System/ImportExport/ObjectBackend/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/LinkObject/GovernanceObject.pm" Permission="660"/>
         <File Location="Kernel/System/ProcessManagement/TransitionAction/GovernanceObjectAdd.pm" Permission="660"/>
@@ -140,6 +146,10 @@
         <File Location="Kernel/System/TESSERA/ScriptEngine.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/GovernanceRoleResolver.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/ControlRuntime.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/APIKey.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/APIPermission.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ExternalChange.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/FAQInstaller.pm" Permission="660"/>
         <File Location="Kernel/System/Ticket/Number/TESSERAIdentity.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
@@ -149,12 +159,14 @@
         <File Location="var/governancedb/policy/control_objective_examples.txt" Permission="660"/>
         <File Location="var/governancedb/script/governance_role_dynamic_resolver.yml" Permission="660"/>
         <File Location="var/governancedb/script/governance_role_requester.yml" Permission="660"/>
+        <File Location="var/governancedb/faq/tessera_external_api.md" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/ztsm-activity-lifecycle-orchestration.yml" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/ztsm-ticket-lifecycle-orchestration.yml" Permission="660"/>
 
         <File Location="Kernel/Config/Files/XML/ZTSMGovernanceRuntime.xml" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Autoload/ServiceImportExport.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Autoload/SLAImportExport.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Autoload/GenericAgentImportExport.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Config/Files/XML/ServiceCatalog.xml" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Config/Files/XML/Framework.xml" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Language/de_ServiceCatalog.pm" Permission="660"/>
@@ -287,14 +299,25 @@
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
+        die 'TESSERA managed FAQ installation failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
     ]]></CodeInstall>
 
     <CodeUpgrade Type="post"><![CDATA[
+        die 'TESSERA managed FAQ installation failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
     ]]></CodeUpgrade>
+
+    <CodeReinstall Type="post"><![CDATA[
+        die 'TESSERA managed FAQ installation failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
+        $BootstrapObject->InstallDefaults();
+    ]]></CodeReinstall>
 
     <DatabaseInstall Type="post">
         <TableCreate Type="post" Name="ztsm_configitem_activity">

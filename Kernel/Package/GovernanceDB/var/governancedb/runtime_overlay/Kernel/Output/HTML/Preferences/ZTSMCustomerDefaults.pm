@@ -142,11 +142,20 @@ sub Run {
             );
         }
         else {
-            $Success = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueDelete(
+            my $ObjectID = $Self->_DynamicFieldObjectIDGet(
                 DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectName         => $Param{UserData}->{UserLogin},
-                UserID             => $Self->{UserID},
+                CustomerUserLogin  => $Param{UserData}->{UserLogin},
             );
+
+            # No mapping means that this customer user has no DynamicField
+            # values to delete. Keep an empty preference submission idempotent.
+            $Success = !$ObjectID
+                ? 1
+                : $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueDelete(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    ObjectID           => $ObjectID,
+                    UserID             => $Self->{UserID},
+                );
         }
 
         if ( !$Success ) {
@@ -199,6 +208,20 @@ sub _DynamicFieldValueGet {
     );
 
     return $Self->_NormalizeValue($Value);
+}
+
+sub _DynamicFieldObjectIDGet {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{DynamicFieldConfig} || !$Param{CustomerUserLogin};
+
+    my $ObjectIDs = $Kernel::OM->Get('Kernel::System::DynamicField')->ObjectMappingGet(
+        ObjectName => $Param{CustomerUserLogin},
+        ObjectType => $Param{DynamicFieldConfig}->{ObjectType},
+    );
+
+    return if !$ObjectIDs || ref $ObjectIDs ne 'HASH';
+    return $ObjectIDs->{ $Param{CustomerUserLogin} };
 }
 
 sub _GovernanceObjectData {

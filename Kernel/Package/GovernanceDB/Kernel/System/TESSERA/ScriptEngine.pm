@@ -682,6 +682,76 @@ sub ValueEvaluate {
     );
 }
 
+sub FieldAssignmentsEvaluate {
+    my ( $Self, %Param ) = @_;
+
+    my $Source = defined $Param{Source} ? $Param{Source} : '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'Field-assignment script is empty.' }
+        if $Source !~ m{\S} && ref $Param{Script} ne 'HASH';
+
+    my ( $Target, $Assignments );
+    my $Loaded = $Param{Script};
+    $Loaded = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source ) }
+        if ref $Loaded ne 'HASH';
+    if ( ref $Loaded eq 'HASH' ) {
+        my $Version = defined $Loaded->{VERSION} ? $Loaded->{VERSION} : 1;
+        return { Success => 0, Status => 'UNKNOWN', Error => "Unsupported TESSERA script version '$Version'." }
+            if "$Version" ne '1';
+        my $Return = $Loaded->{RETURN};
+        return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN must be a mapping.' }
+            if ref $Return ne 'HASH';
+        $Target      = $Return->{AS} || '';
+        $Assignments = $Return->{'FIELD ASSIGNMENTS'};
+        return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN FIELD ASSIGNMENTS must be a mapping.' }
+            if ref $Assignments ne 'HASH';
+    }
+    else {
+        # Compatibility for ControlObjective values authored before field assignments
+        # became a first-class YAML ScriptEngine return type.
+        $Assignments = {};
+        for my $Line ( split m{\r?\n}, $Source ) {
+            $Line =~ s{\s*\#.*\z}{};
+            $Line =~ s{\A\s+|\s+\z}{}g;
+            next if $Line eq '';
+            return { Success => 0, Status => 'UNKNOWN', Error => "Unsupported field-assignment line: $Line" }
+                if $Line !~ m{\ASET\s+\@?([A-Za-z][A-Za-z0-9_-]*\.[A-Za-z][A-Za-z0-9_-]*)\.([A-Za-z][A-Za-z0-9_-]*)\s*(?:=\s*)?(.+?)\s*;?\z}i;
+            my ( $LineTarget, $Field, $Expression ) = ( $1, $2, $3 );
+            $Target ||= $LineTarget;
+            return { Success => 0, Status => 'UNKNOWN', Error => 'A field-assignment script cannot target multiple object classes.' }
+                if lc($Target) ne lc($LineTarget);
+            $Assignments->{$Field} = $Expression;
+        }
+    }
+
+    $Target =~ s{\A\s*\@?}{};
+    $Target =~ s{\s+\z}{};
+    my $Expected = join '.', $Param{ObjectType} || '', $Param{Class} || '';
+    return { Success => 0, Status => 'UNKNOWN', Error => "Field-assignment target '$Target' does not match '$Expected'." }
+        if lc($Target) ne lc($Expected);
+
+    my %Values;
+    for my $Field ( sort keys %{$Assignments} ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => "Invalid field-assignment field '$Field'." }
+            if $Field !~ m{\A[A-Za-z][A-Za-z0-9_-]*\z};
+        my $Expression = $Assignments->{$Field};
+        return { Success => 0, Status => 'UNKNOWN', Error => "Field assignment '$Field' must be a scalar expression." }
+            if ref $Expression;
+        my $Value = defined $Expression && uc($Expression) eq 'THIS'
+            ? { Known => 1, Value => $Param{ThisValue} }
+            : $Self->ValueEvaluate( Expression => $Expression, Context => $Param{Context} );
+        return { Success => 0, Status => 'UNKNOWN', Error => $Value->{Reason} || "Cannot calculate '$Field'." }
+            if !$Value->{Known};
+        $Values{$Field} = $Value->{Value};
+    }
+
+    return {
+        Success   => 1,
+        Status    => 'RETURNED',
+        Value     => \%Values,
+        ValueType => "FieldAssignments<$Expected>",
+    };
+}
+
 sub _PolicyLines {
     my ( $Self, $Source ) = @_;
 

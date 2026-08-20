@@ -49,10 +49,23 @@ my $GenericAgentPath = 'Kernel/Package/GovernanceDB/var/governancedb/runtime_ove
 open my $GenericAgentFH, '<:raw', $GenericAgentPath or die "Cannot read $GenericAgentPath: $!";
 my $GenericAgent = <$GenericAgentFH>;
 close $GenericAgentFH;
-unlike(
+like(
     $GenericAgent,
-    qr/require\s+Kernel::Autoload::GenericAgentImportExport/,
-    'GenericAgent does not eagerly load its same-package autoload extension during ObjectManager construction',
+    qr/sub\s+_TESSERAGenericAgentImportExportMethodGet.*?require\s+Kernel::Autoload::GenericAgentImportExport;.*?\@ObjectDependencies\s*=\s*\@TESSERAGenericAgentObjectDependencies;.*?sub\s+ExportGenericAgents.*?sub\s+ImportGenericAgents/s,
+    'GenericAgent lazy-loads import/export methods after construction and restores its authoritative dependencies',
+);
+
+my $GenericAgentImportExportPath = 'Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/Autoload/GenericAgentImportExport.pm';
+ok( -f $GenericAgentImportExportPath, 'GenericAgent import/export extension is included in the runtime overlay' );
+
+my $SOPMPath = 'Kernel/Package/GovernanceDB/TESSERA-Base.sopm';
+open my $SOPMFH, '<:raw', $SOPMPath or die "Cannot read $SOPMPath: $!";
+my $SOPM = <$SOPMFH>;
+close $SOPMFH;
+like(
+    $SOPM,
+    qr{runtime_overlay/Kernel/Autoload/GenericAgentImportExport\.pm},
+    'GenericAgent import/export extension is declared in the package manifest',
 );
 
 done_testing;

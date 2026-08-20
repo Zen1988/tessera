@@ -124,4 +124,32 @@ $AssignmentEngine->ScriptEvaluate(
 );
 is_deeply( \@IterationCalls, [''], 'empty iteration is handled as the initial unnumbered iteration' );
 
+my $FieldAssignments = $Engine->FieldAssignmentsEvaluate(
+    Script => {
+        VERSION => 1,
+        RETURN  => {
+            AS                  => 'MELTObject.Risk',
+            'FIELD ASSIGNMENTS' => {
+                'MELT-Control' => 'THIS',
+                'MELT-RMF'     => '@CONTROLOBJECTIVE.ZRM-RMF',
+            },
+        },
+    },
+    ObjectType => 'MELTObject',
+    Class      => 'Risk',
+    ThisValue  => 731,
+    Context    => { CONTROLOBJECTIVE => { 'DynamicField_ZRM-RMF' => 392 } },
+);
+ok( $FieldAssignments->{Success}, 'ControlObjective field assignments execute through ScriptEngine' );
+is( $FieldAssignments->{Value}->{'MELT-Control'}, 731, 'THIS resolves to the individual Control instance' );
+is( $FieldAssignments->{Value}->{'MELT-RMF'}, 392, 'ControlObjective context expressions resolve through the shared value engine' );
+is( $FieldAssignments->{ValueType}, 'FieldAssignments<MELTObject.Risk>', 'field assignments return a typed target contract' );
+
+my $WrongTarget = $Engine->FieldAssignmentsEvaluate(
+    Script     => { VERSION => 1, RETURN => { AS => 'MELTObject.Alert', 'FIELD ASSIGNMENTS' => {} } },
+    ObjectType => 'MELTObject',
+    Class      => 'Risk',
+);
+is( $WrongTarget->{Status}, 'UNKNOWN', 'field-assignment target mismatch fails closed' );
+
 done_testing;

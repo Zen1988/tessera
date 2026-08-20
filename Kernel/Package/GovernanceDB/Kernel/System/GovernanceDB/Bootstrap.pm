@@ -43,6 +43,7 @@ sub InstallDefaults {
     my ( $Self, %Param ) = @_;
 
     $Self->_ActivityTablesEnsure();
+    $Self->_ExternalAPITablesEnsure();
 
     my $Defaults = $Self->_DefaultsLoad();
     return if !$Defaults;
@@ -208,6 +209,215 @@ CREATE TABLE governance_object_activity (
     INDEX governance_activity_object (governance_object_id)
 )
 END_SQL
+    }
+    return 1;
+}
+
+sub _ExternalAPITablesEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+
+    if ( !$Table{ztsm_api_key} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_api_key (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    customer_user_id VARCHAR(200) NOT NULL,
+    key_name VARCHAR(200) NOT NULL,
+    key_prefix VARCHAR(32) NOT NULL,
+    key_hash CHAR(64) NOT NULL,
+    expires_time DATETIME NULL,
+    last_used_time DATETIME NULL,
+    revoke_time DATETIME NULL,
+    revoke_by INTEGER NULL,
+    replaced_by BIGINT NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    change_time DATETIME NULL,
+    change_by INTEGER NULL,
+    PRIMARY KEY (id),
+    UNIQUE INDEX ztsm_api_key_hash (key_hash),
+    INDEX ztsm_api_key_user (customer_user_id),
+    INDEX ztsm_api_key_prefix (key_prefix)
+)
+END_SQL
+    }
+
+    if ( !$Table{ztsm_external_change} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_external_change (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    request_uid VARCHAR(64) NOT NULL,
+    idempotency_key VARCHAR(200) NOT NULL,
+    source_name VARCHAR(100) NOT NULL,
+    customer_user_id VARCHAR(200) NOT NULL,
+    object_type VARCHAR(30) NOT NULL,
+    object_class VARCHAR(100) NOT NULL,
+    operation VARCHAR(30) NOT NULL,
+    target_id BIGINT NULL,
+    expected_version_id BIGINT NULL,
+    ticket_id BIGINT NULL,
+    status VARCHAR(40) NOT NULL,
+    schema_hash CHAR(64) NULL,
+    payload LONGBLOB NOT NULL,
+    normalized_payload LONGBLOB NULL,
+    validation_result LONGBLOB NULL,
+    before_snapshot LONGBLOB NULL,
+    after_snapshot LONGBLOB NULL,
+    released_object_id BIGINT NULL,
+    released_version_id BIGINT NULL,
+    entitlement_snapshot LONGBLOB NULL,
+    parent_change_id BIGINT NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    change_time DATETIME NOT NULL,
+    change_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE INDEX ztsm_external_change_uid (request_uid),
+    UNIQUE INDEX ztsm_external_change_idem (source_name, idempotency_key),
+    INDEX ztsm_external_change_ticket (ticket_id),
+    INDEX ztsm_external_change_target (object_type, target_id),
+    INDEX ztsm_external_change_status (status)
+)
+END_SQL
+    }
+
+    if ( !$Table{ztsm_external_change_history} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_external_change_history (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    change_id BIGINT NOT NULL,
+    old_status VARCHAR(40) NULL,
+    new_status VARCHAR(40) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    detail LONGBLOB NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    INDEX ztsm_external_history_change (change_id)
+)
+END_SQL
+    }
+
+    return 1;
+}
+
+sub _ExternalAPIFAQEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+    if ( !$Table{faq_item} || !$Table{faq_category} ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'TESSERA managed FAQ could not be installed because the FAQ database tables are unavailable.',
+        );
+        return;
+    }
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+    my ( $ContentRef, $ContentFile );
+    FILE:
+    for my $File (
+        "$Home/Custom/var/governancedb/faq/tessera_external_api.md",
+        "$Home/var/governancedb/faq/tessera_external_api.md",
+    ) {
+        $ContentRef = $MainObject->FileRead( Location => $File, Mode => 'utf8' );
+        if ($ContentRef) {
+            $ContentFile = $File;
+            last FILE;
+        }
+    }
+    if ( !$ContentRef ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'TESSERA managed FAQ source was not found below Custom/var or var.',
+        );
+        return;
+    }
+
+    my $FAQObject = eval { $Kernel::OM->Get('Kernel::System::FAQ') };
+    if ( !$FAQObject ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ could not load Kernel::System::FAQ.' );
+        return;
+    }
+
+    my $CategoryID;
+    $DBObject->Prepare(
+        SQL => 'SELECT id FROM faq_category WHERE name = ? AND parent_id = 0',
+        Bind => [ \('TESSERA') ], Limit => 1,
+    );
+    ($CategoryID) = $DBObject->FetchrowArray();
+    $CategoryID ||= $FAQObject->CategoryAdd(
+        Name => 'TESSERA', ParentID => 0, Comment => 'Installed TESSERA reference documentation.',
+        ValidID => 1, UserID => 1,
+    );
+    if ( !$CategoryID ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ category could not be created.' );
+        return;
+    }
+
+    # FAQ categories are permission-bearing. Without this relation the article
+    # exists in the database but remains absent from FAQ Explorer.
+    my $FAQGroupID = $Kernel::OM->Get('Kernel::System::Group')->GroupLookup( Group => 'faq' );
+    if ($FAQGroupID) {
+        my $CategoryGroupOK = $FAQObject->SetCategoryGroup(
+            CategoryID => $CategoryID,
+            GroupIDs   => [$FAQGroupID],
+            UserID     => 1,
+        );
+        if ( !$CategoryGroupOK ) {
+            $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ category permission could not be set.' );
+            return;
+        }
+    }
+
+    my %Languages = reverse $FAQObject->LanguageList( UserID => 1 );
+    my $LanguageID = $Languages{en} || $Languages{'English'} || ( values %Languages )[0];
+    my %States = reverse $FAQObject->StateList( UserID => 1 );
+    my ($StateID) = map { $States{$_} } grep { /public|external/i } sort keys %States;
+    $StateID ||= ( values %States )[0];
+    if ( !$LanguageID || !$StateID ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ could not resolve English language or a public state.' );
+        return;
+    }
+
+    my $ItemID;
+    $DBObject->Prepare(
+        SQL => 'SELECT id FROM faq_item WHERE f_name = ?', Bind => [ \('tessera-external-api-reference') ], Limit => 1,
+    );
+    ($ItemID) = $DBObject->FetchrowArray();
+
+    if ($ItemID) {
+        my %FAQ = $FAQObject->FAQGet( ItemID => $ItemID, UserID => 1 );
+        my $Updated = $FAQObject->FAQUpdate(
+            %FAQ,
+            ItemID => $ItemID, Title => 'TESSERA External API, Ansible, and Script Engine Reference',
+            CategoryID => $CategoryID, StateID => $StateID, LanguageID => $LanguageID,
+            Field1 => ${$ContentRef}, ContentType => 'text/plain', ValidID => 1,
+            Approved => 1, ApprovalOff => 1, UserID => 1,
+        );
+        if ( !$Updated ) {
+            $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ article could not be updated.' );
+            return;
+        }
+        return 1;
+    }
+
+    my $NewItemID = $FAQObject->FAQAdd(
+        Number => 'TESSERA-API-REFERENCE', Name => 'tessera-external-api-reference',
+        Title => 'TESSERA External API, Ansible, and Script Engine Reference',
+        CategoryID => $CategoryID, StateID => $StateID, LanguageID => $LanguageID,
+        Field1 => ${$ContentRef}, Keywords => 'TESSERA API Ansible Script Engine key renewal staging entitlement',
+        ContentType => 'text/plain', ValidID => 1, Approved => 1, UserID => 1,
+    );
+    if ( !$NewItemID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "TESSERA managed FAQ article could not be created from $ContentFile.",
+        );
+        return;
     }
     return 1;
 }
@@ -773,6 +983,7 @@ sub _RuntimePrerequisitesEnsure {
 
     $Self->_TicketStatesEnsure();
     $Self->_TicketTypesEnsure();
+    $Self->_ExternalAPIGroupsEnsure();
     $Self->_GovernanceRoleObjectsEnsure();
     $Self->_RuntimeProcessesEnsure();
     $Self->_GenericAgentJobsEnsure();
@@ -783,7 +994,16 @@ sub _RuntimePrerequisitesEnsure {
 sub _ServiceTicketTypeACLsRebuild {
     my ( $Self, %Param ) = @_;
 
-    my $Success = $Kernel::OM->Get('Kernel::System::Service')->UpdateTypServiceACLs(
+    my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+    if ( !$ServiceObject->can('UpdateTypServiceACLs') ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => 'GovernanceDB skipped legacy service ticket type ACL regeneration because this OTOBO 11.1 Service backend does not provide UpdateTypServiceACLs.',
+        );
+        return 1;
+    }
+
+    my $Success = $ServiceObject->UpdateTypServiceACLs(
         UserID => 1,
     );
 
@@ -898,6 +1118,7 @@ sub _TicketTypesEnsure {
         Diagnosis
         Endorsement
         Implementation
+        IntegrationRequest
         Incident
         Incident::Major
         Problem
@@ -914,20 +1135,10 @@ sub _TicketTypesEnsure {
         my $TypeID = $TypeObject->TypeLookup(
             Type => $Type,
         );
-        if ($TypeID) {
-            my %Current = $TypeObject->TypeGet(
-                ID => $TypeID,
-            );
-            next TYPE if ( $Current{ValidID} || 0 ) == 1;
-
-            $TypeObject->TypeUpdate(
-                ID      => $TypeID,
-                Name    => $Type,
-                ValidID => 1,
-                UserID  => 1,
-            );
-            next TYPE;
-        }
+        # Ticket type validity is administrator-owned. Package installation may
+        # create a missing prerequisite, but must never reactivate an existing
+        # type that an administrator deliberately disabled.
+        next TYPE if $TypeID;
 
         $TypeObject->TypeAdd(
             Name    => $Type,
@@ -955,6 +1166,9 @@ sub _GovernanceRoleObjectsEnsure {
         SUPPORT
         ASSET
         ESCALATION
+        CMDBAPI
+        MELTAPI
+        GovernanceAPI
     );
 
     my $GeneralCatalogObject   = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
@@ -1035,7 +1249,7 @@ END_SUPPORT_SCRIPT
         'REQUESTER-DEFAULT'       => $RequesterScript,
         'REQUESTER-SUPPORT-GROUP' => $RequesterScript,
         map { $_ => $DynamicResolverScript }
-            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION),
+            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION CMDBAPI MELTAPI GovernanceAPI),
     );
     @ScriptFor{ keys %EvidenceScriptFor } = values %EvidenceScriptFor;
     $ScriptFor{SUPPORT} = $SupportScript;
@@ -1119,6 +1333,31 @@ END_SUPPORT_SCRIPT
         }
     }
 
+    return 1;
+}
+
+sub _ExternalAPIGroupsEnsure {
+    my ($Self) = @_;
+
+    my %Groups = (
+        'tessera-api'                 => 'Base access to the staged TESSERA external API.',
+        'tessera-cmdb-api'            => 'Submit entitlement-scoped CMDB API requests.',
+        'tessera-melt-api'            => 'Submit entitlement-scoped MELT API requests.',
+        'tessera-governance-api'      => 'Query GovernanceDB through the read-only API.',
+        'tessera-integration-review'  => 'Review staged external requests.',
+        'tessera-integration-release' => 'Release approved external requests through ticket actions.',
+        'tessera-integration-revert'  => 'Request or execute compensating external actions.',
+    );
+    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    for my $Name ( sort keys %Groups ) {
+        next if $GroupObject->GroupLookup( Group => $Name );
+        $GroupObject->GroupAdd(
+            Name    => $Name,
+            Comment => $Groups{$Name},
+            ValidID => 1,
+            UserID  => 1,
+        );
+    }
     return 1;
 }
 

@@ -1635,4 +1635,39 @@ sub _JobUpdateRunTime {
 
 =cut
 
+# OTOBO 11.1 does not consistently execute the legacy AutoloadPerlPackages
+# hook in every web and console process.  Keep construction independent of
+# that extension and load it only when a consumer actually invokes the public
+# import/export API.  The extension reopens this package, so restore the
+# authoritative ObjectManager dependencies immediately after it is loaded.
+sub _TESSERAGenericAgentImportExportMethodGet {
+    my ( $Self, $Method ) = @_;
+
+    my @TESSERAGenericAgentObjectDependencies = @ObjectDependencies;
+    {
+        no strict 'refs';          ## no critic
+        delete ${ __PACKAGE__ . '::' }{ExportGenericAgents};
+        delete ${ __PACKAGE__ . '::' }{ImportGenericAgents};
+        require Kernel::Autoload::GenericAgentImportExport;
+    }
+    @ObjectDependencies = @TESSERAGenericAgentObjectDependencies;
+
+    my $Code = __PACKAGE__->can($Method);
+    return $Code;
+}
+
+sub ExportGenericAgents {
+    my ( $Self, @Param ) = @_;
+
+    my $Code = $Self->_TESSERAGenericAgentImportExportMethodGet('ExportGenericAgents');
+    return $Code->( $Self, @Param );
+}
+
+sub ImportGenericAgents {
+    my ( $Self, @Param ) = @_;
+
+    my $Code = $Self->_TESSERAGenericAgentImportExportMethodGet('ImportGenericAgents');
+    return $Code->( $Self, @Param );
+}
+
 1;

@@ -543,6 +543,15 @@
             <Item Key="Transaction">0</Item>
         </Hash></Value>
     </Setting>
+    <Setting Name="ITSMConfigItem::EventModulePost###120-TESSERAControlFailureWatcher" Required="0" Valid="1">
+        <Description Translatable="1">Processes a failed Control through its mandatory parent ControlObjective instructions.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::System::ITSMConfigItem::Event::ControlFailureWatcher</Item>
+            <Item Key="Event">ConfigItemDynamicFieldUpdate(_ZRM-Result)?</Item>
+            <Item Key="Transaction">0</Item>
+        </Hash></Value>
+    </Setting>
     <Setting Name="Frontend::Module###AgentITSMConfigItemWorkbook" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for preview-first CMDB XLSX import and export.</Description>
         <Navigation>Frontend::Agent::ModuleRegistration</Navigation>

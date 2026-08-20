@@ -139,6 +139,8 @@ sub EvaluateCompletedTicket {
     my $Control = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
         ConfigItemID => $ControlIDs[0], DynamicFields => 1,
     );
+    return { Success => 0, Status => 'UNKNOWN', Reason => 'Control instance cannot be resolved.' }
+        if ref $Control ne 'HASH' || !%{$Control} || ( $Control->{Class} || '' ) ne 'Control';
     my $ObjectiveID = _Scalar( $Control->{'DynamicField_ZRM-ControlObjective'} );
     my $Objective = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
         GovernanceObjectID => $ObjectiveID, DynamicFields => 1, Silent => 1,
@@ -153,11 +155,56 @@ sub EvaluateCompletedTicket {
     return { Success => 0, Status => 'UNKNOWN', Reason => $Result->{Error} } if !$Result->{Success};
 
     $Self->_ConfigItemFieldSet( ConfigItemID => $ControlIDs[0], FieldName => 'ZRM-Result', Value => $Result->{Result}, UserID => $UserID );
-    my $Risk = $Self->_RiskCreateOnFailure(
+    my $Risk = $Self->ProcessFailedControl(
         Result => $Result->{Result}, Control => $Control, Objective => $Objective,
         ConfigItemID => $ControlIDs[0], Ticket => \%Ticket, UserID => $UserID,
     );
     return { Success => $Risk->{Success}, Status => $Result->{Result}, ConfigItemID => $ControlIDs[0], %{$Risk} };
+}
+
+sub ProcessFailedControl {
+    my ( $Self, %Param ) = @_;
+
+    my $UserID       = $Param{UserID} || 1;
+    my $ConfigItemID = $Param{ConfigItemID};
+    my $Control      = $Param{Control};
+    if ( ref $Control ne 'HASH' ) {
+        return { Success => 0, RiskCreated => 0, Reason => 'ConfigItemID for the Control instance is required.' }
+            if !$ConfigItemID;
+        $Control = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+            ConfigItemID => $ConfigItemID,
+            DynamicFields => 1,
+        );
+    }
+    return { Success => 0, RiskCreated => 0, Reason => 'Control instance cannot be resolved.' }
+        if ref $Control ne 'HASH' || !%{$Control} || ( $Control->{Class} || '' ) ne 'Control';
+    $ConfigItemID ||= $Control->{ConfigItemID};
+
+    my $Result = defined $Param{Result} ? $Param{Result} : _Scalar( $Control->{'DynamicField_ZRM-Result'} );
+    return { Success => 1, RiskCreated => 0 } if lc( $Result || '' ) ne 'fail';
+
+    my $Objective = $Param{Objective};
+    my $ObjectiveID = _Scalar( $Control->{'DynamicField_ZRM-ControlObjective'} );
+    return { Success => 0, RiskCreated => 0, Reason => 'A Control must reference its ControlObjective.' }
+        if !$ObjectiveID;
+    if ( ref $Objective ne 'HASH' || !$Objective->{GovernanceObjectID} || "$Objective->{GovernanceObjectID}" ne "$ObjectiveID" ) {
+        $Objective = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $ObjectiveID,
+            DynamicFields      => 1,
+            Silent             => 1,
+        );
+    }
+    return { Success => 0, RiskCreated => 0, Reason => 'The parent ControlObjective cannot be resolved.' }
+        if ref $Objective ne 'HASH' || !%{$Objective} || ( $Objective->{Class} || '' ) ne 'ControlObjective';
+
+    return $Self->_RiskCreateOnFailure(
+        Result       => $Result,
+        Control      => $Control,
+        Objective    => $Objective,
+        ConfigItemID => $ConfigItemID,
+        Ticket       => $Param{Ticket},
+        UserID       => $UserID,
+    );
 }
 
 sub _AutomaticEvaluate {
@@ -176,7 +223,7 @@ sub _AutomaticEvaluate {
         ObjectParams => { Epoch => $Param{Now} },
     )->ToString();
     $Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-LastRun', Value => $Now, UserID => $Param{UserID} );
-    my $Risk = $Self->_RiskCreateOnFailure(
+    my $Risk = $Self->ProcessFailedControl(
         Result => $ControlResult, Control => $Param{Control}, Objective => $Param{Objective},
         ConfigItemID => $Param{ConfigItemID}, UserID => $Param{UserID},
     );
@@ -189,10 +236,12 @@ sub _RiskCreateOnFailure {
     return { Success => 1, RiskCreated => 0 } if !_Truthy( _Scalar( $Param{Objective}{'DynamicField_ZRM-CreateRisk'} ) );
 
     my $Target = _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ) || '';
+    $Target =~ s{\A\s*\@?}{};
+    $Target =~ s{\s+\z}{};
     return { Success => 0, RiskCreated => 0, RiskError => 'ZRM-RiskClass is required when ZRM-CreateRisk is selected.' }
         if $Target !~ m{\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z};
     my ( $ObjectType, $Class ) = ( $1, $2 );
-    my $Source = _Scalar( $Param{Control}{'DynamicField_ZRM-FieldAssignment'} ) || '';
+    my $Source = _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '';
     my $Assignments = $Self->_RiskAssignmentsParse(
         Source => $Source, ObjectType => $ObjectType, Class => $Class,
         Context => { CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective}, TICKET => $Param{Ticket} || {} },
@@ -236,27 +285,21 @@ sub _RiskCreateOnFailure {
 
 sub _RiskAssignmentsParse {
     my ( $Self, %Param ) = @_;
-    my %Values;
-    for my $Line ( split m{\r?\n}, $Param{Source} ) {
-        $Line =~ s{\s*#.*\z}{};
-        $Line =~ s{\A\s+|\s+\z}{}g;
-        next if $Line eq '';
-        return { Success => 0, Error => "Unsupported ZRM-FieldAssignment line: $Line" }
-            if $Line !~ m{\ASET\s+\@\Q$Param{ObjectType}\E\.\Q$Param{Class}\E\.([A-Za-z][A-Za-z0-9_-]*)\s*(?:=\s*)?(.+?)\s*;?\z}i;
-        my ( $FieldName, $Expression ) = ( $1, $2 );
-        my $IsThis = uc($Expression) eq 'THIS' ? 1 : 0;
+    my $Evaluated = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->FieldAssignmentsEvaluate(
+        Source     => $Param{Source},
+        ObjectType => $Param{ObjectType},
+        Class      => $Param{Class},
+        Context    => $Param{Context},
+        ThisValue  => $Param{ConfigItemID},
+    );
+    return { Success => 0, Error => $Evaluated->{Error} } if !$Evaluated->{Success};
+
+    for my $FieldName ( keys %{ $Evaluated->{Value} } ) {
         my $Field = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $FieldName );
         return { Success => 0, Error => "Dynamic Field '$FieldName' does not belong to $Param{ObjectType}." }
             if !$Field || ( $Field->{ObjectType} || '' ) ne $Param{ObjectType};
-        my $Value = $IsThis
-            ? { Known => 1, Value => $Param{ConfigItemID} }
-            : $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ValueEvaluate(
-                Expression => $Expression, Context => $Param{Context},
-            );
-        return { Success => 0, Error => $Value->{Reason} || "Cannot calculate '$FieldName'." } if !$Value->{Known};
-        $Values{$FieldName} = $Value->{Value};
     }
-    return { Success => 1, Values => \%Values };
+    return { Success => 1, Values => $Evaluated->{Value} };
 }
 
 sub _ConfigItemFieldSet {

@@ -28,6 +28,47 @@ sub CustomerHasAssetRole {
     return @{$Assignments} ? 1 : undef;
 }
 
+sub CustomerHasRole {
+    my ( $Self, %Param ) = @_;
+    return if !$Param{CustomerUserID} || !$Param{Role};
+    my $Assignments = $Self->_AssignmentsGet(
+        CustomerUserID => $Param{CustomerUserID},
+        RequireRole    => $Param{Role},
+    );
+    return @{$Assignments} ? 1 : undef;
+}
+
+sub ContractEntitlementAccessCheck {
+    my ( $Self, %Param ) = @_;
+    return if !$Param{CustomerUserID} || !$Param{ContractEntitlementID};
+
+    my $Entitlement = $Self->_ConfigItemReferenceGet(
+        Value => $Param{ContractEntitlementID},
+        Class => 'ContractEntitlement',
+    );
+    return $Self->_Denied(%Param) if !$Entitlement;
+
+    my @EntitledProfiles = $Self->_ReferenceObjects(
+        Value => $Entitlement->{'DynamicField_Contract-SupportProfie'},
+        Class => 'SupportProfile',
+    );
+    return $Self->_Denied(%Param) if !@EntitledProfiles;
+    my %EntitledProfileID = map { $_->{GovernanceObjectID} => 1 } @EntitledProfiles;
+
+    my $Assignments = $Self->_AssignmentsGet(
+        CustomerUserID => $Param{CustomerUserID},
+        RequireRole    => $Param{RequireRole},
+    );
+    for my $Assignment ( @{$Assignments} ) {
+        my @AssignedProfiles = $Self->_ReferenceObjects(
+            Value => $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'},
+            Class => 'SupportProfile',
+        );
+        return 1 if grep { $EntitledProfileID{ $_->{GovernanceObjectID} } } @AssignedProfiles;
+    }
+    return $Self->_Denied(%Param);
+}
+
 sub ConfigItemDiscoveryCheck {
     my ( $Self, %Param ) = @_;
 
@@ -90,11 +131,12 @@ sub _ConfigItemAccessCheck {
     );
     return $Self->_Denied(%Param) if !$Entitlement;
 
-    my $Assignments = $Self->_AssignmentsGet(
-        CustomerUserID => $Param{CustomerUserID},
-        RequireRole    => $Param{RequireAssetRole} ? 'ASSET' : undef,
+    return $Self->ContractEntitlementAccessCheck(
+        CustomerUserID       => $Param{CustomerUserID},
+        ContractEntitlementID => $Entitlement->{ConfigItemID},
+        RequireRole          => $Param{RequireRole} || ( $Param{RequireAssetRole} ? 'ASSET' : undef ),
+        LogNo                => $Param{LogNo},
     );
-    return @{$Assignments} ? 1 : $Self->_Denied(%Param);
 }
 
 sub _AssignmentsGet {

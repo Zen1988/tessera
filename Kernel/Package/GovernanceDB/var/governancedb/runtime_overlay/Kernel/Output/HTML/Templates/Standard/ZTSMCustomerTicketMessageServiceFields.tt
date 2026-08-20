@@ -364,10 +364,17 @@
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField textarea.RichText,
-#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText textarea.RichText,
+#NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText textarea.RichText {
+    min-height: 260px !important;
+}
+
+/* OTOBO 11.1 resizes RichTextHolder and calculates the editable height from
+ * that live value. Do not retain the old TESSERA minimum on CKEditor itself:
+ * label + toolbar + that minimum can exceed the holder and overlap the next
+ * vertical DynamicField Set member. */
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__editable,
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichText .ck-editor__editable {
-    min-height: 260px !important;
+    min-height: 0 !important;
 }
 
 #NewCustomerTicket .ZTSMServiceExtensionField .Field.RichTextField .ck-editor__editable_inline,
@@ -1225,19 +1232,37 @@
         var StickyPanel;
 
         if (!Target || !Node) {
-            return;
+            return false;
         }
 
         StickyPanel = Target.querySelector(':scope > .ck-sticky-panel');
 
         if (StickyPanel && StickyPanel !== Node) {
             Target.insertBefore(Node, StickyPanel);
-            return;
+            return true;
         }
 
         if (Target.firstElementChild !== Node) {
             Target.insertBefore(Node, Target.firstElementChild || null);
+            return true;
         }
+
+        return false;
+    }
+
+    function ZTSMServiceExtensionRichTextReflow(Holder) {
+        if (!Holder || !window.jQuery) {
+            return;
+        }
+
+        /* OTOBO 11.1 measures CKEditor before TESSERA adds its caption to
+         * .ck-editor__top. Re-run the holder's native resize handler after
+         * that DOM move so the editable area and following Set rows reflow
+         * from the live toolbar height. This preserves user resizing.
+         */
+        window.requestAnimationFrame(function () {
+            window.jQuery(Holder).triggerHandler('resize');
+        });
     }
 
     function ZTSMServiceExtensionRichTextTooltipNormalize(Tooltip) {
@@ -1492,11 +1517,15 @@
                 }
 
                 ZTSMServiceExtensionRichTextTooltipNormalize(Tooltip);
-                ZTSMServiceExtensionRichTextTopInsert(Target, Tooltip);
+                if (ZTSMServiceExtensionRichTextTopInsert(Target, Tooltip)) {
+                    ZTSMServiceExtensionRichTextReflow(Holder);
+                }
                 ZTSMServiceExtensionRichTextTooltipStyleApply(Tooltip);
             }
             else if (Label) {
-                ZTSMServiceExtensionRichTextTopInsert(Target, Label);
+                if (ZTSMServiceExtensionRichTextTopInsert(Target, Label)) {
+                    ZTSMServiceExtensionRichTextReflow(Holder);
+                }
             }
 
             Captions = Cell.querySelectorAll('.ZTSMServiceExtensionRichTextCaption');
