@@ -455,7 +455,7 @@ sub _SingleReferenceForDocument {
 
     my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(
         %GetParam,
-        DynamicFields => 1,
+        DynamicFields => 0,
         Silent        => 1,
     );
 

@@ -26,7 +26,8 @@ sub FieldMetadata {
             values %{ $DynamicField->{Config}->{PossibleValues} || {} };
     }
     my $Structured = $Type =~ m{\A(?:Set|Group)\z} || $DynamicField->{Config}->{MultiValue} ? 1 : 0;
-    return { Type => $Type, Options => \@Options, Structured => $Structured };
+    my $Reference = $DynamicField->{Config}->{ReferencedObjectType} ? 1 : 0;
+    return { Type => $Type, Options => \@Options, Structured => $Structured, Reference => $Reference };
 }
 
 sub CatalogOptions {
@@ -45,10 +46,12 @@ sub Build {
     my $HeaderFixed = $Workbook->add_format( bold => 1, color => '#FFFFFF', bg_color => '#5B6573', border => 1, text_wrap => 1 );
     my $HeaderInput = $Workbook->add_format( bold => 1, color => '#FFFFFF', bg_color => '#2F75B5', border => 1, text_wrap => 1 );
     my $HeaderSelect = $Workbook->add_format( bold => 1, color => '#1F1F1F', bg_color => '#A9D18E', border => 1, text_wrap => 1 );
+    my $HeaderReference = $Workbook->add_format( bold => 1, color => '#1F1F1F', bg_color => '#F4B183', border => 1, text_wrap => 1 );
     my $HeaderJSON = $Workbook->add_format( bold => 1, color => '#1F1F1F', bg_color => '#FFD966', border => 1, text_wrap => 1 );
     my $Fixed = $Workbook->add_format( bg_color => '#E7E6E6', border => 1, valign => 'top' );
     my $Input = $Workbook->add_format( bg_color => '#DDEBF7', border => 1, valign => 'top' );
     my $Select = $Workbook->add_format( bg_color => '#E2F0D9', border => 1, valign => 'top' );
+    my $Reference = $Workbook->add_format( bg_color => '#FCE4D6', border => 1, valign => 'top' );
     my $JSON = $Workbook->add_format( bg_color => '#FFF2CC', border => 1, valign => 'top', text_wrap => 1 );
     my $Title = $Workbook->add_format( bold => 1, size => 16, color => '#17365D' );
     my $Subhead = $Workbook->add_format( bold => 1, color => '#FFFFFF', bg_color => '#4472C4', border => 1 );
@@ -58,11 +61,12 @@ sub Build {
     $Info->write( 0, 0, 'TESSERA Excel Import / Export Guide', $Title );
     $Info->write_row( 2, 0, [ 'Colour', 'Meaning' ], $Subhead );
     $Info->write( 3, 0, 'Grey', $Fixed );  $Info->write( 3, 1, 'System identity. Preserve on updates; leave Number blank when creating.', $Wrap );
-    $Info->write( 4, 0, 'Blue', $Input );  $Info->write( 4, 1, 'Editable text, number, date, or reference identity.', $Wrap );
+    $Info->write( 4, 0, 'Blue', $Input );  $Info->write( 4, 1, 'Editable text, number, or date value.', $Wrap );
     $Info->write( 5, 0, 'Green', $Select ); $Info->write( 5, 1, 'Fixed-value field. Choose from the cell dropdown.', $Wrap );
-    $Info->write( 6, 0, 'Amber', $JSON );   $Info->write( 6, 1, 'Structured or multi-value Dynamic Field. Keep valid JSON in one cell.', $Wrap );
-    $Info->write_row( 8, 0, [ 'Worksheet', 'Column', 'Field type', 'Allowed values' ], $Subhead );
-    my $InfoRow = 9;
+    $Info->write( 6, 0, 'Orange', $Reference ); $Info->write( 6, 1, 'Object reference. Use the exported human-readable reference identity.', $Wrap );
+    $Info->write( 7, 0, 'Amber', $JSON );   $Info->write( 7, 1, 'Structured or multi-value Dynamic Field. Keep valid JSON in one cell.', $Wrap );
+    $Info->write_row( 9, 0, [ 'Worksheet', 'Column', 'Field type', 'Allowed values' ], $Subhead );
+    my $InfoRow = 10;
     for my $SheetName ( sort keys %{ $Param{Model} || {} } ) {
         my $SheetModel = $Param{Model}->{$SheetName};
         for my $Name ( @{ $SheetModel->{Headers} || [] } ) {
@@ -74,8 +78,8 @@ sub Build {
             $Info->write_row( $InfoRow++, 0, [ $SheetName, $Name, $Type, $Allowed ], $Wrap );
         }
     }
-    $Info->freeze_panes( 9, 0 );
-    $Info->autofilter( 8, 0, 8, 3 );
+    $Info->freeze_panes( 10, 0 );
+    $Info->autofilter( 9, 0, 9, 3 );
     $Info->set_column( 0, 0, 22 ); $Info->set_column( 1, 1, 30 );
     $Info->set_column( 2, 2, 28 ); $Info->set_column( 3, 3, 76 );
 
@@ -90,9 +94,9 @@ sub Build {
         for my $Column ( 0 .. $#{ $SheetModel->{Headers} } ) {
             my $Name = $SheetModel->{Headers}->[$Column];
             my $Meta = $SheetModel->{Fields}->{$Name} || { Type => 'Text' };
-            my $Kind = $Meta->{Fixed} ? 'fixed' : $Meta->{Structured} ? 'json' : @{ $Meta->{Options} || [] } ? 'select' : 'input';
-            my %HeaderFormat = ( fixed => $HeaderFixed, input => $HeaderInput, select => $HeaderSelect, json => $HeaderJSON );
-            my %CellFormat = ( fixed => $Fixed, input => $Input, select => $Select, json => $JSON );
+            my $Kind = $Meta->{Fixed} ? 'fixed' : $Meta->{Reference} ? 'reference' : $Meta->{Structured} ? 'json' : @{ $Meta->{Options} || [] } ? 'select' : 'input';
+            my %HeaderFormat = ( fixed => $HeaderFixed, input => $HeaderInput, select => $HeaderSelect, reference => $HeaderReference, json => $HeaderJSON );
+            my %CellFormat = ( fixed => $Fixed, input => $Input, select => $Select, reference => $Reference, json => $JSON );
             $Sheet->write( 0, $Column, $Name, $HeaderFormat{$Kind} );
             $Sheet->set_column( $Column, $Column, $Kind eq 'json' ? 34 : $Name eq 'Description' ? 42 : 22, $CellFormat{$Kind} );
             my @Options = @{ $Meta->{Options} || [] };

@@ -19,7 +19,7 @@ my %Expected = (
     ],
     'Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm' => [
         "FieldType} eq 'RichText'", '_RichTextValueForDocument', 'HTMLUtils',
-        'Class}: $GovernanceObject->{Name}',
+        'Class}: $GovernanceObject->{Name}', 'DynamicFields => 0',
     ],
     'Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.DataActions.js' => [
         "Query.get('Filter')", 'CurrentClassID',
@@ -30,7 +30,8 @@ my %Expected = (
     ],
     'Kernel/Package/GovernanceDB/Kernel/System/ZTSMWorkbookXLSX.pm' => [
         'data_validation', 'FieldMetadata', 'GeneralCatalog', 'Instructions', 'Allowed values', '_Selections',
-        "bg_color => '#E7E6E6'", "bg_color => '#A9D18E'", 'Structured',
+        "bg_color => '#E7E6E6'", "bg_color => '#A9D18E'", "bg_color => '#F4B183'",
+        'ReferencedObjectType', 'Reference', "Meta->{Reference} ? 'reference'", 'Structured',
     ],
 );
 
@@ -43,5 +44,16 @@ for my $RelativePath ( sort keys %Expected ) {
         like( $Content, qr/\Q$Marker\E/, "$RelativePath contains $Marker" );
     }
 }
+
+my $GovernanceDocumentPath = "$Root/Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm";
+open my $GovernanceDocumentFH, '<:raw', $GovernanceDocumentPath or die "Cannot read $GovernanceDocumentPath: $!";
+local $/;
+my $GovernanceDocument = <$GovernanceDocumentFH>;
+close $GovernanceDocumentFH;
+like(
+    $GovernanceDocument,
+    qr{sub _SingleReferenceForDocument.*?GovernanceObjectGet\(.*?DynamicFields\s*=>\s*0}s,
+    'Governance reference export resolves portable identity without recursively loading target Dynamic Fields',
+);
 
 done_testing();
