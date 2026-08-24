@@ -127,10 +127,6 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
-    $Self->_ReferenceDisplayTypesRepair();
-
-    $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
-
     $Self->_ITSMControlDefaultsEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
@@ -139,25 +135,7 @@ sub InstallDefaults {
 
     $Self->_RuntimePrerequisitesEnsure();
 
-    $Self->_TicketReferenceDynamicFieldsRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_ConfigItemsCopyToGovernanceObjects(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_TicketReferenceValuesRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
-
     $Self->_RuntimeOverlayInstall();
-
-    $Self->_CustomerBrandingEnsure();
-
-    $Self->_CustomerDashboardEnsure();
-
-    $Self->_CustomerAssetFrontendEnsure();
 
     $Self->_SysConfigDeploy();
 
@@ -454,24 +432,9 @@ sub _DefinitionEnsure {
         ? $GovernanceObjectObject->RoleDefinitionGet(%GetParam)
         : $GovernanceObjectObject->DefinitionGet(%GetParam);
 
-    if ( $CurrentDefinition && $CurrentDefinition->{DefinitionID} ) {
-        my $Current = $Self->_DefinitionNormalize( $CurrentDefinition->{Definition} || '' );
-        my $Wanted  = $Self->_DefinitionNormalize($Definition);
-
-        return 1 if $Current eq $Wanted;
-
-        # Existing definitions may have been customized by the customer. Merge
-        # only missing packaged structure; existing values, order, and additions
-        # remain authoritative and are never replaced by a reinstall/upgrade.
-        my $Merged = $Self->_DefinitionMerge(
-            Current => $CurrentDefinition->{Definition} || '',
-            Wanted  => $Definition,
-        );
-        return 1 if !$Merged || $Self->_DefinitionNormalize($Merged) eq $Current;
-
-        $AddParam{Definition} = $Merged;
-        $AddParam{Force} = 1;
-    }
+    # Definitions are governance data. Once present, installation and upgrade
+    # must not merge packaged structure into them or create a new version.
+    return 1 if $CurrentDefinition && $CurrentDefinition->{DefinitionID};
 
     my $Result = $Type eq 'Role'
         ? $GovernanceObjectObject->RoleDefinitionAdd(%AddParam)
@@ -1075,25 +1038,10 @@ sub _TicketStatesEnsure {
         my $StateID = $StateObject->StateLookup(
             State => $State->{Name},
         );
-        if ($StateID) {
-            my %Current = $StateObject->StateGet(
-                ID => $StateID,
-            );
-            next STATE
-                if ( $Current{ValidID} || 0 ) == 1
-                && ( $Current{TypeID} || 0 ) == $TypeID
-                && ( $Current{Comment} || '' ) eq $State->{Comment};
-
-            $StateObject->StateUpdate(
-                ID      => $StateID,
-                Name    => $State->{Name},
-                ValidID => 1,
-                TypeID  => $TypeID,
-                Comment => $State->{Comment},
-                UserID  => 1,
-            );
-            next STATE;
-        }
+        # State validity, type and wording are administrator-owned. Installation
+        # only supplies a missing prerequisite and never reactivates or rewrites
+        # an existing state.
+        next STATE if $StateID;
 
         $StateObject->StateAdd(
             Name    => $State->{Name},
@@ -1166,6 +1114,7 @@ sub _GovernanceRoleObjectsEnsure {
         SUPPORT
         ASSET
         ESCALATION
+        PLATFORM::NETWORK
         CMDBAPI
         MELTAPI
         GovernanceAPI
@@ -1249,7 +1198,7 @@ END_SUPPORT_SCRIPT
         'REQUESTER-DEFAULT'       => $RequesterScript,
         'REQUESTER-SUPPORT-GROUP' => $RequesterScript,
         map { $_ => $DynamicResolverScript }
-            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION CMDBAPI MELTAPI GovernanceAPI),
+            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION PLATFORM::NETWORK CMDBAPI MELTAPI GovernanceAPI),
     );
     @ScriptFor{ keys %EvidenceScriptFor } = values %EvidenceScriptFor;
     $ScriptFor{SUPPORT} = $SupportScript;
@@ -1261,39 +1210,9 @@ END_SUPPORT_SCRIPT
             Name    => $Role,
         );
 
-        if ($ExistingID) {
-            next ROLE if !$ScriptFor{$Role};
-            my $Existing = $GovernanceObjectObject->GovernanceObjectGet(
-                GovernanceObjectID => $ExistingID,
-                DynamicFields      => 1,
-                Silent             => 1,
-            );
-            next ROLE if !$Existing || ref $Existing ne 'HASH';
-            my $CurrentScript = $Existing->{'DynamicField_ZTSM-ScriptEngine'};
-            if ( $Self->_BootstrapValueHasContent($CurrentScript) ) {
-                my $CurrentScalar = $Self->_BootstrapValueScalar($CurrentScript);
-                next ROLE if !defined $CurrentScalar;
-                my $NormalizedCurrent = $CurrentScalar;
-                my $NormalizedLegacy  = $DynamicResolverScript;
-                $NormalizedCurrent =~ s{\r\n?}{\n}g;
-                $NormalizedLegacy  =~ s{\r\n?}{\n}g;
-                $NormalizedCurrent =~ s{\s+\z}{};
-                $NormalizedLegacy  =~ s{\s+\z}{};
-                next ROLE if $NormalizedCurrent ne $NormalizedLegacy;
-            }
-
-            my $Updated = $Self->_GovernanceRoleScriptValueSet(
-                GovernanceObjectID => $ExistingID,
-                Value              => $ScriptFor{$Role},
-            );
-            if ( !$Updated ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "TESSERA bootstrap could not seed ZTSM-ScriptEngine for GovernanceRole $Role ($ExistingID).",
-                );
-            }
-            next ROLE;
-        }
+        # An existing GovernanceRole is authored governance truth, including an
+        # empty or legacy script. Bootstrap only supplies a missing role.
+        next ROLE if $ExistingID;
 
         my $Number = 'TESSERA-ROLE-' . $Role;
         $Number =~ s{[^A-Za-z0-9-]}{-}g;
@@ -1497,7 +1416,7 @@ sub _RuntimeProcessesEnsure {
             next FILE;
         }
 
-        if ( $Self->_ActiveProcessNameExists( Name => $Data->{Process}->{Name} ) ) {
+        if ( $Self->_ProcessNameExists( Name => $Data->{Process}->{Name} ) ) {
             next FILE;
         }
 
@@ -1536,7 +1455,7 @@ sub _RuntimeProcessesEnsure {
     return 1;
 }
 
-sub _ActiveProcessNameExists {
+sub _ProcessNameExists {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{Name};
@@ -1549,7 +1468,6 @@ sub _ActiveProcessNameExists {
     for my $Process ( @{$List} ) {
         next PROCESS if ref $Process ne 'HASH';
         next PROCESS if ( $Process->{Name} || '' ) ne $Param{Name};
-        next PROCESS if ( $Process->{State} || '' ) ne 'Active';
         return 1;
     }
 
@@ -1625,12 +1543,9 @@ sub _GenericAgentJobsEnsure {
         my %Existing = $GenericAgentObject->JobGet(
             Name => $Job{Name},
         );
-        if (%Existing) {
-            $GenericAgentObject->JobDelete(
-                Name   => $Job{Name},
-                UserID => 1,
-            );
-        }
+        # Existing jobs, including invalid or locally edited jobs, are owned by
+        # the administrator and must not be deleted and recreated by bootstrap.
+        next JOB if %Existing;
 
         $GenericAgentObject->JobAdd(
             Name   => $Job{Name},
@@ -1724,44 +1639,8 @@ sub _ITSMControlDefaultsEnsure {
         return;
     }
 
-    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    my %ClassID = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Class', Valid => 0 ) || {} };
-    my %RoleID  = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Role',  Valid => 0 ) || {} };
-    my $YAML = $Kernel::OM->Get('Kernel::System::YAML');
-
-    ITEM:
-    for my $Item ( @{$Seed} ) {
-        next ITEM if ref $Item ne 'HASH' || !defined $Item->{Definition};
-        my ( $ID, $Current, $Add );
-        if ( $Item->{RoleName} ) {
-            $ID = $RoleID{ $Item->{RoleName} } || next ITEM;
-            $Current = $ConfigItemObject->RoleDefinitionGet( RoleID => $ID ) || {};
-            $Add = sub { $ConfigItemObject->RoleDefinitionAdd( RoleID => $ID, Definition => $_[0], UserID => 1 ) };
-        }
-        elsif ( ref $Item->{Class} eq 'HASH' && $Item->{Class}{Name} ) {
-            $ID = $ClassID{ $Item->{Class}{Name} } || next ITEM;
-            $Current = $ConfigItemObject->DefinitionGet( ClassID => $ID ) || {};
-            $Add = sub { $ConfigItemObject->DefinitionAdd( ClassID => $ID, Definition => $_[0], UserID => 1 ) };
-        }
-        else {
-            next ITEM;
-        }
-
-        my $WantedRef  = $YAML->Load( Data => $Item->{Definition} ) || {};
-        my $CurrentRef = $YAML->Load( Data => $Current->{Definition} || '--- {}' ) || {};
-        my $Merged = $Self->_StructureMerge( Current => $CurrentRef, Wanted => $WantedRef );
-        next ITEM if $JSON->Encode( Data => $Merged ) eq $JSON->Encode( Data => $CurrentRef );
-
-        my $Result = $Add->( $YAML->Dump( Data => $Merged ) );
-        if ( !$Result || !$Result->{Success} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'GovernanceDB could not merge missing ConfigItem Control definition structure.',
-            );
-            return;
-        }
-    }
-
+    # ClassImport with IGNORE is the complete bootstrap contract. Existing
+    # ConfigItem classes and role definitions are never supplemented or revised.
     return 1;
 }
 
@@ -1942,24 +1821,7 @@ sub _ClassPreferencesEnsure {
     KEY:
     for my $Key ( sort keys %Wanted ) {
         next KEY if !$Wanted{$Key};
-        if ( $Key eq 'Permission' ) {
-            my @Existing = ref $Preferences{$Key} eq 'ARRAY'
-                ? @{ $Preferences{$Key} }
-                : grep {$_} ( $Preferences{$Key} );
-
-            my %Existing = map { $_ => 1 } @Existing;
-            my @Merged = ( @Existing, grep { !$Existing{$_}++ } @{ $Wanted{$Key} } );
-            next KEY if @Existing && @Merged == @Existing;
-
-            $GeneralCatalogObject->GeneralCatalogPreferencesSet(
-                ItemID => $Param{ItemID},
-                Key    => $Key,
-                Value  => \@Merged,
-            );
-            next KEY;
-        }
-
-        next KEY if $Preferences{$Key};
+        next KEY if exists $Preferences{$Key};
 
         $GeneralCatalogObject->GeneralCatalogPreferencesSet(
             ItemID => $Param{ItemID},
@@ -2033,47 +1895,9 @@ sub _DynamicFieldsEnsure {
         my $FieldType = $Field->{FieldType} || 'Text';
         my $Existing  = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
 
-        if ($Existing) {
-            my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
-                Config         => $Existing->{Config} || {},
-                AllowedClasses => \%AllowedClasses,
-            );
-            my $MergedConfig = $Self->_StructureMerge(
-                Current => $CurrentConfig,
-                Wanted  => $Config,
-            );
-
-            next FIELD if $Self->_DynamicFieldConfigEqual(
-                Left  => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $CurrentConfig,
-                },
-                Right => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $MergedConfig,
-                },
-            );
-
-            $Self->_DynamicFieldUpdateForce(
-                ID          => $Existing->{ID},
-                Name        => $Existing->{Name},
-                Label       => $Existing->{Label},
-                FieldOrder  => $Existing->{FieldOrder},
-                FieldType   => $Existing->{FieldType},
-                ObjectType  => $Existing->{ObjectType},
-                Config      => $MergedConfig,
-                ValidID     => $Existing->{ValidID} || 1,
-                UserID      => 1,
-                Reorder     => 0,
-            );
-            next FIELD;
-        }
+        # Dynamic Field validity, type, label and configuration are owned by the
+        # installed environment once the field exists.
+        next FIELD if $Existing;
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $FieldName,
@@ -2670,42 +2494,7 @@ sub _TicketRuntimeDynamicFieldsEnsure {
         my $Existing = $DynamicFieldObject->DynamicFieldGet(
             Name => $Field->{Name},
         );
-        if ( $Existing && $Existing->{ID} ) {
-            my $NeedsReferenceRepair = $Field->{Name} eq 'ZIN-KB'
-                && !$Self->_DynamicFieldConfigEqual(
-                    Left => {
-                        Name       => $Existing->{Name},
-                        Label      => $Existing->{Label},
-                        FieldType  => $Existing->{FieldType},
-                        ObjectType => $Existing->{ObjectType},
-                        Config     => $Existing->{Config} || {},
-                    },
-                    Right => {
-                        Name       => $Field->{Name},
-                        Label      => $Field->{Label},
-                        FieldType  => $Field->{FieldType},
-                        ObjectType => 'Ticket',
-                        Config     => $Field->{Config},
-                    },
-                );
-
-            if ($NeedsReferenceRepair) {
-                $Self->_DynamicFieldUpdateForce(
-                    ID         => $Existing->{ID},
-                    Name       => $Field->{Name},
-                    Label      => $Field->{Label},
-                    FieldOrder => $Existing->{FieldOrder},
-                    FieldType  => $Field->{FieldType},
-                    ObjectType => 'Ticket',
-                    Config     => $Field->{Config},
-                    ValidID    => $Existing->{ValidID} || 1,
-                    UserID     => 1,
-                    Reorder    => 0,
-                );
-            }
-
-            next FIELD;
-        }
+        next FIELD if $Existing && $Existing->{ID};
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},
@@ -2939,47 +2728,7 @@ sub _CustomerUserPreferenceDynamicFieldsEnsure {
         };
 
         my $Existing = $DynamicFieldObject->DynamicFieldGet( Name => $Field->{Name} );
-        if ($Existing) {
-            my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
-                Config         => $Existing->{Config} || {},
-                AllowedClasses => { map { $_ => $_ } @ClassIDs },
-            );
-            my $NeedsClassIDRepair = $Self->_DynamicFieldClassIDsNeedRepair(
-                Config       => $Existing->{Config} || {},
-                WantedConfig => $Config,
-            );
-
-            next FIELD if !$NeedsClassIDRepair && $Self->_DynamicFieldConfigEqual(
-                Left  => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $CurrentConfig,
-                },
-                Right => {
-                    Name       => $Field->{Name},
-                    Label      => $Field->{Label},
-                    FieldType  => 'GovernanceObject',
-                    ObjectType => 'CustomerUser',
-                    Config     => $Config,
-                },
-            );
-
-            $Self->_DynamicFieldUpdateForce(
-                ID          => $Existing->{ID},
-                Name        => $Field->{Name},
-                Label       => $Field->{Label},
-                FieldOrder  => $Existing->{FieldOrder} || $Field->{FieldOrder},
-                FieldType   => 'GovernanceObject',
-                ObjectType  => 'CustomerUser',
-                Config      => $Config,
-                ValidID     => $Existing->{ValidID} || 1,
-                UserID      => 1,
-                Reorder     => 0,
-            );
-            next FIELD;
-        }
+        next FIELD if $Existing;
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},
@@ -3122,19 +2871,6 @@ sub _SysConfigDeploy {
     my ( $Self, %Param ) = @_;
 
     my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
-
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'Service',
-        ObjectType => 'GovernanceObject',
-    );
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'Set',
-        ObjectType => 'GovernanceObject',
-    );
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'FAQ',
-        ObjectType => 'GovernanceObject',
-    );
 
     my @DirtySettings   = (
         'DynamicFields::ObjectType###GovernanceObject',

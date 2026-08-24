@@ -20,6 +20,32 @@
          "Category" : "Business",
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Application\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n        \r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Application\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
+            "RoleMap" : {
+               "ChangeTime" : "2026-08-24 07:51:39",
+               "Config" : {
+                  "Include" : [
+                     {
+                        "DF" : "GovernanceRole",
+                        "Definition" : { "Config" : {} }
+                     },
+                     {
+                        "DF" : "SupportProfile",
+                        "Definition" : { "Config" : {} }
+                     }
+                  ],
+                  "MultiValue" : "1",
+                  "RenderLayout" : "Horizontal",
+                  "Tooltip" : null
+               },
+               "CreateTime" : "2026-08-24 07:51:39",
+               "FieldOrder" : 566,
+               "FieldType" : "Set",
+               "InternalField" : 0,
+               "Label" : "Role Mapping",
+               "Name" : "RoleMap",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
             "ZTSM-Code" : {
                "CIClass" : "Application",
                "Config" : {
@@ -3552,6 +3578,26 @@
          "Category" : "Context",
          "Definition" : "---\r\nPages:\r\n  # The individual tabs in AgentGovernanceObjectZoom are called Pages.\r\n  # The fields to be displayed there are defined in the roles \r\n  # listed on the left under \"Roles\".\r\n  - Name: Summary\r\n    Layout:\r\n      Columns: 2\r\n      ColumnWidth: 1fr 1fr\r\n    Interfaces:\r\n      - Agent\r\n    Content:\r\n      - Section: General Fields::Platform\r\n        RowStart: 1\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Backlinks::Backlinks\r\n        RowStart: 2\r\n        ColumnStart: 1\r\n      - Section: GovernanceDB Description::Description\r\n        RowStart: 1\r\n        RowSpan: 2\r\n        ColumnStart: 2\r\n\r\nRoles: \r\n  # Roles are used to define the Sections and their individual fields.\r\n  # Of course, sections can also be defined directly here in the class definitions. \r\n  # We have simply moved them to \"Roles\" for the sake of clarity.\r\n\r\n  # For each class with class-specific fields, there is a \"General Fields\"\r\n  # definition referring to a role with the name \"GovernanceDB GF class name\". \r\n  # This is where the fields of the respective class can be customised.\r\n  General Fields:\r\n    Name: ZTSM Platform\r\n  GovernanceDB Backlinks:\r\n    Name: GovernanceDB Backlinks\r\n  GovernanceDB Description:\r\n    Name: GovernanceDB Description",
          "DynamicFields" : {
+            "RoleMap" : {
+               "ChangeTime" : "2026-08-24 07:51:39",
+               "Config" : {
+                  "Include" : [
+                     { "DF" : "GovernanceRole", "Definition" : { "Config" : {} } },
+                     { "DF" : "SupportProfile", "Definition" : { "Config" : {} } }
+                  ],
+                  "MultiValue" : "1",
+                  "RenderLayout" : "Horizontal",
+                  "Tooltip" : null
+               },
+               "CreateTime" : "2026-08-24 07:51:39",
+               "FieldOrder" : 566,
+               "FieldType" : "Set",
+               "InternalField" : 0,
+               "Label" : "Role Mapping",
+               "Name" : "RoleMap",
+               "ObjectType" : "GovernanceObject",
+               "ValidID" : 1
+            },
             "ZTSM-Code" : {
                "CIClass" : "Platform",
                "Config" : {
@@ -5999,7 +6045,7 @@
          "Name" : "ZRM RiskStatement"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header: Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSMAppSystem-ServiceTier\r\n    - DF: ZTSMAppSystem-CriticalityProfile\r\n    - DF: ZTSMAppSystem-Owner\r\n    - DF: ZTSMAppSystem-Parent\r\n    - DF: ZTSMAppSystem-Platform\r\n    - DF: ZTSMAppSystem-Environment\r\n    - DF: ZTSMAppSystem-Location\r\n    - DF: ZTSMAppSystem-DataClassificationProfile\r\n    - DF: ZTSMAppSystem-ExposureProfile\r\n    - DF: ZTSMAppSystem-DefaultApprovalModel\r\n    - DF: ZTSMAppSystem-DefaultApprovalProfile",
+         "Definition" : "---\r\nSections:\r\n  Application:\r\n    Content:\r\n    - Header: Application System\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSMAppSystem-ServiceTier\r\n    - DF: ZTSMAppSystem-CriticalityProfile\r\n    - DF: ZTSMAppSystem-Owner\r\n    - DF: ZTSMAppSystem-Parent\r\n    - DF: ZTSMAppSystem-Platform\r\n    - DF: ZTSMAppSystem-Environment\r\n    - DF: ZTSMAppSystem-Location\r\n    - DF: ZTSMAppSystem-DataClassificationProfile\r\n    - DF: ZTSMAppSystem-ExposureProfile\r\n    - DF: RoleMap\r\n    - DF: ZTSMAppSystem-DefaultApprovalModel\r\n    - DF: ZTSMAppSystem-DefaultApprovalProfile",
          "Name" : "ZTSM Application"
       },
       {
@@ -6031,7 +6077,7 @@
          "Name" : "ZTSM Organization"
       },
       {
-         "Definition" : "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n    - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location\r\n    - DF: ZTSMPlatform-ServiceSupportMap",
+         "Definition" : "---\r\nSections:\r\n  Platform:\r\n    Content:\r\n    - Header: Platform\r\n    - DF: ZTSM-Code\r\n    - DF: ZTSM-Status\r\n    - DF: ZTSMPlatform-Type\r\n    - DF: ZTSMPlatform-Owner\r\n    - DF: ZTSMPlatform-Location\r\n    - DF: RoleMap\r\n    - DF: ZTSMPlatform-ServiceSupportMap",
          "Name" : "ZTSM Platform"
       },
       {

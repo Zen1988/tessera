@@ -1,28 +1,15 @@
 ---
-SCRIPT: Resolve Dynamic Governance Role
+SCRIPT: Resolve Governance Role Through Application Platform RoleMap
 VERSION: 1
 
 # CURRENT OBJECT is the GovernanceRole whose ZTSM-ScriptEngine is executing.
-# TICKET is the runtime ticket supplied by the caller.
-SEARCH:
-  FOR: GovernanceObject
-  CLASS: SupportAssignment
-  AS: Matching Assignments
-  WHERE:
-    ZTSMSupportAssignment-Role:
-      EQUALS: CURRENT OBJECT
-    ZTSMSupportAssignment-Application:
-      EQUALS: TICKET.ZTicket-Application
-  LIMIT: 2
-
-# LIMIT 2 is intentional: resolution only needs to distinguish zero, one,
-# or ambiguous matches.
-REQUIRE:
-  Matching Assignments:
-    HAS EXACTLY: 1
-  OTHERWISE: GovernanceRole and Application must resolve to exactly one SupportAssignment.
+# The resolver loads the ticket Application and its referenced Platform as typed
+# GovernanceObjects. RoleMap filtering is exact and fail-closed: zero or multiple
+# matching GovernanceRole rows return UNKNOWN.
+# Example: when CURRENT OBJECT is PLATFORM::NETWORK, this evaluates
+# Application.Platform.RoleMap[GovernanceRole='PLATFORM::NETWORK'] and returns
+# that row's SupportProfile.
 
 RETURN:
-  FROM: EXACTLY ONE Matching Assignments
-  FIELD: ZTSMSupportAssignment-SupportProfile
+  VALUE: TICKET.ZTicket-Application.ZTSMAppSystem-Platform.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile
   AS: GovernanceObject.SupportProfile

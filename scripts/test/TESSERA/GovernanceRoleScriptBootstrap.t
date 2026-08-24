@@ -15,7 +15,7 @@ for my $Role (qw(REQUESTER REQUESTER-DEFAULT REQUESTER-SUPPORT-GROUP)) {
         "$Role receives the requester resolver",
     );
 }
-for my $Role (qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION)) {
+for my $Role (qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION PLATFORM::NETWORK)) {
     like(
         $Bootstrap,
         qr/qw\([^)]*\b\Q$Role\E\b[^)]*\)/,
@@ -36,16 +36,17 @@ for my $Mapping (
 }
 like( $Bootstrap, qr/ZTSMAppSystem-DefaultApprovalProfile/, 'SUPPORT uses the application default approval profile' );
 like( $Bootstrap, qr/Collection<SupportAssignment>/, 'evidence roles return typed assignment collections' );
-like( $Bootstrap, qr/\$NormalizedCurrent ne \$NormalizedLegacy/, 'only an unchanged prior TESSERA default is upgraded' );
+unlike( $Bootstrap, qr/\$NormalizedCurrent ne \$NormalizedLegacy/, 'bootstrap never upgrades an existing GovernanceRole script' );
 like( $Bootstrap, qr/sub _GovernanceRoleScriptValueSet/, 'bootstrap has a dedicated GovernanceRole script writer' );
 like( $Bootstrap, qr/ObjectID\s*=>\s*\$GovernanceObject->\{VersionID\}/, 'script value is stored against the GovernanceObject VersionID' );
 like( $Bootstrap, qr/DynamicField::Backend'\)->ValueSet/, 'script writer uses the DynamicField backend' );
 like( $Bootstrap, qr/DynamicField::Backend'\)->ValueGet/, 'script writer verifies the persisted value' );
-like(
+unlike(
     $Bootstrap,
     qr/if \( \$Self->_BootstrapValueHasContent\(\$CurrentScript\) \)/,
-    'bootstrap preserves every existing non-empty GovernanceRole script regardless of value shape',
+    'bootstrap does not inspect an existing GovernanceRole script for replacement',
 );
+like( $Bootstrap, qr/next ROLE if \$ExistingID;/, 'bootstrap leaves every existing GovernanceRole unchanged' );
 like( $Bootstrap, qr/Unknown reference shapes are treated as authored content/, 'bootstrap fails closed against intrusive script replacement' );
 like(
     $Bootstrap,

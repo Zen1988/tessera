@@ -7,19 +7,7 @@ use lib 'Kernel/Package/GovernanceDB', '.';
 use Kernel::System::TESSERA::ScriptEngine;
 use Kernel::System::TESSERA::PolicyEngine;
 
-my @SearchCalls;
-my $Engine = Kernel::System::TESSERA::ScriptEngine->new(
-    SearchProvider => sub {
-        my (%Param) = @_;
-        push @SearchCalls, \%Param;
-        return [
-            {
-                Name => 'Cloud Primary Assignment',
-                'DynamicField_ZTSMSupportAssignment-SupportProfile' => 59,
-            },
-        ];
-    },
-);
+my $Engine = Kernel::System::TESSERA::ScriptEngine->new();
 
 my $Script = YAML::XS::LoadFile(
     'Kernel/Package/GovernanceDB/var/governancedb/script/governance_role_dynamic_resolver.yml'
@@ -33,7 +21,16 @@ my $Result = $Engine->ScriptEvaluate(
     Context => {
         'CURRENT OBJECT' => 13,
         TICKET => {
-            'DynamicField_ZTicket-Application' => 88,
+            'ZTicket-Application' => {
+                'DynamicField_ZTSMAppSystem-Platform' => {
+                    'DynamicField_RoleMap' => [
+                        {
+                            GovernanceRole => 13,
+                            SupportProfile => 59,
+                        },
+                    ],
+                },
+            },
         },
     },
 );
@@ -41,14 +38,26 @@ ok( $Result->{Success}, 'typed governance role script evaluates' );
 is( $Result->{Status}, 'RETURNED', 'script returns a terminal result' );
 is( $Result->{Value}, 59, 'support profile value is returned' );
 is( $Result->{ValueType}, 'GovernanceObject.SupportProfile', 'declared return type is preserved' );
-is( $SearchCalls[0]->{Where}->{'ZTSMSupportAssignment-Role'}->{EQUALS}, 13, 'CURRENT OBJECT is resolved' );
-is( $SearchCalls[0]->{Where}->{'ZTSMSupportAssignment-Application'}->{EQUALS}, 88, 'ticket context is resolved' );
+is( $Result->{Value}, 59, 'Application.Platform.RoleMap resolves the matching role to SupportProfile' );
 
-my $Ambiguous = Kernel::System::TESSERA::ScriptEngine->new(
-    SearchProvider => sub { return [ { Name => 'One' }, { Name => 'Two' } ]; },
-)->ScriptEvaluate( Script => $Script, Context => { 'CURRENT OBJECT' => 13, TICKET => { 'ZTicket-Application' => 88 } } );
+my $Ambiguous = $Engine->ScriptEvaluate(
+    Script => $Script,
+    Context => {
+        'CURRENT OBJECT' => 13,
+        TICKET => {
+            'ZTicket-Application' => {
+                'ZTSMAppSystem-Platform' => {
+                    RoleMap => [
+                        { GovernanceRole => 13, SupportProfile => 59 },
+                        { GovernanceRole => 13, SupportProfile => 60 },
+                    ],
+                },
+            },
+        },
+    },
+);
 is( $Ambiguous->{Status}, 'UNKNOWN', 'ambiguous resolution fails closed' );
-like( $Ambiguous->{Error}, qr/exactly one SupportAssignment/i, 'author-provided ambiguity reason is returned' );
+like( $Ambiguous->{Error}, qr/must resolve exactly one row; found 2/i, 'RoleMap ambiguity reason is returned' );
 
 my $Unsafe = $Engine->ScriptParse(
     Script => {

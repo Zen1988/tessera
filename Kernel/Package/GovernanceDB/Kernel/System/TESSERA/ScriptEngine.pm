@@ -465,17 +465,48 @@ sub _ScriptValueResolve {
     return { Success => 1, Value => $Param{Context}->{'CURRENT OBJECT'} }
         if uc($Value) eq 'CURRENT OBJECT';
     if ( $Value =~ m{\A\@?TICKET(?:\.|\z)}i ) {
-        my @Path = split m{\.}, $Value;
+        my @Path = split m{\.(?![^\[]*\])}, $Value;
         shift @Path;
         my $Resolved = $Param{Context}->{TICKET};
         return { Success => 0, Status => 'UNKNOWN', Error => "Context value '$Value' is unavailable." }
             if ref $Resolved ne 'HASH';
-        for my $Field (@Path) {
+        for my $Segment (@Path) {
+            my ( $Field, $FilterField, $FilterValue )
+                = $Segment =~ m{\A([^\[]+)(?:\[([^=\]]+)=([^\]]+)\])?\z};
+            return { Success => 0, Status => 'UNKNOWN', Error => "Context path segment '$Segment' is invalid." }
+                if !defined $Field;
             return { Success => 0, Status => 'UNKNOWN', Error => "Context value '$Value' cannot traverse '$Field'." }
                 if ref $Resolved ne 'HASH';
             $Resolved = exists $Resolved->{$Field}
                 ? $Resolved->{$Field}
                 : $Resolved->{'DynamicField_' . $Field};
+            if ( defined $FilterField ) {
+                return { Success => 0, Status => 'UNKNOWN', Error => "Context collection '$Field' is unavailable." }
+                    if ref $Resolved ne 'ARRAY';
+                my $Expected = $Self->_ScriptValueResolve(
+                    Value     => $FilterValue,
+                    Context   => $Param{Context},
+                    Variables => $Param{Variables},
+                );
+                return $Expected if !$Expected->{Success};
+                my @Matching = grep {
+                    ref $_ eq 'HASH'
+                        && do {
+                            my $Candidate = exists $_->{$FilterField}
+                                ? $_->{$FilterField}
+                                : $_->{'DynamicField_' . $FilterField};
+                            $Candidate = $Candidate->[0]
+                                if ref $Candidate eq 'ARRAY' && @{$Candidate} == 1;
+                            !ref $Candidate
+                                && defined $Candidate
+                                && defined $Expected->{Value}
+                                && "$Candidate" eq "$Expected->{Value}";
+                        }
+                } @{$Resolved};
+                return { Success => 0, Status => 'UNKNOWN', Error => "Context filter '$Segment' must resolve exactly one row; found " . scalar(@Matching) . '.' }
+                    if @Matching != 1;
+                $Resolved = $Matching[0];
+            }
             $Resolved = $Resolved->[0] if ref $Resolved eq 'ARRAY' && @{$Resolved} == 1;
             if ( !defined $Resolved ) {
                 return { Success => 1, Value => undef } if $Param{AllowMissing};

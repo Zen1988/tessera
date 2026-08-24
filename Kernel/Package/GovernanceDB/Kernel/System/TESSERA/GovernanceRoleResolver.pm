@@ -58,6 +58,17 @@ sub Resolve {
             DynamicFields      => 1,
             Silent             => 1,
         );
+        if ( ref $Application eq 'HASH' ) {
+            my $PlatformID = _Scalar( $Application->{'DynamicField_ZTSMAppSystem-Platform'} );
+            if ($PlatformID) {
+                my $Platform = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+                    GovernanceObjectID => $PlatformID,
+                    DynamicFields      => 1,
+                    Silent             => 1,
+                );
+                $Application->{'ZTSMAppSystem-Platform'} = $Platform if ref $Platform eq 'HASH';
+            }
+        }
         $Ticket->{'ZTicket-Application'} = $Application if ref $Application eq 'HASH';
     }
 

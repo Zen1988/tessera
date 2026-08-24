@@ -1,6 +1,67 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-20
+Last Updated: 2026-08-24
+
+## 2026-08-24 Platform RoleMap Dynamic Resolution
+
+- Synchronized the fresh-install Application and Platform GovernanceObject bootstrap definitions with the 2026-08-24 authoritative export by adding the multi-value `RoleMap` Set (`GovernanceRole`, `SupportProfile`) and exposing it in both class roles.
+- Replaced the default SupportAssignment-search GovernanceRole script with typed traversal through `TICKET.ZTicket-Application.ZTSMAppSystem-Platform.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile`.
+- Added exact Set-row filtering to the YAML ScriptEngine. Zero or multiple matching RoleMap rows fail closed instead of selecting an arbitrary SupportProfile.
+- The synchronous GovernanceRole resolver now hydrates the Application's referenced Platform before script evaluation.
+- Added `PLATFORM::NETWORK` as the bootstrap example GovernanceRole and assigned it the dynamic resolver script. `INFRA::NETWORK` was explicitly rejected as the example name.
+- Existing classes, roles, and GovernanceRole objects remain administrator-owned because bootstrap is create-only; the updated structure applies automatically to fresh installations and does not mutate existing definitions during upgrade/reinstall.
+- Targeted ScriptEngine and GovernanceRole bootstrap suites pass (66 tests); Perl syntax and bootstrap JSON validation pass.
+- Released as `TESSERA-Base 0.0.34`: 279 Base64 payloads, SHA256 `515D1C6990210D253AE3DBF63CA80A13CC256C1484144F52FFEC7027EBCC4C5A`.
+
+## 2026-08-24 Workbook Import Decision Defaults
+
+- Reduced repetitive workbook-preview interaction for ConfigItem, GovernanceObject, and MELTObject imports while retaining preview-before-commit and per-row override controls.
+- A row with an exact object-number match now defaults to Update. A row without a usable number but with exactly one class/name match defaults to the suggested Update/merge candidate.
+- A row with no number/name identity match defaults to Create. Multiple class/name matches remain unselected and require explicit review because identity is ambiguous.
+- Updates that clear populated fields still default to the explicit `UPDATE_CLEAR` operation and retain the destructive confirmation prompt before commit.
+- Released the GovernanceObject and ConfigItem changes in `TESSERA-Base 0.0.28`, and the MELTObject change in `MELT 0.0.20`.
+- Complete TESSERA suite: 14 files, 349 tests passing. `TESSERA-Base-0.0.28.opm` contains 279 byte-matching payloads with SHA256 `19E6343149338F06F39C4538F85708F91170B738900C8DA595AD09A9DB85597F`. `MELT-0.0.20.opm` contains 114 byte-matching payloads with SHA256 `EA3360B8601C2C9B273A953BBFBF2CD9D43C22FCE781EFBD1F85E722C61F33D8`.
+
+## 2026-08-24 Create-Only Governance Bootstrap
+
+- Tightened the TESSERA-Base GovernanceDB installation, upgrade, and reinstall bootstrap to treat every existing governance/runtime prerequisite as administrator-owned data.
+- General Catalog seed import remains explicitly `CreateOnly`, and catalog identity lookup includes invalid entries (`Valid => 0`), so an existing invalid item is neither duplicated nor reactivated.
+- Aligned the packaged GovernanceObject General Catalog seed with the current authoritative export: fresh installations now create the missing top-level classes `EventSeverity` and `Severity` plus supporting roles `EventSeverity`, `Policy`, and `ZTSM Code`.
+- Preserved the current deprecation model for fresh installations by seeding `Control`, `ControlRecommendation`, and role `ZRM Control` as invalid. Upgrade/reinstall remains create-only and therefore does not change those entries in an existing environment.
+- Existing GovernanceObject class/role definitions, GovernanceRole objects and scripts, Dynamic Fields, ticket states/types, processes (active or inactive), GenericAgent jobs, class preferences, and ConfigItem Control definitions are now left unchanged.
+- Removed installation-time execution of reference Dynamic Field repair, stored reference-value migration, lifecycle-date repair, ConfigItem-to-GovernanceObject copying, branding/dashboard enforcement, asset-frontend enforcement, and Dynamic Field driver SysConfig merging.
+- Rejected approach: merging missing packaged keys into an existing definition or Dynamic Field. Even additive mutation is too intrusive for bootstrap; explicit migrations must be separately scoped and versioned.
+- The create-only bootstrap and General Catalog seed changes are included in `TESSERA-Base 0.0.28`. Focused bootstrap regression suite: 35 tests passing; Perl syntax check passes.
+
+## 2026-08-21 Governance Reference Export Identity Repair — TESSERA-Base 0.0.27
+
+- Corrected populated GovernanceObject workbook exports that could emit an empty cell for a valid reference such as `ZTSMSupportAssignment-SupportProfile` even though the reference remained visible in the object edit form.
+- The shared portable-reference serializer now loads only the referenced GovernanceObject identity (`Class`, `Name`, and `Number`). It no longer recursively loads every Dynamic Field of the referenced object merely to produce `Class: Name`.
+- This aligns GovernanceObject reference serialization with the existing ConfigItem identity-only path, avoids failures caused by unrelated or nested reference backends, and applies to all GovernanceObject and GovernanceObjectVersion reference fields without field-name exceptions.
+- Full suite: 13 files, 314 tests. Built `TESSERA-Base-0.0.27.opm` with 279 byte-matching payloads and SHA256 `D6BD83020F313D2B3AFB83979BA0CC7BCC34D804FF18C6E732E7A653A4F4351C`.
+
+## 2026-08-21 Runtime Reference-Aware Excel Guidance — TESSERA-Base 0.0.26
+
+- Corrected the shared GovernanceObject and ConfigItem workbook formatter so reference Dynamic Fields are detected from the live `ReferencedObjectType` metadata instead of falling through to the generic scalar-input category.
+- All reference drivers now receive a distinct orange header and cell treatment. This includes `ZTSMTechnologyProfile-Parent` and applies without field-name or referenced-object-type allowlists.
+- Preserved separate grey system, blue scalar, green fixed-selection, and amber structured/multi-value categories. The Instructions sheet now documents reference identity independently and retains aligned dictionary freeze/filter rows.
+- Reference classification takes precedence over structured classification, so multi-value references remain visibly identifiable as references while their field type remains available in the field dictionary.
+- Full suite: 13 files, 312 tests. Built `TESSERA-Base-0.0.26.opm` with 279 byte-matching payloads and SHA256 `18264010DD1E2FDD83EBE6E2CE62AF8D016305E25EB403A28588485E03284E17`.
+
+## 2026-08-20 Mapped Platform Field Failure Isolation — TESSERA-Base 0.0.25
+
+- Live 0.0.24 evidence allocated TicketID 295 but never reached the new article boundary. The failure begins only when Apps/Platform Details data exists, confirming the stop occurs while mapped GovernanceObject/Set Dynamic Field backends resolve and persist platform values; empty Apps data bypasses this path.
+- Each post-allocation Ticket Dynamic Field write is now exception-isolated and traced by exact field name before and after `ValueSet`. A broken mapping/backend can no longer abort the whole customer request before its mandatory article is created.
+- Incident iteration initialization, requester-owner snapshotting, and service article-snapshot generation are also isolated. Failures remain explicit error evidence while the base ticket/article path continues.
+- Canonical and Custom runtime-overlay CustomerTicketMessage modules are byte-identical and compile. Targeted submission/version tests pass. Built `TESSERA-Base-0.0.25.opm` with 279 byte-verified payloads, SHA256 `36E37DAD7FF5A0DF7A620E56480C14EBA920B564307514BEE48A0E49247AB523`.
+
+## 2026-08-20 Active Customer Ticket Creation Guard — TESSERA-Base 0.0.24
+
+- Live 0.0.23 evidence reached `TicketCreate` and returned provisional TicketID 294, but the subsequent PurpleBook event proved the ticket was already classified with `StateType=closed`; no ticket remained visible in the agent's active-ticket view.
+- Ordinary customer submission now validates the configured initial state against the live State catalog. It preserves the administrator-owned catalog, rejects closed/removed/merged mappings, and falls back from a misclassified configured default to an existing valid `new` or `open` state without rewriting state records during upgrade.
+- A deliberately invalid service submission retains the explicit `closed invalid-info` path.
+- Added a post-`ArticleCreate` trace that distinguishes a successfully persisted article from article creation failure, closing the previous diagnostic gap between provisional TicketID allocation and redirect.
+- Both canonical and Custom runtime-overlay modules are byte-identical and compile. Targeted submission/version tests pass. Built `TESSERA-Base-0.0.24.opm` with 279 byte-verified payloads, SHA256 `462101E417347E50073457641F02BA3C114D2E4281276CF586772B8D33632CFD`.
 
 ## 2026-08-20 Installation-Aware FAQ Permissions — TESSERA-Base 0.0.22
 
@@ -14236,3 +14297,37 @@ PurpleBook completion must not:
 - Full TESSERA test suite passed: 11 files, 214 tests.
 - Added regression coverage preventing eager same-package GenericAgent autoload.
 - SysConfig XML and SOPM parsing passed; all OPM payloads match source; `git diff --check` passed.
+## 2026-08-20 Customer Ticket Submission and Non-Intrusive Bootstrap — TESSERA-Base 0.0.23
+
+- Fixed customer ticket submission when `Dest` is absent by guarding the queue destination pattern match in both the canonical and deployed runtime-overlay module.
+- Fixed GovernanceObject searches sorted by `Name`: the version table is now joined whenever `SortBy` includes `Name`, preventing the post-create GenericAgent SQL failure on `v.name`.
+- Declared the concrete ObjectManager dependencies on the `PolicyEngine` compatibility facade, removing the runtime dependency-declaration failure.
+- Hardened upgrade behavior: existing ticket states are now administrator-owned and create-only during bootstrap, matching ticket types and API groups. Disabled states remain disabled and existing type/comment values remain untouched.
+- Existing Dynamic Field configuration is merged from the unmodified current configuration, so custom and legacy keys are not removed while missing packaged structure is added. ConfigItem class import remains `ClassExists => 'IGNORE'`, and class/object definition merging keeps existing values authoritative.
+- Added regression coverage for all three submission blockers and explicit bootstrap assertions against destructive SQL, existing state/type rewrites, ConfigItem replacement, and Dynamic Field configuration removal.
+- Validation passed: four affected Perl modules compile; the complete TESSERA suite passes (13 files, 303 tests). Built `TESSERA-Base-0.0.23.opm` with 279 byte-verified payloads, SHA256 `8C7A7C2BF1776813291A431258859F396AB8842EE793E370D3C10EEB233E7415`.
+# 2026-08-24 - Workbook Import Live Default Selection Correction
+
+- Corrected ConfigItem, GovernanceObject, and MELT workbook previews so inferred operations are applied to each dropdown's live DOM value after table rendering.
+- New rows (`CREATE_CANDIDATE` without matches) now visibly default to `Create new`; exact-number and unique class/name matches visibly default to update. Only ambiguous identities remain on `-- review --`.
+- Added regression coverage for the post-render DOM assignment, not merely an HTML `selected` marker.
+- Release builds: `TESSERA-Base 0.0.29` and `MELT 0.0.21`.
+# 2026-08-24 - Workbook Candidate Count Type Correction
+
+- Root cause confirmed: preview JSON can serialize `CandidateCount` as `"0"` or `"1"`; JavaScript truthiness and strict numeric comparison therefore left new and unique-match rows on manual review.
+- All ConfigItem, GovernanceObject, and MELT workbook previews now normalize `CandidateCount` with `parseInt(..., 10)` before deciding the operation.
+- `CREATE_CANDIDATE` plus normalized count zero defaults to `CREATE`; exact-number or unique-name count one defaults to update. Ambiguous matches alone remain manual.
+- Regression coverage now explicitly requires JSON string-count normalization.
+- Release builds: `TESSERA-Base 0.0.30` and `MELT 0.0.22`; 14 test files / 355 tests pass.
+# 2026-08-24 - Workbook Literal Names, Row Isolation, and Unicode Tokens
+
+- GovernanceObject and MELT import identity resolution now uses bound exact-name equality instead of OTOBO search-expression parsing. Valid names such as `C++` retain their symbols and cannot generate malformed logical SQL.
+- ConfigItem, GovernanceObject, and MELT workbook commit loops now isolate unexpected failures per row and return an error summary instead of aborting the entire request.
+- Preview-token hashing now encodes workbook JSON as UTF-8 bytes before SHA-256, fixing CMDB HTTP 500 failures for Unicode workbook content (`Wide character in subroutine entry`).
+- Release builds: `TESSERA-Base 0.0.32` and `MELT 0.0.24`; 14 test files / 368 tests pass.
+# 2026-08-24 - CMDB Virtual Asset Tag Class Boundary
+
+- Fixed `ITSMConfigItem::Document` applying the virtual `ZTAM-AssetTag`/Application `ZTSM-Code` rule globally to every CMDB class.
+- Virtual asset-tag resolution and generation now runs only when the selected class's active definition actually contains `ZTAM-AssetTag`.
+- Product and other classes whose authoritative templates omit `ZTAM-AssetTag` no longer require either an asset tag or Application `ZTSM-Code`.
+- Release build: `TESSERA-Base 0.0.33`; 14 test files / 370 tests pass.
