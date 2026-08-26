@@ -187,7 +187,7 @@ sub Run {
             $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
                 CustomerUserID   => $Self->{UserID},
                 ConfigItemIDs    => \@ObjectIDs,
-                RequireAssetRole => 0,
+                RequireCMDBReadRole => 0,
             )
         };
     }
@@ -210,7 +210,7 @@ sub Run {
                 $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@PickerObjectIDs,
-                    RequireAssetRole => 0,
+                    RequireCMDBReadRole => 0,
                 )
             };
         }

@@ -34,6 +34,13 @@ sub Resolve {
     return { Success => 0, Status => 'UNKNOWN', Error => 'GovernanceRole could not be loaded.' }
         if ref $Role ne 'HASH' || ( $Role->{Class} || '' ) ne 'GovernanceRole';
 
+    my $RoleName = _Scalar( $Role->{'DynamicField_ZTSM-Code'} ) || $Role->{Name} || '';
+    return {
+        Success => 0,
+        Status  => 'RESERVED_CAPABILITY',
+        Error   => 'TESSERA::* GovernanceRoles are reserved system capabilities and cannot execute resolver scripts.',
+    } if uc($RoleName) =~ m{\ATESSERA::};
+
     my $Source = _Scalar( $Role->{'DynamicField_ZTSM-ScriptEngine'} );
     return { Success => 0, Status => 'NO_SCRIPT', Error => 'GovernanceRole has no ZTSM-ScriptEngine value.' }
         if !defined $Source || $Source eq '';

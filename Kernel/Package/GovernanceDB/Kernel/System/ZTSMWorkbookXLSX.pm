@@ -38,6 +38,29 @@ sub CatalogOptions {
     return [ sort { lc($a) cmp lc($b) } grep { defined $_ && $_ ne '' } values %{$Items} ];
 }
 
+sub ImportRowsNormalize {
+    my ( $Self, %Param ) = @_;
+    return $Self->_ImportValueNormalize( Value => $Param{Rows} );
+}
+
+sub _ImportValueNormalize {
+    my ( $Self, %Param ) = @_;
+    my $Value = $Param{Value};
+
+    if ( ref $Value eq 'ARRAY' ) {
+        return [ map { $Self->_ImportValueNormalize( Value => $_ ) } @{$Value} ];
+    }
+    if ( ref $Value eq 'HASH' ) {
+        return { map { $_ => $Self->_ImportValueNormalize( Value => $Value->{$_} ) } keys %{$Value} };
+    }
+    return $Value if !defined $Value || ref $Value;
+
+    # SheetJS can expose Excel's leading text-escape apostrophe. Remove one
+    # unmatched marker while preserving deliberately paired quoted content.
+    $Value =~ s{\A'}{} if $Value !~ m{'\z};
+    return $Value;
+}
+
 sub Build {
     my ( $Self, %Param ) = @_;
     my $Content = '';

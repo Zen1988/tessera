@@ -809,6 +809,44 @@ sub Run {
                     return 1;
                 }
             }
+            elsif (
+                ( $ScriptResult->{ValueType} || '' ) eq 'Collection<GovernanceObject.SupportProfile>'
+                || ( $ScriptResult->{ValueType} || '' ) eq 'Collection<CustomerUser>'
+                )
+            {
+                my $Targets = $ScriptResult->{Value};
+                if ( ref $Targets ne 'ARRAY' ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
+                    return 1;
+                }
+                if ( !@{$Targets} ) {
+                    $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
+                        TicketID => $TicketID, State => 'closed no action', UserID => 1,
+                    );
+                    ZTSMArticleCreate(
+                        TicketID => $TicketID,
+                        Subject  => 'Dynamic assignment completed with no action',
+                        Body     => "The GovernanceRole resolver returned no eligible assignment targets.\n\nNo lifecycle transition was initiated by assignment resolution.",
+                        HistoryComment => 'ZTSM: dynamic assignment returned no targets',
+                        UserID => 1,
+                    );
+                    return 1;
+                }
+                if ( @{$Targets} != 1 ) {
+                    $LogObject->Log(
+                        Priority => 'notice',
+                        Message  => 'ZTSMRoleDirector: multiple typed targets require GenericAgent reconciliation; found '
+                            . scalar(@{$Targets}) . " TicketID=$TicketID",
+                    );
+                    return 1;
+                }
+                if ( $ScriptResult->{ValueType} eq 'Collection<CustomerUser>' ) {
+                    $RequesterOwnerUserID = $Targets->[0];
+                }
+                else {
+                    $ResolvedSupportProfile = $Targets->[0];
+                }
+            }
             else {
                 $LogObject->Log(
                     Priority => 'error',

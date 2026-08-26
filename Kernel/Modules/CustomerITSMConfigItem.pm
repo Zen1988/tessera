@@ -97,9 +97,10 @@ sub Run {
     );
     my $StoredFiltersKey = 'UserStoredFilterColumns-' . $Self->{Action} . '-' . $Filter;
     my $JSONObject       = $Kernel::OM->Get('Kernel::System::JSON');
-    my $StoredFilters    = $JSONObject->Decode(
-        Data => $Preferences{$StoredFiltersKey},
-    );
+    my $StoredFilters = $Preferences{$StoredFiltersKey}
+        ? $JSONObject->Decode( Data => $Preferences{$StoredFiltersKey} )
+        : {};
+    $StoredFilters = {} if !IsHashRefWithData($StoredFilters);
 
     # delete stored filters if needed
     if ( $ParamObject->GetParam( Param => 'DeleteFilters' ) ) {
@@ -181,7 +182,7 @@ sub Run {
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $CustomerEntitlementObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
 
-    if ( !$CustomerEntitlementObject->CustomerHasAssetRole( CustomerUserID => $Self->{UserID} ) ) {
+    if ( !$CustomerEntitlementObject->CustomerHasCMDBReadRole( CustomerUserID => $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -364,7 +365,7 @@ sub Run {
                         ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                         CustomerUserID   => $Self->{UserID},
                         ConfigItemIDs    => \@CountConfigItemIDs,
-                        RequireAssetRole => 1,
+                        RequireCMDBReadRole => 1,
                         ),
                         Filters => \%ZTSMVirtualFilter,
                     )
@@ -524,7 +525,7 @@ sub Run {
                     ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@OriginalViewableConfigItems,
-                    RequireAssetRole => 1,
+                    RequireCMDBReadRole => 1,
                     ),
                     Filters => \%ZTSMVirtualFilter,
                 )
@@ -624,7 +625,7 @@ sub Run {
                     ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@CountConfigItemIDs,
-                    RequireAssetRole => 1,
+                    RequireCMDBReadRole => 1,
                     ),
                     Filters => \%ZTSMVirtualFilter,
                 )

@@ -1186,6 +1186,15 @@ sub Run {
             );
         }
 
+        my $RiskAssessmentOutcome = _NormalizeValue(
+            $ParamObject->GetParam( Param => 'RiskAssessmentOutcome' )
+        );
+        if ( !$Self->_RiskAssessmentOutcomeValid( Outcome => $RiskAssessmentOutcome ) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please select a valid risk assessment outcome.',
+            );
+        }
+
         my $Rows = $Self->_RiskAssessmentRowsFromParam();
         if ( !IsArrayRefWithData($Rows) ) {
             return $LayoutObject->CustomerErrorScreen(
@@ -1209,6 +1218,20 @@ sub Run {
         if ( !$RiskAssessmentSet ) {
             return $LayoutObject->CustomerErrorScreen(
                 Message => 'Could not update risk assessment.',
+            );
+        }
+
+        if (
+            !$Self->_TicketDynamicFieldSet(
+                FieldName => 'RiskAssessmentOutcome',
+                TicketID  => $TicketID,
+                Value     => $RiskAssessmentOutcome,
+                UserID    => $CustomerPanelUserID,
+            )
+            )
+        {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not update the risk assessment outcome.',
             );
         }
 
@@ -1237,7 +1260,8 @@ sub Run {
         }
 
         $ActionConfig->{RiskAssessmentRows} = $Rows;
-        $ActionConfig->{Subject} ||= 'Risk assessment submitted';
+        $ActionConfig->{RiskAssessmentOutcome} = $RiskAssessmentOutcome;
+        $ActionConfig->{Subject} ||= 'Risk assessment submitted: ' . $RiskAssessmentOutcome;
     }
 
     if ( $Ticket{Type} eq 'Diagnosis' && $RuntimeAction eq 'Diagnose' ) {
@@ -1410,6 +1434,7 @@ sub Run {
             TicketID             => $TicketID,
             Ticket               => \%Ticket,
             Rows                 => $ActionConfig->{RiskAssessmentRows},
+            Outcome              => $ActionConfig->{RiskAssessmentOutcome},
             Remarks              => $Remarks,
             Config               => $Config,
             CustomerPanelUserID  => $CustomerPanelUserID,
@@ -5267,10 +5292,14 @@ sub _RiskAssessmentWorkspaceHTML {
     my @Columns = _RiskAssessmentColumns();
     my @Targets = _RiskAssessmentTargetColumns();
     my $Configs = $Self->_RiskAssessmentFieldConfigs(
-        Fields => [ map { $_->{Field} } ( @Columns, @Targets ) ],
+        Fields => [ 'RiskAssessmentOutcome', map { $_->{Field} } ( @Columns, @Targets ) ],
     );
 
-    my $HTML = '<div id="ZTSMRiskAssessmentRows" class="ZTSMRiskAssessmentRows">';
+    my $HTML = $Self->_RiskAssessmentOutcomeHTML(
+        Config => $Configs->{RiskAssessmentOutcome},
+        Value  => $Param{Ticket}->{'DynamicField_RiskAssessmentOutcome'},
+    );
+    $HTML .= '<div id="ZTSMRiskAssessmentRows" class="ZTSMRiskAssessmentRows">';
 
     my $Index = 0;
     for my $Row ( @{$Rows} ) {
@@ -5296,6 +5325,59 @@ sub _RiskAssessmentWorkspaceHTML {
         . '</template>';
 
     return $HTML;
+}
+
+sub _RiskAssessmentOutcomeHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config};
+    return '' if !IsHashRefWithData($Config);
+
+    my $Options = $Self->_RiskAssessmentOptionsFromConfig(
+        Field  => 'RiskAssessmentOutcome',
+        Config => $Config,
+    );
+    return '' if !IsHashRefWithData($Options);
+
+    my $Selected = _NormalizeValue( $Param{Value} ) || '';
+    my $HTML = '<div class="ZTSMRiskAssessmentOutcome">'
+        . '<label class="Mandatory" for="RiskAssessmentOutcome">Risk Assessment Outcome <span class="Marker">*</span></label>'
+        . '<select id="RiskAssessmentOutcome" name="RiskAssessmentOutcome" class="ZTSMRiskAssessmentSelect Validate_Required" required="required">'
+        . '<option value=""></option>';
+
+    for my $Key ( $Self->_RiskAssessmentOptionKeysSorted( Field => 'RiskAssessmentOutcome', Options => $Options ) ) {
+        my $Label = $Options->{$Key};
+        my $IsSelected = $Selected eq $Key || $Selected eq $Label;
+        $HTML .= '<option value="' . _HTML($Key) . '"';
+        $HTML .= ' selected="selected"' if $IsSelected;
+        $HTML .= '>' . _HTML($Label) . '</option>';
+    }
+
+    $HTML .= '</select></div>';
+    return $HTML;
+}
+
+sub _RiskAssessmentOutcomeValid {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} );
+    return if !defined $Outcome || $Outcome eq '';
+
+    my $Configs = $Self->_RiskAssessmentFieldConfigs(
+        Fields => ['RiskAssessmentOutcome'],
+    );
+    my $Config = $Configs->{RiskAssessmentOutcome};
+    return if !IsHashRefWithData($Config);
+
+    my $Options = $Self->_RiskAssessmentOptionsFromConfig(
+        Field  => 'RiskAssessmentOutcome',
+        Config => $Config,
+    );
+    return if !IsHashRefWithData($Options);
+
+    return 1 if exists $Options->{$Outcome};
+    return 1 if grep { defined $_ && $_ eq $Outcome } values %{$Options};
+    return;
 }
 
 sub _RiskAssessmentTemplateHydrateIfEmpty {
@@ -5913,6 +5995,7 @@ sub _RiskAssessmentSummaryArticleBody {
     my $Body = ''
         . '<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1340;">'
         . '<p><strong>Note:</strong> This is a system-generated risk assessment decision summary.</p>'
+        . '<p><strong>Risk Assessment Outcome:</strong> ' . _HTML( $Param{Outcome} || 'Not recorded' ) . '</p>'
         . '<p>Use this summary as guidance for endorsement and approval decision making.</p>'
         . '<table style="width:100%;border-collapse:collapse;">'
         . '<tr>'

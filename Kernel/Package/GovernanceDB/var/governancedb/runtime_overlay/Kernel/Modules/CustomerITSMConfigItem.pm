@@ -182,7 +182,7 @@ sub Run {
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $CustomerEntitlementObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
 
-    if ( !$CustomerEntitlementObject->CustomerHasAssetRole( CustomerUserID => $Self->{UserID} ) ) {
+    if ( !$CustomerEntitlementObject->CustomerHasCMDBReadRole( CustomerUserID => $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -365,7 +365,7 @@ sub Run {
                         ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                         CustomerUserID   => $Self->{UserID},
                         ConfigItemIDs    => \@CountConfigItemIDs,
-                        RequireAssetRole => 1,
+                        RequireCMDBReadRole => 1,
                         ),
                         Filters => \%ZTSMVirtualFilter,
                     )
@@ -525,7 +525,7 @@ sub Run {
                     ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@OriginalViewableConfigItems,
-                    RequireAssetRole => 1,
+                    RequireCMDBReadRole => 1,
                     ),
                     Filters => \%ZTSMVirtualFilter,
                 )
@@ -625,7 +625,7 @@ sub Run {
                     ConfigItemIDs => $CustomerEntitlementObject->ConfigItemIDsFilter(
                     CustomerUserID   => $Self->{UserID},
                     ConfigItemIDs    => \@CountConfigItemIDs,
-                    RequireAssetRole => 1,
+                    RequireCMDBReadRole => 1,
                     ),
                     Filters => \%ZTSMVirtualFilter,
                 )

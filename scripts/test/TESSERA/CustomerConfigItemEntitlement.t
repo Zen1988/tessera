@@ -9,19 +9,19 @@ my %Expected = (
     'Kernel/Package/GovernanceDB/Kernel/System/ITSMConfigItem/CustomerEntitlement.pm' => [
         'DynamicField_ZTAM-ContractEntitlement',
         'DynamicField_ZTSMSupportAssignment-UserAccount',
-        q{RequireRole    => 'ASSET'},
+        q{RequireRole    => 'TESSERA::CMDB::READ'},
     ],
     'Kernel/Modules/AgentReferenceSearch.pm' => [
         'ConfigItemIDsFilter',
-        'RequireAssetRole => 0',
+        'RequireCMDBReadRole => 0',
     ],
     'Kernel/Modules/CustomerITSMConfigItem.pm' => [
-        'CustomerHasAssetRole',
-        'RequireAssetRole => 1',
+        'CustomerHasCMDBReadRole',
+        'RequireCMDBReadRole => 1',
     ],
     'Kernel/Modules/CustomerITSMConfigItemSearch.pm' => [
-        'CustomerHasAssetRole',
-        'RequireAssetRole => 1',
+        'CustomerHasCMDBReadRole',
+        'RequireCMDBReadRole => 1',
     ],
     'Kernel/Modules/CustomerITSMConfigItemZoom.pm' => [
         'ConfigItemDetailAccessCheck',
@@ -61,7 +61,7 @@ open my $BootstrapFH, '<:raw', $Bootstrap or die "Cannot read $Bootstrap: $!";
 local $/;
 my $BootstrapContent = <$BootstrapFH>;
 close $BootstrapFH;
-like( $BootstrapContent, qr/\n\s*ASSET\n/, 'bootstrap idempotently ensures ASSET GovernanceRole' );
+like( $BootstrapContent, qr/Name\s*=>\s*'TESSERA::CMDB::READ'/, 'bootstrap idempotently ensures the customer portal CMDB read capability' );
 like(
     $BootstrapContent,
     qr{my \$TypeID = \$TypeObject->TypeLookup\(.*?next TYPE if \$TypeID;.*?\$TypeObject->TypeAdd\(}s,
@@ -79,7 +79,7 @@ local $/;
 my $SOPMContent = <$SOPMFH>;
 close $SOPMFH;
 like( $SOPMContent, qr{<Name>TESSERA-Base</Name>}, 'package identity is TESSERA-Base' );
-like( $SOPMContent, qr{<Version>0\.0\.27</Version>}, 'TESSERA-Base package version is 0.0.27' );
+like( $SOPMContent, qr{<Version>0\.0\.38</Version>}, 'TESSERA-Base package version is 0.0.38' );
 my $AssetOverviewPath = "$Root/Kernel/Package/GovernanceDB/Kernel/Output/HTML/ITSMConfigItem/ZTSMCustomerOverviewSmall.pm";
 open my $AssetOverviewFH, '<:raw', $AssetOverviewPath or die "Cannot read $AssetOverviewPath: $!";
 local $/;

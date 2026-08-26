@@ -133,6 +133,77 @@ $AssignmentEngine->ScriptEvaluate(
 );
 is_deeply( \@IterationCalls, [''], 'empty iteration is handled as the initial unnumbered iteration' );
 
+my @CollectionCalls;
+my $CollectionEngine = Kernel::System::TESSERA::ScriptEngine->new(
+    TicketProvider => sub {
+        my (%Param) = @_;
+        push @CollectionCalls, $Param{Iteration};
+        return [] if $Param{Iteration} eq '3';
+        return [
+            { TicketID => 61, 'DynamicField_ZIN-Outcome' => 'Not Applicable', 'DynamicField_ZTicket-OwnerGroup' => 91 },
+            { TicketID => 62, 'DynamicField_ZIN-Outcome' => 'Cause Observed', 'DynamicField_ZTicket-OwnerGroup' => 92 },
+            { TicketID => 63, 'DynamicField_ZIN-Outcome' => 'Cause Observed', 'DynamicField_ZTicket-OwnerGroup' => 92 },
+        ];
+    },
+);
+my $CollectionScript = {
+    VERSION => 1,
+    'LET THIS' => 'TICKET',
+    RETURN  => {
+        'TICKET FIELD COLLECTION' => {
+            'TICKET TYPE' => 'Diagnosis',
+            'STATE TYPE'  => 'closed',
+            PARENT => { FIELD => 'ZTicket-Parent', VALUE => 'THIS.ZTicket-Parent' },
+            ITERATION => {
+                FIELD                   => 'ZIN-Iteration',
+                VALUE                   => 'THIS.ZIN-Iteration',
+                'CURRENT FIRST'         => 1,
+                'FALLBACK OFFSET'       => -1,
+                'UNNUMBERED WHEN EMPTY' => 1,
+            },
+            FILTER => { FIELD => 'ZIN-Outcome', IN => [ 'Cause Observed', 'Root Cause Observed' ] },
+            FIELD          => 'ZTicket-OwnerGroup',
+            DISTINCT       => 1,
+            'IGNORE EMPTY' => 1,
+            AS             => 'Collection<GovernanceObject.SupportProfile>',
+        },
+    },
+};
+my $CollectionResult = $CollectionEngine->ScriptEvaluate(
+    Script  => $CollectionScript,
+    Context => { TICKET => { TicketID => 70, 'DynamicField_ZTicket-Parent' => 10, 'DynamicField_ZIN-Iteration' => 3 } },
+);
+is_deeply( \@CollectionCalls, [ 3, 2 ], 'typed ticket collection applies the explicit -1 iteration fallback' );
+is_deeply( $CollectionResult->{Value}, [92], 'typed ticket collection filters outcomes and returns distinct OwnerGroups' );
+is( $CollectionResult->{ValueType}, 'Collection<GovernanceObject.SupportProfile>', 'typed ticket collection preserves its strict collection type' );
+
+@CollectionCalls = ();
+my $NoAffectedEngine = Kernel::System::TESSERA::ScriptEngine->new(
+    TicketProvider => sub {
+        my (%Param) = @_;
+        push @CollectionCalls, $Param{Iteration};
+        return [ { TicketID => 71, 'DynamicField_ZIN-Outcome' => 'Not Applicable', 'DynamicField_ZTicket-OwnerGroup' => 91 } ];
+    },
+);
+my $NoAffected = $NoAffectedEngine->ScriptEvaluate(
+    Script  => $CollectionScript,
+    Context => { TICKET => { TicketID => 72, 'DynamicField_ZTicket-Parent' => 10, 'DynamicField_ZIN-Iteration' => 3 } },
+);
+is_deeply( \@CollectionCalls, [3], 'existing current evidence prevents stale previous-iteration fallback after outcome filtering' );
+is_deeply( $NoAffected->{Value}, [], 'non-affected current evidence returns a successful empty collection' );
+
+@CollectionCalls = ();
+my $Unnumbered = $CollectionEngine->ScriptEvaluate(
+    Script  => $CollectionScript,
+    Context => { TICKET => { TicketID => 73, 'DynamicField_ZTicket-Parent' => 10, 'DynamicField_ZIN-Iteration' => '' } },
+);
+is_deeply( \@CollectionCalls, [''], 'typed ticket collection explicitly searches unnumbered evidence when context iteration is empty' );
+
+my $InvalidThis = $Engine->ScriptParse(
+    Script => { VERSION => 1, 'LET THIS' => 'CMDB', RETURN => { VALUE => 'THIS' } },
+);
+ok( !$InvalidThis->{Success}, 'LET THIS rejects object types that the engine does not yet implement' );
+
 my $FieldAssignments = $Engine->FieldAssignmentsEvaluate(
     Script => {
         VERSION => 1,

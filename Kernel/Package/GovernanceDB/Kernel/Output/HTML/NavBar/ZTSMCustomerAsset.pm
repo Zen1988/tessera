@@ -15,7 +15,7 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    return if $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->CustomerHasAssetRole(
+    return if $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->CustomerHasCMDBReadRole(
         CustomerUserID => $Self->{UserID},
     );
 

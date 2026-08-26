@@ -84,11 +84,18 @@ A ConfigItem outside this boundary must not be returned or disclosed, regardless
 
 Discovery permission and full detail permission are separate concerns.
 
-A CustomerUser who is entitled to discover a ConfigItem may view the ConfigItem's full information only when the matching SupportAssignment uses GovernanceRole `ASSET`.
+A CustomerUser who is entitled to discover a ConfigItem may view the ConfigItem's full information in the customer frontend portal only when the matching SupportAssignment uses GovernanceRole `TESSERA::CMDB::READ`.
 
-`ASSET` is a new GovernanceRole value.
+`TESSERA::CMDB::READ` is the reserved customer-portal CMDB read capability. It does not grant API access or ConfigItem create, update, or delete access. Customer-originated CMDB changes must continue through ticket workflow.
 
-Without the matching `ASSET` SupportAssignment role, entitlement may permit the asset to appear as a selectable or searchable request target, but it must not grant access to the ConfigItem detail view or its full data.
+Without the matching `TESSERA::CMDB::READ` SupportAssignment role, entitlement may permit the ConfigItem to appear as a selectable or searchable request target, but it must not grant access to the customer ConfigItem detail view or its full data.
+
+GovernanceRole namespace contract:
+
+- `PLATFORM::*`, `APPLICATION::*`, and `TICKET::*` may contain ScriptEngine resolution programs.
+- `SUPPORT::*` are assignment classifications and do not contain resolver programs.
+- `TESSERA::*` are reserved system capabilities. They are not customizable resolution roles and must never execute GovernanceRole resolver scripts.
+- Authoritative exported GovernanceRole objects are create-if-missing bootstrap defaults. Existing GovernanceRole objects remain administrator-owned and are not overwritten.
 
 ### Security and Architecture Rules
 

@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use namespace::autoclean;
 use Digest::SHA qw(sha256_hex);
+use Encode qw(encode);
 use Kernel::Language qw(Translatable);
 use Kernel::System::VariableCheck qw(IsHashRefWithData);
 
@@ -49,9 +50,10 @@ sub Run {
         my $Rows = eval { $JSON->Decode( Data => $Payload ) };
         if ( ref $Rows ne 'ARRAY' ) { $Message = Translatable('The workbook payload is invalid.'); $MessageClass = 'Error'; }
         else {
+            $Rows = $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->ImportRowsNormalize( Rows => $Rows );
             $Preview = $Self->_Preview( Rows => $Rows );
-            $Token = sha256_hex($Payload);
-            $Message = Translatable('Preview complete. Select an explicit operation for every row, then commit.');
+            $Token = sha256_hex( encode( 'UTF-8', $Payload ) );
+            $Message = Translatable('Preview complete. New rows default to create; number or unique name matches default to update. Review ambiguous rows, then commit.');
             $MessageClass = 'Notice';
         }
     }
@@ -59,10 +61,11 @@ sub Run {
         my $Rows = eval { $JSON->Decode( Data => $Payload ) };
         my $Decisions = eval { $JSON->Decode( Data => ( $Request->GetParam( Param => 'Decisions' ) || '' ) ) };
         my $TokenParam = $Request->GetParam( Param => 'PreviewToken' ) || '';
-        if ( ref $Rows ne 'ARRAY' || ref $Decisions ne 'ARRAY' || sha256_hex($Payload) ne $TokenParam ) {
+        if ( ref $Rows ne 'ARRAY' || ref $Decisions ne 'ARRAY' || sha256_hex( encode( 'UTF-8', $Payload ) ) ne $TokenParam ) {
             $Message = Translatable('Commit rejected: preview token or workbook payload is invalid.'); $MessageClass = 'Error';
         }
         else {
+            $Rows = $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->ImportRowsNormalize( Rows => $Rows );
             my ( $Created, $Updated, $Skipped, @Errors ) = ( 0, 0, 0 );
             my $Check = $Self->_Preview( Rows => $Rows );
             ROW: for my $Index ( 0 .. $#{$Rows} ) {
@@ -88,14 +91,16 @@ sub Run {
                 else { push @Errors, 'Row ' . ( $Index + 1 ) . ': explicit CREATE, UPDATE, UPDATE_CLEAR, or SKIP is required.'; next ROW; }
                 my %Fields = map { $_ => $Row->{$_} }
                     grep { $_ !~ m{\A(?:Class|Number|Name|Version|ZTSMStatus|Description)\z} } keys %{$Row};
-                my $Result = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->Import(
+                my $Result = eval { $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->Import(
                     Data => { object_type => 'GovernanceObject', class => $Row->{Class}, number => $Row->{Number},
                         name => $Row->{Name}, version => $Row->{Version} || '1', ztsm_status => $Row->{ZTSMStatus},
                         description => $Row->{Description} // '', fields => \%Fields },
                     UserID => $Self->{UserID}, Source => 'Excel Import',
-                );
+                ) };
+                my $Failure = $@ || '';
+                $Failure =~ s{\s+}{ }g;
                 if ( IsHashRefWithData($Result) && $Result->{Success} ) { $Operation eq 'CREATE' ? $Created++ : $Updated++; }
-                else { push @Errors, 'Row ' . ( $Index + 1 ) . ': ' . ( IsHashRefWithData($Result) ? ( $Result->{Message} // 'import failed' ) : 'import failed' ); }
+                else { push @Errors, 'Row ' . ( $Index + 1 ) . ': ' . ( IsHashRefWithData($Result) ? ( $Result->{Message} // 'import failed' ) : ( $Failure || 'import failed' ) ); }
             }
             $Message = "Created $Created, updated $Updated, skipped $Skipped.";
             $Message .= ' Errors: ' . join( ' ', @Errors ) if @Errors;

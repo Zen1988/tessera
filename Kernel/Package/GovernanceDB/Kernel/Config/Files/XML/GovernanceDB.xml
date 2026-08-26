@@ -296,7 +296,7 @@
         </Value>
     </Setting>
     <Setting Name="CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset" Required="0" Valid="1">
-        <Description Translatable="1">Hides the customer asset navigation entry unless the customer has a matching ASSET SupportAssignment.</Description>
+        <Description Translatable="1">Hides the customer CMDB navigation entry unless the customer has a matching TESSERA::CMDB::READ SupportAssignment.</Description>
         <Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
         <Value>
             <Hash>

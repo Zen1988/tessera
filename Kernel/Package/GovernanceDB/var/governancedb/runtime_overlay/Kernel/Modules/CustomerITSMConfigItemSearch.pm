@@ -54,7 +54,7 @@ sub Run {
     my $SessionObject        = $Kernel::OM->Get('Kernel::System::AuthSession');
     my $CustomerEntitlementObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
 
-    if ( !$CustomerEntitlementObject->CustomerHasAssetRole( CustomerUserID => $Self->{UserID} ) ) {
+    if ( !$CustomerEntitlementObject->CustomerHasCMDBReadRole( CustomerUserID => $Self->{UserID} ) ) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -517,7 +517,7 @@ sub Run {
             $CustomerEntitlementObject->ConfigItemIDsFilter(
                 CustomerUserID   => $Self->{UserID},
                 ConfigItemIDs    => \@OriginalViewableConfigItems,
-                RequireAssetRole => 1,
+                RequireCMDBReadRole => 1,
             )
         };
 

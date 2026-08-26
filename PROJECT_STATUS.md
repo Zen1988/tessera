@@ -1,6 +1,42 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-24
+Last Updated: 2026-08-26
+
+## 2026-08-26 First-Class GovernanceRole Workbook Bootstrap
+
+- Adopted `Export/TESSERA-GovernanceObject-GovernanceRole-ATFM.xlsx` as the authoritative GovernanceRole object set: 37 roles with exact names, descriptions, codes, statuses, and exported ScriptEngine programs.
+- Fresh install and upgrade bootstrap now creates each missing role as a complete first-class GovernanceObject and ignores every existing role without inspecting or replacing administrator-authored values.
+- Platform, Application, and Ticket namespaces provide executable reference programs; Support roles remain unscripted assignment classifications.
+- Reserved `TESSERA::*` roles are system capabilities, not customizable resolvers. GovernanceRoleResolver fails closed with `RESERVED_CAPABILITY` before reading a script from that namespace.
+- Replaced the legacy customer portal `ASSET` detail capability with `TESSERA::CMDB::READ`. It governs customer frontend navigation/list/search/export/zoom/attachment reads only; it grants no customer CMDB write or API capability, and changes remain ticket-workflow driven.
+- Complete TESSERA regression suite passes: 15 files and 439 tests. Released as `TESSERA-Base 0.0.38` with 279 Base64 payloads, SHA256 `219A06A2A33B7EF859189058D7FBA1DA9A5253EB55D496ECBC0BCAAC08C51C73`.
+
+## 2026-08-26 Executable Typed GovernanceRole Collection Routing
+
+- Added `docs/architecture/tessera-script-engine.md` as the ScriptEngine KB, covering the programming-object/runtime-object context contract, collection reconciliation, spreadsheet normalization, and executable DIAGNOSE, ASSESSOR, and IMPLEMENTER scripts.
+- Workbook preview and commit now recursively remove one unmatched leading Excel text-escape apostrophe from imported scalar values. Values enclosed by paired apostrophes remain unchanged; regression coverage includes ScriptEngine YAML and nested values.
+- Released the import-boundary fix as `TESSERA-Base 0.0.37`: 279 Base64 payloads, SHA256 `5B63FCC4584AE6B3E3404B4C073B45405DD48FC44AC75982BF9AD2A5A08B7E01`.
+- Replaced the conceptual evidence-routing notation with the executable ScriptEngine operation `RETURN.TICKET FIELD COLLECTION`.
+- Added explicit `LET THIS: TICKET` binding. ChapterDirector/RoleDirector supplies the complete Ticket context as `TICKET`; the script binds it to `THIS`, while `CURRENT OBJECT` remains the GovernanceRole being resolved. Unsupported future bindings fail closed until their typed context adapters exist.
+- The collection operation validates every key and requires an explicit TicketType, parent field/value, iteration field/value, `CURRENT FIRST`, optional numeric `FALLBACK OFFSET: -1`, explicit unnumbered behavior, projected field, and `Collection<...>` return type.
+- Iteration selection occurs before outcome filtering. Existing current-iteration evidence therefore prevents stale previous-iteration assignments from being revived when all current outcomes are non-actionable.
+- Dynamic Field filters resolve stored keys through the installed backend before comparing authored display values.
+- DIAGNOSE now explicitly allowlists `Severity Confirmed`, `Symptom Observed`, `Cause Observed`, and `Root Cause Observed`. ASSESSOR explicitly allowlists the four affected/accepted `RiskAssessmentOutcome` values. ENDORSER, APPROVER, IMPLEMENTER, and VERIFIER intentionally have no outcome filter.
+- Generic Agent RoleDirector now reconciles strict SupportProfile or CustomerUser collections against exact parent/type/BlueBook/BlueLevel/chapter/iteration execution identity: preserve matching assignments, reuse active unmatched tickets, spawn missing siblings, and close active surplus or zero-target tickets as `closed no action` with evidence articles. Closed tickets are preserved as immutable execution evidence.
+- Multi-target fan-out fails closed when `ZTicket-Parent` or `ZTicket-Chapter` identity is unavailable, preventing broad cross-ticket reconciliation.
+- TransitionAction RoleDirector consumes zero/single typed collections; multi-target results are deliberately left for Generic Agent reconciliation.
+- Focused ScriptEngine and GovernanceRole bootstrap/consumer suites cover explicit `-1`, unnumbered evidence, strict collection typing, outcome filtering, stale-fallback prevention, `LET THIS`, consumer recognition, and neutral-close paths.
+- Released as `TESSERA-Base 0.0.36`: 279 Base64 payloads, SHA256 `346D4357DAC28AEAAC02ECC4272EE0F8D637225E8EF0DC171CEB99A2963C3F54`.
+
+## 2026-08-26 Explicit Risk Assessment Outcome
+
+- Adopted the 2026-08-26 authoritative Ticket Dynamic Field export entry `RiskAssessmentOutcome` exactly as named; the unprefixed exported name was not replaced or corrected.
+- Added create-only fresh/upgrade bootstrap support for the exported Dropdown and its five values: `Not Applicable`, `At Risk - Mitigation Control in Place`, `At Risk - Mitigation Planned`, `At Risk - No Mitigation`, and `Risk Accepted`.
+- Added a mandatory Outcome selector above the custom Risk Assessment rows. Submission validates the selected value against the installed Dynamic Field configuration, persists it on the Assessment ticket, includes it in the submission subject, and records it in the system-generated decision-summary article.
+- Confirmed ASSESSOR evidence semantics: select the current iteration when it contains closed Assessment evidence; use the previous iteration only when the current iteration has no Assessment evidence; use unnumbered evidence when the requesting ticket has no iteration. Within the selected evidence iteration, `Not Applicable` returns an empty `Collection<GovernanceObject.SupportProfile>`, while the four affected/accepted outcomes return distinct non-empty `ZTicket-OwnerGroup` SupportProfiles. A current iteration containing only `Not Applicable` must not revive an older affected assignment.
+- The explicit ASSESSOR collection projection remains a ScriptEngine language increment; the current opaque `ASSIGNMENTS` shortcut must not be presented as if it already supports outcome filtering or a strict SupportProfile collection.
+- Added focused static regression coverage for export alignment, bootstrap values, mandatory UI rendering, backend persistence/validation, article evidence, and runtime-overlay synchronization.
+- Released as `TESSERA-Base 0.0.35`: 279 Base64 payloads, SHA256 `A3BBF2E45C945C54337CC9AE4865914209B30F22A81F559C5E3B9959ED1D406C`.
 
 ## 2026-08-24 Platform RoleMap Dynamic Resolution
 

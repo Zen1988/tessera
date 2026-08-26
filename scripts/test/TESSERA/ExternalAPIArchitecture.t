@@ -18,7 +18,11 @@ like( $Bootstrap, qr/TESSERA managed FAQ article could not be created/, 'managed
 like( $Bootstrap, qr/CREATE TABLE ztsm_external_change/, 'generic external staging store is installed' );
 like( $Bootstrap, qr/CREATE TABLE ztsm_external_change_history/, 'staging lifecycle history is immutable and separate' );
 like( $Bootstrap, qr/tessera-cmdb-api.*tessera-melt-api.*tessera-governance-api/s, 'object capability groups are bootstrapped' );
-like( $Bootstrap, qr/CMDBAPI.*MELTAPI.*GovernanceAPI/s, 'API GovernanceRole objects are bootstrapped' );
+like(
+    $Bootstrap,
+    qr/TESSERA::CMDB::API.*TESSERA::TICKET::API.*TESSERA::MELT::API.*TESSERA::GDB::API/s,
+    'reserved API GovernanceRole capability objects are bootstrapped',
+);
 like( $Bootstrap, qr/IntegrationRequest/, 'review ticket type is create-only bootstrapped' );
 
 my $Key = content('Kernel/Package/GovernanceDB/Kernel/System/TESSERA/APIKey.pm');

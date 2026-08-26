@@ -1101,25 +1101,6 @@ sub _TicketTypesEnsure {
 sub _GovernanceRoleObjectsEnsure {
     my ( $Self, %Param ) = @_;
 
-    my @Roles = qw(
-        REQUESTER
-        REQUESTER-DEFAULT
-        REQUESTER-SUPPORT-GROUP
-        DIAGNOSE
-        ASSESSOR
-        ENDORSER
-        APPROVER
-        IMPLEMENTER
-        VERIFIER
-        SUPPORT
-        ASSET
-        ESCALATION
-        PLATFORM::NETWORK
-        CMDBAPI
-        MELTAPI
-        GovernanceAPI
-    );
-
     my $GeneralCatalogObject   = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
@@ -1139,72 +1120,121 @@ sub _GovernanceRoleObjectsEnsure {
 ---
 SCRIPT: Resolve Requester Governance Role
 VERSION: 1
+LET THIS: TICKET
+
 RETURN:
   IF:
-    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    VALUE: THIS.CustomerUser.ZUser-SupportProfile
     IS NOT EMPTY: true
   THEN:
-    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    VALUE: THIS.CustomerUser.ZUser-SupportProfile
     AS: GovernanceObject.SupportProfile
   ELSE:
-    VALUE: TICKET.CustomerUser
+    VALUE: THIS.CustomerUser
     AS: CustomerUser
 END_REQUESTER_SCRIPT
 
-    my $DynamicResolverScript = <<'END_DYNAMIC_RESOLVER_SCRIPT';
+    my $PlatformRoleMapScript = sub {
+        my (%ScriptParam) = @_;
+        return "---\nSCRIPT: $ScriptParam{Title}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  VALUE: THIS.ZTicket-Application.ZTSMAppSystem-Platform.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n";
+    };
+    my $ApplicationRoleMapScript = sub {
+        my (%ScriptParam) = @_;
+        return "---\nSCRIPT: $ScriptParam{Title}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  VALUE: THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n";
+    };
+    my $PlatformOwnerScript = <<'END_PLATFORM_OWNER_SCRIPT';
 ---
-SCRIPT: Resolve Dynamic Governance Role
+SCRIPT: Resolve Platform Owner Organization
 VERSION: 1
-SEARCH:
-  FOR: GovernanceObject.SupportAssignment
-  AS: MATCHING_ASSIGNMENTS
-  WHERE:
-    ZTSMSupportAssignment-Role:
-      EQUALS: CURRENT OBJECT
-    ZTSMSupportAssignment-Application:
-      EQUALS: TICKET.ZTicket-Application
-  LIMIT: 100
+LET THIS: TICKET
+
 RETURN:
-  FROM: MATCHING_ASSIGNMENTS
-  REQUIRE: EXACTLY ONE
-  FIELD: ZTSMSupportAssignment-SupportProfile
-  AS: GovernanceObject.SupportProfile
-END_DYNAMIC_RESOLVER_SCRIPT
+  VALUE: THIS.ZTicket-Application.ZTSMAppSystem-Platform.Owner
+  AS: GovernanceObject.Organization
+END_PLATFORM_OWNER_SCRIPT
+    my $ApplicationOwnerScript = <<'END_APPLICATION_OWNER_SCRIPT';
+---
+SCRIPT: Resolve Application Owner Organization
+VERSION: 1
+LET THIS: TICKET
+
+RETURN:
+  VALUE: THIS.ZTicket-Application.Owner
+  AS: GovernanceObject.Organization
+END_APPLICATION_OWNER_SCRIPT
 
     my %EvidenceTicketTypeFor = (
-        ASSESSOR    => 'Assessment',
-        ENDORSER    => 'Endorsement',
-        APPROVER    => 'Approval',
-        IMPLEMENTER => 'Implementation',
-        VERIFIER    => 'Verification',
+        'TICKET::DIAGNOSE'    => 'Diagnosis',
+        'TICKET::ASSESSOR'    => 'Assessment',
+        'TICKET::ENDORSER'    => 'Endorsement',
+        'TICKET::APPROVER'    => 'Approval',
+        'TICKET::IMPLEMENTER' => 'Implementation',
+        'TICKET::VERIFIER'    => 'Verification',
+    );
+    my %EvidenceTitleFor = (
+        'TICKET::DIAGNOSE'    => 'Resolve DIAGNOSE From Affected Diagnosis Evidence',
+        'TICKET::ASSESSOR'    => 'Resolve ASSESSOR From Affected Assessment Evidence',
+        'TICKET::ENDORSER'    => 'Resolve Endorser From Endorsement Evidence',
+        'TICKET::APPROVER'    => 'Resolve APPROVER From Approval Evidence',
+        'TICKET::IMPLEMENTER' => 'Resolve IMPLEMENTER From Implementation Evidence',
+        'TICKET::VERIFIER'    => 'Resolve VERIFIER From Verification Evidence',
     );
     my %EvidenceScriptFor = map {
         my $Role       = $_;
         my $TicketType = $EvidenceTicketTypeFor{$Role};
-        $Role => "---\nSCRIPT: Resolve $Role From Execution Evidence\nVERSION: 1\nRETURN:\n  ASSIGNMENTS:\n    TICKET TYPE: $TicketType\n    ITERATION: TICKET.ZIN-Iteration\n    FALLBACK: PREVIOUS ITERATION\n  AS: Collection<SupportAssignment>\n";
+        my $Filter = '';
+        if ( $Role eq 'TICKET::DIAGNOSE' ) {
+            $Filter = "    FILTER:\n      FIELD: ZIN-Outcome\n      IN:\n        - Severity Confirmed\n        - Symptom Observed\n        - Cause Observed\n        - Root Cause Observed\n";
+        }
+        elsif ( $Role eq 'TICKET::ASSESSOR' ) {
+            $Filter = "    FILTER:\n      FIELD: RiskAssessmentOutcome\n      IN:\n        - At Risk - Mitigation Control in Place\n        - At Risk - Mitigation Planned\n        - At Risk - No Mitigation\n        - Risk Accepted\n";
+        }
+        $Role => "---\nSCRIPT: $EvidenceTitleFor{$Role}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  TICKET FIELD COLLECTION:\n    TICKET TYPE: $TicketType\n    STATE TYPE: closed\n    PARENT:\n      FIELD: ZTicket-Parent\n      VALUE: THIS.ZTicket-Parent\n    ITERATION:\n      FIELD: ZIN-Iteration\n      VALUE: THIS.ZIN-Iteration\n      CURRENT FIRST: true\n      FALLBACK OFFSET: -1\n      UNNUMBERED WHEN EMPTY: true\n$Filter    FIELD: ZTicket-OwnerGroup\n    DISTINCT: true\n    IGNORE EMPTY: true\n    AS: Collection<GovernanceObject.SupportProfile>\n";
     } keys %EvidenceTicketTypeFor;
 
-    my $SupportScript = <<'END_SUPPORT_SCRIPT';
----
-SCRIPT: Resolve Application Default Support Profile
-VERSION: 1
-RETURN:
-  VALUE: TICKET.ZTicket-Application.ZTSMAppSystem-DefaultApprovalProfile
-  AS: GovernanceObject.SupportProfile
-END_SUPPORT_SCRIPT
-
-    my %ScriptFor = (
-        REQUESTER                 => $RequesterScript,
-        'REQUESTER-DEFAULT'       => $RequesterScript,
-        'REQUESTER-SUPPORT-GROUP' => $RequesterScript,
-        map { $_ => $DynamicResolverScript }
-            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION PLATFORM::NETWORK CMDBAPI MELTAPI GovernanceAPI),
+    my @RoleDefinitions = (
+        { Name => 'PLATFORM::NETWORK', Description => 'Platform Network Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Network' ) },
+        { Name => 'PLATFORM::SERVICE', Description => 'Platform Service Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Service Support' ) },
+        { Name => 'PLATFORM::INFRA', Description => 'Platform Infrastructure Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Infrastructure Support' ) },
+        { Name => 'PLATFORM::SYSTEM', Description => 'Platform System Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform System Support' ) },
+        { Name => 'PLATFORM::HELPDESK', Description => 'Platform Helpdesk Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Helpdesk' ) },
+        { Name => 'PLATFORM::BACKUP', Description => 'Platform Backup Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Backup & Restore Support' ) },
+        { Name => 'PLATFORM::SECURITY', Description => 'Platform Security Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Cyber & Security Support' ) },
+        { Name => 'PLATFORM::DEFAULT', Description => 'Platform Point of Contact', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform default point of contact' ) },
+        { Name => 'PLATFORM::DATABASE', Description => 'Platform Database', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Database Support' ) },
+        { Name => 'PLATFORM::OWNER', Description => 'Platform Owner Organization', Script => $PlatformOwnerScript },
+        { Name => 'PLATFORM::DC', Description => 'Platform DC Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Data Center Support' ) },
+        { Name => 'APPLICATION::OWNER', Description => 'Application Owner Organization', Script => $ApplicationOwnerScript },
+        { Name => 'APPLICATION::SUPPORT', Description => 'Application Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Support' ) },
+        { Name => 'APPLICATION::NETWORK', Description => 'Application Network Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Network Support' ) },
+        { Name => 'APPLICATION::SYSTEM', Description => 'Application System Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application System Support' ) },
+        { Name => 'APPLICATION::DATABASE', Description => 'Application Database Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Database Support' ) },
+        { Name => 'APPLICATION::SECURITY', Description => 'Application Security Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Security Support' ) },
+        { Name => 'APPLICATION::DEFAULT', Description => 'Application Point of Contact', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Point of Contact' ) },
+        { Name => 'TICKET::ENDORSER', Description => 'Ticket Endorser - Who had endorsed the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::ENDORSER'} },
+        { Name => 'TICKET::APPROVER', Description => 'Ticket Approver - Who had approved the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::APPROVER'} },
+        { Name => 'TICKET::ASSESSOR', Description => 'Ticket Assessor - Who had assessed the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::ASSESSOR'} },
+        { Name => 'TICKET::IMPLEMENTER', Description => 'Ticket Implementer - Who had implemented the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::IMPLEMENTER'} },
+        { Name => 'TICKET::REQUESTER', Description => 'Ticket Requester - Who had requested the ticket.', Script => $RequesterScript },
+        { Name => 'TICKET::VERIFIER', Description => 'Ticket Verifier - Who had verified the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::VERIFIER'} },
+        { Name => 'TICKET::DIAGNOSE', Description => 'Ticket Incident Diagnose - Who had verified the ticket in last iteration (current if exist, else iteration -1)', Script => $EvidenceScriptFor{'TICKET::DIAGNOSE'} },
+        { Name => 'SUPPORT::PRIMARY', Description => 'Support - Primary Assignment' },
+        { Name => 'SUPPORT::SECONDARY', Description => 'Support - Secondary Assignment' },
+        { Name => 'SUPPORT::ESCALATION', Description => 'Support - Escalation Assignment' },
+        { Name => 'TESSERA::CMDB::READ', Description => 'Can read CMDB directly from customer portal' },
+        { Name => 'TESSERA::CMDB::API', Description => 'TESSERA CMDB API Access' },
+        { Name => 'TESSERA::CMDB::API::READONLY', Description => 'TESSERA CMDB API - Readonly' },
+        { Name => 'TESSERA::TICKET::API', Description => 'TESSERA Ticket API Access' },
+        { Name => 'TESSERA::TICKET::API::READONLY', Description => 'TESSERA Ticket API - Readonly' },
+        { Name => 'TESSERA::MELT::API', Description => 'TESSERA MELT API Access' },
+        { Name => 'TESSERA::MELT::API::READONLY', Description => 'TESSERA MELT API - Readonly' },
+        { Name => 'TESSERA::GDB::API', Description => 'TESSERA GDB API Access' },
+        { Name => 'TESSERA::GDB::API::READONLY', Description => 'TESSERA GDB API - Readonly' },
     );
-    @ScriptFor{ keys %EvidenceScriptFor } = values %EvidenceScriptFor;
-    $ScriptFor{SUPPORT} = $SupportScript;
 
     ROLE:
-    for my $Role (@Roles) {
+    for my $RoleDefinition (@RoleDefinitions) {
+        my $Role = $RoleDefinition->{Name};
         my $ExistingID = $Self->_GovernanceObjectNameExists(
             ClassID => $ClassID,
             Name    => $Role,
@@ -1226,9 +1256,11 @@ END_SUPPORT_SCRIPT
             ZTSMStatusID => $StatusID,
             Number       => $Number,
             Name         => $Role,
-            Description  => "Default governance role used by TESSERA runtime orchestration.",
-            ( $ScriptFor{$Role}
-                ? ( 'DynamicField_ZTSM-ScriptEngine' => $ScriptFor{$Role} )
+            Description  => $RoleDefinition->{Description},
+            'DynamicField_ZTSM-Code'   => $Role,
+            'DynamicField_ZTSM-Status' => 'Active',
+            ( $RoleDefinition->{Script}
+                ? ( 'DynamicField_ZTSM-ScriptEngine' => $RoleDefinition->{Script} )
                 : () ),
             UserID       => 1,
         );
@@ -1238,15 +1270,25 @@ END_SUPPORT_SCRIPT
                 Message  => "TESSERA bootstrap could not create default GovernanceRole $Role.",
             );
         }
-        elsif ( $ScriptFor{$Role} ) {
-            my $Seeded = $Self->_GovernanceRoleScriptValueSet(
-                GovernanceObjectID => $CreatedID,
-                Value              => $ScriptFor{$Role},
+        else {
+            my %FieldValue = (
+                'ZTSM-Code'   => $Role,
+                'ZTSM-Status' => 'Active',
+                ( $RoleDefinition->{Script} ? ( 'ZTSM-ScriptEngine' => $RoleDefinition->{Script} ) : () ),
             );
-            if ( !$Seeded ) {
+            my @FailedField;
+            for my $FieldName ( sort keys %FieldValue ) {
+                push @FailedField, $FieldName if !$Self->_GovernanceRoleDynamicFieldValueSet(
+                    GovernanceObjectID => $CreatedID,
+                    FieldName          => $FieldName,
+                    Value              => $FieldValue{$FieldName},
+                );
+            }
+            if (@FailedField) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "TESSERA bootstrap created GovernanceRole $Role but could not seed ZTSM-ScriptEngine ($CreatedID).",
+                    Message  => "TESSERA bootstrap created GovernanceRole $Role but could not seed fields "
+                        . join( ', ', @FailedField ) . " ($CreatedID).",
                 );
             }
         }
@@ -1280,10 +1322,11 @@ sub _ExternalAPIGroupsEnsure {
     return 1;
 }
 
-sub _GovernanceRoleScriptValueSet {
+sub _GovernanceRoleDynamicFieldValueSet {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{GovernanceObjectID};
+    return if !$Param{FieldName};
     return if !defined $Param{Value} || $Param{Value} eq '';
 
     my $GovernanceObject = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
@@ -1294,7 +1337,7 @@ sub _GovernanceRoleScriptValueSet {
     return if ref $GovernanceObject ne 'HASH' || !$GovernanceObject->{VersionID};
 
     my $DynamicField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
-        Name => 'ZTSM-ScriptEngine',
+        Name => $Param{FieldName},
     );
     return if ref $DynamicField ne 'HASH' || !$DynamicField->{ID};
 
@@ -1930,6 +1973,29 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     my @Fields = (
+        {
+            Name       => 'RiskAssessmentOutcome',
+            Label      => 'Outcome',
+            FieldOrder => 567,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '',
+                Link         => '',
+                LinkPreview  => '',
+                MultiValue   => 0,
+                PossibleNone => 0,
+                PossibleValues => {
+                    'At Risk - Mitigation Control in Place' => 'At Risk - Mitigation Control in Place',
+                    'At Risk - Mitigation Planned'          => 'At Risk - Mitigation Planned',
+                    'At Risk - No Mitigation'               => 'At Risk - No Mitigation',
+                    'Not Applicable'                        => 'Not Applicable',
+                    'Risk Accepted'                         => 'Risk Accepted',
+                },
+                Tooltip           => 'Risk Assessment Outcome',
+                TranslatableValues => 0,
+                TreeView           => 0,
+            },
+        },
         {
             Name       => 'ZRM-Query',
             Label      => 'Attestation Query',

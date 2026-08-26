@@ -15,14 +15,14 @@ sub new {
     return bless {}, $Type;
 }
 
-sub CustomerHasAssetRole {
+sub CustomerHasCMDBReadRole {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{CustomerUserID};
 
     my $Assignments = $Self->_AssignmentsGet(
         CustomerUserID => $Param{CustomerUserID},
-        RequireRole    => 'ASSET',
+        RequireRole    => 'TESSERA::CMDB::READ',
     );
 
     return @{$Assignments} ? 1 : undef;
@@ -74,7 +74,7 @@ sub ConfigItemDiscoveryCheck {
 
     return $Self->_ConfigItemAccessCheck(
         %Param,
-        RequireAssetRole => 0,
+        RequireCMDBReadRole => 0,
     );
 }
 
@@ -83,7 +83,7 @@ sub ConfigItemDetailAccessCheck {
 
     return $Self->_ConfigItemAccessCheck(
         %Param,
-        RequireAssetRole => 1,
+        RequireCMDBReadRole => 1,
     );
 }
 
@@ -99,7 +99,7 @@ sub ConfigItemIDsFilter {
         next if !$Self->_ConfigItemAccessCheck(
             CustomerUserID  => $Param{CustomerUserID},
             ConfigItemID    => $ConfigItemID,
-            RequireAssetRole => $Param{RequireAssetRole} ? 1 : 0,
+            RequireCMDBReadRole => $Param{RequireCMDBReadRole} ? 1 : 0,
             LogNo           => 1,
         );
         push @Allowed, $ConfigItemID;
@@ -134,7 +134,7 @@ sub _ConfigItemAccessCheck {
     return $Self->ContractEntitlementAccessCheck(
         CustomerUserID       => $Param{CustomerUserID},
         ContractEntitlementID => $Entitlement->{ConfigItemID},
-        RequireRole          => $Param{RequireRole} || ( $Param{RequireAssetRole} ? 'ASSET' : undef ),
+        RequireRole          => $Param{RequireRole} || ( $Param{RequireCMDBReadRole} ? 'TESSERA::CMDB::READ' : undef ),
         LogNo                => $Param{LogNo},
     );
 }
@@ -313,7 +313,7 @@ sub _Denied {
             Message  => 'TESSERA customer ConfigItem access denied: CustomerUserID='
                 . ( $Param{CustomerUserID} || '<missing>' )
                 . ' ConfigItemID=' . ( $Param{ConfigItemID} || '<missing>' )
-                . ' RequireAssetRole=' . ( $Param{RequireAssetRole} ? 1 : 0 ),
+                . ' RequireCMDBReadRole=' . ( $Param{RequireCMDBReadRole} ? 1 : 0 ),
         );
     }
     return;

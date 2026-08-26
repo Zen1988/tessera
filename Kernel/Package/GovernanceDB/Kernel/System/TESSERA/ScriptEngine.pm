@@ -50,6 +50,11 @@ sub ScriptParse {
     return { Success => 0, Status => 'UNKNOWN', Error => "Unsupported TESSERA script version '$Version'." }
         if "$Version" ne '1';
 
+    if ( exists $Script->{'LET THIS'} ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => 'LET THIS currently supports only TICKET.' }
+            if !defined $Script->{'LET THIS'} || uc( $Script->{'LET THIS'} ) ne 'TICKET';
+    }
+
     my $Searches = $Script->{SEARCH};
     $Searches = [$Searches] if ref $Searches eq 'HASH';
     $Searches ||= [];
@@ -88,7 +93,14 @@ sub ScriptEvaluate {
         if ref $Parsed ne 'HASH';
     return $Parsed if !$Parsed->{Success};
 
-    my $Context = ref $Param{Context} eq 'HASH' ? $Param{Context} : {};
+    my $InputContext = ref $Param{Context} eq 'HASH' ? $Param{Context} : {};
+    my $Context = { %{$InputContext} };
+    if ( exists $Parsed->{Script}->{'LET THIS'} ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => 'LET THIS TICKET requires a complete ticket context.' }
+            if ref $Context->{TICKET} ne 'HASH';
+        $Context->{THIS} = $Context->{TICKET};
+        $Context->{'THIS TYPE'} = 'Ticket';
+    }
     my %Variables;
     my @Trace;
 
@@ -280,6 +292,14 @@ sub _ScriptReturn {
         );
     }
 
+    if ( exists $Return->{'TICKET FIELD COLLECTION'} ) {
+        return $Self->_TicketFieldCollectionResolve(
+            Config  => $Return->{'TICKET FIELD COLLECTION'},
+            Context => $Param{Context},
+            UserID  => $Param{UserID} || 1,
+        );
+    }
+
     if ( exists $Return->{IF} ) {
         my $Condition = $Return->{IF};
         return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN IF must be a mapping.' }
@@ -345,6 +365,207 @@ sub _ScriptReturn {
             if !defined $Value || ref $Value;
     }
     return { Success => 1, Status => 'RETURNED', Value => $Value, ValueType => $Return->{AS} || 'Scalar' };
+}
+
+sub _TicketFieldCollectionResolve {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Param{Config};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION must be a mapping.' }
+        if ref $Config ne 'HASH';
+
+    my %Allowed = map { $_ => 1 } (
+        'TICKET TYPE', 'STATE TYPE', 'PARENT', 'ITERATION', 'FILTER',
+        'FIELD', 'DISTINCT', 'IGNORE EMPTY', 'AS',
+    );
+    for my $Key ( keys %{$Config} ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => "TICKET FIELD COLLECTION key '$Key' is unsupported." }
+            if !$Allowed{$Key};
+    }
+
+    my $TicketType = $Config->{'TICKET TYPE'} || '';
+    my $Field      = $Config->{FIELD} || '';
+    my $ValueType  = $Config->{AS} || '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION requires TICKET TYPE.' }
+        if $TicketType eq '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION requires FIELD.' }
+        if $Field eq '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION AS must declare Collection<...>.' }
+        if $ValueType !~ m{\ACollection<[^<>]+>\z};
+
+    my $ContextTicket = $Param{Context}->{TICKET};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION requires ticket context.' }
+        if ref $ContextTicket ne 'HASH';
+
+    my $Parent = $Config->{PARENT};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION PARENT must be a mapping.' }
+        if ref $Parent ne 'HASH' || !$Parent->{FIELD} || !exists $Parent->{VALUE};
+    my $ParentResult = $Self->_ScriptValueResolve(
+        Value   => $Parent->{VALUE},
+        Context => $Param{Context},
+        AllowMissing => 1,
+    );
+    return $ParentResult if !$ParentResult->{Success};
+    my $ParentValue = $ParentResult->{Value};
+    $ParentValue = $ParentValue->[0] if ref $ParentValue eq 'ARRAY' && @{$ParentValue} == 1;
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION cannot resolve parent value.' }
+        if !defined $ParentValue || ref $ParentValue || $ParentValue eq '';
+
+    my $Iteration = $Config->{ITERATION};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION ITERATION must be a mapping.' }
+        if ref $Iteration ne 'HASH' || !$Iteration->{FIELD} || !exists $Iteration->{VALUE};
+    my %AllowedIteration = map { $_ => 1 } ( 'FIELD', 'VALUE', 'CURRENT FIRST', 'FALLBACK OFFSET', 'UNNUMBERED WHEN EMPTY' );
+    for my $Key ( keys %{$Iteration} ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => "TICKET FIELD COLLECTION ITERATION key '$Key' is unsupported." }
+            if !$AllowedIteration{$Key};
+    }
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION requires CURRENT FIRST: true.' }
+        if !$Iteration->{'CURRENT FIRST'};
+    my $Offset = $Iteration->{'FALLBACK OFFSET'};
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION FALLBACK OFFSET must be -1.' }
+        if defined $Offset && "$Offset" ne '-1';
+
+    my $IterationResult = $Self->_ScriptValueResolve(
+        Value   => $Iteration->{VALUE},
+        Context => $Param{Context},
+        AllowMissing => 1,
+    );
+    return $IterationResult if !$IterationResult->{Success};
+    my $IterationValue = $IterationResult->{Value};
+    $IterationValue = $IterationValue->[0] if ref $IterationValue eq 'ARRAY' && @{$IterationValue} == 1;
+    return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION iteration value is structured.' }
+        if ref $IterationValue;
+
+    my @Iterations;
+    if ( defined $IterationValue && $IterationValue ne '' ) {
+        push @Iterations, $IterationValue;
+        push @Iterations, $IterationValue - 1
+            if defined $Offset && $IterationValue =~ m{\A\d+\z} && $IterationValue > 1;
+    }
+    elsif ( $Iteration->{'UNNUMBERED WHEN EMPTY'} ) {
+        push @Iterations, '';
+    }
+    else {
+        return { Success => 1, Status => 'RETURNED', Value => [], ValueType => $ValueType };
+    }
+
+    my $Filter = $Config->{FILTER};
+    if ( defined $Filter ) {
+        return { Success => 0, Status => 'UNKNOWN', Error => 'TICKET FIELD COLLECTION FILTER must be a mapping with FIELD and IN.' }
+            if ref $Filter ne 'HASH' || !$Filter->{FIELD} || ref $Filter->{IN} ne 'ARRAY' || !@{ $Filter->{IN} };
+        for my $Key ( keys %{$Filter} ) {
+            return { Success => 0, Status => 'UNKNOWN', Error => "TICKET FIELD COLLECTION FILTER key '$Key' is unsupported." }
+                if $Key ne 'FIELD' && $Key ne 'IN';
+        }
+    }
+
+    ITERATION:
+    for my $CandidateIteration (@Iterations) {
+        my @Tickets;
+        if ( ref $Self->{TicketProvider} eq 'CODE' ) {
+            my $Provided = eval {
+                $Self->{TicketProvider}->(
+                    TicketType      => $TicketType,
+                    StateType       => $Config->{'STATE TYPE'},
+                    ParentField     => $Parent->{FIELD},
+                    ParentTicketID  => $ParentValue,
+                    IterationField  => $Iteration->{FIELD},
+                    Iteration       => $CandidateIteration,
+                    CurrentTicketID => $ContextTicket->{TicketID},
+                    UserID          => $Param{UserID} || 1,
+                );
+            };
+            return { Success => 0, Status => 'UNKNOWN', Error => "Ticket field collection provider failed: $@" } if $@;
+            return { Success => 0, Status => 'UNKNOWN', Error => 'Ticket field collection provider must return an array reference.' }
+                if ref $Provided ne 'ARRAY';
+            @Tickets = @{$Provided};
+        }
+        else {
+            my %Search = (
+                Result => 'ARRAY',
+                Types  => [$TicketType],
+                "DynamicField_$Parent->{FIELD}" => { Equals => $ParentValue },
+                UserID => $Param{UserID} || 1,
+            );
+            my $StateType = $Config->{'STATE TYPE'};
+            $Search{StateType} = ref $StateType eq 'ARRAY' ? $StateType : [$StateType]
+                if defined $StateType && ( ref $StateType eq 'ARRAY' || $StateType ne '' );
+            $Search{"DynamicField_$Iteration->{FIELD}"} = { Equals => $CandidateIteration }
+                if defined $CandidateIteration && $CandidateIteration ne '';
+            my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+            my @IDs = sort { $a <=> $b } eval { $TicketObject->TicketSearch(%Search) };
+            return { Success => 0, Status => 'UNKNOWN', Error => "Ticket field collection search failed: $@" } if $@;
+            for my $ID (@IDs) {
+                my %Ticket = $TicketObject->TicketGet(
+                    TicketID => $ID, DynamicFields => 1, UserID => $Param{UserID} || 1, Silent => 1,
+                );
+                push @Tickets, \%Ticket if %Ticket;
+            }
+        }
+
+        @Tickets = grep {
+            ref $_ eq 'HASH'
+                && !( $ContextTicket->{TicketID} && ( $_->{TicketID} || 0 ) == $ContextTicket->{TicketID} )
+                && (
+                    $CandidateIteration ne ''
+                    || !defined $_->{"DynamicField_$Iteration->{FIELD}"}
+                    || $_->{"DynamicField_$Iteration->{FIELD}"} eq ''
+                )
+        } @Tickets;
+        next ITERATION if !@Tickets;
+
+        my %AllowedFilter;
+        %AllowedFilter = map { lc( _NormalizeCollectionScalar($_) ) => 1 } @{ $Filter->{IN} }
+            if $Filter;
+        my @Values;
+        my %Seen;
+        TICKET:
+        for my $Ticket (@Tickets) {
+            if ($Filter) {
+                my $Raw = $Ticket->{ $Filter->{FIELD} };
+                $Raw = $Ticket->{ 'DynamicField_' . $Filter->{FIELD} } if !defined $Raw;
+                my $Display = $Self->_TicketDynamicFieldDisplayValue(
+                    Field => $Filter->{FIELD}, Value => $Raw,
+                );
+                next TICKET if !$AllowedFilter{ lc( _NormalizeCollectionScalar($Display) ) };
+            }
+            my $Value = $Ticket->{$Field};
+            $Value = $Ticket->{'DynamicField_' . $Field} if !defined $Value;
+            my @Projected = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+            for my $Item (@Projected) {
+                $Item = _NormalizeCollectionScalar($Item);
+                next if $Config->{'IGNORE EMPTY'} && $Item eq '';
+                next if $Config->{DISTINCT} && $Seen{$Item}++;
+                push @Values, $Item;
+            }
+        }
+        return { Success => 1, Status => 'RETURNED', Value => \@Values, ValueType => $ValueType, Iteration => $CandidateIteration };
+    }
+
+    return { Success => 1, Status => 'RETURNED', Value => [], ValueType => $ValueType };
+}
+
+sub _NormalizeCollectionScalar {
+    my ($Value) = @_;
+    $Value = $Value->[0] if ref $Value eq 'ARRAY' && @{$Value} == 1;
+    return '' if !defined $Value || ref $Value;
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return $Value;
+}
+
+sub _TicketDynamicFieldDisplayValue {
+    my ( $Self, %Param ) = @_;
+    my $Value = _NormalizeCollectionScalar( $Param{Value} );
+    return $Value if $Value eq '' || !$Param{Field};
+    my $Config = eval { $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Param{Field} ) };
+    return $Value if ref $Config ne 'HASH' || !$Config->{ID};
+    my $Display = eval {
+        $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueLookup(
+            DynamicFieldConfig => $Config,
+            Key                => $Value,
+        );
+    };
+    return _NormalizeCollectionScalar($Display) || $Value;
 }
 
 sub _TicketAssignmentsResolve {
@@ -464,10 +685,13 @@ sub _ScriptValueResolve {
     return { Success => 1, Value => $Value } if ref $Value || !defined $Value;
     return { Success => 1, Value => $Param{Context}->{'CURRENT OBJECT'} }
         if uc($Value) eq 'CURRENT OBJECT';
-    if ( $Value =~ m{\A\@?TICKET(?:\.|\z)}i ) {
+    return { Success => 1, Value => $Param{Context}->{THIS} }
+        if uc($Value) eq 'THIS';
+    if ( $Value =~ m{\A\@?(TICKET|THIS)(?:\.|\z)}i ) {
+        my $Root = uc($1);
         my @Path = split m{\.(?![^\[]*\])}, $Value;
         shift @Path;
-        my $Resolved = $Param{Context}->{TICKET};
+        my $Resolved = $Param{Context}->{$Root};
         return { Success => 0, Status => 'UNKNOWN', Error => "Context value '$Value' is unavailable." }
             if ref $Resolved ne 'HASH';
         for my $Segment (@Path) {
