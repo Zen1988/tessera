@@ -44,6 +44,7 @@
                         <span><i class="fa fa-plus-square"></i>[% Translate("Services") | html %]</span></a>
                     </li>
 [% RenderBlockEnd("ActionOverview") %]
+                    <li><a href="[% Env("Baselink") %]Action=AdminServiceWorkbook" class="CallForAction Fullsize Center"><span><i class="fa fa-file-excel-o"></i>[% Translate("Service Excel Import/Export") | html %]</span></a></li>
                 </ul>
             </div>
         </div>

@@ -36,6 +36,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::GovernanceObject::Document',
     'Kernel::System::Queue',
     'Kernel::System::Service',
     'Kernel::System::Type',
@@ -152,6 +153,11 @@ sub ExportServices {
             );
             next DYNAMICFIELD if !defined $Value;
 
+            $Value = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->ValueForExport(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Value              => $Value,
+                UserID             => $UserID,
+            );
             $ServiceData{DynamicFields}->{ $DynamicFieldConfig->{Name} } = $Value;
 
             if ( $DynamicFieldConfig->{Name} eq 'ZService-Field' ) {
@@ -463,10 +469,22 @@ sub ImportServices {
             my $DynamicFieldConfig = $ServiceDynamicFieldByName{$DynamicFieldName};
             next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
 
+            my $PortableValue = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->ValueFromImport(
+                DynamicFieldConfig => $DynamicFieldConfig,
+                Value              => $DynamicFieldValues{$DynamicFieldName},
+                UserID             => $UserID,
+            );
+            if ( !_ServicePortableValueResolved( $DynamicFieldValues{$DynamicFieldName}, $PortableValue ) ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Could not resolve named Service Dynamic Field value for '$DynamicFieldName'.",
+                );
+                return;
+            }
             my $ValueSet = $DynamicFieldBackendObject->ValueSet(
                 DynamicFieldConfig => $DynamicFieldConfig,
                 ObjectID           => $ImportedServiceID,
-                Value              => $DynamicFieldValues{$DynamicFieldName},
+                Value              => $PortableValue,
                 UserID             => $UserID,
             );
             return if !$ValueSet;
@@ -513,6 +531,29 @@ sub _ServiceImportPreferencesExtract {
     }
 
     return %Preferences;
+}
+
+sub _ServicePortableValueResolved {
+    my ( $Input, $Resolved ) = @_;
+
+    return 1 if !defined $Input || ( !ref $Input && $Input eq '' );
+    return defined $Resolved ? 1 : 0 if !ref $Input;
+    return 0 if ref $Resolved ne ref $Input;
+    if ( ref $Input eq 'ARRAY' ) {
+        return 0 if @{$Input} != @{$Resolved};
+        for my $Index ( 0 .. $#{$Input} ) {
+            return 0 if !_ServicePortableValueResolved( $Input->[$Index], $Resolved->[$Index] );
+        }
+        return 1;
+    }
+    if ( ref $Input eq 'HASH' ) {
+        for my $Key ( keys %{$Input} ) {
+            return 0 if !exists $Resolved->{$Key};
+            return 0 if !_ServicePortableValueResolved( $Input->{$Key}, $Resolved->{$Key} );
+        }
+        return 1;
+    }
+    return 1;
 }
 
 sub _ServiceImportCorePreferencesDelete {

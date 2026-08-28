@@ -2671,6 +2671,16 @@ sub _ZTSMRuntimeActions {
             State => 'pending confirmation',
             Types => ['Confirmation'],
         },
+        Resolve => {
+            Label => 'Submit Resolution',
+            State => 'closed successful',
+            Types => ['Resolution'],
+        },
+        Treat => {
+            Label => 'Submit Risk Treatment',
+            State => 'closed successful',
+            Types => ['RiskTreatment'],
+        },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -2837,7 +2847,7 @@ sub _ZTSMRuntimeActions {
     my $ConfirmRuntimeActionAllowed = $OwnerMatchesCurrentUser
         && ( $Ticket->{Type} || '' ) eq 'Confirmation';
 
-    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed || $ConfirmRuntimeActionAllowed;
+    my $ConfiguredRuntimeActionAccess = $AddRequiredSupportProfileAllowed || $FollowUpAllowed || $DiagnosisRuntimeActionAllowed || $ConfirmRuntimeActionAllowed || $OwnerMatchesCurrentUser;
 
     if ( !$ActionAccess && !$FailbackAccess && !$RequesterCancelAccess && !$RequesterPauseAccess && !$ExternalPartyRequestAccess && !$IPCDelegateAccess && !$TakeOwnershipAccess && !$ConfiguredRuntimeActionAccess && !$CompleteTaskAccess ) {
         $Self->_ZTSMRuntimeActionDiagnosticsLog(
@@ -2982,8 +2992,23 @@ sub _ZTSMRuntimeActions {
         elsif ( $Ticket->{Type} eq 'Confirmation' && $Action eq 'Confirm' ) {
             $RuntimeAction{RiskFieldsHTML} = $Self->_ZTSMRuntimeRiskFieldsHTML(
                 Ticket => $Ticket,
-                Fields => ['ZIN-Status'],
+                Fields => ['IncidentState'],
             );
+            $RuntimeAction{RemarksRequired} = 0;
+        }
+        elsif ( $Ticket->{Type} eq 'Resolution' && $Action eq 'Resolve' ) {
+            $RuntimeAction{RiskFieldsHTML} = $Self->_ZTSMRuntimeRiskFieldsHTML(
+                Ticket => $Ticket,
+                Fields => [ 'ZTicket-Result', 'ResolutionOutcome' ],
+            );
+            $RuntimeAction{RemarksRequired} = 0;
+        }
+        elsif ( $Ticket->{Type} eq 'RiskTreatment' && $Action eq 'Treat' ) {
+            $RuntimeAction{RiskFieldsHTML} = $Self->_ZTSMRiskTreatmentHTML( Ticket => $Ticket )
+                . $Self->_ZTSMRuntimeRiskFieldsHTML(
+                    Ticket => $Ticket,
+                    Fields => [ 'TreatmentTicket', 'ZTicket-Result', 'RiskTreatmentOutcome' ],
+                );
             $RuntimeAction{RemarksRequired} = 0;
         }
 
@@ -3464,6 +3489,74 @@ sub _ZTSMTaskOutcomeValues {
         '-1' => 'Failed',
         '-2' => 'Rollback',
     };
+}
+
+sub _ZTSMRiskTreatmentHTML {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return '' if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return '' if !$ParentTicketID;
+
+    my @AssessmentTicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+        Result                              => 'ARRAY',
+        Limit                               => 100,
+        Types                               => ['Assessment'],
+        'DynamicField_ZTicket-Parent'       => { Equals => $ParentTicketID },
+        UserID                              => 1,
+        Permission                          => 'ro',
+    );
+
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $FieldConfig        = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' );
+    return '' if !IsHashRefWithData($FieldConfig);
+
+    my @Plans;
+    for my $AssessmentTicketID (@AssessmentTicketIDs) {
+        my $Rows = $BackendObject->ValueGet(
+            DynamicFieldConfig => $FieldConfig,
+            ObjectID           => $AssessmentTicketID,
+        );
+        push @Plans, _ZTSMRiskPlanValues($Rows);
+    }
+
+    my %Seen;
+    @Plans = grep { defined $_ && $_ ne '' && !$Seen{$_}++ } @Plans;
+    my $PlanText = @Plans
+        ? join "\n\n", map { ( $_ + 1 ) . '. ' . $Plans[$_] } 0 .. $#Plans
+        : 'No approved risk plan was found on a related assessment ticket.';
+
+    my $SafePlan = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Ascii2Html( Text => $PlanText );
+    $SafePlan =~ s{\r?\n}{<br />}g;
+
+    return '<section class="ZTSMRiskTreatmentPlan" aria-labelledby="ZTSMRiskTreatmentPlanHeading">'
+        . '<h3 id="ZTSMRiskTreatmentPlanHeading">Approved Risk Treatment Plan</h3>'
+        . '<p>' . $SafePlan . '</p>'
+        . '</section>';
+}
+
+sub _ZTSMRiskPlanValues {
+    my ($Value) = @_;
+
+    return if !defined $Value;
+    if ( ref $Value eq 'ARRAY' ) {
+        return map { _ZTSMRiskPlanValues($_) } @{$Value};
+    }
+    if ( ref $Value eq 'HASH' ) {
+        my @Plans;
+        for my $Key ( keys %{$Value} ) {
+            if ( $Key eq 'ZRM-RiskPlan' || $Key eq 'DynamicField_ZRM-RiskPlan' ) {
+                push @Plans, _ZTSMNormalizeValue( $Value->{$Key} );
+                next;
+            }
+            push @Plans, _ZTSMRiskPlanValues( $Value->{$Key} );
+        }
+        return @Plans;
+    }
+    return;
 }
 
 sub _ZTSMVerificationCompletionHTML {

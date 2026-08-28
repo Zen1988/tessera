@@ -5809,7 +5809,7 @@ DynamicFields:
     ChangeTime: 2026-08-19 07:28:17
     Config:
       Cols: '100'
-      DefaultValue: SET @MELTObject.Risk.MELT-Control THIS
+      DefaultValue: "VERSION: 1\r\nRETURN:\r\n  AS: MELTObject.Risk\r\n  FIELD ASSIGNMENTS:\r\n    MELT-Control: THIS"
       MultiValue: '0'
       RegExList: []
       Rows: '3'
@@ -7255,7 +7255,7 @@ DynamicFields:
   ZRM-RiskClass:
     ChangeTime: 2026-08-19 07:28:17
     Config:
-      DefaultValue: '@MELTObject.RiskEvent'
+      DefaultValue: '@MELTObject.Risk'
       Link: ''
       LinkPreview: ''
       MultiValue: '0'

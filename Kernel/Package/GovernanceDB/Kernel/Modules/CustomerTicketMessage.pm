@@ -1364,6 +1364,18 @@ sub Run {
         if ( $ServiceExtensionGuard->{CloseInvalidInfo} ) {
             $CreateState = $Self->_ServiceExtensionInvalidInfoCloseStateGet() || $CreateState;
         }
+        else {
+            $CreateState = $Self->_ZTSMActiveCreateStateGet(
+                PreferredState => $CreateState,
+            );
+            if ( !$CreateState ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => 'CustomerTicketMessage cannot create an active ticket because no valid new/open state is configured.',
+                );
+                return $LayoutObject->CustomerError();
+            }
+        }
 
         $ZTSMSubmitTraceLog->(
             Stage       => 'backend-before-ticket-create',
@@ -1407,36 +1419,61 @@ sub Run {
             next DYNAMICFIELD if !$Visibility{"DynamicField_$DynamicFieldConfig->{Name}"};
             next DYNAMICFIELD if $DynamicFieldConfig->{Readonly};
 
-            if ( ( $DynamicFieldConfig->{FieldType} || '' ) =~ m{Date}i || ( $DynamicFieldConfig->{Name} || '' ) eq 'ZTicket-ActualStart' ) {
-                $ZTSMSubmitTraceLog->(
-                    Stage     => 'backend-before-dynamicfield-valueset',
-                    Priority  => 'error',
-                    TicketID  => $TicketID || '',
-                    Field     => $DynamicFieldConfig->{Name} || '',
-                    FieldType => $DynamicFieldConfig->{FieldType} || '',
-                    Value     => $DynamicFieldValues{ $DynamicFieldConfig->{Name} },
-                );
-            }
+            $ZTSMSubmitTraceLog->(
+                Stage     => 'backend-before-dynamicfield-valueset',
+                Priority  => 'notice',
+                TicketID  => $TicketID || '',
+                Field     => $DynamicFieldConfig->{Name} || '',
+                FieldType => $DynamicFieldConfig->{FieldType} || '',
+            );
 
             # set the value
-            my $Success = $BackendObject->ValueSet(
-                DynamicFieldConfig => $DynamicFieldConfig,
-                ObjectID           => $TicketID,
-                Value              => $DynamicFieldValues{ $DynamicFieldConfig->{Name} },
-                UserID             => $ConfigObject->Get('CustomerPanelUserID'),
+            my ( $Success, $ValueSetError );
+            {
+                local $@;
+                $Success = eval {
+                    $BackendObject->ValueSet(
+                        DynamicFieldConfig => $DynamicFieldConfig,
+                        ObjectID           => $TicketID,
+                        Value              => $DynamicFieldValues{ $DynamicFieldConfig->{Name} },
+                        UserID             => $ConfigObject->Get('CustomerPanelUserID'),
+                    );
+                };
+                $ValueSetError = $@;
+            }
+
+            $ZTSMSubmitTraceLog->(
+                Stage    => $ValueSetError ? 'backend-dynamicfield-valueset-exception' : 'backend-after-dynamicfield-valueset',
+                Priority => $ValueSetError ? 'error' : 'notice',
+                TicketID => $TicketID || '',
+                Field    => $DynamicFieldConfig->{Name} || '',
+                Success  => $Success ? 1 : 0,
+                Error    => $ValueSetError || '',
             );
         }
 
-        $Self->_ZTSMIncidentIterationInitialize(
-            TicketID => $TicketID,
-            TypeID   => $GetParam{TypeID},
-            UserID   => $ConfigObject->Get('CustomerPanelUserID'),
+        eval {
+            $Self->_ZTSMIncidentIterationInitialize(
+                TicketID => $TicketID,
+                TypeID   => $GetParam{TypeID},
+                UserID   => $ConfigObject->Get('CustomerPanelUserID'),
+            );
+            1;
+        } or $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "CustomerTicketMessage incident iteration initialization failed for TicketID=$TicketID: $@",
         );
 
-        $Self->_ZTSMRequesterOwnerSnapshotSet(
-            TicketID        => $TicketID,
-            CustomerUserID  => $EffectiveCustomer{UserID},
-            UserID          => $ConfigObject->Get('CustomerPanelUserID'),
+        eval {
+            $Self->_ZTSMRequesterOwnerSnapshotSet(
+                TicketID        => $TicketID,
+                CustomerUserID  => $EffectiveCustomer{UserID},
+                UserID          => $ConfigObject->Get('CustomerPanelUserID'),
+            );
+            1;
+        } or $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "CustomerTicketMessage requester snapshot failed for TicketID=$TicketID: $@",
         );
 
         # if no article has to be created clean up and return
@@ -1462,12 +1499,19 @@ sub Run {
             $MimeType = 'text/html';
         }
 
-        my $ServiceExtensionSnapshot = $Self->_ServiceExtensionArticleSnapshotBuild(
-            DynamicFieldValues => \%DynamicFieldValues,
-            HTMLOutput         => $LayoutObject->{BrowserRichText} ? 1 : 0,
-            LayoutObject       => $LayoutObject,
-            ServiceID          => $GetParam{ServiceID},
-            Visibility         => \%Visibility,
+        my $ServiceExtensionSnapshot;
+        eval {
+            $ServiceExtensionSnapshot = $Self->_ServiceExtensionArticleSnapshotBuild(
+                DynamicFieldValues => \%DynamicFieldValues,
+                HTMLOutput         => $LayoutObject->{BrowserRichText} ? 1 : 0,
+                LayoutObject       => $LayoutObject,
+                ServiceID          => $GetParam{ServiceID},
+                Visibility         => \%Visibility,
+            );
+            1;
+        } or $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "CustomerTicketMessage service article snapshot failed for TicketID=$TicketID: $@",
         );
 
         if ($ServiceExtensionSnapshot) {
@@ -1559,6 +1603,13 @@ sub Run {
                 Body    => $PlainBody,
             },
             Queue => $QueueObject->QueueLookup( QueueID => $NewQueueID ),
+        );
+
+        $ZTSMSubmitTraceLog->(
+            Stage     => $ArticleID ? 'backend-article-created' : 'backend-article-create-failed',
+            Priority  => $ArticleID ? 'notice' : 'error',
+            TicketID  => $TicketID || '',
+            ArticleID => $ArticleID || '',
         );
 
         if ( !$ArticleID ) {
@@ -1688,7 +1739,7 @@ sub Run {
 
         if ( $Config->{'Queue'} ) {
             $GetParam{QueueID} = '';
-            if ( $GetParam{Dest} =~ /^(\d{1,100})\|\|.+?$/ ) {
+            if ( defined $GetParam{Dest} && $GetParam{Dest} =~ /^(\d{1,100})\|\|.+?$/ ) {
                 $GetParam{QueueID} = $1;
             }
         }
@@ -3854,6 +3905,37 @@ sub _ServiceExtensionInvalidInfoCloseStateGet {
         Priority => 'error',
         Message  => "Service dynamic field submission requires state '$StateName', but it is not configured.",
     );
+
+    return;
+}
+
+sub _ZTSMActiveCreateStateGet {
+    my ( $Self, %Param ) = @_;
+
+    my $StateObject = $Kernel::OM->Get('Kernel::System::State');
+    my %Seen;
+
+    CANDIDATE:
+    for my $StateName ( grep { defined $_ && $_ ne '' && !$Seen{$_}++ }
+        ( $Param{PreferredState}, 'new', 'open' ) )
+    {
+        my $StateID = $StateObject->StateLookup( State => $StateName );
+        next CANDIDATE if !$StateID;
+
+        my %State = $StateObject->StateGet( ID => $StateID );
+        next CANDIDATE if !%State || ( $State{ValidID} || 0 ) != 1;
+        next CANDIDATE if ( $State{TypeName} || '' ) !~ m{\A(?:new|open|pending(?:\s+auto|\s+reminder)?)\z}i;
+
+        if ( $StateName ne ( $Param{PreferredState} || '' ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "CustomerTicketMessage ignored inactive/closed default state '"
+                    . ( $Param{PreferredState} || '' )
+                    . "' and selected active state '$StateName'.",
+            );
+        }
+        return $StateName;
+    }
 
     return;
 }

@@ -1,6 +1,39 @@
 # TESSERA Project Status
 
-Last Updated: 2026-08-26
+Last Updated: 2026-08-28
+
+## 2026-08-28 Service Excel Import/Export
+
+- Added a first-class, preview-before-commit Service Excel workspace alongside the existing Service YAML workflow.
+- Excel export and the empty template cover Service identity, named parent Service, Service Type, criticality, validity, destination Queue, allowed Ticket Type names, comments, short/long descriptions, additional portable Service attributes, and every installed Service Dynamic Field.
+- Structured and multi-value values use JSON cells through the shared workbook format. Entity-backed Service Dynamic Fields use the same human-readable export and exact name-to-ID import codec as GovernanceObject and ConfigItem workbooks.
+- Excel import identifies existing Services by exact full name, defaults new names to Create and existing names to Update, exposes populated-field clearing before commit, verifies a payload-bound preview token, and commits through the authoritative `ImportServices` implementation.
+- YAML Service export/import remains available and now also uses the shared name-based Dynamic Field reference codec.
+- All 18 TESSERA test files pass (487 tests). Released as `TESSERA-Base 0.0.41`: 282 byte-matching Base64 payloads, zero mismatches, SHA256 `72FD6B85F6ADA5B424A51E7BAE35FC34765D19D58BDF00F3A76F94E49E6E4986`.
+- Deployment testing exposed that frontend settings introduced only through the runtime-overlay `ServiceCatalog.xml` are not incorporated into `Kernel::Config` during that same package installation. Moved `AdminServiceWorkbook` and its loader registration into authoritative packaged `GovernanceDB.xml`; the runtime overlay retains only its pre-existing registrations.
+- Corrected release `TESSERA-Base 0.0.42`: all 18 test files pass (487 tests), 282 byte-matching Base64 payloads, zero mismatches, SHA256 `D4FD1D1839DA3A81109A701EDDAC9DE39981BCF9F04AE3B92C4FED1E8D85903F`.
+
+## 2026-08-28 Portable Entity Names Across All Exporters
+
+- Established one shared portable Dynamic Field value codec for GovernanceObject and ConfigItem YAML/JSON/workbook exports, legacy Import/Export CSV/spreadsheets, and ticket-table workbook payloads.
+- Entity-backed fields export human-readable names instead of internal numeric IDs, including every declared reference driver and the explicit Service, Agent, Ticket, FAQ, MELTObject, CustomerCompany, CustomerUser, GeneralCatalog, ticket Type, Queue, SLA, WebService, ProcessID, and ActivityID selectors.
+- `ZTSMServiceSupportMap-Service` now exports the Service name rather than its numeric ServiceID. Reference fields nested inside Set rows use the same recursive conversion.
+- Configured option fields export their labels. RichText remains portable authored text. Genuine free text, dates, and numeric business values remain unchanged.
+- Import performs the corresponding exact name-to-ID resolution. Ambiguous or unresolved entity names fail closed, and unresolved numeric entity identifiers are not emitted as misleading portable values.
+- Added `ExportReferenceNames.t` to prevent any YAML, Excel, CSV, legacy Import/Export, or ticket-table path from bypassing the shared name-resolution contract.
+- All 17 TESSERA test files pass (475 tests), and the changed Perl modules compile. Released as `TESSERA-Base 0.0.40`: 279 byte-matching Base64 payloads, zero mismatches, SHA256 `587B9FB5E6971186987C5E9393B74BAD45970BF98F8BCCF8484FDFF8D66EA2E6`.
+
+## 2026-08-28 Resolution, Risk Treatment, and Incident Confirmation Outcomes
+
+- Adopted `Export/Export_DynamicFields_2026-08-27 09_03_31.yml` and `Export/Export_Types_2026-08-27 08_22_37.yml` as the authoritative updated exports.
+- Added idempotent fresh-install/upgrade bootstrap definitions for the exact exported Ticket fields `ResolutionOutcome`, `TreatmentTicket`, `RiskTreatmentOutcome`, and `IncidentState`; `RiskAssessmentOutcome` remains unchanged.
+- Added a first-class Resolution submission workspace using the existing `ZTicket-Result` RichText field followed by `ResolutionOutcome`. The generated child and parent evidence articles preserve formatted work details and the selected outcome.
+- Resolution outcomes `Resolved`, both exported self-recovered outcomes, and `Workaround Applied` complete successfully. Other exported outcomes close the Resolution ticket unsuccessfully, increment the incident iteration (empty begins at iteration 2), synchronize `ZIN-Iteration` onto the parent and all tickets sharing that parent, return the parent to `diagnose`, and restart orchestration through `ZTSMStateBookReader` without overwriting earlier evidence.
+- Added a first-class Risk Treatment workspace. It displays the combined, de-duplicated `ZRM-RiskPlan` values from related Assessment tickets as read-only approved-plan context, then renders the native `TreatmentTicket` autocomplete reference, `ZTicket-Result` RichText work detail, and `RiskTreatmentOutcome`.
+- Risk Treatment evidence snapshots the connected ticket identity and its live ticket state at submission, the formatted work detail, and the treatment outcome on both the execution ticket and parent ledger.
+- Confirmation now uses the exact exported `IncidentState` field. `Resolved`, `Self-Recovered`, and `No Longer Observed` are successful confirmations; `Not Resolved` follows the existing incident diagnosis loopback.
+- Added `RuntimeOutcomeWorkspaces.t` and updated the Risk Assessment export test to select the latest authoritative Dynamic Field export. All 16 TESSERA test files pass (454 tests), and the changed Perl modules compile with repository include paths.
+- Released as `TESSERA-Base 0.0.39`: 279 byte-matching Base64 payloads, zero mismatches, SHA256 `88CA42587BE018ECA9AADBBF0FBDF55E5C8E0EF5874CC4260643A4EEF575D31C`.
 
 ## 2026-08-26 First-Class GovernanceRole Workbook Bootstrap
 

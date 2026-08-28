@@ -77,15 +77,22 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
                 var UpdateValue = Clears.length ? 'UPDATE_CLEAR:' + Update : 'UPDATE:' + Update;
                 var UpdateLabel = Clears.length ? 'Update and clear ' + Clears.length + ' field(s)' : 'Update ' + Update;
                 var Warning = Clears.length ? '<br><strong>Will clear:</strong> ' + Core.App.EscapeHTML(Clears.join(', ')) : '';
-                HTML += '<tr><td>' + (Index + 1) + '</td><td>' + Core.App.EscapeHTML(Row.Class) + '</td><td>' + Core.App.EscapeHTML(Row.Number) + '</td><td>' + Core.App.EscapeHTML(Row.Name) + '</td><td>' + Core.App.EscapeHTML(Row.Status) + Warning + '</td><td>' + Core.App.EscapeHTML(Row.CandidateNumber) + '</td><td><select class="ZTSMWorkbookDecision"><option value="">-- decide --</option><option value="CREATE">Create new</option>' + (Update ? '<option value="' + Core.App.EscapeHTML(UpdateValue) + '">' + Core.App.EscapeHTML(UpdateLabel) + '</option>' : '') + '<option value="SKIP">Skip</option></select></td></tr>';
+                var CandidateCount = parseInt(Row.CandidateCount, 10) || 0;
+                var DefaultUpdate = Update && (Row.Status === 'MATCH_NUMBER' || CandidateCount === 1);
+                var DefaultCreate = !DefaultUpdate && Row.Status === 'CREATE_CANDIDATE' && CandidateCount === 0;
+                var DefaultDecision = DefaultUpdate ? UpdateValue : (DefaultCreate ? 'CREATE' : '');
+                HTML += '<tr><td>' + (Index + 1) + '</td><td>' + Core.App.EscapeHTML(Row.Class) + '</td><td>' + Core.App.EscapeHTML(Row.Number) + '</td><td>' + Core.App.EscapeHTML(Row.Name) + '</td><td>' + Core.App.EscapeHTML(Row.Status) + Warning + '</td><td>' + Core.App.EscapeHTML(Row.CandidateNumber) + '</td><td><select class="ZTSMWorkbookDecision" data-default="' + Core.App.EscapeHTML(DefaultDecision) + '"><option value="">-- review --</option><option value="CREATE">Create new</option>' + (Update ? '<option value="' + Core.App.EscapeHTML(UpdateValue) + '">' + Core.App.EscapeHTML(UpdateLabel) + '</option>' : '') + '<option value="SKIP">Skip</option></select></td></tr>';
             });
             PreviewContainer.innerHTML = HTML + '</tbody></table>';
+            Array.prototype.forEach.call(PreviewContainer.querySelectorAll('.ZTSMWorkbookDecision'), function (Select) {
+                Select.value = Select.getAttribute('data-default') || '';
+            });
         }
 
         if (CommitButton) {
             CommitButton.addEventListener('click', function () {
                 var Decisions = Array.prototype.map.call(document.querySelectorAll('.ZTSMWorkbookDecision'), function (Select) { return Select.value; });
-                if (Decisions.some(function (Value) { return !Value; })) { window.alert('Choose an explicit operation for every row.'); return; }
+                if (Decisions.some(function (Value) { return !Value; })) { window.alert('Review rows with ambiguous identity and choose an operation.'); return; }
                 if (Decisions.some(function (Value) { return Value.indexOf('UPDATE_CLEAR:') === 0; }) && !window.confirm('One or more updates will clear existing populated fields. Continue with these destructive updates?')) { return; }
                 document.getElementById('ZTSMWorkbookDecisions').value = JSON.stringify(Decisions);
                 document.getElementById('ZTSMWorkbookCommitForm').submit();

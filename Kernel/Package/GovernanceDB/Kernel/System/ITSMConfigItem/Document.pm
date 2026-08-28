@@ -13,11 +13,24 @@ use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::CustomerCompany',
+    'Kernel::System::DB',
+    'Kernel::System::DynamicField',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::FAQ',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::GenericInterface::Webservice',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::ITSMConfigItem::Activity',
     'Kernel::System::Log',
+    'Kernel::System::Queue',
+    'Kernel::System::Service',
+    'Kernel::System::SLA',
+    'Kernel::System::Ticket',
+    'Kernel::System::Type',
+    'Kernel::System::User',
+    'Kernel::System::YAML',
 );
 
 sub Export {
@@ -126,8 +139,9 @@ sub Import {
         $ObjectData{ 'DynamicField_' . $Name } = $Value;
     }
 
+    my $UsesAssetTag = IsHashRefWithData( $Definition->{DynamicFieldRef}->{'ZTAM-AssetTag'} );
     my $VirtualAssetCode = '';
-    if ( !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
+    if ( $UsesAssetTag && !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
         my $ApplicationID = $ObjectData{'DynamicField_ZTAM-Application'};
         $ApplicationID = $ApplicationID->[0] if ref $ApplicationID eq 'ARRAY';
         my $Application = $ApplicationID
@@ -156,7 +170,7 @@ sub Import {
 
     # Virtual assets have no physical tag. Generate a stable, readable tag only
     # after the ConfigItem has an ID; the ConfigItemID is the monotonic running ID.
-    if ( $Success && !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
+    if ( $Success && $UsesAssetTag && !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
         my $Pattern = $Kernel::OM->Get('Kernel::Config')->Get('TESSERA::CMDB::VirtualAssetTag###Pattern')
             || '<ZTSM-Code>-VT-<running id>';
         $Pattern =~ s{<ZTSM-Code>}{$VirtualAssetCode}g;

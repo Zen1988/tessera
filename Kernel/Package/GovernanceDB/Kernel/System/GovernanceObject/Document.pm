@@ -24,14 +24,25 @@ use utf8;
 use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData IsStringWithData);
 
 our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::CustomerCompany',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::GenericInterface::Webservice',
     'Kernel::System::HTMLUtils',
+    'Kernel::System::FAQ',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::JSON',
     'Kernel::System::Log',
+    'Kernel::System::Queue',
+    'Kernel::System::Service',
+    'Kernel::System::SLA',
+    'Kernel::System::Ticket',
+    'Kernel::System::Type',
+    'Kernel::System::User',
     'Kernel::System::YAML',
 );
 
@@ -357,7 +368,52 @@ sub _ValueForDocument {
         return $Self->_GeneralCatalogValueForDocument(%Param);
     }
 
+    if ( $DynamicFieldConfig->{FieldType} eq 'Type' ) {
+        return $Kernel::OM->Get('Kernel::System::Type')->TypeLookup( TypeID => $Value );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'Queue' ) {
+        return $Kernel::OM->Get('Kernel::System::Queue')->QueueLookup( QueueID => $Value );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'SLA' ) {
+        return $Kernel::OM->Get('Kernel::System::SLA')->SLALookup( SLAID => $Value );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'WebService' ) {
+        my $Webservice = $Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(
+            ID => $Value,
+        );
+        return IsHashRefWithData($Webservice) ? $Webservice->{Name} : undef;
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'ProcessID' ) {
+        my $Processes = $Kernel::OM->Get('Kernel::Config')->Get('Process') || {};
+        return IsHashRefWithData( $Processes->{$Value} ) ? $Processes->{$Value}->{Name} : undef;
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'ActivityID' ) {
+        my $Activities = $Kernel::OM->Get('Kernel::Config')->Get('Process::Activity') || {};
+        return IsHashRefWithData( $Activities->{$Value} ) ? $Activities->{$Value}->{Name} : undef;
+    }
+
+    if ( IsHashRefWithData( $DynamicFieldConfig->{Config}->{PossibleValues} ) ) {
+        return $Self->_ConfiguredOptionValueForDocument(%Param);
+    }
+
     return $Value;
+}
+
+sub ValueForExport {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->_ValueForDocument(%Param);
+}
+
+sub ValueFromImport {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->_ValueFromDocument(%Param);
 }
 
 sub _RichTextValueForDocument {
@@ -394,7 +450,56 @@ sub _ValueFromDocument {
         return $Self->_GeneralCatalogValueFromDocument(%Param);
     }
 
+    if ( $DynamicFieldConfig->{FieldType} eq 'Type' ) {
+        return $Kernel::OM->Get('Kernel::System::Type')->TypeLookup( Type => $Param{Value} );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'Queue' ) {
+        return $Kernel::OM->Get('Kernel::System::Queue')->QueueLookup( Queue => $Param{Value} );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'SLA' ) {
+        return $Kernel::OM->Get('Kernel::System::SLA')->SLALookup( Name => $Param{Value} );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'WebService' ) {
+        my $Webservice = $Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(
+            Name => $Param{Value},
+        );
+        return IsHashRefWithData($Webservice) ? $Webservice->{ID} : undef;
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'ProcessID' ) {
+        return $Self->_ConfiguredEntityIDFromName(
+            ConfigKey => 'Process',
+            Name      => $Param{Value},
+        );
+    }
+
+    if ( $DynamicFieldConfig->{FieldType} eq 'ActivityID' ) {
+        return $Self->_ConfiguredEntityIDFromName(
+            ConfigKey => 'Process::Activity',
+            Name      => $Param{Value},
+        );
+    }
+
+    if ( IsHashRefWithData( $DynamicFieldConfig->{Config}->{PossibleValues} ) ) {
+        return $Self->_ConfiguredOptionValueFromDocument(%Param);
+    }
+
     return $Param{Value};
+}
+
+sub _ConfiguredEntityIDFromName {
+    my ( $Self, %Param ) = @_;
+
+    my $Entities = $Kernel::OM->Get('Kernel::Config')->Get( $Param{ConfigKey} ) || {};
+    my @IDs = grep {
+        IsHashRefWithData( $Entities->{$_} )
+            && ( $Entities->{$_}->{Name} // '' ) eq $Param{Name}
+    } keys %{$Entities};
+
+    return @IDs == 1 ? $IDs[0] : undef;
 }
 
 sub _ReferenceValueForDocument {
@@ -448,6 +553,52 @@ sub _SingleReferenceForDocument {
         return $Self->_SingleConfigItemReferenceForDocument(%Param);
     }
 
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Service' ) {
+        return $Kernel::OM->Get('Kernel::System::Service')->ServiceLookup(
+            ServiceID => $Param{Value},
+        );
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Agent' ) {
+        return $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+            UserID => $Param{Value}, Silent => 1,
+        );
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Ticket' ) {
+        my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID => $Param{Value}, DynamicFields => 0, UserID => 1, Silent => 1,
+        );
+        return $Ticket{TicketNumber};
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'FAQ' ) {
+        my %FAQ = $Kernel::OM->Get('Kernel::System::FAQ')->FAQGet(
+            ItemID => $Param{Value}, UserID => 1,
+        );
+        return $FAQ{Name} || $FAQ{Title};
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'MELTObject' ) {
+        my $MELTObject = $Kernel::OM->Get('Kernel::System::MELTObject')->MELTObjectGet(
+            MELTObjectID => $Param{Value}, DynamicFields => 0, Silent => 1,
+        );
+        return IsHashRefWithData($MELTObject) ? ( $MELTObject->{Name} || $MELTObject->{Number} ) : undef;
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'CustomerCompany' ) {
+        my %Company = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanyGet(
+            CustomerID => $Param{Value},
+        );
+        return $Company{CustomerCompanyName} || $Company{CustomerID};
+    }
+
+    # CustomerUser reference drivers persist the stable customer login rather than
+    # an internal numeric database identifier, so the stored value is already portable.
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'CustomerUser' ) {
+        return $Param{Value};
+    }
+
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my %GetParam = $Param{DynamicFieldConfig}->{FieldType} eq 'GovernanceObjectVersion'
         ? ( VersionID => $Param{Value} )
@@ -480,6 +631,63 @@ sub _SingleReferenceFromDocument {
 
     if ( $Param{DynamicFieldConfig}->{FieldType} =~ m{\AConfigItem(?:Version)?\z}xms ) {
         return $Self->_ConfigItemReferenceIDResolve(%Param);
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Service' ) {
+        my $ServiceID = $Kernel::OM->Get('Kernel::System::Service')->ServiceLookup(
+            Name => $Value,
+        );
+        if (!$ServiceID) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "Could not resolve Service reference '$Value' for $Param{DynamicFieldConfig}->{Name}.",
+            );
+        }
+        return $ServiceID;
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Agent' ) {
+        return $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+            UserLogin => $Value, Silent => 1,
+        );
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'Ticket' ) {
+        return $Kernel::OM->Get('Kernel::System::Ticket')->TicketIDLookup(
+            TicketNumber => $Value, UserID => 1,
+        );
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'FAQ' ) {
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+        return if !$DBObject->Prepare(
+            SQL => 'SELECT id FROM faq_item WHERE f_name = ?', Bind => [ \$Value ], Limit => 2,
+        );
+        my @IDs;
+        while ( my @Row = $DBObject->FetchrowArray() ) { push @IDs, $Row[0]; }
+        return @IDs == 1 ? $IDs[0] : undef;
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'MELTObject' ) {
+        my @IDs = $Kernel::OM->Get('Kernel::System::MELTObject')->MELTObjectSearch(
+            Result => 'ARRAY', Limit => 2, Name => $Value,
+        );
+        return @IDs == 1 ? $IDs[0] : undef;
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'CustomerUser' ) {
+        return $Value;
+    }
+
+    if ( $Param{DynamicFieldConfig}->{FieldType} eq 'CustomerCompany' ) {
+        my @IDs = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanySearchDetail(
+            CustomerCompanyName => $Value, Valid => 0, Result => 'ARRAY', Limit => 2,
+        );
+        @IDs = grep {
+            my %Company = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanyGet( CustomerID => $_ );
+            ( $Company{CustomerCompanyName} // '' ) eq $Value;
+        } @IDs;
+        return @IDs == 1 ? $IDs[0] : undef;
     }
 
     my $ID = $Self->_GovernanceReferenceIDResolve(
@@ -627,6 +835,38 @@ sub _GeneralCatalogValueForDocument {
     return $Self->_SingleGeneralCatalogValueForDocument(%Param);
 }
 
+sub _ConfiguredOptionValueForDocument {
+    my ( $Self, %Param ) = @_;
+
+    my $Options = $Param{DynamicFieldConfig}->{Config}->{PossibleValues} || {};
+    my $Convert = sub {
+        my ($Value) = @_;
+        return $Value if !defined $Value || ref $Value;
+        return $Options->{$Value} if exists $Options->{$Value};
+        return if $Value =~ m{\A\d+\z};
+        return $Value;
+    };
+
+    return [ map { $Convert->($_) } @{ $Param{Value} } ] if ref $Param{Value} eq 'ARRAY';
+    return $Convert->( $Param{Value} );
+}
+
+sub _ConfiguredOptionValueFromDocument {
+    my ( $Self, %Param ) = @_;
+
+    my $Options = $Param{DynamicFieldConfig}->{Config}->{PossibleValues} || {};
+    my $Convert = sub {
+        my ($Value) = @_;
+        return $Value if !defined $Value || ref $Value;
+        return $Value if exists $Options->{$Value};
+        my @Keys = grep { defined $Options->{$_} && $Options->{$_} eq $Value } keys %{$Options};
+        return @Keys == 1 ? $Keys[0] : undef;
+    };
+
+    return [ map { $Convert->($_) } @{ $Param{Value} } ] if ref $Param{Value} eq 'ARRAY';
+    return $Convert->( $Param{Value} );
+}
+
 sub _GeneralCatalogValueFromDocument {
     my ( $Self, %Param ) = @_;
 
@@ -651,7 +891,7 @@ sub _SingleGeneralCatalogValueForDocument {
         ItemID => $Param{Value},
     );
 
-    return IsHashRefWithData($Item) ? $Item->{Name} : $Param{Value};
+    return IsHashRefWithData($Item) ? $Item->{Name} : undef;
 }
 
 sub _SingleGeneralCatalogValueFromDocument {
@@ -882,13 +1122,22 @@ sub _ExistingObjectIDResolve {
 
     return if !$Param{MatchByName} || !IsStringWithData( $Param{Name} );
 
-    my @IDs = $GovernanceObjectObject->GovernanceObjectSearch(
-        Result   => 'ARRAY',
-        Limit    => 2,
-        ClassIDs => [ $Param{ClassID} ],
-        Name     => $Param{Name},
-        UserID   => 1,
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    return if !$DBObject->Prepare(
+        SQL => <<'SQL',
+SELECT ci.id
+FROM governance_object_item ci
+INNER JOIN governance_object_item_version v ON ci.last_version_id = v.id
+WHERE ci.class_id = ? AND v.name = ?
+SQL
+        Bind  => [ \$Param{ClassID}, \$Param{Name} ],
+        Limit => 2,
     );
+
+    my @IDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @IDs, $Row[0];
+    }
 
     return @IDs == 1 ? $IDs[0] : undef;
 }
@@ -952,6 +1201,7 @@ sub _IsPortableObjectReference {
     return if !IsHashRefWithData($DynamicFieldConfig);
     return 1 if $Self->_IsGovernanceObjectReference($DynamicFieldConfig);
     return 1 if ( $DynamicFieldConfig->{FieldType} // '' ) =~ m{\AConfigItem(?:Version)?\z}xms;
+    return 1 if ( $DynamicFieldConfig->{Config}->{ReferencedObjectType} // '' ) ne '';
     return;
 }
 

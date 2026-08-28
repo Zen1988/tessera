@@ -15,6 +15,7 @@ my %Expected = (
     ],
     'Kernel/Package/GovernanceDB/Kernel/System/ITSMConfigItem/Document.pm' => [
         'ZTAM-AssetTag', 'ZTAM-Application', 'DynamicField_ZTSM-Code', '<running id>',
+        q{$Definition->{DynamicFieldRef}->{'ZTAM-AssetTag'}}, '$UsesAssetTag',
         'description     => $Self->_RichTextValueForDocument',
     ],
     'Kernel/Package/GovernanceDB/Kernel/System/GovernanceObject/Document.pm' => [

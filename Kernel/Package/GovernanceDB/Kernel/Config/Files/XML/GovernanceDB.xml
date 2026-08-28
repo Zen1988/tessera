@@ -583,6 +583,16 @@
         <Description Translatable="1">Preview-first GovernanceObject XLSX import and export.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
         <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Description">GovernanceObject Excel import and export.</Item><Item Key="Title">GovernanceObject Excel Import/Export</Item><Item Key="NavBarName">GovernanceDB</Item></Hash></Item></Value>
     </Setting>
+    <Setting Name="Frontend::Module###AdminServiceWorkbook" Required="0" Valid="1">
+        <Description Translatable="1">Preview-first Service XLSX import and export.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array></Array></Item><Item Key="Group"><Array><Item>admin</Item></Array></Item><Item Key="Description">Service Excel import and export.</Item><Item Key="Title">Service Excel Import/Export</Item><Item Key="NavBarName">Admin</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminServiceWorkbook###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader for Service XLSX import and export.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.Service.Workbook.js</Item></Array></Item></Hash></Value>
+    </Setting>
     <Setting Name="Loader::Module::AgentGovernanceObjectWorkbook###003-GovernanceDB" Required="0" Valid="1">
         <Description Translatable="1">Loader for GovernanceObject XLSX.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
         <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.Object.Workbook.js</Item></Array></Item></Hash></Value>

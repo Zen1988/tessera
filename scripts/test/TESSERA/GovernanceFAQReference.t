@@ -8,10 +8,10 @@ local $/;
 my $Bootstrap = <$BootstrapFH>;
 close $BootstrapFH;
 
-like(
+unlike(
     $Bootstrap,
     qr/_DynamicFieldDriverObjectTypeEnsure\(\s*Driver\s*=>\s*'FAQ',\s*ObjectType\s*=>\s*'GovernanceObject'/s,
-    'FAQ reference driver is enabled for GovernanceObject fields',
+    'bootstrap does not rewrite an existing FAQ Dynamic Field driver setting',
 );
 like(
     $Bootstrap,

@@ -1,0 +1,29 @@
+<div class="MainBox ARIARoleMain">
+    [% BreadcrumbPath = [ { Name => Translate("Services"), Link => Env("Baselink") _ "Action=AdminService" }, { Name => Translate("Excel Import/Export") } ] %]
+    [% INCLUDE "Breadcrumb.tt" Path = BreadcrumbPath %]
+    <div class="WidgetSimple">
+        <div class="Header"><h2>[% Translate("Service Excel Import/Export") | html %]</h2></div>
+        <div class="Content">
+[% IF Data.Message %]<div class="MessageBox [% Data.MessageClass | html %]"><p>[% Data.Message | html %]</p></div>[% END %]
+            <fieldset class="TableLike"><legend>[% Translate("Export") | html %]</legend>
+                <p>[% Translate("Export every Service with named parent, type, queue, ticket types, descriptions, preferences, and Service Dynamic Fields.") | html %]</p>
+                <div class="Field"><button type="button" id="ZTSMServiceWorkbookTemplate" class="CallForAction"><span>[% Translate("Download empty template") | html %]</span></button> <button type="button" id="ZTSMServiceWorkbookExport" class="CallForAction Primary"><span>[% Translate("Export Services") | html %]</span></button></div>
+            </fieldset>
+            <form id="ZTSMServiceWorkbookPreviewForm" action="[% Env("CGIHandle") %]" method="post">
+                <input type="hidden" name="ChallengeToken" value=[% Env("UserChallengeToken") | JSON %]>
+                <input type="hidden" name="Action" value="AdminServiceWorkbook"/><input type="hidden" name="Subaction" value="Preview"/><input type="hidden" id="ZTSMServiceWorkbookPayload" name="WorkbookPayload" value=""/>
+                <fieldset class="TableLike"><legend>[% Translate("Import preview") | html %]</legend>
+                    <label for="ZTSMServiceWorkbookFile">[% Translate("Excel workbook") | html %]:</label><div class="Field"><input id="ZTSMServiceWorkbookFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/></div><div class="Clear"></div>
+                    <div class="Field SpacingTop"><button type="button" id="ZTSMServiceWorkbookPreview" class="CallForAction"><span>[% Translate("Preview XLSX") | html %]</span></button></div>
+                </fieldset>
+            </form>
+[% IF Data.PreviewToken %]
+            <form id="ZTSMServiceWorkbookCommitForm" action="[% Env("CGIHandle") %]" method="post">
+                <input type="hidden" name="ChallengeToken" value=[% Env("UserChallengeToken") | JSON %]>
+                <input type="hidden" name="Action" value="AdminServiceWorkbook"/><input type="hidden" name="Subaction" value="Commit"/><input type="hidden" name="WorkbookPayload" value="[% Data.WorkbookPayload | html %]"/><input type="hidden" name="PreviewToken" value="[% Data.PreviewToken | html %]"/><input type="hidden" id="ZTSMServiceWorkbookDecisions" name="Decisions" value=""/>
+                <div id="ZTSMServiceWorkbookPreviewTable"></div><button type="button" id="ZTSMServiceWorkbookCommit" class="CallForAction Primary"><span>[% Translate("Commit selected operations") | html %]</span></button>
+            </form>
+[% END %]
+        </div>
+    </div>
+</div>

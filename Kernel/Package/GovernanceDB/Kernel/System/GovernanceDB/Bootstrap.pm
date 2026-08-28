@@ -1997,6 +1997,60 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             },
         },
         {
+            Name       => 'ResolutionOutcome',
+            Label      => 'Outcome',
+            FieldOrder => 568,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'Partially Resolved', 'Resolved', 'Self-Recovered - Reported / No Action',
+                    'Self-Recovered - System Detected', 'Transferred', 'Unresolved', 'Workaround Applied',
+                ) },
+                Tooltip => 'Resolution Outcome', TranslatableValues => 0, TreeView => 0,
+            },
+        },
+        {
+            Name       => 'TreatmentTicket',
+            Label      => 'Risk Treatment Ticket',
+            FieldOrder => 569,
+            FieldType  => 'Ticket',
+            Config     => {
+                DisplayType => '', EditFieldMode => 'AutoComplete', ImportSearchAttribute => '',
+                LinkDirection => 'ReferencingIsSource', LinkObjectForReferenceType => '', MultiValue => 0,
+                Multiselect => 0, PossibleNone => 1, Queue => [], ReferenceFilterList => [],
+                ReferencedObjectType => 'Ticket', SearchAttribute => '', TicketType => [],
+                Tooltip => 'Risk Treatment - Ticket', TreeView => 0,
+            },
+        },
+        {
+            Name       => 'RiskTreatmentOutcome',
+            Label      => 'Outcome',
+            FieldOrder => 570,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'Accepted', 'Avoided', 'Cancelled / No Longer Applicable', 'Mitigated',
+                    'Partially Treated', 'Remediated', 'Transferred', 'Unsuccessful',
+                ) },
+                Tooltip => 'Risk Treatment Outcome', TranslatableValues => 0, TreeView => 0,
+            },
+        },
+        {
+            Name       => 'IncidentState',
+            Label      => 'Incident State',
+            FieldOrder => 571,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'No Longer Observed', 'Not Resolved', 'Resolved', 'Self-Recovered',
+                ) },
+                Tooltip => 'Incident State', TranslatableValues => 0, TreeView => 0,
+            },
+        },
+        {
             Name       => 'ZRM-Query',
             Label      => 'Attestation Query',
             FieldOrder => 530,

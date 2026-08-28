@@ -38,6 +38,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::GovernanceObject',
+    'Kernel::System::GovernanceObject::Document',
     'Kernel::System::ImportExport',
     'Kernel::System::JSON',
     'Kernel::System::Log',
@@ -782,6 +783,7 @@ sub ExportDataGet {
             # The formatting depends on the config of the dynamic field, which is not really nice.
             my $IsMultiValue = $FieldConfig->{Config}->{MultiValue} ? 2 : 0;
             my $IsSet        = ( $FieldConfig->{FieldType} // '' ) eq 'Set';
+            my $ExportFieldConfig = $FieldConfig;
 
             # handle special cases
             my $ActualValue = eval {
@@ -810,6 +812,7 @@ sub ExportDataGet {
                 my $InnerFieldConfig = $InnerFieldItem->{Definition};
 
                 next MAPPINGOBJECT unless IsHashRefWithData($InnerFieldConfig);
+                $ExportFieldConfig = $InnerFieldConfig;
 
                 # set value
                 my $InnerValue = $ActualValue->{$InnerDF};
@@ -839,6 +842,12 @@ sub ExportDataGet {
                 };
                 $ActualValue = $ActualInnerValue;
             }
+
+            $ActualValue = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->ValueForExport(
+                DynamicFieldConfig => $ExportFieldConfig,
+                Value              => $ActualValue,
+                UserID             => 1,
+            );
 
             # This is relevant for e.g. the CSV backend which can't transparently serialize data structures.
             # References are JSONified. This happens when:

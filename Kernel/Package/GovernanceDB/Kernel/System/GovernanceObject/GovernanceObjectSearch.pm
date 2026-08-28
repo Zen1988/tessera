@@ -955,6 +955,10 @@ sub GovernanceObjectSearch {
 sub _VersionSearchIndexSQLJoinNeeded {
     my ( $Self, %Param ) = @_;
 
+    my $SortBy = $Param{SearchParams}{SortBy};
+    my @SortBy = ref $SortBy eq 'ARRAY' ? @{$SortBy} : ( defined $SortBy ? ($SortBy) : () );
+    return 1 if grep { defined $_ && $_ eq 'Name' } @SortBy;
+
     for my $Attribute (qw/Name ZTSMStatuss ZTSMStatusIDs/) {
         return 1 if $Param{SearchParams}{$Attribute};
     }

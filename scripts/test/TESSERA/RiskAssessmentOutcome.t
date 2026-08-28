@@ -13,7 +13,9 @@ sub Slurp {
     return <$FH>;
 }
 
-my $Export = Slurp( File::Spec->catfile( $Root, 'Export', 'Export_DynamicFields_2026-08-26 05_11_04.yml' ) );
+my @Exports = sort glob File::Spec->catfile( $Root, 'Export', 'Export_DynamicFields_*.yml' );
+die 'No authoritative Dynamic Field export found' if !@Exports;
+my $Export = Slurp( $Exports[-1] );
 my $Bootstrap = Slurp( File::Spec->catfile( $Root, 'Kernel', 'Package', 'GovernanceDB', 'Kernel', 'System', 'GovernanceDB', 'Bootstrap.pm' ) );
 my $Action = Slurp( File::Spec->catfile( $Root, 'Kernel', 'Package', 'GovernanceDB', 'Kernel', 'Modules', 'CustomerTicketZTSMAction.pm' ) );
 my $OverlayAction = Slurp( File::Spec->catfile( $Root, 'Kernel', 'Package', 'GovernanceDB', 'var', 'governancedb', 'runtime_overlay', 'Kernel', 'Modules', 'CustomerTicketZTSMAction.pm' ) );

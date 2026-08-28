@@ -231,7 +231,7 @@ classes:
   - comment: Control
     name: Control
     preferences: {}
-    valid: valid
+    valid: invalid
   - comment: ControlObjective
     name: ControlObjective
     preferences:
@@ -256,7 +256,7 @@ classes:
   - comment: ControlRecommendation
     name: ControlRecommendation
     preferences: {}
-    valid: valid
+    valid: invalid
   - comment: System Criticality
     name: CriticalityProfile
     preferences:
@@ -315,6 +315,26 @@ classes:
       VersionTrigger:
       - Name
       - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: EventSeverity
+    preferences:
+      Categories:
+      - All
+      - Governance
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
       - DefinitionUpdate
     valid: valid
   - comment: Exposure Profile
@@ -569,6 +589,28 @@ classes:
       - DefinitionUpdate
     valid: valid
   - comment: ''
+    name: Severity
+    preferences:
+      Categories:
+      - All
+      - Service
+      NameModule:
+      - ''
+      NumberModule:
+      - GOID
+      Permission:
+      - '17'
+      - '2'
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - Name
+      - Description
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
     name: SupportAssignment
     preferences:
       Categories:
@@ -695,11 +737,19 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
+    name: EventSeverity
+    preferences: {}
+    valid: valid
+  - comment: ''
     name: GovernanceDB Backlinks
     preferences: {}
     valid: valid
   - comment: ''
     name: GovernanceDB Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Policy
     preferences: {}
     valid: valid
   - comment: ZRM Catalog
@@ -709,7 +759,7 @@ classes:
   - comment: ZRM Control
     name: ZRM Control
     preferences: {}
-    valid: valid
+    valid: invalid
   - comment: ZRM Control Objective
     name: ZRM ControlObjective
     preferences: {}
@@ -740,6 +790,10 @@ classes:
     valid: valid
   - comment: ''
     name: ZTSM Blue Book
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ZTSM Code
     preferences: {}
     valid: valid
   - comment: ''

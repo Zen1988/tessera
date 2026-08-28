@@ -1358,6 +1358,80 @@ sub Run {
         $ActionConfig->{ContentType}       = 'text/html; charset=utf-8';
     }
 
+    if ( $Ticket{Type} eq 'Resolution' && $RuntimeAction eq 'Resolve' ) {
+        if ( !$Self->_AssessmentRiskFieldsSet(
+            Fields   => [ 'ZTicket-Result', 'ResolutionOutcome' ],
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        ) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please complete the resolution details and outcome.',
+            );
+        }
+
+        my %UpdatedTicket = $TicketObject->TicketGet(
+            TicketID => $TicketID, DynamicFields => 1, UserID => $CustomerPanelUserID, Silent => 1,
+        );
+        my $Outcome = _NormalizeValue( $UpdatedTicket{'DynamicField_ResolutionOutcome'} ) || '';
+        my $Details = $UpdatedTicket{'DynamicField_ZTicket-Result'} || '';
+        my %Successful = map { $_ => 1 } (
+            'Resolved', 'Self-Recovered - Reported / No Action',
+            'Self-Recovered - System Detected', 'Workaround Applied',
+        );
+        my $Resolved = $Successful{$Outcome} ? 1 : 0;
+
+        $ActionConfig->{State}       = $Resolved ? 'closed successful' : 'closed unsuccessful';
+        $ActionConfig->{Subject}     = 'Resolution submitted: ' . $Outcome;
+        $ActionConfig->{Body}        = $Self->_OutcomeEvidenceArticleBody(
+            Heading => 'Resolution Evidence', Details => $Details,
+            Rows => [ [ 'Resolution Outcome', $Outcome ] ],
+        );
+        $ActionConfig->{ContentType} = 'text/html; charset=utf-8';
+        if ( !$Resolved ) {
+            $ActionConfig->{ResolutionLoopbackApply} = {
+                Ticket => \%UpdatedTicket, TicketObject => $TicketObject,
+                CustomerPanelUserID => $CustomerPanelUserID, Config => $Config, Outcome => $Outcome,
+            };
+            $ActionConfig->{SkipChapterDirector} = 1;
+        }
+    }
+
+    if ( $Ticket{Type} eq 'RiskTreatment' && $RuntimeAction eq 'Treat' ) {
+        if ( !$Self->_AssessmentRiskFieldsSet(
+            Fields   => [ 'TreatmentTicket', 'ZTicket-Result', 'RiskTreatmentOutcome' ],
+            TicketID => $TicketID,
+            UserID   => $CustomerPanelUserID,
+        ) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Please complete the treatment ticket, work details, and outcome.',
+            );
+        }
+
+        my %UpdatedTicket = $TicketObject->TicketGet(
+            TicketID => $TicketID, DynamicFields => 1, UserID => $CustomerPanelUserID, Silent => 1,
+        );
+        my $Outcome = _NormalizeValue( $UpdatedTicket{'DynamicField_RiskTreatmentOutcome'} ) || '';
+        my $Details = $UpdatedTicket{'DynamicField_ZTicket-Result'} || '';
+        my $TreatmentTicketID = _NormalizeValue( $UpdatedTicket{'DynamicField_TreatmentTicket'} );
+        my %TreatmentTicket = $TreatmentTicketID ? $TicketObject->TicketGet(
+            TicketID => $TreatmentTicketID, DynamicFields => 0, UserID => 1, Silent => 1,
+        ) : ();
+        my $TreatmentStatus = IsHashRefWithData( \%TreatmentTicket )
+            ? ( $TreatmentTicket{State} || $TreatmentTicket{StateType} || 'Unknown' )
+            : 'Referenced ticket unavailable';
+
+        $ActionConfig->{Subject} = 'Risk treatment submitted: ' . $Outcome;
+        $ActionConfig->{Body} = $Self->_OutcomeEvidenceArticleBody(
+            Heading => 'Risk Treatment Evidence', Details => $Details,
+            Rows => [
+                [ 'Treatment Ticket', $Self->_TicketSummary( Ticket => \%TreatmentTicket ) || $TreatmentTicketID || 'Not recorded' ],
+                [ 'Connected Ticket Status at Submission', $TreatmentStatus ],
+                [ 'Risk Treatment Outcome', $Outcome ],
+            ],
+        );
+        $ActionConfig->{ContentType} = 'text/html; charset=utf-8';
+    }
+
     if ( $Ticket{Type} eq 'Confirmation' && $RuntimeAction eq 'Confirm' ) {
         my %Confirmation = $Self->_ConfirmationFieldsSet(
             TicketID => $TicketID,
@@ -1372,7 +1446,8 @@ sub Run {
 
         my $ConfirmationStatus = lc( $Confirmation{Status} || '' );
         my $Resolved = $ConfirmationStatus eq 'resolved'
-            || $ConfirmationStatus eq 'auto-confirmed';
+            || $ConfirmationStatus eq 'self-recovered'
+            || $ConfirmationStatus eq 'no longer observed';
         $ActionConfig->{State}       = $Resolved ? 'closed resolved' : 'closed unsuccessful';
         $ActionConfig->{Subject}   ||= 'Confirmation submitted';
         $ActionConfig->{Body}      ||= $Self->_ConfirmationArticleBody(
@@ -1488,6 +1563,15 @@ sub Run {
         if ( !$ParentResult{Success} ) {
             return $LayoutObject->CustomerErrorScreen(
                 Message => $ParentResult{Message} || 'Could not update parent incident confirmation result.',
+            );
+        }
+    }
+
+    if ( $ActionConfig->{ResolutionLoopbackApply} ) {
+        my %LoopbackResult = $Self->_ResolutionLoopbackApply( %{ $ActionConfig->{ResolutionLoopbackApply} } );
+        if ( !$LoopbackResult{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $LoopbackResult{Message} || 'Could not return the incident to diagnosis.',
             );
         }
     }
@@ -4744,11 +4828,11 @@ sub _ConfirmationFieldsSet {
     my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
-        Name => 'ZIN-Status',
+        Name => 'IncidentState',
     );
 
     if ( !IsHashRefWithData($DynamicFieldConfig) || $DynamicFieldConfig->{ObjectType} ne 'Ticket' ) {
-        $Self->_ZTSMActionLog( Message => "Confirmation submit failed: dynamic field 'ZIN-Status' is missing or not a Ticket field." );
+        $Self->_ZTSMActionLog( Message => "Confirmation submit failed: dynamic field 'IncidentState' is missing or not a Ticket field." );
         return (
             %Result,
             Message => "Confirmation status field is not available.",
@@ -4789,7 +4873,7 @@ sub _ConfirmationFieldsSet {
     );
     if ( !$Success ) {
         $Self->_ZTSMActionLog(
-            Message => "Confirmation submit failed: could not set dynamic field 'ZIN-Status' for TicketID='$Param{TicketID}'.",
+            Message => "Confirmation submit failed: could not set dynamic field 'IncidentState' for TicketID='$Param{TicketID}'.",
         );
         return (
             %Result,
@@ -4801,6 +4885,93 @@ sub _ConfirmationFieldsSet {
         Success => 1,
         Status  => $Value,
     );
+}
+
+sub _OutcomeEvidenceArticleBody {
+    my ( $Self, %Param ) = @_;
+
+    my $Details = $Param{Details} || '';
+    my $DetailsHTML = _ValueHasHTML($Details) ? _HTMLBodyFragment($Details) : _PlainTextHTML($Details);
+    my $Body = '<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1340;">'
+        . '<p><strong>Note:</strong> This is a system-generated execution evidence snapshot.</p>'
+        . '<h3>' . _HTML( $Param{Heading} || 'Execution Evidence' ) . '</h3>';
+
+    for my $Row ( @{ $Param{Rows} || [] } ) {
+        next if ref $Row ne 'ARRAY';
+        $Body .= _DiagnosisArticleRow( $Row->[0], _HTML( defined $Row->[1] ? $Row->[1] : '' ) );
+    }
+
+    $Body .= _DiagnosisArticleRow( 'Details of Work Done', $DetailsHTML );
+    return $Body . '</div>';
+}
+
+sub _ResolutionLoopbackApply {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return ( Success => 0, Message => 'Resolution ticket context is unavailable.' )
+        if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return ( Success => 0, Message => 'Resolution ticket has no parent incident.' ) if !$ParentTicketID;
+
+    my $TicketObject = $Param{TicketObject} || $Kernel::OM->Get('Kernel::System::Ticket');
+    my $UserID = $Param{CustomerPanelUserID} || 1;
+    my %ParentTicket = $TicketObject->TicketGet(
+        TicketID => $ParentTicketID, DynamicFields => 1, UserID => $UserID, Silent => 1,
+    );
+    return ( Success => 0, Message => 'Parent incident could not be loaded.' )
+        if !IsHashRefWithData( \%ParentTicket );
+
+    my $CurrentIteration = _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} );
+    my $ResolutionIteration = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} );
+    my $BaseIteration = defined $ResolutionIteration && $ResolutionIteration =~ m{\A\d+\z}
+        ? $ResolutionIteration
+        : defined $CurrentIteration && $CurrentIteration =~ m{\A\d+\z}
+        ? $CurrentIteration
+        : 1;
+    my $NextIteration = $BaseIteration + 1;
+    $NextIteration = $CurrentIteration
+        if defined $CurrentIteration && $CurrentIteration =~ m{\A\d+\z} && $CurrentIteration > $NextIteration;
+
+    my @RelatedTicketIDs = $TicketObject->TicketSearch(
+        Result => 'ARRAY', Limit => 1000,
+        'DynamicField_ZTicket-Parent' => { Equals => $ParentTicketID },
+        UserID => 1, Permission => 'ro',
+    );
+    my %Seen;
+    for my $RelatedTicketID ( $ParentTicketID, @RelatedTicketIDs ) {
+        next if !$RelatedTicketID || $Seen{$RelatedTicketID}++;
+        return ( Success => 0, Message => "Could not synchronize incident iteration on ticket $RelatedTicketID." )
+            if !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZIN-Iteration', TicketID => $RelatedTicketID,
+                Value => $NextIteration, UserID => $UserID,
+            );
+    }
+
+    my $LoopbackState = $Self->_ConfirmationLoopbackState( Config => $Param{Config} );
+    return ( Success => 0, Message => 'Could not return parent incident to diagnosis.' )
+        if !$TicketObject->TicketStateSet(
+            State => $LoopbackState, TicketID => $ParentTicketID, UserID => $UserID,
+        );
+
+    $Self->_RuntimeArticleCreate(
+        TicketID => $ParentTicketID, RuntimeAction => 'Resolve', Label => 'resolution loopback',
+        Subject => 'Resolution unsuccessful; incident returned to diagnosis',
+        Body => "Resolution outcome '$Param{Outcome}' did not establish success. Parent and related tickets were synchronized to iteration $NextIteration, and the incident returned to '$LoopbackState'.",
+        Config => $Param{Config}, CustomerPanelUserID => $UserID,
+    );
+
+    my %ReloadedParent = $TicketObject->TicketGet(
+        TicketID => $ParentTicketID, DynamicFields => 1, UserID => $UserID, Silent => 1,
+    );
+    if ( IsHashRefWithData( \%ReloadedParent ) ) {
+        Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader->new()->Run(
+            Ticket => \%ReloadedParent, UserID => $UserID,
+        );
+    }
+
+    return ( Success => 1, Iteration => $NextIteration );
 }
 
 sub _ConfirmationArticleBody {
@@ -4849,7 +5020,7 @@ sub _ConfirmationParentApply {
             Success => 0,
             Message => 'Could not update parent incident status.',
         ) if !$Self->_TicketDynamicFieldSet(
-            FieldName => 'ZIN-Status',
+            FieldName => 'IncidentState',
             TicketID  => $ParentTicketID,
             Value     => $Param{Status},
             UserID    => $UserID,
@@ -4910,7 +5081,7 @@ sub _ConfirmationParentApply {
         Success => 0,
         Message => 'Could not update parent incident confirmation status.',
     ) if !$Self->_TicketDynamicFieldSet(
-        FieldName => 'ZIN-Status',
+        FieldName => 'IncidentState',
         TicketID  => $ParentTicketID,
         Value     => $Param{Status},
         UserID    => $UserID,
@@ -6690,6 +6861,8 @@ sub _ActionConfig {
             State => 'pending confirmation',
             Types => ['Confirmation'],
         },
+        Resolve => { Label => 'Submit Resolution', State => 'closed successful', Types => ['Resolution'] },
+        Treat   => { Label => 'Submit Risk Treatment', State => 'closed successful', Types => ['RiskTreatment'] },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
@@ -6748,6 +6921,8 @@ sub _ActionableTicketType {
             State => 'pending confirmation',
             Types => ['Confirmation'],
         },
+        Resolve => { Label => 'Submit Resolution', State => 'closed successful', Types => ['Resolution'] },
+        Treat   => { Label => 'Submit Risk Treatment', State => 'closed successful', Types => ['RiskTreatment'] },
         CloseDuplicate => {
             Label => 'Duplicate',
             State => 'closed duplicate',
