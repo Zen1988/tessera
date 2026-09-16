@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,515 +16,171 @@
 [% InsertTemplate("CustomerHeader.tt") %]
 
 <!-- start login -->
-<style>
-    body {
-        background: #F6F8FC;
-    }
-
-    #ztsmLoginPage {
-        min-height: calc(100vh - 68px);
-        display: grid;
-        grid-template-columns: minmax(360px, 32.5vw) minmax(0, 1fr);
-        background: #F7FAFF;
-        color: #051548;
-        font-family: inherit;
-    }
-
-    .ztsmLoginPanel {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 28px;
-        padding: clamp(32px, 5vw, 72px);
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 12px 0 34px rgba(5, 21, 72, 0.08);
-        z-index: 1;
-    }
-
-    .ztsmLoginBrand,
-    .ztsmLoginTitle,
-    #ztsmLoginPage #Slider,
-    .ztsmDivider,
-    .ztsmTrust {
-        width: 100%;
-        max-width: 420px;
-    }
-
-    .ztsmLoginBrand {
-        text-align: center;
-    }
-
-    .ztsmLoginBrand img {
-        width: 116px;
-        height: 116px;
-        object-fit: contain;
-        display: block;
-        margin: 0 auto 12px;
-    }
-
-    .ztsmLoginBrand h1,
-    .ztsmLoginTitle h2 {
-        margin: 0;
-        color: #071A55;
-        letter-spacing: 0;
-        line-height: 1.08;
-    }
-
-    .ztsmLoginBrand h1 {
-        font-size: 36px;
-        font-weight: 800;
-        letter-spacing: 7px;
-    }
-
-    .ztsmLoginBrand p,
-    .ztsmLoginTitle p,
-    .ztsmTrust p {
-        margin: 8px 0 0;
-        color: #40517E;
-    }
-
-    .ztsmLoginBrand p {
-        font-size: 17px;
-        font-weight: 700;
-        color: #0057F8;
-    }
-
-    .ztsmLoginTitle {
-        text-align: center;
-    }
-
-    .ztsmLoginTitle h2 {
-        font-size: 28px;
-        font-weight: 800;
-    }
-
-    .ztsmLoginTitle p {
-        font-size: 15px;
-    }
-
-    #ztsmLoginPage .ErrorBox,
-    #ztsmLoginPage .SuccessBox,
-    #ztsmLoginPage .WarningBox,
-    #ztsmLoginPage #NoJavaScript,
-    #ztsmLoginPage #OldBrowser,
-    #ztsmLoginPage #oooNoGrid,
-    #ztsmLoginPage #oooIE {
-        width: 100%;
-        margin: 0;
-        border-radius: 12px;
-    }
-
-    #ztsmLoginPage #Slider,
-    #ztsmLoginPage #SlideArea,
-    #ztsmLoginPage #Login,
-    #ztsmLoginPage #Reset,
-    #ztsmLoginPage #Signup {
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        margin: 0;
-        padding: 0;
-        position: static;
-        left: auto;
-        right: auto;
-        top: auto;
-        overflow: visible;
-        transform: none;
-    }
-
-    #ztsmLoginPage #SlideArea {
-        display: block;
-    }
-
-    .ztsmLoginForm {
-        display: grid;
-        gap: 18px;
-        width: 100%;
-    }
-
-    .ztsmField label {
-        display: block;
-        margin: 0 0 8px;
-        color: #071A55;
-        font-size: 13px;
-        font-weight: 700;
-    }
-
-    .ztsmInputShell {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-height: 54px;
-        border: 1px solid #CBD5E1;
-        border-radius: 8px;
-        background: #fff;
-        padding: 0 14px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-    }
-
-    .ztsmInputShell:focus-within {
-        border-color: #0757F9;
-        box-shadow: 0 0 0 3px rgba(7, 87, 249, 0.12);
-    }
-
-    .ztsmInputShell svg {
-        width: 22px;
-        height: 22px;
-        flex: 0 0 auto;
-        stroke: #40517E;
-    }
-
-    .ztsmInputShell input {
-        width: 100%;
-        min-width: 0;
-        border: 0;
-        outline: 0;
-        padding: 0;
-        background: transparent;
-        color: #071A55;
-        font-size: 15px;
-        line-height: 1.4;
-    }
-
-    .ztsmInputShell input::placeholder {
-        color: #8794B8;
-    }
-
-    .ztsmLoginOptions {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        font-size: 14px;
-        color: #40517E;
-    }
-
-    .ztsmRemember {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .ztsmRemember input {
-        width: 20px;
-        height: 20px;
-        margin: 0;
-        accent-color: #0757F9;
-    }
-
-    .ztsmLoginOptions a {
-        color: #0757F9;
-        text-decoration: none;
-        font-weight: 700;
-    }
-
-    .ztsmLoginButton {
-        width: 100%;
-        min-height: 58px;
-        border: 0;
-        border-radius: 8px;
-        background: #0757F9;
-        color: #fff;
-        font-size: 18px;
-        font-weight: 800;
-        cursor: pointer;
-        box-shadow: 0 14px 28px rgba(7, 87, 249, 0.22);
-    }
-
-    .ztsmLoginButton:disabled {
-        opacity: 0.72;
-        cursor: default;
-    }
-
-    .ztsmSecondaryPanel {
-        display: none;
-        padding-top: 4px;
-    }
-
-    .ztsmSecondaryPanel:target {
-        display: block;
-    }
-
-    .ztsmSecondaryPanel:target ~ #Login {
-        display: none;
-    }
-
-    .ztsmBackLink,
-    #oooRegister {
-        display: inline-flex;
-        margin-top: 8px;
-        color: #0757F9;
-        text-decoration: none;
-        font-weight: 700;
-    }
-
-    .ztsmDivider {
-        width: 100%;
-        height: 1px;
-        background: #E2E8F0;
-        margin: 4px 0 0;
-    }
-
-    .ztsmTrust {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        color: #071A55;
-    }
-
-    .ztsmTrust svg {
-        width: 42px;
-        height: 42px;
-        flex: 0 0 auto;
-        stroke: #071A55;
-    }
-
-    .ztsmTrust strong {
-        display: block;
-        font-size: 16px;
-    }
-
-    .ztsmTrust p {
-        font-size: 13px;
-    }
-
-    .ztsmLoginVisual {
-        position: relative;
-        min-height: 100%;
-        background-image: url([% Config("Frontend::WebPath") %]common/img/TESSERA/LoginBG.jpg);
-        background-color: #F5FAFF;
-        background-position: center;
-        background-size: contain;
-        background-repeat: no-repeat;
-    }
-
-    .ztsmLoginVisual::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(90deg, rgba(247, 250, 255, 0.18), rgba(247, 250, 255, 0.02));
-    }
-
-    @media (max-width: 980px) {
-        #ztsmLoginPage {
-            grid-template-columns: 1fr;
-        }
-
-        .ztsmLoginPanel {
-            min-height: calc(100vh - 68px);
-            max-width: none;
-        }
-
-        .ztsmLoginVisual {
-            display: none;
-        }
-    }
-
-    @media (max-width: 520px) {
-        .ztsmLoginPanel {
-            padding: 28px 20px;
-        }
-
-        .ztsmLoginBrand img {
-            width: 92px;
-            height: 92px;
-        }
-
-        .ztsmLoginBrand h1 {
-            font-size: 28px;
-            letter-spacing: 5px;
-        }
-
-        .ztsmLoginOptions {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-    }
-</style>
-
-<div id="ztsmLoginPage" class="ARIARoleMain">
-    <section class="ztsmLoginPanel">
-        <div class="ztsmLoginBrand">
-            <img src="[% Config("Frontend::WebPath") %]common/img/TESSERA/TESSERA_LOGO_v2.svg" alt="TESSERA">
-            <h1>TESSERA</h1>
-            <p>ICT Ticket Platform</p>
-        </div>
-
-        <div class="ztsmLoginTitle">
-            <h2>Welcome Back</h2>
-            <p>Sign in to continue to your account</p>
-        </div>
-
+<div id="oooLoginBG">
+    <div class="oooBG" style="background-image: url([% Data.Background | html %]);">
+        <div id="oooBGSignet" style="background-image: url([% Config("Frontend::WebPath") %]common/img/otobo-signet_border.svg);"></div>
+    </div>
+    <h1>[% Translate(Data.LoginText) | html %]</h1>
+</div>
+<div id="MainBox" class="Login ARIARoleMain">
+[% RenderBlockStart("Signet") %]
+    <img id="oooSignet" src="[% Config("Frontend::WebPath") %]common/img/otobo-signet.svg">
+[% RenderBlockEnd("Signet") %]
 [% RenderBlockStart("Message") %]
-        <div class="[% IF Data.MessageType == 'Success' %]SuccessBox[% ELSE %]ErrorBox[% END %]"><p>[% Translate(Data.Message) | html %]</p></div>
+    <div class="[% IF Data.MessageType == 'Success' %]SuccessBox[% ELSE %]ErrorBox[% END %]"><p>[% Translate(Data.Message) | html %]</p></div>
 [% RenderBlockEnd("Message") %]
-        <noscript>
-            <div id="NoJavaScript">
-                <h2>[% Translate("JavaScript Not Available") | html %]</h2>
-                <p>[% Translate("In order to experience this software, you'll need to enable JavaScript in your browser.") | html %]</p>
-            </div>
-        </noscript>
-        <div class="Hidden" id="OldBrowser">
-            <h2 class="Center">[% Translate("Browser Warning") | html %]</h2>
-            <p>
-                [% Translate("The browser you are using is too old.") | html %]
-                [% Translate("This software runs with a huge lists of browsers, please upgrade to one of these.") | html %]
-                [% Translate("Please see the documentation or ask your admin for further information.") | html %]
-            </p>
-        </div>
-        <div id="oooNoGrid">
-            <h2 class="Center">[% Translate("Browser Warning") | html %]</h2>
-            <p>[% Translate("The browser you are using doesn't support css-grid. It's likely too old.") | html %]</p>
-        </div>
-        <div id="oooIE" class="WarningBox">
-            <p>[% Translate("Browser Warning") | html %]: [% Translate("Internet Explorer is functional, but not all features are fully supported. Please consider updating to a modern browser.") | html %]</p>
-        </div>
+    <noscript>
+    <div id="NoJavaScript">
+        <h2>[% Translate("JavaScript Not Available") | html %]</h2>
+        <p>
+            [% Translate("In order to experience this software, you'll need to enable JavaScript in your browser.") | html %]
+        </p>
+    </div>
+    </noscript>
+    <div class="Hidden" id="OldBrowser">
+        <h2 class="Center">[% Translate("Browser Warning") | html %]</h2>
+        <p>
+            [% Translate("The browser you are using is too old.") | html %]
+            [% Translate("This software runs with a huge lists of browsers, please upgrade to one of these.") | html %]
+            [% Translate("Please see the documentation or ask your admin for further information.") | html %]
+        </p>
+    </div>
+    <div id="oooNoGrid">
+        <h2 class="Center">[% Translate("Browser Warning") | html %]</h2>
+        <p>
+            [% Translate("The browser you are using doesn't support css-grid. It's likely too old.") | html %]
+        </p>
+    </div>
+    <div id="oooIE" class="WarningBox">
+        <p>
+            [% Translate("Browser Warning") | html %]: [% Translate("Internet Explorer is functional, but not all features are fully supported. Please consider updating to a modern browser.") | html %]
+        </p>
+    </div>
 
 [% RenderBlockStart("SystemMaintenance") %]
-        <div class="WarningBox WithIcon">
-            <p><i class="fa fa-exclamation-circle"></i> [% Translate(Data.LoginMessage) | html %]</p>
-        </div>
+    <div class="WarningBox WithIcon">
+        <p>
+            <i class="fa fa-exclamation-circle"></i> [% Translate(Data.LoginMessage) | html %]
+        </p>
+    </div>
 [% RenderBlockEnd("SystemMaintenance") %]
 
-        <div id="Slider">
-            <div id="SlideArea">
+    <div id="Slider">
+        <div id="SlideArea">
 [% RenderBlockStart("PreLogin") %]
-                <div id="PreLogin">
-                    <p>[% Translate("One moment please, you are being redirected...") | html %]</p>
-                    <form action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded" name="login">
-                        <input type="hidden" name="Action" value="Login" />
-                        <input type="hidden" name="RequestedURL" value="[% Data.RequestedURL | html %]"/>
-                        <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
-                        <input type="hidden" name="TimeZoneOffset" id="TimeZoneOffset" value=""/>
-                    </form>
-                </div>
+            <div id="PreLogin">
+                <p>[% Translate("One moment please, you are being redirected...") | html %]</p>
+                <form action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded" name="login">
+                    <input type="hidden" name="Action" value="Login" />
+                    <input type="hidden" name="RequestedURL" value="[% Data.RequestedURL | html %]"/>
+                    <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
+                    <input type="hidden" name="TimeZoneOffset" id="TimeZoneOffset" value=""/>
+                </form>
+            </div>
 [% RenderBlockEnd("PreLogin") %]
+[% RenderBlockStart("LoginBox") %]
+[% IF !Data.DisableStandardLogin %]
+            <div id="Login">
+                <h1>[% Translate("Login") | html %]</h1>
+                <form class="Floating" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded" name="login">
+                    <input type="hidden" name="Action" value="Login"/>
+                    <input type="hidden" name="RequestedURL" value="[% Data.RequestedURL | html %]"/>
+                    <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
+                    <input type="hidden" name="TimeZoneOffset" id="TimeZoneOffset" value=""/>
+                    <fieldset class="SimpleForm">
+                        <div class="Row">
+                            <input autocorrect="off" autocapitalize="off" autocomplete="[% Data.UserNameAutocomplete %]" title="[% Translate("Your user name") | html %]" type="text" name="User" id="User" maxlength="150" />
+                            <label for="User">[% Translate("User name") | html %]</label>
+                        </div>
+                        <div class="Row">
+                            <input title="[% Translate("Your password") | html %]" type="password" name="Password" id="Password" autocomplete="[% Data.PasswordAutocomplete %]" />
+                            <label for="Password">[% Translate("Password") | html %]</label>
+    [% RenderBlockStart("LostPasswordLink") %]
+                            <div class="Option">
+                                <a href="#Reset" class="ooo10g" id="ForgotPassword">[% Translate("Forgot password?") | html %]</a>
+                            </div>
+    [% RenderBlockEnd("LostPasswordLink") %]
+                        </div>
+
+[% RenderBlockStart("AuthTwoFactor") %]
+                        <div class="Row">
+                            <input title="[% Translate("Your 2 Factor Token") | html %]" type="text" name="TwoFactorToken" id="TwoFactorToken" />
+                            <label for="TwoFactorToken">[% Translate("2 Factor Token") | html %]</label>
+                        </div>
+[% RenderBlockEnd("AuthTwoFactor") %]
+
+                        <div class="Row">
+                            <button type="submit" value="[% Translate("Log In") | html %]" disabled>[% Translate("Log In") | html %]</button>
+                        </div>
+                    </fieldset>
+                </form>
+[% RenderBlockStart("CreateAccountLink") %]
+                <a id="oooRegister" class="ooo12g" href="#Signup">[% Translate("Request Account") | html %]</a>
+[% RenderBlockEnd("CreateAccountLink") %]
+            </div>
+[% END %]
+[% RenderBlockEnd("LoginBox") %]
 [% RenderBlockStart("LostPassword") %]
 [% IF !Data.DisableStandardLogin %]
-                <div id="Reset" class="ztsmSecondaryPanel">
-                    <a href="#Login" class="ztsmBackLink">&larr; [% Translate("Back") | html %]</a>
-                    <form class="ztsmLoginForm Validate" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded">
-                        <input type="hidden" name="Action" value="CustomerLostPassword" />
-                        <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]" />
-                        <div class="ztsmField">
+            <div id="Reset">
+                <a href="#Login" class="InlineNavigation">&larr; [% Translate("Back") | html %]</a>
+                <h2>[% Translate("Request New Password") | html %]</h2>
+                <form class="Floating" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded">
+                    <input type="hidden" name="Action" value="CustomerLostPassword" />
+                    <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]" />
+                    <fieldset class="SimpleForm">
+                        <div class="Row">
+                            <input title="[% Translate("Your User Name") | html %]" type="text" id="ResetUser" name="User" maxlength="150" />
                             <label for="ResetUser">[% Translate("User name") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input title="[% Translate("Your User Name") | html %]" type="text" id="ResetUser" name="User" maxlength="150" placeholder="[% Translate("Enter your username") | html %]" />
-                            </div>
                         </div>
-                        <button class="ztsmLoginButton" type="submit" value="[% Translate("Submit") | html %]" disabled="disabled">[% Translate("Submit") | html %]</button>
-                    </form>
-                </div>
+                        <div class="Row">
+                            <button type="submit" value="[% Translate("Submit") | html %]" disabled>[% Translate("Submit") | html %]</button>
+                        </div>
+                    </fieldset>
+                </form>
+#                <p>[% Translate("A new password will be sent to your email address.") | html %]</p>
+            </div>
 [% END %]
 [% RenderBlockEnd("LostPassword") %]
 [% RenderBlockStart("CreateAccount") %]
 [% IF !Data.DisableStandardLogin %]
-                <div id="Signup" class="ztsmSecondaryPanel">
-                    <a href="#Login" class="ztsmBackLink">&larr; [% Translate("Back") | html %]</a>
-                    <form class="ztsmLoginForm Validate" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded">
-                        <input type="hidden" name="Action" value="CustomerCreateAccount"/>
-                        <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
-                        <div class="ztsmField">
+            <div id="Signup">
+                <a href="#Login" class="InlineNavigation">&larr; [% Translate("Back") | html %]</a>
+                <h2>[% Translate("Create Account") | html %]</h2>
+                <p>[% Translate("Please fill out this form to receive login credentials.") | html %]</p>
+                <form class="Floating Validate" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded">
+                    <input type="hidden" name="Action" value="CustomerCreateAccount"/>
+                    <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
+                    <fieldset class="SimpleForm">
+                        <div class="Row">
+                            <input title="[% Translate("How we should address you") | html %]" type="text" name="Title"  id="Title" class="W50pc" value="[% Data.UserTitle | html %]"/>
                             <label for="Title">[% Translate("Title or salutation") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <input title="[% Translate("How we should address you") | html %]" type="text" name="Title" id="Title" value="[% Data.UserTitle | html %]"/>
-                            </div>
                         </div>
-                        <div class="ztsmField">
+                        <div class="Row">
+                            <input title="[% Translate("Your First Name") | html %]" name="Firstname" type="text" id="FirstName" maxlength="100" value="[% Data.UserFirstname | html %]" class="W50pc Validate_Required"/>
                             <label class="Mandatory" for="FirstName"><span class="Marker">*</span> [% Translate("Firstname") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <input title="[% Translate("Your First Name") | html %]" name="Firstname" type="text" id="FirstName" maxlength="100" value="[% Data.UserFirstname | html %]" class="Validate_Required"/>
-                            </div>
                             <div id="FirstNameError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                         </div>
-                        <div class="ztsmField">
+                        <div class="Row">
+                            <input title="[% Translate("Your Last Name") | html %]" name="Lastname" type="text" id="LastName" maxlength="100" value="[% Data.UserLastname | html %]" class="W50pc Validate_Required"/>
                             <label class="Mandatory" for="LastName"><span class="Marker">*</span> [% Translate("Lastname") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <input title="[% Translate("Your Last Name") | html %]" name="Lastname" type="text" id="LastName" maxlength="100" value="[% Data.UserLastname | html %]" class="Validate_Required"/>
-                            </div>
                             <div id="LastNameError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                         </div>
-                        <div class="ztsmField">
+                        <div class="Row">
+                            <input title="[% Translate("Your email address (this will become your username)") | html %]" name="Email" type="[% Env("EmailFieldType") | html %]" id="Email" maxlength="150" value="[% Data.UserEmail | html %]" class="W100pc Validate_Required Validate_Email"/>
                             <label class="Mandatory" for="Email"><span class="Marker">*</span> [% Translate("Email") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <input title="[% Translate("Your email address (this will become your username)") | html %]" name="Email" type="[% Env("EmailFieldType") | html %]" id="Email" maxlength="150" value="[% Data.UserEmail | html %]" class="Validate_Required Validate_Email"/>
-                            </div>
                             <div id="EmailError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                         </div>
-                        <button id="CreateAccount" class="ztsmLoginButton" type="submit" value="[% Translate("Create") | html %]" disabled="disabled">[% Translate("Create") | html %]</button>
-                    </form>
-                </div>
+                        <div class="Row">
+                            <button id="CreateAccount" type="submit" value="[% Translate("Create") | html %]" disabled>[% Translate("Create") | html %]</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
 [% END %]
 [% RenderBlockEnd("CreateAccount") %]
-[% RenderBlockStart("LoginBox") %]
-[% IF !Data.DisableStandardLogin %]
-                <div id="Login">
-                    <form class="ztsmLoginForm Validate" action="[% Env("CGIHandle") %]" method="post" enctype="application/x-www-form-urlencoded" name="login">
-                        <input type="hidden" name="Action" value="Login"/>
-                        <input type="hidden" name="RequestedURL" value="[% Data.RequestedURL | html %]"/>
-                        <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
-                        <input type="hidden" name="TimeZoneOffset" id="TimeZoneOffset" value=""/>
-
-                        <div class="ztsmField">
-                            <label for="User">[% Translate("Username") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input autocorrect="off" autocapitalize="off" autocomplete="[% Data.UserNameAutocomplete %]" title="[% Translate("Your user name") | html %]" type="text" name="User" id="User" maxlength="150" placeholder="[% Translate("Enter your username") | html %]" />
-                            </div>
-                        </div>
-
-                        <div class="ztsmField">
-                            <label for="Password">[% Translate("Password") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-                                <input title="[% Translate("Your password") | html %]" type="password" name="Password" id="Password" autocomplete="[% Data.PasswordAutocomplete %]" placeholder="[% Translate("Enter your password") | html %]" />
-                            </div>
-                        </div>
-
-[% RenderBlockStart("AuthTwoFactor") %]
-                        <div class="ztsmField">
-                            <label for="TwoFactorToken">[% Translate("2 Factor Token") | html %]</label>
-                            <div class="ztsmInputShell">
-                                <input title="[% Translate("Your 2 Factor Token") | html %]" type="text" name="TwoFactorToken" id="TwoFactorToken" />
-                            </div>
-                        </div>
-[% RenderBlockEnd("AuthTwoFactor") %]
-
-                        <div class="ztsmLoginOptions">
-                            <label class="ztsmRemember">
-                                <input type="checkbox" name="RememberLogin" value="1">
-                                <span>[% Translate("Remember me") | html %]</span>
-                            </label>
-[% RenderBlockStart("LostPasswordLink") %]
-                            <a href="#Reset" id="ForgotPassword">[% Translate("Forgot password?") | html %]</a>
-[% RenderBlockEnd("LostPasswordLink") %]
-                        </div>
-
-                        <button class="ztsmLoginButton" type="submit" value="[% Translate("Log In") | html %]" disabled="disabled">[% Translate("Sign In") | html %]</button>
-                    </form>
-[% RenderBlockStart("CreateAccountLink") %]
-                    <a id="oooRegister" href="[% IF Data.RequestAccountLink %][% Data.RequestAccountLink | html %][% ELSE %]#Signup[% END %]"[% IF Data.RequestAccountNewTab %] target="_blank" rel="noopener noreferrer"[% END %]>[% Translate(Data.RequestAccountText) | html %]</a>
-[% RenderBlockEnd("CreateAccountLink") %]
-                </div>
-[% END %]
-[% RenderBlockEnd("LoginBox") %]
-            </div>
-        </div>
-
-        <div class="ztsmDivider"></div>
-        <div class="ztsmTrust">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-            <div>
-                <strong>Secure &bull; Reliable &bull; Governed</strong>
-                <p>Your requests, managed with confidence.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="ztsmLoginVisual" aria-hidden="true"></section>
+        </div> <!-- /SlideArea -->
+    </div>
 </div>
 <!-- stop login -->
 

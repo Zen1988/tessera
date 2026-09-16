@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,6 +16,7 @@
 
 package Kernel::System::Translations;
 
+use v5.24;
 use strict;
 use warnings;
 use utf8;
@@ -47,7 +48,7 @@ Kernel::System::Translations -  Translations lib
 
 =head1 DESCRIPTION
 
-All Translations functions. E. g. to add Translations or to get Translations.
+All Translations functions. E. g. to add translations or to get translations.
 
 =head1 PUBLIC INTERFACE
 
@@ -56,7 +57,9 @@ All Translations functions. E. g. to add Translations or to get Translations.
 create an object. Do not use it directly, instead use:
 
     use Kernel::System::ObjectManager;
+
     local $Kernel::OM = Kernel::System::ObjectManager->new();
+
     my $TranslationsObject = $Kernel::OM->Get('Kernel::System::Translations');
 
 =cut
@@ -64,8 +67,7 @@ create an object. Do not use it directly, instead use:
 sub new {
     my ( $Type, %Param ) = @_;
 
-    my $Self = {};
-    bless( $Self, $Type );
+    my $Self = bless {}, $Type;
 
     $Self->{Debug} = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::TranslationsDebug') || 0;
 
@@ -74,15 +76,16 @@ sub new {
 
 =head2 DraftTranslationsAdd()
 
-add translation items
+adds a single draft translation item. Depending on the the parameter C<Edit> the
+new translation is either flagged as 'e' for edit or as 'n' for new item.
 
     my $Success = $TranslationsObject->DraftTranslationsAdd(
-        Language    => 'en',
-        Content     => 'Red',
-        Translation => 'Rojo',
+        Language    => 'es',
+        Content     => 'red',
+        Translation => 'rojo',
         UserID      => 1,
-        Edit        => 0,
-        Import      => (1|0),
+        Edit        => (1|0),   # optional, the default is 0
+        Import      => (1|0),   # optional, the default is 0
     );
 
 Returns:
@@ -105,14 +108,16 @@ sub DraftTranslationsAdd {
         }
     }
 
-    $Param{Edit}   ||= '';
+    $Param{Edit}   ||= 0;
     $Param{Import} ||= 0;
     my $Flag = $Param{Edit} ? 'e' : 'n';
 
     my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL =>
-            "INSERT INTO translation_item (language, content, translation, flag, create_by, create_time, change_by, change_time, import_param) VALUES (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)",
-        Bind => [ \$Param{Language}, \$Param{Content}, \$Param{Translation}, \$Flag, \$Param{UserID}, \$Param{UserID}, \$Param{Import} ]
+        SQL => <<'END_SQL',
+INSERT INTO translation_item (language, content, translation, flag, create_by, create_time, change_by, change_time, import_param)
+  VALUES (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)
+END_SQL
+        Bind => [ \$Param{Language}, \$Param{Content}, \$Param{Translation}, \$Flag, \$Param{UserID}, \$Param{UserID}, \$Param{Import} ],
     );
 
     return $Success;
@@ -124,7 +129,7 @@ change translation items
 
     my $Success = $TranslationsObject->DraftTranslationsChange(
         ID           => 100,
-        Language     => 'en',
+        Language     => 'es',
         Content      => 'Red',
         Translation  => 'Rojo',
         UserID       => 1
@@ -151,8 +156,20 @@ sub DraftTranslationsChange {
     }
 
     my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => "UPDATE translation_item SET translation = ?, change_by = ?, change_time = current_timestamp WHERE id = ? AND content = ? AND language = ?",
-        Bind => [ \$Param{Translation}, \$Param{UserID}, \$Param{ID}, \$Param{Content}, \$Param{Language} ]
+        SQL => <<'END_SQL',
+UPDATE translation_item
+  SET translation = ?, change_by = ?, change_time = current_timestamp
+  WHERE id = ?
+    AND content = ?
+    AND language = ?
+END_SQL
+        Bind => [
+            \$Param{Translation},
+            \$Param{UserID},
+            \$Param{ID},
+            \$Param{Content},
+            \$Param{Language},
+        ]
     );
 
     return $Success;
@@ -160,7 +177,7 @@ sub DraftTranslationsChange {
 
 =head2 DraftTranslationsGet()
 
-get all draft translation items
+gets draft translation items for a specific language.
 
     my $DraftTranslations = $TranslationsObject->DraftTranslationsGet(
         Language => 'en',
@@ -173,10 +190,10 @@ Returns:
     $DraftTranslations = [
         {
             ID          => 32,
-            Language    => 'en',
+            Language    => 'es',
             Content     => 'Earth',
             Translation => 'Tierra',
-            Flag        => 'n', #n: New, #d: Marked for deletion, #e: Editing
+            Flag        => 'n',          # n: New, d: Marked for deletion, e: Editing, a: active
             CreateBy    => 1,
             CreateTime  => '2023-01-01 07:00:00',
             ChangeBy    => 1,
@@ -204,14 +221,22 @@ sub DraftTranslationsGet {
     my @DraftItems;
 
     $Param{Import} ||= 0;
-    my $Flag = $Param{Active} ? "'a'" : "'n','e','d'";
+    my $Flag = $Param{Active} ? q{'a'} : q{'n', 'e', 'd'};
 
-    return \@DraftItems
-        if !$DBObject->Prepare(
-            SQL =>
-            "SELECT id, language, content, translation, flag, create_by, create_time, change_by, change_time FROM translation_item WHERE language = ? and import_param = ? and flag in($Flag) ORDER BY flag, content ASC",
-            Bind => [ \$Param{Language}, \$Param{Import} ]
-        );
+    return [] unless $DBObject->Prepare(
+        SQL => <<"END_SQL",
+SELECT id, language, content, translation, flag, create_by, create_time, change_by, change_time
+  FROM translation_item
+  WHERE language = ?
+    AND import_param = ?
+    AND flag IN ($Flag)
+  ORDER BY flag, content ASC
+END_SQL
+        Bind => [
+            \$Param{Language},
+            \$Param{Import},
+        ]
+    );
 
     while ( my @Row = $DBObject->FetchrowArray() ) {
         my %Item = (
@@ -231,23 +256,34 @@ sub DraftTranslationsGet {
     return \@DraftItems;
 }
 
+=encoding utf-8
+
+=for stopwords dům
+
 =head2 DraftTranslationsExport()
 
-get all draft translation items for Export process
+contrary to the method name, this method gets the active translation items for the export process.
+Exported are the translations for all source strings that have a translation in
+at least one of the relevant languages.
 
     my $DraftTranslations = $TranslationsObject->DraftTranslationsExport(
-        Language     => ['en', 'de', 'es_CO'],
+        Language     => ['ca', 'cs', 'de'],
     );
 
 Returns:
 
     $DraftTranslations = [
         {
-            Language    => 'en',
-            Content     => 'Earth',
-            en          => 'Earth',
-            de          => 'Tierra',
-            es          => 'Erde',
+            'House' => {
+                de => 'Haus',
+                ca => 'casa',
+                cs => 'dům',
+        },
+        {
+            'Mouse' => {
+                de => 'Maus',
+                ca => 'ratolí',
+                cs => 'myš',
         },
         ...
     ]
@@ -266,14 +302,8 @@ sub DraftTranslationsExport {
         return;
     }
 
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-    my @DraftItems;
-    my %Strings;
-    my @LanguageIDsQuoted;
-
-    for my $LanguageID ( @{ $Param{Language} } ) {
-        push @LanguageIDsQuoted, $DBObject->Quote($LanguageID);
-    }
+    my $DBObject          = $Kernel::OM->Get('Kernel::System::DB');
+    my @LanguageIDsQuoted = map { $DBObject->Quote($_) } $Param{Language}->@*;
 
     if ( !@LanguageIDsQuoted ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -281,27 +311,34 @@ sub DraftTranslationsExport {
             Message  => "No Language received!",
         );
 
-        return \@DraftItems;
+        return [];
     }
 
-    my $SQLIn = "'" . join( "', '", @LanguageIDsQuoted ) . "'";
+    my $LanguageList = join ', ', map {qq{'$_'}} @LanguageIDsQuoted;
 
-    return \@DraftItems
-        if !$DBObject->Prepare(
-            SQL => "SELECT distinct(content) FROM translation_item WHERE language in ($SQLIn) and import_param = 0 and flag = 'a' ORDER BY 1 ASC",
-        );
+    return [] unless $DBObject->Prepare(
+        SQL => <<"END_SQL",
+SELECT distinct(content)
+  FROM translation_item
+  WHERE language IN ($LanguageList)
+    AND import_param = 0
+    AND flag = 'a'
+END_SQL
+    );
 
+    my %Strings;
     while ( my @Row = $DBObject->FetchrowArray() ) {
         $Strings{ $Row[0] } = $Row[0];
     }
 
+    my @DraftItems;
     for my $Content ( sort keys %Strings ) {
         my %Record;
         my %DraftElement;
 
         for my $DestLang ( @{ $Param{Language} } ) {
             $DBObject->Prepare(
-                SQL  => "SELECT translation FROM translation_item WHERE language = ? and content = ? and import_param = 0 and flag = 'a' ORDER BY content ASC",
+                SQL  => "SELECT translation FROM translation_item WHERE language = ? AND content = ? AND import_param = 0 AND flag = 'a' ORDER BY content ASC",
                 Bind => [ \$DestLang, \$Content ]
             );
 
@@ -309,9 +346,7 @@ sub DraftTranslationsExport {
                 $Record{$DestLang} = $Row[0];
             }
 
-            if ( !$Record{$DestLang} ) {
-                $Record{$DestLang} = '';
-            }
+            $Record{$DestLang} ||= '';
         }
 
         $DraftElement{$Content} = \%Record;
@@ -328,9 +363,9 @@ delete a draft translation item
     my $Success = $TranslationsObject->DraftTranslationDelete(
         Language     => 'en'
         ID           => 100,
-        Mark         => '1',    #Optional
-        Content     => 'White', #Optional
-        Translation => 'Blanco' #Optional
+        Mark         => '1',    # optional
+        Content     => 'White', # optional
+        Translation => 'Blanco' # optional
     );
 
 Returns:
@@ -372,7 +407,7 @@ sub DraftTranslationDelete {
 
         #Check if item ID/Language exists in db
         $DBObject->Prepare(
-            SQL  => "SELECT id FROM translation_item WHERE language = ? AND id = ? and flag in ('n','e')",
+            SQL  => "SELECT id FROM translation_item WHERE language = ? AND id = ? AND flag IN ('n', 'e')",    # new and edited
             Bind => [ \$Param{Language}, \$Param{ID} ]
         );
 
@@ -400,7 +435,7 @@ sub DraftTranslationDelete {
 
         #Check if item Language/Content exists in db
         $DBObject->Prepare(
-            SQL  => "SELECT id FROM translation_item WHERE language = ? AND content = ? and flag <> 'a' ",
+            SQL  => "SELECT id FROM translation_item WHERE language = ? AND content = ? AND flag <> 'a'",
             Bind => [ \$Param{Language}, \$Param{Content} ]
         );
 
@@ -451,7 +486,7 @@ sub DraftTranslationUndoDelete {
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
     my $Success = $DBObject->Do(
-        SQL  => "DELETE FROM translation_item WHERE language = ? AND content = ? AND flag ='d'",
+        SQL  => "DELETE FROM translation_item WHERE language = ? AND content = ? AND flag = 'd'",
         Bind => [ \$Param{Language}, \$Param{Content} ]
     );
 
@@ -592,7 +627,8 @@ sub ReadExistingTranslationFile {
 
 =head2 WriteTranslationFile()
 
-write translation file
+set new and edited translation items to active.
+Write the translation file into the directory F<Kernel/Language>.
 
     my $Success = $TranslationsObject->WriteTranslationFile(
         UserLanguage  => 'en',
@@ -603,7 +639,17 @@ write translation file
 
 Returns:
 
-    $Success = 1; #1: Successful, #0: Unsuccessful
+    # empty list in case of failure
+    $Success = undef;
+
+    # in case of success
+    $Success = 1;
+
+    # when there are no translations for the relevant language
+    $Success = 2;
+
+    # when writing the tranlation file has been rolled back
+    $Success = 3;
 
 =cut
 
@@ -638,7 +684,7 @@ sub WriteTranslationFile {
     if ( !@DraftTranslations ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
-            Message  => "Nothing to deploy",
+            Message  => 'Nothing to deploy',
         );
 
         return 2;
@@ -656,24 +702,6 @@ sub WriteTranslationFile {
             Active   => 1
         )
     };
-
-    my %BaseTranslations;
-
-    # Get base translations from core installation
-    my %BaseData = %{
-        $Self->ReadExistingTranslationFile(
-            UserLanguage => $Param{UserLanguage},
-        )
-    };
-
-    # if there are any custom translations, they are collected
-    if ( %BaseData && defined $BaseData{Translation} ) {
-        my %Strings = %{ $BaseData{Translation} };
-
-        for my $Custom ( sort keys %Strings ) {
-            $BaseTranslations{$Custom} = $Strings{$Custom};
-        }
-    }
 
     for my $Existing (@LanguageData) {
         my %Item = %{$Existing};
@@ -693,7 +721,7 @@ sub WriteTranslationFile {
             my ( $CreateBy, $CreateTime ) = '';
 
             $Kernel::OM->Get('Kernel::System::DB')->Prepare(
-                SQL  => "SELECT create_by, create_time FROM translation_item WHERE language = ? and content = ? and flag = 'a'",
+                SQL  => "SELECT create_by, create_time FROM translation_item WHERE language = ? AND content = ? AND flag = 'a'",
                 Bind => [ \$Param{UserLanguage}, \$Source ]
             );
 
@@ -704,20 +732,20 @@ sub WriteTranslationFile {
 
             if ($CreateBy) {
                 $Kernel::OM->Get('Kernel::System::DB')->Do(
-                    SQL  => "DELETE FROM translation_item WHERE language = ? and content = ? and flag = 'a'",
+                    SQL  => "DELETE FROM translation_item WHERE language = ? AND content = ? AND flag = 'a'",
                     Bind => [ \$Param{UserLanguage}, \$Source ]
                 );
 
                 $Kernel::OM->Get('Kernel::System::DB')->Do(
                     SQL =>
                         "UPDATE translation_item SET content = ?, translation = ?, import_param = 0, change_time = current_timestamp, create_by = ?, create_time = ?, flag = 'a'
-                            WHERE language = ? and content = ? and flag in('e','n')",
+                            WHERE language = ? AND content = ? AND flag IN ('e', 'n')",
                     Bind => [ \$Item{Content}, \$Item{Translation}, \$CreateBy, \$CreateTime, \$Param{UserLanguage}, \$Source ]
                 );
             }
             else {
                 $Kernel::OM->Get('Kernel::System::DB')->Do(
-                    SQL  => "UPDATE translation_item SET content = ?, translation = ?, import_param = 0, flag = 'a' WHERE language = ? and content = ? and flag in('e','n')",
+                    SQL  => "UPDATE translation_item SET content = ?, translation = ?, import_param = 0, flag = 'a' WHERE language = ? AND content = ? AND flag IN ('e', 'n')",
                     Bind => [ \$Item{Content}, \$Item{Translation}, \$Param{UserLanguage}, \$Source ]
                 );
             }
@@ -726,35 +754,132 @@ sub WriteTranslationFile {
             delete $Collected{ $Item{Content} };
 
             $Kernel::OM->Get('Kernel::System::DB')->Do(
-                SQL  => "DELETE FROM translation_item WHERE language = ? and content = ?",
-                Bind => [ \$Param{UserLanguage}, \$Source ]
+                SQL => <<'END_SQL',
+DELETE FROM translation_item
+  WHERE language = ?
+    AND content  = ?
+END_SQL
+                Bind => [
+                    \$Param{UserLanguage},
+                    \$Source,
+                ]
             );
+        }
+    }
+
+    my $Success = $Self->WriteActiveTranslationsToFile(
+        UserLanguage => $Param{UserLanguage},
+        Translations => \%Collected,
+    );
+
+    return unless $Success;
+
+    if ( !$Param{NoParentChild} ) {
+
+        my %Queues  = $Kernel::OM->Get('Kernel::System::Queue')->QueueList();
+        my @Strings = values %Queues;
+
+        if ( $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Service') ) {
+
+            my %Services = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
+                UserID => 1,
+            );
+            push @Strings, values %Services;
+        }
+
+        $Self->TranslateParentChildElements(
+            LanguageID => $Param{UserLanguage},
+            Strings    => \@Strings,
+        );
+    }
+
+    return $Success;
+}
+
+=head2 WriteActiveTranslationsToFile()
+
+Write the active translations to the language file F<Kernel/Language/LANG_ZZZAAuto.pm>.
+Use the base translations for determining whether the source string
+is to be passed to JavaScript.
+
+    my $RetCode = $TranslationsObject->WriteActiveTranslationsToFile(
+        UserLanguage => 'da',
+        Translations => {
+            cosy => 'hyggelig'
+            sun  => 'Sol',
+        }
+    );
+
+Returns:
+
+    # empty list in case of failure
+    $RetCode = undef;
+
+    # in case of success
+    $RetCode = 1;
+
+    # when writing the tranlation file has been rolled back
+    $Success = 3;
+
+=cut
+
+sub WriteActiveTranslationsToFile {
+    my ( $Self, %Param ) = @_;
+
+    # extract parameters
+    my $UserLanguage = $Param{UserLanguage};
+    my %Translations = $Param{Translations}->%*;    # in future the active translation could be fetched in this sub
+
+    my $BreakLineAfterChars = 60;
+    my $Home                = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my $Indent              = ' ' x 4;
+    my $Data                = '';
+    my $JavascriptStrings =
+        $Indent . '$Self->{JavaScriptStrings} //= [];' . "\n" .
+        $Indent . 'push $Self->{JavaScriptStrings}->@*, (' . "\n";
+
+    # Get base translations from core installation.
+    # This is used for deciding whether a translation should be added to JavaScriptStrings.
+    my %BaseTranslations;
+    {
+        my %BaseData = $Self->ReadExistingTranslationFile(
+            UserLanguage => $Param{UserLanguage},
+        )->%*;
+
+        # collect the base translation if there are any
+        if ( %BaseData && defined $BaseData{Translation} ) {
+            %BaseTranslations = $BaseData{Translation}->%*;
         }
     }
 
     # Generate translation data in required structure
     KEY:
-    for my $Key ( keys %Collected ) {
-        $Collected{$Key} =~ s{\\}{\\\\}xmsg;
-        $Collected{$Key} =~ s{\'}{\\'}xmsg;
+    for my $Key ( keys %Translations ) {
+
+        # Prepare for embedding in single quoted string
+        # by quoting all backslashes and all apostrophes.
+        $Translations{$Key} =~ s{\\}{\\\\}xmsg;
+        $Translations{$Key} =~ s{\'}{\\'}xmsg;
 
         my $SourceKey = $Key;
 
+        # Prepare for embedding in single quoted string
+        # by quoting all backslashes and all apostrophes.
         $Key =~ s{\\}{\\\\}xmsg;
         $Key =~ s{\'}{\\'}xmsg;
 
         if (
-            index( $SourceKey, "\n" )
-            > -1
-            || length($SourceKey) < $BreakLineAfterChars
+            index( $SourceKey, "\n" ) > -1
+            ||
+            length($SourceKey) < $BreakLineAfterChars
             )
         {
             $Data .= $Indent
-                . "\$Self->{Translation}->{'$Key'} = '$Collected{$SourceKey}';\n";
+                . "\$Self->{Translation}->{'$Key'} = '$Translations{$SourceKey}';\n";
         }
         else {
             $Data .= $Indent . "\$Self->{Translation}->{'$Key'} =\n";
-            $Data .= $Indent . '    ' . "'$Collected{$SourceKey}';\n";
+            $Data .= $Indent . '    ' . "'$Translations{$SourceKey}';\n";
         }
 
         # skip adding to javascript strings if item exists in core translations
@@ -766,14 +891,14 @@ sub WriteTranslationFile {
     $JavascriptStrings .= $Indent . ");\n";
 
     # needed for cvs check-in filter
-    my $Separator = "# --";
+    my $Separator = '# --';
 
     my $NewOut = <<"EOF";
 $Separator
 # OTOBO is a web-based ticketing system for service organisations.
 $Separator
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2023 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 $Separator
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -802,8 +927,8 @@ $JavascriptStrings
 1;
 EOF
 
-    my $ModuleName = "Kernel/Language/$Param{UserLanguage}_ZZZAAuto.pm";
-    my $TargetFile = "$Home/$ModuleName";
+    my $ModuleFileName = "Kernel/Language/$Param{UserLanguage}_ZZZAAuto.pm";
+    my $TargetFile     = "$Home/$ModuleFileName";
 
     if ( -e $TargetFile ) {
         my $Rename = rename( $TargetFile, "$TargetFile.old" );
@@ -824,7 +949,7 @@ EOF
         Mode     => 'utf8',
     );
 
-    #If not successful, rollback changes
+    # If not successful, rollback changes
     if ( $Success ne "$TargetFile.new" ) {
         if ( -e "$TargetFile.old" ) {
             my $Rename = rename( "$TargetFile.old", $TargetFile );
@@ -843,7 +968,7 @@ EOF
     else {
         rename( "$TargetFile.new", $TargetFile );
 
-        Kernel::System::ModuleRefresh->refresh_module($ModuleName);
+        Kernel::System::ModuleRefresh->refresh_module($ModuleFileName);
 
         $Kernel::OM->Get('Kernel::System::Main')->FileDelete(
             Location        => "$TargetFile.old",
@@ -852,25 +977,6 @@ EOF
         );
 
         $Success = 1;
-    }
-
-    if ( !$Param{NoParentChild} ) {
-
-        my %Queues  = $Kernel::OM->Get('Kernel::System::Queue')->QueueList();
-        my @Strings = values %Queues;
-
-        if ( $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Service') ) {
-
-            my %Services = $Kernel::OM->Get('Kernel::System::Service')->ServiceList(
-                UserID => 1,
-            );
-            push @Strings, values %Services;
-        }
-
-        $Self->TranslateParentChildElements(
-            LanguageID => $Param{UserLanguage},
-            Strings    => \@Strings,
-        );
     }
 
     return $Success;
@@ -1018,7 +1124,6 @@ sub TranslateParentChildElements {
                 NoParentChild => 1,
             );
         }
-
     }
 
     return 1;

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -24,6 +24,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::Queue',
     'Kernel::System::SystemAddress',
+    'Kernel::System::EmailAddress',
 );
 
 sub new {
@@ -31,9 +32,6 @@ sub new {
 
     # allocate new hash for object
     my $Self = bless {}, $Type;
-
-    # get parser object
-    $Self->{ParserObject} = $Param{ParserObject} || die "Got no ParserObject!";
 
     # Get communication log object.
     $Self->{CommunicationLogObject} = $Param{CommunicationLogObject} || die "Got no CommunicationLogObject!";
@@ -64,18 +62,17 @@ sub GetQueueID {
     # get system address object
     my $SystemAddressObject = $Kernel::OM->Get('Kernel::System::SystemAddress');
 
-    # get addresses
-    my @EmailAddresses = $Self->{ParserObject}->SplitAddressLine( Line => $Recipient );
-
     # check addresses
+    my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+    my @EmailAddresses     = $EmailAddressObject->ParseAddressLine( Line => $Recipient );
     EMAIL:
     for my $Email (@EmailAddresses) {
 
-        next EMAIL if !$Email;
+        next EMAIL unless $Email;
 
-        my $Address = $Self->{ParserObject}->GetEmailAddress( Email => $Email );
+        my $Address = $EmailAddressObject->GetAddress( AddressObject => $Email );
 
-        next EMAIL if !$Address;
+        next EMAIL unless $Address;
 
         # lookup queue id if recipiend address
         my $QueueID = $SystemAddressObject->SystemAddressQueueID(

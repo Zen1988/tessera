@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,7 +23,7 @@ use namespace::autoclean;
 use utf8;
 
 # core modules
-use List::Util qw(any);
+use List::Util qw(any first);
 
 # CPAN modules
 
@@ -51,7 +51,7 @@ sub new {
     {
         $Self->{LoadedFormDraftID} = $ParamObject->LoadFormDraft(
             FormDraftID => $ParamObject->GetParam( Param => 'FormDraftID' ),
-            UserID      => $Self->{UserID},
+            ObjectID    => $Self->{TicketID},
         );
     }
 
@@ -327,8 +327,8 @@ sub Run {
     if ( $Self->{LoadedFormDraftID} ) {
         $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
             FormDraftID => $Self->{LoadedFormDraftID},
+            ObjectID    => $Self->{TicketID},
             GetContent  => 0,
-            UserID      => $Self->{UserID},
         );
 
         my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
@@ -641,7 +641,6 @@ sub Run {
                     ObjectType => 'Ticket',
                     ObjectID   => $Self->{TicketID},
                     Action     => $Self->{Action},
-                    UserID     => $Self->{UserID},
                 );
                 DRAFT:
                 for my $FormDraft ( @{$FormDraftList} ) {
@@ -760,6 +759,29 @@ sub Run {
                 {
                     $Error{'DateInvalid'} = 'ServerError';
                 }
+            }
+        }
+
+        # if action is ArticleEdit, check if article is editable
+        my $ArticleEditingEnabled = 0;
+        if ( $Self->{Action} eq 'AgentTicketArticleEdit' && $Config->{Article} && $Self->{ArticleID} ) {
+
+            # fetch communication channel id by article id
+            my @BaseArticles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(
+                TicketID  => $Self->{TicketID},
+                ArticleID => $Self->{ArticleID},
+            );
+            if (@BaseArticles) {
+                my $CommunicationChannelID = $BaseArticles[0]->{CommunicationChannelID};
+                my %CommunicationChannel   = $Kernel::OM->Get('Kernel::System::CommunicationChannel')->ChannelGet(
+                    ChannelID => $CommunicationChannelID,
+                );
+                $ArticleEditingEnabled = $Self->_CheckArticleEditingEnabled(
+                    Article              => $Config->{Article},
+                    CommunicationChannel => $CommunicationChannel{ChannelName},
+                );
+                $Config->{NoteMandatory} = $ArticleEditingEnabled;
+                $GetParam{CreateArticle} = $ArticleEditingEnabled;
             }
         }
 
@@ -1306,23 +1328,98 @@ sub Run {
                 );
             }
             elsif ( $Self->{ArticleID} ) {
-                $ArticleID = $Kernel::OM->Get('Kernel::System::Ticket::Article::Backend::Internal')->ArticleEdit(
-                    TicketID                        => $Self->{TicketID},
-                    ArticleID                       => $Self->{ArticleID},             #Include the original article id for article versioning
-                    SenderType                      => 'agent',
-                    From                            => $From,
-                    MimeType                        => $MimeType,
-                    Charset                         => $LayoutObject->{UserCharset},
-                    UserID                          => $Self->{UserID},
-                    HistoryType                     => $Config->{HistoryType},
-                    HistoryComment                  => $Config->{HistoryComment},
-                    ForceNotificationToUserID       => \@NotifyUserIDs,
-                    ExcludeMuteNotificationToUserID => \@NotifyDone,
-                    UnlockOnAway                    => $UnlockOnAway,
-                    Attachment                      => \@Attachments,
-                    UserLogin                       => $Self->{UserLogin},
-                    %GetParam,
+
+                # check if editing is necessary by comparing article body
+                my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article')->BackendForArticle(
+                    TicketID  => $Self->{TicketID},
+                    ArticleID => $Self->{ArticleID},
                 );
+                my %Article = $ArticleBackendObject->ArticleGet(
+                    TicketID      => $Self->{TicketID},
+                    ArticleID     => $Self->{ArticleID},
+                    DynamicFields => 1,
+                    RealNames     => 1,
+                    UserID        => $Self->{UserID}
+                );
+                my %Data = $Self->_LoadArticleEdit(
+                    ArticleData          => \%Article,
+                    Ticket               => \%Ticket,
+                    ArticleBackendObject => $ArticleBackendObject,
+                    NoAttachments        => 1,
+                );
+
+                # sanitize both body strings from content ids for comparison
+                my $ExistingBody = $Data{Body};
+                $ExistingBody =~ s/(=|"|')cid:(.*?)("|'|>|\/>|\s)//egxi;
+                my $NewBody = $GetParam{Body};
+                $NewBody =~ s/(=|"|')cid:(.*?)("|'|>|\/>|\s)//egxi;
+
+                # compare attachments
+                my $AttachmentsDifferent = 0;
+                {
+                    # define if rich text should be used
+                    $Self->{RichText} = $ConfigObject->Get('Ticket::Frontend::ZoomRichTextForce')
+                        || $LayoutObject->{BrowserRichText}
+                        || 0;
+
+                    # Always exclude plain text attachment, but exclude HTML body only if rich text is enabled.
+                    $Self->{ExcludeAttachments} = {
+                        ExcludePlainText => 1,
+                        ExcludeHTMLBody  => $Self->{RichText},
+                    };
+
+                    # Get attachment index (excluding body attachments).
+                    my %AtmIndex = $ArticleBackendObject->ArticleAttachmentIndex(
+                        ArticleID => $Self->{ArticleID},
+                        %{ $Self->{ExcludeAttachments} },
+                    );
+
+                    if ( scalar @Attachments != scalar( values %AtmIndex ) ) {
+                        $AttachmentsDifferent = 1;
+                    }
+                    else {
+                        ATTACHMENT:
+                        for my $Attachment (@Attachments) {
+                            my $CompareAttachment = first { $_->{Filename} eq $Attachment->{Filename} } values %AtmIndex;
+                            if ( !IsHashRefWithData($CompareAttachment) ) {
+                                $AttachmentsDifferent = 1;
+                                last ATTACHMENT;
+                            }
+                            if ( $CompareAttachment->{FilesizeRaw} != $Attachment->{Filesize} ) {
+                                $AttachmentsDifferent = 1;
+                                last ATTACHMENT;
+                            }
+                        }
+                    }
+                }
+
+                if (
+                    ( $ExistingBody ne $NewBody )
+                    || ( $Article{Subject} ne $GetParam{Subject} )
+                    || ($AttachmentsDifferent)
+                    )
+                {
+                    $ArticleID = $ArticleBackendObject->ArticleEdit(
+                        TicketID                        => $Self->{TicketID},
+                        ArticleID                       => $Self->{ArticleID},
+                        SenderType                      => $Article{SenderType},
+                        From                            => $From,
+                        MimeType                        => $MimeType,
+                        Charset                         => $LayoutObject->{UserCharset},
+                        UserID                          => $Self->{UserID},
+                        HistoryType                     => $Config->{HistoryType},
+                        HistoryComment                  => $Config->{HistoryComment},
+                        ForceNotificationToUserID       => \@NotifyUserIDs,
+                        ExcludeMuteNotificationToUserID => \@NotifyDone,
+                        UnlockOnAway                    => $UnlockOnAway,
+                        Attachment                      => \@Attachments,
+                        UserLogin                       => $Self->{UserLogin},
+                        %GetParam,
+                    );
+                }
+                else {
+                    $ArticleID = $Self->{ArticleID};
+                }
             }
             else {
                 $ArticleID = $Kernel::OM->Get('Kernel::System::Ticket::Article::Backend::Internal')->ArticleCreate(
@@ -1366,6 +1463,38 @@ sub Run {
             );
 
         }
+        elsif ( $Self->{Action} eq 'AgentTicketArticleEdit' && ( $Config->{TimeUnits} || $ArticleEditingEnabled ) ) {
+
+            # time accounting
+            $ArticleID = $Self->{ArticleID};
+            if ( $GetParam{TimeUnits} ) {
+                $TicketObject->TicketAccountTime(
+                    TicketID  => $Self->{TicketID},
+                    ArticleID => $ArticleID,
+                    TimeUnit  => $GetParam{TimeUnits},
+                    UserID    => $Self->{UserID},
+                );
+            }
+        }
+
+        if ( $Self->{Action} eq 'AgentTicketArticleEdit' && $Config->{IsVisibleForCustomer} ) {
+            my $IsVisibleForCustomer = $Config->{IsVisibleForCustomerDefault};
+            $IsVisibleForCustomer = $GetParam{IsVisibleForCustomer} ? 1 : 0;
+
+            my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article')->BackendForArticle(
+                TicketID  => $Self->{TicketID},
+                ArticleID => $Self->{ArticleID},
+            );
+
+            $ArticleBackendObject->ArticleUpdate(
+                TicketID  => $Self->{TicketID},
+                ArticleID => $Self->{ArticleID},
+                Key       => 'IsVisibleForCustomer',
+                Value     => $IsVisibleForCustomer,
+                UserID    => $Self->{UserID},
+            );
+            $ArticleID = $Self->{ArticleID};
+        }
 
         # set dynamic fields
         # cycle through the activated Dynamic Fields for this screen
@@ -1396,7 +1525,7 @@ sub Run {
             $GetParam{FormDraftID}
             && !$Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
                 FormDraftID => $GetParam{FormDraftID},
-                UserID      => $Self->{UserID},
+                ObjectID    => $Self->{TicketID},
             )
             )
         {
@@ -1662,165 +1791,11 @@ sub Run {
         }
 
         # build the AJAX return for the dynamic fields
-        my @DynamicFieldAJAX;
-        DYNAMICFIELD:
-        for my $Name ( sort keys $DynFieldStates{Fields}->%* ) {
-            my $DynamicFieldConfig = $Self->{DynamicField}{$Name};
-
-            if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} eq 'ARRAY' ) {
-                for my $i ( 0 .. $#{ $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} } ) {
-                    my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-                        ? ( $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] // '' )
-                        :
-                        (
-                            $DynamicFieldBackendObject->BuildSelectionDataGet(
-                                DynamicFieldConfig => $DynamicFieldConfig,
-                                PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                                Value              => [ $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] ],
-                            )
-                            || $DynFieldStates{Fields}{$Name}{PossibleValues}
-                        );
-
-                    # add dynamic field to the list of fields to update
-                    push @DynamicFieldAJAX, {
-                        Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . "_$i",
-                        Data        => $DataValues,
-                        SelectedID  => $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i],
-                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                        Max         => 100,
-                    };
-                }
-
-                # add template value for keeping templates in line with ACLs
-                if ( !$DynFieldStates{Fields}{$Name}{NotACLReducible} ) {
-                    my $DataValues = (
-                        $DynamicFieldBackendObject->BuildSelectionDataGet(
-                            DynamicFieldConfig => $DynamicFieldConfig,
-                            PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                            Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
-                            )
-                            || $DynFieldStates{Fields}{$Name}{PossibleValues}
-                    );
-
-                    # add dynamic field to the list of fields to update
-                    push @DynamicFieldAJAX, {
-                        Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . "_Template",
-                        Data        => $DataValues,
-                        SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
-                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                        Max         => 100,
-                    };
-                }
-
-                next DYNAMICFIELD;
-            }
-
-            my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-                ? ( $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} // '' )
-                :
-                (
-                    $DynamicFieldBackendObject->BuildSelectionDataGet(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                        Value              => $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"},
-                    )
-                    || $DynFieldStates{Fields}{$Name}{PossibleValues}
-                );
-
-            # add dynamic field to the list of fields to update
-            push @DynamicFieldAJAX, {
-                Name        => 'DynamicField_' . $DynamicFieldConfig->{Name},
-                Data        => $DataValues,
-                SelectedID  => $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"},
-                Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                Max         => 100,
-            };
-        }
-
-        for my $SetField ( values $DynFieldStates{Sets}->%* ) {
-            my $DynamicFieldConfig = $SetField->{DynamicFieldConfig};
-
-            # the frontend name is the name of the inner field including its index or the '_Template' suffix
-            DYNAMICFIELD:
-            for my $FrontendName ( keys $SetField->{FieldStates}->%* ) {
-
-                if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $SetField->{Values}{$FrontendName} eq 'ARRAY' ) {
-                    for my $i ( 0 .. $#{ $SetField->{Values}{$FrontendName} } ) {
-                        my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                            ? ( $SetField->{Values}{$FrontendName}[$i] // '' )
-                            :
-                            (
-                                $DynamicFieldBackendObject->BuildSelectionDataGet(
-                                    DynamicFieldConfig => $DynamicFieldConfig,
-                                    PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                                    Value              => [ $SetField->{Values}{$FrontendName}[$i] ],
-                                )
-                                || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                            );
-
-                        # add dynamic field to the list of fields to update
-                        push @DynamicFieldAJAX, {
-                            Name        => 'DynamicField_' . $FrontendName . "_$i",
-                            Data        => $DataValues,
-                            SelectedID  => $SetField->{Values}{$FrontendName}[$i],
-                            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                            Max         => 100,
-                        };
-                    }
-
-                    # add template value for keeping templates in line with ACLs
-                    if ( !$SetField->{FieldStates}{$FrontendName}{NotACLReducible} ) {
-                        my $DataValues = (
-                            $DynamicFieldBackendObject->BuildSelectionDataGet(
-                                DynamicFieldConfig => $DynamicFieldConfig,
-                                PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                                Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
-                                )
-                                || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                        );
-
-                        # add dynamic field to the list of fields to update
-                        push @DynamicFieldAJAX, {
-                            Name        => 'DynamicField_' . $FrontendName . "_Template",
-                            Data        => $DataValues,
-                            SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
-                            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                            Max         => 100,
-                        };
-                    }
-
-                    next DYNAMICFIELD;
-                }
-
-                my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                    ? ( $SetField->{Values}{$FrontendName} // '' )
-                    :
-                    (
-                        $DynamicFieldBackendObject->BuildSelectionDataGet(
-                            DynamicFieldConfig => $DynamicFieldConfig,
-                            PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                            Value              => $SetField->{Values}{$FrontendName},
-                        )
-                        || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                    );
-
-                # add dynamic field to the list of fields to update
-                push @DynamicFieldAJAX, {
-                    Name        => 'DynamicField_' . $FrontendName,
-                    Data        => $DataValues,
-                    SelectedID  => $SetField->{Values}{$FrontendName},
-                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                    Max         => 100,
-                };
-            }
-        }
-
-        if ( IsHashRefWithData( $DynFieldStates{Visibility} ) ) {
-            push @DynamicFieldAJAX, {
-                Name => 'Restrictions_Visibility',
-                Data => $DynFieldStates{Visibility},
-            };
-        }
+        my @DynamicFieldAJAX = $DynamicFieldBackendObject->BuildAJAXReturn(
+            DynamicFieldConfigs => $Self->{DynamicField},
+            GetParam            => \%GetParam,
+            DynFieldStates      => \%DynFieldStates,
+        );
 
         # build AJAX return for the standard fields
         my @StdFieldAJAX;
@@ -1953,7 +1928,7 @@ sub Run {
                     );
                 }
 
-                # send a list of attachments in the upload cache back to the clientside JavaScript
+                # send a list of attachments in the upload cache back to the client-side JavaScript
                 # which renders then the list of currently uploaded attachments
                 @TicketAttachments = $UploadCacheObject->FormIDGetAllFilesMeta(
                     FormID => $Self->{FormID},
@@ -2035,7 +2010,7 @@ sub Run {
             $Body = $GetParam{Body} . $Body;
         }
 
-        # fillup configured default vars
+        # fill up configured default vars
         if ( $Body eq '' && $Config->{Body} ) {
             $Body = $LayoutObject->Output(
                 Template => $Config->{Body},
@@ -2126,7 +2101,7 @@ sub Run {
 
         my $Autoselect = $ConfigObject->Get('TicketACL::Autoselect') || undef;
 
-        # gather fields which are supposed to be hidden when autoselected
+        # gather fields which are supposed to be hidden when auto-selected
         my $HideAutoselectedJSON;
         if ($Autoselect) {
             my @HideAutoselected = grep { !ref( $Autoselect->{$_} ) && $Autoselect->{$_} == 2 } keys %{$Autoselect};
@@ -2819,18 +2794,48 @@ sub _Mask {
 
                 my $QuickDateButtons = $Config->{QuickDateButtons} // $ConfigObject->Get('Ticket::Frontend::DefaultQuickDateButtons');
 
+                # fetch actions to perform pre-filling for
+                my $RestorePendingConfig = $ConfigObject->Get("Ticket::Frontend::RestorePendingInformation");
+
+                # only pre-fill pending information for actions defined in the corresponding system configuration setting
+                my %PendingTimeSettings = ();
+                if ( $RestorePendingConfig->{Actions}->{ $Self->{Action} } ) {
+
+                    # try restoring pending time only if pending time exists and responsible config option is set
+                    if ( $Ticket{StateType} =~ /pending/ && $Ticket{RealTillTimeNotUsed} ) {
+
+                        my $PendingTimeObj = $Kernel::OM->Create(
+                            'Kernel::System::DateTime',
+                            ObjectParams => {
+                                Epoch => $Ticket{RealTillTimeNotUsed},
+                            },
+                        );
+
+                        my $CurrentTimeObj = $Kernel::OM->Create('Kernel::System::DateTime');
+
+                        # set pending time only if it is later than now
+                        if ( $CurrentTimeObj->Compare( DateTimeObject => $PendingTimeObj ) < 0 ) {
+                            %PendingTimeSettings = %{ $PendingTimeObj->Get() };
+                        }
+
+                    }
+
+                }
+
                 $Param{DateString} = $LayoutObject->BuildDateSelection(
                     %Param,
                     Format           => 'DateInputFormatLong',
                     YearPeriodPast   => 0,
                     YearPeriodFuture => 5,
-                    DiffTime         => $ConfigObject->Get('Ticket::Frontend::PendingDiffTime')
-                        || 0,
-                    Class                => $Param{DateInvalid} || ' ',
+
+                    # NOTE DiffTime only takes effect if no PendingTime is passed
+                    DiffTime             => $ConfigObject->Get('Ticket::Frontend::PendingDiffTime') || 0,
+                    Class                => $Param{DateInvalid}                                     || ' ',
                     Validate             => 1,
                     ValidateDateInFuture => 1,
                     Calendar             => $Calendar,
                     QuickDateButtons     => $QuickDateButtons,
+                    %PendingTimeSettings,
                 );
 
                 $LayoutObject->Block(
@@ -2968,23 +2973,20 @@ sub _Mask {
         }
 
         # create email parser object
-        my $EmailParserObject = Kernel::System::EmailParser->new(
-            Mode  => 'Standalone',
-            Debug => 0,
-        );
+        my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
 
         # check and retrieve involved and informed agents of ReplyTo Note
         my @ReplyToUsers;
         my %ReplyToUsersHash;
         my %ReplyToUserIDs;
         if ( $Self->{ReplyToArticle} ) {
-            my @ReplyToParts = $EmailParserObject->SplitAddressLine(
+            my @ReplyToParts = $EmailAddressObject->ParseAddressLine(
                 Line => $Self->{ReplyToArticleContent}->{To} || '',
             );
 
             REPLYTOPART:
             for my $SingleReplyToPart (@ReplyToParts) {
-                my $ReplyToAddress = $EmailParserObject->GetEmailAddress(
+                my $ReplyToAddress = $EmailAddressObject->GetAddress(
                     Email => $SingleReplyToPart,
                 );
 
@@ -3515,7 +3517,7 @@ sub _GetQuotedReplyBody {
                 # quote text
                 $Param{Body} = "<blockquote type=\"cite\">$Param{Body}</blockquote>\n";
 
-                # cleanup not compat. tags
+                # cleanup non-compatible tags
                 $Param{Body} = $LayoutObject->RichTextDocumentCleanup(
                     String => $Param{Body},
                 );
@@ -3691,6 +3693,10 @@ sub _LoadArticleEdit {
         );
     }
     else {
+        return %ArticleData;
+    }
+
+    if ( $Param{NoAttachments} ) {
         return %ArticleData;
     }
 

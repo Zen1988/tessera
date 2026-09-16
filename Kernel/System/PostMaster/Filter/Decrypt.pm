@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,7 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Crypt::PGP',
     'Kernel::System::Crypt::SMIME',
+    'Kernel::System::EmailAddress',
 );
 
 sub new {
@@ -112,8 +113,10 @@ sub Run {
     elsif ( $EncryptionMethod eq 'SMIME' ) {
 
         # Try to decrypt body with SMIME.
+        # Actually pass the complete mail as a string as
+        # the crypted body will be detected in _DecryptSMIME().
         $Param{GetParam}->{'X-OTOBO-BodyDecrypted'} = $Self->_DecryptSMIME(
-            Body        => $Self->{ParserObject}->{Email}->as_string(),
+            Body        => $Self->{ParserObject}->GetPlainEmail,
             ContentType => $ContentType,
             %Param
         ) || '';
@@ -239,15 +242,14 @@ sub _DecryptSMIME {
         my %EmailsToSearch;
         for my $Email (qw(Resent-To Envelope-To To Cc Delivered-To X-Original-To)) {
 
-            my @EmailAddressOnField = $Self->{ParserObject}->SplitAddressLine(
+            my $EmailAddressObject  = $Kernel::OM->Get('Kernel::System::EmailAddress');
+            my @EmailAddressOnField = $EmailAddressObject->ParseAddressLine(
                 Line => $Self->{ParserObject}->GetParam( WHAT => $Email ),
             );
 
             # filter email addresses avoiding repeated and save on hash to search
             for my $EmailAddress (@EmailAddressOnField) {
-                my $CleanEmailAddress = $Self->{ParserObject}->GetEmailAddress(
-                    Email => $EmailAddress,
-                );
+                my $CleanEmailAddress = $EmailAddressObject->GetAddress( AddressObject => $EmailAddress );
                 $EmailsToSearch{$CleanEmailAddress} = '1';
             }
         }
@@ -418,8 +420,9 @@ sub _DecryptSMIME {
             # made if sender and signer addresses does not match
 
             # get original sender from email
-            my $OrigFrom   = $Self->{ParserObject}->GetParam( WHAT => 'From' );
-            my $OrigSender = $Self->{ParserObject}->GetEmailAddress( Email => $OrigFrom );
+            my $OrigFrom           = $Self->{ParserObject}->GetParam( WHAT => 'From' );
+            my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+            my $OrigSender         = $EmailAddressObject->GetAddress( Email => $OrigFrom );
 
             # compare sender email to signer email
             my $SignerSenderMatch = 0;

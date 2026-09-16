@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2023 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,7 +23,7 @@ use namespace::autoclean;
 use utf8;
 
 # core modules
-use List::Util qw(any);
+use List::Util qw(any none);
 
 # CPAN modules
 
@@ -224,7 +224,9 @@ sub _Add {
 
         my $Name = $Setting->{ConfigParamName};
         if ( $Setting->{Multiple} && !defined $GetParam{$Name} ) {
-            $GetParam{$Name}->@* = $ParamObject->GetArray( Param => $Name );
+
+            # prevent storing an array with empty string
+            $GetParam{$Name}->@* = grep { IsStringWithData($_) } $ParamObject->GetArray( Param => $Name );
         }
         else {
             $GetParam{$Name} //= $ParamObject->GetParam( Param => $Name );
@@ -246,10 +248,12 @@ sub _Add {
     my $FieldTypeName  = $ConfigObject->Get('DynamicFields::Driver')->{ $GetParam{FieldType} }->{DisplayName}      || '';
 
     # check namespace validity
-    my $Namespaces = $ConfigObject->Get('DynamicField::Namespaces');
-    my $Namespace  = '';
-    if ( IsArrayRefWithData($Namespaces) && $GetParam{NamespaceFilter} ) {
-        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } $Namespaces->@* ) ? $GetParam{NamespaceFilter} : '';
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    my $Namespace = '';
+    if ( @DFNamespaces && $GetParam{NamespaceFilter} ) {
+        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } @DFNamespaces ) ? $GetParam{NamespaceFilter} : '';
     }
 
     return $Self->_ShowScreen(
@@ -259,6 +263,7 @@ sub _Add {
         BreadcrumbText => $LayoutObject->{LanguageObject}->Translate( 'Add %s field', $LayoutObject->{LanguageObject}->Translate($FieldTypeName) ),
         ObjectTypeName => $ObjectTypeName,
         FieldTypeName  => $FieldTypeName,
+        Namespace      => $Namespace,
     );
 }
 
@@ -287,7 +292,9 @@ sub _AddAction {
 
         my $Name = $Setting->{ConfigParamName};
         if ( $Setting->{Multiple} ) {
-            $GetParam{$Name}->@* = $ParamObject->GetArray( Param => $Name );
+
+            # prevent storing an array with empty string
+            $GetParam{$Name}->@* = grep { IsStringWithData($_) } $ParamObject->GetArray( Param => $Name );
         }
         else {
             $GetParam{$Name} = $ParamObject->GetParam( Param => $Name );
@@ -404,6 +411,9 @@ sub _AddAction {
 
     # multiselect excludes multivalue
     $FieldConfig{MultiValue} = $FieldConfig{Multiselect} ? 0 : $FieldConfig{MultiValue};
+
+    # TreeView is not allowed for AutoComplete
+    $FieldConfig{TreeView} = $FieldConfig{EditFieldMode} eq 'AutoComplete' ? 0 : $FieldConfig{TreeView};
 
     if ( any { $_->{ConfigParamName} eq 'ReferenceFilterList' } $Param{FieldTypeSettings}->@* ) {
         $GetParam{ReferenceFilterCounter} = $ParamObject->GetParam( Param => 'ReferenceFilterCounter' ) || 0;
@@ -554,7 +564,9 @@ sub _ChangeAction {
 
         my $Name = $Setting->{ConfigParamName};
         if ( $Setting->{Multiple} ) {
-            $GetParam{$Name}->@* = $ParamObject->GetArray( Param => $Name );
+
+            # prevent storing an array with empty string
+            $GetParam{$Name}->@* = grep { IsStringWithData($_) } $ParamObject->GetArray( Param => $Name );
         }
         else {
             $GetParam{$Name} = $ParamObject->GetParam( Param => $Name );
@@ -727,6 +739,9 @@ sub _ChangeAction {
     # multiselect excludes multivalue
     $FieldConfig{MultiValue} = $FieldConfig{Multiselect} ? 0 : $FieldConfig{MultiValue};
 
+    # TreeView is not allowed for AutoComplete
+    $FieldConfig{TreeView} = $FieldConfig{EditFieldMode} eq 'AutoComplete' ? 0 : $FieldConfig{TreeView};
+
     if ( any { $_->{ConfigParamName} eq 'ReferenceFilterList' } $Param{FieldTypeSettings}->@* ) {
         $GetParam{ReferenceFilterCounter} = $ParamObject->GetParam( Param => 'ReferenceFilterCounter' ) || 0;
 
@@ -848,7 +863,7 @@ sub _ShowScreen {
         # check for namespace
         if ( $Param{Name} =~ /(.*)-(.*)/ ) {
             $Namespace = $1;
-            $Param{PlainFieldName} = $2 unless $Param{CloneFieldID};
+            $Param{PlainFieldName} = $2;
         }
         else {
             $Param{PlainFieldName} = $Param{Name};
@@ -949,10 +964,12 @@ sub _ShowScreen {
         # more input types might be supported in future
     }
 
-    my $NamespaceList = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    if (@DFNamespaces) {
         my $NamespaceStrg = $LayoutObject->BuildSelection(
-            Data          => $NamespaceList,
+            Data          => \@DFNamespaces,
             Name          => 'Namespace',
             SelectedValue => $Namespace || '',
             PossibleNone  => 1,
@@ -1087,7 +1104,7 @@ sub _ShowScreen {
                 }
 
                 # skip if values are undef
-                next REFERENCEFILTERENTRY if !grep { defined $_ } values %FilterRow;
+                next REFERENCEFILTERENTRY if none { defined $_ } values %FilterRow;
 
                 $LayoutObject->Block(
                     Name => 'ReferenceFilterRow',
@@ -1168,7 +1185,7 @@ sub _ShowScreen {
         );
     }
 
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    if (@DFNamespaces) {
         if ( IsStringWithData( $Param{NamespaceFilter} ) ) {
             $FilterStrg .= ";NamespaceFilter=" . $LayoutObject->Output(
                 Template => '[% Data.Filter | uri %]',
@@ -1220,7 +1237,7 @@ sub _GetParamReferenceFilterList {
             }
 
             # skip if filter values are undef
-            next REFERENCEFILTERENTRY if !grep { defined $_ } values %FilterRow;
+            next REFERENCEFILTERENTRY if none { defined $_ } values %FilterRow;
 
             # is the reference filter valid?
             # TODO Check selects also

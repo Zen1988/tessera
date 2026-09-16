@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -78,7 +78,6 @@ sub Data {
     $Self->{Translation}->{'Add language'} = '言語を追加';
     $Self->{Translation}->{'Add Language'} = '言語を追加';
     $Self->{Translation}->{'Edit Language'} = '言語を編集';
-    $Self->{Translation}->{'Do you really want to delete this language?'} = 'この言語を削除してよろしいですか？';
     $Self->{Translation}->{'You can not delete this language. It is used in at least one FAQ article!'} =
         'この言語を削除することはできません。一つ以上のFAQで使用されています！';
     $Self->{Translation}->{'This language is used in the following FAQ Article(s)'} = 'この言語は、以下のFAQで使用されています。';
@@ -144,6 +143,7 @@ sub Data {
     $Self->{Translation}->{'Insert Full FAQ & Link'} = 'FAQ全文とリンクを挿入する';
 
     # Template: CustomerFAQExplorer
+    $Self->{Translation}->{'Latest updated FAQ articles'} = '最後に更新されたFAQ項目';
     $Self->{Translation}->{'No FAQ articles found.'} = '該当する記事はありません。';
 
     # Template: CustomerFAQRelatedArticles
@@ -202,9 +202,9 @@ sub Data {
 
     # Perl Module: Kernel/Modules/AgentFAQJournal.pm
     $Self->{Translation}->{'FAQ Journal'} = 'FAQ ジャーナル';
-    $Self->{Translation}->{'Need config option FAQ::Frontend::Overview'} = '';
+    $Self->{Translation}->{'Need config option FAQ::Frontend::Overview'} = 'FAQ::Frontend::Overview設定オプションが必要です';
     $Self->{Translation}->{'Config option FAQ::Frontend::Overview needs to be a HASH ref!'} =
-        '';
+        '設定オプション FAQ::Frontend::Overview はハッシュ参照である必要があります！';
     $Self->{Translation}->{'No config option found for the view "%s"!'} = '"%s"を閲覧するための設定値がありません！';
 
     # Perl Module: Kernel/Modules/AgentFAQLanguage.pm
@@ -245,13 +245,15 @@ sub Data {
     $Self->{Translation}->{'You have already voted!'} = 'あなたはすでに評価済です。';
     $Self->{Translation}->{'No rate selected!'} = '評価が選択されていません。';
     $Self->{Translation}->{'The voting mechanism is not enabled!'} = '評価の機能を有効になっていません！';
-    $Self->{Translation}->{'The vote rate is not defined!'} = '';
+    $Self->{Translation}->{'The vote rate is not defined!'} = '投票率は定義されていません!';
 
     # Perl Module: Kernel/Modules/CustomerFAQPrint.pm
     $Self->{Translation}->{'FAQ Article Print'} = '記事印刷';
 
     # Perl Module: Kernel/Modules/CustomerFAQSearch.pm
     $Self->{Translation}->{'Created between'} = 'この期間内に作成された';
+    $Self->{Translation}->{'Created within the last'} = '';
+    $Self->{Translation}->{'Created more than ... ago'} = '';
 
     # Perl Module: Kernel/Modules/CustomerFAQZoom.pm
     $Self->{Translation}->{'Need ItemID!'} = 'アイテムIDの入力が必要です！';
@@ -263,7 +265,7 @@ sub Data {
 
     # Perl Module: Kernel/Modules/PublicFAQRSS.pm
     $Self->{Translation}->{'No Type is given!'} = 'タイプが指定されていません！';
-    $Self->{Translation}->{'Type must be either LastCreate or LastChange or Top10!'} = '';
+    $Self->{Translation}->{'Type must be either LastCreate or LastChange or Top10!'} = 'タイプは LastCreate、LastChange、Top10 のいずれかである必要があります！';
     $Self->{Translation}->{'Can\'t create RSS file!'} = 'RSSファイルが作成できません！';
 
     # Perl Module: Kernel/Output/HTML/HeaderMeta/AgentFAQSearch.pm
@@ -281,19 +283,20 @@ sub Data {
     $Self->{Translation}->{'Need rate!'} = '評価してください。';
     $Self->{Translation}->{'This article is empty!'} = 'この記事は空です!';
     $Self->{Translation}->{'Latest created FAQ articles'} = '最後に作成されたFAQ項目';
-    $Self->{Translation}->{'Latest updated FAQ articles'} = '最後に更新されたFAQ項目';
     $Self->{Translation}->{'Top 10 FAQ articles'} = 'Top 10 FAQ項目';
 
     # Perl Module: Kernel/Output/HTML/LinkObject/FAQ.pm
     $Self->{Translation}->{'Content Type'} = 'コンテンツタイプ';
 
-    # Database XML Definition: FAQ.sopm
+    # Perl Module: Kernel/System/DynamicField/Driver/FAQ.pm
+    $Self->{Translation}->{'Select the attribute which FAQs will be searched by'} = '';
+    $Self->{Translation}->{'External-source key'} = '';
+    $Self->{Translation}->{'Select the type of display'} = '';
+
+    # Database XML / SOPM Definition: FAQ.sopm
     $Self->{Translation}->{'internal'} = '内部向';
     $Self->{Translation}->{'external'} = '外部向';
     $Self->{Translation}->{'public'} = '公開';
-
-    # JS File: FAQ.Agent.ConfirmationDialog
-    $Self->{Translation}->{'Ok'} = 'はい';
 
     # SysConfig
     $Self->{Translation}->{'A filter for HTML output to add links behind a defined string. The element Image allows two input kinds. First the name of an image (e.g. faq.png). In this case the OTOBO image path will be used. The second possibility is to insert the link to the image.'} =
@@ -302,10 +305,10 @@ sub Data {
     $Self->{Translation}->{'CSS color for the voting result.'} = '評価の結果表示ようのカラー（スタイルシート）';
     $Self->{Translation}->{'Cache Time To Leave for FAQ items.'} = 'FAQ項目から離脱するまでのキャッシュ時間';
     $Self->{Translation}->{'Category Management'} = 'カテゴリー管理';
-    $Self->{Translation}->{'Category Management.'} = '';
+    $Self->{Translation}->{'Category Management.'} = 'カテゴリー管理。';
     $Self->{Translation}->{'Customer FAQ Print.'} = '顧客用FAQの表示';
-    $Self->{Translation}->{'Customer FAQ Related Articles'} = '';
-    $Self->{Translation}->{'Customer FAQ Related Articles.'} = '';
+    $Self->{Translation}->{'Customer FAQ Related Articles'} = 'お客様FAQ関連記事';
+    $Self->{Translation}->{'Customer FAQ Related Articles.'} = '顧客FAQ関連記事。';
     $Self->{Translation}->{'Customer FAQ Zoom.'} = '顧客用FAQの詳細表示';
     $Self->{Translation}->{'Customer FAQ search.'} = '顧客用FAQの検索';
     $Self->{Translation}->{'Customer FAQ.'} = '顧客用FAQ';
@@ -326,7 +329,7 @@ sub Data {
     $Self->{Translation}->{'Define if the FAQ title should be concatenated to article subject.'} =
         'FAQタイトルが記事の件名に連結するかどうかを定義します';
     $Self->{Translation}->{'Define which columns are shown in the linked FAQs widget (LinkObject::ViewMode = "complex"). Note: Only FAQ attributes and dynamic fields (DynamicField_NameX) are allowed for DefaultColumns.'} =
-        '';
+        'リンクされた FAQ ウィジェットに表示される列を定義します (LinkObject::ViewMode = "complex")。注: DefaultColumns では、FAQ 属性とダイナミックフィールド (DynamicField_NameX) のみが許可されます。';
     $Self->{Translation}->{'Defines an overview module to show the small view of a FAQ journal.'} =
         '簡易版FAQジャーナル表示用モジュールの概要を定義';
     $Self->{Translation}->{'Defines an overview module to show the small view of a FAQ list.'} =
@@ -357,6 +360,8 @@ sub Data {
         '公開画面における、FAQ検索結果並び順の既定値を定義します。Up: 古い順 / Down: 新しい順';
     $Self->{Translation}->{'Defines the default shown FAQ search attribute for FAQ search screen.'} =
         'FAQ 検索画面に表示されるFAQ 検索属性のデフォルト値を定義する。';
+    $Self->{Translation}->{'Defines the height for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).'} =
+        '';
     $Self->{Translation}->{'Defines the information to be inserted in a FAQ based Ticket. "Full FAQ" includes text, attachments and inline images.'} =
         'FAQ記事からチケットへの挿入される情報を定義する。「FAQすべて」にはテキスト・添付・及びインラインの画像が含まれます。';
     $Self->{Translation}->{'Defines the parameters for the dashboard backend. "Limit" defines the number of entries displayed by default. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually.'} =
@@ -400,14 +405,15 @@ sub Data {
         '公開インターフェイスのFAQズーム画面に表示するダイナミック・フィールド';
     $Self->{Translation}->{'Edit this FAQ'} = 'この記事を編集';
     $Self->{Translation}->{'Enable multiple languages on FAQ module.'} = '多言語を有効にする';
+    $Self->{Translation}->{'Enable service assignment for FAQs.'} = 'FAQ のサービス割り当てを有効にします。';
     $Self->{Translation}->{'Enable the related article feature for the customer frontend.'} =
-        '';
+        '顧客フロントエンドの関連記事機能を有効にします。';
     $Self->{Translation}->{'Enable voting mechanism on FAQ module.'} = '評価の機能を有効にする';
     $Self->{Translation}->{'Explorer'} = '一覧';
-    $Self->{Translation}->{'FAQ AJAX Responder'} = '';
-    $Self->{Translation}->{'FAQ AJAX Responder for Richtext.'} = '';
-    $Self->{Translation}->{'FAQ Area'} = '';
-    $Self->{Translation}->{'FAQ Area.'} = ' FAQ エリア';
+    $Self->{Translation}->{'FAQ AJAX Responder'} = 'FAQ AJAX レスポンダー';
+    $Self->{Translation}->{'FAQ AJAX Responder for Richtext.'} = 'リッチテキスト用の FAQ AJAX レスポンダー。';
+    $Self->{Translation}->{'FAQ Area'} = 'FAQエリア';
+    $Self->{Translation}->{'FAQ Area.'} = 'FAQエリア。';
     $Self->{Translation}->{'FAQ Delete.'} = 'FAQ の削除';
     $Self->{Translation}->{'FAQ Edit.'} = 'FAQ の編集';
     $Self->{Translation}->{'FAQ History.'} = 'FAQ 更新履歴';
@@ -417,26 +423,32 @@ sub Data {
     $Self->{Translation}->{'FAQ search backend router of the agent interface.'} = '担当者インターフェイスにおける、FAQ検索のバックエンドルータ';
     $Self->{Translation}->{'Field4'} = 'Field4';
     $Self->{Translation}->{'Field5'} = 'Field5';
+    $Self->{Translation}->{'Fields of the faq index, used for the fulltext search. Fields are also stored, but are not mandatory for the overall functionality. Inclusion of attachments can be disabled by setting the entry to 0 or deleting it.'} =
+        '';
+    $Self->{Translation}->{'Fields stored in the faq index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory.'} =
+        '';
     $Self->{Translation}->{'Full FAQ'} = 'FAQ全文';
     $Self->{Translation}->{'Group for the approval of FAQ articles.'} = 'FAQの記事の承認のためのグループ';
     $Self->{Translation}->{'History of this FAQ'} = 'この記事の履歴';
+    $Self->{Translation}->{'If activated, FAQ articles of status type internal are also taken into account for the approval process.'} =
+        '';
     $Self->{Translation}->{'Include internal fields on a FAQ based Ticket.'} = 'FAQ由来のチケットに含まれる内部項目';
     $Self->{Translation}->{'Include the name of each field in a FAQ based Ticket.'} = 'FAQ由来のチケットに含まれる内部項目すべての名称';
     $Self->{Translation}->{'Interfaces where the quick search should be shown.'} = 'クイック検索が表示される画面';
     $Self->{Translation}->{'Journal'} = 'ジャーナル';
     $Self->{Translation}->{'Language Management'} = '言語管理';
     $Self->{Translation}->{'Language Management.'} = '言語管理';
-    $Self->{Translation}->{'Limit for the search to build the keyword FAQ article list.'} = '';
+    $Self->{Translation}->{'Limit for the search to build the keyword FAQ article list.'} = 'キーワード FAQ 記事リストを構築するための検索の制限。';
     $Self->{Translation}->{'Link another object to this FAQ item'} = 'このFAQ記事に他オブジェクトを関連付ける';
     $Self->{Translation}->{'List of queue names for which the related article feature is enabled.'} =
-        '';
+        '関連記事機能が有効になっているキュー名のリスト。';
     $Self->{Translation}->{'List of state types which can be used in the agent interface.'} =
         '担当者インターフェイスで利用可能なステートタイプリスト';
     $Self->{Translation}->{'List of state types which can be used in the customer interface.'} =
         '顧客画面で利用可能なステートタイプリスト';
     $Self->{Translation}->{'List of state types which can be used in the public interface.'} =
         '公開画面で利用可能なステートタイプリスト';
-    $Self->{Translation}->{'Loader module registration for the public interface.'} = '';
+    $Self->{Translation}->{'Loader module registration for the public interface.'} = '一般Webインターフェイスのローダー モジュールの登録。';
     $Self->{Translation}->{'Maximum number of FAQ articles to be displayed in the FAQ Explorer result of the agent interface.'} =
         '担当者インターフェイスのFAQ一覧で表示する記事の最大数';
     $Self->{Translation}->{'Maximum number of FAQ articles to be displayed in the FAQ Explorer result of the customer interface.'} =
@@ -466,11 +478,11 @@ sub Data {
     $Self->{Translation}->{'Maximum size of the titles in a FAQ article to be shown in the FAQ journal in the agent interface.'} =
         '担当者インターフェイスのFAQ ジャーナルで表示される件名のFAQ記事の最大サイズ';
     $Self->{Translation}->{'Module to generate HTML OpenSearch profile for short FAQ search in the customer interface.'} =
-        '';
+        '顧客Webインターフェースでの短い FAQ 検索用の HTML OpenSearch プロファイルを生成するモジュール。';
     $Self->{Translation}->{'Module to generate HTML OpenSearch profile for short FAQ search in the public interface.'} =
         '公開インタフェースにおいて、ショート・チケット検索のためのhtml OpenSearchプロフィールを生成するモジュールです';
     $Self->{Translation}->{'Module to generate html OpenSearch profile for short FAQ search.'} =
-        '';
+        '短い FAQ 検索用の HTML OpenSearch プロファイルを生成するモジュール。';
     $Self->{Translation}->{'New FAQ Article.'} = '新規 FAQ 項目';
     $Self->{Translation}->{'New FAQ articles need approval before they get published.'} = '新規 FAQ 項目を公開するには事前に承認されることが必要です';
     $Self->{Translation}->{'Number of FAQ articles to be displayed in the FAQ Explorer of the customer interface.'} =
@@ -481,12 +493,16 @@ sub Data {
         '顧客用インターフェイス 検索結果表示の各画面で表示される FAQ 項目の数';
     $Self->{Translation}->{'Number of FAQ articles to be displayed on each page of a search result in the public interface.'} =
         '公開インターフェイス の検索結果表示の各画面で表示される FAQ 項目の数';
+    $Self->{Translation}->{'Number of shards (NS), replicas (NR) and fields limit for the index \'faq\'.'} =
+        '';
     $Self->{Translation}->{'Number of shown items in last changes.'} = '「最近の変更」に何件まで表示するか';
     $Self->{Translation}->{'Number of shown items in last created.'} = '「最新の新規作成」に何件まで表示するか';
     $Self->{Translation}->{'Number of shown items in the top 10 feature.'} = '「トップ10記事」に何件まで表示するか';
-    $Self->{Translation}->{'Output filter to add Java-script to CustomerTicketMessage screen.'} =
+    $Self->{Translation}->{'Objects to search for, how many entries and which attributes to show. FAQ attributes have to explicitly be stored via Elasticsearch.'} =
         '';
-    $Self->{Translation}->{'Output limit for the related FAQ articles.'} = '';
+    $Self->{Translation}->{'Output filter to add Java-script to CustomerTicketMessage screen.'} =
+        'CustomerTicketMessage 画面に Java スクリプトを追加するための出力フィルター。';
+    $Self->{Translation}->{'Output limit for the related FAQ articles.'} = '関連するFAQ記事の出力制限。';
     $Self->{Translation}->{'Parameters for the pages (in which the FAQ items are shown) of the small FAQ journal overview.'} =
         '簡易版FAQジャーナル一覧のページ指定用のパラメータ';
     $Self->{Translation}->{'Parameters for the pages (in which the FAQ items are shown) of the small FAQ overview.'} =
@@ -500,12 +516,12 @@ sub Data {
     $Self->{Translation}->{'Rates for voting. Key must be in percent.'} = '評価率。キーは、パーセントで指定する必要があります。';
     $Self->{Translation}->{'S'} = 'S';
     $Self->{Translation}->{'Search FAQ'} = 'FAQを検索';
-    $Self->{Translation}->{'Search FAQ Small.'} = '';
+    $Self->{Translation}->{'Search FAQ Small.'} = 'FAQ(小)を検索。';
     $Self->{Translation}->{'Search FAQ.'} = 'FAQの検索';
     $Self->{Translation}->{'Select how many items should be shown in Journal Overview "Small" by default.'} =
-        '';
+        'ジャーナル概要にデフォルトで「小」として表示される項目の数を選択します。';
     $Self->{Translation}->{'Select how many items should be shown in Overview "Small" by default.'} =
-        '';
+        '概要に表示する項目の数を選択します。デフォルトでは「小」です。';
     $Self->{Translation}->{'Set the default height (in pixels) of inline HTML fields in AgentFAQZoom.'} =
         'AgentFAQZoomで表示されるインラインHTMLのデフォルト高さ(ピクセル表記)を設定';
     $Self->{Translation}->{'Set the default height (in pixels) of inline HTML fields in CustomerFAQZoom (and PublicFAQZoom).'} =
@@ -523,12 +539,14 @@ sub Data {
     $Self->{Translation}->{'Show FAQ Article with HTML.'} = '記事でHTMLタグを表示する/表示しない';
     $Self->{Translation}->{'Show FAQ path yes/no.'} = '記事のパスを表示する/表示しない';
     $Self->{Translation}->{'Show invalid items in the FAQ Explorer result of the agent interface.'} =
-        '';
+        '担当者Webインターフェイスの FAQ エクスプローラーの結果に無効な項目を表示します。';
     $Self->{Translation}->{'Show items of subcategories.'} = 'サブカテゴリーのトピックを表示する/表示しない';
     $Self->{Translation}->{'Show last change items in defined interfaces.'} = '最新の変更を表示する画面（担当者用/顧客用/公開）を定義';
     $Self->{Translation}->{'Show last created items in defined interfaces.'} = '最新の新規作成を表示する画面（担当者用/顧客用/公開）を定義';
+    $Self->{Translation}->{'Show related articles on service change even with empty subject and body.'} =
+        '件名と本文が空の場合でも、サービス変更に関する関連記事を表示します。';
     $Self->{Translation}->{'Show the stars for the articles with a rating equal or greater like the defined value (set value \'0\' to deactivate the output).'} =
-        '';
+        '定義された値以上の評価を持つ記事に星を表示します (出力を無効にするには値を \'0\' に設定します)。';
     $Self->{Translation}->{'Show top 10 items in defined interfaces.'} = 'トップ10を表示する画面（担当者用/顧客用/公開）を定義';
     $Self->{Translation}->{'Show voting in defined interfaces.'} = '評価を表示する画面（担当者用/顧客用/公開）を定義';
     $Self->{Translation}->{'Shows a link in the menu that allows linking a FAQ with another object in the zoom view of such FAQ of the agent interface.'} =
@@ -546,7 +564,7 @@ sub Data {
     $Self->{Translation}->{'Solution'} = '解決';
     $Self->{Translation}->{'Symptom'} = '症状';
     $Self->{Translation}->{'Text Only'} = 'テキストのみ';
-    $Self->{Translation}->{'The default languages for the related FAQ articles.'} = '';
+    $Self->{Translation}->{'The default languages for the related FAQ articles.'} = '関連する FAQ 記事のデフォルトの言語。';
     $Self->{Translation}->{'The identifier for a FAQ, e.g. FAQ#, KB#, MyFAQ#. The default is FAQ#.'} =
         'FAQ用の識別子 例. FAQ#, KB#, MyFAQ#. デフォルトでは FAQ# となっています';
     $Self->{Translation}->{'This setting defines that a \'FAQ\' object can be linked with other \'FAQ\' objects using the \'Normal\' link type.'} =
@@ -558,7 +576,8 @@ sub Data {
     $Self->{Translation}->{'This setting defines that a \'FAQ\' object can be linked with other \'Ticket\' objects using the \'ParentChild\' link type.'} =
         '‘ParentChild’リンク・タイプを使用して、‘FAQ’オブジェクトが他の‘Ticket’オブジェクトとリンクされるように、定義します。';
     $Self->{Translation}->{'Ticket body for approval of FAQ article.'} = 'FAQ承認チケット用　チケット本文';
-    $Self->{Translation}->{'Ticket subject for approval of FAQ article.'} = 'FAQ承認チケット用　チケット件名 ';
+    $Self->{Translation}->{'Ticket subject for approval of FAQ article. Permitted notification tags are <OTOBO_FAQ_NUMBER>, <OTOBO_FAQ_CATEGORYID>, <OTOBO_FAQ_ITEMID>> <OTOBO_FAQ_TITLE> and <OTOBO_FAQ_STATEID>.'} =
+        '';
     $Self->{Translation}->{'Toolbar Item for a shortcut.'} = 'ショートカットのためのツールバー・アイテムです。';
     $Self->{Translation}->{'external (customer)'} = '外部 (顧客)';
     $Self->{Translation}->{'internal (agent)'} = '内部 (担当者)';

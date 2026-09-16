@@ -1,5 +1,14 @@
 # TESSERA Project Status
 
+## 2026-09-16 Firewall Request Routing Investigation (Pending Runtime Data)
+
+- Follow-up workbook diagnosis: the supplied ATFM StateBook workbook has 21 BlueBook references across four rows, all authored under obsolete/unrecognized nested key `ZState-BlueBook`. The authoritative export, bootstrap Set definition, and StateBookReader use `ZState-Book`. `_SetValueFromDocument` skips unknown child keys and fills omitted defined children with blank values, explaining the blank Book fields shown in the live editor. All 21 class-prefixed BlueBook names match exactly one entry in the supplied 14-row BlueBook workbook. Correct the nested key to `ZState-Book` and update the existing StateBooks after validating BlueBook imports; no field alias or new Dynamic Field is needed. Live closure cause remains unverified.
+
+- Supplied screenshot for ticket `ICAT-TI-20260000014` (TicketID 297) shows Service Governance Resolution Failed: no matching Service Support Map for ServiceID 8. The supplied log confirms successful ticket creation.
+- Verified the latest TESSERA-Base 0.0.42 OPM payloads for ServiceLibrarian and GovernanceObject Document match their package sources. ServiceLibrarian emits this failure immediately after the exact ServiceSupportMap / `ZTSMServiceSupportMap-Service` search returns no candidates, before map specificity selection or downstream policy/role execution. The supplied evidence does not identify why the live map search is empty.
+- Separate confirmed import errors affect `ZBlue-TicketType` / `ZBlue-Record` on GovernanceObject IDs 1685, 1690, 1695, 1696, 1701, 1704, 1709, and 1712. The authoritative Dynamic Field export defines `ZBlue-TicketType` as GeneralCatalog class `ZTSM::Type`; the latest GeneralCatalog export lacks Clarification, Implementation, Resolution, and RiskTreatment. The Document importer currently passes an unresolved catalog name through to integer storage, explaining the observed error mechanism; live catalog contents still need verification.
+- Next: obtain the installed package version and current firewall ServiceSupportMap export; verify its stored Service Offering reference against ServiceID 8. Verify live `ZTSM::Type` entries and affected BlueBook records before planning explicit catalog/import repair. Do not bypass service matching, substitute ticket Type IDs for GeneralCatalog IDs, or overwrite administrator-owned governance objects. No runtime code or live data changed in this investigation.
+
 Last Updated: 2026-08-28
 
 ## 2026-08-28 Service Excel Import/Export
@@ -14400,3 +14409,16 @@ PurpleBook completion must not:
 - Virtual asset-tag resolution and generation now runs only when the selected class's active definition actually contains `ZTAM-AssetTag`.
 - Product and other classes whose authoritative templates omit `ZTAM-AssetTag` no longer require either an asset tag or Application `ZTSM-Code`.
 - Release build: `TESSERA-Base 0.0.33`; 14 test files / 370 tests pass.
+
+## 2026-09-16 Set Reference Import Shape Fix - TESSERA-Base 0.0.43
+
+- Correcting the StateBook key to ZState-Book exposed scalar empty strings for omitted reference children. BaseEntity requires an array for each Set row and crashed at line 187.
+- Shared Document import now uses empty arrays for missing/blank portable-reference and GeneralCatalog children, singleton arrays for scalar selections, and preserves existing arrays and scalar text fields. Local runtime source synchronized. No migration or bootstrap changes.
+- All 19 TESSERA test files pass (495 tests), including eight new behavioral checks. Built TESSERA-Base-0.0.43.opm: 282 byte-matching payloads, SHA256 830CEB3042A641311CB51FE8E59DA92F847C50C28CFEAFA5D80E566462761462.
+- Next: install and explicitly update the corrected StateBooks; live re-import is not verified. BlueBook catalog-name failures remain separate. No matching completed PROJECT_NEXT item to remove.
+
+## 2026-09-16 Live Dynamic Role Resolution Confirmed
+
+- User confirmed dynamic resolution works in the live test using a new field mapped to Platform and the PLATFORM::NETWORK GovernanceRole, beyond the original RoleDirector mapping used previously.
+- This validates the tested governance-driven Platform role resolution path after the StateBook import investigation. Preserve dynamic governance resolution; do not introduce field-specific or role-specific routing in RoleDirector.
+- This confirmation covers the reported resolution scenario only. Full workflow completion and the previously reported BlueBook catalog import errors have not been separately confirmed resolved.

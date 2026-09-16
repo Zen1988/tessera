@@ -23,18 +23,46 @@ use utf8;
 sub Data {
     my $Self = shift;
 
+    $Self->{Translation}->{'Network::Firewall Policy::Remove'} = 'Network::Firewall Policy::हटायें';
     $Self->{Translation}->{'Network Management::Network Security & Policy Management::Add'} =
         'Network Management::Network Security & Policy Management::जोड़ें';
-    $Self->{Translation}->{'Network::Firewall Policy::Remove'} = 'Network::Firewall Policy::हटायें';
-    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::नया';
+    $Self->{Translation}->{'Common Service::Red Hat Satellite::Remove'} = 'Common Service::Red Hat Satellite::हटायें';
+    $Self->{Translation}->{'Backup::Service::Remove'} = 'Backup::सेवा::हटायें';
+    $Self->{Translation}->{'Network::Segment::New'} = 'Network::Segment::नया';
+    $Self->{Translation}->{'Common Service::Trellix ePO::Remove'} = 'Common Service::Trellix ePO::हटायें';
+    $Self->{Translation}->{'Network::New'} = 'Network::नया';
+    $Self->{Translation}->{'Common Service::WSUS::Remove'} = 'Common Service::WSUS::हटायें';
+    $Self->{Translation}->{'Compute::Virtual Machine::Remove'} = 'Compute::Virtual Machine::हटायें';
+    $Self->{Translation}->{'Security::Certificate::Install'} = 'Security::Certificate::स्थापित';
+    $Self->{Translation}->{'Compute::Virtual Machine::New'} = 'Compute::Virtual Machine::नया';
+    $Self->{Translation}->{'Common Service::Carbon Black::Remove'} = 'Common Service::Carbon Black::हटायें';
+    $Self->{Translation}->{'Backup::Service::Onboarding/Modify'} = 'Backup::सेवा::Onboarding/Modify';
     $Self->{Translation}->{'Network::Firewall Policy::New'} = 'Network::Firewall Policy::नया';
+    $Self->{Translation}->{'Network::Address::New'} = 'Network::Address::नया';
+    $Self->{Translation}->{'Backup::Service'} = 'Backup::सेवा';
+    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::नया';
+    $Self->{Translation}->{'Common Service::Monitoring::Remove'} = 'Common Service::Monitoring::हटायें';
 
 
     push @{ $Self->{JavaScriptStrings} // [] }, (
-        'Network Management::Network Security & Policy Management::Add',
         'Network::Firewall Policy::Remove',
-        'Network::Load Balancer::New',
+        'Network Management::Network Security & Policy Management::Add',
+        'Common Service::Red Hat Satellite::Remove',
+        'Backup::Service::Remove',
+        'Network::Segment::New',
+        'Common Service::Trellix ePO::Remove',
+        'Network::New',
+        'Common Service::WSUS::Remove',
+        'Compute::Virtual Machine::Remove',
+        'Security::Certificate::Install',
+        'Compute::Virtual Machine::New',
+        'Common Service::Carbon Black::Remove',
+        'Backup::Service::Onboarding/Modify',
         'Network::Firewall Policy::New',
+        'Network::Address::New',
+        'Backup::Service',
+        'Network::Load Balancer::New',
+        'Common Service::Monitoring::Remove',
     );
 
 }

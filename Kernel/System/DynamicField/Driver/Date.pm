@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -161,7 +161,6 @@ sub ValueSet {
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
-    my $Prefix          = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
 
     # check values
@@ -172,10 +171,6 @@ sub ValueValidate {
 
     # get necessary object
     my $DynamicFieldValueObject = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
-
-    # init system datetime object
-    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-    my $SystemTime     = $DateTimeObject->ToEpoch();
 
     my $Success;
     for my $Value (@Values) {
@@ -296,7 +291,6 @@ sub SearchSQLGet {
     return $SQL;
 }
 
-# TODO Check if this function is really necessary since it looks roughly the same as in BaseDateTime
 sub EditFieldRender {
     my ( $Self, %Param ) = @_;
 
@@ -339,8 +333,8 @@ sub EditFieldRender {
     my @ValueParts;
     for my $ValueItem ( $Value->@* ) {
         $ValueItem //= '';
-        my ( $Year, $Month, $Day, $Hour, $Minute, $Second ) = $ValueItem =~
-            m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : ( \d{2} ) \z }xms;
+        my ( $Year, $Month, $Day, $Hour, $Minute ) = $ValueItem =~
+            m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : \d{2} \z }xms;
 
         # If a value is sent this value must be active, then the Used part needs to be set to 1
         #   otherwise user can easily forget to mark the checkbox and this could lead into data
@@ -392,15 +386,6 @@ sub EditFieldRender {
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 0,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
         );
-    }
-    else {
-        %YearsPeriodRange = (
-            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
-            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
-        );
-    }
-    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
-        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
     }
 
     # date restrictions
@@ -884,6 +869,9 @@ sub SearchFieldRender {
     # set the default type
     $Param{Type} ||= 'TimeSlot';
 
+    # is it rendered for the customer interface?
+    my $CustomerInterface = $Param{CustomerInterface} || 0;
+
     # add type to FieldName
     $FieldName .= $Param{Type};
 
@@ -974,12 +962,17 @@ sub SearchFieldRender {
     # set as checked if necessary
     my $FieldChecked = ( defined $Value->{$FieldName} && $Value->{$FieldName} == 1 ? 'checked' : '' );
 
-    my $HTMLString = <<"EOF";
+    my $HTMLString = '';
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class=' . $FieldClass . '>';
+    }
+
+    $HTMLString .= <<"EOF";
     <input type="hidden" id="$FieldName" name="$FieldName" value="1">
 EOF
 
     if ( $Param{ConfirmationCheckboxes} ) {
-        $HTMLString = <<"EOF";
+        $HTMLString .= <<"EOF";
     <input type="checkbox" id="$FieldName" name="$FieldName" value="1" $FieldChecked>
 EOF
     }
@@ -1029,6 +1022,10 @@ EOF
             AdditionalText => $AdditionalText,
         );
 
+        if ( $CustomerInterface == 1 ) {
+            $HTMLString .= '</div>';
+        }
+
         return {
             Field => $HTMLString,
             Label => $LabelString,
@@ -1043,17 +1040,13 @@ EOF
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
         );
     }
-    else {
-        %YearsPeriodRange = (
-            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
-            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
-        );
-    }
-    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
-        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
-    }
 
     # build HTML for start value set
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class="oooDate">';
+    }
+
     $HTMLString .= $Param{LayoutObject}->BuildDateSelection(
         %Param,
         Prefix               => $FieldName . 'Start',
@@ -1065,6 +1058,10 @@ EOF
         %YearsPeriodRange,
         OverrideTimeZone => 1,
     );
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
 
     # to put a line break between the two search dates
     my $LineBreak = ' <br>';
@@ -1078,6 +1075,11 @@ EOF
     $HTMLString .= ' ' . $Param{LayoutObject}->{LanguageObject}->Translate("and") . "$LineBreak\n";
 
     # build HTML for stop value set
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class="oooDate">';
+    }
+
     $HTMLString .= $Param{LayoutObject}->BuildDateSelection(
         %Param,
         Prefix               => $FieldName . 'Stop',
@@ -1090,6 +1092,10 @@ EOF
         OverrideTimeZone => 1,
     );
 
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
+
     my $AdditionalText;
     if ( $Param{UseLabelHints} ) {
         $AdditionalText = Translatable('between');
@@ -1101,6 +1107,10 @@ EOF
         FieldName      => $FieldName,
         AdditionalText => $AdditionalText,
     );
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
 
     return {
         Field => $HTMLString,
@@ -1526,8 +1536,6 @@ sub RandomValueSet {
 
     my $Value;
 
-    # TODO Suggestion to reduce code here: Unify this into one for loop and use LoopCount as limiter
-    # my $LoopCount = $Param{DynamicFieldConfig}{Config}{MultiValue} ? 0 : int( rand(3) );
     if ( $Param{DynamicFieldConfig}{Config}{MultiValue} ) {
         for my $j ( 0 .. int( rand(3) ) ) {
 
@@ -1539,12 +1547,9 @@ sub RandomValueSet {
         }
     }
     else {
-        my $YearValue   = int( rand(40) ) + 1_990;
-        my $MonthValue  = int( rand(9) ) + 1;
-        my $DayValue    = int( rand(10) ) + 10;
-        my $HourValue   = int( rand(12) ) + 10;
-        my $MinuteValue = int( rand(30) ) + 10;
-        my $SecondValue = int( rand(30) ) + 10;
+        my $YearValue  = int( rand(40) ) + 1_990;
+        my $MonthValue = int( rand(9) ) + 1;
+        my $DayValue   = int( rand(10) ) + 10;
 
         $Value = $YearValue . '-0' . $MonthValue . '-' . $DayValue . ' 00:00:00';
     }

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2021 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2021 Rother OSS GmbH, https://otobo.de/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -2181,7 +2181,7 @@ sub ChangeSearch {
 
         # add the orderby columns also to the group by clause, as this is correct SQL
         # and some DBs like PostgreSQL are more strict than others
-        # this is the bugfix for bug# 5825 https://ncs.com.sg
+        # this is the bugfix for bug# 5825 http://bugs.otobo.org/show_bug.cgi?id=5825
         if (@SQLOrderBy) {
 
             ORDERBY:
@@ -3535,7 +3535,7 @@ sub _CheckChangeParams {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTOBO project (L<https://ncs.com.sg>).
+This software is part of the OTOBO project (L<https://otobo.org/>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you

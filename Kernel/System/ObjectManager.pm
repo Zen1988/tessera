@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,7 @@
 # --
 
 package Kernel::System::ObjectManager;
+
 ## nofilter(TidyAll::Plugin::OTOBO::Perl::LayoutObject)
 ## nofilter(TidyAll::Plugin::OTOBO::Perl::PodSpelling)
 ## nofilter(TidyAll::Plugin::OTOBO::Perl::Require)
@@ -48,6 +49,7 @@ use Kernel::System::Log          ();
 use Kernel::System::Main         ();
 use Kernel::System::Web::Request ();
 use Kernel::System::User         ();
+
 ## use perlimports
 
 =head1 NAME
@@ -92,7 +94,11 @@ The ObjectManager must always be provided to OTOBO by the top level script like 
 Then in the code any singleton object can be retrieved that the ObjectManager can handle,
 like Kernel::System::DB:
 
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Prepare('SELECT 1');
+    return unless $Kernel::OM->Get('Kernel::System::DB')->Prepare('SELECT 1');
+
+Note that localizing C<$Kernel::OM> is not really necessary in most scripts. The use of C<local> in
+F<otobo.psgi> is a special case. There it helps in avoiding that data from one HTTP request carries
+over to the next request.
 
 =head2 Which objects can be loaded?
 

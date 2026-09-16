@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -26,7 +26,6 @@ use parent 'Kernel::System::Ticket::Article::Backend::Base';
 # CPAN modules
 
 # OTOBO modules
-use Kernel::System::EmailParser   ();
 use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
@@ -42,7 +41,8 @@ our @ObjectDependencies = (
     'Kernel::System::Ticket::Article::Backend::Email',
     'Kernel::System::User',
     'Kernel::System::Encode',
-    'Kernel::System::Ticket::ArticleFeatures'
+    'Kernel::System::Ticket::ArticleFeatures',
+    'Kernel::System::EmailAddress',
 );
 
 =head1 NAME
@@ -1211,7 +1211,8 @@ sub ArticleGet {
         ShowDeletedArticles => 1,
         VersionView         => $Param{VersionView}
     );
-    return if !%Article;
+
+    return unless %Article;
 
     my $ArticleEdited = $Kernel::OM->Get('Kernel::System::Ticket::ArticleFeatures')->IsArticleEdited(
         TicketID  => $Param{TicketID},
@@ -1219,14 +1220,6 @@ sub ArticleGet {
     );
 
     my %ArticleSenderTypeList = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleSenderTypeList();
-
-    # Email parser object might be used below for its field cleanup methods only.
-    my $EmailParser;
-    if ( $Param{RealNames} ) {
-        $EmailParser = Kernel::System::EmailParser->new(
-            Mode => 'Standalone',
-        );
-    }
 
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
@@ -1260,12 +1253,13 @@ sub ArticleGet {
         ';
     }
 
-    return if !$DBObject->Prepare(
+    return unless $DBObject->Prepare(
         SQL   => $SQL,
         Bind  => \@Bind,
         Limit => 1,
     );
 
+    my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
     my %Data;
     while ( my @Row = $DBObject->FetchrowArray() ) {
         %Data = (
@@ -1318,7 +1312,9 @@ sub ArticleGet {
 
         RECIPIENT:
         for my $Key (qw(From To Cc Bcc Subject)) {
-            next RECIPIENT if !$Data{$Key};
+
+            # for some reason the subject '0' is not supported
+            next RECIPIENT unless $Data{$Key};
 
             # Strip unwanted stuff from some fields.
             $Data{$Key} =~ s/\n|\r//g;
@@ -1335,25 +1331,23 @@ sub ArticleGet {
                     next RECIPIENT;
                 }
 
-                # Strip out real names.
-                my $Realname = '';
-                EMAILADDRESS:
-                for my $EmailSplit ( $EmailParser->SplitAddressLine( Line => $Data{$Key} ) ) {
-                    my $Name = $EmailParser->GetRealname( Email => $EmailSplit );
-                    if ( !$Name ) {
-                        $Name = $EmailParser->GetEmailAddress( Email => $EmailSplit );
-                    }
+                # Extract the phrases, aka real names, from the address line
+                my @Realnames;
+                ADDRESS_OBJECT:
+                for my $AddressObject ( $EmailAddressObject->ParseAddressLine( Line => $Data{$Key} ) ) {
+                    my $Name =
+                        $EmailAddressObject->GetRealName( AddressObject => $AddressObject )
+                        ||
+                        $EmailAddressObject->GetAddress( AddressObject => $AddressObject );
 
-                    next EMAILADDRESS if !$Name;
+                    # the name '0' is not accepted
+                    next ADDRESS_OBJECT unless $Name;
 
-                    if ($Realname) {
-                        $Realname .= ', ';
-                    }
-                    $Realname .= $Name;
+                    push @Realnames, $Name;
                 }
 
-                # Add real name lines.
-                $Data{ $Key . 'Realname' } = $Realname;
+                # Add the real name lines like 'FromRealname' and 'CCRealname'
+                $Data{ $Key . 'Realname' } = join ', ', @Realnames;
             }
         }
     }

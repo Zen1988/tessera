@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -199,14 +199,14 @@
                         <div class="Clear"></div>
 [% RenderBlockEnd("ItemEditClassAdd") %]
 [% RenderBlockStart("ItemEditClassExist") %]
-                        <label>[% Translate("Catalog Class") | html %]: </label>
+                        <label>[% Translate("Catalog Class") | html %]:</label>
                         <div class="Field">
                             [% Data.Class | html %]
                             <input type="hidden" name="Class" value="[% Data.Class | html %]">
                         </div>
                         <div class="Clear"></div>
 [% RenderBlockEnd("ItemEditClassExist") %]
-                        <label class="Mandatory" for="Name"><span class="Marker">*</span>[% Translate("Name") | html %]: </label>
+                        <label class="Mandatory" for="Name"><span class="Marker">*</span>[% Translate("Name") | html %]:</label>
                         <div class="Field">
                             <input type="text" name="Name" id="Name" value="[% Data.Name | html %]" class="W50pc Validate_Required" maxlength="100"/>
                             <div id="NameError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
@@ -215,7 +215,7 @@
                         <div class="Clear"></div>
 [% RenderBlockStart("PreferenceItem") %]
 [% IF Data.Type == 'InputKey' %]
-                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]: </label>
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %][% IF Data.Key %] [% Translate(Data.Key) | html %][% END %]:</label>
                         <div class="Field">
                             <input type="text" name="[% Data.Name | html %]" id="[% Data.Name | html %]" value="[% Data.SelectedID | html %]" class="W50pc" maxlength="100"/>
                         </div>
@@ -242,10 +242,10 @@
                         <div class="Clear"></div>
 [% ELSIF Data.Type == 'Option' %]
                         [% IF Data.Mandatory %]
-                        <label class="Mandatory" for="[% Data.Name | html %]"><span class="Marker">*</span>[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]:<br/>
+                        <label class="Mandatory" for="[% Data.Name | html %]"><span class="Marker">*</span>[% Translate(Data.Label) | html %][% IF Data.Key %] [% Translate(Data.Key) | html %][% END %]:<br/>
                         </label>
                         [% ELSE %]
-                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]:<br/>
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %][% IF Data.Key %] [% Translate(Data.Key) | html %][% END %]:<br/>
                         </label>
                         [% END %]
                         <div class="Field">
@@ -260,14 +260,14 @@
                         </div>
                         <div class="Clear"></div>
 [% ELSIF Data.Type == 'Upload' %]
-                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]: </label>
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %][% IF Data.Key %] [% Translate(Data.Key) | html %][% END %]:</label>
                         <div class="Field">
                             <input name="[% Data.Name | html %]" id="[% Data.Name | html %]" type="file" size="30" class="fixed"/><br/>
                             <a href="">[% Data.Filename | html %]</a>
                         </div>
                         <div class="Clear"></div>
 [% ELSIF Data.Type == 'Password' %]
-                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]: </label>
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %][% IF Data.Key %] [% Translate(Data.Key) | html %][% END %]:</label>
                         <div class="Field">
                             <input type="password" name="[% Data.Name | html %]" id="[% Data.Name | html %]" value="" class="W50pc"/>
                         </div>
@@ -284,13 +284,13 @@
                         <div class="Clear"></div>
 [% END %]
 [% RenderBlockEnd("PreferenceItem") %]
-                        <label for="ValidID">[% Translate("Validity") | html %]: </label>
+                        <label for="ValidID">[% Translate("Validity") | html %]:</label>
                         <div class="Field">
                             [% Data.ValidOptionStrg %]
                         </div>
                         <div class="Clear"></div>
 
-                        <label for="Comment">[% Translate("Comment") | html %]: </label>
+                        <label for="Comment">[% Translate("Comment") | html %]:</label>
                         <div class="Field">
                             <input type="text" name="Comment" id="Comment" value="[% Data.Comment | html %]" class="W50pc" maxlength="200"/>
                         </div>

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1063,6 +1063,21 @@ sub ExportDataGet {
     }
 
     return \@ExportData;
+}
+
+=head2 IsExportComplete()
+
+Indicate whether the last C<ExportDataGet()> has returned the last chunk of data.
+A true value is also returned when chunking had not been activated.
+
+    my $ChunkingFinished = $ObjectBackend->IsExportComplete;
+
+=cut
+
+sub IsExportComplete {
+    my ($Self) = @_;
+
+    return $Self->{ChunkingFinished};
 }
 
 =head2 ImportDataSave()

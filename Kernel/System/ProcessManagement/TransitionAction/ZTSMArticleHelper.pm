@@ -6,6 +6,7 @@ package Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper;
 
 use strict;
 use warnings;
+no warnings 'redefine';
 
 use Exporter 'import';
 

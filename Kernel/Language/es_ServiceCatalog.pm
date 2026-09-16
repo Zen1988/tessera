@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -27,10 +27,10 @@ sub Data {
     $Self->{Translation}->{'Show details of this service.'} = '';
 
     # Template: AdminService
+    $Self->{Translation}->{'Criticality'} = '';
     $Self->{Translation}->{'Service depends on the following ticket types'} = '';
     $Self->{Translation}->{'Ticket destination queue'} = '';
     $Self->{Translation}->{'Customer default service'} = '';
-    $Self->{Translation}->{'Criticality'} = '';
     $Self->{Translation}->{'Keywords'} = '';
     $Self->{Translation}->{'Service Description'} = '';
     $Self->{Translation}->{'This language is not present or enabled on the system. This service description could be deleted if it is not needed anymore.'} =
@@ -124,6 +124,8 @@ sub Data {
     $Self->{Translation}->{'This option allows you to automatically generate ACLs for different interfaces when creating services. Services will then only be displayed if the ticket type stored in the service has been selected. The "AddBulkACL" console script can also be used to create ACLs for services that have already been create.'} =
         '';
     $Self->{Translation}->{'This option makes it possible to preconfigure the automatically generated ACLs. The aim is to only display the services that have also been assigned to the service in the service catalog. To use this function, please first enable the "ServiceCatalog::CreateTypeServiceRelatedAcls" option. "GenerateInitalACLToDisableAllServices" generates an ACL that initially hides all services. The value "Possible" or "PossibleAdd" can be set for the key "ConfigChange". The "DeployNewACL" key decides whether the changed ACL should also be deployed immediately. "ACLValidID" (1, 2, 3) sets the ACLs to valid, invalid or temporarily invalid.'} =
+        '';
+    $Self->{Translation}->{'Tile registration for the CustomerDashboard. Module is required.'} =
         '';
 
 

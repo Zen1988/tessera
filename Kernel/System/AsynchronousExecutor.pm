@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,8 +16,10 @@
 
 package Kernel::System::AsynchronousExecutor;
 
+use v5.24;
 use strict;
 use warnings;
+use namespace::autoclean;
 
 # core modules
 
@@ -52,6 +54,8 @@ creates a scheduler daemon task to execute a function asynchronously.
                                                                 # this function was called
         FunctionName             => 'MyFunction',               # the name of the function to execute
         FunctionParams           => \%MyParams,                 # a ref with the required parameters for the function
+        TaskName                 => 'some-name',                # optional, defaults to "$ObjectName-$FunctionName()"
+                                                                #   max length: 150
         Attempts                 => 3,                          # optional, default: 1, number of tries to lock the
                                                                 #   task by the scheduler
         MaximumParallelInstances => 1,                          # optional, default: 0 (unlimited), number of same
@@ -78,6 +82,7 @@ sub AsyncCall {
             Priority => 'error',
             Message  => "Function needs to be a non empty string!",
         );
+
         return;
     }
 
@@ -105,6 +110,7 @@ sub AsyncCall {
             Priority => 'error',
             Message  => "$ObjectName object is not valid!",
         );
+
         return;
     }
 
@@ -114,6 +120,7 @@ sub AsyncCall {
             Priority => 'error',
             Message  => "$ObjectName can not execute $FunctionName()!",
         );
+
         return;
     }
 
@@ -122,11 +129,14 @@ sub AsyncCall {
             Priority => 'error',
             Message  => "FunctionParams needs to be a hash or list reference.",
         );
+
         return;
     }
 
     # define the task name with object name and concatenate the function name
-    my $TaskName = substr "$ObjectName-$FunctionName()", 0, 255;
+    my $TaskName = $Param{TaskName}
+        ? substr $Param{TaskName}, 0, 150
+        : substr "$ObjectName-$FunctionName()", 0, 150;
 
     # create a new task
     my $TaskID = $Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(

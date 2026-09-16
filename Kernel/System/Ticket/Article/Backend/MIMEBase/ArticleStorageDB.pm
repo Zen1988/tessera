@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,9 +16,9 @@
 
 package Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB;
 
+use v5.24;
 use strict;
 use warnings;
-use v5.24;
 
 use parent qw(Kernel::System::Ticket::Article::Backend::MIMEBase::Base);
 
@@ -214,25 +214,32 @@ sub ArticleWritePlain {
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-    # encode attachment if it's a postgresql backend!!!
-    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+    # pass plain email as binary for MySQL and MariaDB
+    # encode plain email as Base65 if it's a postgresql backend!!!
+    my %ExtraDoParams;
+    if ( $DBObject->GetDatabaseFunction('DirectBlob') ) {
 
+        # Make sure that the content is passed as a byte array and is bound as binary
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Email} );
-
+        $ExtraDoParams{BindAsBinary} = [ 0, 1, 0, 0 ];
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Email} );
         $Param{Email} = encode_base64( $Param{Email} );
     }
 
     # write article to db 1:1
     if ( !$Param{DeletedVersionID} ) {
-        return if !$DBObject->Do(
+        return unless $DBObject->Do(
             SQL => 'INSERT INTO article_data_mime_plain '
                 . ' (article_id, body, create_time, create_by, change_time, change_by) '
                 . ' VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
             Bind => [ \$Param{ArticleID}, \$Param{Email}, \$Param{UserID}, \$Param{UserID} ],
+            %ExtraDoParams,
         );
     }
     else {
-        return if !$DBObject->Do(
+        return unless $DBObject->Do(
             SQL => 'INSERT INTO article_data_mime_plain_version '
                 . ' (article_id, body, create_time, create_by, change_time, change_by) '
                 . ' VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
@@ -299,10 +306,15 @@ sub ArticleWriteAttachment {
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
     # encode attachment if it's a postgresql backend!!!
-    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+    my %ExtraDoParams;
+    if ( $DBObject->GetDatabaseFunction('DirectBlob') ) {
 
+        # Make sure that the content is passed as a byte array and is bound as binary
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Content} );
-
+        $ExtraDoParams{BindAsBinary} = [ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, ];
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Content} );
         $Param{Content} = encode_base64( $Param{Content} );
     }
 
@@ -331,6 +343,7 @@ sub ArticleWriteAttachment {
                 \$Param{Content},   \$Param{ContentID}, \$Param{ContentAlternative},
                 \$Disposition,      \$Param{UserID},    \$Param{UserID},
             ],
+            %ExtraDoParams,
         );
     }
     else {

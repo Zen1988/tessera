@@ -2,9 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
-# --
-# $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/Output/HTML/Templates/Standard/AgentTicketPhone.tt
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -148,15 +146,13 @@
                     <div class="Clear"></div>
 [% RenderBlockEnd("TicketType") %]
 
-# Rother OSS / ITSMCore
-#                    <label class="Mandatory" for="Dest"><span class="Marker">*</span> [% Translate("To queue") | html %]:</label>
-#                    <div class="Field">
-#                        [% Data.ToStrg %]
-#                        <div id="DestError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
-#                        <div id="DestServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
-#                    </div>
-#                    <div class="Clear"></div>
-# EO ITSMCore
+                    <label class="Mandatory" for="Dest"><span class="Marker">*</span> [% Translate("To queue") | html %]:</label>
+                    <div class="Field">
+                        [% Data.ToStrg %]
+                        <div id="DestError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                        <div id="DestServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+                    </div>
+                    <div class="Clear"></div>
 
 [% RenderBlockStart("TicketService") %]
                     [% IF Data.ServiceMandatory %]
@@ -189,16 +185,6 @@
                     </div>
                     <div class="Clear"></div>
 [% RenderBlockEnd("TicketSLA") %]
-
-# Rother OSS / ITSMCore
-                    <label class="Mandatory" for="Dest"><span class="Marker">*</span> [% Translate("To queue") | html %]:</label>
-                    <div class="Field">
-                        [% Data.ToStrg %]
-                        <div id="DestError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
-                        <div id="DestServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
-                    </div>
-                    <div class="Clear"></div>
-# EO ITSMCore
 
 [% Data.DynamicFieldHTML %]
 

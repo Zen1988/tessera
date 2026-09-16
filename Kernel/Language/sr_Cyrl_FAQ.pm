@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -78,7 +78,6 @@ sub Data {
     $Self->{Translation}->{'Add language'} = 'Додај језик';
     $Self->{Translation}->{'Add Language'} = 'Додај Језик';
     $Self->{Translation}->{'Edit Language'} = 'Уреди Језик';
-    $Self->{Translation}->{'Do you really want to delete this language?'} = 'Да ли заиста желите да избришете овај језик?';
     $Self->{Translation}->{'You can not delete this language. It is used in at least one FAQ article!'} =
         'Не можете обрисати овај језик. Употребљен је у бар једном FAQ чланку!';
     $Self->{Translation}->{'This language is used in the following FAQ Article(s)'} = 'Овај језик је употребљен у следећим FAQ чланцима';
@@ -144,6 +143,7 @@ sub Data {
     $Self->{Translation}->{'Insert Full FAQ & Link'} = 'Унеси комплетан FAQ и везу';
 
     # Template: CustomerFAQExplorer
+    $Self->{Translation}->{'Latest updated FAQ articles'} = 'Последње ажурирани FAQ чланци';
     $Self->{Translation}->{'No FAQ articles found.'} = 'Нису пронађени FAQ чланци.';
 
     # Template: CustomerFAQRelatedArticles
@@ -252,6 +252,8 @@ sub Data {
 
     # Perl Module: Kernel/Modules/CustomerFAQSearch.pm
     $Self->{Translation}->{'Created between'} = 'Креиран између';
+    $Self->{Translation}->{'Created within the last'} = '';
+    $Self->{Translation}->{'Created more than ... ago'} = '';
 
     # Perl Module: Kernel/Modules/CustomerFAQZoom.pm
     $Self->{Translation}->{'Need ItemID!'} = 'Потребан ИД Ставке!';
@@ -281,19 +283,20 @@ sub Data {
     $Self->{Translation}->{'Need rate!'} = 'Неопходна оцена!';
     $Self->{Translation}->{'This article is empty!'} = 'Чланак је празан!';
     $Self->{Translation}->{'Latest created FAQ articles'} = 'Последње креирани FAQ чланци';
-    $Self->{Translation}->{'Latest updated FAQ articles'} = 'Последње ажурирани FAQ чланци';
     $Self->{Translation}->{'Top 10 FAQ articles'} = 'Најпопуларнијих 10 FAQ чланака';
 
     # Perl Module: Kernel/Output/HTML/LinkObject/FAQ.pm
     $Self->{Translation}->{'Content Type'} = 'Тип садржаја';
 
-    # Database XML Definition: FAQ.sopm
+    # Perl Module: Kernel/System/DynamicField/Driver/FAQ.pm
+    $Self->{Translation}->{'Select the attribute which FAQs will be searched by'} = '';
+    $Self->{Translation}->{'External-source key'} = '';
+    $Self->{Translation}->{'Select the type of display'} = '';
+
+    # Database XML / SOPM Definition: FAQ.sopm
     $Self->{Translation}->{'internal'} = 'интерно';
     $Self->{Translation}->{'external'} = 'екстерно';
     $Self->{Translation}->{'public'} = 'јавно';
-
-    # JS File: FAQ.Agent.ConfirmationDialog
-    $Self->{Translation}->{'Ok'} = 'У реду';
 
     # SysConfig
     $Self->{Translation}->{'A filter for HTML output to add links behind a defined string. The element Image allows two input kinds. First the name of an image (e.g. faq.png). In this case the OTOBO image path will be used. The second possibility is to insert the link to the image.'} =
@@ -357,6 +360,8 @@ sub Data {
         'Дефинише подразумевани редослед FAQ у резултатима претраге у јавном интерфејсу. Горе: најстарији на врху. Доле: најновије на врху.';
     $Self->{Translation}->{'Defines the default shown FAQ search attribute for FAQ search screen.'} =
         'Дефинише подразумевани приказани FAQ атрибут претраге за FAQ прозор за претрагу. ';
+    $Self->{Translation}->{'Defines the height for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).'} =
+        '';
     $Self->{Translation}->{'Defines the information to be inserted in a FAQ based Ticket. "Full FAQ" includes text, attachments and inline images.'} =
         'Одређује информације које ће бити убачене у FAQ базирани тикет. "Комплетан FAQ" укључује текст, прилоге и уметнуте слике.';
     $Self->{Translation}->{'Defines the parameters for the dashboard backend. "Limit" defines the number of entries displayed by default. "Group" is used to restrict access to the plugin (e. g. Group: admin;group1;group2;). "Default" indicates if the plugin is enabled by default or if the user needs to enable it manually.'} =
@@ -400,6 +405,7 @@ sub Data {
         'Динамичка поља приказана у детаљном прегледу FAQ у јавном интерфејсу.';
     $Self->{Translation}->{'Edit this FAQ'} = 'Уреди овај FAQ';
     $Self->{Translation}->{'Enable multiple languages on FAQ module.'} = 'Активирање више језика на FAQ модулу.';
+    $Self->{Translation}->{'Enable service assignment for FAQs.'} = '';
     $Self->{Translation}->{'Enable the related article feature for the customer frontend.'} =
         'Активира функцију сродних чланака за интерфејс клијента.';
     $Self->{Translation}->{'Enable voting mechanism on FAQ module.'} = 'Активирање механизма за гласање на FAQ модулу.';
@@ -417,9 +423,15 @@ sub Data {
     $Self->{Translation}->{'FAQ search backend router of the agent interface.'} = 'Модул рутера FAQ претраге у интерфејсу оператера.';
     $Self->{Translation}->{'Field4'} = 'Поље4';
     $Self->{Translation}->{'Field5'} = 'Поље5';
+    $Self->{Translation}->{'Fields of the faq index, used for the fulltext search. Fields are also stored, but are not mandatory for the overall functionality. Inclusion of attachments can be disabled by setting the entry to 0 or deleting it.'} =
+        '';
+    $Self->{Translation}->{'Fields stored in the faq index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory.'} =
+        '';
     $Self->{Translation}->{'Full FAQ'} = 'Kомплетан FAQ';
     $Self->{Translation}->{'Group for the approval of FAQ articles.'} = 'Група за одобравање FAQ чланака.';
     $Self->{Translation}->{'History of this FAQ'} = 'Историјат овог FAQ';
+    $Self->{Translation}->{'If activated, FAQ articles of status type internal are also taken into account for the approval process.'} =
+        '';
     $Self->{Translation}->{'Include internal fields on a FAQ based Ticket.'} = 'Укључи интерна поља у FAQ базиран тикет.';
     $Self->{Translation}->{'Include the name of each field in a FAQ based Ticket.'} = 'Укључи назив сваког поља у FAQ базиран тикет.';
     $Self->{Translation}->{'Interfaces where the quick search should be shown.'} = 'Интерфејс на ком треба приказати брзу претрагу.';
@@ -481,9 +493,13 @@ sub Data {
         'Број FAQ чланака који ће бити приказани на свакој страни резултата претраге у интерфејсу клијента.';
     $Self->{Translation}->{'Number of FAQ articles to be displayed on each page of a search result in the public interface.'} =
         'Број FAQ чланака који ће бити приказани на свакој страни резултата претраге у јавном интерфејсу.';
+    $Self->{Translation}->{'Number of shards (NS), replicas (NR) and fields limit for the index \'faq\'.'} =
+        '';
     $Self->{Translation}->{'Number of shown items in last changes.'} = 'Број приказаних ставки у последњим изменама.';
     $Self->{Translation}->{'Number of shown items in last created.'} = 'Број приказаних ставки у последње креираним.';
     $Self->{Translation}->{'Number of shown items in the top 10 feature.'} = 'Број приказаних ставки у "првих 10" .';
+    $Self->{Translation}->{'Objects to search for, how many entries and which attributes to show. FAQ attributes have to explicitly be stored via Elasticsearch.'} =
+        '';
     $Self->{Translation}->{'Output filter to add Java-script to CustomerTicketMessage screen.'} =
         'Излазни филтер за убацивање JavaScript у CustomerTicketMessage екран.';
     $Self->{Translation}->{'Output limit for the related FAQ articles.'} = 'Ограничење броја приказаних сродних FAQ чланака.';
@@ -527,6 +543,8 @@ sub Data {
     $Self->{Translation}->{'Show items of subcategories.'} = 'Прикажи ставке субкатегорија.';
     $Self->{Translation}->{'Show last change items in defined interfaces.'} = 'Прикажи задње промењене ставке у дефинисаним интерфејсима.';
     $Self->{Translation}->{'Show last created items in defined interfaces.'} = 'Прикажи задње креиране ставке у дефинисаним интерфејсима.';
+    $Self->{Translation}->{'Show related articles on service change even with empty subject and body.'} =
+        '';
     $Self->{Translation}->{'Show the stars for the articles with a rating equal or greater like the defined value (set value \'0\' to deactivate the output).'} =
         'Прикажи звездице за чланке са једнаком или бољом оценом од дефинисане вредности (поставите вредност \'0\' за деактивирање приказа).';
     $Self->{Translation}->{'Show top 10 items in defined interfaces.'} = 'Прикажи првих 10 ставки у дефинисаним интерфејсима.';
@@ -558,7 +576,8 @@ sub Data {
     $Self->{Translation}->{'This setting defines that a \'FAQ\' object can be linked with other \'Ticket\' objects using the \'ParentChild\' link type.'} =
         'Ово подешавање дефинише да FAQ објект може да се повеже са другим тикет објектима користећи везу типа \'ParentChild\'.';
     $Self->{Translation}->{'Ticket body for approval of FAQ article.'} = 'Садржај тикета за одобравање FAQ чланака.';
-    $Self->{Translation}->{'Ticket subject for approval of FAQ article.'} = 'Предмет тикета за одобравање FAQ чланака.';
+    $Self->{Translation}->{'Ticket subject for approval of FAQ article. Permitted notification tags are <OTOBO_FAQ_NUMBER>, <OTOBO_FAQ_CATEGORYID>, <OTOBO_FAQ_ITEMID>> <OTOBO_FAQ_TITLE> and <OTOBO_FAQ_STATEID>.'} =
+        '';
     $Self->{Translation}->{'Toolbar Item for a shortcut.'} = 'Ставка алатне линије за скраћеницу.';
     $Self->{Translation}->{'external (customer)'} = 'екстерно (клијент)';
     $Self->{Translation}->{'internal (agent)'} = 'интерно (оператер)';

@@ -2,9 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - ba2b8d4c3d1d2c75ac3e475af1adb5fafd50f378 - Kernel/Modules/AgentTicketProcess.pm
+# $origin: otobo - f4a2fc11280f888d516cc323860e32bfc4bc3f9e - Kernel/Modules/AgentTicketProcess.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,6 @@ use warnings;
 use List::Util qw(none);
 
 # CPAN modules
-use Mail::Address ();
 
 # OTOBO modules
 use Kernel::System::VariableCheck qw(:all);
@@ -800,6 +799,32 @@ sub _RenderAjax {
         }
     }
 
+    # activate standard templates if article is configured and standard templates are not explicitly set to 0
+    my $ActivateStandardTemplates = 0;
+    if ( $ActivityDialog->{Fields}{Article} ) {
+        $ActivateStandardTemplates
+            = defined $ActivityDialog->{Fields}{Article}{Config}{StandardTemplates} ? $ActivityDialog->{Fields}{Article}{Config}{StandardTemplates} : 1;
+    }
+    if ($ActivateStandardTemplates) {
+
+        my $Data = $Self->_GetStandardTemplates(
+            %{ $Param{GetParam} },
+        );
+
+        # Add StandardTemplate to the JSONCollector (Use SelectedID from web request).
+        push(
+            @JSONCollector,
+            {
+                Name         => 'StandardTemplateID',
+                Data         => $Data,
+                SelectedID   => $ParamObject->GetParam( Param => 'StandardTemplateID' ) || '',
+                PossibleNone => 1,
+                Translation  => 1,
+                Max          => 100,
+            },
+        );
+    }
+
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $FieldRestrictionsObject   = $Kernel::OM->Get('Kernel::System::Ticket::FieldRestrictions');
 
@@ -843,6 +868,21 @@ sub _RenderAjax {
         LoopProtection            => \$LoopProtection,
     );
 
+    if ($ActivateStandardTemplates) {
+        my $StandardTemplates = $Self->_GetStandardTemplates( $Param{GetParam}->%* );
+
+        # check whether current selected value is still valid for the field
+        if (
+            $Param{GetParam}{StandardTemplateID}
+            && !$StandardTemplates->{ $Param{GetParam}{StandardTemplateID} }
+            )
+        {
+            # if not empty the field
+            $Param{GetParam}{StandardTemplateID} = '';
+            $ChangedElements{StandardTemplateID} = 1;
+        }
+    }
+
     $Param{GetParam}{DynamicField} //= {};
 
     # set new values
@@ -851,165 +891,91 @@ sub _RenderAjax {
         $DynFieldStates{NewValues}->%*,
     };
 
-    if ( IsHashRefWithData( $DynFieldStates{Visibility} ) ) {
-        push @JSONCollector, {
-            Name => 'Restrictions_Visibility',
-            Data => $DynFieldStates{Visibility},
-        };
-    }
+    my @DynamicFieldAJAX = $DynamicFieldBackendObject->BuildAJAXReturn(
+        DynamicFieldConfigs => $Self->{DynamicField},
+        GetParam            => {
+            $Param{GetParam}->%*,
+            DynamicField => $DFParam,
+        },
+        DynFieldStates => \%DynFieldStates,
+    );
 
-    DYNAMICFIELD:
-    for my $Name ( keys $DynFieldStates{Fields}->%* ) {
-        my $DynamicFieldConfig = $Self->{DynamicField}{$Name};
+    push @JSONCollector, @DynamicFieldAJAX;
 
-        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+    # update ticket body and attachements if needed.
+    if ( $ActivateStandardTemplates && $ChangedElements{StandardTemplateID} ) {
+        my @TicketAttachments;
+        my $TemplateText;
 
-        if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"} eq 'ARRAY' ) {
-            for my $i ( 0 .. $#{ $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"} } ) {
-                my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-                    ? ( $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] // '' )
-                    :
-                    (
-                        $DynamicFieldBackendObject->BuildSelectionDataGet(
-                            DynamicFieldConfig => $DynamicFieldConfig,
-                            PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                            Value              => [ $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] ],
-                        )
-                        || $DynFieldStates{Fields}{$Name}{PossibleValues}
-                    );
+        my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
 
-                # add dynamic field to the list of fields to update
-                push @JSONCollector, {
-                    Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . "_$i",
-                    Data        => $DataValues,
-                    SelectedID  => $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"}[$i],
-                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                    Max         => 100,
-                };
-            }
-
-            # add template value for keeping templates in line with ACLs
-            if ( !$DynFieldStates{Fields}{$Name}{NotACLReducible} ) {
-                my $DataValues = (
-                    $DynamicFieldBackendObject->BuildSelectionDataGet(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                        Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
-                        )
-                        || $DynFieldStates{Fields}{$Name}{PossibleValues}
-                );
-
-                # add dynamic field to the list of fields to update
-                push @JSONCollector, {
-                    Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . "_Template",
-                    Data        => $DataValues,
-                    SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
-                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                    Max         => 100,
-                };
-            }
-
-            next DYNAMICFIELD;
+        # remove all attachments from the Upload cache
+        my $RemoveSuccess = $UploadCacheObject->FormIDRemove(
+            FormID => $Self->{FormID},
+        );
+        if ( !$RemoveSuccess ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Form attachments could not be deleted!",
+            );
         }
 
-        my $DataValues = $DynFieldStates{Fields}{$Name}{NotACLReducible}
-            ? ( $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"} // '' )
-            :
-            (
-                $DynamicFieldBackendObject->BuildSelectionDataGet(
-                    DynamicFieldConfig => $DynamicFieldConfig,
-                    PossibleValues     => $DynFieldStates{Fields}{$Name}{PossibleValues},
-                    Value              => $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"},
-                )
-                || $DynFieldStates{Fields}{$Name}{PossibleValues}
+        # get the template text and set new attachments if a template is selected
+        if ( IsPositiveInteger( $Param{GetParam}{StandardTemplateID} ) ) {
+            my $TemplateGenerator = $Kernel::OM->Get('Kernel::System::TemplateGenerator');
+
+            # set template text, replace smart tags
+            $TemplateText = $TemplateGenerator->Template(
+                TemplateID     => $Param{GetParam}{StandardTemplateID},
+                UserID         => $Self->{UserID},
+                TicketID       => $Param{GetParam}{TicketID},
+                CustomerUserID => $Param{GetParam}{CustomerUserID} || '',
             );
 
-        # add dynamic field to the list of fields to update
-        push @JSONCollector, {
-            Name        => 'DynamicField_' . $DynamicFieldConfig->{Name},
-            Data        => $DataValues,
-            SelectedID  => $DFParam->{"DynamicField_$DynamicFieldConfig->{Name}"},
-            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-            Max         => 100,
-        };
-    }
+            # create StdAttachmentObject
+            my $StdAttachmentObject = $Kernel::OM->Get('Kernel::System::StdAttachment');
 
-    for my $SetField ( values $DynFieldStates{Sets}->%* ) {
-        my $DynamicFieldConfig = $SetField->{DynamicFieldConfig};
-
-        # the frontend name is the name of the inner field including its index or the '_Template' suffix
-        DYNAMICFIELD:
-        for my $FrontendName ( keys $SetField->{FieldStates}->%* ) {
-
-            if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $SetField->{Values}{$FrontendName} eq 'ARRAY' ) {
-                for my $i ( 0 .. $#{ $SetField->{Values}{$FrontendName} } ) {
-                    my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                        ? ( $SetField->{Values}{$FrontendName}[$i] // '' )
-                        :
-                        (
-                            $DynamicFieldBackendObject->BuildSelectionDataGet(
-                                DynamicFieldConfig => $DynamicFieldConfig,
-                                PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                                Value              => [ $SetField->{Values}{$FrontendName}[$i] ],
-                            )
-                            || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                        );
-
-                    # add dynamic field to the list of fields to update
-                    push @JSONCollector, {
-                        Name        => 'DynamicField_' . $FrontendName . "_$i",
-                        Data        => $DataValues,
-                        SelectedID  => $SetField->{Values}{$FrontendName}[$i],
-                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                        Max         => 100,
-                    };
-                }
-
-                # add template value for keeping templates in line with ACLs
-                if ( !$SetField->{FieldStates}{$FrontendName}{NotACLReducible} ) {
-                    my $DataValues = (
-                        $DynamicFieldBackendObject->BuildSelectionDataGet(
-                            DynamicFieldConfig => $DynamicFieldConfig,
-                            PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                            Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
-                            )
-                            || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                    );
-
-                    # add dynamic field to the list of fields to update
-                    push @JSONCollector, {
-                        Name        => 'DynamicField_' . $FrontendName . "_Template",
-                        Data        => $DataValues,
-                        SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
-                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                        Max         => 100,
-                    };
-                }
-
-                next DYNAMICFIELD;
+            # add std. attachments to ticket
+            my %AllStdAttachments = $StdAttachmentObject->StdAttachmentStandardTemplateMemberList(
+                StandardTemplateID => $Param{GetParam}{StandardTemplateID},
+            );
+            for ( sort keys %AllStdAttachments ) {
+                my %AttachmentsData = $StdAttachmentObject->StdAttachmentGet( ID => $_ );
+                $UploadCacheObject->FormIDAddFile(
+                    FormID      => $Self->{FormID},
+                    Disposition => 'attachment',
+                    %AttachmentsData,
+                );
             }
 
-            my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
-                ? ( $SetField->{Values}{$FrontendName} // '' )
-                :
-                (
-                    $DynamicFieldBackendObject->BuildSelectionDataGet(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
-                        Value              => $SetField->{Values}{$FrontendName},
-                    )
-                    || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
-                );
+            # send a list of attachments in the upload cache back to the clientside JavaScript
+            # which renders then the list of currently uploaded attachments
+            @TicketAttachments = $UploadCacheObject->FormIDGetAllFilesMeta(
+                FormID => $Self->{FormID},
+            );
 
-            # add dynamic field to the list of fields to update
-            push @JSONCollector, {
-                Name        => 'DynamicField_' . $FrontendName,
-                Data        => $DataValues,
-                SelectedID  => $SetField->{Values}{$FrontendName},
-                Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
-                Max         => 100,
-            };
+            for my $Attachment (@TicketAttachments) {
+                $Attachment->{Filesize} = $LayoutObject->HumanReadableDataSize(
+                    Size => $Attachment->{Filesize},
+                );
+            }
         }
+
+        push @JSONCollector, (
+            {
+                Name => 'UseTemplateProcessDialog',
+                Data => '0',
+            },
+            {
+                Name => 'RichText',
+                Data => $TemplateText || '',
+            },
+            {
+                Name     => 'TicketAttachments',
+                Data     => \@TicketAttachments,
+                KeepData => 1,
+            },
+        );
     }
 
     my $JSON = $LayoutObject->BuildSelectionJSON( [@JSONCollector] );
@@ -1205,8 +1171,9 @@ sub _GetParam {
         # get article fields
         if ( $CurrentField eq 'Article' ) {
 
-            $GetParam{Subject} = $ParamObject->GetParam( Param => 'Subject' );
-            $GetParam{Body}    = $ParamObject->GetParam( Param => 'Body' );
+            $GetParam{Subject}            = $ParamObject->GetParam( Param => 'Subject' );
+            $GetParam{Body}               = $ParamObject->GetParam( Param => 'Body' );
+            $GetParam{StandardTemplateID} = $ParamObject->GetParam( Param => 'StandardTemplateID' );
             @{ $GetParam{InformUserID} } = $ParamObject->GetArray(
                 Param => 'InformUserID',
             );
@@ -2038,6 +2005,7 @@ sub _OutputActivityDialog {
                 FormID              => $Self->{FormID},
                 PossibleValues      => $DFPossibleValues{$DynamicFieldName},
                 Visibility          => $Visibility{ 'DynamicField_' . $DynamicFieldName } // 0,
+                Visibilities        => \%Visibility,
                 Object              => {
                     CustomerID     => $Param{GetParam}{CustomerID},
                     CustomerUserID => $Param{GetParam}{CustomerUserID},
@@ -2468,6 +2436,8 @@ sub _OutputActivityDialog {
         elsif ( $Self->{NameToID}{$CurrentField} eq 'Article' ) {
             next DIALOGFIELD if $RenderedFields{ $Self->{NameToID}{$CurrentField} };
 
+            my $StandardTemplates = $Self->_GetStandardTemplates( $Param{GetParam}->%* );
+
             my $Response = $Self->_RenderArticle(
                 ActivityDialogField => $ActivityDialog->{Fields}{$CurrentField},
                 FieldName           => $CurrentField,
@@ -2478,6 +2448,7 @@ sub _OutputActivityDialog {
                 FormID              => $Self->{FormID},
                 GetParam            => $Param{GetParam},
                 InformAgents        => $ActivityDialog->{Fields}{Article}{Config}{InformAgents},
+                StandardTemplates   => $StandardTemplates,
             );
 
             if ( !$Response->{Success} ) {
@@ -2779,6 +2750,7 @@ sub _RenderDynamicField {
         ServerError          => $ServerError,
         ErrorMessage         => $ErrorMessage,
         Object               => $Param{Object},
+        Visibility           => $Param{Visibilities},
     );
 
     my $FieldClasses = 'Field' . ( $DynamicFieldConfig->{FieldType} eq 'RichText' ? ' RichTextField' : '' );
@@ -3148,6 +3120,51 @@ sub _RenderArticle {
         );
     }
 
+    my $ActivateStandardTemplates = defined $Param{ActivityDialogField}{Config}{StandardTemplates} ? $Param{ActivityDialogField}{Config}{StandardTemplates} : 1;
+    if ($ActivateStandardTemplates) {
+
+        # check if exists create templates regardless the queue
+        my $StandardTemplateObject = $Kernel::OM->Get('Kernel::System::StandardTemplate');
+        my %StandardTemplates      = $StandardTemplateObject->StandardTemplateList(
+            Valid => 1,
+            Type  => 'ProcessDialog',
+        );
+
+        # build text template string
+        if ( IsHashRefWithData( \%StandardTemplates ) ) {
+
+            my $SelectedValue;
+
+            my $StandardTemplateIDParam = $Param{GetParam}{StandardTemplateID};
+            if ($StandardTemplateIDParam) {
+                $SelectedValue = $StandardTemplateObject->StandardTemplateLookup(
+                    StandardTemplateID => $StandardTemplateIDParam,
+                );
+            }
+
+            # set server errors
+            my $ServerError = '';
+            if ( IsHashRefWithData( $Param{Error} ) && $Param{Error}->{'StandardTemplateID'} ) {
+                $ServerError = 'ServerError';
+            }
+
+            $Param{StandardTemplateStrg} = $LayoutObject->BuildSelection(
+                Data          => $Param{StandardTemplates} || {},
+                Name          => 'StandardTemplateID',
+                SelectedValue => $SelectedValue,
+                Class         => "Modernize $ServerError",
+                PossibleNone  => 1,
+                Sort          => 'AlphanumericValue',
+                Translation   => 1,
+                Max           => 200,
+            );
+            $LayoutObject->Block(
+                Name => 'StandardTemplate',
+                Data => {%Param},
+            );
+        }
+    }
+
     if ( $Param{InformAgents} ) {
 
         my %ShownUsers;
@@ -3322,12 +3339,12 @@ sub _RenderCustomer {
         && $Self->{LinkArticleData}{SenderType} eq 'customer'
         )
     {
-
-        my @ArticleFromAddress = Mail::Address->parse( $Self->{LinkArticleData}{From} );
+        my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+        my ($ArticleFromAddress) = $EmailAddressObject->ParseAddressLine( Line => $Self->{LinkArticleData}{From} );
 
         my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
         my %List               = $CustomerUserObject->CustomerSearch(
-            PostMasterSearch => $ArticleFromAddress[0]->address(),
+            PostMasterSearch => $EmailAddressObject->GetAddress( AddressObject => $ArticleFromAddress ),
             Valid            => 1,
         );
 
@@ -4245,7 +4262,6 @@ sub _RenderPriority {
         );
     }
 
-
 # Rother OSS / ITSMCore - calculate Priority via CIP matrix
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $Config       = $ConfigObject->Get("Ticket::Frontend::$Self->{Action}") // {};
@@ -4864,11 +4880,9 @@ sub _StoreActivityDialog {
                 $CustomerUserID = $ParamObject->GetParam( Param => 'CustomerAutoComplete' );
 
                 # check email address
-                for my $Email ( Mail::Address->parse($CustomerUserID) ) {
-                    if (
-                        !$Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail( Address => $Email->address() )
-                        )
-                    {
+                my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+                for my $Email ( $EmailAddressObject->ParseAddressLine( Line => $CustomerUserID ) ) {
+                    if ( !$Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail( AddressObject => $Email ) ) {
                         $Error{'CustomerUserID'} = 1;
                     }
                 }
@@ -6741,6 +6755,50 @@ sub _GetTypes {
         );
     }
     return \%Type;
+}
+
+sub _GetStandardTemplates {
+    my ( $Self, %Param ) = @_;
+
+    my %Templates;
+    my $QueueID = $Param{QueueID} || '';
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $QueueObject  = $Kernel::OM->Get('Kernel::System::Queue');
+
+    if ( !$QueueID ) {
+        my $DefaultQueue   = $ConfigObject->Get("Process::DefaultQueue");
+        my $DefaultQueueID = $QueueObject->QueueLookup( Queue => $DefaultQueue );
+        if ($DefaultQueueID) {
+            $QueueID = $DefaultQueueID;
+        }
+    }
+
+    # check needed
+    return \%Templates if !$QueueID && !$Param{TicketID};
+
+    if ( !$QueueID && $Param{TicketID} ) {
+
+        # get QueueID from the ticket
+        my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID      => $Param{TicketID},
+            DynamicFields => 0,
+            UserID        => $Self->{UserID},
+        );
+        $QueueID = $Ticket{QueueID} || '';
+    }
+
+    # fetch all std. templates
+    my %StandardTemplates = $QueueObject->QueueStandardTemplateMemberList(
+        QueueID       => $QueueID,
+        TemplateTypes => 1,
+    );
+
+    # return empty hash if there are no templates for this screen
+    return \%Templates if !IsHashRefWithData( $StandardTemplates{ProcessDialog} );
+
+    # return just the templates for this screen
+    return $StandardTemplates{ProcessDialog};
 }
 
 sub _ShowDialogError {

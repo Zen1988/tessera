@@ -1,0 +1,68 @@
+﻿# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header">
+        <h1>[% Translate("Governance as Code") | html %][% IF Data.Number %]: [% Data.Number | html %] - [% Data.Name | html %][% END %]</h1>
+        <p>
+            <a href="[% Env("Baselink") %][% IF Data.MELTObjectID %]Action=AgentMELTObjectZoom;MELTObjectID=[% Data.MELTObjectID | uri %][% ELSE %]Action=AgentMELTObject[% END %]">[% Translate("Cancel & close") | html %]</a>
+        </p>
+    </div>
+    <div class="Content">
+[% IF Data.Message %]
+        <div class="MessageBox [% Data.MessageClass | html %]">
+            <p>[% Translate(Data.Message) | html %]</p>
+        </div>
+[% END %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="Subaction" value="Import"/>
+            <input type="hidden" name="MELTObjectID" value="[% Data.MELTObjectID | html %]"/>
+            <input type="hidden" name="VersionID" value="[% Data.VersionID | html %]"/>
+            <fieldset class="TableLike">
+                <label for="Format">[% Translate("Format") | html %]:</label>
+                <div class="Field">
+                    <select id="Format" name="Format">
+                        <option value="yaml"[% IF Data.Format == "yaml" %] selected="selected"[% END %]>YAML</option>
+                        <option value="json"[% IF Data.Format == "json" %] selected="selected"[% END %]>JSON</option>
+                    </select>
+                    [% IF Data.MELTObjectID %]
+                        <a class="CallForAction" href="[% Env("Baselink") %]Action=[% Env("Action") %];MELTObjectID=[% Data.MELTObjectID | uri %];VersionID=[% Data.VersionID | uri %];Format=[% IF Data.Format == "json" %]yaml[% ELSE %]json[% END %]">
+                            <span>[% Translate("Switch Format") | html %]</span>
+                        </a>
+                    [% END %]
+                </div>
+                <div class="Clear"></div>
+
+                <label class="Mandatory" for="Document"><span class="Marker">*</span> [% Translate("Document") | html %]:</label>
+                <div class="Field">
+                    <textarea id="Document" name="Document" class="W100pc Validate_Required" rows="28" spellcheck="false">[% Data.Document | html %]</textarea>
+                    <div id="DocumentError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
+                </div>
+                <div class="Clear"></div>
+            </fieldset>
+            <fieldset class="TableLike">
+                <div class="Field SpacingTop">
+                    <button class="CallForAction Primary" type="submit" value="Submit">
+                        <span>[% Translate("Import") | html %]</span>
+                    </button>
+                    [% Translate("or") | html %]
+                    <a href="[% Env("Baselink") %][% IF Data.MELTObjectID %]Action=AgentMELTObjectZoom;MELTObjectID=[% Data.MELTObjectID | uri %][% ELSE %]Action=AgentMELTObject[% END %]">[% Translate("Cancel") | html %]</a>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+

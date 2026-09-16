@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,7 +15,6 @@
 # --
 
 package Kernel::Modules::MigrateFromOTRS;
-## nofilter(TidyAll::Plugin::OTOBO::Perl::DBObject)
 
 use strict;
 use warnings;
@@ -156,7 +155,8 @@ sub Run {
                 $GetParam{$Key} =~ s/\s+$//;
             }
             $GetParam{DBDSN} =
-                $GetParam{DBType} eq 'mysql'      ? "DBI:mysql:database=;host=$GetParam{DBHost};" :
+                $GetParam{DBType} eq 'mariadb'    ? "DBI:MariaDB:database=;host=$GetParam{DBHost};" :
+                $GetParam{DBType} eq 'mysql'      ? "DBI:MariaDB:database=;host=$GetParam{DBHost};" :
                 $GetParam{DBType} eq 'postgresql' ? "DBI:Pg:host=$GetParam{DBHost};" :
                 $GetParam{DBType} eq 'oracle'     ? $GetParam{DBDSN} :
                 '';
@@ -428,6 +428,7 @@ sub Run {
         },
         OTRSDBSettings => {
             DBType => {
+                mariadb    => 'MariaDB',
                 mysql      => 'MySQL',
                 postgresql => 'PostgreSQL',
                 oracle     => 'Oracle',

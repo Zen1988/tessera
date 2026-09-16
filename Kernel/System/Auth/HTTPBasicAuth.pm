@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -20,9 +20,9 @@
 # config settings:
 #
 # If use isn't login through apache ($ENV{REMOTE_USER} or $ENV{HTTP_REMOTE_USER})
-# $Self->{LoginURL} = 'https://ncs.com.sg';
+# $Self->{LoginURL} = 'http://host.example.com/not-authorised-for-otobo.html';
 #
-# $Self->{LogoutURL} = 'https://ncs.com.sg';
+# $Self->{LogoutURL} = 'http://host.example.com/thanks-for-using-otobo.html';
 
 package Kernel::System::Auth::HTTPBasicAuth;
 

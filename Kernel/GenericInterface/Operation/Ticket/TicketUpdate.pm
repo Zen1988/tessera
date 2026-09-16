@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -26,8 +26,9 @@ use parent qw(
 );
 
 # core modules
-use Scalar::Util qw(reftype);
+use List::Util   qw(first);
 use MIME::Base64 qw(encode_base64);
+use Scalar::Util qw(reftype);
 
 # CPAN modules
 
@@ -147,6 +148,12 @@ if applicable the created ArticleID.
                 ForceNotificationToUserID       => [1, 2, 3]                   # optional
                 ExcludeNotificationToUserID     => [1, 2, 3]                   # optional
                 ExcludeMuteNotificationToUserID => [1, 2, 3]                   # optional
+                SendEmail                       => 1                           # optional, defaults to 0.
+                EmailSecurity => {                                             # optional to enable signing/encryption
+                    Backend => 'SMIME',                                        # Backend, only SMIME supported for now
+                    Sign    => 1,                                              # optional, whether to the sign the email. needs valid SMIME cert for the queue
+                    Encrypt => 1,                                              # optional,whether to encrypt the email. needs valid customer SMIME cert (for the TO addr)
+                }
             },
 
             DynamicField => [                                                  # optional
@@ -335,22 +342,51 @@ sub Run {
         );
     }
 
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    # try to identify ticket by configured dynamic field
+    my $FieldName = $Self->{Config}{ExternalIdentifierDynamicField};
+    if ($FieldName) {
+
+        # search dynamic field data for configured identifier
+        my $FieldValue;
+        if ( IsHashRefWithData( $Param{Data}{DynamicField} ) ) {
+            if ( $Param{Data}{DynamicField}{Name} eq $FieldName ) {
+                $FieldValue = $Param{Data}{DynamicField}{Value};
+            }
+        }
+        elsif ( IsArrayRefWithData( $Param{Data}{DynamicField} ) ) {
+            my $Item = first { $_->{Name} eq $FieldName } $Param{Data}{DynamicField}->@*;
+            if ( IsHashRefWithData($Item) ) {
+                $FieldValue = $Item->{Value};
+            }
+        }
+
+        if ( !$Param{Data}{TicketID} && !$Param{Data}{TicketNumber} && $FieldValue ) {
+            my @SearchResult = $TicketObject->TicketSearch(
+                Result                    => 'ARRAY',
+                "DynamicField_$FieldName" => {
+                    Equals => $FieldValue,
+                },
+                UserID => 1,
+            );
+            if ( ( scalar @SearchResult ) == 1 ) {
+                $Param{Data}{TicketID} = $SearchResult[0];
+            }
+            else {
+                return $Self->ReturnError(
+                    ErrorCode    => 'TicketUpdate.MissingParameter',
+                    ErrorMessage => "TicketUpdate: Found ambiguous or no result searching for dynamic field $FieldName!",
+                );
+            }
+        }
+    }
+
     if ( !$Param{Data}->{TicketID} && !$Param{Data}->{TicketNumber} ) {
         return $Self->ReturnError(
             ErrorCode    => 'TicketUpdate.MissingParameter',
             ErrorMessage => "TicketUpdate: TicketID or TicketNumber is required!",
-        );
-    }
-
-    if (
-        !$Param{Data}->{UserLogin}
-        && !$Param{Data}->{CustomerUserLogin}
-        && !$Param{Data}->{SessionID}
-        )
-    {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.MissingParameter',
-            ErrorMessage => "TicketUpdate: UserLogin, CustomerUserLogin or SessionID is required!",
         );
     }
 
@@ -380,9 +416,6 @@ sub Run {
     if ( $UserType eq 'Customer' ) {
         $UserID = $Kernel::OM->Get('Kernel::Config')->Get('CustomerPanelUserID');
     }
-
-    # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
     # check TicketID
     my $TicketID;
@@ -538,7 +571,6 @@ sub Run {
             $Article->{AutoResponseType} = $Self->{Config}->{AutoResponseType} || '';
         }
 
-        # TODO: GenericInterface::Operation::TicketUpdate###CommunicationChannel
         if ( !$Article->{CommunicationChannelID} && !$Article->{CommunicationChannel} ) {
             $Article->{CommunicationChannel} = 'Internal';
         }
@@ -1301,7 +1333,6 @@ sub _CheckUpdatePermissions {
     my $Ticket           = $Param{Ticket};
     my $Article          = $Param{Article};
     my $DynamicFieldList = $Param{DynamicFieldList};
-    my $AttachmentList   = $Param{AttachmentList};
 
     # get ticket object
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
@@ -1996,41 +2027,117 @@ sub _TicketUpdate {
     if ( IsHashRefWithData($Article) ) {
 
         # set Article From
-        my $From;
+        my $ArticleFrom;
         if ( $Article->{From} ) {
-            $From = $Article->{From};
+            $ArticleFrom = $Article->{From};
         }
         elsif ( $Param{UserType} eq 'Customer' ) {
 
             # use data from customer user (if customer user is in database)
             if ( IsHashRefWithData( \%CustomerUserData ) ) {
-                $From = '"'
+                $ArticleFrom = '"'
                     . $CustomerUserData{UserFullname} . '"'
                     . ' <' . $CustomerUserData{UserEmail} . '>';
             }
 
             # otherwise use customer user as sent from the request (it should be an email)
             else {
-                $From = $Ticket->{CustomerUser};
+                $ArticleFrom = $Ticket->{CustomerUser};
             }
         }
         else {
             my %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
                 UserID => $Param{UserID},
             );
-            $From = $UserData{UserFullname};
+
+            if ( $Article->{SendEmail} ) {
+
+                if ( $Article->{From} ) {
+                    $ArticleFrom = $Article->{From};
+                }
+                else {
+                    my %TicketData = $TicketObject->TicketGet(
+                        TicketID      => $TicketID,
+                        DynamicFields => 0,
+                        UserID        => $Param{UserID},
+                        Silent        => 1,
+                    );
+
+                    my %Address = $Kernel::OM->Get('Kernel::System::Queue')->GetSystemAddress(
+                        QueueID => $TicketData{QueueID},
+                    );
+
+                    $ArticleFrom = $Address{Email};
+                }
+            }
+            else {
+                $ArticleFrom = $UserData{UserFullname};
+            }
         }
 
-        # Set Article To, Cc, Bcc.
-        my ( $To, $Cc, $Bcc );
-        if ( $Article->{To} ) {
-            $To = $Article->{To};
+        # Create article and optionally send email.
+
+        my $ArticleMethodRef;
+        my $To      = $Article->{To}   // '';
+        my $From    = $Article->{From} // '';
+        my $Cc      = $Article->{Cc}   // '';
+        my $Bcc     = $Article->{Bcc}  // '';
+        my $Subject = $Article->{Subject} || '';
+
+        if ( !$Article->{CommunicationChannel} ) {
+
+            my %CommunicationChannel = $Kernel::OM->Get('Kernel::System::CommunicationChannel')->ChannelGet(
+                ChannelID => $Article->{CommunicationChannelID},
+            );
+            $Article->{CommunicationChannel} = $CommunicationChannel{ChannelName};
         }
-        if ( $Article->{Cc} ) {
-            $Cc = $Article->{Cc};
+
+        my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article')->BackendForChannel(
+            ChannelName => $Article->{CommunicationChannel},
+        );
+
+        my $SystemAddressObject = $Kernel::OM->Get('Kernel::System::SystemAddress');
+        my $IsLocalTo           = !$Article->{To} ? 0 : $SystemAddressObject->SystemAddressIsLocalAddress(
+            Address => $Article->{To}
+        );
+
+        my $ShallSendEmail = $Article->{SendEmail} &&
+            $Article->{To}                              &&
+            $Article->{SenderType} eq 'agent'           &&
+            $Article->{CommunicationChannel} eq 'Email' &&
+            !$IsLocalTo;
+
+        if ($ShallSendEmail) {
+
+            my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
+
+            my %Queue = $QueueObject->QueueGet(
+                ID => $Ticket->{QueueID},
+            );
+
+            my %SystemAddress = $SystemAddressObject->SystemAddressGet( ID => $Queue{SystemAddressID} );
+
+            my $IsLocalFrom = !$Article->{From} ? 0 : $SystemAddressObject->SystemAddressIsLocalAddress(
+                Address => $Article->{From}
+            );
+
+            $ArticleMethodRef = $ArticleBackendObject->can('ArticleSend');
+            $To               = $Article->{To};
+            $From             = $IsLocalFrom ? $ArticleFrom : $SystemAddress{Name};
+            $Cc               = $Article->{Cc}  if $Article->{Cc}  && !$SystemAddressObject->SystemAddressIsLocalAddress( Address => $Article->{Cc} );
+            $Bcc              = $Article->{Bcc} if $Article->{Bcc} && !$SystemAddressObject->SystemAddressIsLocalAddress( Address => $Article->{Bcc} );
+
+            my $Tn = $TicketObject->TicketNumberLookup( TicketID => $TicketID );
+
+            $Subject = $TicketObject->TicketSubjectBuild(
+                TicketNumber => $Tn,
+                Subject      => $Subject,
+            );
         }
-        if ( $Article->{Bcc} ) {
-            $Bcc = $Article->{Bcc};
+        else {
+
+            $From             = $ArticleFrom;
+            $ArticleMethodRef = $ArticleBackendObject->can('ArticleCreate');
         }
 
         # Fallback for To
@@ -2048,18 +2155,6 @@ sub _TicketUpdate {
             }
         }
 
-        if ( !$Article->{CommunicationChannel} ) {
-
-            my %CommunicationChannel = $Kernel::OM->Get('Kernel::System::CommunicationChannel')->ChannelGet(
-                ChannelID => $Article->{CommunicationChannelID},
-            );
-            $Article->{CommunicationChannel} = $CommunicationChannel{ChannelName};
-        }
-
-        my $ArticleBackendObject = $Kernel::OM->Get('Kernel::System::Ticket::Article')->BackendForChannel(
-            ChannelName => $Article->{CommunicationChannel},
-        );
-
         my $PlainBody = $Article->{Body};
 
         # Convert article body to plain text, if HTML content was supplied. This is necessary since auto response code
@@ -2075,8 +2170,81 @@ sub _TicketUpdate {
             );
         }
 
-        # Create article.
-        $ArticleID = $ArticleBackendObject->ArticleCreate(
+        # support for SMIME encryption and signing
+        my %EmailSecurityOptions;
+
+        if (
+            $ShallSendEmail
+            && $Article->{EmailSecurity}
+            &&
+            $Article->{EmailSecurity}->{Backend} eq 'SMIME'
+            )
+        {
+
+            my $EmailSecurity = {
+                Backend     => 'SMIME',
+                SignKey     => undef,
+                EncryptKeys => undef,
+            };
+
+            my $SMIMEObject       = $Kernel::OM->Get('Kernel::System::Crypt::SMIME');
+            my $EmailParserObject = Kernel::System::EmailParser->new(
+                Mode  => 'Standalone',
+                Debug => 0,
+            );
+
+            if ( $Article->{EmailSecurity}->{Sign} ) {
+
+                my $Email  = $EmailParserObject->GetEmailAddress( Email => $From );
+                my @Result = $SMIMEObject->CertificateSearch(
+                    Search => $Email,
+                );
+
+                if ( scalar @Result == 1 ) {
+
+                    $EmailSecurity->{SignKey} = $Result[0]->{Filename};
+                }
+                else {
+
+                    return {
+                        Success      => 0,
+                        ErrorMessage => 'Article could not be send, SMIME Signing was requested but no SMIME signing certificate is avail.'
+                    };
+                }
+            }
+            if ( $Article->{EmailSecurity}->{Encrypt} ) {
+
+                my $Email  = $EmailParserObject->GetEmailAddress( Email => $To );
+                my @Result = $SMIMEObject->CertificateSearch(
+                    Search => $Email,
+                );
+
+                if ( scalar @Result == 1 ) {
+
+                    $EmailSecurity->{EncryptKeys} = [ $Result[0]->{Filename} ];
+                }
+                else {
+
+                    return {
+                        Success      => 0,
+                        ErrorMessage => 'Article could not be send, SMIME Encryption was requested but no unique SMIME certificate for encryption could be identified.'
+                    };
+                }
+            }
+
+            $EmailSecurityOptions{EmailSecurity} = $EmailSecurity;
+        }
+
+        # prettify FROM
+        if ($ShallSendEmail) {
+            $From = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->Sender(
+                QueueID => $TicketData{QueueID},
+                UserID  => $Param{UserID},
+            );
+        }
+
+        $ArticleID = $ArticleMethodRef->(
+            $ArticleBackendObject,
             NoAgentNotify        => $Article->{NoAgentNotify} || 0,
             TicketID             => $TicketID,
             SenderTypeID         => $Article->{SenderTypeID} || '',
@@ -2086,7 +2254,7 @@ sub _TicketUpdate {
             To                   => $To,
             Cc                   => $Cc,
             Bcc                  => $Bcc,
-            Subject              => $Article->{Subject},
+            Subject              => $Subject,
             Body                 => $Article->{Body},
             MimeType             => $Article->{MimeType}    || '',
             Charset              => $Article->{Charset}     || '',
@@ -2102,6 +2270,7 @@ sub _TicketUpdate {
                 Subject => $Article->{Subject},
                 Body    => $PlainBody,
             },
+            %EmailSecurityOptions
         );
 
         if ( !$ArticleID ) {

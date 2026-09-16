@@ -2,9 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - ff9e297baf287e16071d3ac6ad7f6c13f11ac7fa - Kernel/System/SLA.pm
+# $origin: otobo - ea211902130ca5b796d966845970cfc546444548 - Kernel/System/SLA.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -21,17 +21,26 @@ package Kernel::System::SLA;
 use strict;
 use warnings;
 
+# core modules
+
+# CPAN modules
+
+# OTOBO modules
+# Rother OSS / ITSMCore
+# use Kernel::System::VariableCheck qw(IsArrayRefWithData);
+use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData);
+# EO ITSMCore
+
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
     'Kernel::System::CheckItem',
     'Kernel::System::DB',
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     'Kernel::System::GeneralCatalog',
-# ---
+# EO ITSMCore
     'Kernel::System::Log',
+    'Kernel::System::Service',
     'Kernel::System::Valid',
 );
 
@@ -172,13 +181,11 @@ Returns:
           'ServiceIDs'          => [ '4', '7', '8' ],
           'ValidID'             => '1',
           'Comment'             => 'Some Comment',
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
           'TypeID'                  => '5',
           'Type'                    => 'Incident',
           'MinTimeBetweenIncidents' => '4000',  # in minutes
-# ---
+# EO ITSMCore
           'CreateBy'            => '93',
           'CreateTime'          => '2011-06-16 22:54:54',
           'ChangeBy'            => '93',
@@ -222,11 +229,9 @@ sub SLAGet {
         SQL => 'SELECT id, name, calendar_name, first_response_time, first_response_notify, '
             . 'update_time, update_notify, solution_time, solution_notify, '
             . 'valid_id, comments, create_time, create_by, change_time, change_by '
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
             . ', type_id, min_time_bet_incidents '
-# ---
+# EO ITSMCore
             . 'FROM sla WHERE id = ?',
         Bind => [
             \$Param{SLAID},
@@ -252,12 +257,10 @@ sub SLAGet {
         $SLAData{CreateBy}            = $Row[12];
         $SLAData{ChangeTime}          = $Row[13];
         $SLAData{ChangeBy}            = $Row[14];
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         $SLAData{TypeID}                  = $Row[15];
         $SLAData{MinTimeBetweenIncidents} = $Row[16] || 0;
-# ---
+# EO ITSMCore
     }
 
     # check sla
@@ -268,15 +271,13 @@ sub SLAGet {
         );
         return;
     }
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     # get sla type list
     my $SLATypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
         Class => 'ITSM::SLA::Type',
     );
     $SLAData{Type} = $SLATypeList->{ $SLAData{TypeID} } || '';
-# ---
+# EO ITSMCore
 
     # get all service ids
     $DBObject->Prepare(
@@ -444,12 +445,10 @@ add a sla
         ValidID             => 1,
         Comment             => 'Comment',    # (optional)
         UserID              => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         TypeID                  => 2,
         MinTimeBetweenIncidents => 3443,     # (optional)
-# ---
+# EO ITSMCore
     );
 
 =cut
@@ -458,12 +457,10 @@ sub SLAAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #    for my $Argument (qw(Name ValidID UserID)) {
     for my $Argument (qw(Name ValidID UserID TypeID)) {
-# ---
+# EO ITSMCore
         if ( !$Param{$Argument} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -492,11 +489,9 @@ sub SLAAdd {
     $Param{UpdateNotify}        ||= 0;
     $Param{SolutionTime}        ||= 0;
     $Param{SolutionNotify}      ||= 0;
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     $Param{MinTimeBetweenIncidents} ||= 0;
-# ---
+# EO ITSMCore
 
     # get check item object
     my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
@@ -537,9 +532,7 @@ sub SLAAdd {
 
     # add sla to database
     return if !$DBObject->Do(
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #        SQL => 'INSERT INTO sla '
 #            . '(name, calendar_name, first_response_time, first_response_notify, '
 #            . 'update_time, update_notify, solution_time, solution_notify, '
@@ -563,7 +556,7 @@ sub SLAAdd {
             \$Param{SolutionTime},        \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
             \$Param{UserID},              \$Param{UserID},         \$Param{TypeID},  \$Param{MinTimeBetweenIncidents},
         ],
-# ---
+# EO ITSMCore
     );
 
     # get sla id
@@ -625,12 +618,10 @@ update a existing sla
         ValidID             => 1,
         Comment             => 'Comment',    # (optional)
         UserID              => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         TypeID                  => 2,
         MinTimeBetweenIncidents => 3443,  # (optional)
-# ---
+# EO ITSMCore
     );
 
 =cut
@@ -639,12 +630,10 @@ sub SLAUpdate {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #    for my $Argument (qw(SLAID Name ValidID UserID)) {
     for my $Argument (qw(SLAID Name ValidID UserID TypeID)) {
-# ---
+# EO ITSMCore
         if ( !$Param{$Argument} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -673,11 +662,9 @@ sub SLAUpdate {
     $Param{UpdateNotify}        ||= 0;
     $Param{SolutionTime}        ||= 0;
     $Param{SolutionNotify}      ||= 0;
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     $Param{MinTimeBetweenIncidents} ||= 0;
-# ---
+# EO ITSMCore
 
     # get check item object
     my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
@@ -734,9 +721,7 @@ sub SLAUpdate {
 
     # update service
     return if !$DBObject->Do(
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #        SQL => 'UPDATE sla SET name = ?, calendar_name = ?, '
 #            . 'first_response_time = ?, first_response_notify = ?, '
 #            . 'update_time = ?, update_notify = ?, solution_time = ?, solution_notify = ?, '
@@ -760,7 +745,7 @@ sub SLAUpdate {
             \$Param{SolutionTime},        \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
             \$Param{UserID},              \$Param{TypeID},         \$Param{MinTimeBetweenIncidents}, \$Param{SLAID},
         ],
-# ---
+# EO ITSMCore
     );
 
     # remove all existing allocations
@@ -816,6 +801,162 @@ sub SLAPreferencesGet {
     my ( $Self, %Param ) = @_;
 
     return $Self->{PreferencesObject}->SLAPreferencesGet(%Param);
+}
+
+sub ExportSLAs {
+    my ( $Self, %Param ) = @_;
+
+    my $UserID = $Self->{UserID} || $Param{UserID};
+
+    my %SLAFilter;
+    if ( IsArrayRefWithData( $Param{SLAs} ) ) {
+        %SLAFilter = map { $_ => 1 } $Param{SLAs}->@*;
+    }
+
+    my %SLAList = $Self->SLAList(
+        Valid  => 0,
+        UserID => $UserID,
+    );
+
+# Rother OSS / ITSMCore
+    my $TypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::SLA::Type',
+    );
+# EO ITSMCore
+
+    my %ExportData;
+    SLAID:
+    for my $SLAID ( sort keys %SLAList ) {
+
+        my %SLAData = $Self->SLAGet(
+            SLAID  => $SLAID,
+            UserID => $UserID,
+        );
+
+        if (%SLAFilter) {
+            next SLAID unless $SLAFilter{ $SLAData{Name} };
+        }
+
+        # translate IDs into names or name-like identifiers
+        my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+        my $ValidObject   = $Kernel::OM->Get('Kernel::System::Valid');
+
+        ATTRIBUTE:
+        for my $Attribute ( keys %SLAData ) {
+
+            next ATTRIBUTE unless $Attribute =~ /ID/;
+
+            if ( $Attribute eq 'ValidID' ) {
+                my $Valid = $ValidObject->ValidLookup(
+                    ValidID => $SLAData{ValidID},
+                );
+                $SLAData{Valid} = $Valid;
+                delete $SLAData{ValidID};
+            }
+            elsif ( $Attribute eq 'ServiceIDs' ) {
+                if ( IsArrayRefWithData( $SLAData{ServiceIDs} ) ) {
+                    my @Services;
+                    for my $ServiceID ( $SLAData{ServiceIDs}->@* ) {
+                        push @Services, $ServiceObject->ServiceLookup(
+                            ServiceID => $ServiceID,
+                        );
+                    }
+                    $SLAData{Services} = \@Services;
+                    delete $SLAData{ServiceIDs};
+                }
+            }
+# Rother OSS / ITSMCore
+            elsif ( $Attribute eq 'TypeID' && IsHashRefWithData($TypeList) ) {
+                my $Type = $TypeList->{$SLAData{TypeID}};
+                $SLAData{Type} = $Type;
+                delete $SLAData{TypeID};
+            }
+# EO ITSMCore
+        }
+
+        # observation showed that Type and TypeID both are usually present
+        delete $SLAData{TypeID};
+
+        delete $SLAData{ChangeBy};
+        delete $SLAData{ChangeTime};
+        delete $SLAData{CreateBy};
+        delete $SLAData{CreateTime};
+        delete $SLAData{SLAID};
+
+        $ExportData{ $SLAData{Name} } = \%SLAData;
+    }
+
+    return \%ExportData;
+}
+
+sub ImportSLAs {
+    my ( $Self, %Param ) = @_;
+
+    my $UserID = $Self->{UserID} || $Param{UserID};
+
+    my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+    my $ValidObject   = $Kernel::OM->Get('Kernel::System::Valid');
+    my %SLAList       = $Self->SLAList(
+        Valid  => 0,
+        UserID => $UserID,
+    );
+    my %SLALookup = reverse %SLAList;
+
+# Rother OSS / ITSMCore
+    my $TypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::SLA::Type',
+    );
+
+    my %TypeLookup = IsHashRefWithData($TypeList) ? reverse $TypeList->%* : ();
+# EO ITSMCore
+
+    SLANAME:
+    for my $SLAName ( keys $Param{SLAs}->%* ) {
+        my $SLAData = $Param{SLAs}{$SLAName};
+
+        my $SLAID = $SLALookup{ $SLAData->{Name} };
+
+        # skip if SLA with same name exists and overwrite is not set
+        next SLANAME if ( !$Param{OverwriteExistingEntities} && $SLAID );
+
+        # translate named data back to IDs
+        if ( IsArrayRefWithData( $SLAData->{Services} ) ) {
+            my @ServiceIDs;
+            for my $Service ( $SLAData->{Services}->@* ) {
+                push @ServiceIDs, $ServiceObject->ServiceLookup(
+                    Name => $Service,
+                );
+            }
+            $SLAData->{ServiceIDs} = \@ServiceIDs;
+        }
+# Rother OSS / ITSMCore
+        if ( $SLAData->{Type} ) {
+            $SLAData->{TypeID} = $TypeLookup{$SLAData->{Type}};
+        }
+# EO ITSMCore
+        $SLAData->{ValidID} = $ValidObject->ValidLookup(
+            Valid => $SLAData->{Valid},
+        );
+
+        if ($SLAID) {
+
+            my $Success = $Self->SLAUpdate(
+                $SLAData->%*,
+                SLAID  => $SLAID,
+                UserID => $UserID,
+            );
+            return unless $Success;
+        }
+        else {
+            my $SLAID = $Self->SLAAdd(
+                $SLAData->%*,
+                UserID => $UserID,
+            );
+            return unless $SLAID;
+        }
+    }
+
+    return 1;
 }
 
 1;

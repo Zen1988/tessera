@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -54,9 +54,10 @@ sub CheckAccess {
     }
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $Config       = $ConfigObject->Get('Ticket::Frontend::AgentTicketArticleEdit');
 
-    return if $Param{ChannelName} ne 'Internal';
-    return if $Param{Article}->{IsVisibleForCustomer};
+    return if ( $Param{Article}{IsVisibleForCustomer}     && !$Config->{ArticleCustomerVisible} );
+    return if ( $Param{Article}{SenderType} eq 'customer' && !$Config->{EditCustomerArticles} );
     return if $ConfigObject->Get('Ticket::Article::Backend::MIMEBase::ArticleStorage') =~ m/ArticleStorageS3/;
 
     # NOTE checking for AgentTicketArticleEdit because
@@ -70,7 +71,6 @@ sub CheckAccess {
 
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
-    my $Config = $ConfigObject->Get('Ticket::Frontend::AgentTicketArticleEdit');
     if ( $Config->{Permission} ) {
         my $Ok = $TicketObject->TicketPermission(
             Type     => $Config->{Permission},

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,9 +16,9 @@
 
 package Kernel::System::MigrateFromOTRS::CloneDB::Driver::Base;
 
+use v5.24;
 use strict;
 use warnings;
-use v5.24;
 use namespace::autoclean;
 
 # core modules
@@ -132,7 +132,8 @@ sub SanityChecks {
 
     # check whether the source database type is supported and whether the DBD module can be loaded
     my %DBDModule = (
-        mysql      => 'DBD::mysql',
+        mariadb    => 'DBD::MariaDB',
+        mysql      => 'DBD::MariaDB',
         postgresql => 'DBD::Pg',
         oracle     => 'DBD::Oracle',
     );
@@ -278,7 +279,7 @@ sub RowCount {
 
     # This is a workaround for a very special case.
     # There can be OTRS 6 running on MySQL 8, where groups is a reserverd word.
-    # See https://ncs.com.sg
+    # See https://github.com/RotherOSS/otobo/issues/639
     my $Table = ( $Param{DBObject}->{'DB::Type'} eq 'mysql' && $Param{Table} eq 'groups' )
         ?
         q{`groups`}
@@ -450,13 +451,12 @@ sub DataTransfer {
 
     # Keep track of table attributes which must be base64 encoded or decoded.
     # This conversion of BLOBs is only relevant when DirectBlob settings are different.
+    my $DirectBlobIsDifferent = ( $TargetDBObject->GetDatabaseFunction('DirectBlob') != $SourceDBObject->GetDatabaseFunction('DirectBlob') ) ? 1 : 0;
     my %BlobConversionNeeded;
     my %IsDirectBlobColumn;
-    if ( $TargetDBObject->GetDatabaseFunction('DirectBlob') != $SourceDBObject->GetDatabaseFunction('DirectBlob') ) {
-        for my $Setup ( $MigrationBaseObject->DBDirectBlobColumns ) {
-            $IsDirectBlobColumn{ lc $Setup->{Table} } //= {};
-            $IsDirectBlobColumn{ lc $Setup->{Table} }->{ lc $Setup->{Column} } = 1;
-        }
+    for my $Setup ( $MigrationBaseObject->DBDirectBlobColumns ) {
+        $IsDirectBlobColumn{ lc $Setup->{Table} } //= {};
+        $IsDirectBlobColumn{ lc $Setup->{Table} }->{ lc $Setup->{Column} } = 1;
     }
 
     # extract params needed in the second and the following loops
@@ -604,9 +604,9 @@ sub DataTransfer {
         # only relevant when the DirectBlob settings are different and when there are any
         # DirectBlob fields for this table
         $BlobConversionNeeded{$SourceTable} = {};
-        if ( $IsDirectBlobColumn{$SourceTable} ) {
+        if ( $DirectBlobIsDifferent && $IsDirectBlobColumn{$SourceTable} ) {
 
-            # get LONGBLOB fields of the source table as only those are candidates for base63 conversion o
+            # get LONGBLOB fields of the source table as only those are candidates for base64 conversion o
             my $BlobColumnsList = $Self->BlobColumnsList(
                 Table    => $SourceTable,
                 DBName   => $SourceDBName,
@@ -621,7 +621,6 @@ sub DataTransfer {
                 $BlobConversionNeeded{$SourceTable}->{$Column} = 1;
             }
         }
-
     }
 
     # needed for the progress messages emitted by the last two loops
@@ -768,11 +767,14 @@ sub DataTransfer {
             @SourceColumns = $SourceColumnRef->@*;
         }
 
-        # List of columns for generating INSERT statements.
-        # The $TargetColumnsString is simply the list of the column names.
-        # Source and target columns can be different when there is column shortening.
-        # In this case some source columns are wrapped in SUBSTRING calls.
-        my $TargetColumnsString = join ', ', @SourceColumns;
+        # Declare LONGBLOB colums a binary.
+        # More precisely, only the LONGBLOB columns that do not hold UTF-8 data.
+        my @BindAsBinary;
+        if ( $IsDirectBlobColumn{$SourceTable} ) {
+            @BindAsBinary =
+                map { $IsDirectBlobColumn{ lc $SourceTable }->{ lc $_ } ? 1 : 0 }
+                @SourceColumns;
+        }
 
         # If we have extra columns in OTRS table we need to add the column to OTOBO.
         {
@@ -812,12 +814,18 @@ sub DataTransfer {
             # assemble the relevant SQL
             my ( $SelectSQL, $InsertSQL );
             {
+                # List of columns for generating INSERT statements.
+                # The $TargetColumnsString is simply the list of the column names.
+                # Source and target columns can be of different size when there is column shortening.
+                # In this case some source columns are wrapped in SUBSTRING calls.
+                my $TargetColumnsString = join ', ', @SourceColumns;
+
                 my $BindString = join ', ', map {'?'} @SourceColumns;
                 $InsertSQL = "INSERT INTO $TargetTable ($TargetColumnsString) VALUES ($BindString)";
 
                 # This is a workaround for a very special case.
                 # There can be OTRS 6 running on MySQL 8, where groups is a reserved word.
-                # See https://ncs.com.sg
+                # See https://github.com/RotherOSS/otobo/issues/639
                 my $Table = ( $Param{OTRSDBObject}->{'DB::Type'} eq 'mysql' && $SourceTable eq 'groups' )
                     ?
                     q{`groups`}
@@ -863,9 +871,20 @@ sub DataTransfer {
                     }
                 }
 
+                # turn off UTF-8 flag for the LONGBLOB columns
+                if ( $TargetDBObject->GetDatabaseFunction('DirectBlob') ) {
+                    COLUMN_COUNTER:
+                    for my $ColumnCounter ( 1 .. $#SourceColumns ) {
+                        next COLUMN_COUNTER unless $BindAsBinary[$ColumnCounter];
+
+                        $EncodeObject->EncodeOutput( \$Row[$ColumnCounter] );
+                    }
+                }
+
                 my $Success = $TargetDBObject->Do(
-                    SQL  => $InsertSQL,
-                    Bind => [ \(@Row) ],    # reference to an array of references
+                    SQL          => $InsertSQL,
+                    Bind         => [ \(@Row) ],      # reference to an array of references
+                    BindAsBinary => \@BindAsBinary,
                 );
 
                 if ( !$Success ) {

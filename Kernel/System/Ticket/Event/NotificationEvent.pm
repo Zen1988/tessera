@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -21,10 +21,9 @@ use strict;
 use warnings;
 
 # core modules
-use List::Util qw(first);
+use List::Util qw(any first);
 
 # CPAN modules
-use Mail::Address ();
 
 # OTOBO modules
 use Kernel::System::VariableCheck qw(:all);
@@ -50,6 +49,7 @@ our @ObjectDependencies = (
     'Kernel::System::DateTime',
     'Kernel::System::User',
     'Kernel::System::CheckItem',
+    'Kernel::System::EmailAddress',
 );
 
 sub new {
@@ -643,7 +643,7 @@ sub _RecipientsGet {
 
             if (
                 $Recipient
-                =~ /^Agent(Owner|Responsible|Watcher|WritePermissions|MyQueues|MyServices|MyQueuesMyServices|CreateBy)$/
+                =~ /^Agent(Owner|Responsible|Watcher|WritePermissions|MyQueues|MyServices|MyQueuesMyServices|CreateBy|CreateByTicket)$/
                 )
             {
                 if ( $Recipient eq 'AgentOwner' ) {
@@ -759,7 +759,10 @@ sub _RecipientsGet {
                     if ( $Articles[0] && $Articles[0]->{ArticleNumber} == 1 ) {
                         push @{ $Notification{Data}->{RecipientAgents} }, $Ticket{CreateBy};
                     }
+                }
+                elsif ( $Recipient eq 'AgentCreateByTicket' ) {
 
+                    push @{ $Notification{Data}->{RecipientAgents} }, $Ticket{CreateBy};
                 }
             }
 
@@ -932,17 +935,13 @@ sub _RecipientsGet {
                     next RECIPIENT;
                 }
 
-                my %Recipient;
-                my @AllRecipients;
-                my @TmpRecipients;
-                my @TmpRecipientAgents;
-                my @RecipientAgents;
-
                 # Get recipient agents to prevent multiple notifications
+                my @RecipientAgents;
                 if ( IsArrayRefWithData( $Notification{Data}->{RecipientAgents} ) ) {
                     @RecipientAgents = @{ $Notification{Data}->{RecipientAgents} };
                 }
 
+                my @TmpRecipientAgents;
                 if (@RecipientAgents) {
                     for my $UserID (@RecipientAgents) {
 
@@ -954,48 +953,47 @@ sub _RecipientsGet {
                     }
                 }
 
-                # Get all recipients from the article.
-                ALLRECIPIENTS:
-                for my $Header (qw(From To Cc)) {
+                my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
 
-                    next ALLRECIPIENTS if !$Article{$Header};
+                # Get the bare addresses of all of the recipients in the article
+                # Do not split an address line by comma, as a comma might be part of the phrase.
+                my @Addresses =
+                    map { $EmailAddressObject->GetAddress( AddressObject => $_ ) }
+                    map { $EmailAddressObject->ParseAddressLine( Line => $Article{$_} ) }
+                    qw(From To Cc);
 
-                    push @TmpRecipients, split /,/, $Article{$Header};
-                }
-
-                # Loop through recipients.
-                EMAIL:
-                for my $Email ( Mail::Address->parse(@TmpRecipients) ) {
+                # Filter the bare addresses.
+                my @AllRecipients;
+                ADDRESS:
+                for my $Address (@Addresses) {
 
                     # Skip notification if email address is already used by other groups.
-                    next EMAIL if grep { $_ eq $Email->address() } @RecipientUserEmails;
+                    next ADDRESS if any { $_ eq $Address } @RecipientUserEmails;
 
                     # Validate email address.
                     my $Valid = $CheckItemObject->CheckEmail(
-                        Address => $Email->address(),
+                        Address => $Address,
                     );
 
                     # Skip invalid.
-                    next EMAIL if !$Valid;
-
-                    # Check if email address is a local.
-                    my $IsLocal = $SystemAddressObject->SystemAddressIsLocalAddress(
-                        Address => $Email->address(),
-                    );
+                    next ADDRESS unless $Valid;
 
                     # Skip local email address.
-                    next EMAIL if $IsLocal;
+                    next ADDRESS if $SystemAddressObject->SystemAddressIsLocalAddress(
+                        Address => $Address,
+                    );
 
                     # Skip email addresses from agents selected by other groups.
-                    next EMAIL if grep { $_ eq $Email->address() } @TmpRecipientAgents;
+                    next ADDRESS if any { $_ eq $Address } @TmpRecipientAgents;
 
-                    push @AllRecipients, $Email->address();
+                    push @AllRecipients, $Address;
 
-                    # Push Email Addresses into array to prevent multiple notifications.
-                    push @RecipientUserEmails, $Email->address();
+                    # Push email addresses into array to prevent multiple notifications.
+                    push @RecipientUserEmails, $Address;
                 }
 
                 # Merge recipients.
+                my %Recipient;
                 $Recipient{UserEmail} = join( ',', @AllRecipients );
 
                 $Recipient{Type} = 'Customer';

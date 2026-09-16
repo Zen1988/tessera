@@ -2,9 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/System/Service.pm
+# $origin: otobo - 5aa4852713ee4b3845891682f4385939fd086546 - Kernel/System/Service.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -27,19 +27,15 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
     'Kernel::System::CheckItem',
-    'Kernel::System::ACL::DB::ACL',
     'Kernel::System::DB',
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     'Kernel::System::DynamicField',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::LinkObject',
-# ---
+# EO ITSMCore
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::Translations',
-    'Kernel::System::Type',
     'Kernel::System::Valid',
 );
 
@@ -70,9 +66,7 @@ sub new {
 
     $Self->{CacheType} = 'Service';
     $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 
     # get the dynamic field for ITSMCriticality
     my $DynamicFieldConfigArrayRef = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
@@ -95,7 +89,7 @@ sub new {
 
     # set the criticality list
     $Self->{CriticalityList} = $PossibleValues{ITSMCriticality};
-# ---
+# EO ITSMCore
 
     # load generator preferences module
     my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('Service::PreferencesModule')
@@ -103,11 +97,9 @@ sub new {
     if ( $Kernel::OM->Get('Kernel::System::Main')->Require($GeneratorModule) ) {
         $Self->{PreferencesObject} = $GeneratorModule->new();
     }
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
-# ---
+# EO ITSMCore
 
     return $Self;
 }
@@ -252,16 +244,14 @@ return a list of services with the complete list of attributes for each service
             ChangeTime => '2011-06-11 17:22:00',
             CreateBy   => 1,
             ChangeBy   => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
             TypeID           => 16,
             Type             => 'Backend',
             Criticality      => '3 normal',
             CurInciStateID   => 1,
             CurInciState     => 'Operational',
             CurInciStateType => 'operational',
-# ---
+# EO ITSMCore
         },
         {
             ServiceID  => 2,
@@ -274,16 +264,14 @@ return a list of services with the complete list of attributes for each service
             ChangeTime => '2011-06-11 17:22:00',
             CreateBy   => 1,
             ChangeBy   => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
             TypeID           => 16,
             Type             => 'Backend',
             Criticality      => '3 normal',
             CurInciStateID   => 1,
             CurInciState     => 'Operational',
             CurInciStateType => 'operational',
-# ---
+# EO ITSMCore
         },
         # ...
     ];
@@ -317,11 +305,9 @@ sub ServiceListGet {
 
     # create SQL query
     my $SQL = 'SELECT id, name, valid_id, comments, create_time, create_by, change_time, change_by '
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         . ", type_id, criticality "
-# ---
+# EO ITSMCore
         . 'FROM service';
 
     if ( $Param{Valid} ) {
@@ -352,12 +338,10 @@ sub ServiceListGet {
         $ServiceData{CreateBy}   = $Row[5];
         $ServiceData{ChangeTime} = $Row[6];
         $ServiceData{ChangeBy}   = $Row[7];
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         $ServiceData{TypeID}      = $Row[8];
         $ServiceData{Criticality} = $Row[9] || '';
-# ---
+# EO ITSMCore
 
         # add service data to service list
         push @ServiceList, \%ServiceData;
@@ -368,7 +352,7 @@ sub ServiceListGet {
 
     for my $ServiceData (@ServiceList) {
 
-        # create short name and parentid
+        # create short name and parent id
         $ServiceData->{NameShort} = $ServiceData->{Name};
         if ( $ServiceData->{Name} =~ m{ \A (.*) :: (.+?) \z }xms ) {
             my $ParentName = $1;
@@ -385,9 +369,7 @@ sub ServiceListGet {
         if (%Preferences) {
             %{$ServiceData} = ( %{$ServiceData}, %Preferences );
         }
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         # get current incident state, calculated from related config items and child services
         my %NewServiceData = $Self->_ServiceGetCurrentIncidentState(
             ServiceData => $ServiceData,
@@ -395,10 +377,7 @@ sub ServiceListGet {
             UserID      => $Param{UserID},
         );
         $ServiceData = \%NewServiceData;
-# ---
-        $Self->_ZTSMTicketTypesInject(
-            ServiceData => $ServiceData,
-        );
+# EO ITSMCore
     }
 
     if (@ServiceList) {
@@ -430,9 +409,7 @@ Return
     $ServiceData{CreateBy}
     $ServiceData{ChangeTime}
     $ServiceData{ChangeBy}
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     $ServiceData{TypeID}
     $ServiceData{Type}
     $ServiceData{Criticality}
@@ -445,7 +422,7 @@ Return
         IncidentState => 1, # Optional, returns CurInciState etc.
         UserID        => 1,
     );
-# ---
+# EO ITSMCore
 
     my %ServiceData = $ServiceObject->ServiceGet(
         ServiceID => 123,
@@ -498,13 +475,11 @@ sub ServiceGet {
 
     # check cached results
     my $CacheKey = 'Cache::ServiceGet::' . $Param{ServiceID};
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     # add the IncidentState parameter to the cache key
     $Param{IncidentState} ||= 0;
     $CacheKey .= '::IncidentState::' . $Param{IncidentState};
-# ---
+# EO ITSMCore
     my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
         Type => $Self->{CacheType},
         Key  => $CacheKey,
@@ -518,11 +493,9 @@ sub ServiceGet {
     $DBObject->Prepare(
         SQL =>
             'SELECT id, name, valid_id, comments, create_time, create_by, change_time, change_by '
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
             . ", type_id, criticality "
-# ---
+# EO ITSMCore
             . 'FROM service WHERE id = ?',
         Bind  => [ \$Param{ServiceID} ],
         Limit => 1,
@@ -539,12 +512,10 @@ sub ServiceGet {
         $ServiceData{CreateBy}   = $Row[5];
         $ServiceData{ChangeTime} = $Row[6];
         $ServiceData{ChangeBy}   = $Row[7];
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         $ServiceData{TypeID}      = $Row[8];
         $ServiceData{Criticality} = $Row[9] || '';
-# ---
+# EO ITSMCore
     }
 
     # check service
@@ -556,7 +527,7 @@ sub ServiceGet {
         return;
     }
 
-    # create short name and parentid
+    # create short name and parent id
     $ServiceData{NameShort} = $ServiceData{Name};
     if ( $ServiceData{Name} =~ m{ \A (.*) :: (.+?) \z }xms ) {
         $ServiceData{NameShort} = $2;
@@ -577,9 +548,7 @@ sub ServiceGet {
     if (%Preferences) {
         %ServiceData = ( %ServiceData, %Preferences );
     }
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     if ( $Param{IncidentState} ) {
         # get current incident state, calculated from related config items and child services
         %ServiceData = $Self->_ServiceGetCurrentIncidentState(
@@ -588,10 +557,7 @@ sub ServiceGet {
             UserID      => $Param{UserID},
         );
     }
-# ---
-    $Self->_ZTSMTicketTypesInject(
-        ServiceData => \%ServiceData,
-    );
+# EO ITSMCore
 
     # set cache
     $Kernel::OM->Get('Kernel::System::Cache')->Set(
@@ -712,12 +678,10 @@ add a service
         ValidID  => 1,
         Comment  => 'Comment',    # (optional)
         UserID   => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         TypeID      => 2,
         Criticality => '3 normal',
-# ---
+# EO ITSMCore
     );
 
 =cut
@@ -726,12 +690,10 @@ sub ServiceAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #    for my $Argument (qw(Name ValidID UserID)) {
     for my $Argument (qw(Name ValidID UserID TypeID Criticality)) {
-# ---
+# EO ITSMCore
         if ( !$Param{$Argument} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -800,9 +762,7 @@ sub ServiceAdd {
     }
 
     return if !$DBObject->Do(
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #        SQL => 'INSERT INTO service '
 #            . '(name, valid_id, comments, create_time, create_by, change_time, change_by) '
 #            . 'VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
@@ -818,7 +778,7 @@ sub ServiceAdd {
             \$Param{FullName}, \$Param{ValidID}, \$Param{Comment},
             \$Param{UserID}, \$Param{UserID}, \$Param{TypeID}, \$Param{Criticality},
         ],
-# ---
+# EO ITSMCore
     );
 
     # get service id
@@ -846,12 +806,6 @@ sub ServiceAdd {
         Strings => [ values %Services ],
     );
 
-    $Self->_ZTSMServiceCatalogACLRefresh(
-        Source    => 'ServiceAdd',
-        ServiceID => $ServiceID,
-        UserID    => $Param{UserID},
-    );
-
     return $ServiceID;
 }
 
@@ -866,12 +820,10 @@ update an existing service
         ValidID   => 1,
         Comment   => 'Comment',    # (optional)
         UserID    => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         TypeID      => 2,
         Criticality => '3 normal',
-# ---
+# EO ITSMCore
     );
 
 =cut
@@ -880,12 +832,10 @@ sub ServiceUpdate {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #    for my $Argument (qw(ServiceID Name ValidID UserID)) {
     for my $Argument (qw(ServiceID Name ValidID UserID TypeID Criticality)) {
-# ---
+# EO ITSMCore
         if ( !$Param{$Argument} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -982,9 +932,7 @@ sub ServiceUpdate {
 
     # update service
     return if !$DBObject->Do(
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
 #        SQL => 'UPDATE service SET name = ?, valid_id = ?, comments = ?, '
 #            . ' change_time = current_timestamp, change_by = ? WHERE id = ?',
 #        Bind => [
@@ -998,12 +946,12 @@ sub ServiceUpdate {
             \$Param{FullName}, \$Param{ValidID}, \$Param{Comment},
             \$Param{UserID}, \$Param{TypeID}, \$Param{Criticality}, \$Param{ServiceID},
         ],
-# ---
+# EO ITSMCore
     );
 
     my $LikeService = $DBObject->Quote( $OldServiceName, 'Like' ) . '::%';
 
-    # find all childs
+    # find all children
     $DBObject->Prepare(
         SQL  => "SELECT id, name FROM service WHERE name LIKE ?",
         Bind => [ \$LikeService ],
@@ -1017,7 +965,7 @@ sub ServiceUpdate {
         push @Childs, \%Child;
     }
 
-    # update childs
+    # update children
     for my $Child (@Childs) {
         $Child->{Name} =~ s{ \A ( \Q$OldServiceName\E ) :: }{$Param{FullName}::}xms;
         $DBObject->Do(
@@ -1040,12 +988,6 @@ sub ServiceUpdate {
         Strings => [ values %Services ],
     );
 
-    $Self->_ZTSMServiceCatalogACLRefresh(
-        Source    => 'ServiceUpdate',
-        ServiceID => $Param{ServiceID},
-        UserID    => $Param{UserID},
-    );
-
     return 1;
 }
 
@@ -1057,12 +999,10 @@ return service ids as an array
         Name   => 'Service Name', # (optional)
         Limit  => 122,            # (optional) default 1000
         UserID => 1,
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
         TypeIDs       => 2,
         Criticalities => [ '2 low', '3 normal' ],
-# ---
+# EO ITSMCore
     );
 
 =cut
@@ -1102,9 +1042,7 @@ sub ServiceSearch {
 
         $SQL .= " AND name LIKE ?";
     }
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
     # add type ids
     if ( $Param{TypeIDs} && ref $Param{TypeIDs} eq 'ARRAY' && @{ $Param{TypeIDs} } ) {
 
@@ -1126,7 +1064,7 @@ sub ServiceSearch {
 
         $SQL .= "AND criticality IN (" . join(', ', @{ $Param{Criticalities} }) . ") ";
     }
-# ---
+# EO ITSMCore
 
     $SQL .= ' ORDER BY name';
 
@@ -1398,15 +1336,6 @@ sub ServicePreferencesSet {
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
         Type => $Self->{CacheType},
     );
-
-    if ( ( $Param{Key} || '' ) eq 'TicketTypeIDs' ) {
-        $Self->_ZTSMServiceCatalogACLRefresh(
-            Source    => 'ServicePreferencesSet:TicketTypeIDs',
-            ServiceID => $Param{ServiceID},
-            UserID    => $Param{UserID} || 1,
-        );
-    }
-
     return 1;
 }
 
@@ -1425,306 +1354,6 @@ sub ServicePreferencesGet {
     my ( $Self, %Param ) = @_;
 
     return $Self->{PreferencesObject}->ServicePreferencesGet(%Param);
-}
-
-sub _ZTSMTicketTypesInject {
-    my ( $Self, %Param ) = @_;
-
-    my $ServiceData = $Param{ServiceData};
-    return if ref $ServiceData ne 'HASH';
-
-    my @TicketTypeIDs;
-    if ( ref $ServiceData->{TicketTypeIDs} eq 'ARRAY' ) {
-        @TicketTypeIDs = grep { $_ } $ServiceData->{TicketTypeIDs}->@*;
-    }
-    elsif ( defined $ServiceData->{TicketTypeIDs} && $ServiceData->{TicketTypeIDs} ne '' ) {
-        @TicketTypeIDs = grep { $_ } split m{\s*,\s*}, $ServiceData->{TicketTypeIDs};
-    }
-    return if !@TicketTypeIDs;
-
-    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
-        Valid => 0,
-    );
-    my @TicketTypes = map { $TicketTypeList{$_} } grep { $TicketTypeList{$_} } @TicketTypeIDs;
-    return if !@TicketTypes;
-
-    $ServiceData->{TicketTypeIDs} = \@TicketTypeIDs;
-    $ServiceData->{TicketTypes}   = \@TicketTypes;
-    $ServiceData->{TicketType}    = $TicketTypes[0];
-
-    return 1;
-}
-
-sub UpdateTypServiceACL {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
-        return 1;
-    }
-
-    for my $Needed (qw(TicketTypeID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
-        Valid => 0,
-    );
-    my $TicketType = $TicketTypeList{ $Param{TicketTypeID} };
-    if ( !$TicketType ) {
-        return;
-    }
-
-    my $Options = $Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls::Options') || {};
-    my @FrontendAction = @{ $Options->{FrontendAction} || [] };
-    @FrontendAction = qw(CustomerTicketMessage AgentTicketPhone AgentTicketEmail AgentTicketFreeText) if !@FrontendAction;
-
-    my $ConfigChangeKey = ( $Options->{ConfigChange} || '' ) eq 'PossibleAdd' ? 'PossibleAdd' : 'Possible';
-    my $ACLValidID      = $Options->{ACLValidID} || 1;
-
-    my @ServiceNames;
-    my $ServiceList = $Self->ServiceListGet(
-        Valid  => 0,
-        UserID => $Param{UserID},
-    ) || [];
-
-    SERVICE:
-    for my $ServiceData ( $ServiceList->@* ) {
-        next SERVICE if ref $ServiceData ne 'HASH';
-        next SERVICE if !$ServiceData->{Name};
-        next SERVICE if ( $ServiceData->{ValidID} || 0 ) != 1;
-        next SERVICE if ref $ServiceData->{TicketTypeIDs} ne 'ARRAY';
-        next SERVICE if !@{ $ServiceData->{TicketTypeIDs} };
-
-        my %ServiceTicketTypeID = map { $_ => 1 } $ServiceData->{TicketTypeIDs}->@*;
-        next SERVICE if !$ServiceTicketTypeID{ $Param{TicketTypeID} };
-
-        push @ServiceNames, $ServiceData->{Name};
-    }
-
-    my $ACLName = 'zzz - Show Service based on Ticket-Type: ' . $TicketType;
-    my $Success = $Self->_ZTSMServiceCatalogACLUpsert(
-        Name           => $ACLName,
-        Comment        => 'This ACL was generated when a service was added or changed.',
-        ValidID        => $ACLValidID,
-        UserID         => $Param{UserID},
-        StopAfterMatch => 0,
-        ConfigMatch    => {
-            Properties => {
-                Frontend => {
-                    Action => \@FrontendAction,
-                },
-                Ticket => {
-                    Type => [$TicketType],
-                },
-            },
-        },
-        ConfigChange => {
-            $ConfigChangeKey => {
-                Ticket => {
-                    Service => \@ServiceNames,
-                },
-            },
-        },
-    );
-    if ( !$Success ) {
-        return;
-    }
-
-    if ( $Options->{GenerateInitalACLToDisableAllServices} ) {
-        $Success = $Self->_ZTSMServiceCatalogACLUpsert(
-            Name           => 'zza - Disable all Services if no Ticket-Type is selected.',
-            Comment        => 'This ACL was generated when a service was added or changed.',
-            ValidID        => $ACLValidID,
-            UserID         => $Param{UserID},
-            StopAfterMatch => 0,
-            ConfigMatch    => {
-                Properties => {
-                    Frontend => {
-                        Action => \@FrontendAction,
-                    },
-                },
-            },
-            ConfigChange => {
-                PossibleNot => {
-                    Ticket => {
-                        Service => ['[RegExp].*'],
-                    },
-                },
-            },
-        );
-        if ( !$Success ) {
-            return;
-        }
-    }
-
-    if ( $Options->{ACLDeploy} && ( !exists $Param{Deploy} || $Param{Deploy} ) ) {
-        return $Self->_ZTSMServiceCatalogACLDeploy(
-            UserID => $Param{UserID},
-        );
-    }
-
-    return 1;
-}
-
-sub UpdateTypServiceACLs {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
-        return 1;
-    }
-
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
-
-    my %TicketTypeList = $Kernel::OM->Get('Kernel::System::Type')->TypeList(
-        Valid => 0,
-    );
-    my %TicketTypeNameToID = reverse %TicketTypeList;
-
-    my %TicketTypeID;
-    my $RequestTypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
-        Class => 'ZTSM::RequestType',
-        Valid => 1,
-    ) || {};
-
-    if ( IsHashRefWithData($RequestTypeList) ) {
-        REQUESTTYPE:
-        for my $RequestType ( values $RequestTypeList->%* ) {
-            next REQUESTTYPE if !$RequestType;
-            my $TicketTypeID = $TicketTypeNameToID{$RequestType};
-            next REQUESTTYPE if !$TicketTypeID;
-            $TicketTypeID{$TicketTypeID} = 1;
-        }
-    }
-
-    my @RequestTypeNames = sort grep {$_} values $RequestTypeList->%*;
-    my $ServiceList = $Self->ServiceListGet(
-        Valid  => 0,
-        UserID => $Param{UserID},
-    ) || [];
-
-    SERVICE:
-    for my $ServiceData ( $ServiceList->@* ) {
-        next SERVICE if ref $ServiceData ne 'HASH';
-        next SERVICE if ref $ServiceData->{TicketTypeIDs} ne 'ARRAY';
-
-        TICKETTYPEID:
-        for my $TicketTypeID ( $ServiceData->{TicketTypeIDs}->@* ) {
-            next TICKETTYPEID if !$TicketTypeID;
-            next TICKETTYPEID if !$TicketTypeList{$TicketTypeID};
-            $TicketTypeID{$TicketTypeID} = 1;
-        }
-    }
-
-    TICKETTYPEID:
-    for my $TicketTypeID ( sort keys %TicketTypeID ) {
-        my $Success = $Self->UpdateTypServiceACL(
-            TicketTypeID => $TicketTypeID,
-            UserID       => $Param{UserID},
-            Deploy       => 0,
-        );
-        return if !$Success;
-    }
-
-    my $Options = $Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls::Options') || {};
-    if ( $Options->{ACLDeploy} ) {
-        return $Self->_ZTSMServiceCatalogACLDeploy(
-            UserID => $Param{UserID},
-        );
-    }
-
-    return 1;
-}
-
-sub _ZTSMServiceCatalogACLRefresh {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Kernel::OM->Get('Kernel::Config')->Get('ServiceCatalog::CreateTypeServiceRelatedAcls') ) {
-        return 1;
-    }
-
-    my $Success = $Self->UpdateTypServiceACLs(
-        Source    => $Param{Source},
-        ServiceID => $Param{ServiceID},
-        UserID    => $Param{UserID} || 1,
-    );
-    if ($Success) {
-        return 1;
-    }
-
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
-        Message  => 'Could not refresh generated service ticket type ACLs after service change.',
-    );
-
-    return;
-}
-
-sub _ZTSMServiceCatalogACLUpsert {
-    my ( $Self, %Param ) = @_;
-
-    my $ACLObject = $Kernel::OM->Get('Kernel::System::ACL::DB::ACL');
-    my $ExistingACL;
-    my $ACLList = $ACLObject->ACLListGet(
-        UserID => $Param{UserID},
-    ) || [];
-
-    ACL:
-    for my $ACLData ( $ACLList->@* ) {
-        next ACL if ref $ACLData ne 'HASH';
-        next ACL if ( $ACLData->{Name} || '' ) ne $Param{Name};
-
-        $ExistingACL = $ACLData;
-        last ACL;
-    }
-
-    if ($ExistingACL) {
-        return $ACLObject->ACLUpdate(
-            $ExistingACL->%*,
-            %Param,
-        );
-    }
-
-    return $ACLObject->ACLAdd(%Param);
-}
-
-sub _ZTSMServiceCatalogACLDeploy {
-    my ( $Self, %Param ) = @_;
-
-    my $ACLObject = $Kernel::OM->Get('Kernel::System::ACL::DB::ACL');
-    my $Location  = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/Kernel/Config/Files/ZZZACL.pm';
-
-    my $ACLDumpSuccess = $ACLObject->ACLDump(
-        ResultType => 'FILE',
-        Location   => $Location,
-        UserID     => $Param{UserID},
-    );
-    if ( !$ACLDumpSuccess ) {
-        return;
-    }
-
-    my $Success = $ACLObject->ACLsNeedSyncReset();
-    if ( !$Success ) {
-        return;
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
-        Type => 'TicketACL',
-        Key  => 'Preselection',
-    );
-
-    return 1;
 }
 
 =head2 ServiceParentsGet()
@@ -1791,7 +1420,7 @@ sub ServiceParentsGet {
     # get the ServiceParentID from the requested service
     my $ServiceParentID = $ServiceLookup{ $Param{ServiceID} }->{ParentID};
 
-    # get all partents for the requested service
+    # get all parents for the requested service
     while ($ServiceParentID) {
 
         # add service parent ID to the return structure
@@ -1873,9 +1502,201 @@ sub GetAllCustomServices {
 
     return @ServiceIDs;
 }
-# ---
-# ITSMCore
-# ---
+
+sub ExportServices {
+    my ( $Self, %Param ) = @_;
+
+    my $UserID = $Self->{UserID} || $Param{UserID};
+
+    my %ServiceFilter;
+    if ( IsArrayRefWithData( $Param{Services} ) ) {
+        %ServiceFilter = map { $_ => 1 } $Param{Services}->@*;
+    }
+
+    my %ServiceList = $Self->ServiceList(
+        Valid  => 0,
+        UserID => $UserID,
+    );
+
+# Rother OSS / ITSMCore
+    my $TypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::Service::Type',
+    );
+# EO ITSMCore
+
+    my %ExportData;
+    SERVICEID:
+    for my $ServiceID ( sort keys %ServiceList ) {
+
+        my %ServiceData = $Self->ServiceGet(
+            ServiceID => $ServiceID,
+            UserID    => $UserID,
+        );
+
+        if (%ServiceFilter) {
+            next SERVICEID unless $ServiceFilter{ $ServiceData{Name} };
+        }
+
+        # translate IDs into names or name-like identifiers
+        my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+
+        ATTRIBUTE:
+        for my $Attribute ( keys %ServiceData ) {
+
+            next ATTRIBUTE unless $Attribute =~ /ID/;
+
+            if ( $Attribute eq 'ParentID' ) {
+                my $ParentService = $Self->ServiceLookup(
+                    ServiceID => $ServiceData{ParentID},
+                );
+                $ServiceData{Parent} = $ParentService;
+                delete $ServiceData{ParentID};
+            }
+            elsif ( $Attribute eq 'ValidID' ) {
+                my $Valid = $ValidObject->ValidLookup(
+                    ValidID => $ServiceData{ValidID},
+                );
+                $ServiceData{Valid} = $Valid;
+                delete $ServiceData{ValidID};
+            }
+# Rother OSS / ITSMCore
+            elsif ( $Attribute eq 'TypeID' && IsHashRefWithData($TypeList) ) {
+                my $Type = $TypeList->{$ServiceData{TypeID}};
+                $ServiceData{Type} = $Type;
+                delete $ServiceData{TypeID};
+            }
+# EO ITSMCore
+        }
+
+        delete $ServiceData{ChangeBy};
+        delete $ServiceData{ChangeTime};
+        delete $ServiceData{CreateBy};
+        delete $ServiceData{CreateTime};
+        delete $ServiceData{ServiceID};
+
+        $ExportData{ $ServiceData{Name} } = \%ServiceData;
+    }
+
+    return \%ExportData;
+}
+
+sub ImportServices {
+    my ( $Self, %Param ) = @_;
+
+    my $UserID = $Self->{UserID} || $Param{UserID};
+
+    my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+    my %ServiceList = $Self->ServiceList(
+        Valid  => 0,
+        UserID => $UserID,
+    );
+    my %ServiceLookup = reverse %ServiceList;
+
+# Rother OSS / ITSMCore
+    my $TypeList = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ITSM::Service::Type',
+    );
+
+    my %TypeLookup = IsHashRefWithData($TypeList) ? reverse $TypeList->%* : ();
+# EO ITSMCore
+
+    # sort services by parent attribute
+    my @FirstLevelServices;
+    my @ChildServices;
+    for my $ServiceName ( keys $Param{Services}->%* ) {
+        if ( $Param{Services}{$ServiceName}{Parent} ) {
+            push @ChildServices, $ServiceName;
+        }
+        else {
+            push @FirstLevelServices, $ServiceName;
+        }
+    }
+    my @ChildServicesSorted = sort {
+        if ( ( $Param{Services}{$a}{Parent} // '' ) eq $Param{Services}{$b}{Name} ) {
+            return 1;
+        }
+        elsif ( ( $Param{Services}{$b}{Parent} // '' ) eq $Param{Services}{$a}{Name} ) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    } @ChildServices;
+
+    SERVICENAME:
+    for my $ServiceName ( @FirstLevelServices, @ChildServicesSorted ) {
+        my $ServiceData = $Param{Services}{$ServiceName};
+
+        # skip if parent attribute present but no corresponding service
+        if ( $ServiceData->{Parent} ) {
+            my $ParentServiceID = $Self->ServiceLookup(
+                Name => $ServiceData->{Parent},
+            );
+
+            next SERVICENAME unless $ParentServiceID;
+
+            $ServiceData->{ParentID} = $ParentServiceID;
+        }
+
+        # in case of child service, check if all parent services are present
+        #   either in the system or in the import data
+        my @NameElements = split( /::/, $ServiceData->{Name} );
+        if ( scalar @NameElements > 1 ) {
+            my $NameStrg = '';
+            for my $Index ( 0 .. $#NameElements - 1 ) {
+                if ($NameStrg) {
+                    $NameStrg .= '::' . $NameElements[$Index];
+                }
+                else {
+                    $NameStrg .= $NameElements[$Index];
+                }
+
+                if ( !$ServiceLookup{$NameStrg} && !$Param{Services}{$NameStrg} ) {
+
+                    # parent element not found, skipping
+                    next SERVICENAME;
+                }
+            }
+        }
+
+        my $ServiceID = $ServiceLookup{ $ServiceData->{Name} };
+
+        # skip if service with same name exists and overwrite is not set
+        next SERVICENAME if ( !$Param{OverwriteExistingEntities} && $ServiceID );
+
+        # translate named data back to IDs
+# Rother OSS / ITSMCore
+        if ( $ServiceData->{Type} ) {
+            $ServiceData->{TypeID} = $TypeLookup{$ServiceData->{Type}};
+        }
+# EO ITSMCore
+        $ServiceData->{ValidID} = $ValidObject->ValidLookup(
+            Valid => $ServiceData->{Valid},
+        );
+
+        if ($ServiceID) {
+
+            my $Success = $Self->ServiceUpdate(
+                $ServiceData->%*,
+                Name      => $ServiceData->{NameShort},
+                ServiceID => $ServiceID,
+                UserID    => $UserID,
+            );
+            return unless $Success;
+        }
+        else {
+            my $ServiceID = $Self->ServiceAdd(
+                $ServiceData->%*,
+                Name   => $ServiceData->{NameShort},
+                UserID => $UserID,
+            );
+            return unless $ServiceID;
+        }
+    }
+
+    return 1;
+}
+# Rother OSS / ITSMCore
 
 =head2 _ServiceGetCurrentIncidentState()
 
@@ -2105,6 +1926,6 @@ sub _ServiceGetCurrentIncidentState {
     return %ServiceData;
 }
 
-# ---
+# EO ITSMCore
 
 1;

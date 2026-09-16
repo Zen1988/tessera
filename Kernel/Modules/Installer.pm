@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@ package Kernel::Modules::Installer;
 
 ## nofilter(TidyAll::Plugin::OTOBO::Perl::Print)
 
-use v5.24;
+use v5.26;
 use strict;
 use warnings;
 use namespace::autoclean;
@@ -39,7 +39,7 @@ our $ObjectManagerDisabled = 1;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # Allocate new hash for object and initialize with the passed params
+    # Allocate a new hash for the instance and initialize it with the passed parameters.
     return bless {%Param}, $Type;
 }
 
@@ -111,6 +111,7 @@ sub Run {
     my $StepCounter;
 
     # Build header - but only if we're not in AJAX mode.
+    # 'CheckRequirements' is the only subaction that is called from JS and returns JSON
     if ( $Self->{Subaction} ne 'CheckRequirements' ) {
         $LayoutObject->Block(
             Name => 'Steps',
@@ -291,7 +292,7 @@ sub Run {
             %Result = (
                 Successful => 0,
                 Message    => Translatable('Unknown Check!'),
-                Comment    => $LayoutObject->{LanguageObject}->Translate( 'The check "%s" doesn\'t exist!', $CheckMode ),
+                Comment    => $LayoutObject->{LanguageObject}->Translate( 'The check "%s" doesn\'t exist!', $CheckMode )
             );
         }
 
@@ -331,10 +332,25 @@ sub Run {
                 },
             );
             if ( $DBInstallType eq 'CreateDB' ) {
+
+                # this selection list will be updated later by JS
+                my %AuthPlugins = (
+                    'mysql_native_password' => 'mysql_native_password (default)',
+                );
+                my $DefaultAuthPlugin = 'mysql_native_password';
+
+                my $AuthPluginsList = $LayoutObject->BuildSelection(
+                    Data       => \%AuthPlugins,
+                    Name       => 'AuthPlugin',
+                    Class      => 'Modernize',
+                    SelectedID => $DefaultAuthPlugin
+                );
+
                 $LayoutObject->Block(
                     Name => 'DatabaseMySQLCreate',
                     Data => {
-                        Password => $GeneratedPassword,
+                        AuthPlugin => $AuthPluginsList,
+                        Password   => $GeneratedPassword,
                     },
                 );
             }
@@ -467,6 +483,7 @@ sub Run {
             },
         );
 
+        # SQL statements for creating the otobo database and the otobo user
         my @Statements;
 
         # Create database, add user.
@@ -506,35 +523,62 @@ sub Run {
                 }
 
                 # SQL for creating the OTOBO user.
+                #
                 # An explicit statement for user creation is needed because MySQL 8 no longer
                 # supports implicit user creation via the 'GRANT PRIVILEGES' statement.
-                # Also note that there are multiple authentication plugins for MySQL/MariaDB.
-                # 'mysql_native_password' works without an encrypted DB connection and is used here.
-                # The advantage is that no encryption keys have to be set up.
-                # The syntax for CREATE USER is not completely the same between MySQL and MariaDB. Therfore
-                # a case switch must be used here.
-                my $CreateUserSQL;
-                {
-                    if ( $DBH->{mysql_serverinfo} =~ m/mariadb/i ) {
-                        $CreateUserSQL
-                            .= "CREATE USER `$DB{OTOBODBUser}`\@`$Host` IDENTIFIED BY '$DB{OTOBODBPassword}'";
+                # Also note that there are multiple authentication plugins for MariaDB and MySQLB.
+                #
+                # The syntax for CREATE USER is mostly the same between MySQL and MariaDB.
+                #
+                # Different authentication plugins are supported for different database systems.
+                my $OTOBODBUser     = $ParamObject->GetParam( Param => 'OTOBODBUser' );
+                my $OTOBODBPassword = $ParamObject->GetParam( Param => 'OTOBODBPassword' );
+                my $AuthPlugin      = $ParamObject->GetParam( Param => 'AuthPlugin' );
+                my @CreateUserSQLs;
+                if ( !$AuthPlugin || $AuthPlugin eq 'default' ) {
+
+                    # Use the default authentication plugin, works for MariaDB and MySQL
+                    push @CreateUserSQLs,
+                        "CREATE USER `$OTOBODBUser`\@`$Host` IDENTIFIED BY '$OTOBODBPassword'";
+                }
+                else {
+
+                    # Use portable way of getting the name of the database system.
+                    # Previously this was done using attributes of the database handle,
+                    # but the prefixes of the attributes differ with different database driver modules.
+                    #
+                    # Quite sensibly, the name 'MariaDB' is returned for a MariaDB database
+                    my $DbmsName = $DBH->get_info( $DBI::Const::GetInfoType::GetInfoType{SQL_DBMS_NAME} );
+
+                    if ( $DbmsName =~ m/mariadb/i ) {
+
+                        # This is the CREATE USER statement where the authenication plugin is specified.
+                        # This SQL statement works for 'ed25519' since MariaDB 10.4. 'mysql_native_password' and 'PARSEC'
+                        # are also covered.
+                        # See https://mariadb.com/docs/server/reference/plugins/authentication-plugins/authentication-plugin-ed25519
+                        # See https://mariadb.com/docs/server/reference/plugins/authentication-plugins/authentication-plugin-parsec
+                        push @CreateUserSQLs,
+                            "CREATE USER `$OTOBODBUser`\@`$Host` IDENTIFIED WITH $AuthPlugin USING PASSWORD('$OTOBODBPassword')";
                     }
                     else {
-                        $CreateUserSQL
-                            .= "CREATE USER `$DB{OTOBODBUser}`\@`$Host` IDENTIFIED WITH mysql_native_password BY '$DB{OTOBODBPassword}'";
+
+                        # The MySQL case.
+                        # "USING PASSWORD('...')" is not supported
+                        push @CreateUserSQLs,
+                            "CREATE USER `$OTOBODBUser`\@`$Host` IDENTIFIED WITH $AuthPlugin BY '$OTOBODBPassword'";
                     }
                 }
 
                 @Statements = (
                     "CREATE DATABASE `$DB{DBName}` charset utf8mb4 DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci",
-                    $CreateUserSQL,
+                    @CreateUserSQLs,
                     "GRANT ALL PRIVILEGES ON `$DB{DBName}`.* TO `$DB{OTOBODBUser}`\@`$Host` WITH GRANT OPTION",
                 );
             }
 
             # Set DSN for Config.pm.
-            $DB{ConfigDSN} = 'DBI:mysql:database=$Self->{Database};host=$Self->{DatabaseHost}';
-            $DB{DSN}       = "DBI:mysql:database=$DB{DBName};host=$DB{DBHost}";
+            $DB{ConfigDSN} = 'DBI:MariaDB:database=$Self->{Database};host=$Self->{DatabaseHost}';
+            $DB{DSN}       = "DBI:MariaDB:database=$DB{DBName};host=$DB{DBHost}";
         }
         elsif ( $DB{DBType} eq 'postgresql' ) {
 
@@ -1179,10 +1223,10 @@ sub ConnectToDB {
 
     # Create DSN string for backend.
     if ( $Param{DBType} eq 'mysql' && $Param{InstallType} eq 'CreateDB' ) {
-        $Param{DSN} = "DBI:mysql:database=;host=$Param{DBHost};";
+        $Param{DSN} = "DBI:MariaDB:database=;host=$Param{DBHost};";
     }
     elsif ( $Param{DBType} eq 'mysql' && $Param{InstallType} eq 'UseDB' ) {
-        $Param{DSN} = "DBI:mysql:database=;host=$Param{DBHost};database=$Param{DBName}";
+        $Param{DSN} = "DBI:MariaDB:database=;host=$Param{DBHost};database=$Param{DBName}";
     }
     elsif ( $Param{DBType} eq 'postgresql' && $Param{InstallType} eq 'CreateDB' ) {
         $Param{DSN} = "DBI:Pg:host=$Param{DBHost};";
@@ -1252,18 +1296,20 @@ sub CheckDBRequirements {
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
     # Version checks are only active for some database systems.
-    # See https://ncs.com.sg
+    # See https://doc.otobo.org/manual/installation/11.1/en/content/requirements.html#software-requirements
     my %RequiredVersion = (
-        mysql   => '5.6',
-        mariadb => '10.0',
+        mysql   => '8.4',
+        mariadb => '10.11',
 
-        # postgresql => '9.2',   version check not implemented and tested yet
-        # oracle     => '10g',   version check not implemented and tested yet
+        # postgresql => '13.0',   version check not implemented and tested yet
+        # oracle     => '19c',   version check not implemented and tested yet
     );
+
+    # Both MariaDB and MySQL have $Param{DBType} set to 'mysql'
     if ( $RequiredVersion{ $Param{DBType} } ) {
 
         # Compare versions with version.pm as this module is always available. It is a core module.
-        # MariaDB reports version like 10.5.20-MariaDB-1:10.5.20+maria~ubu2004. That string needs to be normlized.
+        # MariaDB reports version like 10.5.20-MariaDB-1:10.5.20+maria~ubu2004. That string needs to be normalized.
         my $ReportedVersion = $Result{DBH}->get_info( $DBI::Const::GetInfoType::GetInfoType{SQL_DBMS_VER} );
         my $DBType          = $Param{DBType};
         if ( $ReportedVersion =~ m/MariaDB/ ) {
@@ -1289,7 +1335,7 @@ sub CheckDBRequirements {
     }
 
     # Check max_allowed_packet for MySQL
-    if ( $Param{DBType} eq 'mysql' && $Result{Successful} == 1 ) {
+    if ( $Param{DBType} eq 'mysql' && $Result{Successful} ) {
 
         # max_allowed_packet should be at least 64 MB
         my $MySQLMaxAllowedPacketRecommended = 64;
@@ -1305,7 +1351,7 @@ sub CheckDBRequirements {
     }
 
     # Check innodb_log_file_size.
-    if ( $Param{DBType} eq 'mysql' && $Result{Successful} == 1 ) {
+    if ( $Param{DBType} eq 'mysql' && $Result{Successful} ) {
 
         my $MySQLInnoDBLogFileSize            = 0;
         my $MySQLInnoDBLogFileSizeMinimum     = 256;
@@ -1337,7 +1383,24 @@ sub CheckDBRequirements {
         }
     }
 
-    # Delete not necessary key/value pairs.
+    # not really used by the recipient, but useful information when inspecting the traffic
+    $Result{DbmsName} = $Result{DBH}->get_info( $DBI::Const::GetInfoType::GetInfoType{SQL_DBMS_NAME} );
+
+    if ( $Param{DBType} eq 'mysql' && $Result{Successful} ) {
+
+        # The list of supported authentication plugins differs between MariaDB and MySQL.
+        my $PluginList = $Result{DbmsName} eq 'MariaDB' ? q{'ed25519', 'parsec'} : q{'caching_sha2_password'};
+
+        $Result{AvailablePlugins} = $Result{DBH}->selectall_arrayref(<<~"END_SQL");
+            SELECT plugin_name
+              FROM information_schema.plugins
+              WHERE plugin_type = 'AUTHENTICATION'
+                AND plugin_status = 'ACTIVE'
+                AND plugin_name IN ($PluginList)
+            END_SQL
+    }
+
+    # Delete key/value pairs which should not be included in the sent json
     delete $Result{DB};
     delete $Result{DBH};
 
@@ -1420,16 +1483,11 @@ sub CheckMailConfiguration {
 
         # Check outbound mail configuration.
         my $SendObject = $Kernel::OM->Get('Kernel::System::Email');
-
-        my $Status = 'Successful';
-
         %Result = $SendObject->Check(
             CommunicationLogObject => $CommunicationLogObject,
         );
 
-        if ( !$Result{Successful} ) {
-            $Status = 'Failed';
-        }
+        my $Status = $Result{Successful} ? 'Successful' : 'Failed';
 
         my $CommunicationLogSuccess = $CommunicationLogObject->CommunicationStop(
             Status => $Status,

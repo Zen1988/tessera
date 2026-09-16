@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -250,7 +250,7 @@ sub Log {
     # Get current timestamp while honoring the OTOBO time zone.
     # The reason why Kernel::System::DateTime is not used here, is that there were infinite loops
     # during global destruction.
-    # See https://ncs.com.sg
+    # See https://github.com/RotherOSS/otobo/issues/1099
     my $LogTime;
     if ( $Self->{OTOBOTimeZone} eq 'UTC' ) {
 

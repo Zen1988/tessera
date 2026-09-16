@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,9 @@ use utf8;
 use parent qw(Kernel::System::Console::BaseCommand);
 
 # core modules
-use Cwd qw(abs_path);
+use Config;    # import %Config
+use Cwd        qw(abs_path);
+use List::Util qw(none);
 
 # CPAN modules
 use CPAN::Audit 20260308.002 ();
@@ -121,17 +123,33 @@ sub Run {
 
         ADVISORY:
         for my $Advisory ( $Dist->{advisories}->@* ) {
-            my $AdvisoryId = $Advisory->{id};
+            my $Evaluation        = $Evaluations{ $Advisory->{id} };
+            my $EvaluationApplies = $Evaluation ? 1 : 0;
 
-            if ( $Evaluations{$AdvisoryId} ) {
-                $Advisory->{otobo_evaluation} = $Evaluations{$AdvisoryId};
-                $NumRelevantAdvisories += $Evaluations{$AdvisoryId}->{is_relevant_for_otobo};
+            # some advisories are relevant only in special cases
+            if ($Evaluation) {
+                if ( $Evaluation->{only_relevant_for_32bit_perl} && !$Config{use64bitall} ) {
+                    $EvaluationApplies = 0;    # evaluation does not apply on 32bit Perl
+                }
 
-                next ADVISORY;
+                # Currently not used, but might be useful in future
+                if ( $Evaluation->{only_when_version_is} ) {
+                    if ( none { "==$_" eq $Dist->{version} } $Evaluation->{only_when_version_is}->@* ) {
+                        $EvaluationApplies = 0;    # evaluation does not apply for unknown versions
+                    }
+                }
             }
 
-            # no OTOBO evaluation
-            $NumRelevantAdvisories += 1;
+            if ($EvaluationApplies) {
+                $Advisory->{otobo_evaluation} = $Evaluation;
+                $NumRelevantAdvisories += $Evaluation->{is_relevant_for_otobo};
+            }
+            else {
+
+                # evaluations that do not apply count as not being not evaluated
+                $Advisory->{otobo_evaluation} = { has_been_evaluated => 0 };
+                $NumRelevantAdvisories++;
+            }
         }
     }
 
@@ -164,13 +182,32 @@ In Docker based installations the commands /opt/otobo/bin/docker/carton and /usr
 have been patched to download source via HTTPS.
 END_REASON
 
-        'debian_unimportant' => <<'END_REASON',
+        debian_unimportant => <<'END_REASON',
 Debian has classified the urgency of this advisory as unimportant. OTOBO does the same.
 END_REASON
 
-        'ldaps' => <<'END_REASON',
+        ldaps => <<'END_REASON',
 The advisory is about default settings in the underlying module Net::LDAPS. In OTOBO the admin
 is responsible for setting up the connection to the LDAP server.
+END_REASON
+
+        'xsendfile' => <<'END_REASON',
+The advisory is about the Plack middlewarx Plack::Middleware::XSendfile. This middleware is not used
+in OTOBO.
+END_REASON
+
+        thirtytwo_bit_perl => <<'END_REASON',
+The advisory is only relevant for 32bit builds of Perl. But this is a 64bit build of Perl.
+END_REASON
+
+        text_linefold => <<'END_REASON',
+The advisory is about the module Text::LineFold. This module is not used in OTOBO.
+It is installed only because it is included in Unicode::LineBreak.
+Unicode::LineBreak is installed because Unicode::GCString is needed by the test suite.
+
+        crypt_with_md5 => <<'END_REASON',
+The advisory is relevant only when customer or user passwords are stored in the database in MD5 crypted form.
+Using MD5 for crypting passwords is discouraged in OTOBO. Therefore this advisory is not relevant in regular installations.
 END_REASON
     );
 
@@ -194,6 +231,23 @@ END_REASON
         'CPANSA-Net-LDAPS-2020-16093' => {
             is_relevant_for_otobo => 0,
             reason                => $Reason{ldaps},
+        },
+        'CPANSA-Plack-2026-7381' => {
+            is_relevant_for_otobo => 0,
+            reason                => $Reason{xsendfile},
+        },
+        'CPANSA-perl-2026-8376' => {
+            only_relevant_for_32bit_perl => 1,
+            is_relevant_for_otobo        => 0,
+            reason                       => $Reason{thirtytwo_bit_perl},
+        },
+        'CPANSA-Unicode-LineBreak-2026-8594' => {
+            is_relevant_for_otobo => 0,
+            reason                => $Reason{text_linefold},
+        },
+        'CPANSA-Crypt-PasswdMD5-2026-6659' => {
+            is_relevant_for_otobo => 0,
+            reason                => $Reason{crypt_with_md5},
         },
         ;
 }

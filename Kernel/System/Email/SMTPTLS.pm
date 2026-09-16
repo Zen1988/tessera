@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -34,15 +34,6 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Log',
 );
-
-# Use Net::SSLGlue::SMTP on systems with older Net::SMTP modules that cannot handle SSL.
-BEGIN {
-    if ( !defined &Net::SMTP::starttls ) {
-        ## nofilter(TidyAll::Plugin::OTOBO::Perl::Require)
-        ## nofilter(TidyAll::Plugin::OTOBO::Perl::SyntaxCheck)
-        require Net::SSLGlue::SMTP;
-    }
-}
 
 sub _Connect {
     my ( $Self, %Param ) = @_;

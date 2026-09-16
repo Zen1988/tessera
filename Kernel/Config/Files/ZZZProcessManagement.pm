@@ -9,15 +9,34 @@ sub Load {
     my ($File, $Self) = @_;
 $Self->{'Process'} = {
   'Process-44258576c8e8bc5e7290607746956473' => {
-    'ChangeTime' => '2026-05-28 04:50:57',
+    'ChangeTime' => '2026-06-02 08:00:00',
     'CreateTime' => '2026-05-19 06:44:01',
     'Name' => 'ztsm-ticket-lifecycle-ochestration',
     'Path' => {
+      'Activity-2c9b289d02d2935550df191c986e2bb8' => {
+        'Transition-62f721d77000b8a55ffcd36fd50ee25e' => {
+          'ActivityEntityID' => 'Activity-7ae5a5a1d78eed43c2c718facb3eae65'
+        }
+      },
       'Activity-34165120277c0bacb81ab0d4238c37d8' => {
         'Transition-04744060f9f24ba6ecf9e31e7b3bd54a' => {
           'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d',
           'TransitionAction' => [
             'TransitionAction-86d1455359a643cefdf2176a7194c0fe'
+          ]
+        }
+      },
+      'Activity-7ae5a5a1d78eed43c2c718facb3eae65' => {
+        'Transition-530b2bb23669e9ddd10dbf6f11d73b67' => {
+          'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d',
+          'TransitionAction' => [
+            'TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d'
+          ]
+        },
+        'Transition-79a9beb15c36092f1be847504957ad37' => {
+          'ActivityEntityID' => 'Activity-2c9b289d02d2935550df191c986e2bb8',
+          'TransitionAction' => [
+            'TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8'
           ]
         }
       },
@@ -31,7 +50,7 @@ $Self->{'Process'} = {
       },
       'Activity-b83380fe3605688f475b6a0cc8a94085' => {
         'Transition-3d843ca4f50c50443595ca689fce2c58' => {
-          'ActivityEntityID' => 'Activity-a08597b234bbccf5791c588eb7eb904d',
+          'ActivityEntityID' => 'Activity-2c9b289d02d2935550df191c986e2bb8',
           'TransitionAction' => [
             'TransitionAction-baa9deeea687c519eb9b4141f89f94dc'
           ]
@@ -72,7 +91,7 @@ $Self->{'Process'} = {
     'StateEntityID' => 'S1'
   },
   'Process-f591d39e4cefb1b9e16207b0f1f249b8' => {
-    'ChangeTime' => '2026-05-29 05:46:27',
+    'ChangeTime' => '2026-06-02 08:25:22',
     'CreateTime' => '2026-05-19 08:02:57',
     'Name' => 'ztsm-activity-lifecycle-orchestration',
     'Path' => {
@@ -85,22 +104,19 @@ $Self->{'Process'} = {
         }
       },
       'Activity-423fffb8cdf2b78ca99648eea844990a' => {},
-      'Activity-cb38901550faadf19a997fe8f800316c' => {
-        'Transition-1591e474e042ee46453c3af941cf2f04' => {
-          'ActivityEntityID' => 'Activity-423fffb8cdf2b78ca99648eea844990a'
+      'Activity-bb9a72021794a05b1987ad5d19cede4d' => {
+        'Transition-c85842060cd288f31c26b7055433e59b' => {
+          'ActivityEntityID' => 'Activity-423fffb8cdf2b78ca99648eea844990a',
+          'TransitionAction' => [
+            'TransitionAction-76049985f97045be0504eeea395c711b'
+          ]
         }
       },
       'Activity-d03ebeeb1fe92dc4ed1ddbb9d6e5a8b1' => {
         'Transition-3307fab7725f8178910dde7b308e3aca' => {
-          'ActivityEntityID' => 'Activity-423fffb8cdf2b78ca99648eea844990a',
+          'ActivityEntityID' => 'Activity-bb9a72021794a05b1987ad5d19cede4d',
           'TransitionAction' => [
             'TransitionAction-0a9c66ff63d6d8d1d0b924d0138d3d31'
-          ]
-        },
-        'Transition-c85842060cd288f31c26b7055433e59b' => {
-          'ActivityEntityID' => 'Activity-cb38901550faadf19a997fe8f800316c',
-          'TransitionAction' => [
-            'TransitionAction-76049985f97045be0504eeea395c711b'
           ]
         }
       }
@@ -142,6 +158,15 @@ $Self->{'Process::Activity'} = {
     'ID' => 9,
     'Name' => 'Assessment'
   },
+  'Activity-2c9b289d02d2935550df191c986e2bb8' => {
+    'ActivityDialog' => {
+      '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
+    },
+    'ChangeTime' => '2026-06-02 02:48:47',
+    'CreateTime' => '2026-06-02 02:48:47',
+    'ID' => 17,
+    'Name' => 'BlueBook Reader - 2'
+  },
   'Activity-34165120277c0bacb81ab0d4238c37d8' => {
     'ActivityDialog' => {
       '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
@@ -159,11 +184,13 @@ $Self->{'Process::Activity'} = {
     'Name' => 'Verification'
   },
   'Activity-423fffb8cdf2b78ca99648eea844990a' => {
-    'ActivityDialog' => '',
-    'ChangeTime' => '2026-05-19 08:15:09',
+    'ActivityDialog' => {
+      '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
+    },
+    'ChangeTime' => '2026-06-02 08:18:51',
     'CreateTime' => '2026-05-19 08:08:52',
     'ID' => 14,
-    'Name' => 'BlueBook-Step'
+    'Name' => 'ChapterDirector'
   },
   'Activity-6cfb0a8533e82409664c98a0bb857ace' => {
     'ActivityDialog' => '',
@@ -171,6 +198,15 @@ $Self->{'Process::Activity'} = {
     'CreateTime' => '2026-05-13 03:23:52',
     'ID' => 5,
     'Name' => 'Approval'
+  },
+  'Activity-7ae5a5a1d78eed43c2c718facb3eae65' => {
+    'ActivityDialog' => {
+      '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
+    },
+    'ChangeTime' => '2026-06-02 02:41:06',
+    'CreateTime' => '2026-06-02 02:41:06',
+    'ID' => 16,
+    'Name' => 'BlueBook Director'
   },
   'Activity-a08597b234bbccf5791c588eb7eb904d' => {
     'ActivityDialog' => {
@@ -197,6 +233,15 @@ $Self->{'Process::Activity'} = {
     'ID' => 6,
     'Name' => 'Implementation'
   },
+  'Activity-bb9a72021794a05b1987ad5d19cede4d' => {
+    'ActivityDialog' => {
+      '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
+    },
+    'ChangeTime' => '2026-06-02 08:23:15',
+    'CreateTime' => '2026-06-02 08:23:15',
+    'ID' => 18,
+    'Name' => 'Activity-InProgress'
+  },
   'Activity-cb38901550faadf19a997fe8f800316c' => {
     'ActivityDialog' => '',
     'ChangeTime' => '2026-05-19 08:09:56',
@@ -214,8 +259,10 @@ $Self->{'Process::Activity'} = {
     'Name' => 'New'
   },
   'Activity-d03ebeeb1fe92dc4ed1ddbb9d6e5a8b1' => {
-    'ActivityDialog' => '',
-    'ChangeTime' => '2026-05-19 08:09:28',
+    'ActivityDialog' => {
+      '1' => 'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6'
+    },
+    'ChangeTime' => '2026-06-02 08:18:19',
     'CreateTime' => '2026-05-19 08:04:16',
     'ID' => 13,
     'Name' => 'Activity-Engage'
@@ -233,7 +280,7 @@ $Self->{'Process::Activity'} = {
 
 $Self->{'Process::ActivityDialog'} = {
   'ActivityDialog-0531e22886a9fb00153f49f4dfa56ab6' => {
-    'ChangeTime' => '2026-05-19 07:06:57',
+    'ChangeTime' => '2026-07-14 01:52:52',
     'CreateTime' => '2026-05-19 07:06:57',
     'DescriptionLong' => 'Empty Process Dialog',
     'DescriptionShort' => 'Empty Process Dialog',
@@ -245,7 +292,7 @@ $Self->{'Process::ActivityDialog'} = {
       'AgentInterface',
       'CustomerInterface'
     ],
-    'Name' => 'EmptyDialog',
+    'Name' => 'return',
     'Permission' => 'owner',
     'RequiredLock' => '',
     'SubmitAdviceText' => '',
@@ -557,21 +604,91 @@ $Self->{'Process::Transition'} = {
     'Name' => 'work-inprogress'
   },
   'Transition-3d843ca4f50c50443595ca689fce2c58' => {
-    'ChangeTime' => '2026-05-19 07:26:26',
+    'ChangeTime' => '2026-06-02 02:50:08',
     'Condition' => {
       '1' => {
         'Fields' => {
-          'State' => {
+          'StateType' => {
             'Match' => 'new',
-            'Type' => 'Module'
+            'Type' => 'String'
           }
         },
         'Type' => 'xor'
+      },
+      '2' => {
+        'Fields' => {
+          'StateType' => {
+            'Match' => 'open',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
+      },
+      '3' => {
+        'Fields' => {
+          'StateType' => {
+            'Match' => 'pending',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
       }
     },
     'ConditionLinking' => 'and',
     'CreateTime' => '2026-05-19 07:26:26',
     'Name' => 'bluebook_step_up'
+  },
+  'Transition-530b2bb23669e9ddd10dbf6f11d73b67' => {
+    'ChangeTime' => '2026-06-02 02:57:54',
+    'Condition' => {
+      '1' => {
+        'Fields' => {
+          'TicketID' => {
+            'Match' => 'Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookComplete',
+            'Type' => 'Module'
+          }
+        },
+        'Type' => 'and'
+      }
+    },
+    'ConditionLinking' => 'and',
+    'CreateTime' => '2026-06-02 02:57:54',
+    'Name' => 'BlueBook Complete'
+  },
+  'Transition-54a61cf289a7b6bfa900d5dd1e6836b3' => {
+    'ChangeTime' => '2026-06-02 02:55:15',
+    'Condition' => {
+      '1' => {
+        'Fields' => {
+          'StateType' => {
+            'Match' => 'open',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
+      },
+      '2' => {
+        'Fields' => {
+          'StateType' => {
+            'Match' => 'new',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
+      },
+      '3' => {
+        'Fields' => {
+          'StateType' => {
+            'Match' => 'pending',
+            'Type' => 'String'
+          }
+        },
+        'Type' => 'and'
+      }
+    },
+    'ConditionLinking' => 'and',
+    'CreateTime' => '2026-06-02 02:55:15',
+    'Name' => 'loop-bluebook'
   },
   'Transition-623ec4e8437c55da1079cac3288ed53b' => {
     'ChangeTime' => '2026-05-14 06:05:22',
@@ -590,6 +707,23 @@ $Self->{'Process::Transition'} = {
     'CreateTime' => '2026-05-13 04:26:48',
     'Name' => 'validate_to_assess'
   },
+  'Transition-62f721d77000b8a55ffcd36fd50ee25e' => {
+    'ChangeTime' => '2026-06-02 02:44:56',
+    'Condition' => {
+      '1' => {
+        'Fields' => {
+          'TicketID' => {
+            'Match' => 'Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookComplete',
+            'Type' => 'Module'
+          }
+        },
+        'Type' => 'and'
+      }
+    },
+    'ConditionLinking' => 'and',
+    'CreateTime' => '2026-06-02 02:44:56',
+    'Name' => 'BlueLevel Completion'
+  },
   'Transition-73986cfe5c9d1f052a8801de90639d39' => {
     'ChangeTime' => '2026-05-19 08:12:53',
     'Condition' => {
@@ -607,12 +741,29 @@ $Self->{'Process::Transition'} = {
     'CreateTime' => '2026-05-19 08:12:53',
     'Name' => 'new_to_pending'
   },
-  'Transition-c85842060cd288f31c26b7055433e59b' => {
-    'ChangeTime' => '2026-05-19 08:16:58',
+  'Transition-79a9beb15c36092f1be847504957ad37' => {
+    'ChangeTime' => '2026-06-02 03:01:45',
     'Condition' => {
       '1' => {
         'Fields' => {
-          'State' => {
+          'TicketID' => {
+            'Match' => 'Kernel::System::ProcessManagement::TransitionValidation::ZTSMBlueBookHasNextLevel',
+            'Type' => 'Module'
+          }
+        },
+        'Type' => 'and'
+      }
+    },
+    'ConditionLinking' => 'and',
+    'CreateTime' => '2026-06-02 03:01:45',
+    'Name' => 'BlueBook Has Next Level'
+  },
+  'Transition-c85842060cd288f31c26b7055433e59b' => {
+    'ChangeTime' => '2026-06-02 08:21:51',
+    'Condition' => {
+      '1' => {
+        'Fields' => {
+          'StateType' => {
             'Match' => 'closed',
             'Type' => 'String'
           }
@@ -697,6 +848,15 @@ $Self->{'Process::TransitionAction'} = {
     'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMCharacterEngage',
     'Name' => 'TESSERA-ChapterEngage'
   },
+  'TransitionAction-0b71e4ec234707e58f9557faf6ad1fb8' => {
+    'ChangeTime' => '2026-06-02 02:53:35',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-06-02 02:53:35',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMBlueBookDirector',
+    'Name' => 'TESSERA-BlueBookDirector'
+  },
   'TransitionAction-6c0450f3dae3fe3c33d3e326ad8a7c3d' => {
     'ChangeTime' => '2026-04-15 08:50:20',
     'Config' => {
@@ -750,6 +910,15 @@ $Self->{'Process::TransitionAction'} = {
     'CreateTime' => '2026-04-15 08:51:48',
     'Module' => 'Kernel::System::ProcessManagement::TransitionAction::TicketStateSet',
     'Name' => 'MoveVerify'
+  },
+  'TransitionAction-ab713b9f7dbf3a77e7314a6bd6da5e6d' => {
+    'ChangeTime' => '2026-06-02 07:59:38',
+    'Config' => {
+      '' => ''
+    },
+    'CreateTime' => '2026-06-02 07:59:38',
+    'Module' => 'Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookResume',
+    'Name' => 'TESSERA-StateBookResume'
   },
   'TransitionAction-baa9deeea687c519eb9b4141f89f94dc' => {
     'ChangeTime' => '2026-05-28 04:48:31',

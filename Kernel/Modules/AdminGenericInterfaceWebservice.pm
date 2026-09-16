@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -374,7 +374,13 @@ sub Run {
         }
 
         # Dump configuration into a YAML structure.
-        my $YAMLContent = $YAMLObject->Dump( Data => $WebserviceData->{Config} );
+        # export webservice name to be flexible regarding filename
+        my $YAMLContent = $YAMLObject->Dump(
+            Data => {
+                $WebserviceData->{Config}->%*,
+                Name => $WebserviceData->{Name},
+            },
+        );
 
         # Return YAML to download.
         my $YAMLFile = $WebserviceData->{Name};

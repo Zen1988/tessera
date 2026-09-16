@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -48,7 +48,7 @@ Kernel::System::DynamicField::Driver::FAQ - backend for the Reference dynamic fi
 
 =head1 DESCRIPTION
 
-FAQ plugin for the Reference dynamic field.
+FAQ backend for the Reference dynamic field.
 
 =head1 PUBLIC INTERFACE
 
@@ -95,13 +95,15 @@ sub new {
 
 =head2 GetFieldTypeSettings()
 
-Get field type settings that are specific to the referenced object type FAQ.
+Get the field type settings for the referenced object type C<FAQ>.
+The generic settings for all referenced object types are included as well.
 
 =cut
 
 sub GetFieldTypeSettings {
     my ( $Self, %Param ) = @_;
 
+    # First fetch the generic settings.
     my @FieldTypeSettings = $Self->SUPER::GetFieldTypeSettings(
         %Param,
     );
@@ -111,11 +113,34 @@ sub GetFieldTypeSettings {
         {
             ConfigParamName => 'SearchAttribute',
             Label           => Translatable('Attribute which will be searched on autocomplete'),
-            Explanation     => Translatable('Select the attribute which tickets will be searched by'),
+            Explanation     => Translatable('Select the attribute which FAQs will be searched by'),
             InputType       => 'Selection',
             SelectionData   => {
                 'Number' => 'Number',
                 'Title'  => 'Title',
+            },
+            PossibleNone => 1,
+            Multiple     => 0,
+        };
+
+    my $DynamicFieldsList = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldList(
+        ObjectType => ['FAQ'],
+        Valid      => 1,
+        ResultType => 'HASH',
+    );
+    my %DFSelectionData = map { ( "DynamicField_$_" => "DynamicField_$_" ) } values $DynamicFieldsList->%*;
+
+    # Support configurable import search attribute
+    push @FieldTypeSettings,
+        {
+            ConfigParamName => 'ImportSearchAttribute',
+            Label           => Translatable('External-source key'),
+            Explanation     => Translatable('When set via an external source (e.g. web service or import / export), the value will be interpreted as this attribute.'),
+            InputType       => 'Selection',
+            SelectionData   => {
+                'Number' => 'Number',
+                'Title'  => 'Title',
+                %DFSelectionData,
             },
             PossibleNone => 1,
             Multiple     => 0,
@@ -193,7 +218,7 @@ Return
 
     %Description = (
         Normal => "FAQ# 1234455",
-        Long   => "FAQ# 1234455: Need a sample ticket title",
+        Long   => "FAQ# 1234455: Need a sample FAQ title",
     );
 
 =cut
@@ -216,7 +241,7 @@ sub ObjectDescriptionGet {
     # TODO: Discuss security considerations - not much is shown though
     my $UserID = 1;
 
-    # get ticket
+    # get FAQ item
     my %FAQ = $Kernel::OM->Get('Kernel::System::FAQ')->FAQGet(
         FAQID         => $Param{ObjectID},
         UserID        => $UserID,
@@ -291,17 +316,24 @@ sub SearchObjects {
 
     $Param{Term} //= '';
 
-    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $DFDetails = $Param{DynamicFieldConfig}{Config} // {};
 
     my %SearchParams;
 
     if ( $Param{ObjectID} ) {
         $SearchParams{Number} = $Param{ObjectID};
     }
+    elsif ( $Param{ExternalSource} ) {
+
+        # include configured search param if present
+        my $SearchAttribute = $DFDetails->{ImportSearchAttribute} || 'Number';
+
+        $SearchParams{$SearchAttribute} = "$Param{Term}";
+    }
     else {
 
         # include configured search param if present
-        my $SearchAttribute = $DynamicFieldConfig->{Config}{SearchAttribute} || 'What';
+        my $SearchAttribute = $DFDetails->{SearchAttribute} || 'What';
 
         $SearchParams{$SearchAttribute} = "*$Param{Term}*";
     }
@@ -314,7 +346,7 @@ sub SearchObjects {
             'From',
 
             # AgentTicketPhone
-            'To',
+            'SelectedCustomerUser',
         ],
         ResponsibleID => [
             'NewResponsibleID',
@@ -337,11 +369,11 @@ sub SearchObjects {
     );
 
     # incorporate referencefilterlist into search params
-    if ( IsArrayRefWithData( $DynamicFieldConfig->{Config}{ReferenceFilterList} ) ) {
+    if ( IsArrayRefWithData( $DFDetails->{ReferenceFilterList} ) && !$Param{ExternalSource} ) {
         FILTERITEM:
-        for my $FilterItem ( $DynamicFieldConfig->{Config}{ReferenceFilterList}->@* ) {
+        for my $FilterItem ( $DFDetails->{ReferenceFilterList}->@* ) {
 
-            # map ID to IDs if neccessary
+            # map ID to IDs if necessary
             my $AttributeName = $FilterItem->{ReferenceObjectAttribute};
             if ( any { $_ eq $AttributeName } qw(QueueID TypeID StateID PriorityID ServiceID SLAID OwnerID ResponsibleID ) ) {
                 $AttributeName .= 's';
@@ -372,8 +404,8 @@ sub SearchObjects {
                     }
                     else {
 
-                        # match standard ticket attribute names with edit mask attribute names
-                        my @ParamNames = $Param{ParamObject}->GetParamNames();
+                        # match standard FAQ attribute names with edit mask attribute names
+                        my @ParamNames = $Param{ParamObject}->GetParamNames;
 
                         # check if attribute name itself is in params
                         # NOTE trying attribute itself is crucially important in case of QueueID
@@ -397,7 +429,7 @@ sub SearchObjects {
                             }
                         }
 
-                        return unless $ParamName;
+                        return () unless $ParamName;
 
                         $EqualsObjectAttribute = $Param{ParamObject}->GetParam( Param => $ParamName );
 
@@ -417,8 +449,8 @@ sub SearchObjects {
                     $EqualsObjectAttribute = $Param{UserID};
                 }
 
-                return unless $EqualsObjectAttribute;
-                return if ( ref $EqualsObjectAttribute eq 'ARRAY' && !$EqualsObjectAttribute->@* );
+                return () unless $EqualsObjectAttribute;
+                return () if ( ref $EqualsObjectAttribute eq 'ARRAY' && !$EqualsObjectAttribute->@* );
 
                 # config item attribute
                 if ( $FilterItem->{ReferenceObjectAttribute} =~ m{^Con}i ) {
@@ -440,7 +472,7 @@ sub SearchObjects {
             elsif ( $FilterItem->{EqualsString} ) {
 
                 # config item attribute
-                # TODO check if this has to be adapted for ticket search
+                # TODO check if this has to be adapted for FAQ search
                 if ( $FilterItem->{ReferenceObjectAttribute} =~ m{^Con}i ) {
                     $SearchParams{$AttributeName} = $FilterItem->{EqualsString};
                 }
@@ -460,7 +492,7 @@ sub SearchObjects {
         }
     }
 
-    # return a list of ticket IDs
+    # return a list of FAQ IDs
     return $Kernel::OM->Get('Kernel::System::FAQ')->FAQSearch(
         Limit            => $Param{MaxResults},
         Result           => 'ARRAY',

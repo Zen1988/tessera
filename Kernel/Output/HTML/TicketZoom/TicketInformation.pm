@@ -2,9 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/Output/HTML/TicketZoom/TicketInformation.pm
+# $origin: otobo - ca50d9ee774bfd53701b6cca5d903ea4a2491f19 - Kernel/Output/HTML/TicketZoom/TicketInformation.pm
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -101,7 +101,10 @@ sub Run {
                 operational => 'greenled',
                 warning     => 'yellowled',
                 incident    => 'redled',
+                unknown     => 'grayled',
             );
+
+            $Service{CurInciStateType} ||= 'unknown';
 
             $LayoutObject->Block(
                 Name => 'ServiceInciSignal',
@@ -382,31 +385,6 @@ sub Run {
     # overwrite display options for process ticket
     if ($IsProcessTicket) {
         $Param{WidgetTitle} = $Self->{DisplaySettings}->{ProcessDisplay}->{WidgetTitle};
-
-        # get the DF where the ProcessEntityID is stored
-        my $ProcessEntityIDField = 'DynamicField_'
-            . $ConfigObject->Get("Process::DynamicFieldProcessManagementProcessID");
-
-        # get the DF where the AtivityEntityID is stored
-        my $ActivityEntityIDField = 'DynamicField_'
-            . $ConfigObject->Get("Process::DynamicFieldProcessManagementActivityID");
-
-        my $ProcessData = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessGet(
-            ProcessEntityID => $Ticket{$ProcessEntityIDField},
-        );
-        my $ActivityData = $Kernel::OM->Get('Kernel::System::ProcessManagement::Activity')->ActivityGet(
-            Interface        => 'AgentInterface',
-            ActivityEntityID => $Ticket{$ActivityEntityIDField},
-        );
-
-        # output process information in the sidebar
-        $LayoutObject->Block(
-            Name => 'ProcessData',
-            Data => {
-                Process  => $ProcessData->{Name}  || '',
-                Activity => $ActivityData->{Name} || '',
-            },
-        );
     }
 
     # get dynamic field config for frontend module
@@ -503,6 +481,15 @@ sub Run {
     FIELD:
     for my $Field (@FieldsSidebar) {
 
+        # check Set field behavior to include lenses on Sets
+        my $FieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => $Field->{Name},
+        );
+        my $IsSetField = $DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $FieldConfig,
+            Behavior           => 'IsSetField',
+        );
+
         # handle titles separately
         if ( $Field->{TitleFieldConfig} ) {
             my $Style = "padding-left:4px;font-size:$Field->{TitleFieldConfig}{FontSize}px;color:$Field->{TitleFieldConfig}{FontColor};";
@@ -528,7 +515,7 @@ sub Run {
 
             next FIELD;
         }
-        elsif ( $Field->{FieldType} eq 'Set' ) {
+        elsif ($IsSetField) {
 
             $LayoutObject->Block(
                 Name => 'TicketDynamicField',

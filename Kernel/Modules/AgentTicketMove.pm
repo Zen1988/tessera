@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,7 +40,7 @@ sub new {
     {
         $Self->{LoadedFormDraftID} = $Kernel::OM->Get('Kernel::System::Web::Request')->LoadFormDraft(
             FormDraftID => $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => 'FormDraftID' ),
-            UserID      => $Self->{UserID},
+            ObjectID    => $Self->{TicketID},
         );
     }
 
@@ -337,7 +337,6 @@ sub Run {
                 ObjectType => 'Ticket',
                 ObjectID   => $Self->{TicketID},
                 Action     => $Self->{Action},
-                UserID     => $Self->{UserID},
             );
             DRAFT:
             for my $FormDraft ( @{$FormDraftList} ) {
@@ -399,7 +398,7 @@ sub Run {
         elsif ( $FormDraftAction eq 'Delete' && $GetParam{FormDraftID} ) {
             $FormDraftActionOk = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
                 FormDraftID => $GetParam{FormDraftID},
-                UserID      => $Self->{UserID},
+                ObjectID    => $Self->{TicketID},
             );
         }
 
@@ -596,7 +595,7 @@ sub Run {
                     );
                 }
 
-                # send a list of attachments in the upload cache back to the clientside JavaScript
+                # send a list of attachments in the upload cache back to the client-side JavaScript
                 # which renders then the list of currently uploaded attachments
                 @TicketAttachments = $UploadCacheObject->FormIDGetAllFilesMeta(
                     FormID => $Self->{FormID},
@@ -1286,7 +1285,7 @@ sub Run {
         $GetParam{FormDraftID}
         && !$Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
             FormDraftID => $GetParam{FormDraftID},
-            UserID      => $Self->{UserID},
+            ObjectID    => $Self->{TicketID},
         )
         )
     {
@@ -1502,7 +1501,7 @@ sub AgentMove {
             Errors               => $Param{DFErrors},
             Object               => {
                 CustomerID     => $Param{CustomerID},
-                CustomerUserID => $Param{CustomerIserID},
+                CustomerUserID => $Param{CustomerUserID},
                 UserID         => $Self->{UserID},
                 %DynamicFieldValues,
             },
@@ -1551,7 +1550,7 @@ sub AgentMove {
             Data => {%Param},
         );
 
-        # fillup configured default vars
+        # fill-up configured default vars
         if ( $Param{Body} eq '' && $Config->{Body} ) {
             $Param{Body} = $LayoutObject->Output(
                 Template => $Config->{Body},
@@ -1679,8 +1678,8 @@ sub AgentMove {
     if ( $Self->{LoadedFormDraftID} ) {
         $LoadedFormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
             FormDraftID => $Self->{LoadedFormDraftID},
+            ObjectID    => $Self->{TicketID},
             GetContent  => 0,
-            UserID      => $Self->{UserID},
         );
 
         my @Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleList(

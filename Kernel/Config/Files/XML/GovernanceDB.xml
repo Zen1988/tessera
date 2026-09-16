@@ -1,0 +1,3079 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Config">
+
+    <!-- registration of agent and customer frontend modules -->
+    <Setting Name="Frontend::Module###AdminGovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Admin.</Item>
+                    <Item Key="Title" Translatable="1">Governance Object</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AdminGovernanceObject###003-GovernanceObject" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AdminGovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Admin area navigation for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Group">
+                    <Array>
+                        <Item>admin</Item>
+                    </Array>
+                </Item>
+                <Item Key="GroupRo">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+                <Item Key="Name" Translatable="1">Governance Objects</Item>
+                <Item Key="Block">GovernanceDBSettings</Item>
+                <Item Key="Description" Translatable="1">Create and manage the definitions for Governance Objects.</Item>
+                <Item Key="IconBig">fa-laptop</Item>
+                <Item Key="IconSmall"/>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminGovernanceObject###002-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.CodeMirrorEditor.css</Item>
+                        <Item>ITSM.Agent.Admin.GovernanceObject.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/mode/yaml/yaml.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchtags.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/closetag.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/searchcursor.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/search.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldcode.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/trailingspace.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/selection/selection-pointer.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/indent-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/comment-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/comment/comment.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/comment/continuecomment.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/jump-to-line.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.js</Item>
+                        <Item>Core.UI.CodeMirrorEditor.js</Item>
+                        <Item>ITSM.Admin.GovernanceObject.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance object overview.</Item>
+                    <Item Key="Title" Translatable="1">Overview</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObject###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>ITSM.Agent.Default.css</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Overview.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Overview.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceObject###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                                <Item>governance-db</Item>
+                            
+                                <Item>admin</Item></Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Governance Object Database.</Item>
+                        <Item Key="Name">GovernanceDB</Item>
+                        <Item Key="Link">Action=AgentGovernanceObject</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type">Menu</Item>
+                        <Item Key="Block">ItemArea</Item>
+                        <Item Key="AccessKey"/>
+                        <Item Key="Prio">3200</Item>
+                    </Hash>
+                </Item>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                                <Item>governance-db</Item>
+                            
+                                <Item>admin</Item></Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Overview.</Item>
+                        <Item Key="Name">Overview</Item>
+                        <Item Key="Link">Action=AgentGovernanceObject</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type"/>
+                        <Item Key="Block"/>
+                        <Item Key="AccessKey"/>
+                        <Item Key="Prio">100</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerGovernanceObject" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance object overview.</Item>
+                    <Item Key="Title" Translatable="1">Overview</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerGovernanceObject###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Search.js</Item>
+                        <Item>ITSM.Customer.GovernanceObjectList.js</Item>
+                        <Item>ITSM.Customer.GovernanceObject.Overview.js</Item>
+                        <Item>Core.Customer.Search.js</Item>
+                        <!-- TODO relevant for column settings
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        -->
+                    </Array>
+                </Item>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.GovernanceObjectList.css</Item>
+                        <Item>ITSM.Customer.GovernanceObjectOverview.css</Item>
+                        <Item>ITSM.Table.css</Item>
+                        <!--- TODO relevant for column settings
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>ITSM.Agent.Default.css</Item>
+                        -->
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Navigation###CustomerGovernanceObject###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Governance Object Database.</Item>
+                        <Item Key="Name">GovernanceDB</Item>
+                        <Item Key="Link">Action=CustomerGovernanceObject</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="NavBar">Ticket</Item>
+                        <Item Key="Type">Menu</Item>
+                        <Item Key="Block"/>
+                        <Item Key="AccessKey"/>
+                        <Item Key="Prio">310</Item>
+                        <Item Key="svgIcon">var/httpd/htdocs/skins/Customer/default/img/devices_black_24dp.svg</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset" Required="0" Valid="1">
+        <Description Translatable="1">Hides the customer asset navigation entry unless the customer has a matching ASSET SupportAssignment.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ZTSMCustomerAsset</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerGovernanceObjectSearch" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Search Governance Objects.</Item>
+                    <Item Key="Title" Translatable="1">Search</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerGovernanceObjectSearch###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.GovernanceObjectList.css</Item>
+                        <Item>ITSM.Customer.GovernanceObjectOverview.css</Item>
+                        <Item>ITSM.Customer.GovernanceObjectSearch.css</Item>
+                        <Item>ITSM.Agent.Detail.css</Item>
+                        <Item>ITSM.Table.css</Item>
+                        <Item>ITSM.Print.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Search.js</Item>
+                        <Item>ITSM.Customer.GovernanceObject.Overview.js</Item>
+                        <Item>ITSM.Customer.GovernanceObjectList.js</Item>
+                        <Item>Core.Customer.Search.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectZoom" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object zoom.</Item>
+                    <Item Key="Title" Translatable="1">Zoom</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectZoom###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Agent.Default.css</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Zoom.css</Item>
+                        <Item>ITSM.Agent.Detail.css</Item>
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>ITSM.Print.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>thirdparty/jquery-tablesorter-2.28.14/jquery.tablesorter.js</Item>
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.UI.InputFields.js</Item>
+                        <Item>Core.UI.Table.Sort.js</Item>
+                        <Item>Core.Agent.DynamicFieldDBDetailedSearch.js</Item>
+                        <Item>Core.Agent.DynamicFieldDBSearch.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        <Item>Core.Agent.LinkObject.js</Item>
+                        <Item>ITSM.Agent.Zoom.js</Item>
+                        <Item>ITSM.Agent.ConfirmDialog.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Zoom.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerGovernanceObjectZoom" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object zoom.</Item>
+                    <Item Key="Title" Translatable="1">Zoom</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerGovernanceObjectZoom###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.GovernanceObject.Zoom.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ITSM.Customer.GovernanceObject.Zoom.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectEdit" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object edit.</Item>
+                    <Item Key="Title" Translatable="1">Edit</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectEdit###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.Edit.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldDBDetailedSearch.js</Item>
+                        <Item>Core.Agent.DynamicFieldDBSearch.js</Item>
+                        <Item>Core.UI.InputFields.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.CustomerSearch.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Edit.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="TESSERA::CMDB::VirtualAssetTag###Pattern" Required="1" Valid="1">
+        <Description Translatable="1">Pattern used when a ConfigItem is imported without ZTAM-AssetTag. Supported placeholders are &lt;ZTSM-Code&gt; and &lt;running id&gt;.</Description>
+        <Navigation>TESSERA::CMDB::ImportExport</Navigation>
+        <Value><Item ValueType="String" ValueRegex="^.+$">&lt;ZTSM-Code&gt;-VT-&lt;running id&gt;</Item></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentITSMConfigItemDocument" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for ConfigItem YAML/JSON import and export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="GroupRo"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Group"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Description" Translatable="1">ConfigItem YAML/JSON document editor.</Item>
+            <Item Key="Title" Translatable="1">CMDB as Code</Item>
+            <Item Key="NavBarName">ITSMConfigItem</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentITSMConfigItemActivity" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module for immutable ConfigItem activity articles.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="GroupRo"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Group"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Description" Translatable="1">Asset activity articles.</Item>
+            <Item Key="Title" Translatable="1">Asset Activity Articles</Item><Item Key="NavBarName">ITSMConfigItem</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentITSMConfigItemActivity###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader registration for ConfigItem activity articles.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.Default.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1">
+        <Description Translatable="1">Shows immutable asset activity articles in ConfigItem zoom.</Description>
+        <Navigation>Frontend::Agent::ITSMConfigItem::MenuModule</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::MenuGeneric</Item>
+            <Item Key="Name" Translatable="1">Activity Articles</Item>
+            <Item Key="Description" Translatable="1">Every recorded activity for this asset</Item>
+            <Item Key="Action">AgentITSMConfigItemActivity</Item>
+            <Item Key="Link">Action=AgentITSMConfigItemActivity;ConfigItemID=[% Data.ConfigItemID | html %]</Item>
+            <Item Key="Target">PopUp</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::EventModulePost###110-TESSERAActivityArticles" Required="0" Valid="1">
+        <Description Translatable="1">Records every ConfigItem event as an immutable asset activity article.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::System::ITSMConfigItem::Event::ActivityRecorder</Item>
+            <Item Key="Event">(ConfigItemCreate|ConfigItemUpdate|VersionCreate|VersionUpdate|DeploymentStateUpdate|IncidentStateUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField.*)</Item>
+            <Item Key="Transaction">0</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::EventModulePost###120-TESSERAControlFailureWatcher" Required="0" Valid="1">
+        <Description Translatable="1">Processes a failed Control through its mandatory parent ControlObjective instructions.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::System::ITSMConfigItem::Event::ControlFailureWatcher</Item>
+            <Item Key="Event">ConfigItemDynamicFieldUpdate(_ZRM-Result)?</Item>
+            <Item Key="Transaction">0</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentITSMConfigItemWorkbook" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for preview-first CMDB XLSX import and export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="GroupRo"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Group"><Array><Item>itsm-configitem</Item><Item>admin</Item></Array></Item>
+            <Item Key="Description" Translatable="1">CMDB Excel import and export.</Item>
+            <Item Key="Title" Translatable="1">CMDB Excel Import/Export</Item>
+            <Item Key="NavBarName">ITSMConfigItem</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentITSMConfigItemWorkbook###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader registration for CMDB XLSX import and export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash>
+            <Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item>
+            <Item Key="JavaScript"><Array>
+                <Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item>
+                <Item>ZTSM.Agent.ConfigItem.Workbook.js</Item>
+            </Array></Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentITSMConfigItemDocument###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader registration for ConfigItem YAML/JSON.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectWorkbook" Required="0" Valid="1">
+        <Description Translatable="1">Preview-first GovernanceObject XLSX import and export.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Description">GovernanceObject Excel import and export.</Item><Item Key="Title">GovernanceObject Excel Import/Export</Item><Item Key="NavBarName">GovernanceDB</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectWorkbook###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader for GovernanceObject XLSX.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.Object.Workbook.js</Item></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectActivity" Required="0" Valid="1">
+        <Description Translatable="1">GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Description">Governance activity articles.</Item><Item Key="Title">Governance Activity Articles</Item><Item Key="NavBarName">GovernanceDB</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1">
+        <Description Translatable="1">Shows GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item><Item Key="Name">Activity Articles</Item><Item Key="Description">Every recorded activity</Item><Item Key="Action">AgentGovernanceObjectActivity</Item><Item Key="Link">Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item><Item Key="Target">PopUp</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GovernanceObject::EventModulePost###110-TESSERAActivityArticles" Required="0" Valid="1">
+        <Description Translatable="1">Records every GovernanceObject event as an immutable activity article.</Description><Navigation>Core::Event::GovernanceObject</Navigation><Value><Hash><Item Key="Module">Kernel::System::GovernanceObject::Event::ActivityRecorder</Item><Item Key="Event">(GovernanceObjectCreate|GovernanceObjectUpdate|VersionCreate|VersionUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField.*)</Item><Item Key="Transaction">0</Item></Hash></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectActivity###003-GovernanceDB" Required="0" Valid="1"><Description Translatable="1">Loader.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation><Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.Default.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectDocument" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for Governance Object YAML/JSON import and export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object YAML/JSON document editor.</Item>
+                    <Item Key="Title" Translatable="1">Governance as Code</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceOSCALImport" Required="0" Valid="1">
+        <Description Translatable="1">Preview and import OSCAL catalogs into Policy, RiskStatement, and ControlObjective Governance Objects.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item>
+                    <Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item>
+                    <Item Key="Description" Translatable="1">OSCAL policy catalog ingestion.</Item>
+                    <Item Key="Title" Translatable="1">OSCAL Policy Import</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceOSCALImport###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">GovernanceDB OSCAL policy import menu item.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation"><Hash></Hash></DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group"><Array></Array></Item>
+                        <Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item>
+                        <Item Key="AccessKey">o</Item>
+                        <Item Key="Block"/>
+                        <Item Key="Description" Translatable="1">Import an OSCAL catalog JSON file into Policies, Risk Statements, and Control Objectives.</Item>
+                        <Item Key="Link">Action=AgentGovernanceOSCALImport</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="Name" Translatable="1">OSCAL Import</Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Prio">400</Item>
+                        <Item Key="Type"/>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceOSCALImport###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for OSCAL policy import.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectDocument###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the Governance Object YAML/JSON document editor.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.Edit.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGeneralCatalogDocument" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for General Catalog YAML/JSON import and export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">General Catalog YAML/JSON document editor.</Item>
+                    <Item Key="Title" Translatable="1">General Catalog as Code</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGeneralCatalogDocument###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the General Catalog YAML/JSON document editor.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.Edit.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminGeneralCatalog###002-GovernanceDBGeneralCatalogDocument" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the General Catalog YAML/JSON action.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.GeneralCatalogDocument.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectEdit###RichTextWidth" UserPreferencesGroup="Advanced" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the width for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectEdit</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+%?$">620</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectEdit###RichTextHeight" UserPreferencesGroup="Advanced" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the height for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectEdit</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+%?$">320</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectPrint" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object print.</Item>
+                    <Item Key="Title" Translatable="1">Print</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectDelete" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description">Delete a configuration item</Item>
+                    <Item Key="Title">Delete</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectTreeView" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description">Governance Object Tree View</Item>
+                    <Item Key="Title">Tree View</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectTreeView###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.TreeView.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.TreeView.js</Item>
+                        <Item>thirdparty/jsplumb-1.6.4/jsplumb.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectAdd" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object add.</Item>
+                    <Item Key="Title" Translatable="1">Add</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectAdd###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.Add.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceObjectAdd###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                                <Item>governance-db</Item>
+                            
+                                <Item>admin</Item></Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">New</Item>
+                        <Item Key="Name">New</Item>
+                        <Item Key="Link">Action=AgentGovernanceObjectAdd</Item>
+                        <Item Key="LinkOption"/>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type"/>
+                        <Item Key="Block"/>
+                        <Item Key="AccessKey"/>
+                        <Item Key="Prio">200</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectSearch" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Search Governance Objects.</Item>
+                    <Item Key="Title" Translatable="1">Search</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectSearch###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>ITSM.Agent.Default.css</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Overview.css</Item>
+                        <Item>ITSM.Agent.Detail.css</Item>
+                        <Item>ITSM.Table.css</Item>
+                        <Item>ITSM.Print.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.UI.Table.Sort.js</Item>
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Overview.js</Item>
+                        <Item>ITSM.Agent.GovernanceObject.Search.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceObjectSearch###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                                <Item>governance-db</Item>
+                            
+                                <Item>admin</Item></Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Search Governance Objects.</Item>
+                        <Item Key="Name">Search</Item>
+                        <Item Key="Link">Action=AgentGovernanceObjectSearch</Item>
+                        <Item Key="LinkOption">onclick="ITSM.Agent.GovernanceObject.Search.OpenSearchDialog('AgentGovernanceObjectSearch'); if (event.stopPropagation) { event.stopPropagation(); } else { window.event.cancelBubble = true; } return false;"</Item>
+                        <Item Key="NavBar">GovernanceDB</Item>
+                        <Item Key="Type"/>
+                        <Item Key="Block"/>
+                        <Item Key="AccessKey"/>
+                        <Item Key="Prio">300</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <!-- menu modules -->
+    <Setting Name="GovernanceObject::Frontend::MenuModule###000-Back" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to go back in the configuration item zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Back</Item>
+                <Item Key="Description" Translatable="1">Back</Item>
+                <Item Key="Action"/>
+                <Item Key="Link">[% Env("LastScreenOverview") %]</Item>
+                <Item Key="Target"/>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###200-History" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to access the history of a configuration item in the its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">History</Item>
+                <Item Key="Description" Translatable="1">History</Item>
+                <Item Key="Action">AgentGovernanceObjectHistory</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectHistory;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###300-Edit" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to edit a configuration item in the its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Edit</Item>
+                <Item Key="Description" Translatable="1">Edit</Item>
+                <Item Key="Action">AgentGovernanceObjectEdit</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectEdit;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###400-Print" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to print a configuration item in the its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Print</Item>
+                <Item Key="Description" Translatable="1">Print</Item>
+                <Item Key="Action">AgentGovernanceObjectPrint</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectPrint;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="LinkParam">target="print"</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###450-Document" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to export and import a Governance Object as YAML or JSON.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">YAML/JSON</Item>
+                <Item Key="Description" Translatable="1">Export or import this Governance Object as YAML or JSON</Item>
+                <Item Key="Action">AgentGovernanceObjectDocument</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectDocument;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###500-Link" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu that allows linking a configuration item with another object in the Governance Object zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Link</Item>
+                <Item Key="Description" Translatable="1">Link</Item>
+                <Item Key="Action">AgentLinkObject</Item>
+                <Item Key="Link">Action=AgentLinkObject;SourceObject=GovernanceObject;SourceKey=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###550-TreeView" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to display the configuration item links as a Tree View.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Tree View</Item>
+                <Item Key="Description" Translatable="1">Governance Object Tree View</Item>
+                <Item Key="Action">AgentGovernanceObjectTreeView</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectTreeView;VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###600-Duplicate" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to duplicate a configuration item in the its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Duplicate</Item>
+                <Item Key="Description" Translatable="1">Duplicate</Item>
+                <Item Key="Action">AgentGovernanceObjectEdit</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectEdit;DuplicateID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###700-GovernanceObjectDelete" Required="1" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to delete a configuration item in its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Delete</Item>
+                <Item Key="Description" Translatable="1">Delete Configuration Item</Item>
+                <Item Key="Action">AgentGovernanceObjectDelete</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="Target">ConfirmDialog</Item>
+                <Item Key="ElementSelector">#Menu[% Data.MenuID | html %]</Item>
+                <Item Key="DialogContentQueryString">Action=AgentGovernanceObjectDelete;AJAX=1;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="ConfirmedActionQueryString">Action=AgentGovernanceObjectDelete;Subaction=GovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="DialogTitle">[% Translate("Delete") | html %] [% Config("GovernanceObject::Hook") %] [% Data.Number | html %]</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- settings for specific Governance Object classes -->
+    <Setting Name="GovernanceObject::CINameRegex" Required="0" Valid="0">
+        <Description Translatable="1">Defines regular expressions individually for each Governance Object class to check the Governance Object name and to show corresponding error messages.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Computer::CINameRegex">^ABC.*</Item>
+                <Item Key="Computer::CINameRegexErrorMessage">A computer name must start with ABC!</Item>
+                <Item Key="Hardware::CINameRegex">.*\d\d$</Item>
+                <Item Key="Hardware::CINameRegexErrorMessage">A hardware name must end with two digits!</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- settings for the LinkObject feature -->
+    <Setting Name="LinkObject::ComplexTable::SettingsVisibility###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Define Actions where a settings button is available in the linked objects widget (LinkObject::ViewMode = "complex"). Please note that these Actions must have registered the following JS and CSS files: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js and Core.Agent.LinkObject.js.</Description>
+        <Navigation>Frontend::Agent::LinkObject</Navigation>
+        <Value>
+            <Array>
+                <Item>AgentGovernanceObjectZoom</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="LinkObject::DefaultSubObject###GovernanceObject" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default subobject of the class 'GovernanceObject'.</Description>
+        <Navigation>Core::LinkObject</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">Computer</Item>
+        </Value>
+    </Setting>
+    <Setting Name="LinkObject::GovernanceObject::ShowColumns" Required="0" Valid="1">
+        <Description Translatable="1">Defines the shown columns of CIs in the link table complex view for all CI classes. If there is no entry, then the default columns are shown.</Description>
+        <Navigation>Core::LinkObject</Navigation>
+        <Value>
+            <Array>
+                <Item>CurInciSignal</Item>
+                <Item>CurDeplSignal</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="LinkObject::GovernanceObject::ShowColumnsByClass" Required="0" Valid="0">
+        <Description Translatable="1">Defines the shown columns of CIs in the link table complex view, depending on the CI class. Each entry must be prefixed with the class name and double colons (i.e. Computer::). There are a few CI-Attributes that common to all CIs (example for the class Computer: Computer::Name, Computer::ZTSMStatus, Computer::CreateTime). To show individual CI-Attributes as defined in the CI-Definition, the following scheme must be used (example for the class Computer): Computer::HardDisk::1, Computer::HardDisk::1::Capacity::1, Computer::HardDisk::2, Computer::HardDisk::2::Capacity::1. If there is no entry for a CI class, then the default columns are shown.</Description>
+        <Navigation>Core::LinkObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Computer::Name</Item>
+                <Item>Computer::ZTSMStatus</Item>
+                <Item>Computer::HardDisk::1</Item>
+                <Item>Computer::HardDisk::1::Capacity::1</Item>
+                <Item>Computer::HardDisk::2</Item>
+                <Item>Computer::HardDisk::2::Capacity::1</Item>
+                <Item>Computer::HardDisk::3</Item>
+                <Item>Computer::HardDisk::3::Capacity::1</Item>
+                <Item>Computer::WarrantyExpirationDate::1</Item>
+                <Item>Computer::CreateTime</Item>
+                <Item>Location::Type::1</Item>
+                <Item>Location::Address::1</Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <!-- stats settings -->
+    <Setting Name="Stats::DynamicObjectRegistration###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Module to generate Governance object statistics.</Description>
+        <Navigation>Core::Stats</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::Stats::Dynamic::GovernanceObject</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- Import/Export settings -->
+    <Setting Name="ImportExport::ObjectBackendRegistration###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Object backend module registration for the import/export module.</Description>
+        <Navigation>Core::ImportExport::ObjectBackend::ModuleRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::ImportExport::ObjectBackend::GovernanceObject</Item>
+                <Item Key="Name">Governance Object</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- event settings -->
+    <Setting Name="GovernanceObject::EventModulePost###100-History" Required="0" Valid="1">
+        <Description Translatable="1">Governance Object event module that enables logging to history in the agent interface.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Event::DoHistory</Item>
+                <Item Key="Event">(GovernanceObjectCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField)</Item>
+                <Item Key="Transaction">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::EventModulePost###300-DefinitionGovernanceObjectUpdate" Required="0" Valid="1">
+        <Description Translatable="1">Governance Object event module that updates Governance Objects to their current definition.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Event::DefinitionGovernanceObjectUpdate</Item>
+                <Item Key="Event">DefinitionCreate</Item>
+                <Item Key="Transaction">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::EventModulePost###4000-ScriptDynamicFields" Required="0" Valid="1">
+        <Description Translatable="1">Evaluate all script fields.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Event::EvaluateScriptFields</Item>
+                <Item Key="Event"/>
+                <Item Key="Transaction">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- more frontend module settings and registrations -->
+    <Setting Name="GovernanceObject::Frontend::HistoryOrder" Required="1" Valid="1">
+        <Description Translatable="1">Shows the Governance Object history (reverse ordered) in the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectHistory</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="normal">
+                <Item ValueType="Option" Value="reverse" Translatable="1">reverse</Item>
+                <Item ValueType="Option" Value="normal" Translatable="1">normal</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectHistory" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Governance Object history.</Item>
+                    <Item Key="Title" Translatable="1">History</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentGovernanceObjectHistory###003-GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ITSM.Agent.GovernanceObject.History.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Preferences::UpdateAJAX::Allowed###002-GovernanceDB" Required="1" Valid="1" ConfigLevel="200">
+        <Description Translatable="1">A list of parameters which can be updated via the UpdateAJAX.</Description>
+        <Navigation>Frontend::Agent::View::Preferences</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="UserGovernanceObjectZoomTableHeight">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectStatusFunctionality" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the ZTSM Statuss in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Status</Item>
+                <Item Key="Label" Translatable="1">ZTSM Status Type</Item>
+                <Item Key="Priority">20</Item>
+                <Item Key="Desc" Translatable="1"/>
+                <Item Key="Data">
+                    <Hash>
+                        <Item Key="postproductive" Translatable="1">postproductive</Item>
+                        <Item Key="preproductive" Translatable="1">preproductive</Item>
+                        <Item Key="productive" Translatable="1">productive</Item>
+                    </Hash>
+                </Item>
+                <Item Key="PrefKey">Functionality</Item>
+                <Item Key="Block">Option</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GeneralCatalog settings -->
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectStatusColor" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the ZTSM Statuss color in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Status</Item>
+                <Item Key="Label" Translatable="1">ZTSM Status Color</Item>
+                <Item Key="Priority">25</Item>
+                <Item Key="Desc" Translatable="1"/>
+                <Item Key="Data"/>
+                <Item Key="PrefKey">Color</Item>
+                <Item Key="Block">ColorPicker</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectNameModule" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the name module for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Name Module</Item>
+                <Item Key="Priority">30</Item>
+                <Item Key="Desc" Translatable="1">Choose a module to enforce a naming scheme.</Item>
+                <Item Key="Data">
+                    <Hash>
+                    </Hash>
+                </Item>
+                <Item Key="PrefKey">NameModule</Item>
+                <Item Key="Block">GovernanceObjectNameModule</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectNumberModule" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the number module for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Number Module</Item>
+                <Item Key="Priority">40</Item>
+                <Item Key="Desc" Translatable="1">Choose a module to enforce a number scheme.</Item>
+                <Item Key="Data">
+                    <Hash>
+                    </Hash>
+                </Item>
+                <Item Key="DataSelected">GOID</Item>
+                <Item Key="PrefKey">NumberModule</Item>
+                <Item Key="Block">GovernanceObjectNumberModule</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionStringModule" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the version string module for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Version String Module</Item>
+                <Item Key="Priority">50</Item>
+                <Item Key="Desc" Translatable="1">Choose a module to enforce a version string scheme.</Item>
+                <Item Key="Data">
+                    <Hash>
+                    </Hash>
+                </Item>
+                <!-- TODO rename DataSelected properly to DataSelectedID, as it is passed as SelectedID subsequently -->
+                <Item Key="DataSelected">Incremental</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
+                <Item Key="PrefKey">VersionStringModule</Item>
+                <Item Key="Block">GovernanceObjectVersionStringModule</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionStringExpression" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the version string template toolkit module for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Version String Expression</Item>
+                <Item Key="Priority">60</Item>
+                <Item Key="Desc" Translatable="1">Define a Template::Toolkit scheme for version strings. Only used if Version String Module is set to TemplateToolkit.</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
+                <Item Key="PrefKey">VersionStringExpression</Item>
+                <Item Key="Block">Input</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectVersionTrigger" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the version trigger for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Version Trigger</Item>
+                <Item Key="Priority">70</Item>
+                <Item Key="Desc" Translatable="1">Choose attributes to trigger the creation of a new version.</Item>
+                <Item Key="Data">
+                    <Hash>
+                        <Item Key="Name" Translatable="1">Name</Item>
+                        <Item Key="Description" Translatable="1">Description</Item>
+                        <Item Key="ZTSMStatusID" Translatable="1">ZTSM Status</Item>
+                        <Item Key="DefinitionUpdate" Translatable="1">Definition Update</Item>
+                    </Hash>
+                </Item>
+                <Item Key="PrefKey">VersionTrigger</Item>
+                <Item Key="Block">GovernanceObjectVersionTrigger</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
+                <Item Key="Multiple" ValueType="Checkbox">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectCategories" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the categories for Governance Object classes in the preferences view of the agent interface.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="Label" Translatable="1">Categories</Item>
+                <Item Key="Priority">80</Item>
+                <Item Key="Desc" Translatable="1">Choose categories to assign to this Governance Object class.</Item>
+                <Item Key="Data">
+                    <Hash>
+                    </Hash>
+                </Item>
+                <Item Key="PrefKey">Categories</Item>
+                <Item Key="Block">GovernanceObjectClassCategories</Item>
+                <Item Key="Multiple" ValueType="Checkbox">1</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- permission settings -->
+    <Setting Name="GovernanceObject::Permission::Class###010-ClassGroupCheck" Required="0" Valid="1">
+        <Description Translatable="1">Module to check the group responsible for a class.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Permission::ClassGroupCheck</Item>
+                <Item Key="Required">0</Item>
+                <Item Key="Granted">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Permission::Item###010-ItemClassGroupCheck" Required="0" Valid="1">
+        <Description Translatable="1">Module to check the group responsible for a configuration item.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Permission::ItemClassGroupCheck</Item>
+                <Item Key="Required">0</Item>
+                <Item Key="Granted">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernance Object -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AdminGovernanceObject###EditorRows" Required="1" Valid="1">
+        <Description Translatable="1">Defines the number of rows for the CI definition editor in the admin interface.</Description>
+        <Navigation>Frontend::Admin::View::GovernanceObjectDefinition</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">30</Item>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectEdit -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectEdit###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the edit ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectEdit###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the additional ITSM field screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::AgentGovernanceObjectEdit</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectAdd -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectAdd###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the add ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectHistory -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectHistory###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the history ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectPrint -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectPrint###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the print ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectPrint###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the additional ITSM field screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::AgentGovernanceObjectHistory</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectDelete -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectDelete###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required privileges to delete Governance Objects.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectDelete</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectZoom -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectZoom###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item zoom screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectZoom###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the additional ITSM field screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::AgentGovernanceObjectZoom</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectSearch -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item search screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###ExtendedSearchCondition" Required="1" Valid="1">
+        <Description Translatable="1">Allows extended search conditions in Governance Object search of the agent interface. With this feature you can search e. g. Governance Object name with this kind of conditions like "(*key1*&amp;&amp;*key2*)" or "(*key1*||*key2*)".</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###SearchPageShown" Required="1" Valid="1">
+        <Description Translatable="1">Number of Governance Objects to be displayed in each page of a search result in the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">40</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###SortBy::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default Governance Object attribute for Governance Object sorting of the Governance Object search result of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Age">
+                <Item ValueType="Option" Value="Age" Translatable="1">Age</Item>
+                <!-- TODO verify attribute names -->
+                <Item ValueType="Option" Value="Number" Translatable="1">Number</Item>
+                <Item ValueType="Option" Value="Name" Translatable="1">Name</Item>
+                <Item ValueType="Option" Value="ZTSMStatus" Translatable="1">ZTSM Status</Item>
+                <!-- TODO test dynamic fields -->
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Order::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default Governance Object order in the Governance Object search result of the agent interface. Up: oldest on top. Down: latest on top.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Down">
+                <Item ValueType="Option" Value="Down" Translatable="1">Down</Item>
+                <Item ValueType="Option" Value="Up" Translatable="1">Up</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###SearchCSVData" Required="1" Valid="1">
+        <Description Translatable="1">Data used to export the search result in CSV format.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Array>
+                <Item Translatable="1">Class</Item>
+                <Item Translatable="1">ZTSMStatus</Item>
+                <Item Translatable="1">Name</Item>
+                <Item Translatable="1">Number</Item>
+                <Item Translatable="1">Version</Item>
+                <Item Translatable="1">CreateTime</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###SearchCSVDynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic Fields used to export the search result in CSV format.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###Number" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###Name" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###DeploymentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Array/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###IncidentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Array/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###CustomerID" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###CustomerUserLogin" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###GovernanceObjectCreateTimePoint" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Default data to use on attribute for Governance Object search screen. Example: "GovernanceObjectCreateTimePointFormat=year;GovernanceObjectCreateTimePointStart=Last;GovernanceObjectCreateTimePoint=2;".</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###GovernanceObjectCreateTimeSlot" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Default data to use on attribute for Governance Object search screen. Example: "GovernanceObjectCreateTimeStartYear=2010;GovernanceObjectCreateTimeStartMonth=10;GovernanceObjectCreateTimeStartDay=4;GovernanceObjectCreateTimeStopYear=2010;GovernanceObjectCreateTimeStopMonth=11;GovernanceObjectCreateTimeStopDay=3;".</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###GovernanceObjectChangeTimePoint" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###GovernanceObjectChangeTimeSlot" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###SearchPreviousVersions" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="0">
+                <Item ValueType="Option" Value="0" Translatable="1">No</Item>
+                <Item ValueType="Option" Value="1" Translatable="1">Yes</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###Defaults###DynamicField" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen. Example: "Key" must have the name of the Dynamic Field in this case 'X', "Content" must have the value of the Dynamic Field depending on the Dynamic Field type,  Text: 'a text', Dropdown: '1', Date/Time: 'Search_DynamicField_XTimeSlotStartYear=1974; Search_DynamicField_XTimeSlotStartMonth=01; Search_DynamicField_XTimeSlotStartDay=26; Search_DynamicField_XTimeSlotStartHour=00; Search_DynamicField_XTimeSlotStartMinute=00; Search_DynamicField_XTimeSlotStartSecond=00; Search_DynamicField_XTimeSlotStopYear=2013; Search_DynamicField_XTimeSlotStopMonth=01; Search_DynamicField_XTimeSlotStopDay=26; Search_DynamicField_XTimeSlotStopHour=23; Search_DynamicField_XTimeSlotStopMinute=59; Search_DynamicField_XTimeSlotStopSecond=59;' and or 'Search_DynamicField_XTimePointFormat=week; Search_DynamicField_XTimePointStart=Before; Search_DynamicField_XTimePointValue=7';.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Hash>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::CustomerGovernanceObjectSearch -->
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item search screen in the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###DeploymentState" Required="0" Valid="1">
+        <Description Translatable="1">Includes ZTSM Statuss in the Governance Object search of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###IncidentState" Required="0" Valid="1">
+        <Description Translatable="1">Includes ZTSM Statuss in the Governance Object search of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###ExtendedSearchCondition" Required="1" Valid="1">
+        <Description Translatable="1">Allows extended search conditions in Governance Object search of the customer interface. With this feature you can search e. g. Governance Object name with this kind of conditions like "(*key1*&amp;&amp;*key2*)" or "(*key1*||*key2*)".</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###SearchPageShown" Required="1" Valid="1">
+        <Description Translatable="1">Number of Governance Objects to be displayed in each page of a search result in the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">40</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###SortBy::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default Governance Object attribute for Governance Object sorting of the Governance Object search result of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Age">
+                <Item ValueType="Option" Value="Age" Translatable="1">Age</Item>
+                <Item ValueType="Option" Value="Number" Translatable="1">Number</Item>
+                <Item ValueType="Option" Value="Name" Translatable="1">Name</Item>
+                <Item ValueType="Option" Value="ZTSMStatus" Translatable="1">ZTSM Status</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Order::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default Governance Object order in the Governance Object search result of the customer interface. Up: oldest on top. Down: latest on top.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Down">
+                <Item ValueType="Option" Value="Down" Translatable="1">Down</Item>
+                <Item ValueType="Option" Value="Up" Translatable="1">Up</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Defaults###Number" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Defaults###Name" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String"/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Defaults###DeploymentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Array/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Defaults###IncidentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Array/>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###Defaults###DynamicField" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default shown Governance Object search attribute for Governance Object search screen. Example: "Key" must have the name of the Dynamic Field in this case 'X', "Content" must have the value of the Dynamic Field depending on the Dynamic Field type,  Text: 'a text', Dropdown: '1', Date/Time: 'Search_DynamicField_XTimeSlotStartYear=1974; Search_DynamicField_XTimeSlotStartMonth=01; Search_DynamicField_XTimeSlotStartDay=26; Search_DynamicField_XTimeSlotStartHour=00; Search_DynamicField_XTimeSlotStartMinute=00; Search_DynamicField_XTimeSlotStartSecond=00; Search_DynamicField_XTimeSlotStopYear=2013; Search_DynamicField_XTimeSlotStopMonth=01; Search_DynamicField_XTimeSlotStopDay=26; Search_DynamicField_XTimeSlotStopHour=23; Search_DynamicField_XTimeSlotStopMinute=59; Search_DynamicField_XTimeSlotStopSecond=59;' and or 'Search_DynamicField_XTimePointFormat=week; Search_DynamicField_XTimePointStart=Before; Search_DynamicField_XTimePointValue=7';.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Hash>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- GovernanceObject::Frontend::AgentGovernanceObjectTreeView -->
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectTreeView###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item tree view screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="GeneralCatalogPreferences###GovernanceObjectPermissions" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the example permission groups of the general catalog attributes.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric</Item>
+                <Item Key="Label" Translatable="1">Permission Group</Item>
+                <Item Key="Priority">10</Item>
+                <Item Key="Block">Permission</Item>
+                <Item Key="Class">ZTSM::GovernanceObject::Class</Item>
+                <Item Key="PrefKey">Permission</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Search###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">Configuration item search backend router of the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu::Search</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="^(?:Agent|Admin)GovernanceObject">Action=AgentGovernanceObjectSearch;Subaction=AJAX</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Search::JavaScript###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">JavaScript function for the search frontend.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu::Search</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="^(?:Agent|Admin)GovernanceObject">ITSM.Agent.GovernanceObject.Search.OpenSearchDialog('AgentGovernanceObjectSearch')</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Agent::CommonJS###100-ConfigurationManagement" Required="1" Valid="1">
+        <Description Translatable="1">List of JS files to always be loaded for the agent interface.</Description>
+        <Navigation>Frontend::Base::Loader</Navigation>
+        <Value>
+            <Array>
+                <Item>ITSM.Agent.GovernanceObject.Search.js</Item>
+                <Item>ITSM.UI.GovernanceObjectActionRow.js</Item>
+                <Item>ITSM.Agent.GovernanceObject.Dashboard.js</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="PreferencesGroups###GovernanceObjectOverviewSmallPageShown" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the pages (in which the configuration items are shown).</Description>
+        <Navigation>Frontend::Agent::View::Preferences</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Preferences::Generic</Item>
+                <Item Key="PreferenceGroup">Miscellaneous</Item>
+                <Item Key="Label" Translatable="1">Configuration Item Limit</Item>
+                <Item Key="Desc" Translatable="1">Configuration Item limit per page.</Item>
+                <Item Key="Key" Translatable="1"/>
+                <Item Key="Data">
+                    <Hash>
+                        <Item Key="10">10</Item>
+                        <Item Key="15">15</Item>
+                        <Item Key="20">20</Item>
+                        <Item Key="25">25</Item>
+                        <Item Key="30">30</Item>
+                        <Item Key="35">35</Item>
+                    </Hash>
+                </Item>
+                <Item Key="DataSelected">25</Item>
+                <Item Key="PrefKey">UserGovernanceObjectOverviewSmallPageShown</Item>
+                <Item Key="Prio">8000</Item>
+                <Item Key="Active">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="PreferencesGroups###GovernanceObjectOverviewFilterSettings" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the column filters of the small Governance Object overview. Please note: setting 'Active' to 0 will only prevent agents from editing settings of this group in their personal preferences, but will still allow administrators to edit the settings of another user's behalf. Use 'PreferenceGroup' to control in which area these settings should be shown in the user interface.</Description>
+        <Navigation>Frontend::Agent::View::Preferences</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Preferences::ColumnFilters</Item>
+                <Item Key="PreferenceGroup">Miscellaneous</Item>
+                <Item Key="Label" Translatable="1">Enabled filters.</Item>
+                <Item Key="Desc" Translatable="1">Column Governance Object filters for Governance Object Overview.</Item>
+                <Item Key="Key" Translatable="1"/>
+                <Item Key="PrefKey">UserFilterColumnsEnabled</Item>
+                <Item Key="Prio">8100</Item>
+                <Item Key="Active">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::Overview###Small" Required="0" Valid="1">
+        <Description Translatable="1">Defines an overview module to show the small view of a configuration item list.</Description>
+        <Navigation>Frontend::Agent::GovernanceObjectOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::OverviewSmall</Item>
+                <Item Key="Name">Small</Item>
+                <Item Key="NameShort">S</Item>
+                <Item Key="PageShown">25</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerOverview###Small" Required="0" Valid="1">
+        <Description Translatable="1">Defines an overview module to show the small view of a configuration item list.</Description>
+        <Navigation>Frontend::Customer::GovernanceObjectOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::CustomerOverviewSmall</Item>
+                <Item Key="Name">Small</Item>
+                <Item Key="NameShort">S</Item>
+                <Item Key="PageShown">25</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###DefaultColumns" Required="0" Valid="1">
+        <Description Translatable="1">Columns that can be filtered in the Governance Object overview of the agent interface. Note: Only Governance Object attributes and Dynamic Fields (DynamicField_NameX) are allowed.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Available</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled by default</Item>
+                </DefaultItem>
+                <Item Key="Class" SelectedID="2"/>
+                <Item Key="Number" SelectedID="2"/>
+                <Item Key="Name" SelectedID="2"/>
+                <Item Key="ZTSMStatus" SelectedID="2"/>
+                <Item Key="LastChanged" SelectedID="2"/>
+                <Item Key="ZTSMStatusType" SelectedID="1"/>
+                <Item Key="Created" SelectedID="1"/>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Hook" Required="1" Valid="1">
+        <Description Translatable="1">The identifier for a configuration item, e.g. GovernanceObject#, MyGovernanceObject#. The default is GovernanceObject#.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">GovernanceObject#</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Defines the search limit for the AgentGovernanceObjectSearch screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10000</Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Defines the search limit for the AgentGovernance Object screen.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10000</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###DefaultCategory" Required="0" Valid="1">
+        <Description Translatable="1">The default category which is shown, if none is selected.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Item>Governance</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###ClassColumnsDisabled" Required="0" Valid="0">
+        <Description Translatable="1">Defines the disabled columns of CIs in the Governance Object overview depending on the CI class. Each entry must consist of a class name and an array of available fields for the corresponding class. Dynamic field entries have to honor the scheme DynamicField_FieldName.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem>
+                    <Array>
+                    </Array>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###ClassColumnsAvailable" Required="0" Valid="0">
+        <Description Translatable="1">Defines the available columns of CIs in the Governance Object overview depending on the CI class. Each entry must consist of a class name and an array of available fields for the corresponding class. Dynamic field entries have to honor the scheme DynamicField_FieldName.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem>
+                    <Array>
+                    </Array>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObject###ClassColumnsDefault" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default displayed columns of CIs in the Governance Object overview depending on the CI class. Each entry must consist of a class name and an array of available fields for the corresponding class. Dynamic field entries have to honor the scheme DynamicField_FieldName.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem>
+                    <Array>
+                    </Array>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectSearch###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the Governance Object search screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObject###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the Governance Object overview screen of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectOverview</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the Governance Object overview screen of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectOverview</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Defines the search limit for the CustomerGovernanceObjectSearch screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10000</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObject###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Defines the search limit for the CustomerGovernance Object screen.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10000</Item>
+        </Value>
+    </Setting>
+    <Setting Name="UniqueCIName::EnableUniquenessCheck" Required="0" Valid="1">
+        <Description Translatable="1">Enables/disables the functionality to check ITSM onfiguration items for unique names. Before enabling this option you should check your system for already existing Governance Objects with duplicate names. You can do this with the console command Admin::ZTSM::GovernanceObject::ListDuplicates.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="0">
+                <Item ValueType="Option" Value="1" Translatable="1">Enabled</Item>
+                <Item ValueType="Option" Value="0" Translatable="1">Disabled</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="UniqueCIName::UniquenessCheckScope" Required="0" Valid="1">
+        <Description Translatable="1">Check for a unique name only within the same Governance Object class ('class') or globally ('global'), which means every existing Governance Object is taken into account when looking for duplicates.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="global">
+                <Item ValueType="Option" Value="global" Translatable="1">global</Item>
+                <Item ValueType="Option" Value="class" Translatable="1">class</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::BulkFeature" Required="1" Valid="1">
+        <Description Translatable="1">Enables configuration item bulk action feature for the agent frontend to work on more than one configuration item at a time.</Description>
+        <Navigation>Core::BulkAction</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::BulkFeatureGroup" Required="0" Valid="0">
+        <Description Translatable="1">Enables configuration item bulk action feature only for the listed groups.</Description>
+        <Navigation>Core::BulkAction</Navigation>
+        <Value>
+            <Array>
+                <Item>admin</Item>
+                <Item>users</Item>
+                <Item>governance-db</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectBulk" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Configuration item bulk module.</Item>
+                    <Item Key="Title" Translatable="1">Bulk Action</Item>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentGovernanceObjectBulk###003-GovernanceObject" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectBulk###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the bulk ITSM configuration item screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectBulk###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the additional ITSM field screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::AgentGovernanceObjectBulk</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentGovernanceObjectAttachment" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                            <Item>governance-db</Item>
+                        
+                                <Item>admin</Item></Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">To download attachments.</Item>
+                    <Item Key="Title"/>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectAttachment###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the ITSM configuration item attachment action in the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObjectAttachment::Permission</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">ro</Item>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerGovernanceObjectAttachment" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">To download attachments.</Item>
+                    <Item Key="Title"/>
+                    <Item Key="NavBarName">GovernanceDB</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::PreMenuModule###100-Zoom" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to zoom into a configuration item in the configuration item overview of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModulePre</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Zoom</Item>
+                <Item Key="Description" Translatable="1">Zoom</Item>
+                <Item Key="Action">AgentGovernanceObjectZoom</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+                <Item Key="Target"/>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::PreMenuModule###200-History" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to access the history of a configuration item in the configuration item overview of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModulePre</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">History</Item>
+                <Item Key="Description" Translatable="1">History</Item>
+                <Item Key="Action">AgentGovernanceObjectHistory</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectHistory;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::PreMenuModule###300-Duplicate" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to duplicate a configuration item in the configuration item overview of the agent interface.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModulePre</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item>
+                <Item Key="Name" Translatable="1">Duplicate</Item>
+                <Item Key="Description" Translatable="1">Duplicate</Item>
+                <Item Key="Action">AgentGovernanceObjectEdit</Item>
+                <Item Key="Link">Action=AgentGovernanceObjectEdit;DuplicateID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %];ReturnToLastScreen=1</Item>
+                <Item Key="Target">PopUp</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::AgentGovernanceObjectBulk###ZTSMStatus" Required="0" Valid="1">
+        <Description Translatable="1">Sets the ZTSM Status in the configuration item bulk screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::GovernanceObjectBulk</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::AdminModuleGroups###200-GovernanceDB" Required="1" Valid="1">
+        <Description Translatable="1">Defines available groups for the admin overview screen.</Description>
+        <Navigation>Frontend::Base::NavBarModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="GovernanceDBSettings">
+                    <Hash>
+                        <Item Key="Title" Translatable="1">GovernanceDB Settings</Item>
+                        <Item Key="Order">8000</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectZoom###VersionsEnabled" Required="0" Valid="1">
+        <Description Translatable="1">Customers can see historic CI versions.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectZoom</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectZoom###VersionsSelectable" Required="0" Valid="1">
+        <Description Translatable="1">Customers have the possibility to manually switch between historic CI versions.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectZoom</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::CustomerGovernanceObjectZoom###GeneralInfo" Required="0" Valid="1">
+        <Description Translatable="1">Which general information is shown in the header.</Description>
+        <Navigation>Frontend::Customer::View::GovernanceObjectZoom</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Hidden</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Shown</Item>
+                </DefaultItem>
+                <Item Key="Class" SelectedID="1"/>
+                <Item Key="Number" SelectedID="1"/>
+                <Item Key="DeploymentState" SelectedID="1"/>
+                <Item Key="IncidentState" SelectedID="1"/>
+                <Item Key="CreatedTime" SelectedID="1"/>
+                <Item Key="ChangedTime" SelectedID="1"/>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="AgentCustomerInformationCenter::Backend###0060-CIC-GovernanceObjectCustomerCompany" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the dashboard backend of the customer company Governance Object overview of the agent interface . "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "GovernanceObjectKey" is used to specify which reference field is used for a Governance Object class (Key=Class, Value=DynamicFieldName).</Description>
+        <Navigation>Frontend::Agent::View::CustomerInformationCenter</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Dashboard::GovernanceObjectGeneric</Item>
+                <Item Key="Title" Translatable="1">Assigned CIs</Item>
+                <Item Key="Description" Translatable="1">CIs assigned to customer company</Item>
+                <Item Key="Attributes">CustomerCompany</Item>
+                <Item Key="Filter" Translatable="1">All</Item>
+                <Item Key="Limit">10</Item>
+                <Item Key="Permission">ro</Item>
+                <Item Key="Block">ContentLarge</Item>
+                <Item Key="Group"/>
+                <Item Key="Default">1</Item>
+                <Item Key="CacheTTLLocal">0.5</Item>
+                <Item Key="GovernanceObjectKey">
+                    <Hash>
+                    </Hash>
+                </Item>
+                <Item Key="DefaultColumns">
+                    <Hash>
+                        <DefaultItem ValueType="Select">
+                            <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                            <Item ValueType="Option" Value="1" Translatable="1">1 - Available</Item>
+                            <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled by default</Item>
+                        </DefaultItem>
+                        <Item Key="Number" SelectedID="2"/>
+                        <Item Key="Name" SelectedID="2"/>
+                        <Item Key="Class" SelectedID="2"/>
+                        <Item Key="ZTSMStatus" SelectedID="1"/>
+                        <Item Key="ZTSMStatusType" SelectedID="1"/>
+                        <Item Key="LastChanged" SelectedID="2"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="AgentCustomerUserInformationCenter::Backend###0060-CUIC-GovernanceObjectCustomerUser" Required="0" Valid="1">
+        <Description Translatable="1">Parameters for the dashboard backend of the customer company Governance Object overview of the agent interface . "Limit" is the number of entries per Governance Object class shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "GovernanceObjectKey" is used to specify which reference field is used for a Governance Object class (Key=Class, Value=DynamicFieldName).</Description>
+        <Navigation>Frontend::Agent::View::CustomerUserInformationCenter</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Dashboard::GovernanceObjectGeneric</Item>
+                <Item Key="Title" Translatable="1">Assigned CIs</Item>
+                <Item Key="Description" Translatable="1">CIs assigned to customer user</Item>
+                <Item Key="Attributes">Customer</Item>
+                <Item Key="Filter" Translatable="1">All</Item>
+                <Item Key="Limit">10</Item>
+                <Item Key="Permission">ro</Item>
+                <Item Key="Block">ContentLarge</Item>
+                <Item Key="Group"/>
+                <Item Key="Default">1</Item>
+                <Item Key="CacheTTLLocal">0.5</Item>
+                <Item Key="GovernanceObjectKey">
+                    <Hash>
+                        <Item Key="Appliance">Contact-User</Item>
+                        <Item Key="Client">Contact-User</Item>
+                        <Item Key="Client (virtual)">Contact-User</Item>
+                        <Item Key="Display">Contact-User</Item>
+                        <Item Key="Device (unidentified)">Contact-User</Item>
+                        <Item Key="Mobile Device">Contact-User</Item>
+                        <Item Key="Other Accessories">Contact-User</Item>
+                        <Item Key="Phone">Contact-User</Item>
+                        <Item Key="Printer">Contact-User</Item>
+                        <Item Key="Projector">Contact-User</Item>
+                        <Item Key="Router (Firewall)">Contact-User</Item>
+                        <Item Key="Server">Contact-User</Item>
+                        <Item Key="Server (virtual)">Contact-User</Item>
+                        <Item Key="Smartboard">Contact-User</Item>
+                        <Item Key="Storage">Contact-User</Item>
+                        <Item Key="Switch">Contact-User</Item>
+                        <Item Key="UPS">Contact-User</Item>
+                        <Item Key="WLAN access point">Contact-User</Item>
+                    </Hash>
+                </Item>
+                <Item Key="DefaultColumns">
+                    <Hash>
+                        <DefaultItem ValueType="Select">
+                            <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                            <Item ValueType="Option" Value="1" Translatable="1">1 - Available</Item>
+                            <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled by default</Item>
+                        </DefaultItem>
+                        <Item Key="Number" SelectedID="2"/>
+                        <Item Key="Name" SelectedID="2"/>
+                        <Item Key="Class" SelectedID="2"/>
+                        <Item Key="ZTSMStatus" SelectedID="1"/>
+                        <Item Key="ZTSMStatusType" SelectedID="1"/>
+                        <Item Key="LastChanged" SelectedID="2"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::ExcludedCIClasses" Required="0" Valid="0">
+        <Description Translatable="1">GovernanceObjects of the following classes will not be stored on the Elasticsearch server. To apply this to existing CIs, the CI migration has to be run via console, after changing this option.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Array>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::ExcludedCIDeploymentStates" Required="0" Valid="0">
+        <Description Translatable="1">GovernanceObjects with the following ZTSM Statuss will not be stored on the Elasticsearch server. To apply this to existing CIs, the CI migration has to be run via console, after changing this option.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Array>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::GovernanceObjectStoreFields" Required="0" Valid="0" ConfigLevel="100">
+        <Description Translatable="1">Fields stored in the configuration item index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Basic">
+                    <Array>
+                        <Item>GovernanceObjectID</Item>
+                        <Item>ClassID</Item>
+                        <Item>Class</Item>
+                        <Item>Number</Item>
+                    </Array>
+                </Item>
+                <Item Key="DynamicField">
+                    <Array>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::GovernanceObjectSearchFields" Required="0" Valid="0">
+        <Description Translatable="1">Fields of the configuration item index, used for the fulltext search. Fields are also stored, but are not mandatory for the overall functionality. Inclusion of attachments can be disabled by setting the entry to 0 or deleting it.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Basic">
+                    <Array>
+                        <Item>Name</Item>
+                        <Item>Number</Item>
+                    </Array>
+                </Item>
+                <Item Key="DynamicField">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Attachments">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::QuickSearchShow###GovernanceObject" Required="0" Valid="0">
+        <Description Translatable="1">Objects to search for, how many entries and which attributs to show. Governance Object attributes have to explicitly be stored via Elasticsearch.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Count">5</Item>
+                <Item Key="Attributes">
+                    <Array>
+                        <Item>Number</Item>
+                        <Item>Name</Item>
+                    </Array>
+                </Item>
+                <Item Key="AttributeHeader">
+                    <Hash>
+                        <Item Key="Number">Number</Item>
+                        <Item Key="Name">Name</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Events###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">List of all Package events to be displayed in the GUI.</Description>
+        <Navigation>Frontend::Admin</Navigation>
+        <Value>
+            <Array>
+                <Item>GovernanceObjectCreate</Item>
+                <Item>GovernanceObjectUpdate</Item>
+                <Item>VersionCreate</Item>
+                <Item>VersionUpdate</Item>
+                <Item>DeploymentStateUpdate</Item>
+                <Item>IncidentStateUpdate</Item>
+                <Item>GovernanceObjectDelete</Item>
+                <Item>NameUpdate</Item>
+                <Item>AttachmentAddPost</Item>
+                <Item>AttachmentDeletePost</Item>
+                <Item>VersionDelete</Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <!-- dynamic field related settings -->
+    <Setting Name="DynamicFields::ObjectType###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField object registration.</Description>
+        <Navigation>Core::DynamicFields::ObjectTypeRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Governance Object</Item>
+                <Item Key="Module">Kernel::System::DynamicField::ObjectType::GovernanceObject</Item>
+                <Item Key="Prio">115</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFieldScreens###GovernanceDB" Required="1" Valid="1">
+        <Description Translatable="1">This configuration defines all possible screens to enable or disable dynamic fields.</Description>
+        <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="GovernanceObject::Frontend::AgentGovernanceObjectEdit###DynamicField">AgentGovernanceObjectEdit</Item>
+                <Item Key="GovernanceObject::Frontend::AgentGovernanceObjectPrint###DynamicField">AgentGovernanceObjectPrint</Item>
+                <Item Key="GovernanceObject::Frontend::AgentGovernanceObjectSearch###DynamicField">AgentGovernanceObjectSearch</Item>
+                <Item Key="GovernanceObject::Frontend::AgentGovernanceObjectZoom###DynamicField">AgentGovernanceObjectZoom</Item>
+                <Item Key="GovernanceObject::Frontend::CustomerGovernanceObjectSearch###DynamicField">CustomerGovernanceObjectSearch</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DefaultColumnsScreens###GovernanceDB" Required="1" Valid="1">
+        <Description Translatable="1">This configuration defines all possible screens to enable or disable default columns.</Description>
+        <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="AgentCustomerUserInformationCenter::Backend###0060-CUIC-GovernanceObjectCustomerUser">DashboardWidget CUIC-GovernanceObjectCustomerUser</Item>
+                <Item Key="AgentCustomerInformationCenter::Backend###0060-CIC-GovernanceObjectCustomerCompany">DashboardWidget CIC-GovernanceObjectCustomerCompany</Item>
+                <Item Key="GovernanceObject::Frontend::AgentGovernanceObject###DefaultColumns">AgentGovernanceObject</Item>
+                <Item Key="GovernanceObject::Frontend::CustomerGovernanceObject###DefaultColumns">CustomerGovernanceObject</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFieldScreens::ObjectTypes###GovernanceDB" Required="1" Valid="1">
+        <Description Translatable="1"/>
+        <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
+        <Value>
+            <Array>
+                <Item>GovernanceObject</Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <Setting Name="CustomerPreferencesGroups###ZTSMRequestDefaults" Required="0" Valid="1">
+        <Description Translatable="1">Defines customer-selectable default governance request context.</Description>
+        <Navigation>Frontend::Customer::View::Preferences</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Preferences::ZTSMCustomerDefaults</Item>
+                <Item Key="PreferenceGroup">UserProfile</Item>
+                <Item Key="Label" Translatable="1">Request defaults</Item>
+                <Item Key="Desc" Translatable="1">Select default governance request context values.</Item>
+                <Item Key="PrefKey">ZTSMRequestDefaults</Item>
+                <Item Key="Prio">3900</Item>
+                <Item Key="Active">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- Extend existing reference drivers so Governance Objects can model ownership, service and ticket relationships. -->
+    <Setting Name="DynamicFields::Driver###Ticket" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Ticket</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Ticket</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Agent" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Agent</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Agent</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###CustomerCompany" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerCompany</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerCompany</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###CustomerUser" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">CustomerUser</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerUser</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Service" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Service</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Service</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###FAQ" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">FAQ</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::FAQ</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>GovernanceObject</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Set" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Dynamic Field Set</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Set</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldSet</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###DynamicFieldGroup" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Dynamic Field Group</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::DynamicFieldGroup</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldGroup</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminDynamicFieldGroup" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">This module is part of the admin area of OTOBO.</Item>
+                    <Item Key="Title" Translatable="1">Dynamic Field Group Backend GUI</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminDynamicFieldGroup###002-DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.Agent.Admin.DynamicField.css</Item>
+                        <Item>Core.CodeMirrorEditor.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.css</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.DynamicField.js</Item>
+                        <Item>Core.Agent.Admin.SysConfig.Entity.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/mode/yaml/yaml.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchtags.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldcode.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/xml-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/searchcursor.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/search/search.js</Item>
+                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.js</Item>
+                        <Item>Core.CodeMirrorEditor.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- dynamic field Governance Object Reference -->
+    <Setting Name="DynamicFields::Driver###GovernanceObject" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">GovernanceObject</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::GovernanceObject</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <!-- End dynamic field Governance Object Reference -->
+
+    <!-- dynamic field GovernanceObjectVersion Reference -->
+    <Setting Name="DynamicFields::Driver###GovernanceObjectVersion" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Governance Object Version</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::GovernanceObjectVersion</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <!-- End dynamic field GovernanceObjectVersion Reference -->
+
+    <Setting Name="DynamicField::EventModulePost###200-DynamicFieldSync" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic field event module that marks Governance Object definitions as out of sync, if containing dynamic fields change.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::DynamicField::Event::GovernanceObjectDefinitionSync</Item>
+                <Item Key="Event">DynamicFieldUpdate</Item>
+                <Item Key="Transaction">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicField::EventModulePost###2400-RebuildACLPreselectionCache" Required="0" Valid="1">
+        <Description Translatable="1">Rebuilds the ACL preselection cache.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::GovernanceObject::Event::RebuildACLPreselectionCache</Item>
+                <Item Key="Event">DefinitionCreate</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditions###01" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a customer is allowed to see a Governance Object. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all Governance Objects will be visible under that category.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name">All</Item>
+                <Item Key="Groups"><Array/></Item>
+                <Item Key="Classes"><Array/></Item>
+                <Item Key="DeploymentStates"><Array/></Item>
+                <Item Key="CustomerUserDynamicField"/>
+                <Item Key="CustomerCompanyDynamicField"/>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditions###02" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a customer is allowed to see a Governance Object. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all Governance Objects will be visible under that category.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"/>
+                <Item Key="Groups"><Array/></Item>
+                <Item Key="Classes"><Array/></Item>
+                <Item Key="DeploymentStates"><Array/></Item>
+                <Item Key="CustomerUserDynamicField"/>
+                <Item Key="CustomerCompanyDynamicField"/>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditions###03" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a customer is allowed to see a Governance Object. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all Governance Objects will be visible under that category.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"/>
+                <Item Key="Groups"><Array/></Item>
+                <Item Key="Classes"><Array/></Item>
+                <Item Key="DeploymentStates"><Array/></Item>
+                <Item Key="CustomerUserDynamicField"/>
+                <Item Key="CustomerCompanyDynamicField"/>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditions###04" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a customer is allowed to see a Governance Object. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all Governance Objects will be visible under that category.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"/>
+                <Item Key="Groups"><Array/></Item>
+                <Item Key="Classes"><Array/></Item>
+                <Item Key="DeploymentStates"><Array/></Item>
+                <Item Key="CustomerUserDynamicField"/>
+                <Item Key="CustomerCompanyDynamicField"/>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditions###05" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a customer is allowed to see a Governance Object. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all Governance Objects will be visible under that category.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"/>
+                <Item Key="Groups"><Array/></Item>
+                <Item Key="Classes"><Array/></Item>
+                <Item Key="DeploymentStates"><Array/></Item>
+                <Item Key="CustomerUserDynamicField"/>
+                <Item Key="CustomerCompanyDynamicField"/>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"/>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###Default" Required="0" Valid="1">
+        <Description Translatable="1">Configure the columns which are available for viewing Permission Conditions in the customer interface, when the corresponding Permission Condition Columns are not specifically configured. This setting is used as a fallback for the other Permission Condition Columns settings.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###01" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###02" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###03" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###04" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Customer::GovernanceObject::PermissionConditionColumns###05" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>ZTSMStatus</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+
+    <!-- TreeView related settings -->
+    <Setting Name="GovernanceDBTreeView::DefaultDepth" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default relations depth to be shown.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">3</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GovernanceDBTreeView::ShowLinkLabels" Required="1" Valid="1">
+        <Description Translatable="1">Defines if the link type labels must be shown in the node connections.</Description>
+        <Navigation>Core::GovernanceObject</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Yes">
+                <Item ValueType="Option" Value="Yes" Translatable="1">Yes</Item>
+                <Item ValueType="Option" Value="No" Translatable="1">No</Item>
+            </Item>
+        </Value>
+    </Setting>
+
+    <Setting Name="DynamicFields::DynamicFieldSet::InnerFieldsTicketToGovernanceObject" Required="0" Valid="0">
+        <Description Translatable="1">A mapping of inner field names used in the Process Management TransitionActions GovernanceObjectAdd and -Update. The keys are the names of the set inner fields of the set with object type ticket which will be used to create/update the CI, and the values are the names of the inner fields of the set with object type GovernanceObject.</Description>
+        <Navigation>Core::DynamicFields</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="SwappedDiskSN">ITSMStorage-SerialNumber</Item>
+            </Hash>
+        </Value>
+    </Setting>
+</otobo_config>

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2023 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,18 +23,197 @@ use utf8;
 sub Data {
     my $Self = shift;
 
+    $Self->{Translation}->{'Network::Routing/Switching::Configuration Modify'} = 'Nätverk::Routing/Switching::Configuration Modify';
+    $Self->{Translation}->{'Network::Connectivity'} = 'Nätverk::Connectivity';
+    $Self->{Translation}->{'Network::Load Balancer::Pool/Member New/Modify'} = 'Nätverk::Load Balancer::Pool/Member New/Modify';
+    $Self->{Translation}->{'Network::Load Balancer'} = 'Nätverk::Load Balancer';
+    $Self->{Translation}->{'Network::Patch Management'} = 'Nätverk::Patch Management';
+    $Self->{Translation}->{'Network::Firewall Policy::New'} = 'Network::Firewall Policy::Nytt';
+    $Self->{Translation}->{'Compute::Resource::Assist'} = 'Compute::Resurs::Assist';
+    $Self->{Translation}->{'Network::Zone'} = 'Nätverk::Zone';
+    $Self->{Translation}->{'Storage::Object Storage::Assist'} = 'Förvaring::Object Storage::Assist';
+    $Self->{Translation}->{'Common Service::Trellix ePO::Remove'} = 'Common Service::Trellix ePO::Ta bort';
+    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::Nytt';
+    $Self->{Translation}->{'Network::Patch Management::Emergency Patch'} = 'Nätverk::Patch Management::Emergency Patch';
+    $Self->{Translation}->{'Network::System Configuration'} = 'Nätverk::System Configuration';
+    $Self->{Translation}->{'Backup::Service::Remove'} = 'Backup::Tjänst::Ta bort';
+    $Self->{Translation}->{'Storage::Object Storage::Lifecycle Policy Modify'} = 'Förvaring::Object Storage::Lifecycle Policy Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Lifecycle Policy New/Modify'} = 'Förvaring::Object Storage::Lifecycle Policy New/Modify';
+    $Self->{Translation}->{'Network::DNS::Configuration Modify'} = 'Nätverk::DNS::Configuration Modify';
+    $Self->{Translation}->{'Storage::Platform::Configuration Modify'} = 'Förvaring::Platform::Configuration Modify';
+    $Self->{Translation}->{'Network::Device Lifecycle'} = 'Nätverk::Device Lifecycle';
+    $Self->{Translation}->{'Network::Firewall Policy'} = 'Nätverk::Firewall Policy';
+    $Self->{Translation}->{'Network::Load Balancer::Certificate New/Modify'} = 'Nätverk::Load Balancer::Certificate New/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Bucket Configuration Modify'} = 'Förvaring::Object Storage::Bucket Configuration Modify';
+    $Self->{Translation}->{'Network::DNS'} = 'Nätverk::DNS';
+    $Self->{Translation}->{'Security::Certificate::Install'} = 'Security::Certificate::Installera';
+    $Self->{Translation}->{'Network::Patch Management::Out-of-Band Patch'} = 'Nätverk::Patch Management::Out-of-Band Patch';
+    $Self->{Translation}->{'Network::Connectivity::Proxy/URL Allowlist'} = 'Nätverk::Connectivity::Proxy/URL Allowlist';
+    $Self->{Translation}->{'Network::System Configuration::Modify'} = 'Nätverk::System Configuration::Modify';
+    $Self->{Translation}->{'Network::DNS::Record New/Modify'} = 'Nätverk::DNS::Record New/Modify';
+    $Self->{Translation}->{'Network::Load Balancer::VIP Remove'} = 'Nätverk::Load Balancer::VIP Remove';
+    $Self->{Translation}->{'Network::System Hardening'} = 'Nätverk::System Hardening';
+    $Self->{Translation}->{'Network::Firmware Management'} = 'Nätverk::Firmware Management';
+    $Self->{Translation}->{'Compute::Resource'} = 'Compute::Resurs';
+    $Self->{Translation}->{'Network::System Hardening::Apply/Modify'} = 'Nätverk::System Hardening::Apply/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Replication Modify'} = 'Förvaring::Object Storage::Replication Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Versioning Modify'} = 'Förvaring::Object Storage::Versioning Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Replication New/Modify'} = 'Förvaring::Object Storage::Replication New/Modify';
+    $Self->{Translation}->{'Network::DNS::Record Remove'} = 'Nätverk::DNS::Record Remove';
+    $Self->{Translation}->{'Compute::Resource::Upgrade/Downgrade'} = 'Compute::Resurs::Upgrade/Downgrade';
+    $Self->{Translation}->{'Network::New'} = 'Nätverk::Nytt';
+    $Self->{Translation}->{'Network::Load Balancer::Configuration Modify'} = 'Nätverk::Load Balancer::Configuration Modify';
+    $Self->{Translation}->{'Storage::Object Storage'} = 'Förvaring::Object Storage';
+    $Self->{Translation}->{'Network::Device Lifecycle::Decommission'} = 'Nätverk::Device Lifecycle::Decommission';
+    $Self->{Translation}->{'Network::Firewall Policy::New/Modify'} = 'Nätverk::Firewall Policy::New/Modify';
+    $Self->{Translation}->{'Network::Connectivity::Allowlist New/Modify'} = 'Nätverk::Connectivity::Allowlist New/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Quota New/Modify'} = 'Förvaring::Object Storage::Quota New/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Rollback'} = 'Förvaring::Object Storage::Rollback';
+    $Self->{Translation}->{'Storage::Object Storage::Object Lock New/Modify'} = 'Förvaring::Object Storage::Object Lock New/Modify';
+    $Self->{Translation}->{'Network::Address::Release'} = 'Nätverk::Adress::Release';
+    $Self->{Translation}->{'Storage::Object Storage::Versioning New/Modify'} = 'Förvaring::Object Storage::Versioning New/Modify';
+    $Self->{Translation}->{'Common Service::Monitoring::Remove'} = 'Common Service::Monitoring::Ta bort';
+    $Self->{Translation}->{'Network::Device Lifecycle::Device Replacement'} = 'Nätverk::Device Lifecycle::Device Replacement';
+    $Self->{Translation}->{'Network::Routing/Switching::Rollback'} = 'Nätverk::Routing/Switching::Rollback';
+    $Self->{Translation}->{'Backup::Service::Onboarding/Modify'} = 'Backup::Tjänst::Onboarding/Modify';
+    $Self->{Translation}->{'Network::Connectivity::Connectivity Assist'} = 'Nätverk::Connectivity::Connectivity Assist';
+    $Self->{Translation}->{'Network::Load Balancer::New/Modify'} = 'Nätverk::Load Balancer::New/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Bucket New/Modify'} = 'Förvaring::Object Storage::Bucket New/Modify';
+    $Self->{Translation}->{'Network::DNS::Rollback'} = 'Nätverk::DNS::Rollback';
+    $Self->{Translation}->{'Network::Load Balancer::VIP New/Modify'} = 'Nätverk::Load Balancer::VIP New/Modify';
+    $Self->{Translation}->{'Storage::Object Storage::Bucket Remove'} = 'Förvaring::Object Storage::Bucket Remove';
+    $Self->{Translation}->{'Network::Device Lifecycle::New Device'} = 'Nätverk::Device Lifecycle::New Device';
+    $Self->{Translation}->{'Network::Patch Management::Patch Rollback'} = 'Nätverk::Patch Management::Patch Rollback';
+    $Self->{Translation}->{'Storage::Platform'} = 'Förvaring::Platform';
+    $Self->{Translation}->{'Network::Firewall Policy::Review'} = 'Nätverk::Firewall Policy::Översyn';
+    $Self->{Translation}->{'Compute::Virtual Machine::Remove'} = 'Compute::Virtual Machine::Ta bort';
+    $Self->{Translation}->{'Common Service::WSUS::Remove'} = 'Common Service::WSUS::Ta bort';
+    $Self->{Translation}->{'Storage::Platform::Hardening Apply/Modify'} = 'Förvaring::Platform::Hardening Apply/Modify';
+    $Self->{Translation}->{'Network::Routing/Switching'} = 'Nätverk::Routing/Switching';
+    $Self->{Translation}->{'Network::System Hardening::Remediation'} = 'Nätverk::System Hardening::Remediation';
+    $Self->{Translation}->{'Network::System Configuration::Baseline Update'} = 'Nätverk::System Configuration::Baseline Update';
+    $Self->{Translation}->{'Network::System Configuration::Rollback'} = 'Nätverk::System Configuration::Rollback';
+    $Self->{Translation}->{'Backup::Service'} = 'Backup::Tjänst';
+    $Self->{Translation}->{'Network::Segment::New'} = 'Nätverk::Segment::Nytt';
+    $Self->{Translation}->{'Network::Segment'} = 'Nätverk::Segment';
+    $Self->{Translation}->{'Network::System Hardening::Rollback'} = 'Nätverk::System Hardening::Rollback';
+    $Self->{Translation}->{'Common Service::Red Hat Satellite::Remove'} = 'Common Service::Red Hat Satellite::Ta bort';
+    $Self->{Translation}->{'Network::Firmware Management::Firmware Upgrade'} = 'Nätverk::Firmware Management::Firmware Upgrade';
+    $Self->{Translation}->{'Compute::Resource::Disk Expansion'} = 'Compute::Resurs::Disk Expansion';
     $Self->{Translation}->{'Network Management::Network Security & Policy Management::Add'} =
         'Network Management::Network Security & Policy Management::Lägg till';
-    $Self->{Translation}->{'Network::Firewall Policy::Remove'} = 'Network::Firewall Policy::Ta bort';
-    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::Nytt';
-    $Self->{Translation}->{'Network::Firewall Policy::New'} = 'Network::Firewall Policy::Nytt';
+    $Self->{Translation}->{'Storage::Object Storage::Access New/Modify'} = 'Förvaring::Object Storage::Access New/Modify';
+    $Self->{Translation}->{'Storage::Platform::Firmware Upgrade'} = 'Förvaring::Platform::Firmware Upgrade';
+    $Self->{Translation}->{'Network::Load Balancer::Assist'} = 'Nätverk::Load Balancer::Assist';
+    $Self->{Translation}->{'Common Service::Carbon Black::Remove'} = 'Common Service::Carbon Black::Ta bort';
+    $Self->{Translation}->{'Network::Load Balancer::Rollback'} = 'Nätverk::Load Balancer::Rollback';
+    $Self->{Translation}->{'Network::Firewall Policy::Remove'} = 'Nätverk::Firewall Policy::Ta bort';
+    $Self->{Translation}->{'Storage::Object Storage::Object Lock Modify'} = 'Förvaring::Object Storage::Object Lock Modify';
+    $Self->{Translation}->{'Network::Firewall Policy::Emergency'} = 'Nätverk::Firewall Policy::Emergency';
+    $Self->{Translation}->{'Network::Firmware Management::Firmware Rollback'} = 'Nätverk::Firmware Management::Firmware Rollback';
+    $Self->{Translation}->{'Network::Address'} = 'Nätverk::Adress';
+    $Self->{Translation}->{'Compute::Virtual Machine::New'} = 'Compute::Virtual Machine::Nytt';
+    $Self->{Translation}->{'Network::Address::New'} = 'Nätverk::Adress::Nytt';
+    $Self->{Translation}->{'Storage::Platform::Patch Management'} = 'Förvaring::Platform::Patch Management';
+    $Self->{Translation}->{'Network::DNS::Assist'} = 'Nätverk::DNS::Assist';
+    $Self->{Translation}->{'Network::Patch Management::Scheduled Patch'} = 'Nätverk::Patch Management::Scheduled Patch';
 
 
-    push @{ $Self->{JavaScriptStrings} // [] }, (
-        'Network Management::Network Security & Policy Management::Add',
-        'Network::Firewall Policy::Remove',
-        'Network::Load Balancer::New',
+    $Self->{JavaScriptStrings} //= [];
+    push $Self->{JavaScriptStrings}->@*, (
+        'Network::Routing/Switching::Configuration Modify',
+        'Network::Connectivity',
+        'Network::Load Balancer::Pool/Member New/Modify',
+        'Network::Load Balancer',
+        'Network::Patch Management',
         'Network::Firewall Policy::New',
+        'Compute::Resource::Assist',
+        'Network::Zone',
+        'Storage::Object Storage::Assist',
+        'Common Service::Trellix ePO::Remove',
+        'Network::Load Balancer::New',
+        'Network::Patch Management::Emergency Patch',
+        'Network::System Configuration',
+        'Backup::Service::Remove',
+        'Storage::Object Storage::Lifecycle Policy Modify',
+        'Storage::Object Storage::Lifecycle Policy New/Modify',
+        'Network::DNS::Configuration Modify',
+        'Storage::Platform::Configuration Modify',
+        'Network::Device Lifecycle',
+        'Network::Firewall Policy',
+        'Network::Load Balancer::Certificate New/Modify',
+        'Storage::Object Storage::Bucket Configuration Modify',
+        'Network::DNS',
+        'Security::Certificate::Install',
+        'Network::Patch Management::Out-of-Band Patch',
+        'Network::Connectivity::Proxy/URL Allowlist',
+        'Network::System Configuration::Modify',
+        'Network::DNS::Record New/Modify',
+        'Network::Load Balancer::VIP Remove',
+        'Network::System Hardening',
+        'Network::Firmware Management',
+        'Compute::Resource',
+        'Network::System Hardening::Apply/Modify',
+        'Storage::Object Storage::Replication Modify',
+        'Storage::Object Storage::Versioning Modify',
+        'Storage::Object Storage::Replication New/Modify',
+        'Network::DNS::Record Remove',
+        'Compute::Resource::Upgrade/Downgrade',
+        'Network::New',
+        'Network::Load Balancer::Configuration Modify',
+        'Storage::Object Storage',
+        'Network::Device Lifecycle::Decommission',
+        'Network::Firewall Policy::New/Modify',
+        'Network::Connectivity::Allowlist New/Modify',
+        'Storage::Object Storage::Quota New/Modify',
+        'Storage::Object Storage::Rollback',
+        'Storage::Object Storage::Object Lock New/Modify',
+        'Network::Address::Release',
+        'Storage::Object Storage::Versioning New/Modify',
+        'Common Service::Monitoring::Remove',
+        'Network::Device Lifecycle::Device Replacement',
+        'Network::Routing/Switching::Rollback',
+        'Backup::Service::Onboarding/Modify',
+        'Network::Connectivity::Connectivity Assist',
+        'Network::Load Balancer::New/Modify',
+        'Storage::Object Storage::Bucket New/Modify',
+        'Network::DNS::Rollback',
+        'Network::Load Balancer::VIP New/Modify',
+        'Storage::Object Storage::Bucket Remove',
+        'Network::Device Lifecycle::New Device',
+        'Network::Patch Management::Patch Rollback',
+        'Storage::Platform',
+        'Network::Firewall Policy::Review',
+        'Compute::Virtual Machine::Remove',
+        'Common Service::WSUS::Remove',
+        'Storage::Platform::Hardening Apply/Modify',
+        'Network::Routing/Switching',
+        'Network::System Hardening::Remediation',
+        'Network::System Configuration::Baseline Update',
+        'Network::System Configuration::Rollback',
+        'Backup::Service',
+        'Network::Segment::New',
+        'Network::Segment',
+        'Network::System Hardening::Rollback',
+        'Common Service::Red Hat Satellite::Remove',
+        'Network::Firmware Management::Firmware Upgrade',
+        'Compute::Resource::Disk Expansion',
+        'Network Management::Network Security & Policy Management::Add',
+        'Storage::Object Storage::Access New/Modify',
+        'Storage::Platform::Firmware Upgrade',
+        'Network::Load Balancer::Assist',
+        'Common Service::Carbon Black::Remove',
+        'Network::Load Balancer::Rollback',
+        'Network::Firewall Policy::Remove',
+        'Storage::Object Storage::Object Lock Modify',
+        'Network::Firewall Policy::Emergency',
+        'Network::Firmware Management::Firmware Rollback',
+        'Network::Address',
+        'Compute::Virtual Machine::New',
+        'Network::Address::New',
+        'Storage::Platform::Patch Management',
+        'Network::DNS::Assist',
+        'Network::Patch Management::Scheduled Patch',
     );
 
 }

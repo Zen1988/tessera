@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # $origin: otobo - 4dade81e7e04433cb2aed36af0c8727d822a1c61 - Kernel/System/UnitTest/Helper.pm
 # --
@@ -282,7 +282,7 @@ sub TestConfigItemCreateLegacyClasses {
     # preliminary create needed namespaces to not interfere with sysconfig afterwards
     $Param{HelperObject}->ConfigSettingChange(
         Valid => 1,
-        Key   => 'DynamicField::Namespaces',
+        Key   => 'Namespaces###DynamicField',
         Value => [
             'Computer',
             'Hardware',

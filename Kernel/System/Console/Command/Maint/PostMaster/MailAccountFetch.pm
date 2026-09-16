@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -18,13 +18,14 @@
 
 package Kernel::System::Console::Command::Maint::PostMaster::MailAccountFetch;
 
+use v5.24;
 use strict;
 use warnings;
 
 use parent qw(Kernel::System::Console::BaseCommand);
 
 # core modules
-use POSIX ":sys_wait_h";    ## no perlimports
+use POSIX 'WNOHANG';    ## no perlimports
 use Time::HiRes qw(sleep);
 
 # CPAN modules
@@ -114,10 +115,12 @@ sub Run {
     if ( !%List ) {
         if ($MailAccountID) {
             $Self->PrintError("Could not find mail account $MailAccountID.");
+
             return $Self->ExitCodeError();
         }
 
         $Self->Print("\n<yellow>No configured mail accounts found!</yellow>\n\n");
+
         return $Self->ExitCodeOk();
     }
 
@@ -193,7 +196,9 @@ sub Run {
             # Hide password contained in error message and print message back to standard error.
             # Please see bug#12829 for more information.
             if ($ErrorMessage) {
-                $ErrorMessage =~ s/\Q$Data{Password}\E/********/g;
+                if ( $Data{Password} ) {
+                    $ErrorMessage =~ s/\Q$Data{Password}\E/********/g;
+                }
                 print STDERR $ErrorMessage;
             }
 
@@ -230,10 +235,11 @@ sub Run {
     WAIT:
     while (1) {
 
-        last WAIT if !$Self->{ChildPID};
+        last WAIT unless $Self->{ChildPID};
 
         sleep 0.1;
 
+        # Do not suspend the calling process until a child process changes state but instead return immediately
         my $WaitResult = waitpid( $PID, WNOHANG );
 
         if ( $WaitResult == -1 ) {
@@ -252,6 +258,7 @@ sub Run {
     alarm 0;
 
     $Self->Print("<green>Done.</green>\n\n");
+
     return $Self->ExitCodeOk();
 }
 

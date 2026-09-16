@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -167,13 +167,13 @@
 [% IF Data.CommunicationType == 'Requester' %]
                             <label class="Mandatory" for="Host"><span class="Marker">*</span>[% Translate("Endpoint") | html %]:</label>
                             <div class="Field">
-                                <input id="Host" class="W50pc [% Data.HostServerError | html %] Validate_Required" type="text" maxlength="250" value="[% Data.Host | html %]" name="Host"/>
+                                <input id="Host" class="W50pc [% Data.HostServerError | html %] Validate_Required" type="text" value="[% Data.Host | html %]" name="Host"/>
                                 <div id="HostError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                                 <div id="HostServerError" class="TooltipErrorMessage"><p>[% Translate(Data.HostServerErrorMessage) | html %]</p></div>
                                 <p class="FieldExplanation">
                                     [% Translate("URI to indicate specific location for accessing a web service.") | html %]
                                     <br/>
-                                    [% Translate("e.g. https://ncs.com.sg (without trailing backslash)") | html %]
+                                    [% Translate("e.g. https://www.otobo.de:10745/api/v1.0 (without trailing backslash)") | html %]
                                 </p>
                             </div>
                             <div class="Clear"></div>
@@ -246,13 +246,26 @@
                                         <div id="KerberosKeytabError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                                         <div id="KerberosKeytabServerError" class="TooltipErrorMessage"><p>[% Translate(Data.KerberosKeytabServerErrorMessage) | html %]</p></div>
                                         <p class="FieldExplanation">
-                                            [% Translate("The kerberos keytab file for the privileged user.") | html %]
+                                            [% Translate("The Kerberos keytab file for the privileged user.") | html %]
                                         </p>
                                     </div>
                                     <div class="Clear"></div>
                                 </fieldset>
                             </div>
+                            <div class="OAuthAuthField [% Data.OAuthHidden | html %]">
+                                <fieldset class="TableLike">
 
+                                    <label class="Mandatory" for="OAuthAccountName"><span class="Marker">*</span> [% Translate("OAuth2 Functional Account") | html %]:</label>
+                                    <div class="Field">
+                                        [% Data.OAuthAccountNamesStrg %]
+                                        <p class="FieldExplanation">
+                                        [% Translate("Select the Functional-Account to use for OAuth2 authentication. Functional-Accounts can be configured here:") | html %]
+                                        <a target="_blank" href="?Action=AdminOAuthTokenStore">[% Translate("OAuth2 Functional Accounts") | html %]</a>.
+                                        </p>
+                                    </div>
+                                    <div class="Clear"></div>
+                                </fieldset>
+                            </div>
                             <label class="Mandatory" for="UseProxy"><span class="Marker">*</span>[% Translate("Use Proxy Options") | html %]:</label>
                             <div class="Field">
                                 [% Data.UseProxyStrg %]
@@ -409,6 +422,7 @@
                                 </p>
                             </div>
                             <div class="Clear"></div>
+
 [% RenderBlockEnd("InvokerControllerMapping") %]
 
                             <label for="DefaultCommand">[% Translate("Default command") | html %]:</label>
@@ -421,6 +435,19 @@
                             <div class="Clear"></div>
 
 [% END %]
+
+[% RenderBlockStart("MultipartBlock") %]
+
+                            <label for="MultipartConfig">[% Translate("Use multipart/form-data:") | html %]:</label>
+                            <div class="Field">
+                                [% Data.MultipartStrg %]
+                                <p class="FieldExplanation">
+                                    [% Translate("Select requesters to send attachments as binary data with content type 'multipart/form-data' instead of the default Base64 encoded inline JSON.") | html %]
+                                </p>
+                            </div>
+                            <div class="Clear"></div>
+
+[% RenderBlockEnd("MultipartBlock") %]
 
 # added for OTOBOTicketInvoker
 

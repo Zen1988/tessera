@@ -1,0 +1,67 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+package Kernel::Language::hu_DynamicFieldAttachment;
+
+use strict;
+use warnings;
+use utf8;
+
+sub Data {
+    my $Self = shift;
+
+    # Template: AdminDynamicFieldAttachment
+    $Self->{Translation}->{'Maximum amount of attachments'} = 'Mellékletek legnagyobb száma';
+    $Self->{Translation}->{'Change this, if you need more or less attachments to be stored in this dynamic field.'} =
+        'Változtassa meg, ha több vagy kevesebb mellékletet szükséges tárolni ebben a dinamikus mezőben.';
+    $Self->{Translation}->{'Maximum attachment size'} = 'Legnagyobb mellékletméret';
+    $Self->{Translation}->{'Maximum size per attachment in MB for this dynamic field. 0 for no limit.'} =
+        'Legnagyobb méret mellékletenként MB-ban ennél a dinamikus mezőnél. A 0 azt jelenti, hogy nincs korlát.';
+
+    # Perl Module: Kernel/Modules/AdminDynamicFieldAttachment.pm
+    $Self->{Translation}->{'Dynamic field Attachment is not implemented for object type %s!'} =
+        '';
+    $Self->{Translation}->{'The maximum of attachments for this dynamic field of type attachment must be a positive integer.'} =
+        '';
+    $Self->{Translation}->{'The maximum attachment size for this dynamic field of type attachment must be a positive integer.'} =
+        '';
+    $Self->{Translation}->{'The maximum of attachments for this dynamic field of type attachment must be a positive number.'} =
+        'A mellékletek legnagyobb számának ennél a melléklet típusú dinamikus mezőnél pozitív számnak kell lennie.';
+    $Self->{Translation}->{'The maximum attachment size for this dynamic field of type attachment must be a positive number.'} =
+        'A legnagyobb mellékletméretnek ennél a melléklet típusú dinamikus mezőnél pozitív számnak kell lennie.';
+
+    # JS File: Core.Agent.DynamicField.Attachment
+    $Self->{Translation}->{'Disable Attachments'} = 'Mellékletek letiltása';
+
+    # SysConfig
+    $Self->{Translation}->{'Dynamic Fields Attachment Backend GUI'} = 'Melléklet dinamikus mezők háttérprogram grafikus felhasználói felület';
+    $Self->{Translation}->{'Dynamic Fields Attachment download frontend'} = 'Melléklet dinamikus mezők letöltés előtétprogram';
+    $Self->{Translation}->{'Dynamic field backend registration.'} = 'Dinamikus mező háttérprogram regisztráció.';
+    $Self->{Translation}->{'Dynamic fields extension.'} = 'Dinamikus mező kiterjesztés.';
+    $Self->{Translation}->{'List of css files to always be loaded for the customer interface.'} =
+        '';
+
+
+    push @{ $Self->{JavaScriptStrings} // [] }, (
+    'Cancel',
+    'Delete',
+    'Disable',
+    'Disable Attachments',
+    );
+
+}
+
+1;

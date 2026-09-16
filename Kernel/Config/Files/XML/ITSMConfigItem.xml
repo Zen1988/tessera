@@ -876,7 +876,7 @@
         <Description Translatable="1">Defines the default subobject of the class 'ITSMConfigItem'.</Description>
         <Navigation>Core::LinkObject</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">Computer</Item>
+            <Item ValueType="String" ValueRegex="">Client</Item>
         </Value>
     </Setting>
     <Setting Name="LinkObject::ITSMConfigItem::ShowColumns" Required="0" Valid="1">
@@ -973,7 +973,7 @@
         <Description Translatable="1">Shows the config item history (reverse ordered) in the agent interface.</Description>
         <Navigation>Frontend::Agent::View::ITSMConfigItemHistory</Navigation>
         <Value>
-            <Item ValueType="Select" SelectedID="normal">
+            <Item ValueType="Select" SelectedID="reverse">
                 <Item ValueType="Option" Value="reverse" Translatable="1">reverse</Item>
                 <Item ValueType="Option" Value="normal" Translatable="1">normal</Item>
             </Item>
@@ -2087,7 +2087,7 @@
     </Setting>
 
     <Setting Name="AgentCustomerInformationCenter::Backend###0060-CIC-ITSMConfigItemCustomerCompany" Required="0" Valid="1">
-        <Description Translatable="1">Parameters for the dashboard backend of the customer company config item overview of the agent interface . "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is used to specify which reference field is used for a ConfigItem class (Key=Class, Value=DynamicFieldName).</Description>
+        <Description Translatable="1">Parameters for the dashboard backend of the customer company config item overview show in the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is to specify which customer company reference dynamic field is used to filter for the selected customer company. "ShownClasses" is a list to optionally restrict classes of the shown config items. Leaving this list empty defaults to all classes which match the customer company in the dynamic field configured in "ConfigItemKey".</Description>
         <Navigation>Frontend::Agent::View::CustomerInformationCenter</Navigation>
         <Value>
             <Hash>
@@ -2095,16 +2095,16 @@
                 <Item Key="Title" Translatable="1">Assigned CIs</Item>
                 <Item Key="Description" Translatable="1">CIs assigned to customer company</Item>
                 <Item Key="Attributes">CustomerCompany</Item>
-                <Item Key="Filter" Translatable="1">All</Item>
+                <Item Key="Filter" Translatable="1">AssignedToEntity</Item>
                 <Item Key="Limit">10</Item>
                 <Item Key="Permission">ro</Item>
                 <Item Key="Block">ContentLarge</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
                 <Item Key="CacheTTLLocal">0.5</Item>
-                <Item Key="ConfigItemKey">
-                    <Hash>
-                    </Hash>
+                <Item Key="ConfigItemKey"></Item>
+                <Item Key="ShownClasses">
+                    <Array></Array>
                 </Item>
                 <Item Key="DefaultColumns">
                     <Hash>
@@ -2128,7 +2128,7 @@
     </Setting>
 
     <Setting Name="AgentCustomerUserInformationCenter::Backend###0060-CUIC-ITSMConfigItemCustomerUser" Required="0" Valid="1">
-        <Description Translatable="1">Parameters for the dashboard backend of the customer company config item overview of the agent interface . "Limit" is the number of entries per config item class shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is used to specify which reference field is used for a ConfigItem class (Key=Class, Value=DynamicFieldName).</Description>
+        <Description Translatable="1">Parameters for the dashboard backend of the customer company config item overview shown in the agent interface. "Limit" is the number of entries per config item class shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is to specify which customer user reference dynamic field is used to filter for the selected customer user. "ShownClasses" is a list to optionally restrict classes of the shown config items. Leaving this list empty defaults to all classes which match the customer user in the dynamic field configured in "ConfigItemKey".</Description>
         <Navigation>Frontend::Agent::View::CustomerUserInformationCenter</Navigation>
         <Value>
             <Hash>
@@ -2136,35 +2136,17 @@
                 <Item Key="Title" Translatable="1">Assigned CIs</Item>
                 <Item Key="Description" Translatable="1">CIs assigned to customer user</Item>
                 <Item Key="Attributes">Customer</Item>
-                <Item Key="Filter" Translatable="1">All</Item>
+                <Item Key="Filter" Translatable="1">AssignedToEntity</Item>
                 <Item Key="Limit">10</Item>
                 <Item Key="Permission">ro</Item>
                 <Item Key="Block">ContentLarge</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
                 <Item Key="CacheTTLLocal">0.5</Item>
-                <Item Key="ConfigItemKey">
-                    <Hash>
-                        <Item Key="Appliance">Contact-User</Item>
-                        <Item Key="Client">Contact-User</Item>
-                        <Item Key="Client (virtual)">Contact-User</Item>
-                        <Item Key="Display">Contact-User</Item>
-                        <Item Key="Device (unidentified)">Contact-User</Item>
-                        <Item Key="Mobile Device">Contact-User</Item>
-                        <Item Key="Other Accessories">Contact-User</Item>
-                        <Item Key="Phone">Contact-User</Item>
-                        <Item Key="Printer">Contact-User</Item>
-                        <Item Key="Projector">Contact-User</Item>
-                        <Item Key="Router (Firewall)">Contact-User</Item>
-                        <Item Key="Server">Contact-User</Item>
-                        <Item Key="Server (virtual)">Contact-User</Item>
-                        <Item Key="Smartboard">Contact-User</Item>
-                        <Item Key="Storage">Contact-User</Item>
-                        <Item Key="Switch">Contact-User</Item>
-                        <Item Key="UPS">Contact-User</Item>
-                        <Item Key="WLAN access point">Contact-User</Item>
-                    </Hash>
+                <Item Key="ShownClasses">
+                    <Array></Array>
                 </Item>
+                <Item Key="ConfigItemKey">Contact-User</Item>
                 <Item Key="DefaultColumns">
                     <Hash>
                         <DefaultItem ValueType="Select">
@@ -2319,7 +2301,7 @@
         </Value>
     </Setting>
     <Setting Name="DynamicFieldScreens::ObjectTypes###ITSMConfigurationManagement" Required="1" Valid="1">
-        <Description Translatable="1"></Description>
+        <Description Translatable="1">Define a list of dynamic field object types which are allowed to be assigned to actions of this package via the dynamic field screens interface.</Description>
         <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
         <Value>
             <Array>
@@ -2583,6 +2565,777 @@
             <Hash>
                 <Item Key="SwappedDiskSN">ITSMStorage-SerialNumber</Item>
             </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="ITSMConfigItem::LicenseCount###01" Required="0" Valid="1">
+        <Description Translatable="1">Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \&lt;OTOBO_CONFIGITEM_X\&gt; where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="TotalLicensesDF">ITSMLicense-LicenseCount</Item>
+                <Item Key="AvailableLicensesDF">ITSMLicense-LicensesAvailable</Item>
+                <Item Key="MinimumLicenses"></Item>
+                <Item Key="LicenseReferenceDF">ITSM-ReferenceToLicense</Item>
+                <Item Key="ValidDeplStates">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Ticket">
+                    <Hash>
+                        <Item Key="Queue">Misc</Item>
+                        <Item Key="Text" ValueType="Textarea">The license &lt;OTOBO_CONFIGITEM_NAME&gt; has less than &lt;OTOBO_CONFIGITEM_LICENSES_MIN&gt; items (&lt;OTOBO_CONFIGITEM_LICENSES_AVAIL&gt; licenses left).</Item>
+                        <Item Key="DynamicField">CMDBLicenseNotification</Item>
+                        <Item Key="Lock"></Item>
+                        <Item Key="Priority"></Item>
+                        <Item Key="State"></Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Service"></Item>
+                        <Item Key="SLA"></Item>
+                        <Item Key="CustomerID"></Item>
+                        <Item Key="CustomerUser"></Item>
+                        <Item Key="OwnerID"></Item>
+                        <Item Key="Title">License Reprovisioning</Item>
+                        <Item Key="SenderType">system</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::LicenseCount###02" Required="0" Valid="0">
+        <Description Translatable="1">Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \&lt;OTOBO_CONFIGITEM_X\&gt; where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="TotalLicensesDF"></Item>
+                <Item Key="AvailableLicensesDF"></Item>
+                <Item Key="MinimumLicenses"></Item>
+                <Item Key="LicenseReferenceDF"></Item>
+                <Item Key="ValidDeplStates">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Ticket">
+                    <Hash>
+                        <Item Key="Queue"></Item>
+                        <Item Key="Text" ValueType="Textarea"></Item>
+                        <Item Key="DynamicField"></Item>
+                        <Item Key="Lock"></Item>
+                        <Item Key="Priority"></Item>
+                        <Item Key="State"></Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Service"></Item>
+                        <Item Key="SLA"></Item>
+                        <Item Key="CustomerID"></Item>
+                        <Item Key="CustomerUser"></Item>
+                        <Item Key="OwnerID"></Item>
+                        <Item Key="Title"></Item>
+                        <Item Key="SenderType"></Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::LicenseCount###03" Required="0" Valid="0">
+        <Description Translatable="1">Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \&lt;OTOBO_CONFIGITEM_X\&gt; where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="TotalLicensesDF"></Item>
+                <Item Key="AvailableLicensesDF"></Item>
+                <Item Key="MinimumLicenses"></Item>
+                <Item Key="LicenseReferenceDF"></Item>
+                <Item Key="ValidDeplStates">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Ticket">
+                    <Hash>
+                        <Item Key="Queue"></Item>
+                        <Item Key="Text" ValueType="Textarea"></Item>
+                        <Item Key="DynamicField"></Item>
+                        <Item Key="Lock"></Item>
+                        <Item Key="Priority"></Item>
+                        <Item Key="State"></Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Service"></Item>
+                        <Item Key="SLA"></Item>
+                        <Item Key="CustomerID"></Item>
+                        <Item Key="CustomerUser"></Item>
+                        <Item Key="OwnerID"></Item>
+                        <Item Key="Title"></Item>
+                        <Item Key="SenderType"></Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::LicenseCount###04" Required="0" Valid="0">
+        <Description Translatable="1">Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \&lt;OTOBO_CONFIGITEM_X\&gt; where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="TotalLicensesDF"></Item>
+                <Item Key="AvailableLicensesDF"></Item>
+                <Item Key="MinimumLicenses"></Item>
+                <Item Key="LicenseReferenceDF"></Item>
+                <Item Key="ValidDeplStates">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Ticket">
+                    <Hash>
+                        <Item Key="Queue"></Item>
+                        <Item Key="Text" ValueType="Textarea"></Item>
+                        <Item Key="DynamicField"></Item>
+                        <Item Key="Lock"></Item>
+                        <Item Key="Priority"></Item>
+                        <Item Key="State"></Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Service"></Item>
+                        <Item Key="SLA"></Item>
+                        <Item Key="CustomerID"></Item>
+                        <Item Key="CustomerUser"></Item>
+                        <Item Key="OwnerID"></Item>
+                        <Item Key="Title"></Item>
+                        <Item Key="SenderType"></Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::LicenseCount###05" Required="0" Valid="0">
+        <Description Translatable="1">Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \&lt;OTOBO_CONFIGITEM_X\&gt; where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="TotalLicensesDF"></Item>
+                <Item Key="AvailableLicensesDF"></Item>
+                <Item Key="MinimumLicenses"></Item>
+                <Item Key="LicenseReferenceDF"></Item>
+                <Item Key="ValidDeplStates">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Ticket">
+                    <Hash>
+                        <Item Key="Queue"></Item>
+                        <Item Key="Text" ValueType="Textarea"></Item>
+                        <Item Key="Lock"></Item>
+                        <Item Key="Priority"></Item>
+                        <Item Key="State"></Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Service"></Item>
+                        <Item Key="SLA"></Item>
+                        <Item Key="CustomerID"></Item>
+                        <Item Key="CustomerUser"></Item>
+                        <Item Key="OwnerID"></Item>
+                        <Item Key="Title"></Item>
+                        <Item Key="SenderType">system</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::EventModulePost###200-LicenseLinkCount" Required="0" Valid="0">
+        <Description Translatable="1">Config item event module that enables accounting licenses for a given config item.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::ITSMConfigItem::Event::CountLicenseLinks</Item>
+                <Item Key="Event">DeploymentStateUpdate|ConfigItemDynamicFieldUpdate_|Delete</Item>
+                <Item Key="Transaction">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ElasticsearchWidgetBackend###04-ElasticsearchConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Elasticsearch::ElasticsearchConfigItemGeneric</Item>
+                <Item Key="Name" Translatable="1">Config Items</Item>
+                <Item Key="Permission">AgentITSMConfigItemZoom</Item>
+                <Item Key="Default">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="PublicFrontend::Module###PublicITSMConfigItem" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Description" Translatable="1">ITSM config item overview.</Item>
+                    <Item Key="NavBarName">Config Item</Item>
+                    <Item Key="Title" Translatable="1">Config Item</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="PublicFrontend::Module###PublicITSMConfigItemZoom" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Config item zoom.</Item>
+                    <Item Key="Title" Translatable="1">Zoom</Item>
+                    <Item Key="NavBarName">Config Item</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="PublicFrontend::Module###PublicITSMConfigItemSearch" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Search config items.</Item>
+                    <Item Key="Title" Translatable="1">Search</Item>
+                    <Item Key="NavBarName">Config Item</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="PublicFrontend::Module###PublicITSMConfigItemAttachment" Required="0" Valid="0">
+        <Description Translatable="1">Frontend module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>itsm-configitem</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">To download attachments.</Item>
+                    <Item Key="Title"></Item>
+                    <Item Key="NavBarName">Config Item</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicOverview###Small" Required="0" Valid="1">
+        <Description Translatable="1">Defines an overview module to show the small view of a configuration item list.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::ITSMConfigItem::PublicOverviewSmall</Item>
+                <Item Key="Name">Small</Item>
+                <Item Key="NameShort">S</Item>
+                <Item Key="PageShown">25</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItem###PageShown" Required="1" Valid="1">
+        <Description Translatable="1">Number of config items to be displayed in each page of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItem</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10</Item>
+        </Value>
+    </Setting>
+    <!-- ITSMConfigItem::Frontend::PublicITSMConfigItemSearch -->
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Class" Required="0" Valid="1">
+        <Description Translatable="1">Includes classes in the config item search of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Name" Required="0" Valid="1">
+        <Description Translatable="1">Includes the name in the config item search of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Number" Required="0" Valid="1">
+        <Description Translatable="1">Includes the number in the config item search of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###DeploymentState" Required="0" Valid="1">
+        <Description Translatable="1">Includes deployment states in the config item search of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###IncidentState" Required="0" Valid="1">
+        <Description Translatable="1">Includes incident states in the config item search of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###SortBy::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default config item attribute for config item sorting of the config item search result of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Age">
+                <Item ValueType="Option" Value="Age" Translatable="1">Age</Item>
+                <Item ValueType="Option" Value="Number" Translatable="1">Number</Item>
+                <Item ValueType="Option" Value="Name" Translatable="1">Name</Item>
+                <Item ValueType="Option" Value="DeplState" Translatable="1">Deployment State</Item>
+                <Item ValueType="Option" Value="InciState" Translatable="1">Incident State</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Order::Default" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="1" Valid="1">
+        <Description Translatable="1">Defines the default config item order in the config item search result of the public interface. Up: oldest on top. Down: latest on top.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Down">
+                <Item ValueType="Option" Value="Down" Translatable="1">Down</Item>
+                <Item ValueType="Option" Value="Up" Translatable="1">Up</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Defaults###Number" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown config item search attribute for config item search screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="String"></Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Defaults###Name" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown config item search attribute for config item search screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="String"></Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Defaults###DeploymentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown config item search attribute for config item search screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Array></Array>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Defaults###IncidentStateIDs" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="0">
+        <Description Translatable="1">Defines the default shown config item search attribute for config item search screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Array></Array>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Defaults###DynamicField" UserPreferencesGroup="Advanced" UserModificationActive="1" UserModificationPossible="1" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default shown config item search attribute for config item search screen. Example: "Key" must have the name of the Dynamic Field in this case 'X', "Content" must have the value of the Dynamic Field depending on the Dynamic Field type,  Text: 'a text', Dropdown: '1', Date/Time: 'Search_DynamicField_XTimeSlotStartYear=1974; Search_DynamicField_XTimeSlotStartMonth=01; Search_DynamicField_XTimeSlotStartDay=26; Search_DynamicField_XTimeSlotStartHour=00; Search_DynamicField_XTimeSlotStartMinute=00; Search_DynamicField_XTimeSlotStartSecond=00; Search_DynamicField_XTimeSlotStopYear=2013; Search_DynamicField_XTimeSlotStopMonth=01; Search_DynamicField_XTimeSlotStopDay=26; Search_DynamicField_XTimeSlotStopHour=23; Search_DynamicField_XTimeSlotStopMinute=59; Search_DynamicField_XTimeSlotStopSecond=59;' and or 'Search_DynamicField_XTimePointFormat=week; Search_DynamicField_XTimePointStart=Before; Search_DynamicField_XTimePointValue=7';.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Hash>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the config item overview screen of the public interface.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemOverview</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###SearchLimit" Required="1" Valid="1">
+        <Description Translatable="1">Defines the search limit for the PublicITSMConfigItemSearch screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^\d+$">10000</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###SuppressFuzzyLogic" Required="0" Valid="0">
+        <Description Translatable="1">Defines the search limit for the PublicITSMConfigItemSearch screen.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="PublicFrontend::Navigation###PublicITSMConfigItem###003-ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Configuration Management Database.</Item>
+                        <Item Key="Name">CMDB</Item>
+                        <Item Key="Link">Action=PublicITSMConfigItem</Item>
+                        <Item Key="LinkOption"></Item>
+                        <Item Key="NavBar">Ticket</Item>
+                        <Item Key="Type">Menu</Item>
+                        <Item Key="Block"></Item>
+                        <Item Key="AccessKey"></Item>
+                        <Item Key="Prio">310</Item>
+                        <Item Key="svgIcon">var/httpd/htdocs/skins/Public/default/img/devices_black_24dp.svg</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditions###01" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"></Item>
+                <Item Key="Classes"><Array></Array></Item>
+                <Item Key="DeploymentStates"><Array></Array></Item>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditions###02" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"></Item>
+                <Item Key="Classes"><Array></Array></Item>
+                <Item Key="DeploymentStates"><Array></Array></Item>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditions###03" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"></Item>
+                <Item Key="Classes"><Array></Array></Item>
+                <Item Key="DeploymentStates"><Array></Array></Item>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditions###04" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"></Item>
+                <Item Key="Classes"><Array></Array></Item>
+                <Item Key="DeploymentStates"><Array></Array></Item>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditions###05" Required="0" Valid="0">
+        <Description Translatable="1">Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Name"></Item>
+                <Item Key="Classes"><Array></Array></Item>
+                <Item Key="DeploymentStates"><Array></Array></Item>
+                <Item Key="DynamicFieldValues">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###Default" Required="0" Valid="1">
+        <Description Translatable="1">Configure the columns which are available for viewing Permission Conditions in the public interface, when the corresponding Permission Condition Columns are not specifically configured. This setting is used as a fallback for the other Permission Condition Columns settings.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###01" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###02" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###03" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###04" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Public::ConfigItem::PermissionConditionColumns###05" Required="0" Valid="0">
+        <Description Translatable="1">Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.</Description>
+        <Navigation>Core::ITSMConfigItem</Navigation>
+        <Value>
+            <Array>
+                <Item>Number</Item>
+                <Item>Name</Item>
+                <Item>Class</Item>
+                <Item>InciState</Item>
+                <Item>DeplState</Item>
+                <Item>Created</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::PublicITSMConfigItem###003-ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                        <Item>ITSM.Agent.ConfigItem.Search.js</Item>
+                        <Item>ITSM.Customer.ConfigItemList.js</Item>
+                        <Item>ITSM.Customer.ConfigItem.Overview.js</Item>
+                        <Item>Core.Customer.Search.js</Item>
+                        <!-- TODO relevant for column settings
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        -->
+                    </Array>
+                </Item>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.ConfigItemList.css</Item>
+                        <Item>ITSM.Customer.ConfigItemOverview.css</Item>
+                        <Item>ITSM.Table.css</Item>
+                        <!--- TODO relevant for column settings
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>ITSM.Agent.Default.css</Item>
+                        -->
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::PublicITSMConfigItemSearch###003-ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.ConfigItemList.css</Item>
+                        <Item>ITSM.Customer.ConfigItemOverview.css</Item>
+                        <Item>ITSM.Customer.ConfigItemSearch.css</Item>
+                        <Item>ITSM.Agent.Detail.css</Item>
+                        <Item>ITSM.Table.css</Item>
+                        <Item>ITSM.Print.css</Item>
+                        <Item>ITSM.Public.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                        <Item>ITSM.Agent.ConfigItem.Search.js</Item>
+                        <Item>ITSM.Customer.ConfigItem.Overview.js</Item>
+                        <Item>ITSM.Customer.ConfigItemList.js</Item>
+                        <Item>Core.Customer.Search.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::PublicITSMConfigItemZoom###003-ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the public interface.</Description>
+        <Navigation>Frontend::Public::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>ITSM.Customer.ConfigItem.Zoom.css</Item>
+                        <Item>ITSM.Public.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ITSM.Customer.ConfigItem.Zoom.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemZoom###VersionsEnabled" Required="0" Valid="0">
+        <Description Translatable="1">Public users can see historic CI versions.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemZoom</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemZoom###VersionsSelectable" Required="0" Valid="0">
+        <Description Translatable="1">Public users have the possibility to manually switch between historic CI versions.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemZoom</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemZoom###GeneralInfo" Required="0" Valid="1">
+        <Description Translatable="1">Which general information is shown in the header.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemZoom</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Hidden</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Shown</Item>
+                </DefaultItem>
+                <Item Key="Class" SelectedID="1"></Item>
+                <Item Key="Number" SelectedID="1"></Item>
+                <Item Key="DeploymentState" SelectedID="1"></Item>
+                <Item Key="IncidentState" SelectedID="1"></Item>
+                <Item Key="CreatedTime" SelectedID="1"></Item>
+                <Item Key="ChangedTime" SelectedID="1"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <Setting Name="AutoComplete::Public###Default" Required="0" Valid="1">
+        <Description Translatable="1">Defines the config options for the autocompletion feature.</Description>
+        <Navigation>Frontend::Public</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="AutoCompleteActive">1</Item>
+                <Item Key="MinQueryLength">2</Item>
+                <Item Key="QueryDelay">100</Item>
+                <Item Key="MaxResultsDisplayed">20</Item>
+                <Item Key="ButtonText" Translatable="1">Search</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="PublicColorDefinitions" Required="1" Valid="1">
+        <Description Translatable="1">Color definitions for the public interface.</Description>
+        <Navigation>Frontend::Public</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="MainDark">#00023c</Item>
+                <Item Key="MainLight">#001bff</Item>
+                <Item Key="MainHover">#000099</Item>
+                <Item Key="BGLight">#f7f7f9</Item>
+                <Item Key="BGDark">#bfbfce</Item>
+                <Item Key="TextDark">#00023c</Item>
+                <Item Key="TextLight">#7f809d</Item>
+                <Item Key="Highlight">#fef235</Item>
+                <Item Key="NotifyOK">#c4cdfa</Item>
+                <Item Key="NotifyWarn">#fffccc</Item>
+                <Item Key="NotifyErr">#f9bcb2</Item>
+                <Item Key="HoverLight">#c4cdfa</Item>
+                <Item Key="HoverDark">#6d83f2</Item>
+                <Item Key="ShadowMain">rgba(0,27,255,0.24)</Item>
+                <Item Key="ShadowDark">rgba(4,0,71,0.16)</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItem###Title" Required="0" Valid="1">
+        <Description Translatable="1">Title for the public interface overview.</Description>
+        <Navigation>Frontend::Public::View::ConfigItem</Navigation>
+        <Value>
+            <Item ValueType="String">ConfigItems</Item>
+        </Value>
+    </Setting>
+    <Setting Name="ITSMConfigItem::Frontend::PublicITSMConfigItemSearch###Title" Required="0" Valid="1">
+        <Description Translatable="1">Title for the public interface search.</Description>
+        <Navigation>Frontend::Public::View::ConfigItemSearch</Navigation>
+        <Value>
+            <Item ValueType="String">ConfigItem Search</Item>
         </Value>
     </Setting>
 </otobo_config>

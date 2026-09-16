@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -14,14 +14,10 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
-# ---
-# MasterSlave
-# ---
-
+# Rother OSS / MasterSlave
 # This module uses AgentTicketActionCommon as a base, for easy update and framework compatibility
-# special markers has been set along the file to easy spot the differences introduced by
-# MasterSlave package
-# ---
+# special markers have been set along the file to easy spot the differences introduced by
+# EO MasterSlave
 
 [% RenderBlockStart("Properties") %]
 
@@ -71,13 +67,11 @@
 [% RenderBlockStart("HeaderAgentTicketArticleEdit") %]
 [% Translate("Edit Article \"%s\" of %s%s%s", Data.ArticleTitle, Config('Ticket::Hook'), Config('Ticket::HookDivider'), Data.TicketNumber) | html %]
 [% RenderBlockEnd("HeaderAgentTicketArticleEdit") %]
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
 [% RenderBlockStart("HeaderAgentTicketMasterSlave") %]
 [% Translate("Manage Master/Slave status for %s%s%s", Config('Ticket::Hook'), Config('Ticket::HookDivider'), Data.TicketNumber) | html %]
 [% RenderBlockEnd("HeaderAgentTicketMasterSlave") %]
-# ---
+# EO MasterSlave
                  &mdash; [% Data.Title | html %]
             </h1>
                 </li>

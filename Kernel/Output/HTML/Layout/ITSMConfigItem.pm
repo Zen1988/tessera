@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -21,6 +21,7 @@ use warnings;
 use namespace::autoclean;
 
 # core modules
+use List::Util qw(none);
 
 # CPAN modules
 
@@ -303,7 +304,7 @@ in F<Kernel/Output/HTML/LayoutTicket.pm>.
         Env           => $Self,
         LinkPage      => $LinkPage,
         LinkSort      => $LinkSort,
-        Frontend      => 'Agent',                           # optional (Agent|Customer), default: Agent, indicates from which frontend this function was called
+        Frontend      => 'Agent',                           # optional (Agent|Customer|Public), default: Agent, indicates from which frontend this function was called
     );
 
 =cut
@@ -326,18 +327,20 @@ sub ITSMConfigItemListShow {
     my $View = $Param{View} || 'Small';
 
     # store latest view mode
-    $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
-        SessionID => $Self->{SessionID},
-        Key       => 'UserITSMConfigItemOverview' . $Env->{Action},
-        Value     => $View,
-    );
+    if ( $Param{Frontend} ne 'Public' ) {
+        $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+            SessionID => $Self->{SessionID},
+            Key       => 'UserITSMConfigItemOverview' . $Env->{Action},
+            Value     => $View,
+        );
+    }
 
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # update preferences if needed
     my $Key = 'UserITSMConfigItemOverview' . $Env->{Action};
-    if ( $Param{Frontend} ne 'Customer' ) {
+    if ( $Param{Frontend} ne 'Customer' && $Param{Frontend} ne 'Public' ) {
         if ( !$ConfigObject->Get('DemoSystem') && ( $Self->{$Key} // '' ) ne $View ) {
             $Kernel::OM->Get('Kernel::System::User')->SetPreferences(
                 UserID => $Self->{UserID},
@@ -348,8 +351,18 @@ sub ITSMConfigItemListShow {
     }
 
     # get backend from config
-    my $Backends
-        = $Param{Frontend} eq 'Agent' ? $ConfigObject->Get('ITSMConfigItem::Frontend::Overview') : $ConfigObject->Get('ITSMConfigItem::Frontend::CustomerOverview');
+    my $Backends;
+    if ( $Param{Frontend} eq 'Agent' ) {
+        $Backends = $ConfigObject->Get('ITSMConfigItem::Frontend::Overview');
+    }
+    elsif ( $Param{Frontend} eq 'Customer' ) {
+        $Backends = $ConfigObject->Get('ITSMConfigItem::Frontend::CustomerOverview');
+    }
+    else {
+        # public frontend
+        $Backends = $ConfigObject->Get('ITSMConfigItem::Frontend::PublicOverview');
+    }
+
     if ( !$Backends ) {
         return $Self->FatalError(
             Message => 'Need config option ITSMConfigItem::Frontend::Overview',
@@ -609,7 +622,7 @@ sub ITSMConfigItemListShow {
                 @ColumnsEnabled = @ColumnsEnabledAux;
 
                 for my $ColumnName ( sort { $a cmp $b } @{ $Object->{ColumnsAvailable} } ) {
-                    if ( !grep { $_ eq $ColumnName } @ColumnsEnabled ) {
+                    if ( none { $_ eq $ColumnName } @ColumnsEnabled ) {
                         push @ColumnsAvailable, $ColumnName;
                     }
                 }
@@ -651,7 +664,8 @@ sub ITSMConfigItemListShow {
 
     # create nav bar and run overview backend module
     my $NavBarHTML = '';
-    if ( $Param{Frontend} ne 'Customer' ) {
+
+    if ( $Param{Frontend} ne 'Customer' && $Param{Frontend} ne 'Public' ) {
         $NavBarHTML = $Self->Output(
             TemplateFile => 'AgentITSMConfigItemOverviewNavBar',
             Data         => { %Param, },
@@ -735,7 +749,7 @@ sub XMLData2Hash {
             }
 
             # skip not needed elements and sub elements
-            next COUNTER if !grep { $_ =~ m{\A$Prefix} } @{ $Param{Attributes} };
+            next COUNTER if none { $_ =~ m{\A$Prefix} } @{ $Param{Attributes} };
 
             # lookup value
             my $Value = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->XMLValueLookup(

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -149,7 +149,7 @@ sub Run {
         }
 
         my ( %GetParam, %Errors );
-        for my $Parameter (qw(ID Name Comment ValidID TemplateType)) {
+        for my $Parameter (qw(ID Name Comment ValidID TemplateType PreSelectedTicketStateID)) {
             $GetParam{$Parameter} = $ParamObject->GetParam( Param => $Parameter ) || '';
         }
 
@@ -307,7 +307,7 @@ sub Run {
 
         my ( %GetParam, %Errors );
 
-        for my $Parameter (qw(ID Name Comment ValidID TemplateType)) {
+        for my $Parameter (qw(ID Name Comment ValidID TemplateType PreSelectedTicketStateID)) {
             $GetParam{$Parameter} = $ParamObject->GetParam( Param => $Parameter ) || '';
         }
 
@@ -535,6 +535,19 @@ sub _Edit {
         }
     }
 
+    # display template state preselection
+    #   NOTE: visibility only for forward and response handled via JS
+    my %States = $Kernel::OM->Get('Kernel::System::State')->StateList(
+        UserID => $Self->{UserID},
+    );
+    $Param{States} = $LayoutObject->BuildSelection(
+        Data         => \%States,
+        Name         => 'PreSelectedTicketStateID',
+        PossibleNone => 1,
+        SelectedID   => $Param{PreSelectedTicketStateID},
+        Class        => 'Modernize',
+    );
+
     $LayoutObject->Block(
         Name => 'OverviewUpdate',
         Data => {
@@ -583,6 +596,7 @@ sub _Overview {
         },
     );
     $LayoutObject->Block( Name => 'Filter' );
+    $LayoutObject->Block( Name => 'ImportExportWidget' );
 
     $LayoutObject->Block(
         Name => 'OverviewResult',
@@ -632,10 +646,20 @@ sub _Overview {
             for my $Key ( sort keys %SelectedAttachmentData ) {
                 push @SelectedAttachment, $Key;
             }
+
+            # convert PreSelectedTicketStateID to string
+            my $PreSelectedTicketState = '-';
+            if ( $Data{PreSelectedTicketStateID} ) {
+                $PreSelectedTicketState = $Kernel::OM->Get('Kernel::System::State')->StateLookup(
+                    StateID => $Data{PreSelectedTicketStateID},
+                );
+            }
+
             $LayoutObject->Block(
                 Name => 'OverviewResultRow',
                 Data => {
-                    Valid => $ValidList{ $Data{ValidID} },
+                    Valid                  => $ValidList{ $Data{ValidID} },
+                    PreSelectedTicketState => $PreSelectedTicketState,
                     %Data,
                     Attachments => scalar @SelectedAttachment,
                 },

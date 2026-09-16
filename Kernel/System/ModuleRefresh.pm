@@ -1,7 +1,7 @@
 # --
 # OTOBO is a web-based ticketing system for service organisations.
 # --
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -79,6 +79,9 @@ sub new {
 =head2 mtime()
 
 Generate a cache key based on the modified time and the file size.
+
+This method overrides C<Module::Refresh::mtime()>. The overridden method also includes the inode number.
+The inode number has been excluded here, as it was found that it frequently changes on solid state disks.
 
 =cut
 

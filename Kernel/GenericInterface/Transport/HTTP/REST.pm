@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -22,17 +22,19 @@ use warnings;
 use namespace::autoclean;
 
 # core modules
-use MIME::Base64 qw(encode_base64);
+use MIME::Base64 qw(encode_base64 decode_base64);
 
 # CPAN modules
-use HTTP::Status    qw(status_message);
-use REST::Client    ();
 use URI::Escape     qw(uri_escape_utf8 uri_unescape);
+use HTTP::Status    qw(status_message);
+use HTTP::Message   ();
+use REST::Client    ();
 use Plack::Response ();
 
 # OTOBO modules
 use Kernel::System::VariableCheck  qw(:all);
 use Kernel::System::Web::Exception ();
+use Kernel::Language               qw(Translatable);
 
 our $ObjectManagerDisabled = 1;
 
@@ -134,6 +136,7 @@ sub ProviderProcessRequest {
     }
 
     my %QueryParams;
+
     if ($QueryParamsStr) {
 
         # Remove question mark '?' in the beginning.
@@ -699,6 +702,42 @@ sub RequesterPerformRequest {
             );
         }
 
+        # oauth
+        elsif (
+            $Config->{Authentication}->{AuthType} eq 'OAuth'
+            && IsStringWithData( $Config->{Authentication}->{OAuthAccountName} )
+            )
+        {
+
+            my $AccountName = $Config->{Authentication}->{OAuthAccountName};
+
+            my $TokenResult = $Kernel::OM->Get('Kernel::System::OpenIDConnect::TokenProvider')->Fetch(
+                AccountName => $AccountName,
+            );
+
+            if ( !$TokenResult->{Success} ) {
+
+                $Self->{DebuggerObject}->Debug(
+                    Summary => Translatable("Error fetching the OAuth2 Token"),
+                    Data    => $TokenResult->{Error},
+                );
+
+                return {
+                    Success      => 0,
+                    ErrorMessage => $TokenResult->{Error},
+                };
+            }
+
+            my $Token = $TokenResult->{Token};
+
+            $Self->{DebuggerObject}->Debug(
+                Summary => Translatable("Attached OAuth2 Bearer Token"),
+                Data    => $Token,
+            );
+
+            $Headers{Authorization} = "Bearer $Token";
+        }
+
         # kerberos
         elsif (
             $Config->{Authentication}->{AuthType} eq 'Kerberos'
@@ -716,7 +755,7 @@ sub RequesterPerformRequest {
                     ErrorMessage => "'$Config->{Authentication}->{KerberosKeytab}' does not exist.",
                 };
             }
-            if ( $Config->{Authentication}->{KerberosUser} =~ /[^\w\d\-\._@]/ ) {
+            if ( $Config->{Authentication}->{KerberosUser} =~ /[^\w0-9\-\._@]/ ) {
                 $Self->{DebuggerObject}->Error(
                     Summary => "Invalid user format '$Config->{Authentication}->{KerberosUser}'.",
                 );
@@ -801,6 +840,9 @@ sub RequesterPerformRequest {
 
     my $Controller = $Config->{InvokerControllerMapping}->{ $Param{Operation} }->{Controller};
 
+    # special case for MultiPart, do this check before $Controller is modified
+    my $IsMultiPartAttachmentUpload = $Config->{InvokerControllerMapping}->{ $Param{Operation} }->{MultipartAttachment} // 0;
+
     # Remove any query parameters that might be in the config,
     #   For example, from the controller: /Ticket/:TicketID/?:UserLogin&:Password
     #   controller must remain  /Ticket/:TicketID/
@@ -882,10 +924,48 @@ sub RequesterPerformRequest {
     my $JSONObject   = $Kernel::OM->Get('Kernel::System::JSON');
     my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
 
+    my ( @BodyArr, @HeadersArr, @RequestParam );
+
     if ( IsHashRefWithData( $Param{Data} ) || IsArrayRefWithData( $Param{Data} ) ) {
 
+        # a special case with multipart messages
+        # see http://www.openproject.org/docs/api/endpoints/attachments/
+        if ($IsMultiPartAttachmentUpload) {
+
+            # create Boundary
+            my $Boundary = 'OTOBOBoundary' . int( rand(1000000) );
+            $Headers{'Content-Type'} = "multipart/form-data; boundary=$Boundary";
+            push @HeadersArr, \%Headers;
+
+            my @AttachmentArray;
+
+            # loop over attachments
+            ATTACHMENT:
+            for my $Attachment ( $Param{Data}->{Attachment}->@* ) {
+                next ATTACHMENT if $Attachment->{Filename} =~ /^file-\d*/;
+
+                # the first part sets up the filename
+                my $Filename = $Attachment->{Filename};
+
+                # create Multipart content
+                my $Content = "--$Boundary\r\n";
+                $Content .= "Content-Disposition: form-data; name=\"file\"; filename=\"$Filename\"\r\n";
+                $Content .= "Content-Type: $Attachment->{ContentType}\r\n\r\n";
+                $Content .= decode_base64( $Attachment->{Content} ) . "\r\n\r\n";
+
+                push( @AttachmentArray, $Content );
+            }
+
+            my $Content = join( "", @AttachmentArray );
+
+            $Content .= "\r\n--$Boundary--\r\n";
+
+            # The content is the two concatenated parts
+            push @BodyArr, $Content;
+        }
+
         # POST, PUT and PATCH can have Data in the Body.
-        if (
+        elsif (
             $RestCommand eq 'POST'
             || $RestCommand eq 'PUT'
             || $RestCommand eq 'PATCH'
@@ -934,8 +1014,6 @@ sub RequesterPerformRequest {
         }
     }
 
-    my @RequestParam = ($Controller);
-
     # Only POST, PUT or PATCH have a body. If it is empty
     # (i. e. $Param{Data} = {}), undef is passed to REST::Client.
     if (
@@ -944,12 +1022,23 @@ sub RequesterPerformRequest {
         || $RestCommand eq 'PATCH'
         )
     {
-        my $Body;
-        if ( IsStringWithData( $Param{Data} ) ) {
-            $Body = $Param{Data};
+        # the regular case
+        if ( !$IsMultiPartAttachmentUpload ) {
+            push @BodyArr,    $Param{Data};
+            push @HeadersArr, %Headers;
         }
+        for my $Body (@BodyArr) {
+            my $Headers = shift @HeadersArr;
 
-        push @RequestParam, $Body;
+            push @RequestParam, $Controller;
+
+            if ( IsStringWithData($Body) ) {
+                push @RequestParam, $Body;
+            }
+        }
+    }
+    else {
+        push @RequestParam, $Controller;
     }
 
     # added for OTOBOTicketInvoker
@@ -1106,7 +1195,7 @@ sub _AssessResponse {
         $ResponseError = $ErrorMessage;
     }
 
-    if ( $ResponseCode !~ m{ \A 20 \d \z }xms ) {
+    if ( $ResponseCode !~ m{ \A 20 [0-9] \z }xms ) {
         $ResponseError = $ErrorMessage . " Response code '$ResponseCode'.";
     }
 

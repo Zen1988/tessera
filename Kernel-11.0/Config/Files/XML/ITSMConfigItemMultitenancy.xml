@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Changes">
+
+    <Setting Name="ITSMConfigItemManagementGroup" Required="0" Valid="1">
+        <Description Translatable="1">Management group that exempts from any config item level group restrictions.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Item ValueType="String">admin</Item>
+        </Value>
+    </Setting>
+    <Setting Name="GeneralCatalogPreferences###ConfigitemGroup" Required="0" Valid="1">
+        <Description Translatable="1">Mode for config item level group restrictions.</Description>
+        <Navigation>Core::GeneralCatalog</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::GeneralCatalogPreferences::Generic</Item>
+                <Item Key="Class">ITSM::ConfigItem::Class</Item>
+                <Item Key="Label" Translatable="1">Config Item Group</Item>
+                <Item Key="Priority">25</Item>
+                <Item Key="Desc" Translatable="1">Set mode for config item level group restrictions.</Item>
+                <Item Key="Data">
+                    <Hash>
+                        <Item Key="0" Translatable="1">Disabled</Item>
+                        <Item Key="1" Translatable="1">Enabled</Item>
+                        <Item Key="2" Translatable="1">Enabled and required</Item>
+                    </Hash>
+                </Item>
+                <Item Key="PrefKey">ConfigItemGroup</Item>
+                <Item Key="Block">Option</Item>
+                <Item Key="Mandatory" ValueType="Checkbox">1</Item>                
+            </Hash>
+        </Value>
+    </Setting>    
+
+    <!-- Override these original ITSMConfigItem settings to insert the GroupUpdate event -->
+    <Setting Name="ITSMConfigItem::EventModulePost###100-History" Required="0" Valid="1">
+        <Description Translatable="1">Config item event module that enables logging to history in the agent interface.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::ITSMConfigItem::Event::DoHistory</Item>
+                <Item Key="Event">(ConfigItemCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField|GroupUpdate|ConfigItemUpdate|VersionUpdate)</Item>
+                <Item Key="Transaction">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Events###ITSMConfigItem" Required="0" Valid="1">
+        <Description Translatable="1">List of all Package events to be displayed in the GUI.</Description>
+        <Navigation>Frontend::Admin</Navigation>
+        <Value>
+            <Array>
+                <Item>ConfigItemCreate</Item>
+                <Item>ConfigItemUpdate</Item>
+                <Item>VersionCreate</Item>
+                <Item>DeploymentStateUpdate</Item>
+                <Item>IncidentStateUpdate</Item>
+                <Item>ConfigItemDelete</Item>
+                <Item>NameUpdate</Item>
+                <Item>AttachmentAddPost</Item>
+                <Item>AttachmentDeletePost</Item>
+                <Item>VersionDelete</Item>
+                <Item>VersionUpdate</Item>
+                <Item>GroupUpdate</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Elasticsearch::ConfigItemStoreFields" Required="0" Valid="0" ConfigLevel="100">
+        <Description Translatable="1">Fields stored in the configuration item index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Basic">
+                    <Array>
+                        <Item>ConfigItemID</Item>
+                        <Item>ClassID</Item>
+                        <Item>Class</Item>
+                        <Item>Number</Item>
+                        <Item>GroupID</Item>
+                    </Array>
+                </Item>
+                <Item Key="DynamicField">
+                    <Array>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+</otobo_config>

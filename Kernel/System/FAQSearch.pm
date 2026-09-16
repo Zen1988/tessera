@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,11 @@ search in FAQ articles
         ValidIDs    => [ 1, 2, 3 ],                                   # (optional) (default 1)
 
         ServiceID => $ServiceID,                                      # (optional)
+
+        # Use FAQSearch as an FAQ filter on a single FAQ item,
+        # or a predefined FAQ item list
+        FAQID     => 1234,                                            # (optional)
+        FAQID     => [1234, 1235],                                    # (optional)
 
         # Approved
         #    Only available in internal interface (agent interface)
@@ -429,6 +434,22 @@ sub FAQSearch {
             $Ext .= ' AND ';
         }
         $Ext .= " LOWER(i.f_subject) LIKE LOWER('" . $Param{Title} . "') $Self->{LikeEscapeString}";
+    }
+
+    # Limit the search to just one (or a list) FAQID (used by the otobo-ai package
+    #   to filter for events on single FAQ items with the job's FAQ filter).
+    if ( IsStringWithData( $Param{FAQID} ) || IsArrayRefWithData( $Param{FAQID} ) ) {
+
+        my $SQLQueryInCondition = $DBObject->QueryInCondition(
+            Key       => 'i.id',
+            Values    => ref $Param{FAQID} eq 'ARRAY' ? $Param{FAQID} : [ $Param{FAQID} ],
+            QuoteType => 'Integer',
+            BindMode  => 0,
+        );
+        if ($Ext) {
+            $Ext .= ' AND ';
+        }
+        $Ext .= ' ( ' . $SQLQueryInCondition . ' ) ';
     }
 
     # search for languages
@@ -1129,7 +1150,7 @@ sub _InConditionGet {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTOBO project (L<https://ncs.com.sg>).
+This software is part of the OTOBO project (L<https://otobo.org/>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you

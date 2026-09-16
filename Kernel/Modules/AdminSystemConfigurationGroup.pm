@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -123,7 +123,7 @@ sub Run {
             UserID  => $Self->{UserID},
         );
 
-        # Send only useful setting attributes to reduce ammount of data transfered in the AJAX call.
+        # Send only useful setting attributes to reduce amount of data transferred in the AJAX call.
         for my $Key (qw(IsModified IsDirty IsLocked Error ExclusiveLockGUID IsValid UserModificationActive)) {
             $Result{Data}->{SettingData}->{$Key} = $Setting{$Key};
         }
@@ -178,7 +178,7 @@ sub Run {
             UserID  => $Self->{UserID},
         );
 
-        # Send only useful setting attributes to reduce ammount of data transfered in the AJAX call.
+        # Send only useful setting attributes to reduce amount of data transferred in the AJAX call.
         for my $Key (qw(IsModified IsDirty IsLocked Error ExclusiveLockGUID IsValid UserModificationActive)) {
             $Result{Data}->{SettingData}->{$Key} = $Setting{$Key};
         }
@@ -307,7 +307,7 @@ sub Run {
             UserID          => $Self->{UserID},
         );
 
-        # Send only useful setting attributes to reduce amount of data transfered in the AJAX call.
+        # Send only useful setting attributes to reduce amount of data transferred in the AJAX call.
         for my $Key (qw(IsModified IsDirty IsLocked ExclusiveLockGUID IsValid UserModificationActive)) {
             $Result{Data}->{SettingData}->{$Key} = $Setting{$Key};
         }
@@ -612,12 +612,17 @@ sub Run {
         pop @SettingStructure;
 
         my %Result;
-        for my $Needed (qw(Name Key)) {
-            if ( !$Needed ) {
-                $Result{Error} = Translatable("Missing setting $Needed.");
-
-                return $LayoutObject->JSONReply( Data => \%Result );
-            }
+        if ( !$SettingName ) {
+            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
+                "Missing setting name!",
+            );
+            return $Self->_ReturnJSON( Response => \%Result );
+        }
+        if ( !$Key ) {
+            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
+                "Missing setting key!",
+            );
+            return $Self->_ReturnJSON( Response => \%Result );
         }
 
         my %Setting = $SysConfigObject->SettingGet(

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,10 +16,18 @@
 
 package Kernel::System::PostMaster::Filter;
 
+# for indented heredoc
+use v5.26;
 use strict;
 use warnings;
 
-use Kernel::System::VariableCheck qw(IsStringWithData);
+# core modules
+use List::Util qw(none);
+
+# CPAN modules
+
+# OTOBO modules
+use Kernel::System::VariableCheck qw(IsArrayRefWithData IsStringWithData);
 
 our @ObjectDependencies = (
     'Kernel::System::Cache',
@@ -66,6 +74,7 @@ get all filter
         SearchTerm   => $SearchTerm,                    # optional - String, term to search by
         SearchFilter => \@SearchFilter|$SearchFilter,   # optional - Array or string, restrict search to certain match headers
         SearchValue  => \@SearchValue|$SearchValue,     # optional - Array or string, restrict search to certain set headers
+        ValidIDs     => ['1', '2'],                     # optional: filter by given valid ids
     );
 
 =cut
@@ -117,8 +126,22 @@ sub FilterList {
     );
     return %{$Cache} if $Cache;
 
+    my $SQL = 'SELECT f_name FROM postmaster_filter';
+
+    my @Bind;
+    if ( IsArrayRefWithData( $Param{ValidIDs} ) ) {
+
+        $SQL .= " WHERE valid_id IN (";
+
+        $SQL .= join( ',', map {'?'} $Param{ValidIDs}->@* );
+        push @Bind, map { \$_ } $Param{ValidIDs}->@*;
+
+        $SQL .= ")";
+    }
+
     return if !$DBObject->Prepare(
-        SQL => 'SELECT f_name FROM postmaster_filter',
+        SQL  => $SQL,
+        Bind => \@Bind,
     );
 
     my %Data;
@@ -150,15 +173,15 @@ sub FilterList {
                 for my $FilterDataIndex ( 0 .. $#{ $Filter{$FilterAttribute} } ) {
 
                     # fetch filter data and corresponding 'Not' entry
-                    my %FilterData = $Filter{$FilterAttribute}->[$FilterDataIndex]->%*;
+                    my %FilterData = $Filter{$FilterAttribute}[$FilterDataIndex]->%*;
 
                     # caution: 'Not' only applies to 'Match', not to 'Set'
-                    my %FilterNot = $FilterAttribute eq 'Match' ? $Filter{Not}->[$FilterDataIndex]->%* : ();
+                    my %FilterNot = $FilterAttribute eq 'Match' ? $Filter{Not}[$FilterDataIndex]->%* : ();
 
                     # skip if search filter or search value does not match
                     for my $SearchRestriction (qw(SearchFilter SearchValue)) {
                         if ( $Param{$SearchRestriction}->@* ) {
-                            if ( !grep { $_ eq $FilterData{Key} } $Param{$SearchRestriction}->@* ) {
+                            if ( none { $_ eq $FilterData{Key} } $Param{$SearchRestriction}->@* ) {
                                 next FILTERATTRIBUTE;
                             }
                         }
@@ -206,6 +229,7 @@ add a filter
 
     $PMFilterObject->FilterAdd(
         Name           => 'some name',
+        ValidID        => 1,
         StopAfterMatch => 0,
         Match = [
             {
@@ -236,7 +260,7 @@ sub FilterAdd {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for (qw(Name StopAfterMatch Match Set)) {
+    for (qw(Name ValidID StopAfterMatch Match Set)) {
         if ( !defined $Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -259,11 +283,11 @@ sub FilterAdd {
 
             return if !$DBObject->Do(
                 SQL =>
-                    'INSERT INTO postmaster_filter (f_name, f_stop, f_type, f_key, f_value, f_not)'
-                    . ' VALUES (?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO postmaster_filter (valid_id, f_name, f_stop, f_type, f_key, f_value, f_not)'
+                    . ' VALUES (?, ?, ?, ?, ?, ?, ?)',
                 Bind => [
-                    \$Param{Name},         \$Param{StopAfterMatch}, \$Type,
-                    \$Data[$Index]->{Key}, \$Data[$Index]->{Value}, \$Not[$Index]->{Value},
+                    \$Param{ValidID},    \$Param{Name},         \$Param{StopAfterMatch}, \$Type,
+                    \$Data[$Index]{Key}, \$Data[$Index]{Value}, \$Not[$Index]{Value},
                 ],
             );
         }
@@ -369,12 +393,28 @@ sub FilterGet {
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
+    # ensure that body statements are listed at the very end of matching condition for performance reasons
     return if !$DBObject->Prepare(
-        SQL =>
-            'SELECT f_type, f_key, f_value, f_name, f_stop, f_not'
-            . ' FROM postmaster_filter'
-            . ' WHERE f_name = ?'
-            . ' ORDER BY f_key, f_value',
+        SQL => <<~"POSTMASTER_SELECT",
+            SELECT
+                f_type,
+                f_key,
+                f_value,
+                f_name,
+                valid_id,
+                f_stop,
+                f_not,
+                CASE
+                    WHEN f_key = 'Body' THEN 1
+                    ELSE 0
+                END AS is_body
+            FROM postmaster_filter
+            WHERE f_name = ?
+            ORDER BY
+                is_body,
+                f_key,
+                f_value
+        POSTMASTER_SELECT
         Bind => [ \$Param{Name} ],
     );
 
@@ -385,12 +425,13 @@ sub FilterGet {
             Value => $Row[2],
         };
         $Data{Name}           = $Row[3];
-        $Data{StopAfterMatch} = $Row[4];
+        $Data{ValidID}        = $Row[4];
+        $Data{StopAfterMatch} = $Row[5];
 
         if ( $Row[0] eq 'Match' ) {
             push @{ $Data{Not} }, {
                 Key   => $Row[1],
-                Value => $Row[5],
+                Value => $Row[6],
             };
         }
     }

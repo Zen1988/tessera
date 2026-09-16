@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Ticket::NumberGenerator::TESSERAIdentity" Required="0" Valid="1">
+        <Description Translatable="1">Defines the TESSERA generated ticket identity format and ticket-type code mapping.</Description>
+        <Navigation>Core::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="SystemIdentity" ValueType="String">ICAT</Item>
+                <Item Key="TypeCodeLength" ValueType="String" ValueRegex="^[1-9][0-9]*$">2</Item>
+                <Item Key="SequencePadding" ValueType="String" ValueRegex="^[1-9][0-9]*$">7</Item>
+                <Item Key="ChildSequencePadding" ValueType="String" ValueRegex="^[1-9][0-9]*$">3</Item>
+                <Item Key="SequenceScope" ValueType="String">SystemYear</Item>
+                <Item Key="ResetPolicy" ValueType="String">Yearly</Item>
+                <Item Key="TypeCodes">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                        <Item Key="ServiceRequest">SE</Item>
+                        <Item Key="Change">CH</Item>
+                        <Item Key="Incident">IN</Item>
+                        <Item Key="Problem">PR</Item>
+                        <Item Key="Assessment">AS</Item>
+                        <Item Key="Confirmation">CF</Item>
+                        <Item Key="Approval">AP</Item>
+                        <Item Key="Task">TA</Item>
+                        <Item Key="Verification">VE</Item>
+                        <Item Key="Endorsement">EN</Item>
+                        <Item Key="FollowUp">FU</Item>
+                        <Item Key="Exception">EX</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ZTSM::Provisioning::HostnamePolicy" Required="0" Valid="1">
+        <Description Translatable="1">Defines the provisioning hostname policy. When global policy is disabled, ZTicket-Custom from each ZCompute-VM row is used as the hostname. When enabled, fields with position greater than zero are resolved and joined in position order per VM row. Use ZTSM-RunningNumber as a synthetic segment for a scoped running number. Supported running number scopes include Global, GlobalYear, Application, ApplicationYear, Location, LocationYear, Environment, EnvironmentYear, Prefix, and PrefixYear.</Description>
+        <Navigation>Core::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="EnforceGlobalPolicy" ValueType="Checkbox">0</Item>
+                <Item Key="Separator" ValueType="String"></Item>
+                <Item Key="RunningNumberScope" ValueType="Select" SelectedID="ApplicationYear">
+                    <Item ValueType="Option" Value="Global" Translatable="1">Global</Item>
+                    <Item ValueType="Option" Value="GlobalYear" Translatable="1">Global yearly</Item>
+                    <Item ValueType="Option" Value="Application" Translatable="1">Application</Item>
+                    <Item ValueType="Option" Value="ApplicationYear" Translatable="1">Application yearly</Item>
+                    <Item ValueType="Option" Value="Location" Translatable="1">Location</Item>
+                    <Item ValueType="Option" Value="LocationYear" Translatable="1">Location yearly</Item>
+                    <Item ValueType="Option" Value="Environment" Translatable="1">Environment</Item>
+                    <Item ValueType="Option" Value="EnvironmentYear" Translatable="1">Environment yearly</Item>
+                    <Item ValueType="Option" Value="Prefix" Translatable="1">Generated prefix</Item>
+                    <Item ValueType="Option" Value="PrefixYear" Translatable="1">Generated prefix yearly</Item>
+                </Item>
+                <Item Key="RunningNumberWidth" ValueType="String">3</Item>
+                <Item Key="SegmentPositions">
+                    <Hash>
+                        <DefaultItem ValueType="String" ValueRegex="^[0-9]+$">0</DefaultItem>
+                        <Item Key="ZTicket-Location">0</Item>
+                        <Item Key="ZTicket-Env">0</Item>
+                        <Item Key="ZTicket-Application">0</Item>
+                        <Item Key="ZTicket-FunctionProfile">0</Item>
+                        <Item Key="ZTicket-Custom">1</Item>
+                        <Item Key="ZCompute-Image">0</Item>
+                        <Item Key="ZCompute-CpuCore">0</Item>
+                        <Item Key="ZCompute-GPU">0</Item>
+                        <Item Key="ZCompute-RAM">0</Item>
+                        <Item Key="ZStorage-FS">0</Item>
+                        <Item Key="ZTicket-NetworkPool">0</Item>
+                        <Item Key="ZTSM-RunningNumber">0</Item>
+                    </Hash>
+                </Item>
+                <Item Key="CodeDynamicFields">
+                    <Hash>
+                        <DefaultItem ValueType="String"></DefaultItem>
+                        <Item Key="GovernanceObject">ZTSM-Code</Item>
+                        <Item Key="ConfigItem">ZTAM-Code</Item>
+                        <Item Key="ZCompute-Image">ZTAM-Code</Item>
+                        <Item Key="ZTicket-NetworkPool">ZTAM-Code</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Service" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Service</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Service</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###FAQ" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">FAQ</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::FAQ</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>GovernanceObject</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::Driver###Set" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField backend registration.</Description>
+        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Dynamic Field Set</Item>
+                <Item Key="Module">Kernel::System::DynamicField::Driver::Set</Item>
+                <Item Key="ConfigDialog">AdminDynamicFieldSet</Item>
+                <Item Key="ObjectTypes">
+                    <Array>
+                        <Item>Article</Item>
+                        <Item>GovernanceObject</Item>
+                        <Item>ITSMConfigItem</Item>
+                        <Item>Ticket</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFieldScreens###ZTSMGovernanceRuntime" Required="1" Valid="1">
+        <Description Translatable="1">Dynamic field screens for TESSERA governance runtime actions.</Description>
+        <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Ticket::Frontend::AgentTicketDecision###DynamicField">AgentTicketDecision</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentTicketDecision" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Ticket decision.</Item>
+                    <Item Key="Title" Translatable="1">Decision</Item>
+                    <Item Key="NavBarName">Ticket</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentTicketDecision###003-ZTSMGovernanceRuntime" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.TicketAction.js</Item>
+                        <Item>Core.Agent.TicketActionCommon.js</Item>
+                        <Item>Core.Agent.TicketFormDraft.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::MenuModule###420-Decision" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to change the decision of a ticket in its zoom view of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketZoom::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::TicketMenu::Generic</Item>
+                <Item Key="Name" Translatable="1">Decision</Item>
+                <Item Key="Description" Translatable="1">Add a decision.</Item>
+                <Item Key="Action">AgentTicketDecision</Item>
+                <Item Key="Link">Action=AgentTicketDecision;TicketID=[% Data.TicketID | html %]</Item>
+                <Item Key="Target"></Item>
+                <Item Key="PopupType">TicketAction</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the decision screen in the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###RequiredLock" Required="0" Valid="1">
+        <Description Translatable="1">Defines if a ticket lock is required in the decision screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###Note" Required="0" Valid="1">
+        <Description Translatable="1">Allows adding notes in the decision screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###NoteMandatory" Required="0" Valid="1">
+        <Description Translatable="1">Sets if note must be filled in by the agent.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###Subject" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default subject of a note in the decision screen.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex=""></Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###Body" Required="0" Valid="1">
+        <Description Translatable="1">Defines the default body of a note in the decision screen.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Textarea"></Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###IsVisibleForCustomerDefault" Required="0" Valid="1">
+        <Description Translatable="1">Defines if the note is visible for the customer by default.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###FormDraft" Required="0" Valid="1">
+        <Description Translatable="1">Allows saving current work as draft in the decision screen.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###HistoryType" Required="0" Valid="1">
+        <Description Translatable="1">Defines the history type for the decision screen action.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">AddNote</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###HistoryComment" Required="0" Valid="1">
+        <Description Translatable="1">Defines the history comment for the decision screen action.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">%%Note</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketDecision###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the decision screen of the agent interface.</Description>
+        <Navigation>Frontend::Agent::View::TicketDecision</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                    <Item ValueType="Option" Value="2" Translatable="1">2 - Enabled and required</Item>
+                </DefaultItem>
+                <Item Key="ITSMDecisionResult" SelectedID="1"></Item>
+                <Item Key="ITSMDecisionDate" SelectedID="1"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentTicketQuickClose" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Quick close ticket.</Item>
+                    <Item Key="Title" Translatable="1">Quick Close</Item>
+                    <Item Key="NavBarName">Ticket</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::AgentTicketQuickClose###Permission" Required="1" Valid="1">
+        <Description Translatable="1">Required permissions to use the quick close screen.</Description>
+        <Navigation>Frontend::Agent::View::TicketQuickClose</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">rw</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::MenuModule###430-QuickClose" Required="0" Valid="1">
+        <Description Translatable="1">Shows a link in the menu to quickly close a ticket.</Description>
+        <Navigation>Frontend::Agent::View::TicketZoom::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::TicketMenu::Generic</Item>
+                <Item Key="Name" Translatable="1">Quick Close</Item>
+                <Item Key="Description" Translatable="1">Quick close this ticket.</Item>
+                <Item Key="Action">AgentTicketQuickClose</Item>
+                <Item Key="Link">Action=AgentTicketQuickClose;TicketID=[% Data.TicketID | html %]</Item>
+                <Item Key="Target"></Item>
+                <Item Key="PopupType">TicketAction</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AgentTicketTESSERATable" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for TESSERA ticket table import/export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">TESSERA ticket table import/export.</Item>
+                    <Item Key="Title" Translatable="1">Ticket Import/Export</Item>
+                    <Item Key="NavBarName">Ticket</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentTicketTESSERATable###002-Ticket" Required="0" Valid="1">
+        <Description Translatable="1">Main menu item registration for TESSERA ticket table export.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+                <Item>
+                    <Hash>
+                        <Item Key="Group">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="GroupRo">
+                            <Array>
+                            </Array>
+                        </Item>
+                        <Item Key="Description" Translatable="1">Export readable tickets to CSV or XLSX.</Item>
+                        <Item Key="Name" Translatable="1">Table Export</Item>
+                        <Item Key="Link">Action=AgentTicketTESSERATable</Item>
+                        <Item Key="LinkOption"></Item>
+                        <Item Key="NavBar">Ticket</Item>
+                        <Item Key="Type"></Item>
+                        <Item Key="Block"></Item>
+                        <Item Key="AccessKey"></Item>
+                        <Item Key="Prio">900</Item>
+                    </Hash>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::MenuModule###440-TESSERATable" Required="0" Valid="1">
+        <Description Translatable="1">Shows a TESSERA ticket import/export link in the ticket zoom menu.</Description>
+        <Navigation>Frontend::Agent::View::TicketZoom::MenuModule</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::TicketMenu::Generic</Item>
+                <Item Key="Name" Translatable="1">Table Export</Item>
+                <Item Key="Description" Translatable="1">Export this ticket as CSV or XLSX.</Item>
+                <Item Key="Action">AgentTicketTESSERATable</Item>
+                <Item Key="Link">Action=AgentTicketTESSERATable;TicketID=[% Data.TicketID | html %]</Item>
+                <Item Key="Target"></Item>
+                <Item Key="PopupType"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerTicket::Permission###5-ZTSMUserIDCheck" Required="0" Valid="1">
+        <Description Translatable="1">Module to grant customer access through TESSERA support profile participation and story inheritance.</Description>
+        <Navigation>Core::Ticket::Permission</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck</Item>
+                <Item Key="Required">0</Item>
+                <Item Key="Granted">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerTicketZTSMAction" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for TESSERA customer runtime ticket actions.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">TESSERA runtime action.</Item>
+                    <Item Key="NavBarName">Ticket</Item>
+                    <Item Key="Title" Translatable="1">Runtime Action</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::Frontend::CustomerTicketZTSMAction###ConfirmLoopbackState" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parent ticket state used when confirmation reports that the incident is not resolved.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="String">diagnose</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZTSMAction###002-Ticket" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer runtime ticket actions.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZoom###112-ZTSMRuntimeReferenceSearch" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer runtime reference search controls loaded inline on ticket zoom.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.DynamicFieldReferenceSearch.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketMessage###110-ZTSMReferenceTrace" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer ticket reference diagnostics.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ZTSM.Customer.ReferenceTrace.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime" Required="0" Valid="1">
+        <Description Translatable="1">Defines TESSERA governance runtime actions available in ACL third level.</Description>
+        <Navigation>Core::Ticket::ACL</Navigation>
+        <Value>
+            <Array>
+                <Item>AgentTicketDecision</Item>
+                <Item>AgentTicketQuickClose</Item>
+                <Item>CustomerTicketZTSMAction</Item>
+            </Array>
+        </Value>
+    </Setting>
+</otobo_config>

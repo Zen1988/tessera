@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -24,7 +24,6 @@ use parent 'Kernel::Output::HTML::Article::Base';
 # core modules
 
 # CPAN modules
-use Mail::Address ();
 
 # OTOBO modules
 use Kernel::Language              qw(Translatable);
@@ -40,6 +39,7 @@ our @ObjectDependencies = (
     'Kernel::System::Main',
     'Kernel::System::Ticket',
     'Kernel::System::Ticket::Article',
+    'Kernel::System::EmailAddress',
 );
 
 sub new {
@@ -450,19 +450,20 @@ sub ArticleCustomerRecipientsGet {
 
     my $CheckItemObject    = $Kernel::OM->Get('Kernel::System::CheckItem');
     my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
-
+    my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
     my @CustomerUserIDs;
 
     EMAIL:
-    for my $Email ( Mail::Address->parse($RecipientEmail) ) {
-        next EMAIL if !$CheckItemObject->CheckEmail( Address => $Email->address() );
+    for my $Email ( $EmailAddressObject->ParseAddressLine( Line => $RecipientEmail ) ) {
+        next EMAIL unless $CheckItemObject->CheckEmail( AddressObject => $Email );
 
         # Get single customer user from customer backend based on the email address.
         my %CustomerSearch = $CustomerUserObject->CustomerSearch(
-            PostMasterSearch => $Email->address(),
+            PostMasterSearch => $EmailAddressObject->GetAddress( AddressObject => $Email ),
             Limit            => 1,
         );
-        next EMAIL if !%CustomerSearch;
+
+        next EMAIL unless %CustomerSearch;
 
         # Save customer user ID if not already present in the list.
         for my $CustomerUserID ( sort keys %CustomerSearch ) {

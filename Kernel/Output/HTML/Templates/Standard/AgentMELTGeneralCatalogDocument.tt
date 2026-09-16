@@ -1,0 +1,80 @@
+﻿# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header">
+        <h1>[% Translate("General Catalog as Code") | html %]</h1>
+        <p>
+            <a href="[% Env("Baselink") %]Action=[% Data.ReturnAction | uri %]">[% Translate("Cancel & close") | html %]</a>
+        </p>
+    </div>
+    <div class="Content">
+[% IF Data.Message %]
+        <div class="MessageBox [% Data.MessageClass | html %]">
+            <p>[% Data.Message | html %]</p>
+        </div>
+[% END %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="ReturnAction" value="[% Data.ReturnAction | html %]"/>
+            <fieldset class="TableLike">
+                <label for="Class">[% Translate("Catalog") | html %]:</label>
+                <div class="Field">
+                    <select id="Class" name="Class" class="W100pc">
+                        <option value=""[% IF !Data.SelectedClass %] selected="selected"[% END %]>[% Translate("All catalog classes") | html %]</option>
+[% FOREACH ClassOption IN Data.ClassOptions %]
+                        <option value="[% ClassOption.Class | html %]"[% IF ClassOption.Selected %] selected="selected"[% END %]>[% ClassOption.Class | html %]</option>
+[% END %]
+                    </select>
+                </div>
+                <div class="Clear"></div>
+
+                <label for="Classes">[% Translate("Classes") | html %]:</label>
+                <div class="Field">
+                    <input id="Classes" name="Classes" class="W100pc" type="text" value="[% Data.Classes | html %]" placeholder="[% Translate("Optional comma-separated class override") | html %]"/>
+                </div>
+                <div class="Clear"></div>
+
+                <label for="Format">[% Translate("Format") | html %]:</label>
+                <div class="Field">
+                    <select id="Format" name="Format">
+                        <option value="yaml"[% IF Data.Format == "yaml" %] selected="selected"[% END %]>YAML</option>
+                        <option value="json"[% IF Data.Format == "json" %] selected="selected"[% END %]>JSON</option>
+                    </select>
+                    <button class="CallForAction" type="submit" name="Subaction" value="Export">
+                        <span>[% Translate("Export") | html %]</span>
+                    </button>
+                </div>
+                <div class="Clear"></div>
+
+                <label for="Document">[% Translate("Document") | html %]:</label>
+                <div class="Field">
+                    <textarea id="Document" name="Document" class="W100pc" rows="28" spellcheck="false">[% Data.Document | html %]</textarea>
+                </div>
+                <div class="Clear"></div>
+            </fieldset>
+            <fieldset class="TableLike">
+                <div class="Field SpacingTop">
+                    <button class="CallForAction Primary" type="submit" name="Subaction" value="Import">
+                        <span>[% Translate("Import") | html %]</span>
+                    </button>
+                    [% Translate("or") | html %]
+                    <a href="[% Env("Baselink") %]Action=[% Data.ReturnAction | uri %]">[% Translate("Cancel") | html %]</a>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+

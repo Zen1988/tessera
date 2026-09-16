@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://otobo.de/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -224,7 +224,7 @@ Returns:
         "CustomerUserConditionsJSON" => "{\"UserLogin\":[{\"RegExpValue\":\"\",\"Negation\":\"0\"}]}",
         "Description" => "Selenium Descriptioncustomer",
         "Introduction" => "Selenium Introduction",
-        "NotificationBody" => "Dear Customer,\r\n\r\nThanks for using our service. Help us to improve us and our services.\r\n\r\nPlease give us feedback on how to improve our services:\r\n\r\nhttps://ncs.com.sg;PublicSurveyKey=<OTOBO_PublicSurveyKey>\r\n\r\nThanks for your help!\r\n\r\nYour OTOBO-Team",
+        "NotificationBody" => "Dear Customer,\r\n\r\nThanks for using our service. Help us to improve us and our services.\r\n\r\nPlease give us feedback on how to improve our services:\r\n\r\nhttp://localhost/otobo-alpha/public.pl?Action=PublicSurvey;PublicSurveyKey=<OTOBO_PublicSurveyKey>\r\n\r\nThanks for your help!\r\n\r\nYour OTOBO-Team",
         "NotificationSender" => "quality\@example.com",
         "NotificationSubject" => "Help us with your feedback!",
         "Queues" => [],
@@ -1634,7 +1634,7 @@ sub _SendConditionGetFieldSelections {
 
 =head1 TERMS AND CONDITIONS
 
-This software is part of the OTOBO project (L<https://ncs.com.sg>).
+This software is part of the OTOBO project (L<https://otobo.org/>).
 
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (GPL). If you

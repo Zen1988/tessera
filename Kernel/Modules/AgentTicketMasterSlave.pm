@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -14,9 +14,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
 #package Kernel::Modules::AgentTicketActionCommon;
 
 # This module uses AgentTicketActionCommon as a base, for easy update and framework compatibility
@@ -24,7 +22,7 @@
 # MasterSlave package
 package Kernel::Modules::AgentTicketMasterSlave;
 
-# ---
+# EO MasterSlave
 
 use v5.24;
 use strict;
@@ -114,9 +112,7 @@ sub new {
     # frontend specific config
     my $Config = $Kernel::OM->Get('Kernel::Config')->Get("Ticket::Frontend::$Self->{Action}");
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
     # get master/slave dynamic field
     $Self->{MasterSlaveDynamicField}    = $Kernel::OM->Get('Kernel::Config')->Get('MasterSlave::DynamicField')    || '';
     $Self->{MasterSlaveAdvancedEnabled} = $Kernel::OM->Get('Kernel::Config')->Get('MasterSlave::AdvancedEnabled') || 0;
@@ -126,7 +122,7 @@ sub new {
         $Config->{DynamicField}->{ $Self->{MasterSlaveDynamicField} } = $Display;
     }
 
-# ---
+# EO MasterSlave
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     # get the dynamic fields for this screen
@@ -927,9 +923,7 @@ sub Run {
         for my $DynamicFieldConfig ( values $Self->{DynamicField}->%* ) {
             next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
             if (
                 !$Self->{MasterSlaveAdvancedEnabled}
                 && $DynamicFieldConfig->{Name} eq $Self->{MasterSlaveDynamicField}
@@ -938,7 +932,7 @@ sub Run {
                 next DYNAMICFIELD;
             }
 
-# ---
+# EO MasterSlave
             my $PossibleValuesFilter;
 
             my $IsACLReducible = $DynamicFieldBackendObject->HasBehavior(
@@ -983,9 +977,7 @@ sub Run {
             }
 
             $DynamicFieldPossibleValues{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $PossibleValuesFilter;
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
 
             if ( $DynamicFieldConfig->{Name} eq $Self->{MasterSlaveDynamicField} ) {
                 $PossibleValuesFilter = $Self->_GetMasterSlaveData(
@@ -994,7 +986,7 @@ sub Run {
                 );
             }
 
-# ---
+# EO MasterSlave
             # Do not validate only if object type is Article and CreateArticle value is not defined, or Field is invisible.
             if (
                 !( $DynamicFieldConfig->{ObjectType} eq 'Article' && !$GetParam{CreateArticle} )
@@ -1422,9 +1414,7 @@ sub Run {
             next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD if !$Visibility{"DynamicField_$DynamicFieldConfig->{Name}"};
             next DYNAMICFIELD if $DynamicFieldConfig->{Readonly};
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
             if (
                 !$Self->{MasterSlaveAdvancedEnabled}
                 && $DynamicFieldConfig->{Name} eq $Self->{MasterSlaveDynamicField}
@@ -1433,7 +1423,7 @@ sub Run {
                 next DYNAMICFIELD;
             }
 
-# ---
+# EO MasterSlave
 
             # set the object ID (TicketID or ArticleID) depending on the field configration
             my $ObjectID = $DynamicFieldConfig->{ObjectType} eq 'Article'
@@ -2130,9 +2120,7 @@ sub Run {
         for my $DynamicFieldConfig ( values $Self->{DynamicField}->%* ) {
             next DYNAMICFIELD unless IsHashRefWithData($DynamicFieldConfig);
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
             if (
                 !$Self->{MasterSlaveAdvancedEnabled}
                 && $DynamicFieldConfig->{Name} eq $Self->{MasterSlaveDynamicField}
@@ -2141,7 +2129,7 @@ sub Run {
                 next DYNAMICFIELD;
             }
 
-# ---
+# EO MasterSlave
             # This overwrites the values that might have been taken from the web request.
             # Note that there shouldn't be any values from the web request,
             # because submits, successful and unsuccessful have been handled already above.
@@ -2404,15 +2392,13 @@ sub Run {
                 : undef
         } ( keys $Self->{DynamicField}->%* );
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
         $DynamicFieldPossibleValues{ 'DynamicField_' . $Self->{MasterSlaveDynamicField} } = $Self->_GetMasterSlaveData(
             Ticket                  => \%Ticket,
             MasterSlaveDynamicField => $Self->{MasterSlaveDynamicField},
         );
 
-# ---
+# EO MasterSlave
 
         # print form ...
         return join '',
@@ -3906,9 +3892,7 @@ sub _CopyArticleAttachmentsToUploadCache {
     return @Attachments;
 }
 
-# ---
-# MasterSlave
-# ---
+# Rother OSS / MasterSlave
 sub _GetMasterSlaveData {
     my ( $Self, %Param ) = @_;
 
@@ -3983,6 +3967,6 @@ sub _GetMasterSlaveData {
     return \%Data;
 }
 
-# ---
+# EO MasterSlave
 
 1;

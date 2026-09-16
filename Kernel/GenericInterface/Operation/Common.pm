@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -116,6 +116,39 @@ sub Auth {
         # if UserCustomerLogin
         if ($CustomerUserID) {
             return ( $CustomerUserID, 'Customer' );
+        }
+    }
+
+    # Authenthentication header
+    my $ParamObject          = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $AuthenticationHeader = $ParamObject->Header('Authorization') // '';
+    $AuthenticationHeader =~ s/^\s+|\s+$//g;    # trim whitespace
+
+    if ( $AuthenticationHeader && lc($AuthenticationHeader) =~ /^bearer / ) {
+
+        my $Token = substr( $AuthenticationHeader, 7 );
+        $Token =~ s/^\s+|\s+$//g;               # trim whitespace
+
+        my $AuthenticatorObject = $Kernel::OM->Get('Kernel::System::OpenIDConnect::Authenticator');
+        my $Result              = $AuthenticatorObject->Authenticate( Token => $Token );
+
+        if ( $Result->{Success} ) {
+
+            # report success!
+            $Self->{DebuggerObject}->Debug(
+                Summary => 'Athentication success - OAuth2 bearer token decoded:',
+                Data    => $Result->{TokenData},
+            );
+
+            return ( $Result->{UserData}->{UserID}, 'User' );
+        }
+        else {
+
+            # report failure!
+            $Self->{DebuggerObject}->Debug(
+                Summary => 'Authorization Token present but invalid!',
+                Data    => $Token,
+            );
         }
     }
 

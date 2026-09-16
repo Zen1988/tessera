@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -206,7 +206,13 @@ The trimming can be turned of by passing the parameter C<Raw>.
 
     my $Param = $ParamObject->GetParam(
         Param => 'ID',
-        Raw   => 1,       # optional, input data is not changed
+        Raw   => 1,                  # optional, input data is not changed
+                                     # specifying 'raw' will suppress input validation
+        Check => 'check_identifier', # optional, can be a compiled regex (qr/^abc$/) or
+                                     # a named check indetifier from K/S/Checkitem
+        Default => 'some_value',     # default value to use if input param validation
+                                     # failed. If not present an exception will be raised
+                                     # A default value of 0 or of the empty string is allowed.
     );
 
 When the parameter is not part of the query then C<undef> is returned.
@@ -246,6 +252,8 @@ sub GetParam {
     my ($Value) = $PlackRequest->parameters->get_all($Key);
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Value );
 
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
     # Stay compatible with CGI.pm by checking for file uploads.
     # The name of the file is returned when a file upload was found
     if ( !defined $Value && $PlackRequest->uploads->{$Key} ) {
@@ -258,10 +266,45 @@ sub GetParam {
     # no string cleaning when specifically so requested
     return $Value if $Param{Raw};
 
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('ValidateInputParams') ) {
+
+        my $Validator = $Param{Check};
+        my $Default   = $Param{Default};
+
+        if ( $Value && !$Validator ) {
+
+            my $DefaultValidator = $CheckItemObject->GetDefaultValidator( Key => $Key );
+            if ( defined $DefaultValidator ) {
+                $Validator = $DefaultValidator->{Check};
+                $Default //= $DefaultValidator->{Default};
+            }
+        }
+
+        if ( $Value && $Validator ) {
+
+            my $ValidationResult = $CheckItemObject->Validate(
+                Key       => $Key,
+                Value     => $Value,
+                Validator => $Validator
+            );
+
+            if ( !$ValidationResult->{Success} ) {
+
+                return $Default if defined $Default;
+
+                die Kernel::System::Web::Exception->new(
+                    PlackResponse => Plack::Response->new( 400, [], $ValidationResult->{Error} )
+                );
+            }
+
+            $Value = $ValidationResult->{Value};
+        }
+    }
+
     # If it is a plain string, perform trimming
     return $Value unless ref \$Value eq 'SCALAR';
 
-    $Kernel::OM->Get('Kernel::System::CheckItem')->StringClean(
+    $CheckItemObject->StringClean(
         StringRef => \$Value,
         TrimLeft  => 1,
         TrimRight => 1,
@@ -309,7 +352,13 @@ By default, trimming is performed on the data.
 
     my @Param = $ParamObject->GetArray(
         Param => 'ID',
-        Raw   => 1,     # optional, input data is not changed
+        Raw   => 1,                  # optional, input data is not changed
+                                     # specifying 'raw' will suppress input validation
+        Check => 'check_identifier', # optional, can be a compiled regex (qr/^abc$/) or
+                                     # a named check indetifier from K/S/Checkitem
+        Default => 'some_value',     # default value to use if input param validation
+                                     # failed. If not present an exception will be raised
+                                     # A default value of 0 or of the empty string is allowed.
     );
 
 URL and body parameters are merged. URL parameters come before body parameters
@@ -324,23 +373,67 @@ sub GetArray {
 
     return @Values if $Param{Raw};
 
-    # get check item object
-    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+    my $CheckItemObject     = $Kernel::OM->Get('Kernel::System::CheckItem');
+    my $ValidateInputParams = $Kernel::OM->Get('Kernel::Config')->Get('ValidateInputParams');
 
+    my $Validator = $Param{Check};
+    my $Default   = $Param{Default};
+    if ( $ValidateInputParams && !defined $Validator ) {
+
+        my $DefaultValidator = $CheckItemObject->GetDefaultValidator( Key => $Param{Param} );
+        if ( defined $DefaultValidator ) {
+            $Validator = $DefaultValidator->{Check};
+            $Default //= $DefaultValidator->{Default};
+        }
+    }
+
+    my @NewValues;
     VALUE:
     for my $Value (@Values) {
 
         # don't validate objects from file uploads
-        next VALUE if !$Value || ref \$Value ne 'SCALAR';
+        if ( !$Value || ref \$Value ne 'SCALAR' ) {
+            push @NewValues, $Value;
+            next VALUE;
+        }
 
-        $CheckItemObject->StringClean(
-            StringRef => \$Value,
-            TrimLeft  => 1,
-            TrimRight => 1,
-        );
+        if ( !$Param{Raw} && $ValidateInputParams && defined $Validator ) {
+
+            my $ValidationResult = $CheckItemObject->Validate(
+                Key       => $Param{Param},
+                Value     => $Value,
+                Validator => $Validator
+            );
+
+            if ( !$ValidationResult->{Success} ) {
+
+                if ( defined $Default ) {
+                    push @NewValues, $Default;
+
+                    next VALUE;
+                }
+
+                die Kernel::System::Web::Exception->new(
+                    PlackResponse => Plack::Response->new( 400, [], $ValidationResult->{Error} )
+                );
+            }
+
+            $Value = $ValidationResult->{Value};
+        }
+
+        if ( !$Param{Raw} ) {
+
+            $CheckItemObject->StringClean(
+                StringRef => \$Value,
+                TrimLeft  => 1,
+                TrimRight => 1,
+            );
+        }
+
+        push @NewValues, $Value;
     }
 
-    return @Values;
+    return @NewValues;
 }
 
 =head2 SetArray()
@@ -444,7 +537,7 @@ sub GetUploadAll {
     # get real file name from the Plack::Request::Upload object
     my $UploadFilenameOrig = $Upload->filename;
 
-    my $NewFileName = basename("$UploadFilenameOrig");    # use "" to get filename of anony. object
+    my $NewFileName = basename("$UploadFilenameOrig");    # use "" to get filename of anonymous object
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$NewFileName );
 
     # replace all devices like c: or d: and dirs for IE!
@@ -769,7 +862,7 @@ for transparent use by frontend module.
 
     my $FormDraftID = $ParamObject->LoadFormDraft(
         FormDraftID => 123,
-        UserID  => 1,
+        ObjectID    => 123,
     );
 
 =cut
@@ -777,12 +870,12 @@ for transparent use by frontend module.
 sub LoadFormDraft {
     my ( $Self, %Param ) = @_;
 
-    return if !$Param{FormDraftID} || !$Param{UserID};
+    return if !$Param{FormDraftID} || !$Param{ObjectID};
 
     # get draft data
     my $FormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
+        ObjectID    => $Param{ObjectID},
         FormDraftID => $Param{FormDraftID},
-        UserID      => $Param{UserID},
     );
 
     return unless IsHashRefWithData($FormDraft);
@@ -814,6 +907,17 @@ sub LoadFormDraft {
             );
 
             next KEY;
+        }
+
+        if ( $Key eq 'Body' ) {
+
+            # replace old form id with new one
+            $Value =~ s{
+                (<img.+?src=("|')[^"'>]+?FormID=)([^;]+?)(;[^>]*>)
+            }
+            {
+                $1 . $FormID . $4
+            }esgxi;
         }
 
         # scalar value
@@ -869,7 +973,9 @@ sub SaveFormDraft {
     }
     return unless $MetaParams{Action};
 
-    # determine session name param (SessionUseCookie = 0) for exclusion
+    # Determine session name param for exclusion.
+    # In previous version of OTOBO this was relevant
+    # when passing the session ID in the URL, SessionUseCookie = 0, was still supported.
     my $SessionName = $Kernel::OM->Get('Kernel::Config')->Get('SessionName') || 'SessionID';
 
     # compile override list
@@ -917,12 +1023,12 @@ sub SaveFormDraft {
             my @Values = $Self->GetArray( Param => $Param );
             next PARAM unless IsArrayRefWithData( \@Values );
 
-            # store single occurances as string
+            # store single occurrences as string
             if ( scalar @Values == 1 ) {
                 $Value = $Values[0];
             }
 
-            # store multiple occurances as array reference
+            # store multiple occurrences as array reference
             else {
                 $Value = \@Values;
             }

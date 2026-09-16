@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AdminServiceImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Service Import Export</Item>
+                    <Item Key="Title">ServiceImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminServiceImportExport###002-ServiceCatalog" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.ServiceImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminSLAImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">SLA Import Export</Item>
+                    <Item Key="Title">SLAImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminSLAImportExport###002-ServiceCatalog" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.SLAImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerDashboard::Tiles###ServiceCatalog-01" Required="0" Valid="0">
+        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Order">7</Item>
+                <Item Key="Module">Kernel::Output::HTML::CustomerDashboard::TileServiceCatalog</Item>
+                <Item Key="Config">
+                    <Hash>
+                        <Item Key="HeaderText">Find the right service for your ticket</Item>
+                    </Hash>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <!-- FIXME: This could be renamed; would probably break existing configs on installed systems -->
+    <Setting Name="CustomerDashboard::Configuration::ServiceCatalog" Required="0" Valid="1">
+        <Description Translatable="1">Additional settings for the service catalog.</Description>
+        <Navigation>Frontend::Customer::View::Dashboard::Configuration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Incident">ooofo-bang oooColor-Red</Item>
+                <Item Key="Incident::Major">ooofo-bang oooColor-Red</Item>
+                <Item Key="ServiceRequest"></Item>
+                <Item Key="Problem"></Item>
+                <Item Key="RfC"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerDashboard::Configuration::ServiceCatalog###DynamicField" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic fields shown in the service catalog screen of the customer interface.</Description>
+        <Navigation>Frontend::Customer::View::Dashboard::Configuration</Navigation>
+        <Value>
+            <Hash>
+                <DefaultItem ValueType="Select" SelectedID="0">
+                    <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+                </DefaultItem>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFieldScreens###ServiceCatalog" Required="1" Valid="1">
+        <Description Translatable="1">This configuration defines all possible screens to enable or disable dynamic fields.</Description>
+        <Navigation>Frontend::Base::DynamicFieldScreens</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CustomerDashboard::Configuration::ServiceCatalog###DynamicField">CustomerDashboardTile ServiceCatalog</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerDashboard::Configuration::ServiceCatalog###SortByTicketType" Required="0" Valid="0">
+        <Description Translatable="1">Show services with the following ticket type last.</Description>
+        <Navigation>Frontend::Customer::View::Dashboard::Configuration</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">Incident</Item>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerDashboard::Configuration::ServiceCatalog###FAQDescriptionField" Required="0" Valid="1">
+        <Description Translatable="1">The FAQ field that should be used as the description of an FAQ article in the sidebar (e.g. Field1, Field2, Field3...).</Description>
+        <Navigation>Frontend::Customer::View::Dashboard::Configuration</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">Field1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerDashboard###003-CustomerDashboard" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.Dashboard.TileServiceCatalog.css</Item>
+                        <Item>Core.Widget.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.UI.oooWidget.js</Item>
+                        <Item>Core.Customer.TileServiceCatalog.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerTileServiceCatalog" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the customer interface.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Title"></Item>
+                    <Item Key="Description" Translatable="1">CustomerTileServiceCatalog AJAX Module.</Item>
+                    <Item Key="NavBarName">Service Catalog</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicFields::ObjectType###Service" Required="0" Valid="1">
+        <Description Translatable="1">DynamicField object registration.</Description>
+        <Navigation>Core::DynamicFields::ObjectTypeRegistration</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="DisplayName" Translatable="1">Service</Item>
+                <Item Key="Module">Kernel::System::DynamicField::ObjectType::Service</Item>
+                <Item Key="Prio">140</Item>
+                <Item Key="UseObjectName">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ServiceCatalog::CreateTypeServiceRelatedAcls" Required="0" Valid="1">
+        <Description Translatable="1">This option allows you to automatically generate ACLs for different interfaces when creating services. Services will then only be displayed if the ticket type stored in the service has been selected. The "AddBulkACL" console script can also be used to create ACLs for services that have already been create.</Description>
+        <Navigation>Core::Acl</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="0">
+                <Item ValueType="Option" Value="0" Translatable="1">0 - Disabled</Item>
+                <Item ValueType="Option" Value="1" Translatable="1">1 - Enabled</Item>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="ServiceCatalog::CreateTypeServiceRelatedAcls::Options" Required="0" Valid="1">
+        <Description Translatable="1">This option makes it possible to preconfigure the automatically generated ACLs. The aim is to only display the services that have also been assigned to the service in the service catalog. To use this function, please first enable the "ServiceCatalog::CreateTypeServiceRelatedAcls" option. "GenerateInitalACLToDisableAllServices" generates an ACL that initially hides all services. The value "Possible" or "PossibleAdd" can be set for the key "ConfigChange". The "DeployNewACL" key decides whether the changed ACL should also be deployed immediately. "ACLValidID" (1, 2, 3) sets the ACLs to valid, invalid or temporarily invalid.</Description>
+        <Navigation>Core::Acl</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="FrontendAction">
+                    <Array>
+                        <Item>CustomerTicketMessage</Item>
+                        <Item>AgentTicketPhone</Item>
+                        <Item>AgentTicketEmail</Item>
+                        <Item>AgentTicketFreeText</Item>
+                    </Array>
+                </Item>
+                <Item Key="GenerateInitalACLToDisableAllServices">1</Item>
+                <Item Key="ConfigChange">Possible</Item>
+                <Item Key="ACLDeploy">1</Item>
+                <Item Key="ACLValidID">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::EventModulePost###9700-SetDynamicFieldCriticalityFromService" Required="0" Valid="0">
+        <Description Translatable="1">Event module registration. Currently, the criticality of the service can also be set in the service, but this has no effect. Therefore, this event module has been implemented that automatically updates the DynamicField Criticality in a ticket as soon as a service has been assigned. Please activate the SysConfig option SetPriorityFromCriticalityAndImpactMatrix to set the priority in the next step based an Criticality and Impact.</Description>
+        <Navigation>Core::Event::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::Ticket::Event::SetDynamicFieldCriticalityFromService</Item>
+                <Item Key="Transaction">1</Item>
+                <Item Key="Event">TicketServiceUpdate|TicketCreate</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Ticket::EventModulePost###9800-SetPriorityFromCriticalityAndImpactMatrix" Required="0" Valid="0">
+        <Description Translatable="1">Event module registration. Currently, the criticality of the service can also be set in the service, but this has no effect. Therefore, this event module has been implemented that automatically updates the priority regarding Criticality and Impact in a ticket.</Description>
+        <Navigation>Core::Event::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::Ticket::Event::SetPriorityFromCriticalityAndImpactMatrix</Item>
+                <Item Key="Transaction">1</Item>
+                <Item Key="Event">TicketDynamicFieldUpdate_ITSMCriticality|TicketDynamicFieldUpdate_ITSMImpact</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentITSMServiceZoom###002-ServiceCatalog" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.ITSMServiceZoom.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###002-ServiceImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for Service import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::ServiceImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="AutoloadPerlPackages###002-SLAImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Autoload configuration for SLA import and export functions.</Description>
+        <Navigation>Core::Autoload</Navigation>
+        <Value>
+            <Array>
+                <Item ValueType="String">Kernel::Autoload::SLAImportExport</Item>
+            </Array>
+        </Value>
+    </Setting>
+</otobo_config>

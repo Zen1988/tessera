@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -275,7 +275,7 @@ sub _PrepareAttributeMapping {
             'ö' => 'oe',
             'ü' => 'ue',
             'ß' => 'ss',
-            '_'  => '',
+            '_' => '',
         );
 
         for my $Sub ( sort keys %Substitions ) {
@@ -515,7 +515,7 @@ END_XML
     }
 
     # set namespace setting if empty
-    my $NamespacesSetting = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
+    my $NamespacesSetting = $Kernel::OM->Get('Kernel::Config')->Get('Namespaces###DynamicField');
     if ( %Namespaces && ( !$NamespacesSetting || !$NamespacesSetting->@* ) ) {
         my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
 
@@ -526,7 +526,7 @@ END_XML
         );
 
         $SysConfigObject->SettingUpdate(
-            Name              => 'DynamicField::Namespaces',
+            Name              => 'Namespaces###DynamicField',
             IsValid           => 1,
             EffectiveValue    => [ sort keys %Namespaces ],
             ExclusiveLockGUID => $ExclusiveLockGUID,
@@ -939,7 +939,7 @@ END_SQL
 
     if ($DisabledHistory) {
 
-        # reactivate wrinting history
+        # reactivate writing history
         my $ExclusiveLockGUID = $SysConfigObject->SettingLock(
             LockAll => 1,
             Force   => 1,

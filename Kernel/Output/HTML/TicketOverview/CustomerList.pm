@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,25 +47,6 @@ sub new {
     bless( $Self, $Type );
 
     return $Self;
-}
-
-sub _NormalizeValue {
-    my ($Value) = @_;
-
-    return if !defined $Value;
-
-    if ( ref $Value eq 'ARRAY' ) {
-        return _NormalizeValue( $Value->[0] );
-    }
-
-    if ( ref $Value eq 'HASH' ) {
-        return $Value->{Content} if defined $Value->{Content};
-        return $Value->{Value}   if defined $Value->{Value};
-        return $Value->{Key}     if defined $Value->{Key};
-        return;
-    }
-
-    return $Value;
 }
 
 sub Run {
@@ -138,12 +119,12 @@ sub Run {
         # get ticket info
         my %Ticket = $TicketObject->TicketGet(
             TicketID      => $TicketID,
-            DynamicFields => 1,
+            DynamicFields => 0,
         );
 
         my $Subject;
 
-        # TODO: get config oútside the loop
+        # TODO: get config outside the loop
         my $SmallViewColumnHeader = $ConfigObject->Get('Ticket::Frontend::CustomerTicketOverview')->{ColumnHeader};
 
         # Check if the last customer subject or ticket title should be shown.
@@ -163,7 +144,8 @@ sub Run {
         # Age design.
         $Ticket{CustomerAge} = $LayoutObject->CustomerAge(
             Age   => $Ticket{Age},
-            Space => ' '
+            Space => ' ',
+            Date  => $Ticket{Created},
         ) || 0;
 
         # return ticket information if there is no article
@@ -217,6 +199,7 @@ sub Run {
         my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
         my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
+        # NOTE the sysconfig setting Ticket::Frontend::CustomerTicketOverview is not used for its original purpose anymore, but kept here due to historical reasons
         # get dynamic field config for frontend module
         my $DynamicFieldFilter = $ConfigObject->Get("Ticket::Frontend::CustomerTicketOverview")->{DynamicField};
         my $DynamicField       = $DynamicFieldObject->DynamicFieldListGet(
@@ -251,7 +234,6 @@ sub Run {
             my $ValueStrg = $BackendObject->DisplayValueRender(
                 DynamicFieldConfig => $DynamicFieldConfig,
                 Value              => $Value,
-                ValueMaxChars      => 20,
                 LayoutObject       => $LayoutObject,
             );
             next DYNAMICFIELD if ( !defined $ValueStrg->{Value} || $ValueStrg->{Value} eq '' );
@@ -278,12 +260,10 @@ sub Run {
             Data => {
                 %Ticket,
                 %Article,
-                Subject            => $Subject,
-                CustomerName       => $CustomerName,
-                Avatar             => $Avatar,
-                UserInitials       => $UserInitials,
-                ZTSMSupportProfile => _NormalizeValue( $Ticket{'DynamicField_ZTicket-OwnerGroup'} ) || '',
-                ZTSMOwner          => _NormalizeValue( $Ticket{'DynamicField_ZTicket-Owner'} )      || '',
+                Subject      => $Subject,
+                CustomerName => $CustomerName,
+                Avatar       => $Avatar,
+                UserInitials => $UserInitials,
             },
         );
 

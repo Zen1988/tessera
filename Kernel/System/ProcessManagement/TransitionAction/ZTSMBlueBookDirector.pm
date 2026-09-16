@@ -14,7 +14,6 @@ use parent qw(
 );
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
-use Kernel::System::GenericAgent::ZTSMChangeTaskReader ();
 use Kernel::System::ZTSMBlueBookRuntime ();
 
 our @ObjectDependencies = (
@@ -67,25 +66,6 @@ sub Run {
             Message  => "ZTSMBlueBookDirector: Ticket is onhold, skip BlueBook advance TicketID=$TicketID",
         );
         return 1;
-    }
-
-    if ( lc( $Ticket->{Type} || '' ) eq 'change' ) {
-        my $ChangeTaskReader = Kernel::System::GenericAgent::ZTSMChangeTaskReader->new();
-        if (
-            !$ChangeTaskReader->NormalProgressAllowed(
-                ParentTicketID => $TicketID,
-                ParentTicket   => $Ticket,
-                UserID         => $UserID,
-            )
-            )
-        {
-            $LogObject->Log(
-                Priority => 'notice',
-                Message  =>
-                    "ZTSMBlueBookDirector: Change execution failure or rollback blocks BlueBook advance TicketID=$TicketID",
-            );
-            return 1;
-        }
     }
 
     my $BlueBookID = Kernel::System::ZTSMBlueBookRuntime::BlueBookIDGet(

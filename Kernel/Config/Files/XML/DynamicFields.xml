@@ -205,24 +205,6 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="DynamicFields::Driver###DynamicFieldGroup" Required="0" Valid="1">
-        <Description Translatable="1">DynamicField backend registration.</Description>
-        <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
-        <Value>
-            <Hash>
-                <Item Key="DisplayName" Translatable="1">Dynamic Field Group</Item>
-                <Item Key="Module">Kernel::System::DynamicField::Driver::DynamicFieldGroup</Item>
-                <Item Key="ConfigDialog">AdminDynamicFieldGroup</Item>
-                <Item Key="ObjectTypes">
-                    <Array>
-                        <Item>Article</Item>
-                        <Item>ITSMConfigItem</Item>
-                        <Item>Ticket</Item>
-                    </Array>
-                </Item>
-            </Hash>
-        </Value>
-    </Setting>
     <Setting Name="DynamicFields::Driver###ScriptTemplateToolkit" Required="0" Valid="1">
         <Description Translatable="1">DynamicField backend registration.</Description>
         <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
@@ -1187,7 +1169,7 @@
         <Navigation>Core::DynamicFields::DriverRegistration</Navigation>
         <Value>
             <Hash>
-                <Item Key="DisplayName" Translatable="1">CustomerCompany</Item>
+                <Item Key="DisplayName" Translatable="1">Customer Company</Item>
                 <Item Key="Module">Kernel::System::DynamicField::Driver::CustomerCompany</Item>
                 <Item Key="ConfigDialog">AdminDynamicFieldReference</Item>
                 <Item Key="ObjectTypes">
@@ -1749,68 +1731,6 @@
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="Frontend::Module###AdminDynamicFieldGroup" Required="0" Valid="1">
-        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
-        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
-        <Value>
-            <Item ValueType="FrontendRegistration">
-                <Hash>
-                    <Item Key="GroupRo">
-                        <Array>
-                        </Array>
-                    </Item>
-                    <Item Key="Group">
-                        <Array>
-                            <Item>admin</Item>
-                        </Array>
-                    </Item>
-                    <Item Key="Description" Translatable="1">This module is part of the admin area of OTOBO.</Item>
-                    <Item Key="Title" Translatable="1">Dynamic Field Group Backend GUI</Item>
-                    <Item Key="NavBarName">Admin</Item>
-                </Hash>
-            </Item>
-        </Value>
-    </Setting>
-    <Setting Name="Loader::Module::AdminDynamicFieldGroup###002-DynamicField" Required="0" Valid="1">
-        <Description Translatable="1">Loader module registration for the agent interface.</Description>
-        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
-        <Value>
-            <Hash>
-                <Item Key="CSS">
-                    <Array>
-                        <Item>Core.Agent.Admin.DynamicField.css</Item>
-                        <Item>Core.CodeMirrorEditor.css</Item>
-                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.css</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.css</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.css</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.css</Item>
-                    </Array>
-                </Item>
-                <Item Key="JavaScript">
-                    <Array>
-                        <Item>Core.Agent.Admin.DynamicField.js</Item>
-                        <Item>Core.Agent.Admin.SysConfig.Entity.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/lib/codemirror.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/mode/yaml/yaml.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/hint/show-hint.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchtags.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldcode.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/fold/xml-fold.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/dialog/dialog.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/search/searchcursor.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/search/search.js</Item>
-                        <Item>thirdparty/codemirror-5.65.20/addon/display/fullscreen.js</Item>
-                        <Item>Core.CodeMirrorEditor.js</Item>
-                    </Array>
-                </Item>
-            </Hash>
-        </Value>
-    </Setting>
     <Setting Name="Frontend::Module###AdminDynamicFieldScript" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for the agent interface.</Description>
         <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
@@ -1932,7 +1852,7 @@
                             </Array>
                         </Item>
                         <Item Key="Description">Manage dynamic field in screens.</Item>
-                        <Item Key="Title" Translatable="1">DynamicFieldScreen</Item>
+                        <Item Key="Title" Translatable="1">Dynamic Field Screen</Item>
                         <Item Key="NavBarName">Admin</Item>
                     </Hash>
                 </Item>
@@ -1986,8 +1906,8 @@
             <Navigation>Core</Navigation>
             <Value>
                 <Item ValueType="Select" SelectedID="1">
-                    <Item ValueType="Option" Value="1">valid</Item>
-                    <Item ValueType="Option" Value="0">invalid</Item>
+                    <Item ValueType="Option" Value="1" Translatable="1">valid</Item>
+                    <Item ValueType="Option" Value="0" Translatable="1">invalid</Item>
                 </Item>
             </Value>
         </Setting>
@@ -2051,6 +1971,7 @@
                     <Item Key="Ticket::Frontend::CustomerTicketPrint###DynamicField">CustomerTicketPrint</Item>
                     <Item Key="Ticket::Frontend::CustomerTicketSearch###DynamicField">CustomerTicketSearch</Item>
                     <Item Key="Ticket::Frontend::CustomerTicketZoom###DynamicField">CustomerTicketZoom</Item>
+                    <Item Key="Ticket::Frontend::CustomerTicketZoom###FollowUpDynamicField">CustomerTicketZoomReply</Item>
                     <Item Key="Ticket::Frontend::AgentTicketZoom###DynamicFieldWidgetDynamicField">DynamicFieldWidgetDynamicField</Item>
                     <!-- OverViews -->
                     <Item Key="Ticket::Frontend::OverviewMedium###DynamicField">OverviewMedium</Item>
@@ -2076,6 +1997,7 @@
                     <Item Key="Ticket::Frontend::AgentTicketEscalationView###DefaultColumns">AgentTicketEscalationView</Item>
                     <Item Key="Ticket::Frontend::AgentTicketSearch###DefaultColumns">AgentTicketSearch</Item>
                     <Item Key="Ticket::Frontend::AgentTicketService###DefaultColumns">AgentTicketService</Item>
+                    <Item Key="Ticket::Frontend::CustomerTicketSearch###SearchOverviewDynamicField">CustomerTicketSearch</Item>
                     <!-- DefaultColumns and Dashboard Widgets -->
                     <Item Key="DashboardBackend###0100-TicketPendingReminder">DashboardWidget TicketPendingReminder</Item>
                     <Item Key="DashboardBackend###0110-TicketEscalation">DashboardWidget TicketEscalation</Item>
@@ -2100,6 +2022,7 @@
         <Navigation>Frontend::Base</Navigation>
         <Value>
             <Array>
+                <Item>AgentTicketArticleEdit</Item>
                 <Item>AgentTicketClose</Item>
                 <Item>AgentTicketCompose</Item>
                 <Item>AgentTicketEmailOutbound</Item>
@@ -2180,9 +2103,9 @@
     <!-- End Ticket Masks -->
 
     <!-- Namespaces -->
-    <Setting Name="DynamicField::Namespaces" Required="0" Valid="0">
+    <Setting Name="Namespaces###DynamicField" Required="0" Valid="0">
         <Description Translatable="1">Define possible namespaces for dynamic fields. Must only contain alphanumeric characters. A namespace must not be longer than 64 characters. Namespace plus dynamic field name must not exceed 190 characters.</Description>
-        <Navigation>Core::DynamicFields</Navigation>
+        <Navigation>Core::Namespaces</Navigation>
         <Value>
             <Array>
                 <DefaultItem ValueType="String" ValueRegex="^[a-zA-Z0-9]{1,64}$"></DefaultItem>
@@ -2220,6 +2143,17 @@
             <Hash>
                 <Item Key="Module">Kernel::System::DynamicField::Event::UpdateSetFieldIncludedFields</Item>
                 <Item Key="Event">DynamicFieldAdd|DynamicFieldDelete|DynamicFieldUpdate</Item>
+                <Item Key="Transaction">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="DynamicField::EventModulePost###500-UpdateLensFieldMultiValue" Required="0" Valid="1">
+        <Description Translatable="1">Dynamic field event module that updates the MultiValue attribute of the Lens field configuration to match the MultiValue attribute of the attribute field.</Description>
+        <Navigation>Core::Event::Ticket</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::DynamicField::Event::UpdateLensFieldMultiValue</Item>
+                <Item Key="Event">DynamicFieldAdd|DynamicFieldUpdate</Item>
                 <Item Key="Transaction">1</Item>
             </Hash>
         </Value>

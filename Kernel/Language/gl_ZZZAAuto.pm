@@ -23,18 +23,50 @@ use utf8;
 sub Data {
     my $Self = shift;
 
+    $Self->{Translation}->{'Network::Address::New'} = 'Network::Enderezo::Novo';
+    $Self->{Translation}->{'Backup::Service'} = 'Backup::Servizo';
+    $Self->{Translation}->{'Network::Firewall Policy::New'} = 'Network::Firewall Policy::Novo';
+    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::Novo';
+    $Self->{Translation}->{'Common Service::Monitoring::Remove'} = 'Common Service::Monitoring::Retirar';
+    $Self->{Translation}->{'Security::Certificate::Install'} = 'Security::Certificate::Instalar';
+    $Self->{Translation}->{'Compute::Virtual Machine::New'} = 'Compute::Virtual Machine::Novo';
+    $Self->{Translation}->{'Network::Address::Release'} = 'Network::Enderezo::Release';
+    $Self->{Translation}->{'Backup::Service::Onboarding/Modify'} = 'Backup::Servizo::Onboarding/Modify';
+    $Self->{Translation}->{'Common Service::Carbon Black::Remove'} = 'Common Service::Carbon Black::Retirar';
+    $Self->{Translation}->{'Common Service::WSUS::Remove'} = 'Common Service::WSUS::Retirar';
+    $Self->{Translation}->{'Network::New'} = 'Network::Novo';
+    $Self->{Translation}->{'Compute::Virtual Machine::Remove'} = 'Compute::Virtual Machine::Retirar';
+    $Self->{Translation}->{'Network::Address'} = 'Network::Enderezo';
     $Self->{Translation}->{'Network Management::Network Security & Policy Management::Add'} =
         'Network Management::Network Security & Policy Management::Engadir';
     $Self->{Translation}->{'Network::Firewall Policy::Remove'} = 'Network::Firewall Policy::Retirar';
-    $Self->{Translation}->{'Network::Firewall Policy::New'} = 'Network::Firewall Policy::Novo';
-    $Self->{Translation}->{'Network::Load Balancer::New'} = 'Network::Load Balancer::Novo';
+    $Self->{Translation}->{'Network::Segment::New'} = 'Network::Segment::Novo';
+    $Self->{Translation}->{'Common Service::Red Hat Satellite::Remove'} = 'Common Service::Red Hat Satellite::Retirar';
+    $Self->{Translation}->{'Backup::Service::Remove'} = 'Backup::Servizo::Retirar';
+    $Self->{Translation}->{'Common Service::Trellix ePO::Remove'} = 'Common Service::Trellix ePO::Retirar';
 
 
     push @{ $Self->{JavaScriptStrings} // [] }, (
-        'Network Management::Network Security & Policy Management::Add',
-        'Network::Firewall Policy::Remove',
+        'Network::Address::New',
+        'Backup::Service',
         'Network::Firewall Policy::New',
         'Network::Load Balancer::New',
+        'Common Service::Monitoring::Remove',
+        'Security::Certificate::Install',
+        'Compute::Virtual Machine::New',
+        'Network::Address::Release',
+        'Backup::Service::Onboarding/Modify',
+        'Common Service::Carbon Black::Remove',
+        'Common Service::WSUS::Remove',
+        'Network::New',
+        'Compute::Virtual Machine::Remove',
+        'Network::Address',
+        'Network Management::Network Security & Policy Management::Add',
+        'Network::Firewall Policy::Remove',
+        'Network::Segment::New',
+        'Common Service::Red Hat Satellite::Remove',
+        'Backup::Service::Remove',
+        'Common Service::Trellix ePO::Remove',
     );
 
 }

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -16,8 +16,18 @@
 
 package Kernel::Output::PDF::Ticket;
 
+use v5.24;
 use strict;
 use warnings;
+use namespace::autoclean;
+use utf8;
+
+# core modules
+
+# CPAN modules
+
+# OTOBO modules
+use Kernel::System::VariableCheck qw(IsHashRefWithData);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -34,16 +44,10 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField::Backend',
 );
 
-use Kernel::System::VariableCheck qw(IsHashRefWithData);
-
 sub new {
-    my ( $Type, %Param ) = @_;
+    my ($Type) = @_;
 
-    # Allocate new hash for object.
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
+    return bless {}, $Type;
 }
 
 sub GeneratePDF {
@@ -56,6 +60,7 @@ sub GeneratePDF {
                 Priority => "error",
                 Message  => "Need $Needed!"
             );
+
             return;
         }
     }
@@ -339,7 +344,7 @@ sub GeneratePDF {
     );
 
     # Return the PDF document.
-    return $PDFObject->DocumentOutput();
+    return $PDFObject->DocumentOutput;
 }
 
 sub _PDFOutputTicketInfos {
@@ -605,6 +610,7 @@ sub _PDFOutputTicketInfos {
             $Page{PageCount}++;
         }
     }
+
     return 1;
 }
 
@@ -1065,7 +1071,7 @@ sub _PDFOutputArticles {
         my %Article = %{$ArticleTmp};
 
         # Get attachment string.
-        my %AtmIndex = ();
+        my %AtmIndex;
         if ( $Article{Atms} ) {
             %AtmIndex = %{ $Article{Atms} };
         }
@@ -1312,6 +1318,7 @@ sub _PDFOutputArticles {
         }
         $ArticleCounter++;
     }
+
     return 1;
 }
 

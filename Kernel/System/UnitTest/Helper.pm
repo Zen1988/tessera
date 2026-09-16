@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -185,7 +185,9 @@ sub GetRandomNumber {
 
     my $Prefix = $PID . substr time(), -5, 5;
 
-    return $Prefix . sprintf( '%.05d', ( $GetRandomNumberPrevious{$Prefix}++ || 0 ) );
+    my $Counter = sprintf '%.05d', ( $GetRandomNumberPrevious{$Prefix}++ || 0 );
+
+    return "$Prefix$Counter";
 }
 
 =head2 GetSequentialTwoLetterString()
@@ -717,7 +719,7 @@ sub DisableAsyncCalls {
 Provide temporary database for the test. Please first define test database settings in C<Config.pm>, i.e:
 
     $Self->{TestDatabase} = {
-        DatabaseDSN  => 'DBI:mysql:database=otobo_test;host=127.0.0.1;',
+        DatabaseDSN  => 'DBI:MariaDB:database=otobo_test;host=127.0.0.1;',
         DatabaseUser => 'otobo_test',
         DatabasePw   => 'otobo_test',
     };

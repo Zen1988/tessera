@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -458,7 +458,9 @@ sub EditFieldRender {
         }
 
         # set as checked if necessary
-        my $FieldChecked = ( defined $Value->{UsedValue} ? $Value->{UsedValue} eq 1 : 1 ) && defined $Value->{FieldValue} && $Value->{FieldValue} eq 1;
+        my $FieldChecked =
+            ( defined $Value->{UsedValue} ? $Value->{UsedValue} eq 1 : 1 )
+            && defined $Value->{FieldValue} && $Value->{FieldValue} eq 1;
         $FieldTemplateData{FieldChecked} = $FieldChecked ? 'checked ' : '';
 
         push @ResultHTML, $Param{LayoutObject}->Output(

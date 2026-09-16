@@ -2,9 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
-# --
-# $origin: otobo - 9bbf86da448bcff2bcc655fde9320646bc2950f2 - Kernel/Output/HTML/TicketOverview/Preview.pm
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -73,17 +71,6 @@ sub new {
         );
         $Self->{StoredFilters} = $StoredFilters;
     }
-
-# ---
-# ITSMIncidentProblemManagement
-# ---
-
-    # Check if ITSMIncidentProblemManagement is used.
-    my $OutputFilterConfig = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::Output::FilterElementPost');
-    if ( $OutputFilterConfig->{ITSMIncidentProblemManagement} ) {
-        $Self->{ITSMIncidentProblemManagement} = 1;
-    }
-# ---
 
     return $Self;
 }
@@ -165,14 +152,6 @@ sub ActionRow {
             next MENUMODULE if !IsHashRefWithData($Item);
 
             if ( $Item->{Block} eq 'DocumentActionRowItem' ) {
-
-                # add session id if needed
-                if ( !$LayoutObject->{SessionIDCookie} && $Item->{Link} ) {
-                    $Item->{Link}
-                        .= ';'
-                        . $LayoutObject->{SessionName} . '='
-                        . $LayoutObject->{SessionID};
-                }
 
                 # create id
                 $Item->{ID} = $Item->{Name};
@@ -392,20 +371,8 @@ sub _Show {
 
     my %Ticket = $TicketObject->TicketGet(
         TicketID      => $Param{TicketID},
-# ---
-# ITSMIncidentProblemManagement
-# ---
-#        DynamicFields => 0,
-        DynamicFields => 1,
-# ---
+        DynamicFields => 0,
     );
-# ---
-# ITSMIncidentProblemManagement
-# ---
-    # set criticality and impact
-    $Ticket{Criticality} = $Ticket{DynamicField_ITSMCriticality} || '-';
-    $Ticket{Impact}      = $Ticket{DynamicField_ITSMImpact}      || '-';
-# ---
 
     # Get configured number of last articles.
     my @Articles = $ArticleObject->ArticleList(
@@ -483,7 +450,7 @@ sub _Show {
     # get queue object
     my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
 
-    # fetch all std. templates ...
+    # fetch all std. templates
     my %StandardTemplates = $QueueObject->QueueStandardTemplateMemberList(
         QueueID       => $Article{QueueID},
         TemplateTypes => 1,
@@ -564,14 +531,6 @@ sub _Show {
             next MENU if !$Item;
             next MENU if ref $Item ne 'HASH';
 
-            # add session id if needed
-            if ( !$LayoutObject->{SessionIDCookie} && $Item->{Link} ) {
-                $Item->{Link}
-                    .= ';'
-                    . $LayoutObject->{SessionName} . '='
-                    . $LayoutObject->{SessionID};
-            }
-
             # create id
             $Item->{ID} = $Item->{Name};
             $Item->{ID} =~ s/(\s|&|;)//ig;
@@ -621,12 +580,6 @@ sub _Show {
         Name => 'DocumentContent',
         Data => {
             %Param,
-# ---
-# ITSMIncidentProblemManagement
-# ---
-            %Ticket,
-            ITSMIncidentProblemManagement => $Self->{ITSMIncidentProblemManagement},
-# ---
             %Article,
             Class             => 'ArticleCount' . $ArticleCount,
             AdditionalClasses => $AdditionalClasses,
@@ -993,6 +946,19 @@ sub _Show {
         );
     }
 
+    # show accounted time if needed
+    # get ticket object
+    my $DataValue = $TicketObject->TicketAccountedTimeGet( TicketID => $Param{TicketID} );
+
+    if ( defined $DataValue ) {
+        $LayoutObject->Block(
+            Name => 'AccountedTime',
+            Data => {
+                AccountedTime => $DataValue,
+            },
+        );
+    }
+
     # Dynamic fields
     $Counter = 0;
     my $Class = 'Middle';
@@ -1061,10 +1027,11 @@ sub _Show {
             $LayoutObject->Block(
                 Name => 'DynamicFieldTableRowRecordLink',
                 Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $ValueStrg->{Link},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
+                    %Ticket,
+                    Value                                      => $ValueStrg->{Value},
+                    Title                                      => $ValueStrg->{Title},
+                    Link                                       => $ValueStrg->{Link},
+                    "DynamicField_$DynamicFieldConfig->{Name}" => $ValueStrg->{Title},
                 },
             );
         }
@@ -1100,10 +1067,11 @@ sub _Show {
             $LayoutObject->Block(
                 Name => 'DynamicField_' . $DynamicFieldConfig->{Name} . '_TableRowRecordLink',
                 Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $ValueStrg->{Link},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Title},
+                    %Ticket,
+                    Value                                      => $ValueStrg->{Value},
+                    Title                                      => $ValueStrg->{Title},
+                    Link                                       => $ValueStrg->{Link},
+                    "DynamicField_$DynamicFieldConfig->{Name}" => $ValueStrg->{Title},
                 },
             );
         }
@@ -1123,7 +1091,7 @@ sub _Show {
     # fill the rest of the Dynamic Fields row with empty cells, this will look better
     if ( $Counter > 0 && $Counter < 2 ) {
 
-        for ( $Counter + 1 ... 2 ) {
+        for ( $Counter + 1 .. 2 ) {
 
             # outout dynamic field label
             $LayoutObject->Block(

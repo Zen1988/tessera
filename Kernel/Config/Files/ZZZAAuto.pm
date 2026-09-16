@@ -7,7 +7,7 @@ no warnings 'redefine'; ## no critic qw(TestingAndDebugging::ProhibitNoWarnings)
 use utf8;
 sub Load {
     my ($File, $Self) = @_;
-$Self->{'CurrentDeploymentID'} = '86';
+$Self->{'CurrentDeploymentID'} = '194';
 $Self->{'ACL::CacheTTL'} =  '3600';
 $Self->{'ACLKeysLevel1Change'} =  {
   'Possible' => 'Possible',
@@ -80,6 +80,7 @@ $Self->{'ACLKeysLevel3::Actions'}->{'100-Default'} =  [
   'AgentAppointmentCalendarOverview',
   'AgentTicketArticleDelete',
   'AgentTicketArticleEdit',
+  'AgentTicketArticleStatus',
   'AgentTicketArticleRestore',
   'AgentTicketArticleVersion',
   'AgentTicketBounce',
@@ -117,7 +118,7 @@ $Self->{'ACLKeysLevel3::Actions'}->{'100-Default'} =  [
   'CustomerTicketMessage',
   'CustomerTicketPrint',
   'CustomerTicketProcess',
-  'CustomerTicketZTSMAction',
+  'CustomerTicketSearch',
   'CustomerTicketZoom',
   'CustomerTicketZoomReply'
 ];
@@ -125,9 +126,15 @@ $Self->{'ACLKeysLevel3::Actions'}->{'100-Default-ITSM'} =  [
   'AgentTicketAddtlITSMField',
   'AgentTicketDecision'
 ];
+$Self->{'ACLKeysLevel3::Actions'}->{'110-ZTSMGovernanceRuntime'} =  [
+  'AgentTicketDecision',
+  'AgentTicketQuickClose',
+  'CustomerTicketZTSMAction'
+];
 $Self->{'ACLKeysLevel3::Actions'}->{'888-MasterSlave'} =  [
   'AgentTicketMasterSlave'
 ];
+$Self->{'AccountedTime::UsedUnits'} =  'Minutes';
 $Self->{'AdminContactWD::RunInitialWildcardSearch'} =  '1';
 $Self->{'AdminCustomerCompany::RunInitialWildcardSearch'} =  '1';
 $Self->{'AdminCustomerUser::RunInitialWildcardSearch'} =  '1';
@@ -193,11 +200,33 @@ $Self->{'AgentCustomerInformationCenter::Backend'}->{'0050-CIC-CustomerUserList'
   'Permission' => 'ro',
   'Title' => 'Customer Users'
 };
+$Self->{'AgentCustomerInformationCenter::Backend'}->{'0060-CIC-GovernanceObjectCustomerCompany'} =  {
+  'Attributes' => 'CustomerCompany',
+  'Block' => 'ContentLarge',
+  'CacheTTLLocal' => '0.5',
+  'Default' => '1',
+  'DefaultColumns' => {
+    'Class' => '2',
+    'LastChanged' => '2',
+    'Name' => '2',
+    'Number' => '2',
+    'ZTSMStatus' => '1',
+    'ZTSMStatusType' => '1'
+  },
+  'Description' => 'CIs assigned to customer company',
+  'Filter' => 'All',
+  'GovernanceObjectKey' => {},
+  'Group' => '',
+  'Limit' => '10',
+  'Module' => 'Kernel::Output::HTML::Dashboard::GovernanceObjectGeneric',
+  'Permission' => 'ro',
+  'Title' => 'Assigned CIs'
+};
 $Self->{'AgentCustomerInformationCenter::Backend'}->{'0060-CIC-ITSMConfigItemCustomerCompany'} =  {
   'Attributes' => 'CustomerCompany',
   'Block' => 'ContentLarge',
   'CacheTTLLocal' => '0.5',
-  'ConfigItemKey' => {},
+  'ConfigItemKey' => '',
   'Default' => '1',
   'DefaultColumns' => {
     'Class' => '2',
@@ -210,10 +239,33 @@ $Self->{'AgentCustomerInformationCenter::Backend'}->{'0060-CIC-ITSMConfigItemCus
     'Number' => '2'
   },
   'Description' => 'CIs assigned to customer company',
-  'Filter' => 'All',
+  'Filter' => 'AssignedToEntity',
   'Group' => '',
   'Limit' => '10',
   'Module' => 'Kernel::Output::HTML::Dashboard::ITSMConfigItemGeneric',
+  'Permission' => 'ro',
+  'ShownClasses' => [],
+  'Title' => 'Assigned CIs'
+};
+$Self->{'AgentCustomerInformationCenter::Backend'}->{'0060-CIC-MELTObjectCustomerCompany'} =  {
+  'Attributes' => 'CustomerCompany',
+  'Block' => 'ContentLarge',
+  'CacheTTLLocal' => '0.5',
+  'Default' => '1',
+  'DefaultColumns' => {
+    'Class' => '2',
+    'LastChanged' => '2',
+    'Name' => '2',
+    'Number' => '2',
+    'ZTSMStatus' => '1',
+    'ZTSMStatusType' => '1'
+  },
+  'Description' => 'CIs assigned to customer company',
+  'Filter' => 'All',
+  'Group' => '',
+  'Limit' => '10',
+  'MELTObjectKey' => {},
+  'Module' => 'Kernel::Output::HTML::Dashboard::MELTObjectGeneric',
   'Permission' => 'ro',
   'Title' => 'Assigned CIs'
 };
@@ -405,11 +457,22 @@ $Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0050-CUIC-CustomerIDLi
   'Permission' => 'ro',
   'Title' => 'Customer IDs'
 };
-$Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-ITSMConfigItemCustomerUser'} =  {
+$Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-GovernanceObjectCustomerUser'} =  {
   'Attributes' => 'Customer',
   'Block' => 'ContentLarge',
   'CacheTTLLocal' => '0.5',
-  'ConfigItemKey' => {
+  'Default' => '1',
+  'DefaultColumns' => {
+    'Class' => '2',
+    'LastChanged' => '2',
+    'Name' => '2',
+    'Number' => '2',
+    'ZTSMStatus' => '1',
+    'ZTSMStatusType' => '1'
+  },
+  'Description' => 'CIs assigned to customer user',
+  'Filter' => 'All',
+  'GovernanceObjectKey' => {
     'Appliance' => 'Contact-User',
     'Client' => 'Contact-User',
     'Client (virtual)' => 'Contact-User',
@@ -429,6 +492,17 @@ $Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-ITSMConfigIt
     'UPS' => 'Contact-User',
     'WLAN access point' => 'Contact-User'
   },
+  'Group' => '',
+  'Limit' => '10',
+  'Module' => 'Kernel::Output::HTML::Dashboard::GovernanceObjectGeneric',
+  'Permission' => 'ro',
+  'Title' => 'Assigned CIs'
+};
+$Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-ITSMConfigItemCustomerUser'} =  {
+  'Attributes' => 'Customer',
+  'Block' => 'ContentLarge',
+  'CacheTTLLocal' => '0.5',
+  'ConfigItemKey' => 'Contact-User',
   'Default' => '1',
   'DefaultColumns' => {
     'Class' => '2',
@@ -441,10 +515,52 @@ $Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-ITSMConfigIt
     'Number' => '2'
   },
   'Description' => 'CIs assigned to customer user',
-  'Filter' => 'All',
+  'Filter' => 'AssignedToEntity',
   'Group' => '',
   'Limit' => '10',
   'Module' => 'Kernel::Output::HTML::Dashboard::ITSMConfigItemGeneric',
+  'Permission' => 'ro',
+  'ShownClasses' => [],
+  'Title' => 'Assigned CIs'
+};
+$Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0060-CUIC-MELTObjectCustomerUser'} =  {
+  'Attributes' => 'Customer',
+  'Block' => 'ContentLarge',
+  'CacheTTLLocal' => '0.5',
+  'Default' => '1',
+  'DefaultColumns' => {
+    'Class' => '2',
+    'LastChanged' => '2',
+    'Name' => '2',
+    'Number' => '2',
+    'ZTSMStatus' => '1',
+    'ZTSMStatusType' => '1'
+  },
+  'Description' => 'CIs assigned to customer user',
+  'Filter' => 'All',
+  'Group' => '',
+  'Limit' => '10',
+  'MELTObjectKey' => {
+    'Appliance' => 'Contact-User',
+    'Client' => 'Contact-User',
+    'Client (virtual)' => 'Contact-User',
+    'Device (unidentified)' => 'Contact-User',
+    'Display' => 'Contact-User',
+    'Mobile Device' => 'Contact-User',
+    'Other Accessories' => 'Contact-User',
+    'Phone' => 'Contact-User',
+    'Printer' => 'Contact-User',
+    'Projector' => 'Contact-User',
+    'Router (Firewall)' => 'Contact-User',
+    'Server' => 'Contact-User',
+    'Server (virtual)' => 'Contact-User',
+    'Smartboard' => 'Contact-User',
+    'Storage' => 'Contact-User',
+    'Switch' => 'Contact-User',
+    'UPS' => 'Contact-User',
+    'WLAN access point' => 'Contact-User'
+  },
+  'Module' => 'Kernel::Output::HTML::Dashboard::MELTObjectGeneric',
   'Permission' => 'ro',
   'Title' => 'Assigned CIs'
 };
@@ -662,15 +778,16 @@ $Self->{'AgentCustomerUserInformationCenter::Backend'}->{'0600-CUIC-CustomerComp
   'Title' => 'Customer Information'
 };
 $Self->{'AgentLoginLogo'} =  {
-  'StyleHeight' => '150px',
-  'URL' => 'common/img/tessera-wordmark.svg'
+  'StyleHeight' => '198px',
+  'StyleWidth' => '320px',
+  'URL' => 'common/img/TESSERA/TESSERA_LOGIN_v2.svg'
 };
 $Self->{'AgentLogo'} =  {
-  'StyleHeight' => '95px',
-  'StyleRight' => '50px',
-  'StyleTop' => '0px',
-  'StyleWidth' => '100px',
-  'URL' => 'common/img/tessera-p-font_h100.png'
+  'StyleHeight' => '42px',
+  'StyleRight' => '24px',
+  'StyleTop' => '10px',
+  'StyleWidth' => '42px',
+  'URL' => 'common/img/TESSERA/TESSERA_MARK_v2.svg'
 };
 $Self->{'AgentPreferencesGroups'} =  [
   {
@@ -892,37 +1009,14 @@ $Self->{'AutoComplete::Customer'}->{'DynamicFieldReference'} =  {
   'MinQueryLength' => '2',
   'QueryDelay' => '100'
 };
+$Self->{'AutoComplete::Public'}->{'Default'} =  {
+  'AutoCompleteActive' => '1',
+  'ButtonText' => 'Search',
+  'MaxResultsDisplayed' => '20',
+  'MinQueryLength' => '2',
+  'QueryDelay' => '100'
+};
 $Self->{'AutoResponseForWebTickets'} =  '1';
-$Self->{'AutoloadPerlPackages'}->{'002-SLAImportExport'} =  [
-  'Kernel::Autoload::SLAImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'002-ServiceImportExport'} =  [
-  'Kernel::Autoload::ServiceImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-GenericAgentImportExport'} =  [
-  'Kernel::Autoload::GenericAgentImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-GroupImportExport'} =  [
-  'Kernel::Autoload::GroupImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-QueueImportExport'} =  [
-  'Kernel::Autoload::QueueImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-QueueTemplatesImportExport'} =  [
-  'Kernel::Autoload::QueueTemplatesImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-RoleGroupImportExport'} =  [
-  'Kernel::Autoload::RoleGroupImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-RoleImportExport'} =  [
-  'Kernel::Autoload::RoleImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-TemplateImportExport'} =  [
-  'Kernel::Autoload::TemplateImportExport'
-];
-$Self->{'AutoloadPerlPackages'}->{'003-TypeImportExport'} =  [
-  'Kernel::Autoload::TypeImportExport'
-];
 $Self->{'AutoloadPerlPackages'}->{'200-DownloadAttachment'} =  [
   'Kernel::Autoload::RepoArticle'
 ];
@@ -1001,12 +1095,53 @@ $Self->{'Customer::AuthModule::Radius::Die'} =  '1';
 $Self->{'Customer::AuthTwoFactorModule::AllowEmptySecret'} =  '1';
 $Self->{'Customer::AuthTwoFactorModule::AllowPreviousToken'} =  '1';
 $Self->{'Customer::AuthTwoFactorModule::SecretPreferencesKey'} =  'UserGoogleAuthenticatorSecretKey';
+$Self->{'Customer::ConfigItem::PermissionConditionColumns'}->{'01'} =  [
+  'Number',
+  'Name',
+  'ZTSMAssetTag',
+  'Class',
+  'ZTSMProductModel',
+  'ZTSMApplication',
+  'ZTSMEnvironment',
+  'ZTSMLocation',
+  'ZTSMDomain',
+  'ZTSMFunctionProfile',
+  'CurDeplState'
+];
 $Self->{'Customer::ConfigItem::PermissionConditionColumns'}->{'Default'} =  [
   'Number',
   'Name',
+  'ZTSMAssetTag',
   'Class',
-  'InciState',
-  'DeplState',
+  'ZTSMProductModel',
+  'ZTSMApplication',
+  'ZTSMEnvironment',
+  'ZTSMLocation',
+  'ZTSMDomain',
+  'ZTSMFunctionProfile',
+  'CurDeplState'
+];
+$Self->{'Customer::ConfigItem::PermissionConditions'}->{'01'} =  {
+  'Classes' => [],
+  'CustomerCompanyDynamicField' => '',
+  'CustomerUserDynamicField' => '',
+  'DeploymentStates' => [],
+  'DynamicFieldValues' => {},
+  'Groups' => [],
+  'Name' => 'All'
+};
+$Self->{'Customer::GovernanceObject::PermissionConditionColumns'}->{'Default'} =  [
+  'Number',
+  'Name',
+  'Class',
+  'ZTSMStatus',
+  'Created'
+];
+$Self->{'Customer::MELTObject::PermissionConditionColumns'}->{'Default'} =  [
+  'Number',
+  'Name',
+  'Class',
+  'ZTSMStatus',
   'Created'
 ];
 $Self->{'Customer::TicketSearch::AllServices'} =  '0';
@@ -1062,20 +1197,19 @@ $Self->{'CustomerDashboard::Configuration::ServiceCatalog'}->{'FAQDescriptionFie
 $Self->{'CustomerDashboard::Configuration::Text'} =  {
   'Name' => 'UserFirstname',
   'SubText' => 'This service portal is available to you all day every day.',
-  'WelcomeText' => 'Welcome %s, to your OTOBO.'
+  'WelcomeText' => 'Welcome %s, to your TESSERA workspace.'
 };
 $Self->{'CustomerDashboard::Tiles'}->{'FeaturedLink-01'} =  {
   'Config' => {
-    'BackgroundImage' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/Dashboard/dashboard_bgfl.png',
-    'FooterText' => 'Learn more >',
-    'HeaderText' => 'OTOBO 11.0 | Service Management',
-    'Link' => 'https://ncs.com.sg',
-    'MainText' => 'OTOBO 11.0 takes your service management to the next level with enhanced flexibility. And, with the simultaneous release of CMDB 11.0, you\'ll get seamless integration between your asset management and service management workflows.',
-    'NewTab' => '0',
-    'TextColor' => '#ffffff'
+    'CategoryName' => 'Announcement',
+    'EmptyText' => 'No current announcements.',
+    'ExpiryField' => 'ZFAQ-Expiry',
+    'Limit' => '5',
+    'StartField' => 'ZFAQ-Start'
   },
+  'Module' => 'Kernel::Output::HTML::CustomerDashboard::TileFeaturedFAQ',
   'Order' => '2',
-  'Template' => 'Dashboard/TileFeaturedLink'
+  'Template' => 'Dashboard/TileFeaturedFAQ'
 };
 $Self->{'CustomerDashboard::Tiles'}->{'InfoTile-01'} =  {
   'Config' => {
@@ -1094,13 +1228,6 @@ $Self->{'CustomerDashboard::Tiles'}->{'NewTicket'} =  {
   'Order' => '1',
   'Template' => 'Dashboard/TileNewTicket'
 };
-$Self->{'CustomerDashboard::Tiles'}->{'ServiceCatalog-01'} =  {
-  'Config' => {
-    'HeaderText' => 'Find the right service for your ticket'
-  },
-  'Module' => 'Kernel::Output::HTML::CustomerDashboard::TileServiceCatalog',
-  'Order' => '7'
-};
 $Self->{'CustomerDashboard::Tiles'}->{'TicketList-01'} =  {
   'Config' => {
     'CompanyTickets' => '0',
@@ -1108,7 +1235,7 @@ $Self->{'CustomerDashboard::Tiles'}->{'TicketList-01'} =  {
     'OrderBy' => 'Down',
     'SortBy' => 'Age',
     'StateType' => '',
-    'Text' => 'Your last tickets'
+    'Text' => 'My workspace'
   },
   'Module' => 'Kernel::Output::HTML::CustomerDashboard::TileTicketList',
   'Order' => '3'
@@ -1121,8 +1248,8 @@ $Self->{'CustomerDashboard::Tiles'}->{'ToolBox-01'} =  {
       '/otobo-web/skins/Customer/default/img/sample_wikipedia.png' => '3'
     },
     'Links' => {
-      'https://ncs.com.sg' => '1',
       'https://www.openstreetmap.org' => '2',
+      'https://www.otobo.io' => '1',
       'https://www.wikipedia.org' => '3'
     },
     'Text' => 'Your external tools',
@@ -1160,6 +1287,7 @@ $Self->{'CustomerFrontend::CKEditorPlugins'} =  [
   'ImageToolbar',
   'ImageInsert',
   'Indent',
+  'IndentBlock',
   'Italic',
   'Link',
   'List',
@@ -1179,7 +1307,8 @@ $Self->{'CustomerFrontend::CKEditorPlugins'} =  [
   'Underline',
   'Undo',
   'PasteFromOffice',
-  'Fullscreen'
+  'Fullscreen',
+  'TodoList'
 ];
 $Self->{'CustomerFrontend::CommonParam'}->{'Action'} =  'CustomerDashboard';
 $Self->{'CustomerFrontend::CommonParam'}->{'TicketID'} =  '';
@@ -1193,7 +1322,8 @@ $Self->{'CustomerFrontend::EnhancedCKEditorToolbar'} =  [
   ],
   [
     'bulletedList',
-    'numberedList'
+    'numberedList',
+    'todoList'
   ],
   [
     'insertTable'
@@ -1359,11 +1489,46 @@ $Self->{'CustomerFrontend::Module'}->{'CustomerGenericContent'} =  {
   'NavBarName' => '',
   'Title' => 'Info'
 };
+$Self->{'CustomerFrontend::Module'}->{'CustomerGovernanceObjectAttachment'} =  {
+  'Description' => 'To download attachments.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => ''
+};
+$Self->{'CustomerFrontend::Module'}->{'CustomerITSMConfigItem'} =  {
+  'Description' => 'ITSM config item overview.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Config Item',
+  'Title' => 'Overview'
+};
 $Self->{'CustomerFrontend::Module'}->{'CustomerITSMConfigItemAttachment'} =  {
   'Description' => 'To download attachments.',
   'Group' => [],
   'GroupRo' => [],
   'NavBarName' => 'Config Item',
+  'Title' => ''
+};
+$Self->{'CustomerFrontend::Module'}->{'CustomerITSMConfigItemSearch'} =  {
+  'Description' => 'Search config items.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Config Item',
+  'Title' => 'Search'
+};
+$Self->{'CustomerFrontend::Module'}->{'CustomerITSMConfigItemZoom'} =  {
+  'Description' => 'Config item zoom.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Config Item',
+  'Title' => 'Zoom'
+};
+$Self->{'CustomerFrontend::Module'}->{'CustomerMELTObjectAttachment'} =  {
+  'Description' => 'To download attachments.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
   'Title' => ''
 };
 $Self->{'CustomerFrontend::Module'}->{'CustomerPassword'} =  {
@@ -1415,13 +1580,6 @@ $Self->{'CustomerFrontend::Module'}->{'CustomerTicketPrint'} =  {
   'NavBarName' => '',
   'Title' => 'Print'
 };
-$Self->{'CustomerFrontend::Module'}->{'CustomerTicketSearch'} =  {
-  'Description' => 'Customer ticket search.',
-  'Group' => [],
-  'GroupRo' => [],
-  'NavBarName' => 'Ticket',
-  'Title' => 'Search'
-};
 $Self->{'CustomerFrontend::Module'}->{'CustomerTicketZTSMAction'} =  {
   'Description' => 'TESSERA runtime action.',
   'Group' => [],
@@ -1456,6 +1614,9 @@ $Self->{'CustomerFrontend::Module'}->{'PictureUpload'} =  {
   'GroupRo' => [],
   'NavBarName' => 'Ticket',
   'Title' => 'Picture-Upload'
+};
+$Self->{'CustomerFrontend::NavBarModule'}->{'900-ZTSMCustomerAsset'} =  {
+  'Module' => 'Kernel::Output::HTML::NavBar::ZTSMCustomerAsset'
 };
 $Self->{'CustomerFrontend::Navigation'}->{'CustomerDashboard'}->{'002-CustomerDashboard'} =  [
   {
@@ -1517,16 +1678,48 @@ $Self->{'CustomerFrontend::Navigation'}->{'CustomerFAQSearch'}->{'002-FAQ'} =  [
     'Type' => 'Submenu'
   }
 ];
+$Self->{'CustomerFrontend::Navigation'}->{'CustomerGovernanceObject'}->{'003-GovernanceObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Governance Object Database.',
+    'Group' => [],
+    'GroupRo' => [],
+    'Link' => 'Action=CustomerGovernanceObject',
+    'LinkOption' => '',
+    'Name' => 'GovernanceDB',
+    'NavBar' => 'Ticket',
+    'Prio' => '310',
+    'Type' => 'Menu',
+    'svgIcon' => 'var/httpd/htdocs/skins/Customer/default/img/devices_black_24dp.svg'
+  }
+];
 $Self->{'CustomerFrontend::Navigation'}->{'CustomerITSMConfigItem'}->{'003-ITSMConfigItem'} =  [
   {
     'AccessKey' => '',
     'Block' => '',
-    'Description' => 'Configuration Management Database.',
+    'Description' => 'Assets covered by your support assignments.',
     'Group' => [],
     'GroupRo' => [],
     'Link' => 'Action=CustomerITSMConfigItem',
     'LinkOption' => '',
-    'Name' => 'CMDB',
+    'Name' => 'Assets',
+    'NavBar' => 'Ticket',
+    'Prio' => '310',
+    'Type' => 'Menu',
+    'svgIcon' => 'var/httpd/htdocs/skins/Customer/default/img/ztsm_assets.svg'
+  }
+];
+$Self->{'CustomerFrontend::Navigation'}->{'CustomerMELTObject'}->{'003-MELTObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'MELT Object Database.',
+    'Group' => [],
+    'GroupRo' => [],
+    'Link' => 'Action=CustomerMELTObject',
+    'LinkOption' => '',
+    'Name' => 'MELT',
     'NavBar' => 'Ticket',
     'Prio' => '310',
     'Type' => 'Menu',
@@ -1582,21 +1775,6 @@ $Self->{'CustomerFrontend::Navigation'}->{'CustomerTicketSearch'}->{'002-Ticket'
   {
     'AccessKey' => 's',
     'Block' => '',
-    'Description' => 'Search.',
-    'Group' => [],
-    'GroupRo' => [],
-    'Link' => 'Action=CustomerTicketSearch',
-    'LinkOption' => '',
-    'Name' => 'Search',
-    'NavBar' => 'Ticket',
-    'Prio' => '300',
-    'Type' => 'Submenu'
-  }
-];
-$Self->{'CustomerFrontend::Navigation'}->{'CustomerTicketSearch'}->{'003-CustomerTickerSearch'} =  [
-  {
-    'AccessKey' => '',
-    'Block' => '',
     'Description' => 'Search Tickets.',
     'Group' => [],
     'GroupRo' => [],
@@ -1642,15 +1820,12 @@ $Self->{'CustomerGroupPermissionContext'}->{'001-CustomerID-same'} =  {
 $Self->{'CustomerGroupSupport'} =  '1';
 $Self->{'CustomerHeadline'} =  'Example Company';
 $Self->{'CustomerLogin::Settings'} =  {
-  'Background' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/LoginBG.jpg',
-  'LoginText' => 'Your Tickets. Your OTOBO.',
-  'RequestAccountLink' => '/public.pl?Action=PublicFAQZoom;ItemID=1',
-  'RequestAccountNewTab' => '0',
-  'RequestAccountText' => 'Request Account'
+  'Background' => '<OTOBO_CONFIG_Frontend::WebPath>common/img/TESSERA/LoginBG.jpg',
+  'LoginText' => 'TESSERA ICT Ticket Platform'
 };
 $Self->{'CustomerLogo'} =  {
-  'URLLogo' => 'common/img/tessera-vertical.svg',
-  'URLSignet' => 'common/img/tessera-wordmark.svg'
+  'URLLogo' => 'common/img/TESSERA/TESSERA_LOGIN_v2.svg',
+  'URLSignet' => 'common/img/TESSERA/TESSERA_MARK_v2.svg'
 };
 $Self->{'CustomerNotifyJustToRealCustomer'} =  '0';
 $Self->{'CustomerPanel::InfoFile'} =  'CustomerAccept';
@@ -1688,7 +1863,7 @@ via the Preferences button after logging in.
 
 <OTOBO_CONFIG_HttpType>://<OTOBO_CONFIG_FQDN>/<OTOBO_CONFIG_ScriptAlias>customer.pl
             ';
-$Self->{'CustomerPanelCreateAccount'} =  '0';
+$Self->{'CustomerPanelCreateAccount'} =  '1';
 $Self->{'CustomerPanelLostPassword'} =  '1';
 $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerAccept'} =  'Kernel::Modules::CustomerAccept';
 $Self->{'CustomerPanelPreApplicationModule'}->{'CustomerPassword'} =  'Kernel::Modules::CustomerPassword';
@@ -1823,6 +1998,15 @@ $Self->{'CustomerPreferencesGroups'}->{'TimeZone'} =  {
   'PrefKey' => 'UserTimeZone',
   'PreferenceGroup' => 'UserProfile',
   'Prio' => '2500'
+};
+$Self->{'CustomerPreferencesGroups'}->{'ZTSMRequestDefaults'} =  {
+  'Active' => '1',
+  'Desc' => 'Select default governance request context values.',
+  'Label' => 'Request defaults',
+  'Module' => 'Kernel::Output::HTML::Preferences::ZTSMCustomerDefaults',
+  'PrefKey' => 'ZTSMRequestDefaults',
+  'PreferenceGroup' => 'UserProfile',
+  'Prio' => '3900'
 };
 $Self->{'CustomerSessionLimit'} =  '100';
 $Self->{'CustomerSessionPerUserLimit'} =  '20';
@@ -2136,6 +2320,17 @@ $Self->{'Daemon::SchedulerCronTaskManager::Task'}->{'TicketUnlockTimeout'} =  {
   'Params' => [],
   'Schedule' => '35 * * * *',
   'TaskName' => 'TicketUnlockTimeout'
+};
+$Self->{'Daemon::SchedulerCronTaskManager::Task'}->{'TokenStoreUpdater'} =  {
+  'Function' => 'Run',
+  'MaximumParallelInstances' => '1',
+  'Module' => 'Kernel::System::OpenIDConnect::TokenStoreUpdater',
+  'Params' => [
+    'Interval',
+    '3600'
+  ],
+  'Schedule' => '0 * * * *',
+  'TaskName' => 'TokenStoreUpdater'
 };
 $Self->{'Daemon::SchedulerCronTaskManager::Task'}->{'WebUploadCacheCleanup'} =  {
   'Function' => 'FormIDCleanUp',
@@ -2585,9 +2780,7 @@ $Self->{'DashboardBackend'}->{'0910-TicketSlave'} =  {
   'Title' => 'Slave Tickets'
 };
 $Self->{'DashboardEventsTicketCalendar'}->{'CalendarWidth'} =  '95';
-$Self->{'DashboardEventsTicketCalendar'}->{'Queues'} =  [
-  'Raw'
-];
+$Self->{'DashboardEventsTicketCalendar'}->{'Queues'} =  [];
 $Self->{'DashboardEventsTicketCalendar::DynamicFieldEndTime'} =  'TicketCalendarEndTime';
 $Self->{'DashboardEventsTicketCalendar::DynamicFieldStartTime'} =  'TicketCalendarStartTime';
 $Self->{'DashboardEventsTicketCalendar::DynamicFieldsForEvents'} =  [
@@ -2606,9 +2799,6 @@ $Self->{'DashboardEventsTicketCalendar::TicketFieldsForEvents'} =  {
   'Type' => 'Type'
 };
 $Self->{'DashboardMyLastChangedTickets::Limit'} =  '10';
-$Self->{'DefaultColumnsScreens'}->{'CustomerTicketSearch'} =  {
-  'Ticket::Frontend::CustomerTicketSearch###SearchOverviewDynamicField' => 'CustomerTicketSearch'
-};
 $Self->{'DefaultColumnsScreens'}->{'Framework'} =  {
   'AgentCustomerInformationCenter::Backend###0100-CIC-TicketPendingReminder' => 'DashboardWidget CIC-TicketPendingReminder',
   'AgentCustomerInformationCenter::Backend###0110-CIC-TicketEscalation' => 'DashboardWidget CIC-TicketEscalation',
@@ -2630,13 +2820,26 @@ $Self->{'DefaultColumnsScreens'}->{'Framework'} =  {
   'Ticket::Frontend::AgentTicketSearch###DefaultColumns' => 'AgentTicketSearch',
   'Ticket::Frontend::AgentTicketService###DefaultColumns' => 'AgentTicketService',
   'Ticket::Frontend::AgentTicketStatusView###DefaultColumns' => 'AgentTicketStatusView',
-  'Ticket::Frontend::AgentTicketWatchView###DefaultColumns' => 'AgentTicketWatchView'
+  'Ticket::Frontend::AgentTicketWatchView###DefaultColumns' => 'AgentTicketWatchView',
+  'Ticket::Frontend::CustomerTicketSearch###SearchOverviewDynamicField' => 'CustomerTicketSearch'
+};
+$Self->{'DefaultColumnsScreens'}->{'GovernanceDB'} =  {
+  'AgentCustomerInformationCenter::Backend###0060-CIC-GovernanceObjectCustomerCompany' => 'DashboardWidget CIC-GovernanceObjectCustomerCompany',
+  'AgentCustomerUserInformationCenter::Backend###0060-CUIC-GovernanceObjectCustomerUser' => 'DashboardWidget CUIC-GovernanceObjectCustomerUser',
+  'GovernanceObject::Frontend::AgentGovernanceObject###DefaultColumns' => 'AgentGovernanceObject',
+  'GovernanceObject::Frontend::CustomerGovernanceObject###DefaultColumns' => 'CustomerGovernanceObject'
 };
 $Self->{'DefaultColumnsScreens'}->{'ITSMConfigurationManagement'} =  {
   'AgentCustomerInformationCenter::Backend###0060-CIC-ITSMConfigItemCustomerCompany' => 'DashboardWidget CIC-ITSMConfigItemCustomerCompany',
   'AgentCustomerUserInformationCenter::Backend###0060-CUIC-ITSMConfigItemCustomerUser' => 'DashboardWidget CUIC-ITSMConfigItemCustomerUser',
   'ITSMConfigItem::Frontend::AgentITSMConfigItem###DefaultColumns' => 'AgentITSMConfigItem',
   'ITSMConfigItem::Frontend::CustomerITSMConfigItem###DefaultColumns' => 'CustomerITSMConfigItem'
+};
+$Self->{'DefaultColumnsScreens'}->{'MELT'} =  {
+  'AgentCustomerInformationCenter::Backend###0060-CIC-MELTObjectCustomerCompany' => 'DashboardWidget CIC-MELTObjectCustomerCompany',
+  'AgentCustomerUserInformationCenter::Backend###0060-CUIC-MELTObjectCustomerUser' => 'DashboardWidget CUIC-MELTObjectCustomerUser',
+  'MELTObject::Frontend::AgentMELTObject###DefaultColumns' => 'AgentMELTObject',
+  'MELTObject::Frontend::CustomerMELTObject###DefaultColumns' => 'CustomerMELTObject'
 };
 $Self->{'DefaultLanguage'} =  'en';
 $Self->{'DefaultOverviewColumns'} =  {
@@ -2784,12 +2987,12 @@ $Self->{'DynamicField::EventModulePost'}->{'100-UpdateITSMChangeConditions'} =  
 };
 $Self->{'DynamicField::EventModulePost'}->{'200-DynamicFieldSync'} =  {
   'Event' => 'DynamicFieldUpdate',
-  'Module' => 'Kernel::System::DynamicField::Event::ITSMConfigItemDefinitionSync',
+  'Module' => 'Kernel::System::DynamicField::Event::MELTObjectDefinitionSync',
   'Transaction' => '1'
 };
 $Self->{'DynamicField::EventModulePost'}->{'2400-RebuildACLPreselectionCache'} =  {
   'Event' => 'DefinitionCreate',
-  'Module' => 'Kernel::System::ITSMConfigItem::Event::RebuildACLPreselectionCache'
+  'Module' => 'Kernel::System::MELTObject::Event::RebuildACLPreselectionCache'
 };
 $Self->{'DynamicField::EventModulePost'}->{'300-DeleteScriptFieldEvents'} =  {
   'Event' => 'DynamicFieldDelete',
@@ -2801,59 +3004,16 @@ $Self->{'DynamicField::EventModulePost'}->{'400-UpdateSetFieldInclusions'} =  {
   'Module' => 'Kernel::System::DynamicField::Event::UpdateSetFieldIncludedFields',
   'Transaction' => '1'
 };
+$Self->{'DynamicField::EventModulePost'}->{'500-UpdateLensFieldMultiValue'} =  {
+  'Event' => 'DynamicFieldAdd|DynamicFieldUpdate',
+  'Module' => 'Kernel::System::DynamicField::Event::UpdateLensFieldMultiValue',
+  'Transaction' => '1'
+};
 $Self->{'DynamicField::EventModulePost'}->{'8000-GenericInterface'} =  {
   'Event' => '',
   'Module' => 'Kernel::GenericInterface::Event::Handler',
   'Transaction' => '1'
 };
-$Self->{'DynamicField::Namespaces'} =  [
-  'ITSMUPS',
-  'ITSM',
-  'ITSMNetworkInfo',
-  'CPU',
-  'ITSMIPNetwork',
-  'ITSMStorage',
-  'ITSMMemory',
-  'ITSMSoftware',
-  'Contract',
-  'Contact',
-  'ITSMStoragePartition',
-  'ITSMServerSoftware',
-  'ITSMDisplay',
-  'ITSMClientSoftware',
-  'ITSMCertificate',
-  'ITSMAccounting',
-  'ITSMLicense',
-  'ITSMAppliance',
-  'ITSMClient',
-  'ITSMSIM',
-  'ITSMPhone',
-  'ITSMGraphicsCard',
-  'ITSMOtherAccessories',
-  'ITSMModel',
-  'ITSMFormFactor',
-  'Location',
-  'ZTSM',
-  'ZTSMOrganization',
-  'ZTSMAppSystem',
-  'ZTSMApprovalModel',
-  'ZTSMSupportProfile',
-  'ZTSMSupportAssignment',
-  'ZTSMTechnologyProfile',
-  'ZTSMServiceProfile',
-  'ZTSMServiceSupportMap',
-  'ZTSMSupportModel',
-  'ZTSMSLAPolicy',
-  'ZTSMPlatform',
-  'ZTSMEnvironment',
-  'ZTSMLocation',
-  'ZTSMGovernanceRole',
-  'ZFirewall',
-  'ZTicket',
-  'ZState',
-  'ZBlue',
-  'ZService'
-];
 $Self->{'DynamicFieldDB::DisplayfieldHeaders'} =  [];
 $Self->{'DynamicFieldDB::ExtendedValueStructure'} =  '1';
 $Self->{'DynamicFieldScreens'}->{'Framework'} =  {
@@ -2883,9 +3043,17 @@ $Self->{'DynamicFieldScreens'}->{'Framework'} =  {
   'Ticket::Frontend::CustomerTicketPrint###DynamicField' => 'CustomerTicketPrint',
   'Ticket::Frontend::CustomerTicketSearch###DynamicField' => 'CustomerTicketSearch',
   'Ticket::Frontend::CustomerTicketZoom###DynamicField' => 'CustomerTicketZoom',
+  'Ticket::Frontend::CustomerTicketZoom###FollowUpDynamicField' => 'CustomerTicketZoomReply',
   'Ticket::Frontend::OverviewMedium###DynamicField' => 'OverviewMedium',
   'Ticket::Frontend::OverviewPreview###DynamicField' => 'OverviewPreview',
   'Ticket::Frontend::OverviewSmall###DynamicField' => 'OverviewSmall'
+};
+$Self->{'DynamicFieldScreens'}->{'GovernanceDB'} =  {
+  'GovernanceObject::Frontend::AgentGovernanceObjectEdit###DynamicField' => 'AgentGovernanceObjectEdit',
+  'GovernanceObject::Frontend::AgentGovernanceObjectPrint###DynamicField' => 'AgentGovernanceObjectPrint',
+  'GovernanceObject::Frontend::AgentGovernanceObjectSearch###DynamicField' => 'AgentGovernanceObjectSearch',
+  'GovernanceObject::Frontend::AgentGovernanceObjectZoom###DynamicField' => 'AgentGovernanceObjectZoom',
+  'GovernanceObject::Frontend::CustomerGovernanceObjectSearch###DynamicField' => 'CustomerGovernanceObjectSearch'
 };
 $Self->{'DynamicFieldScreens'}->{'ITSMChangeManagement'} =  {
   'ITSMChange::Frontend::AgentITSMChangeAdd###DynamicField' => 'AgentITSMChangeAdd',
@@ -2909,11 +3077,27 @@ $Self->{'DynamicFieldScreens'}->{'ITSMIncidentProblemManagement'} =  {
   'Ticket::Frontend::AgentTicketAddtlITSMField###DynamicField' => 'AgentTicketAddtlITSMField',
   'Ticket::Frontend::AgentTicketDecision###DynamicField' => 'AgentTicketDecision'
 };
+$Self->{'DynamicFieldScreens'}->{'MELT'} =  {
+  'MELTObject::Frontend::AgentMELTObjectEdit###DynamicField' => 'AgentMELTObjectEdit',
+  'MELTObject::Frontend::AgentMELTObjectPrint###DynamicField' => 'AgentMELTObjectPrint',
+  'MELTObject::Frontend::AgentMELTObjectSearch###DynamicField' => 'AgentMELTObjectSearch',
+  'MELTObject::Frontend::AgentMELTObjectZoom###DynamicField' => 'AgentMELTObjectZoom',
+  'MELTObject::Frontend::CustomerMELTObjectSearch###DynamicField' => 'CustomerMELTObjectSearch'
+};
 $Self->{'DynamicFieldScreens'}->{'ServiceCatalog'} =  {
   'CustomerDashboard::Configuration::ServiceCatalog###DynamicField' => 'CustomerDashboardTile ServiceCatalog'
 };
+$Self->{'DynamicFieldScreens'}->{'ZTSMGovernanceRuntime'} =  {
+  'Ticket::Frontend::AgentTicketDecision###DynamicField' => 'AgentTicketDecision'
+};
+$Self->{'DynamicFieldScreens::ObjectTypes'}->{'GovernanceDB'} =  [
+  'GovernanceObject'
+];
 $Self->{'DynamicFieldScreens::ObjectTypes'}->{'ITSMConfigurationManagement'} =  [
   'ITSMConfigItem'
+];
+$Self->{'DynamicFieldScreens::ObjectTypes'}->{'MELT'} =  [
+  'MELTObject'
 ];
 $Self->{'DynamicFields::Driver'}->{'ActivityID'} =  {
   'ConfigDialog' => 'AdminDynamicFieldText',
@@ -2927,6 +3111,7 @@ $Self->{'DynamicFields::Driver'}->{'Agent'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::Agent',
   'ObjectTypes' => [
     'Article',
+    'GovernanceObject',
     'ITSMConfigItem',
     'Ticket'
   ]
@@ -2972,6 +3157,7 @@ $Self->{'DynamicFields::Driver'}->{'CustomerCompany'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::CustomerCompany',
   'ObjectTypes' => [
     'Article',
+    'MELTObject',
     'ITSMConfigItem',
     'Ticket'
   ]
@@ -2982,6 +3168,7 @@ $Self->{'DynamicFields::Driver'}->{'CustomerUser'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::CustomerUser',
   'ObjectTypes' => [
     'Article',
+    'MELTObject',
     'ITSMConfigItem',
     'Ticket'
   ]
@@ -3010,16 +3197,39 @@ $Self->{'DynamicFields::Driver'}->{'Dropdown'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::Dropdown',
   'ObjectTypes' => []
 };
+$Self->{'DynamicFields::Driver'}->{'DynamicFieldGroup'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldGroup',
+  'DisplayName' => 'Dynamic Field Group',
+  'Module' => 'Kernel::System::DynamicField::Driver::DynamicFieldGroup',
+  'ObjectTypes' => [
+    'Article',
+    'GovernanceObject',
+    'ITSMConfigItem',
+    'Ticket'
+  ]
+};
 $Self->{'DynamicFields::Driver'}->{'FAQ'} =  {
   'ConfigDialog' => 'AdminDynamicFieldReference',
   'DisplayName' => 'FAQ',
   'Module' => 'Kernel::System::DynamicField::Driver::FAQ',
-  'ObjectTypes' => []
+  'ObjectTypes' => [
+    'GovernanceObject'
+  ]
 };
 $Self->{'DynamicFields::Driver'}->{'GeneralCatalog'} =  {
   'ConfigDialog' => 'AdminDynamicFieldGeneralCatalog',
   'DisplayName' => 'GeneralCatalog',
   'Module' => 'Kernel::System::DynamicField::Driver::GeneralCatalog'
+};
+$Self->{'DynamicFields::Driver'}->{'GovernanceObject'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldReference',
+  'DisplayName' => 'GovernanceObject',
+  'Module' => 'Kernel::System::DynamicField::Driver::GovernanceObject'
+};
+$Self->{'DynamicFields::Driver'}->{'GovernanceObjectVersion'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldReference',
+  'DisplayName' => 'Governance Object Version',
+  'Module' => 'Kernel::System::DynamicField::Driver::GovernanceObjectVersion'
 };
 $Self->{'DynamicFields::Driver'}->{'Lens'} =  {
   'ConfigDialog' => 'AdminDynamicFieldLens',
@@ -3027,11 +3237,30 @@ $Self->{'DynamicFields::Driver'}->{'Lens'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::Lens',
   'ObjectTypes' => [
     'Article',
-    'CustomerCompany',
-    'CustomerUser',
     'ITSMConfigItem',
     'Ticket'
   ]
+};
+$Self->{'DynamicFields::Driver'}->{'MELTAgent'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldReference',
+  'DisplayName' => 'MELT Agent',
+  'Module' => 'Kernel::System::DynamicField::Driver::MELTAgent',
+  'ObjectTypes' => [
+    'Article',
+    'MELTObject',
+    'ITSMConfigItem',
+    'Ticket'
+  ]
+};
+$Self->{'DynamicFields::Driver'}->{'MELTObject'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldReference',
+  'DisplayName' => 'MELTObject',
+  'Module' => 'Kernel::System::DynamicField::Driver::MELTObject'
+};
+$Self->{'DynamicFields::Driver'}->{'MELTObjectVersion'} =  {
+  'ConfigDialog' => 'AdminDynamicFieldReference',
+  'DisplayName' => 'MELT Object Version',
+  'Module' => 'Kernel::System::DynamicField::Driver::MELTObjectVersion'
 };
 $Self->{'DynamicFields::Driver'}->{'MasterSlave'} =  {
   'ConfigDialog' => 'AdminDynamicFieldMasterSlave',
@@ -3074,8 +3303,6 @@ $Self->{'DynamicFields::Driver'}->{'ScriptTemplateToolkit'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::ScriptTemplateToolkit',
   'ObjectTypes' => [
     'Article',
-    'CustomerCompany',
-    'CustomerUser',
     'ITSMConfigItem',
     'Ticket'
   ]
@@ -3087,7 +3314,9 @@ $Self->{'DynamicFields::Driver'}->{'Service'} =  {
   'ObjectTypes' => [
     'Article',
     'ITSMConfigItem',
-    'Ticket'
+    'Ticket',
+    'GovernanceObject',
+    'MELTObject'
   ]
 };
 $Self->{'DynamicFields::Driver'}->{'Set'} =  {
@@ -3096,8 +3325,10 @@ $Self->{'DynamicFields::Driver'}->{'Set'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::Set',
   'ObjectTypes' => [
     'Article',
+    'MELTObject',
     'ITSMConfigItem',
-    'Ticket'
+    'Ticket',
+    'GovernanceObject'
   ]
 };
 $Self->{'DynamicFields::Driver'}->{'Text'} =  {
@@ -3118,6 +3349,7 @@ $Self->{'DynamicFields::Driver'}->{'Ticket'} =  {
   'Module' => 'Kernel::System::DynamicField::Driver::Ticket',
   'ObjectTypes' => [
     'Article',
+    'MELTObject',
     'ITSMConfigItem',
     'Ticket'
   ]
@@ -3164,6 +3396,11 @@ $Self->{'DynamicFields::ObjectType'}->{'FAQ'} =  {
   'Module' => 'Kernel::System::DynamicField::ObjectType::FAQ',
   'Prio' => '200'
 };
+$Self->{'DynamicFields::ObjectType'}->{'GovernanceObject'} =  {
+  'DisplayName' => 'Governance Object',
+  'Module' => 'Kernel::System::DynamicField::ObjectType::GovernanceObject',
+  'Prio' => '115'
+};
 $Self->{'DynamicFields::ObjectType'}->{'ITSMChange'} =  {
   'DisplayName' => 'ITSMChange',
   'Module' => 'Kernel::System::DynamicField::ObjectType::ITSMChange',
@@ -3178,6 +3415,11 @@ $Self->{'DynamicFields::ObjectType'}->{'ITSMWorkOrder'} =  {
   'DisplayName' => 'ITSMWorkOrder',
   'Module' => 'Kernel::System::DynamicField::ObjectType::ITSMWorkOrder',
   'Prio' => '460'
+};
+$Self->{'DynamicFields::ObjectType'}->{'MELTObject'} =  {
+  'DisplayName' => 'MELT Object',
+  'Module' => 'Kernel::System::DynamicField::ObjectType::MELTObject',
+  'Prio' => '115'
 };
 $Self->{'DynamicFields::ObjectType'}->{'Service'} =  {
   'DisplayName' => 'Service',
@@ -3219,9 +3461,28 @@ $Self->{'Elasticsearch::CustomerUserStoreFields'} =  [
   'UserLogin',
   'UserCustomerID'
 ];
-$Self->{'Elasticsearch::ExcludedQueues'} =  [
-  'Junk'
-];
+$Self->{'Elasticsearch::ExcludedQueues'} =  [];
+$Self->{'Elasticsearch::FAQSearchFields'} =  {
+  'Attachments' => '1',
+  'Basic' => [
+    'Field1',
+    'Field2',
+    'Field3',
+    'Title',
+    'Keywords'
+  ],
+  'DynamicField' => []
+};
+$Self->{'Elasticsearch::FAQStoreFields'} =  {
+  'Basic' => [
+    'ItemID',
+    'CategoryID',
+    'Number',
+    'Title',
+    'StateTypeID'
+  ],
+  'DynamicField' => []
+};
 $Self->{'Elasticsearch::IngestAttachmentFormat'} =  [
   'pdf',
   'txt',
@@ -3267,6 +3528,17 @@ $Self->{'Elasticsearch::QuickSearchShow'}->{'CustomerUser'} =  {
   ],
   'Count' => '5'
 };
+$Self->{'Elasticsearch::QuickSearchShow'}->{'FAQ'} =  {
+  'AttributeHeader' => {
+    'Number' => 'Number',
+    'Title' => 'Title'
+  },
+  'Attributes' => [
+    'Number',
+    'Title'
+  ],
+  'Count' => '5'
+};
 $Self->{'Elasticsearch::QuickSearchShow'}->{'Ticket'} =  {
   'AttributeHeader' => {
     'Age' => 'Age',
@@ -3281,6 +3553,9 @@ $Self->{'Elasticsearch::QuickSearchShow'}->{'Ticket'} =  {
     'Age'
   ],
   'Count' => '10'
+};
+$Self->{'Elasticsearch::Settings::SimilarSearch'} =  {
+  'Limit' => '6'
 };
 $Self->{'Elasticsearch::TicketSearchFields'} =  {
   'Article' => [
@@ -3314,6 +3589,36 @@ $Self->{'Elasticsearch::TicketStoreFields'} =  {
     'CustomerUserID'
   ]
 };
+$Self->{'ElasticsearchWidgetBackend'}->{'01-ElasticsearchTickets'} =  {
+  'Default' => '1',
+  'Module' => 'Kernel::Output::HTML::Elasticsearch::ElasticsearchTicketGeneric',
+  'Name' => 'Tickets',
+  'Permission' => 'AgentTicketZoom'
+};
+$Self->{'ElasticsearchWidgetBackend'}->{'02-ElasticsearchCustomerCompany'} =  {
+  'Default' => '1',
+  'Module' => 'Kernel::Output::HTML::Elasticsearch::ElasticsearchCustomerGeneric',
+  'Name' => 'Customers',
+  'Permission' => 'AgentCustomerInformationCenter'
+};
+$Self->{'ElasticsearchWidgetBackend'}->{'03-ElasticsearchCustomerUser'} =  {
+  'Default' => '1',
+  'Module' => 'Kernel::Output::HTML::Elasticsearch::ElasticsearchCustomerUserGeneric',
+  'Name' => 'Customer Users',
+  'Permission' => 'AgentCustomerUserInformationCenter'
+};
+$Self->{'ElasticsearchWidgetBackend'}->{'04-ElasticsearchConfigItem'} =  {
+  'Default' => '1',
+  'Module' => 'Kernel::Output::HTML::Elasticsearch::ElasticsearchConfigItemGeneric',
+  'Name' => 'Config Items',
+  'Permission' => 'AgentITSMConfigItemZoom'
+};
+$Self->{'ElasticsearchWidgetBackend'}->{'05-ElasticsearchFAQ'} =  {
+  'Default' => '1',
+  'Module' => 'Kernel::Output::HTML::Elasticsearch::ElasticsearchFAQGeneric',
+  'Name' => 'FAQs',
+  'Permission' => 'AgentFAQZoom'
+};
 $Self->{'EscalationSuspendCancelEscalation'} =  '0';
 $Self->{'EscalationSuspendLoopProtection'} =  '500';
 $Self->{'Events'}->{'Appointment'} =  [
@@ -3325,6 +3630,8 @@ $Self->{'Events'}->{'Appointment'} =  [
 $Self->{'Events'}->{'Article'} =  [
   'ArticleCreate',
   'ArticleUpdate',
+  'ArticleEdit',
+  'ArticleDynamicFieldUpdate',
   'ArticleSend',
   'ArticleBounce',
   'ArticleAgentNotification',
@@ -3354,6 +3661,26 @@ $Self->{'Events'}->{'DynamicField'} =  [
   'DynamicFieldAdd',
   'DynamicFieldUpdate',
   'DynamicFieldDelete'
+];
+$Self->{'Events'}->{'FAQ'} =  [
+  'FAQCreate',
+  'FAQUpdate',
+  'FAQDelete',
+  'FAQAttachmentAddPost',
+  'FAQAttachmentDeletePost'
+];
+$Self->{'Events'}->{'GovernanceObject'} =  [
+  'GovernanceObjectCreate',
+  'GovernanceObjectUpdate',
+  'VersionCreate',
+  'VersionUpdate',
+  'DeploymentStateUpdate',
+  'IncidentStateUpdate',
+  'GovernanceObjectDelete',
+  'NameUpdate',
+  'AttachmentAddPost',
+  'AttachmentDeletePost',
+  'VersionDelete'
 ];
 $Self->{'Events'}->{'ITSMChange'} =  [
   'ChangeAddPre',
@@ -3398,6 +3725,19 @@ $Self->{'Events'}->{'ITSMWorkOrder'} =  [
 $Self->{'Events'}->{'LinkObject'} =  [
   'LinkObjectLinkAdd',
   'LinkObjectLinkDelete'
+];
+$Self->{'Events'}->{'MELTObject'} =  [
+  'MELTObjectCreate',
+  'MELTObjectUpdate',
+  'VersionCreate',
+  'VersionUpdate',
+  'DeploymentStateUpdate',
+  'IncidentStateUpdate',
+  'MELTObjectDelete',
+  'NameUpdate',
+  'AttachmentAddPost',
+  'AttachmentDeletePost',
+  'VersionDelete'
 ];
 $Self->{'Events'}->{'Package'} =  [
   'PackageInstall',
@@ -3453,8 +3793,7 @@ $Self->{'Events'}->{'Ticket'} =  [
   'NotificationPendingReminder',
   'NotificationEscalation',
   'NotificationEscalationNotifyBefore',
-  'NotificationServiceUpdate',
-  'ArticleEdit'
+  'NotificationServiceUpdate'
 ];
 $Self->{'FAQ::Agent::StateTypes'} =  [
   'internal',
@@ -3483,7 +3822,7 @@ Your OTOBO Notification Master
 $Self->{'FAQ::ApprovalTicketDefaultState'} =  'new';
 $Self->{'FAQ::ApprovalTicketPriority'} =  '3 normal';
 $Self->{'FAQ::ApprovalTicketSubject'} =  'FAQ approval required for FAQ# <OTOBO_FAQ_NUMBER>';
-$Self->{'FAQ::ApprovalTicketType'} =  'Unclassified';
+$Self->{'FAQ::ApprovalTicketType'} =  '';
 $Self->{'FAQ::CacheTTL'} =  '172800';
 $Self->{'FAQ::Customer::RelatedArticles::Enabled'} =  '1';
 $Self->{'FAQ::Customer::RelatedArticlesOnServiceOnly'} =  '0';
@@ -3494,6 +3833,11 @@ $Self->{'FAQ::Customer::StateTypes'} =  [
 $Self->{'FAQ::Default::RootCategoryComment'} =  'default comment';
 $Self->{'FAQ::Default::RootCategoryName'} =  'FAQ';
 $Self->{'FAQ::Default::State'} =  'internal (agent)';
+$Self->{'FAQ::EventModulePost'}->{'9800-GenericInterface'} =  {
+  'Event' => '(FAQCreate|FAQUpdate|FAQDelete|FAQAttachmentAddPost|FAQAttachmentDeletePost)',
+  'Module' => 'Kernel::GenericInterface::Event::Handler',
+  'Transaction' => '1'
+};
 $Self->{'FAQ::Explorer::ItemList::VotingResultColors'} =  {
   '100' => 'green',
   '30' => 'red',
@@ -3769,6 +4113,12 @@ $Self->{'Frontend::AdminModuleGroups'}->{'002-Translations'} =  {
     'Title' => 'Languages'
   }
 };
+$Self->{'Frontend::AdminModuleGroups'}->{'200-GovernanceDB'} =  {
+  'GovernanceDBSettings' => {
+    'Order' => '8000',
+    'Title' => 'GovernanceDB Settings'
+  }
+};
 $Self->{'Frontend::AdminModuleGroups'}->{'200-ITSMChangeManagement'} =  {
   'ChangeSettings' => {
     'Order' => '9000',
@@ -3779,6 +4129,12 @@ $Self->{'Frontend::AdminModuleGroups'}->{'200-ITSMConfigurationManagement'} =  {
   'CMDBSettings' => {
     'Order' => '8000',
     'Title' => 'CMDB Settings'
+  }
+};
+$Self->{'Frontend::AdminModuleGroups'}->{'200-MELT'} =  {
+  'MELTSettings' => {
+    'Order' => '8000',
+    'Title' => 'MELT Settings'
   }
 };
 $Self->{'Frontend::AgentLinkObject::WildcardSearch'} =  '0';
@@ -3807,6 +4163,7 @@ $Self->{'Frontend::CKEditorPlugins'} =  [
   'ImageToolbar',
   'ImageInsert',
   'Indent',
+  'IndentBlock',
   'Italic',
   'Link',
   'List',
@@ -3826,7 +4183,8 @@ $Self->{'Frontend::CKEditorPlugins'} =  [
   'Underline',
   'Undo',
   'PasteFromOffice',
-  'Fullscreen'
+  'Fullscreen',
+  'TodoList'
 ];
 $Self->{'Frontend::CSSPath'} =  '<OTOBO_CONFIG_Frontend::WebPath>css/';
 $Self->{'Frontend::CommonParam'}->{'Action'} =  'AgentDashboard';
@@ -3911,7 +4269,8 @@ $Self->{'Frontend::EnhancedCKEditorToolbar'} =  [
   ],
   [
     'bulletedList',
-    'numberedList'
+    'numberedList',
+    'todoList'
   ],
   [
     'insertTable'
@@ -4224,6 +4583,15 @@ $Self->{'Frontend::Module'}->{'AdminDynamicFieldGeneralCatalog'} =  {
   'NavBarName' => 'Admin',
   'Title' => 'Dynamic Fields GeneralCatalog Backend GUI'
 };
+$Self->{'Frontend::Module'}->{'AdminDynamicFieldGroup'} =  {
+  'Description' => 'This module is part of the admin area of OTOBO.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'Admin',
+  'Title' => 'Dynamic Field Group Backend GUI'
+};
 $Self->{'Frontend::Module'}->{'AdminDynamicFieldImportExport'} =  {
   'Description' => 'DynamicField Import Export',
   'Group' => [
@@ -4294,7 +4662,7 @@ $Self->{'Frontend::Module'}->{'AdminDynamicFieldScreen'} =  {
   ],
   'GroupRo' => [],
   'NavBarName' => 'Admin',
-  'Title' => 'DynamicFieldScreen'
+  'Title' => 'Dynamic Field Screen'
 };
 $Self->{'Frontend::Module'}->{'AdminDynamicFieldScript'} =  {
   'Description' => 'This module is part of the admin area of OTOBO.',
@@ -4521,6 +4889,15 @@ $Self->{'Frontend::Module'}->{'AdminGenericInterfaceWebserviceHistory'} =  {
   'NavBarName' => '',
   'Title' => 'GenericInterface Web Service History GUI'
 };
+$Self->{'Frontend::Module'}->{'AdminGovernanceObject'} =  {
+  'Description' => 'Admin.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'Admin',
+  'Title' => 'Governance Object'
+};
 $Self->{'Frontend::Module'}->{'AdminGroup'} =  {
   'Description' => 'Admin',
   'Group' => [
@@ -4611,6 +4988,15 @@ $Self->{'Frontend::Module'}->{'AdminLog'} =  {
   'NavBarName' => 'Admin',
   'Title' => 'System Log'
 };
+$Self->{'Frontend::Module'}->{'AdminMELTObject'} =  {
+  'Description' => 'Admin.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'Admin',
+  'Title' => 'MELT Object'
+};
 $Self->{'Frontend::Module'}->{'AdminMailAccount'} =  {
   'Description' => 'Admin',
   'Group' => [
@@ -4628,6 +5014,24 @@ $Self->{'Frontend::Module'}->{'AdminNotificationEvent'} =  {
   'GroupRo' => [],
   'NavBarName' => 'Admin',
   'Title' => 'Ticket Notifications'
+};
+$Self->{'Frontend::Module'}->{'AdminOAuthTokenStore'} =  {
+  'Description' => 'Admin',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'Admin',
+  'Title' => 'OAuth Tokens'
+};
+$Self->{'Frontend::Module'}->{'AdminOIDCProfiles'} =  {
+  'Description' => 'Admin',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'Admin',
+  'Title' => 'OIDC Profiles'
 };
 $Self->{'Frontend::Module'}->{'AdminPGP'} =  {
   'Description' => 'Admin',
@@ -4772,15 +5176,6 @@ $Self->{'Frontend::Module'}->{'AdminQueueTemplatesImportExport'} =  {
   'GroupRo' => [],
   'NavBarName' => 'Admin',
   'Title' => 'QueueTemplatesImportExport'
-};
-$Self->{'Frontend::Module'}->{'AdminResponseTemplatesStatePreselection'} =  {
-  'Description' => 'Manage ticket state pre-selections for response templates.',
-  'Group' => [
-    'admin'
-  ],
-  'GroupRo' => [],
-  'NavBarName' => 'Admin',
-  'Title' => 'Ticket state pre-selection for response templates'
 };
 $Self->{'Frontend::Module'}->{'AdminRole'} =  {
   'Description' => 'Admin',
@@ -5208,6 +5603,13 @@ $Self->{'Frontend::Module'}->{'AgentDynamicFieldDBSearch'} =  {
   'NavBarName' => 'Ticket',
   'Title' => 'Agent Dynamic Field Database Search'
 };
+$Self->{'Frontend::Module'}->{'AgentElasticsearch'} =  {
+  'Description' => 'Elastic Module',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Dashboard',
+  'Title' => ''
+};
 $Self->{'Frontend::Module'}->{'AgentElasticsearchQuickResult'} =  {
   'Description' => 'Elasticsearch quick result module.',
   'Group' => [],
@@ -5309,6 +5711,178 @@ $Self->{'Frontend::Module'}->{'AgentFAQZoom'} =  {
   'GroupRo' => [],
   'NavBarName' => 'FAQ',
   'Title' => 'FAQ'
+};
+$Self->{'Frontend::Module'}->{'AgentGeneralCatalogDocument'} =  {
+  'Description' => 'General Catalog YAML/JSON document editor.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'General Catalog as Code'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceOSCALImport'} =  {
+  'Description' => 'OSCAL policy catalog ingestion.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'OSCAL Policy Import'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObject'} =  {
+  'Description' => 'Governance object overview.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Overview'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectActivity'} =  {
+  'Description' => 'Governance activity articles.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Governance Activity Articles'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectAdd'} =  {
+  'Description' => 'Governance Object add.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Add'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectAttachment'} =  {
+  'Description' => 'To download attachments.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => ''
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectBulk'} =  {
+  'Description' => 'Configuration item bulk module.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Bulk Action'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectDelete'} =  {
+  'Description' => 'Delete a configuration item',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Delete'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectDocument'} =  {
+  'Description' => 'Governance Object YAML/JSON document editor.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Governance as Code'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectEdit'} =  {
+  'Description' => 'Governance Object edit.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Edit'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectHistory'} =  {
+  'Description' => 'Governance Object history.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'History'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectPrint'} =  {
+  'Description' => 'Governance Object print.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Print'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectSearch'} =  {
+  'Description' => 'Search Governance Objects.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Search'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectTreeView'} =  {
+  'Description' => 'Governance Object Tree View',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Tree View'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectWorkbook'} =  {
+  'Description' => 'GovernanceObject Excel import and export.',
+  'Group' => [
+    'governance-db',
+    'admin'
+  ],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'GovernanceObject Excel Import/Export'
+};
+$Self->{'Frontend::Module'}->{'AgentGovernanceObjectZoom'} =  {
+  'Description' => 'Governance Object zoom.',
+  'Group' => [],
+  'GroupRo' => [
+    'governance-db',
+    'admin'
+  ],
+  'NavBarName' => 'GovernanceDB',
+  'Title' => 'Zoom'
 };
 $Self->{'Frontend::Module'}->{'AgentITSMCABMemberSearch'} =  {
   'Description' => 'Lookup of CAB members for autocompletion.',
@@ -5528,6 +6102,19 @@ $Self->{'Frontend::Module'}->{'AgentITSMConfigItem'} =  {
   'NavBarName' => 'Config Item',
   'Title' => 'Overview'
 };
+$Self->{'Frontend::Module'}->{'AgentITSMConfigItemActivity'} =  {
+  'Description' => 'Asset activity articles.',
+  'Group' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'GroupRo' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'NavBarName' => 'ITSMConfigItem',
+  'Title' => 'Asset Activity Articles'
+};
 $Self->{'Frontend::Module'}->{'AgentITSMConfigItemAdd'} =  {
   'Description' => 'Config item add.',
   'Group' => [
@@ -5561,6 +6148,19 @@ $Self->{'Frontend::Module'}->{'AgentITSMConfigItemDelete'} =  {
   'GroupRo' => [],
   'NavBarName' => 'ITSM ConfigItem',
   'Title' => 'Delete'
+};
+$Self->{'Frontend::Module'}->{'AgentITSMConfigItemDocument'} =  {
+  'Description' => 'ConfigItem YAML/JSON document editor.',
+  'Group' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'GroupRo' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'NavBarName' => 'ITSMConfigItem',
+  'Title' => 'CMDB as Code'
 };
 $Self->{'Frontend::Module'}->{'AgentITSMConfigItemEdit'} =  {
   'Description' => 'Config item edit.',
@@ -5615,6 +6215,19 @@ $Self->{'Frontend::Module'}->{'AgentITSMConfigItemTreeView'} =  {
   'GroupRo' => [],
   'NavBarName' => 'ITSM ConfigItem',
   'Title' => 'Tree View'
+};
+$Self->{'Frontend::Module'}->{'AgentITSMConfigItemWorkbook'} =  {
+  'Description' => 'CMDB Excel import and export.',
+  'Group' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'GroupRo' => [
+    'itsm-configitem',
+    'admin'
+  ],
+  'NavBarName' => 'ITSMConfigItem',
+  'Title' => 'CMDB Excel Import/Export'
 };
 $Self->{'Frontend::Module'}->{'AgentITSMConfigItemZoom'} =  {
   'Description' => 'Config item zoom.',
@@ -5859,6 +6472,165 @@ $Self->{'Frontend::Module'}->{'AgentLinkObject'} =  {
   'GroupRo' => [],
   'NavBarName' => '',
   'Title' => 'Link Object'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTGeneralCatalogDocument'} =  {
+  'Description' => 'General Catalog YAML/JSON document editor.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'General Catalog as Code'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObject'} =  {
+  'Description' => 'MELT object overview.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'Overview'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectActivity'} =  {
+  'Description' => 'MELT activity articles.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'MELT Activity Articles'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectAdd'} =  {
+  'Description' => 'MELT Object add.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
+  'Title' => 'Add'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectAttachment'} =  {
+  'Description' => 'To download attachments.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => ''
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectBulk'} =  {
+  'Description' => 'Configuration item bulk module.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
+  'Title' => 'Bulk Action'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectDelete'} =  {
+  'Description' => 'Delete a configuration item',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
+  'Title' => 'Delete'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectDocument'} =  {
+  'Description' => 'MELT Object YAML/JSON document editor.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'Governance as Code'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectEdit'} =  {
+  'Description' => 'MELT Object edit.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
+  'Title' => 'Edit'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectHistory'} =  {
+  'Description' => 'MELT Object history.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'History'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectPrint'} =  {
+  'Description' => 'MELT Object print.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'Print'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectSearch'} =  {
+  'Description' => 'Search MELT Objects.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'Search'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectTreeView'} =  {
+  'Description' => 'MELT Object Tree View',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [],
+  'NavBarName' => 'MELT',
+  'Title' => 'Tree View'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectWorkbook'} =  {
+  'Description' => 'MELTObject Excel import and export.',
+  'Group' => [
+    'melt',
+    'admin'
+  ],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'MELTObject Excel Import/Export'
+};
+$Self->{'Frontend::Module'}->{'AgentMELTObjectZoom'} =  {
+  'Description' => 'MELT Object zoom.',
+  'Group' => [],
+  'GroupRo' => [
+    'melt',
+    'admin'
+  ],
+  'NavBarName' => 'MELT',
+  'Title' => 'Zoom'
 };
 $Self->{'Frontend::Module'}->{'AgentPassword'} =  {
   'Description' => 'Agent Password.',
@@ -6229,11 +7001,11 @@ $Self->{'Frontend::Module'}->{'AgentTicketQueue'} =  {
   'Title' => 'QueueView'
 };
 $Self->{'Frontend::Module'}->{'AgentTicketQuickClose'} =  {
-  'Description' => 'Ticket Close',
+  'Description' => 'Quick close ticket.',
   'Group' => [],
   'GroupRo' => [],
   'NavBarName' => 'Ticket',
-  'Title' => 'Close'
+  'Title' => 'Quick Close'
 };
 $Self->{'Frontend::Module'}->{'AgentTicketResponsible'} =  {
   'Description' => 'Ticket Responsible.',
@@ -6269,6 +7041,13 @@ $Self->{'Frontend::Module'}->{'AgentTicketStatusView'} =  {
   'GroupRo' => [],
   'NavBarName' => 'Ticket',
   'Title' => 'Status view'
+};
+$Self->{'Frontend::Module'}->{'AgentTicketTESSERATable'} =  {
+  'Description' => 'TESSERA ticket table import/export.',
+  'Group' => [],
+  'GroupRo' => [],
+  'NavBarName' => 'Ticket',
+  'Title' => 'Ticket Import/Export'
 };
 $Self->{'Frontend::Module'}->{'AgentTicketWatchView'} =  {
   'Description' => 'Watched Tickets.',
@@ -6343,13 +7122,6 @@ $Self->{'Frontend::Module'}->{'AgentUserSearch'} =  {
   'GroupRo' => [],
   'NavBarName' => 'Ticket',
   'Title' => 'Agent User Search'
-};
-$Self->{'Frontend::Module'}->{'AgentZoom'} =  {
-  'Description' => 'Compat module for AgentZoom to AgentTicketZoom.',
-  'Group' => [],
-  'GroupRo' => [],
-  'NavBarName' => 'Ticket',
-  'Title' => ''
 };
 $Self->{'Frontend::Module'}->{'AjaxAttachment'} =  {
   'Description' => 'AjaxAttachment',
@@ -6695,6 +7467,94 @@ $Self->{'Frontend::Navigation'}->{'AgentFAQSearch'}->{'002-FAQ'} =  [
     'Type' => ''
   }
 ];
+$Self->{'Frontend::Navigation'}->{'AgentGovernanceOSCALImport'}->{'003-GovernanceObject'} =  [
+  {
+    'AccessKey' => 'o',
+    'Block' => '',
+    'Description' => 'Import an OSCAL catalog JSON file into Policies, Risk Statements, and Control Objectives.',
+    'Group' => [],
+    'GroupRo' => [
+      'governance-db',
+      'admin'
+    ],
+    'Link' => 'Action=AgentGovernanceOSCALImport',
+    'LinkOption' => '',
+    'Name' => 'OSCAL Import',
+    'NavBar' => 'GovernanceDB',
+    'Prio' => '400',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentGovernanceObject'}->{'003-GovernanceObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => 'ItemArea',
+    'Description' => 'Governance Object Database.',
+    'Group' => [],
+    'GroupRo' => [
+      'governance-db',
+      'admin'
+    ],
+    'Link' => 'Action=AgentGovernanceObject',
+    'LinkOption' => '',
+    'Name' => 'GovernanceDB',
+    'NavBar' => 'GovernanceDB',
+    'Prio' => '3200',
+    'Type' => 'Menu'
+  },
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Overview.',
+    'Group' => [],
+    'GroupRo' => [
+      'governance-db',
+      'admin'
+    ],
+    'Link' => 'Action=AgentGovernanceObject',
+    'LinkOption' => '',
+    'Name' => 'Overview',
+    'NavBar' => 'GovernanceDB',
+    'Prio' => '100',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentGovernanceObjectAdd'}->{'003-GovernanceObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'New',
+    'Group' => [
+      'governance-db',
+      'admin'
+    ],
+    'GroupRo' => [],
+    'Link' => 'Action=AgentGovernanceObjectAdd',
+    'LinkOption' => '',
+    'Name' => 'New',
+    'NavBar' => 'GovernanceDB',
+    'Prio' => '200',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentGovernanceObjectSearch'}->{'003-GovernanceObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Search Governance Objects.',
+    'Group' => [],
+    'GroupRo' => [
+      'governance-db',
+      'admin'
+    ],
+    'Link' => 'Action=AgentGovernanceObjectSearch',
+    'LinkOption' => 'onclick="ITSM.Agent.GovernanceObject.Search.OpenSearchDialog(\'AgentGovernanceObjectSearch\'); if (event.stopPropagation) { event.stopPropagation(); } else { window.event.cancelBubble = true; } return false;"',
+    'Name' => 'Search',
+    'NavBar' => 'GovernanceDB',
+    'Prio' => '300',
+    'Type' => ''
+  }
+];
 $Self->{'Frontend::Navigation'}->{'AgentITSMChange'}->{'003-ITSMChangeManagement'} =  [
   {
     'AccessKey' => '',
@@ -6967,6 +7827,76 @@ $Self->{'Frontend::Navigation'}->{'AgentITSMTemplateOverview'}->{'003-ITSMChange
     'Type' => ''
   }
 ];
+$Self->{'Frontend::Navigation'}->{'AgentMELTObject'}->{'003-MELTObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => 'ItemArea',
+    'Description' => 'MELT Object Database.',
+    'Group' => [],
+    'GroupRo' => [
+      'melt',
+      'admin'
+    ],
+    'Link' => 'Action=AgentMELTObject',
+    'LinkOption' => '',
+    'Name' => 'MELT',
+    'NavBar' => 'MELT',
+    'Prio' => '3200',
+    'Type' => 'Menu'
+  },
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Overview.',
+    'Group' => [],
+    'GroupRo' => [
+      'melt',
+      'admin'
+    ],
+    'Link' => 'Action=AgentMELTObject',
+    'LinkOption' => '',
+    'Name' => 'Overview',
+    'NavBar' => 'MELT',
+    'Prio' => '100',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentMELTObjectAdd'}->{'003-MELTObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'New',
+    'Group' => [
+      'melt',
+      'admin'
+    ],
+    'GroupRo' => [],
+    'Link' => 'Action=AgentMELTObjectAdd',
+    'LinkOption' => '',
+    'Name' => 'New',
+    'NavBar' => 'MELT',
+    'Prio' => '200',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentMELTObjectSearch'}->{'003-MELTObject'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Search MELT Objects.',
+    'Group' => [],
+    'GroupRo' => [
+      'melt',
+      'admin'
+    ],
+    'Link' => 'Action=AgentMELTObjectSearch',
+    'LinkOption' => 'onclick="ITSM.Agent.MELTObject.Search.OpenSearchDialog(\'AgentMELTObjectSearch\'); if (event.stopPropagation) { event.stopPropagation(); } else { window.event.cancelBubble = true; } return false;"',
+    'Name' => 'Search',
+    'NavBar' => 'MELT',
+    'Prio' => '300',
+    'Type' => ''
+  }
+];
 $Self->{'Frontend::Navigation'}->{'AgentStatistics'}->{'001-Framework'} =  [
   {
     'AccessKey' => '',
@@ -7195,6 +8125,21 @@ $Self->{'Frontend::Navigation'}->{'AgentTicketStatusView'}->{'002-Ticket'} =  [
     'Name' => 'Status view',
     'NavBar' => 'Ticket',
     'Prio' => '110',
+    'Type' => ''
+  }
+];
+$Self->{'Frontend::Navigation'}->{'AgentTicketTESSERATable'}->{'002-Ticket'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Export readable tickets to CSV or XLSX.',
+    'Group' => [],
+    'GroupRo' => [],
+    'Link' => 'Action=AgentTicketTESSERATable',
+    'LinkOption' => '',
+    'Name' => 'Table Export',
+    'NavBar' => 'Ticket',
+    'Prio' => '900',
     'Type' => ''
   }
 ];
@@ -7541,6 +8486,18 @@ $Self->{'Frontend::NavigationModule'}->{'AdminGenericInterfaceWebservice'} =  {
   'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
   'Name' => 'Web Services'
 };
+$Self->{'Frontend::NavigationModule'}->{'AdminGovernanceObject'} =  {
+  'Block' => 'GovernanceDBSettings',
+  'Description' => 'Create and manage the definitions for Governance Objects.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'IconBig' => 'fa-laptop',
+  'IconSmall' => '',
+  'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
+  'Name' => 'Governance Objects'
+};
 $Self->{'Frontend::NavigationModule'}->{'AdminGroup'} =  {
   'Block' => 'Users',
   'Description' => 'Create and manage groups.',
@@ -7637,6 +8594,18 @@ $Self->{'Frontend::NavigationModule'}->{'AdminLog'} =  {
   'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
   'Name' => 'System Log'
 };
+$Self->{'Frontend::NavigationModule'}->{'AdminMELTObject'} =  {
+  'Block' => 'MELTSettings',
+  'Description' => 'Create and manage the definitions for MELT Objects.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'IconBig' => 'fa-laptop',
+  'IconSmall' => '',
+  'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
+  'Name' => 'MELT Objects'
+};
 $Self->{'Frontend::NavigationModule'}->{'AdminMailAccount'} =  {
   'Block' => 'Communication',
   'Description' => 'Manage POP3 or IMAP accounts to fetch email from.',
@@ -7660,6 +8629,30 @@ $Self->{'Frontend::NavigationModule'}->{'AdminNotificationEvent'} =  {
   'IconSmall' => '',
   'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
   'Name' => 'Ticket Notifications'
+};
+$Self->{'Frontend::NavigationModule'}->{'AdminOAuthTokenStore'} =  {
+  'Block' => 'Administration',
+  'Description' => 'Functional Account and Token Management.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'IconBig' => 'fa-circle-o',
+  'IconSmall' => '',
+  'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
+  'Name' => 'OAuth Functional Accounts'
+};
+$Self->{'Frontend::NavigationModule'}->{'AdminOIDCProfiles'} =  {
+  'Block' => 'Administration',
+  'Description' => 'Manage OpendID Connect OAuth2 Profiles.',
+  'Group' => [
+    'admin'
+  ],
+  'GroupRo' => [],
+  'IconBig' => 'fa-circle-o',
+  'IconSmall' => '',
+  'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
+  'Name' => 'OIDC Profile Management'
 };
 $Self->{'Frontend::NavigationModule'}->{'AdminPGP'} =  {
   'Block' => 'Communication',
@@ -7768,18 +8761,6 @@ $Self->{'Frontend::NavigationModule'}->{'AdminQueueTemplates'} =  {
   'IconSmall' => 'fa-folder',
   'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
   'Name' => 'Templates ↔ Queues'
-};
-$Self->{'Frontend::NavigationModule'}->{'AdminResponseTemplatesStatePreselection'} =  {
-  'Block' => 'Ticket',
-  'Description' => 'Manage ticket state pre-selections for response templates.',
-  'Group' => [
-    'admin'
-  ],
-  'GroupRo' => [],
-  'IconBig' => 'fa-th-list',
-  'IconSmall' => '',
-  'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
-  'Name' => 'State pre-selection for Templates'
 };
 $Self->{'Frontend::NavigationModule'}->{'AdminRole'} =  {
   'Block' => 'Users',
@@ -8179,7 +9160,6 @@ $Self->{'Frontend::RichTextArticleStyles'} =  'common/css/ckeditor5-47.6.1-conte
 $Self->{'Frontend::RichTextEditorStyles'} =  'common/css/ckeditor5-47.6.1-editor.css';
 $Self->{'Frontend::RichTextHeight'} =  '320';
 $Self->{'Frontend::RichTextPath'} =  '<OTOBO_CONFIG_Frontend::WebPath>js/thirdparty/ckeditor5-47.6.1/';
-$Self->{'Frontend::RichTextWidth'} =  '620';
 $Self->{'Frontend::Search'}->{'AdminSystemConfiguration'} =  {
   '^AdminSystemConfiguration' => 'Action=AdminSystemConfiguration;Subaction=SearchDialog'
 };
@@ -8197,6 +9177,12 @@ $Self->{'Frontend::Search'}->{'ConfigItem'} =  {
 };
 $Self->{'Frontend::Search'}->{'FAQ'} =  {
   '^(?:Agent|Admin)FAQ' => 'Action=AgentFAQSearch;Subaction=AJAX'
+};
+$Self->{'Frontend::Search'}->{'GovernanceObject'} =  {
+  '^(?:Agent|Admin)GovernanceObject' => 'Action=AgentGovernanceObjectSearch;Subaction=AJAX'
+};
+$Self->{'Frontend::Search'}->{'MELTObject'} =  {
+  '^(?:Agent|Admin)MELTObject' => 'Action=AgentMELTObjectSearch;Subaction=AJAX'
 };
 $Self->{'Frontend::Search'}->{'Ticket'} =  {
   '^AgentTicket' => 'Action=AgentTicketSearch;Subaction=AJAX'
@@ -8216,6 +9202,12 @@ $Self->{'Frontend::Search::JavaScript'}->{'Change'} =  {
 $Self->{'Frontend::Search::JavaScript'}->{'ConfigItem'} =  {
   '^(?:Agent|Admin)ITSMConfigItem' => 'ITSM.Agent.ConfigItem.Search.OpenSearchDialog(\'AgentITSMConfigItemSearch\')'
 };
+$Self->{'Frontend::Search::JavaScript'}->{'GovernanceObject'} =  {
+  '^(?:Agent|Admin)GovernanceObject' => 'ITSM.Agent.GovernanceObject.Search.OpenSearchDialog(\'AgentGovernanceObjectSearch\')'
+};
+$Self->{'Frontend::Search::JavaScript'}->{'MELTObject'} =  {
+  '^(?:Agent|Admin)MELTObject' => 'ITSM.Agent.MELTObject.Search.OpenSearchDialog(\'AgentMELTObjectSearch\')'
+};
 $Self->{'Frontend::SearchDefault'} =  'Action=AgentTicketSearch;Subaction=AJAX';
 $Self->{'Frontend::Template::GenerateBlockHooks'}->{'100-Znuny4OTOBOAdvancedDynamicFields'} =  {
   'AdminDynamicField' => [
@@ -8228,6 +9220,7 @@ $Self->{'Frontend::Themes'} =  {
   'Standard' => '1'
 };
 $Self->{'Frontend::TicketMasks'}->{'002-DynamicField'} =  [
+  'AgentTicketArticleEdit',
   'AgentTicketClose',
   'AgentTicketCompose',
   'AgentTicketEmailOutbound',
@@ -8408,6 +9401,113 @@ $Self->{'GeneralCatalogPreferences'}->{'DeploymentStatesColors'} =  {
   'PrefKey' => 'Color',
   'Priority' => '25'
 };
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectCategories'} =  {
+  'Block' => 'GovernanceObjectClassCategories',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Data' => {},
+  'Desc' => 'Choose categories to assign to this Governance Object class.',
+  'Label' => 'Categories',
+  'Mandatory' => '1',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'Multiple' => '1',
+  'PrefKey' => 'Categories',
+  'Priority' => '80'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectNameModule'} =  {
+  'Block' => 'GovernanceObjectNameModule',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Data' => {},
+  'Desc' => 'Choose a module to enforce a naming scheme.',
+  'Label' => 'Name Module',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'PrefKey' => 'NameModule',
+  'Priority' => '30'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectNumberModule'} =  {
+  'Block' => 'GovernanceObjectNumberModule',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Data' => {},
+  'DataSelected' => 'GOID',
+  'Desc' => 'Choose a module to enforce a number scheme.',
+  'Label' => 'Number Module',
+  'Mandatory' => '1',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'PrefKey' => 'NumberModule',
+  'Priority' => '40'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectPermissions'} =  {
+  'Block' => 'Permission',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Label' => 'Permission Group',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'PrefKey' => 'Permission',
+  'Priority' => '10'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectStatusColor'} =  {
+  'Block' => 'ColorPicker',
+  'Class' => 'ZTSM::GovernanceObject::Status',
+  'Data' => '',
+  'Desc' => '',
+  'Label' => 'ZTSM Status Color',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::Generic',
+  'PrefKey' => 'Color',
+  'Priority' => '25'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectStatusFunctionality'} =  {
+  'Block' => 'Option',
+  'Class' => 'ZTSM::GovernanceObject::Status',
+  'Data' => {
+    'postproductive' => 'postproductive',
+    'preproductive' => 'preproductive',
+    'productive' => 'productive'
+  },
+  'Desc' => '',
+  'Label' => 'ZTSM Status Type',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::Generic',
+  'PrefKey' => 'Functionality',
+  'Priority' => '20'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectVersionStringExpression'} =  {
+  'Block' => 'Input',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Desc' => 'Define a Template::Toolkit scheme for version strings. Only used if Version String Module is set to TemplateToolkit.',
+  'Label' => 'Version String Expression',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'PrefKey' => 'VersionStringExpression',
+  'Priority' => '60'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectVersionStringModule'} =  {
+  'Block' => 'GovernanceObjectVersionStringModule',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Data' => {},
+  'DataSelected' => 'Incremental',
+  'Desc' => 'Choose a module to enforce a version string scheme.',
+  'Label' => 'Version String Module',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'PrefKey' => 'VersionStringModule',
+  'Priority' => '50'
+};
+$Self->{'GeneralCatalogPreferences'}->{'GovernanceObjectVersionTrigger'} =  {
+  'Block' => 'GovernanceObjectVersionTrigger',
+  'Class' => 'ZTSM::GovernanceObject::Class',
+  'Data' => {
+    'DefinitionUpdate' => 'Definition Update',
+    'Description' => 'Description',
+    'Name' => 'Name',
+    'ZTSMStatusID' => 'ZTSM Status'
+  },
+  'Desc' => 'Choose attributes to trigger the creation of a new version.',
+  'Label' => 'Version Trigger',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::GovernanceObjectGeneric',
+  'Multiple' => '1',
+  'PrefKey' => 'VersionTrigger',
+  'Priority' => '70'
+};
 $Self->{'GeneralCatalogPreferences'}->{'IncidentStates'} =  {
   'Block' => 'Option',
   'Class' => 'ITSM::Core::IncidentState',
@@ -8421,6 +9521,113 @@ $Self->{'GeneralCatalogPreferences'}->{'IncidentStates'} =  {
   'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::Generic',
   'PrefKey' => 'Functionality',
   'Priority' => '10'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectCategories'} =  {
+  'Block' => 'MELTObjectClassCategories',
+  'Class' => 'ZTSM::MELT::Class',
+  'Data' => {},
+  'Desc' => 'Choose categories to assign to this MELT Object class.',
+  'Label' => 'Categories',
+  'Mandatory' => '1',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'Multiple' => '1',
+  'PrefKey' => 'Categories',
+  'Priority' => '80'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectNameModule'} =  {
+  'Block' => 'MELTObjectNameModule',
+  'Class' => 'ZTSM::MELT::Class',
+  'Data' => {},
+  'Desc' => 'Choose a module to enforce a naming scheme.',
+  'Label' => 'Name Module',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'PrefKey' => 'NameModule',
+  'Priority' => '30'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectNumberModule'} =  {
+  'Block' => 'MELTObjectNumberModule',
+  'Class' => 'ZTSM::MELT::Class',
+  'Data' => {},
+  'DataSelected' => 'MELTID',
+  'Desc' => 'Choose a module to enforce a number scheme.',
+  'Label' => 'Number Module',
+  'Mandatory' => '1',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'PrefKey' => 'NumberModule',
+  'Priority' => '40'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectPermissions'} =  {
+  'Block' => 'Permission',
+  'Class' => 'ZTSM::MELT::Class',
+  'Label' => 'Permission Group',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'PrefKey' => 'Permission',
+  'Priority' => '10'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectStatusColor'} =  {
+  'Block' => 'ColorPicker',
+  'Class' => 'ZTSM::MELT::Status',
+  'Data' => '',
+  'Desc' => '',
+  'Label' => 'ZTSM Status Color',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::Generic',
+  'PrefKey' => 'Color',
+  'Priority' => '25'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectStatusFunctionality'} =  {
+  'Block' => 'Option',
+  'Class' => 'ZTSM::MELT::Status',
+  'Data' => {
+    'postproductive' => 'postproductive',
+    'preproductive' => 'preproductive',
+    'productive' => 'productive'
+  },
+  'Desc' => '',
+  'Label' => 'ZTSM Status Type',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::Generic',
+  'PrefKey' => 'Functionality',
+  'Priority' => '20'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectVersionStringExpression'} =  {
+  'Block' => 'Input',
+  'Class' => 'ZTSM::MELT::Class',
+  'Desc' => 'Define a Template::Toolkit scheme for version strings. Only used if Version String Module is set to TemplateToolkit.',
+  'Label' => 'Version String Expression',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'PrefKey' => 'VersionStringExpression',
+  'Priority' => '60'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectVersionStringModule'} =  {
+  'Block' => 'MELTObjectVersionStringModule',
+  'Class' => 'ZTSM::MELT::Class',
+  'Data' => {},
+  'DataSelected' => 'Incremental',
+  'Desc' => 'Choose a module to enforce a version string scheme.',
+  'Label' => 'Version String Module',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'PrefKey' => 'VersionStringModule',
+  'Priority' => '50'
+};
+$Self->{'GeneralCatalogPreferences'}->{'MELTObjectVersionTrigger'} =  {
+  'Block' => 'MELTObjectVersionTrigger',
+  'Class' => 'ZTSM::MELT::Class',
+  'Data' => {
+    'DefinitionUpdate' => 'Definition Update',
+    'Description' => 'Description',
+    'Name' => 'Name',
+    'ZTSMStatusID' => 'ZTSM Status'
+  },
+  'Desc' => 'Choose attributes to trigger the creation of a new version.',
+  'Label' => 'Version Trigger',
+  'Mandatory' => '0',
+  'Module' => 'Kernel::Output::HTML::GeneralCatalogPreferences::MELTObjectGeneric',
+  'Multiple' => '1',
+  'PrefKey' => 'VersionTrigger',
+  'Priority' => '70'
 };
 $Self->{'GeneralCatalogPreferences'}->{'NameModule'} =  {
   'Block' => 'NameModule',
@@ -8589,6 +9796,11 @@ $Self->{'GenericInterface::Invoker::Module'}->{'Elasticsearch::CustomerUserManag
   'Controller' => 'CustomerUserManagement',
   'Name' => 'CustomerUserManagement'
 };
+$Self->{'GenericInterface::Invoker::Module'}->{'Elasticsearch::FAQManagement'} =  {
+  'ConfigDialog' => 'AdminGenericInterfaceInvokerDefault',
+  'Controller' => 'FAQManagement',
+  'Name' => 'FAQManagement'
+};
 $Self->{'GenericInterface::Invoker::Module'}->{'Elasticsearch::Search'} =  {
   'ConfigDialog' => 'AdminGenericInterfaceInvokerDefault',
   'Controller' => 'Search',
@@ -8746,6 +9958,232 @@ $Self->{'GenericInterface::Transport::Module'}->{'HTTP::SOAP'} =  {
   'Protocol' => 'HTTP'
 };
 $Self->{'GenericInterface::WebserviceConfig::CacheTTL'} =  '86400';
+$Self->{'GovernanceDBTreeView::DefaultDepth'} =  '3';
+$Self->{'GovernanceDBTreeView::ShowLinkLabels'} =  'Yes';
+$Self->{'GovernanceObject::EventModulePost'}->{'100-History'} =  {
+  'Event' => '(GovernanceObjectCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField)',
+  'Module' => 'Kernel::System::GovernanceObject::Event::DoHistory',
+  'Transaction' => '0'
+};
+$Self->{'GovernanceObject::EventModulePost'}->{'110-TESSERAActivityArticles'} =  {
+  'Event' => '(GovernanceObjectCreate|GovernanceObjectUpdate|VersionCreate|VersionUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField.*)',
+  'Module' => 'Kernel::System::GovernanceObject::Event::ActivityRecorder',
+  'Transaction' => '0'
+};
+$Self->{'GovernanceObject::EventModulePost'}->{'300-DefinitionGovernanceObjectUpdate'} =  {
+  'Event' => 'DefinitionCreate',
+  'Module' => 'Kernel::System::GovernanceObject::Event::DefinitionGovernanceObjectUpdate',
+  'Transaction' => '1'
+};
+$Self->{'GovernanceObject::EventModulePost'}->{'4000-ScriptDynamicFields'} =  {
+  'Event' => '',
+  'Module' => 'Kernel::System::GovernanceObject::Event::EvaluateScriptFields',
+  'Transaction' => '1'
+};
+$Self->{'GovernanceObject::Frontend::AdminGovernanceObject'}->{'EditorRows'} =  '30';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObject'}->{'DefaultCategory'} =  'Governance';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObject'}->{'DefaultColumns'} =  {
+  'Class' => '2',
+  'Created' => '1',
+  'LastChanged' => '2',
+  'Name' => '2',
+  'Number' => '2',
+  'ZTSMStatus' => '2',
+  'ZTSMStatusType' => '1'
+};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObject'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObject'}->{'SearchLimit'} =  '10000';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectAdd'}->{'Permission'} =  'rw';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectAttachment'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectBulk'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectBulk'}->{'Permission'} =  'rw';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectBulk'}->{'ZTSMStatus'} =  '1';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectDelete'}->{'Permission'} =  'rw';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectEdit'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectEdit'}->{'Permission'} =  'rw';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectEdit'}->{'RichTextHeight'} =  '320';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectEdit'}->{'RichTextWidth'} =  '620';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectHistory'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectPrint'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectPrint'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'Defaults'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'Defaults'}->{'Name'} =  '';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'Defaults'}->{'Number'} =  '';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'ExtendedSearchCondition'} =  '1';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'Order::Default'} =  'Down';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'SearchCSVData'} =  [
+  'Class',
+  'ZTSMStatus',
+  'Name',
+  'Number',
+  'Version',
+  'CreateTime'
+];
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'SearchCSVDynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'SearchLimit'} =  '10000';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'SearchPageShown'} =  '40';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectSearch'}->{'SortBy::Default'} =  'Age';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectTreeView'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectZoom'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::AgentGovernanceObjectZoom'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::BulkFeature'} =  '1';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObject'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObject'}->{'SearchLimit'} =  '10000';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'Defaults'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'DeploymentState'} =  '0';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'DynamicField'} =  {};
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'ExtendedSearchCondition'} =  '1';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'IncidentState'} =  '0';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'Order::Default'} =  'Down';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'Permission'} =  'ro';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'SearchLimit'} =  '10000';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'SearchPageShown'} =  '40';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectSearch'}->{'SortBy::Default'} =  'Age';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectZoom'}->{'GeneralInfo'} =  {
+  'ChangedTime' => '1',
+  'Class' => '1',
+  'CreatedTime' => '1',
+  'DeploymentState' => '1',
+  'IncidentState' => '1',
+  'Number' => '1'
+};
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectZoom'}->{'VersionsEnabled'} =  '1';
+$Self->{'GovernanceObject::Frontend::CustomerGovernanceObjectZoom'}->{'VersionsSelectable'} =  '1';
+$Self->{'GovernanceObject::Frontend::CustomerOverview'}->{'Small'} =  {
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::CustomerOverviewSmall',
+  'Name' => 'Small',
+  'NameShort' => 'S',
+  'PageShown' => '25'
+};
+$Self->{'GovernanceObject::Frontend::HistoryOrder'} =  'normal';
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'000-Back'} =  {
+  'Action' => '',
+  'Description' => 'Back',
+  'Link' => '[% Env("LastScreenOverview") %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Back',
+  'Target' => ''
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'200-History'} =  {
+  'Action' => 'AgentGovernanceObjectHistory',
+  'Description' => 'History',
+  'Link' => 'Action=AgentGovernanceObjectHistory;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'History',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'210-ActivityArticles'} =  {
+  'Action' => 'AgentGovernanceObjectActivity',
+  'Description' => 'Every recorded activity',
+  'Link' => 'Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Activity Articles',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'300-Edit'} =  {
+  'Action' => 'AgentGovernanceObjectEdit',
+  'Description' => 'Edit',
+  'Link' => 'Action=AgentGovernanceObjectEdit;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Edit',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'400-Print'} =  {
+  'Action' => 'AgentGovernanceObjectPrint',
+  'Description' => 'Print',
+  'Link' => 'Action=AgentGovernanceObjectPrint;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'LinkParam' => 'target="print"',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Print',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'450-Document'} =  {
+  'Action' => 'AgentGovernanceObjectDocument',
+  'Description' => 'Export or import this Governance Object as YAML or JSON',
+  'Link' => 'Action=AgentGovernanceObjectDocument;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'YAML/JSON',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'500-Link'} =  {
+  'Action' => 'AgentLinkObject',
+  'Description' => 'Link',
+  'Link' => 'Action=AgentLinkObject;SourceObject=GovernanceObject;SourceKey=[% Data.GovernanceObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Link',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'550-TreeView'} =  {
+  'Action' => 'AgentGovernanceObjectTreeView',
+  'Description' => 'Governance Object Tree View',
+  'Link' => 'Action=AgentGovernanceObjectTreeView;VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Tree View',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'600-Duplicate'} =  {
+  'Action' => 'AgentGovernanceObjectEdit',
+  'Description' => 'Duplicate',
+  'Link' => 'Action=AgentGovernanceObjectEdit;DuplicateID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Duplicate',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::MenuModule'}->{'700-GovernanceObjectDelete'} =  {
+  'Action' => 'AgentGovernanceObjectDelete',
+  'ConfirmedActionQueryString' => 'Action=AgentGovernanceObjectDelete;Subaction=GovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'Description' => 'Delete Configuration Item',
+  'DialogContentQueryString' => 'Action=AgentGovernanceObjectDelete;AJAX=1;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'DialogTitle' => '[% Translate("Delete") | html %] [% Config("GovernanceObject::Hook") %] [% Data.Number | html %]',
+  'ElementSelector' => '#Menu[% Data.MenuID | html %]',
+  'Link' => 'Action=AgentGovernanceObjectDelete;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Delete',
+  'Target' => 'ConfirmDialog'
+};
+$Self->{'GovernanceObject::Frontend::Overview'}->{'Small'} =  {
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::OverviewSmall',
+  'Name' => 'Small',
+  'NameShort' => 'S',
+  'PageShown' => '25'
+};
+$Self->{'GovernanceObject::Frontend::PreMenuModule'}->{'100-Zoom'} =  {
+  'Action' => 'AgentGovernanceObjectZoom',
+  'Description' => 'Zoom',
+  'Link' => 'Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Zoom',
+  'Target' => ''
+};
+$Self->{'GovernanceObject::Frontend::PreMenuModule'}->{'200-History'} =  {
+  'Action' => 'AgentGovernanceObjectHistory',
+  'Description' => 'History',
+  'Link' => 'Action=AgentGovernanceObjectHistory;GovernanceObjectID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'History',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Frontend::PreMenuModule'}->{'300-Duplicate'} =  {
+  'Action' => 'AgentGovernanceObjectEdit',
+  'Description' => 'Duplicate',
+  'Link' => 'Action=AgentGovernanceObjectEdit;DuplicateID=[% Data.GovernanceObjectID | html %];VersionID=[% Data.VersionID | html %];ReturnToLastScreen=1',
+  'Module' => 'Kernel::Output::HTML::GovernanceObject::MenuGeneric',
+  'Name' => 'Duplicate',
+  'Target' => 'PopUp'
+};
+$Self->{'GovernanceObject::Hook'} =  'GovernanceObject#';
+$Self->{'GovernanceObject::Permission::Class'}->{'010-ClassGroupCheck'} =  {
+  'Granted' => '1',
+  'Module' => 'Kernel::System::GovernanceObject::Permission::ClassGroupCheck',
+  'Required' => '0'
+};
+$Self->{'GovernanceObject::Permission::Item'}->{'010-ItemClassGroupCheck'} =  {
+  'Granted' => '1',
+  'Module' => 'Kernel::System::GovernanceObject::Permission::ItemClassGroupCheck',
+  'Required' => '0'
+};
 $Self->{'HTTPSForceRedirect'} =  '0';
 $Self->{'HttpType'} =  'http';
 $Self->{'ITSM::Core::IncidentLinkTypeDirection'} =  {
@@ -9733,6 +11171,16 @@ $Self->{'ITSMConfigItem::EventModulePost'}->{'100-History'} =  {
   'Module' => 'Kernel::System::ITSMConfigItem::Event::DoHistory',
   'Transaction' => '0'
 };
+$Self->{'ITSMConfigItem::EventModulePost'}->{'110-TESSERAActivityArticles'} =  {
+  'Event' => '(ConfigItemCreate|ConfigItemUpdate|VersionCreate|VersionUpdate|DeploymentStateUpdate|IncidentStateUpdate|ConfigItemDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|ConfigItemDynamicField.*)',
+  'Module' => 'Kernel::System::ITSMConfigItem::Event::ActivityRecorder',
+  'Transaction' => '0'
+};
+$Self->{'ITSMConfigItem::EventModulePost'}->{'200-LicenseUpdate'} =  {
+  'Event' => '(DeploymentStateUpdate|ConfigItemDynamicFieldUpdate_|Delete)',
+  'Module' => 'Kernel::System::ITSMConfigItem::Event::CountLicenseLinks',
+  'Transaction' => '0'
+};
 $Self->{'ITSMConfigItem::EventModulePost'}->{'300-DefinitionConfigItemUpdate'} =  {
   'Event' => 'DefinitionCreate',
   'Module' => 'Kernel::System::ITSMConfigItem::Event::DefinitionConfigItemUpdate',
@@ -9892,12 +11340,12 @@ $Self->{'ITSMConfigItem::Frontend::CustomerITSMConfigItemZoom'}->{'GeneralInfo'}
 $Self->{'ITSMConfigItem::Frontend::CustomerITSMConfigItemZoom'}->{'VersionsEnabled'} =  '1';
 $Self->{'ITSMConfigItem::Frontend::CustomerITSMConfigItemZoom'}->{'VersionsSelectable'} =  '1';
 $Self->{'ITSMConfigItem::Frontend::CustomerOverview'}->{'Small'} =  {
-  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::CustomerOverviewSmall',
+  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::ZTSMCustomerOverviewSmall',
   'Name' => 'Small',
   'NameShort' => 'S',
   'PageShown' => '25'
 };
-$Self->{'ITSMConfigItem::Frontend::HistoryOrder'} =  'normal';
+$Self->{'ITSMConfigItem::Frontend::HistoryOrder'} =  'reverse';
 $Self->{'ITSMConfigItem::Frontend::MenuModule'}->{'000-Back'} =  {
   'Action' => '',
   'Description' => 'Back',
@@ -9912,6 +11360,14 @@ $Self->{'ITSMConfigItem::Frontend::MenuModule'}->{'200-History'} =  {
   'Link' => 'Action=AgentITSMConfigItemHistory;ConfigItemID=[% Data.ConfigItemID | html %];VersionID=[% Data.VersionID | html %]',
   'Module' => 'Kernel::Output::HTML::ITSMConfigItem::MenuGeneric',
   'Name' => 'History',
+  'Target' => 'PopUp'
+};
+$Self->{'ITSMConfigItem::Frontend::MenuModule'}->{'210-ActivityArticles'} =  {
+  'Action' => 'AgentITSMConfigItemActivity',
+  'Description' => 'Every recorded activity for this asset',
+  'Link' => 'Action=AgentITSMConfigItemActivity;ConfigItemID=[% Data.ConfigItemID | html %]',
+  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::MenuGeneric',
+  'Name' => 'Activity Articles',
   'Target' => 'PopUp'
 };
 $Self->{'ITSMConfigItem::Frontend::MenuModule'}->{'300-Edit'} =  {
@@ -9977,7 +11433,7 @@ $Self->{'ITSMConfigItem::Frontend::MenuModule'}->{'700-ConfigItemDelete'} =  {
   'Target' => 'ConfirmDialog'
 };
 $Self->{'ITSMConfigItem::Frontend::Overview'}->{'Small'} =  {
-  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::OverviewSmall',
+  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::ZTSMOverviewSmall',
   'Name' => 'Small',
   'NameShort' => 'S',
   'PageShown' => '25'
@@ -10006,7 +11462,57 @@ $Self->{'ITSMConfigItem::Frontend::PreMenuModule'}->{'300-Duplicate'} =  {
   'Name' => 'Duplicate',
   'Target' => 'PopUp'
 };
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItem'}->{'PageShown'} =  '10';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItem'}->{'Title'} =  'ConfigItems';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Class'} =  '1';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Defaults'}->{'DynamicField'} =  {};
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'DeploymentState'} =  '0';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'DynamicField'} =  {};
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'IncidentState'} =  '0';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Name'} =  '1';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Number'} =  '1';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Order::Default'} =  'Down';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'SearchLimit'} =  '10000';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'SortBy::Default'} =  'Age';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemSearch'}->{'Title'} =  'ConfigItem Search';
+$Self->{'ITSMConfigItem::Frontend::PublicITSMConfigItemZoom'}->{'GeneralInfo'} =  {
+  'ChangedTime' => '1',
+  'Class' => '1',
+  'CreatedTime' => '1',
+  'DeploymentState' => '1',
+  'IncidentState' => '1',
+  'Number' => '1'
+};
+$Self->{'ITSMConfigItem::Frontend::PublicOverview'}->{'Small'} =  {
+  'Module' => 'Kernel::Output::HTML::ITSMConfigItem::PublicOverviewSmall',
+  'Name' => 'Small',
+  'NameShort' => 'S',
+  'PageShown' => '25'
+};
 $Self->{'ITSMConfigItem::Hook'} =  'ConfigItem#';
+$Self->{'ITSMConfigItem::LicenseCount'}->{'01'} =  {
+  'AvailableLicensesDF' => 'ITSMLicense-LicensesAvailable',
+  'LicenseReferenceDF' => 'ITSM-ReferenceToLicense',
+  'MinimumLicenses' => '',
+  'Ticket' => {
+    'CustomerID' => '',
+    'CustomerUser' => '',
+    'DynamicField' => 'CMDBLicenseNotification',
+    'Lock' => '',
+    'OwnerID' => '',
+    'Priority' => '',
+    'Queue' => 'Misc',
+    'SLA' => '',
+    'SenderType' => 'system',
+    'Service' => '',
+    'State' => '',
+    'Text' => 'The license <OTOBO_CONFIGITEM_NAME> has less than <OTOBO_CONFIGITEM_LICENSES_MIN> items (<OTOBO_CONFIGITEM_LICENSES_AVAIL> licenses left).',
+    'Title' => 'License Reprovisioning',
+    'Type' => ''
+  },
+  'TotalLicensesDF' => 'ITSMLicense-LicenseCount',
+  'ValidDeplStates' => []
+};
 $Self->{'ITSMConfigItem::LinkStatus::IncidentStates'} =  [
   'Incident',
   'Warning',
@@ -10551,14 +12057,21 @@ $Self->{'ImportExport::FormatBackendRegistration'}->{'CSV'} =  {
   'Module' => 'Kernel::System::ImportExport::FormatBackend::CSV',
   'Name' => 'CSV'
 };
-$Self->{'ImportExport::ImportExportCustomerCompany::ForceCSVMappingRecreation'} =  '0';
 $Self->{'ImportExport::ObjectBackendRegistration'}->{'CustomerCompany'} =  {
   'Module' => 'Kernel::System::ImportExport::ObjectBackend::CustomerCompany',
   'Name' => 'CustomerCompany'
 };
+$Self->{'ImportExport::ObjectBackendRegistration'}->{'GovernanceObject'} =  {
+  'Module' => 'Kernel::System::ImportExport::ObjectBackend::GovernanceObject',
+  'Name' => 'Governance Object'
+};
 $Self->{'ImportExport::ObjectBackendRegistration'}->{'ITSMConfigItem'} =  {
   'Module' => 'Kernel::System::ImportExport::ObjectBackend::ITSMConfigItem',
   'Name' => 'Config Item'
+};
+$Self->{'ImportExport::ObjectBackendRegistration'}->{'MELTObject'} =  {
+  'Module' => 'Kernel::System::ImportExport::ObjectBackend::MELTObject',
+  'Name' => 'MELT Object'
 };
 $Self->{'ImportExport::ObjectBackendRegistration'}->{'Ticket'} =  {
   'Module' => 'Kernel::System::ImportExport::ObjectBackend::Ticket',
@@ -10568,7 +12081,6 @@ $Self->{'ImportExport::ObjectBackendRegistration'}->{'Translations'} =  {
   'Module' => 'Kernel::System::ImportExport::ObjectBackend::Translations',
   'Name' => 'Translations'
 };
-$Self->{'ImportExport::TranslationsImportExport::ForceCSVMappingRecreation'} =  '0';
 $Self->{'InfoFile'} =  'AgentInfo';
 $Self->{'InfoKey'} =  'wpt22';
 $Self->{'KeepStateHeader'} =  'X-OTOBO-FollowUp-State-Keep';
@@ -10760,6 +12272,9 @@ $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'Appointment'} =  [
 $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'FAQ'} =  [
   'AgentFAQZoom'
 ];
+$Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'GovernanceObject'} =  [
+  'AgentGovernanceObjectZoom'
+];
 $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'ITSMChangeManagement'} =  [
   'AgentITSMChangeZoom',
   'AgentITSMWorkOrderZoom'
@@ -10767,18 +12282,27 @@ $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'ITSMChangeManagement'
 $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'ITSMConfigItem'} =  [
   'AgentITSMConfigItemZoom'
 ];
+$Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'MELTObject'} =  [
+  'AgentMELTObjectZoom'
+];
 $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'Service'} =  [
   'AgentITSMServiceZoom'
 ];
 $Self->{'LinkObject::ComplexTable::SettingsVisibility'}->{'Ticket'} =  [
   'AgentTicketZoom'
 ];
-$Self->{'LinkObject::DefaultSubObject'}->{'ITSMConfigItem'} =  'Computer';
+$Self->{'LinkObject::DefaultSubObject'}->{'GovernanceObject'} =  'Computer';
+$Self->{'LinkObject::DefaultSubObject'}->{'ITSMConfigItem'} =  'Client';
+$Self->{'LinkObject::DefaultSubObject'}->{'MELTObject'} =  'Computer';
 $Self->{'LinkObject::EventModulePost'}->{'8000-GenericInterface'} =  {
   'Event' => '',
   'Module' => 'Kernel::GenericInterface::Event::Handler',
   'Transaction' => '1'
 };
+$Self->{'LinkObject::GovernanceObject::ShowColumns'} =  [
+  'CurInciSignal',
+  'CurDeplSignal'
+];
 $Self->{'LinkObject::ITSMConfigItem::ShowColumns'} =  [
   'CurInciSignal',
   'CurDeplSignal'
@@ -10786,6 +12310,10 @@ $Self->{'LinkObject::ITSMConfigItem::ShowColumns'} =  [
 $Self->{'LinkObject::IgnoreLinkedTicketStateTypes'} =  [
   'merged',
   'removed'
+];
+$Self->{'LinkObject::MELTObject::ShowColumns'} =  [
+  'CurInciSignal',
+  'CurDeplSignal'
 ];
 $Self->{'LinkObject::PossibleLink'}->{'0200'} =  {
   'Object1' => 'Ticket',
@@ -11072,9 +12600,9 @@ $Self->{'Loader::Agent::CommonJS'}->{'001-Daemon'} =  [
   'Core.Agent.Daemon.js'
 ];
 $Self->{'Loader::Agent::CommonJS'}->{'100-ConfigurationManagement'} =  [
-  'ITSM.Agent.ConfigItem.Search.js',
-  'ITSM.UI.ConfigItemActionRow.js',
-  'ITSM.Agent.ConfigItem.Dashboard.js'
+  'ITSM.Agent.MELTObject.Search.js',
+  'ITSM.UI.MELTObjectActionRow.js',
+  'ITSM.Agent.MELTObject.Dashboard.js'
 ];
 $Self->{'Loader::Agent::CommonJS'}->{'100-Framework'} =  [
   'Core.Agent.DynamicField.Attachment.js'
@@ -11120,13 +12648,13 @@ $Self->{'Loader::Agent::ResponsiveCSS'}->{'000-Framework'} =  [
 ];
 $Self->{'Loader::Agent::Skin'}->{'000-default'} =  {
   'Description' => 'This is the default orange - black skin.',
-  'HomePage' => 'https://ncs.com.sg',
+  'HomePage' => 'www.otobo.org',
   'InternalName' => 'default',
   'VisibleName' => 'Default'
 };
 $Self->{'Loader::Agent::Skin'}->{'002-high-contrast'} =  {
   'Description' => 'High contrast skin for visually impaired users.',
-  'HomePage' => 'www.otrs.com',
+  'HomePage' => 'www.otobo.io',
   'InternalName' => 'highcontrast',
   'VisibleName' => 'High Contrast'
 };
@@ -11204,13 +12732,13 @@ $Self->{'Loader::Customer::ResponsiveCSS'}->{'000-Framework'} =  [
 $Self->{'Loader::Customer::SelectedSkin'} =  'default';
 $Self->{'Loader::Customer::Skin'}->{'000-default'} =  {
   'Description' => 'This is the default orange - black skin for the customer interface.',
-  'HomePage' => 'https://ncs.com.sg',
+  'HomePage' => 'www.otobo.org',
   'InternalName' => 'default',
   'VisibleName' => 'Default'
 };
 $Self->{'Loader::Customer::Skin'}->{'001-high-contrast'} =  {
   'Description' => 'High contrast skin for visually impaired users.',
-  'HomePage' => 'https://ncs.com.sg',
+  'HomePage' => 'www.otobo.org',
   'InternalName' => 'highcontrast',
   'VisibleName' => 'High Contrast'
 };
@@ -11399,6 +12927,36 @@ $Self->{'Loader::Module::AdminDynamicFieldGeneralCatalog'}->{'002-Ticket'} =  {
     'Core.Agent.Admin.SysConfig.Entity.js'
   ]
 };
+$Self->{'Loader::Module::AdminDynamicFieldGroup'}->{'002-DynamicField'} =  {
+  'CSS' => [
+    'Core.Agent.Admin.DynamicField.css',
+    'Core.CodeMirrorEditor.css',
+    'thirdparty/codemirror-5.65.20/lib/codemirror.css',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.css',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.css',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.Admin.DynamicField.js',
+    'Core.Agent.Admin.SysConfig.Entity.js',
+    'thirdparty/codemirror-5.65.20/lib/codemirror.js',
+    'thirdparty/codemirror-5.65.20/mode/yaml/yaml.js',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchtags.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldcode.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/xml-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.js',
+    'thirdparty/codemirror-5.65.20/addon/search/searchcursor.js',
+    'thirdparty/codemirror-5.65.20/addon/search/search.js',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.js',
+    'Core.CodeMirrorEditor.js'
+  ]
+};
 $Self->{'Loader::Module::AdminDynamicFieldImportExport'}->{'002-DynamicField'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.Znuny4OTOBODynamicFieldImportExport.js'
@@ -11549,6 +13107,16 @@ $Self->{'Loader::Module::AdminGeneralCatalog'}->{'001-GeneralCatalog'} =  {
   'JavaScript' => [
     'ITSM.GeneralCatalog.JSColorPicker.js',
     'ITSM.GeneralCatalog.js'
+  ]
+};
+$Self->{'Loader::Module::AdminGeneralCatalog'}->{'002-GovernanceDBGeneralCatalogDocument'} =  {
+  'JavaScript' => [
+    'Core.Agent.Admin.GeneralCatalogDocument.js'
+  ]
+};
+$Self->{'Loader::Module::AdminGeneralCatalog'}->{'002-MELTGeneralCatalogDocument'} =  {
+  'JavaScript' => [
+    'Core.Agent.Admin.MELTGeneralCatalogDocument.js'
   ]
 };
 $Self->{'Loader::Module::AdminGenericAgent'}->{'002-Ticket'} =  {
@@ -11721,6 +13289,42 @@ $Self->{'Loader::Module::AdminGenericInterfaceWebserviceHistory'}->{'002-Generic
     'Core.Agent.Admin.GenericInterfaceWebserviceHistory.js'
   ]
 };
+$Self->{'Loader::Module::AdminGovernanceObject'}->{'002-GovernanceObject'} =  {
+  'CSS' => [
+    'Core.CodeMirrorEditor.css',
+    'ITSM.Agent.Admin.GovernanceObject.css',
+    'thirdparty/codemirror-5.65.20/lib/codemirror.css',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.css',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.css',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/codemirror-5.65.20/lib/codemirror.js',
+    'thirdparty/codemirror-5.65.20/mode/yaml/yaml.js',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchtags.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/closetag.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/search/searchcursor.js',
+    'thirdparty/codemirror-5.65.20/addon/search/search.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldcode.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/trailingspace.js',
+    'thirdparty/codemirror-5.65.20/addon/selection/selection-pointer.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/indent-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/comment-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/comment/comment.js',
+    'thirdparty/codemirror-5.65.20/addon/comment/continuecomment.js',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.js',
+    'thirdparty/codemirror-5.65.20/addon/search/jump-to-line.js',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.js',
+    'Core.UI.CodeMirrorEditor.js',
+    'ITSM.Admin.GovernanceObject.js'
+  ]
+};
 $Self->{'Loader::Module::AdminGroup'}->{'001-Framework'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.Group.js'
@@ -11799,6 +13403,42 @@ $Self->{'Loader::Module::AdminLog'}->{'001-Framework'} =  {
     'Core.Agent.Admin.Log.js'
   ]
 };
+$Self->{'Loader::Module::AdminMELTObject'}->{'002-MELTObject'} =  {
+  'CSS' => [
+    'Core.CodeMirrorEditor.css',
+    'ITSM.Agent.Admin.MELTObject.css',
+    'thirdparty/codemirror-5.65.20/lib/codemirror.css',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.css',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.css',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.css',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/codemirror-5.65.20/lib/codemirror.js',
+    'thirdparty/codemirror-5.65.20/mode/yaml/yaml.js',
+    'thirdparty/codemirror-5.65.20/addon/hint/show-hint.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchtags.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/matchbrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/closetag.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/closebrackets.js',
+    'thirdparty/codemirror-5.65.20/addon/search/searchcursor.js',
+    'thirdparty/codemirror-5.65.20/addon/search/search.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldcode.js',
+    'thirdparty/codemirror-5.65.20/addon/edit/trailingspace.js',
+    'thirdparty/codemirror-5.65.20/addon/selection/selection-pointer.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/foldgutter.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/brace-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/indent-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/fold/comment-fold.js',
+    'thirdparty/codemirror-5.65.20/addon/comment/comment.js',
+    'thirdparty/codemirror-5.65.20/addon/comment/continuecomment.js',
+    'thirdparty/codemirror-5.65.20/addon/dialog/dialog.js',
+    'thirdparty/codemirror-5.65.20/addon/search/jump-to-line.js',
+    'thirdparty/codemirror-5.65.20/addon/display/fullscreen.js',
+    'Core.UI.CodeMirrorEditor.js',
+    'ITSM.Admin.MELTObject.js'
+  ]
+};
 $Self->{'Loader::Module::AdminMailAccount'}->{'001-Framework'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.MailAccount.js'
@@ -11810,6 +13450,11 @@ $Self->{'Loader::Module::AdminNotificationEvent'}->{'002-Ticket'} =  {
   ],
   'JavaScript' => [
     'Core.Agent.Admin.NotificationEvent.js'
+  ]
+};
+$Self->{'Loader::Module::AdminOAuthTokenStore'}->{'001-Framework'} =  {
+  'JavaScript' => [
+    'Core.Agent.Admin.OAuth2Module.js'
   ]
 };
 $Self->{'Loader::Module::AdminPGP'}->{'001-Framework'} =  {
@@ -11967,11 +13612,6 @@ $Self->{'Loader::Module::AdminRegistration'}->{'001-Framework'} =  {
     'Core.Agent.Admin.Registration.js'
   ]
 };
-$Self->{'Loader::Module::AdminResponseTemplatesStatePreselection'}->{'002-ResponseTemplatesStatePreselection'} =  {
-  'JavaScript' => [
-    'Core.Agent.Admin.ResponseTemplatesStatePreselection.js'
-  ]
-};
 $Self->{'Loader::Module::AdminRole'}->{'001-Framework'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.Role.js'
@@ -12007,6 +13647,11 @@ $Self->{'Loader::Module::AdminSLAImportExport'}->{'002-ServiceCatalog'} =  {
     'Core.Agent.Admin.SLAImportExport.js'
   ]
 };
+$Self->{'Loader::Module::AdminSLAImportExport'}->{'002-Ticket'} =  {
+  'JavaScript' => [
+    'Core.Agent.Admin.SLAImportExport.js'
+  ]
+};
 $Self->{'Loader::Module::AdminSMIME'}->{'001-Framework'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.SMIME.js'
@@ -12028,6 +13673,11 @@ $Self->{'Loader::Module::AdminService'}->{'002-Ticket'} =  {
   ]
 };
 $Self->{'Loader::Module::AdminServiceImportExport'}->{'002-ServiceCatalog'} =  {
+  'JavaScript' => [
+    'Core.Agent.Admin.ServiceImportExport.js'
+  ]
+};
+$Self->{'Loader::Module::AdminServiceImportExport'}->{'002-Ticket'} =  {
   'JavaScript' => [
     'Core.Agent.Admin.ServiceImportExport.js'
   ]
@@ -12318,6 +13968,32 @@ $Self->{'Loader::Module::AgentDynamicFieldDBDetails'}->{'002-DynamicField'} =  {
     'Core.Agent.DynamicFieldDBSearch.js'
   ]
 };
+$Self->{'Loader::Module::AgentElasticsearch'}->{'001-Framework'} =  {
+  'CSS' => [
+    'Core.Agent.Dashboard.css',
+    'Core.AllocationList.css',
+    'thirdparty/fullcalendar-3.10.2/fullcalendar.min.css',
+    'thirdparty/nvd3-1.7.1/nv.d3.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/momentjs-2.29.3/moment.min.js',
+    'thirdparty/fullcalendar-3.10.2/fullcalendar.min.js',
+    'thirdparty/d3-3.5.6/d3.min.js',
+    'thirdparty/nvd3-1.7.1/nvd3.min.js',
+    'thirdparty/nvd3-1.7.1/models/OTOBOLineChart.js',
+    'thirdparty/nvd3-1.7.1/models/OTOBOMultiBarChart.js',
+    'thirdparty/nvd3-1.7.1/models/OTOBOStackedAreaChart.js',
+    'thirdparty/canvg-1.4/rgbcolor.js',
+    'thirdparty/canvg-1.4/StackBlur.js',
+    'thirdparty/canvg-1.4/canvg.js',
+    'thirdparty/StringView-8/stringview.js',
+    'Core.UI.AdvancedChart.js',
+    'Core.UI.AllocationList.js',
+    'Core.Agent.TableFilters.js',
+    'Core.Agent.Dashboard.js',
+    'Core.Agent.Statistics.ParamsWidget.js'
+  ]
+};
 $Self->{'Loader::Module::AgentFAQAdd'}->{'002-FAQ'} =  {
   'CSS' => [
     'FAQ.Agent.Detail.css'
@@ -12375,6 +14051,121 @@ $Self->{'Loader::Module::AgentFAQZoom'}->{'002-FAQ'} =  {
     'Core.UI.Table.Sort.js',
     'Core.Agent.TableFilters.js',
     'Core.Agent.LinkObject.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGeneralCatalogDocument'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentGovernanceOSCALImport'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentGovernanceObject'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'Core.AllocationList.css',
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.GovernanceObject.Overview.css'
+  ],
+  'JavaScript' => [
+    'Core.UI.AllocationList.js',
+    'Core.Agent.TableFilters.js',
+    'ITSM.Agent.GovernanceObject.Overview.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectActivity'}->{'003-GovernanceDB'} =  {
+  'CSS' => [
+    'ITSM.Agent.Default.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentGovernanceObjectAdd'}->{'003-GovernanceObject'} =  {
+  'JavaScript' => [
+    'ITSM.Agent.GovernanceObject.Add.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectDocument'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentGovernanceObjectEdit'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldDBDetailedSearch.js',
+    'Core.Agent.DynamicFieldDBSearch.js',
+    'Core.UI.InputFields.js',
+    'ITSM.Agent.GovernanceObject.CustomerSearch.js',
+    'ITSM.Agent.GovernanceObject.Edit.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectHistory'}->{'003-GovernanceObject'} =  {
+  'JavaScript' => [
+    'ITSM.Agent.GovernanceObject.History.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectSearch'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'Core.AllocationList.css',
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.GovernanceObject.Overview.css',
+    'ITSM.Agent.Detail.css',
+    'ITSM.Table.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'Core.UI.Table.Sort.js',
+    'Core.UI.AllocationList.js',
+    'Core.Agent.TableFilters.js',
+    'ITSM.Agent.GovernanceObject.Overview.js',
+    'ITSM.Agent.GovernanceObject.Search.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectTreeView'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.TreeView.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.TreeView.js',
+    'thirdparty/jsplumb-1.6.4/jsplumb.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectWorkbook'}->{'003-GovernanceDB'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/sheetjs-0.20.3/xlsx.full.min.js',
+    'ZTSM.Agent.Object.Workbook.js'
+  ]
+};
+$Self->{'Loader::Module::AgentGovernanceObjectZoom'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.GovernanceObject.Zoom.css',
+    'ITSM.Agent.Detail.css',
+    'Core.AllocationList.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/jquery-tablesorter-2.28.14/jquery.tablesorter.js',
+    'Core.UI.AllocationList.js',
+    'Core.UI.InputFields.js',
+    'Core.UI.Table.Sort.js',
+    'Core.Agent.DynamicFieldDBDetailedSearch.js',
+    'Core.Agent.DynamicFieldDBSearch.js',
+    'Core.Agent.TableFilters.js',
+    'Core.Agent.LinkObject.js',
+    'ITSM.Agent.Zoom.js',
+    'ITSM.Agent.ConfirmDialog.js',
+    'ITSM.Agent.GovernanceObject.Zoom.js'
   ]
 };
 $Self->{'Loader::Module::AgentITSMChange'}->{'003-ITSMChangeManagement'} =  {
@@ -12488,13 +14279,28 @@ $Self->{'Loader::Module::AgentITSMConfigItem'}->{'003-ITSMConfigItem'} =  {
   'JavaScript' => [
     'Core.UI.AllocationList.js',
     'Core.Agent.TableFilters.js',
+    'ITSM.UI.ConfigItemActionRow.js',
+    'ZTSM.Agent.ConfigItem.OverviewGuard.js',
+    'ZTSM.Agent.ConfigItem.DataActions.js',
     'ITSM.Agent.ConfigItem.Overview.js'
   ]
+};
+$Self->{'Loader::Module::AgentITSMConfigItemActivity'}->{'003-GovernanceDB'} =  {
+  'CSS' => [
+    'ITSM.Agent.Default.css'
+  ],
+  'JavaScript' => []
 };
 $Self->{'Loader::Module::AgentITSMConfigItemAdd'}->{'003-ITSMConfigItem'} =  {
   'JavaScript' => [
     'ITSM.Agent.ConfigItem.Add.js'
   ]
+};
+$Self->{'Loader::Module::AgentITSMConfigItemDocument'}->{'003-GovernanceDB'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => []
 };
 $Self->{'Loader::Module::AgentITSMConfigItemEdit'}->{'003-ITSMConfigItem'} =  {
   'CSS' => [
@@ -12537,6 +14343,15 @@ $Self->{'Loader::Module::AgentITSMConfigItemTreeView'}->{'003-ITSMConfigItem'} =
   'JavaScript' => [
     'Core.Agent.TreeView.js',
     'thirdparty/jsplumb-1.6.4/jsplumb.js'
+  ]
+};
+$Self->{'Loader::Module::AgentITSMConfigItemWorkbook'}->{'003-GovernanceDB'} =  {
+  'CSS' => [
+    'ITSM.Agent.GovernanceObject.Edit.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/sheetjs-0.20.3/xlsx.full.min.js',
+    'ZTSM.Agent.ConfigItem.Workbook.js'
   ]
 };
 $Self->{'Loader::Module::AgentITSMConfigItemZoom'}->{'003-DynamicFieldDatabaseExtensions'} =  {
@@ -12638,6 +14453,115 @@ $Self->{'Loader::Module::AgentITSMWorkOrderZoom'}->{'003-ITSMChangeManagement'} 
 $Self->{'Loader::Module::AgentLinkObject'}->{'001-Framework'} =  {
   'JavaScript' => [
     'Core.Agent.LinkObject.SearchForm.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTGeneralCatalogDocument'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.MELTObject.Edit.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentMELTObject'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'Core.AllocationList.css',
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.MELTObject.Overview.css'
+  ],
+  'JavaScript' => [
+    'Core.UI.AllocationList.js',
+    'Core.Agent.TableFilters.js',
+    'ITSM.Agent.MELTObject.Overview.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectActivity'}->{'003-MELT'} =  {
+  'CSS' => [
+    'ITSM.Agent.Default.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentMELTObjectAdd'}->{'003-MELTObject'} =  {
+  'JavaScript' => [
+    'ITSM.Agent.MELTObject.Add.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectDocument'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.MELTObject.Edit.css'
+  ],
+  'JavaScript' => []
+};
+$Self->{'Loader::Module::AgentMELTObjectEdit'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.MELTObject.Edit.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldDBDetailedSearch.js',
+    'Core.Agent.DynamicFieldDBSearch.js',
+    'Core.UI.InputFields.js',
+    'ITSM.Agent.MELTObject.CustomerSearch.js',
+    'ITSM.Agent.MELTObject.Edit.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectHistory'}->{'003-MELTObject'} =  {
+  'JavaScript' => [
+    'ITSM.Agent.MELTObject.History.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectSearch'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'Core.AllocationList.css',
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.MELTObject.Overview.css',
+    'ITSM.Agent.Detail.css',
+    'ITSM.Table.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'Core.UI.Table.Sort.js',
+    'Core.UI.AllocationList.js',
+    'Core.Agent.TableFilters.js',
+    'ITSM.Agent.MELTObject.Overview.js',
+    'ITSM.Agent.MELTObject.Search.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectTreeView'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.MELTObject.TreeView.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.TreeView.js',
+    'thirdparty/jsplumb-1.6.4/jsplumb.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectWorkbook'}->{'003-MELT'} =  {
+  'CSS' => [
+    'ITSM.Agent.MELTObject.Edit.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/melt-sheetjs-0.20.3/xlsx.full.min.js',
+    'ZTSM.Agent.MELTObject.Workbook.js'
+  ]
+};
+$Self->{'Loader::Module::AgentMELTObjectZoom'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Agent.Default.css',
+    'ITSM.Agent.MELTObject.Zoom.css',
+    'ITSM.Agent.Detail.css',
+    'Core.AllocationList.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'thirdparty/jquery-tablesorter-2.28.14/jquery.tablesorter.js',
+    'Core.UI.AllocationList.js',
+    'Core.UI.InputFields.js',
+    'Core.UI.Table.Sort.js',
+    'Core.Agent.DynamicFieldDBDetailedSearch.js',
+    'Core.Agent.DynamicFieldDBSearch.js',
+    'Core.Agent.TableFilters.js',
+    'Core.Agent.LinkObject.js',
+    'ITSM.Agent.Zoom.js',
+    'ITSM.Agent.ConfirmDialog.js',
+    'ITSM.Agent.MELTObject.Zoom.js'
   ]
 };
 $Self->{'Loader::Module::AgentPreferences'}->{'001-Framework'} =  {
@@ -12844,6 +14768,13 @@ $Self->{'Loader::Module::AgentTicketDecision'}->{'003-ITSMTicket'} =  {
     'Core.Agent.TicketActionCommon.js',
     'Core.Agent.TicketFormDraft.js',
     'ITSM.Agent.ITSMIncidentProblemManagement.js'
+  ]
+};
+$Self->{'Loader::Module::AgentTicketDecision'}->{'003-ZTSMGovernanceRuntime'} =  {
+  'JavaScript' => [
+    'Core.Agent.TicketAction.js',
+    'Core.Agent.TicketActionCommon.js',
+    'Core.Agent.TicketFormDraft.js'
   ]
 };
 $Self->{'Loader::Module::AgentTicketEmail'}->{'002-Ticket'} =  {
@@ -13331,6 +15262,45 @@ $Self->{'Loader::Module::CustomerGenericContent'}->{'001-Framework'} =  {
     'Core.GenericContent.css'
   ]
 };
+$Self->{'Loader::Module::CustomerGovernanceObject'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.GovernanceObjectList.css',
+    'ITSM.Customer.GovernanceObjectOverview.css',
+    'ITSM.Table.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.GovernanceObject.Search.js',
+    'ITSM.Customer.GovernanceObjectList.js',
+    'ITSM.Customer.GovernanceObject.Overview.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerGovernanceObjectSearch'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.GovernanceObjectList.css',
+    'ITSM.Customer.GovernanceObjectOverview.css',
+    'ITSM.Customer.GovernanceObjectSearch.css',
+    'ITSM.Agent.Detail.css',
+    'ITSM.Table.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.GovernanceObject.Search.js',
+    'ITSM.Customer.GovernanceObject.Overview.js',
+    'ITSM.Customer.GovernanceObjectList.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerGovernanceObjectZoom'}->{'003-GovernanceObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.GovernanceObject.Zoom.css'
+  ],
+  'JavaScript' => [
+    'ITSM.Customer.GovernanceObject.Zoom.js'
+  ]
+};
 $Self->{'Loader::Module::CustomerITSMConfigItem'}->{'003-ITSMConfigItem'} =  {
   'CSS' => [
     'ITSM.Customer.ConfigItemList.css',
@@ -13342,7 +15312,8 @@ $Self->{'Loader::Module::CustomerITSMConfigItem'}->{'003-ITSMConfigItem'} =  {
     'ITSM.Agent.ConfigItem.Search.js',
     'ITSM.Customer.ConfigItemList.js',
     'ITSM.Customer.ConfigItem.Overview.js',
-    'Core.Customer.Search.js'
+    'Core.Customer.Search.js',
+    'ZTSM.Customer.AssetFilters.js'
   ]
 };
 $Self->{'Loader::Module::CustomerITSMConfigItemSearch'}->{'003-ITSMConfigItem'} =  {
@@ -13377,10 +15348,50 @@ $Self->{'Loader::Module::CustomerITSMConfigItemZoom'}->{'003-ITSMConfigItem'} = 
 };
 $Self->{'Loader::Module::CustomerLogin'}->{'002-CustomerLogin'} =  {
   'CSS' => [
-    'Core.Login.css'
+    'Core.Login.css',
+    'TESSERA.Customer.Branding.css'
   ],
   'JavaScript' => [
     'Core.Customer.InputFields.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerMELTObject'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.MELTObjectList.css',
+    'ITSM.Customer.MELTObjectOverview.css',
+    'ITSM.Table.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.MELTObject.Search.js',
+    'ITSM.Customer.MELTObjectList.js',
+    'ITSM.Customer.MELTObject.Overview.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerMELTObjectSearch'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.MELTObjectList.css',
+    'ITSM.Customer.MELTObjectOverview.css',
+    'ITSM.Customer.MELTObjectSearch.css',
+    'ITSM.Agent.Detail.css',
+    'ITSM.Table.css',
+    'ITSM.Print.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.MELTObject.Search.js',
+    'ITSM.Customer.MELTObject.Overview.js',
+    'ITSM.Customer.MELTObjectList.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerMELTObjectZoom'}->{'003-MELTObject'} =  {
+  'CSS' => [
+    'ITSM.Customer.MELTObject.Zoom.css'
+  ],
+  'JavaScript' => [
+    'ITSM.Customer.MELTObject.Zoom.js'
   ]
 };
 $Self->{'Loader::Module::CustomerPassword'}->{'002-CustomerPassword'} =  {
@@ -13418,6 +15429,12 @@ $Self->{'Loader::Module::CustomerTicketMessage'}->{'003-FAQ'} =  {
     'FAQ.Customer.RelatedArticles.js'
   ]
 };
+$Self->{'Loader::Module::CustomerTicketMessage'}->{'110-ZTSMReferenceTrace'} =  {
+  'CSS' => [],
+  'JavaScript' => [
+    'ZTSM.Customer.ReferenceTrace.js'
+  ]
+};
 $Self->{'Loader::Module::CustomerTicketOverview'}->{'002-Ticket'} =  {
   'CSS' => [
     'Core.TicketList.css',
@@ -13431,11 +15448,11 @@ $Self->{'Loader::Module::CustomerTicketOverview'}->{'002-Ticket'} =  {
 };
 $Self->{'Loader::Module::CustomerTicketSearch'}->{'002-Ticket'} =  {
   'CSS' => [
+    'Core.Widget.css',
     'Core.TicketList.css',
     'Core.TicketOverview.css',
     'Core.AllocationList.css',
-    'Core.TicketSearch.css',
-    'Core.Widget.css'
+    'Core.TicketSearch.css'
   ],
   'JavaScript' => [
     'Core.UI.AllocationList.js',
@@ -13445,6 +15462,12 @@ $Self->{'Loader::Module::CustomerTicketSearch'}->{'002-Ticket'} =  {
     'Core.Agent.DynamicFieldReferenceSearch.js',
     'Core.Customer.TicketList.js',
     'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::CustomerTicketZTSMAction'}->{'002-Ticket'} =  {
+  'CSS' => [],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js'
   ]
 };
 $Self->{'Loader::Module::CustomerTicketZoom'}->{'002-Ticket'} =  {
@@ -13463,6 +15486,12 @@ $Self->{'Loader::Module::CustomerTicketZoom'}->{'002-Ticket'} =  {
 $Self->{'Loader::Module::CustomerTicketZoom'}->{'003-DynamicFieldDatabaseExtensions'} =  {
   'CSS' => [
     'DynamicFieldDatabaseExtensions.TicketZoom.css'
+  ]
+};
+$Self->{'Loader::Module::CustomerTicketZoom'}->{'112-ZTSMRuntimeReferenceSearch'} =  {
+  'CSS' => [],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js'
   ]
 };
 $Self->{'Loader::Module::PublicFAQExplorer'}->{'002-FAQ'} =  {
@@ -13493,6 +15522,47 @@ $Self->{'Loader::Module::PublicFAQZoom'}->{'002-FAQ'} =  {
     'Core.Customer.Search.js'
   ]
 };
+$Self->{'Loader::Module::PublicITSMConfigItem'}->{'003-ITSMConfigItem'} =  {
+  'CSS' => [
+    'ITSM.Customer.ConfigItemList.css',
+    'ITSM.Customer.ConfigItemOverview.css',
+    'ITSM.Table.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.ConfigItem.Search.js',
+    'ITSM.Customer.ConfigItemList.js',
+    'ITSM.Customer.ConfigItem.Overview.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::PublicITSMConfigItemSearch'}->{'003-ITSMConfigItem'} =  {
+  'CSS' => [
+    'ITSM.Customer.ConfigItemList.css',
+    'ITSM.Customer.ConfigItemOverview.css',
+    'ITSM.Customer.ConfigItemSearch.css',
+    'ITSM.Agent.Detail.css',
+    'ITSM.Table.css',
+    'ITSM.Print.css',
+    'ITSM.Public.css'
+  ],
+  'JavaScript' => [
+    'Core.Agent.DynamicFieldReferenceSearch.js',
+    'ITSM.Agent.ConfigItem.Search.js',
+    'ITSM.Customer.ConfigItem.Overview.js',
+    'ITSM.Customer.ConfigItemList.js',
+    'Core.Customer.Search.js'
+  ]
+};
+$Self->{'Loader::Module::PublicITSMConfigItemZoom'}->{'003-ITSMConfigItem'} =  {
+  'CSS' => [
+    'ITSM.Customer.ConfigItem.Zoom.css',
+    'ITSM.Public.css'
+  ],
+  'JavaScript' => [
+    'ITSM.Customer.ConfigItem.Zoom.js'
+  ]
+};
 $Self->{'Loader::Module::PublicSurvey'}->{'002-Survey'} =  {
   'CSS' => [
     'Survey.Customer.Default.css'
@@ -13508,6 +15578,232 @@ $Self->{'LogModule::SysLog::Facility'} =  'user';
 $Self->{'LoopProtectionLog'} =  '<OTOBO_CONFIG_Home>/var/log/LoopProtection';
 $Self->{'LoopProtectionModule'} =  'Kernel::System::PostMaster::LoopProtection::DB';
 $Self->{'LostPassword'} =  '1';
+$Self->{'MELTObject::EventModulePost'}->{'100-History'} =  {
+  'Event' => '(MELTObjectCreate|VersionCreate|DeploymentStateUpdate|IncidentStateUpdate|MELTObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|MELTObjectDynamicField)',
+  'Module' => 'Kernel::System::MELTObject::Event::DoHistory',
+  'Transaction' => '0'
+};
+$Self->{'MELTObject::EventModulePost'}->{'110-TESSERAActivityArticles'} =  {
+  'Event' => '(MELTObjectCreate|MELTObjectUpdate|VersionCreate|VersionUpdate|MELTObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|MELTObjectDynamicField.*)',
+  'Module' => 'Kernel::System::MELTObject::Event::ActivityRecorder',
+  'Transaction' => '0'
+};
+$Self->{'MELTObject::EventModulePost'}->{'300-DefinitionMELTObjectUpdate'} =  {
+  'Event' => 'DefinitionCreate',
+  'Module' => 'Kernel::System::MELTObject::Event::DefinitionMELTObjectUpdate',
+  'Transaction' => '1'
+};
+$Self->{'MELTObject::EventModulePost'}->{'4000-ScriptDynamicFields'} =  {
+  'Event' => '',
+  'Module' => 'Kernel::System::MELTObject::Event::EvaluateScriptFields',
+  'Transaction' => '1'
+};
+$Self->{'MELTObject::Frontend::AdminMELTObject'}->{'EditorRows'} =  '30';
+$Self->{'MELTObject::Frontend::AgentMELTObject'}->{'DefaultCategory'} =  'Governance';
+$Self->{'MELTObject::Frontend::AgentMELTObject'}->{'DefaultColumns'} =  {
+  'Class' => '2',
+  'Created' => '1',
+  'LastChanged' => '2',
+  'Name' => '2',
+  'Number' => '2',
+  'ZTSMStatus' => '2',
+  'ZTSMStatusType' => '1'
+};
+$Self->{'MELTObject::Frontend::AgentMELTObject'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObject'}->{'SearchLimit'} =  '10000';
+$Self->{'MELTObject::Frontend::AgentMELTObjectAdd'}->{'Permission'} =  'rw';
+$Self->{'MELTObject::Frontend::AgentMELTObjectAttachment'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObjectBulk'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectBulk'}->{'Permission'} =  'rw';
+$Self->{'MELTObject::Frontend::AgentMELTObjectBulk'}->{'ZTSMStatus'} =  '1';
+$Self->{'MELTObject::Frontend::AgentMELTObjectDelete'}->{'Permission'} =  'rw';
+$Self->{'MELTObject::Frontend::AgentMELTObjectEdit'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectEdit'}->{'Permission'} =  'rw';
+$Self->{'MELTObject::Frontend::AgentMELTObjectEdit'}->{'RichTextHeight'} =  '320';
+$Self->{'MELTObject::Frontend::AgentMELTObjectEdit'}->{'RichTextWidth'} =  '620';
+$Self->{'MELTObject::Frontend::AgentMELTObjectHistory'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObjectPrint'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectPrint'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'Defaults'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'Defaults'}->{'Name'} =  '';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'Defaults'}->{'Number'} =  '';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'ExtendedSearchCondition'} =  '1';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'Order::Default'} =  'Down';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'SearchCSVData'} =  [
+  'Class',
+  'ZTSMStatus',
+  'Name',
+  'Number',
+  'Version',
+  'CreateTime'
+];
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'SearchCSVDynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'SearchLimit'} =  '10000';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'SearchPageShown'} =  '40';
+$Self->{'MELTObject::Frontend::AgentMELTObjectSearch'}->{'SortBy::Default'} =  'Age';
+$Self->{'MELTObject::Frontend::AgentMELTObjectTreeView'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::AgentMELTObjectZoom'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::AgentMELTObjectZoom'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::BulkFeature'} =  '1';
+$Self->{'MELTObject::Frontend::CustomerMELTObject'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::CustomerMELTObject'}->{'SearchLimit'} =  '10000';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'Defaults'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'DeploymentState'} =  '0';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'DynamicField'} =  {};
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'ExtendedSearchCondition'} =  '1';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'IncidentState'} =  '0';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'Order::Default'} =  'Down';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'Permission'} =  'ro';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'SearchLimit'} =  '10000';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'SearchPageShown'} =  '40';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectSearch'}->{'SortBy::Default'} =  'Age';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectZoom'}->{'GeneralInfo'} =  {
+  'ChangedTime' => '1',
+  'Class' => '1',
+  'CreatedTime' => '1',
+  'DeploymentState' => '1',
+  'IncidentState' => '1',
+  'Number' => '1'
+};
+$Self->{'MELTObject::Frontend::CustomerMELTObjectZoom'}->{'VersionsEnabled'} =  '1';
+$Self->{'MELTObject::Frontend::CustomerMELTObjectZoom'}->{'VersionsSelectable'} =  '1';
+$Self->{'MELTObject::Frontend::CustomerOverview'}->{'Small'} =  {
+  'Module' => 'Kernel::Output::HTML::MELTObject::CustomerOverviewSmall',
+  'Name' => 'Small',
+  'NameShort' => 'S',
+  'PageShown' => '25'
+};
+$Self->{'MELTObject::Frontend::HistoryOrder'} =  'normal';
+$Self->{'MELTObject::Frontend::MenuModule'}->{'000-Back'} =  {
+  'Action' => '',
+  'Description' => 'Back',
+  'Link' => '[% Env("LastScreenOverview") %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Back',
+  'Target' => ''
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'200-History'} =  {
+  'Action' => 'AgentMELTObjectHistory',
+  'Description' => 'History',
+  'Link' => 'Action=AgentMELTObjectHistory;MELTObjectID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'History',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'210-ActivityArticles'} =  {
+  'Action' => 'AgentMELTObjectActivity',
+  'Description' => 'Every recorded activity',
+  'Link' => 'Action=AgentMELTObjectActivity;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Activity Articles',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'300-Edit'} =  {
+  'Action' => 'AgentMELTObjectEdit',
+  'Description' => 'Edit',
+  'Link' => 'Action=AgentMELTObjectEdit;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Edit',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'400-Print'} =  {
+  'Action' => 'AgentMELTObjectPrint',
+  'Description' => 'Print',
+  'Link' => 'Action=AgentMELTObjectPrint;MELTObjectID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'LinkParam' => 'target="print"',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Print',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'450-Document'} =  {
+  'Action' => 'AgentMELTObjectDocument',
+  'Description' => 'Export or import this MELT Object as YAML or JSON',
+  'Link' => 'Action=AgentMELTObjectDocument;MELTObjectID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'YAML/JSON',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'500-Link'} =  {
+  'Action' => 'AgentLinkObject',
+  'Description' => 'Link',
+  'Link' => 'Action=AgentLinkObject;SourceObject=MELTObject;SourceKey=[% Data.MELTObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Link',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'550-TreeView'} =  {
+  'Action' => 'AgentMELTObjectTreeView',
+  'Description' => 'MELT Object Tree View',
+  'Link' => 'Action=AgentMELTObjectTreeView;VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Tree View',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'600-Duplicate'} =  {
+  'Action' => 'AgentMELTObjectEdit',
+  'Description' => 'Duplicate',
+  'Link' => 'Action=AgentMELTObjectEdit;DuplicateID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Duplicate',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::MenuModule'}->{'700-MELTObjectDelete'} =  {
+  'Action' => 'AgentMELTObjectDelete',
+  'ConfirmedActionQueryString' => 'Action=AgentMELTObjectDelete;Subaction=MELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'Description' => 'Delete Configuration Item',
+  'DialogContentQueryString' => 'Action=AgentMELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'DialogTitle' => '[% Translate("Delete") | html %] [% Config("MELTObject::Hook") %] [% Data.Number | html %]',
+  'ElementSelector' => '#Menu[% Data.MenuID | html %]',
+  'Link' => 'Action=AgentMELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Delete',
+  'Target' => 'ConfirmDialog'
+};
+$Self->{'MELTObject::Frontend::Overview'}->{'Small'} =  {
+  'Module' => 'Kernel::Output::HTML::MELTObject::OverviewSmall',
+  'Name' => 'Small',
+  'NameShort' => 'S',
+  'PageShown' => '25'
+};
+$Self->{'MELTObject::Frontend::PreMenuModule'}->{'100-Zoom'} =  {
+  'Action' => 'AgentMELTObjectZoom',
+  'Description' => 'Zoom',
+  'Link' => 'Action=AgentMELTObjectZoom;MELTObjectID=[% Data.MELTObjectID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Zoom',
+  'Target' => ''
+};
+$Self->{'MELTObject::Frontend::PreMenuModule'}->{'200-History'} =  {
+  'Action' => 'AgentMELTObjectHistory',
+  'Description' => 'History',
+  'Link' => 'Action=AgentMELTObjectHistory;MELTObjectID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %]',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'History',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Frontend::PreMenuModule'}->{'300-Duplicate'} =  {
+  'Action' => 'AgentMELTObjectEdit',
+  'Description' => 'Duplicate',
+  'Link' => 'Action=AgentMELTObjectEdit;DuplicateID=[% Data.MELTObjectID | html %];VersionID=[% Data.VersionID | html %];ReturnToLastScreen=1',
+  'Module' => 'Kernel::Output::HTML::MELTObject::MenuGeneric',
+  'Name' => 'Duplicate',
+  'Target' => 'PopUp'
+};
+$Self->{'MELTObject::Hook'} =  'MELTObject#';
+$Self->{'MELTObject::Permission::Class'}->{'010-ClassGroupCheck'} =  {
+  'Granted' => '1',
+  'Module' => 'Kernel::System::MELTObject::Permission::ClassGroupCheck',
+  'Required' => '0'
+};
+$Self->{'MELTObject::Permission::Item'}->{'010-ItemClassGroupCheck'} =  {
+  'Granted' => '1',
+  'Module' => 'Kernel::System::MELTObject::Permission::ItemClassGroupCheck',
+  'Required' => '0'
+};
+$Self->{'MELTTreeView::DefaultDepth'} =  '3';
+$Self->{'MELTTreeView::ShowLinkLabels'} =  'Yes';
 $Self->{'MailQueue'} =  {
   'IncrementAttemptDelayInMinutes' => '2',
   'ItemMaxAttempts' => '3'
@@ -13535,6 +15831,65 @@ $Self->{'Nagios::Acknowledge::NamedPipe::CMD'} =  'echo \'<OUTPUTSTRING>\' > /us
 $Self->{'Nagios::Acknowledge::NamedPipe::Host'} =  '[<UNIXTIME>] ACKNOWLEDGE_HOST_PROBLEM;<HOST_NAME>;1;1;1;<LOGIN>;<a href="<CONFIG_HttpType>://<CONFIG_FQDN>/<CONFIG_ScriptAlias>index.pl?Action=AgentTicketZoom&TicketID=<TicketID>"><CONFIG_Ticket::Hook><TicketNumber></a>';
 $Self->{'Nagios::Acknowledge::NamedPipe::Service'} =  '[<UNIXTIME>] ACKNOWLEDGE_SVC_PROBLEM;<HOST_NAME>;<SERVICE_NAME>;1;1;1;<LOGIN>;<a href="<CONFIG_HttpType>://<CONFIG_FQDN>/<CONFIG_ScriptAlias>index.pl?Action=AgentTicketZoom&TicketID=<TicketID>"><CONFIG_Ticket::Hook><TicketNumber></a>';
 $Self->{'Nagios::Acknowledge::Type'} =  '';
+$Self->{'Namespaces'}->{'Global'} =  [
+  'ITSMUPS',
+  'ITSM',
+  'ITSMNetworkInfo',
+  'CPU',
+  'ITSMIPNetwork',
+  'ITSMStorage',
+  'ITSMMemory',
+  'ITSMSoftware',
+  'Contract',
+  'Contact',
+  'ITSMStoragePartition',
+  'ITSMServerSoftware',
+  'ITSMDisplay',
+  'ITSMClientSoftware',
+  'ITSMCertificate',
+  'ITSMAccounting',
+  'ITSMLicense',
+  'ITSMAppliance',
+  'ITSMClient',
+  'ITSMSIM',
+  'ITSMPhone',
+  'ITSMGraphicsCard',
+  'ITSMOtherAccessories',
+  'ITSMModel',
+  'ITSMFormFactor',
+  'Location',
+  'ZTSM',
+  'ZTSMOrganization',
+  'ZTSMAppSystem',
+  'ZTSMApprovalModel',
+  'ZTSMSupportProfile',
+  'ZTSMSupportAssignment',
+  'ZTSMTechnologyProfile',
+  'ZTSMServiceProfile',
+  'ZTSMServiceSupportMap',
+  'ZTSMSupportModel',
+  'ZTSMSLAPolicy',
+  'ZTSMPlatform',
+  'ZTSMEnvironment',
+  'ZTSMLocation',
+  'ZTSMGovernanceRole',
+  'ZFirewall',
+  'ZTicket',
+  'ZState',
+  'ZBlue',
+  'ZService',
+  'ZRM',
+  'ZTAM',
+  'ZTemplate',
+  'ZUser',
+  'ZIN',
+  'ZCH',
+  'ZPR',
+  'ZCompute',
+  'ZStorage',
+  'ZCI',
+  'MELT'
+];
 $Self->{'NewTicketInNewWindow::Enabled'} =  '0';
 $Self->{'Notification::CharactersPerLine'} =  '80';
 $Self->{'Notification::Transport'}->{'Email'} =  {
@@ -13611,6 +15966,7 @@ $Self->{'PGP::Method'} =  'Detached';
 $Self->{'PGP::Options'} =  '--homedir /opt/otobo/.gnupg/ --batch --no-tty --yes';
 $Self->{'PGP::Options::DigestPreference'} =  'sha256';
 $Self->{'PGP::TrustedNetwork'} =  '0';
+$Self->{'Package::AllowLocalModifications'} =  '1';
 $Self->{'Package::AllowNotVerifiedPackages'} =  '1';
 $Self->{'Package::EventModulePost'}->{'2400-RebuildACLPreselectionCache'} =  {
   'Event' => 'PackageInstall|PackageReinstall|PackageUpgrade|PackageUninstall',
@@ -13763,6 +16119,7 @@ $Self->{'PostmasterX-Header'} =  [
   'X-OTOBO-Service',
   'X-OTOBO-SLA',
   'X-OTOBO-Title',
+  'X-OTOBO-From',
   'X-OTOBO-CustomerNo',
   'X-OTOBO-CustomerUser',
   'X-OTOBO-SenderType',
@@ -13800,8 +16157,14 @@ $Self->{'Preferences::UpdateAJAX::Allowed'}->{'001-Framework'} =  {
   'UserWidgetState_SystemConfiguration_Navigation' => '1',
   'UserWidgetState_SystemConfiguration_Sticky' => '1'
 };
+$Self->{'Preferences::UpdateAJAX::Allowed'}->{'002-GovernanceDB'} =  {
+  'UserGovernanceObjectZoomTableHeight' => '1'
+};
 $Self->{'Preferences::UpdateAJAX::Allowed'}->{'002-ITSMConfigurationManagement'} =  {
   'UserConfigItemZoomTableHeight' => '1'
+};
+$Self->{'Preferences::UpdateAJAX::Allowed'}->{'002-MELT'} =  {
+  'UserMELTObjectZoomTableHeight' => '1'
 };
 $Self->{'PreferencesGroups'}->{'AppointmentNotificationEvent'} =  {
   'Active' => '1',
@@ -14002,6 +16365,35 @@ $Self->{'PreferencesGroups'}->{'GoogleAuthenticatorSecretKey'} =  {
   'ValidateRegex' => '^([A-Z2-7]{16}|)$',
   'ValidateRegexMessage' => 'The secret you supplied is invalid. The secret must only contain letters (A-Z, uppercase) and numbers (2-7) and must consist of 16 characters.'
 };
+$Self->{'PreferencesGroups'}->{'GovernanceObjectOverviewFilterSettings'} =  {
+  'Active' => '0',
+  'Desc' => 'Column Governance Object filters for Governance Object Overview.',
+  'Key' => '',
+  'Label' => 'Enabled filters.',
+  'Module' => 'Kernel::Output::HTML::Preferences::ColumnFilters',
+  'PrefKey' => 'UserFilterColumnsEnabled',
+  'PreferenceGroup' => 'Miscellaneous',
+  'Prio' => '8100'
+};
+$Self->{'PreferencesGroups'}->{'GovernanceObjectOverviewSmallPageShown'} =  {
+  'Active' => '0',
+  'Data' => {
+    '10' => '10',
+    '15' => '15',
+    '20' => '20',
+    '25' => '25',
+    '30' => '30',
+    '35' => '35'
+  },
+  'DataSelected' => '25',
+  'Desc' => 'Configuration Item limit per page.',
+  'Key' => '',
+  'Label' => 'Configuration Item Limit',
+  'Module' => 'Kernel::Output::HTML::Preferences::Generic',
+  'PrefKey' => 'UserGovernanceObjectOverviewSmallPageShown',
+  'PreferenceGroup' => 'Miscellaneous',
+  'Prio' => '8000'
+};
 $Self->{'PreferencesGroups'}->{'Language'} =  {
   'Active' => '1',
   'Desc' => 'Select the main interface language.',
@@ -14012,6 +16404,35 @@ $Self->{'PreferencesGroups'}->{'Language'} =  {
   'PrefKey' => 'UserLanguage',
   'PreferenceGroup' => 'UserProfile',
   'Prio' => '1000'
+};
+$Self->{'PreferencesGroups'}->{'MELTObjectOverviewFilterSettings'} =  {
+  'Active' => '0',
+  'Desc' => 'Column MELT Object filters for MELT Object Overview.',
+  'Key' => '',
+  'Label' => 'Enabled filters.',
+  'Module' => 'Kernel::Output::HTML::Preferences::ColumnFilters',
+  'PrefKey' => 'UserFilterColumnsEnabled',
+  'PreferenceGroup' => 'Miscellaneous',
+  'Prio' => '8100'
+};
+$Self->{'PreferencesGroups'}->{'MELTObjectOverviewSmallPageShown'} =  {
+  'Active' => '0',
+  'Data' => {
+    '10' => '10',
+    '15' => '15',
+    '20' => '20',
+    '25' => '25',
+    '30' => '30',
+    '35' => '35'
+  },
+  'DataSelected' => '25',
+  'Desc' => 'Configuration Item limit per page.',
+  'Key' => '',
+  'Label' => 'Configuration Item Limit',
+  'Module' => 'Kernel::Output::HTML::Preferences::Generic',
+  'PrefKey' => 'UserMELTObjectOverviewSmallPageShown',
+  'PreferenceGroup' => 'Miscellaneous',
+  'Prio' => '8000'
 };
 $Self->{'PreferencesGroups'}->{'MarkTicketSeenRedirectURL'} =  {
   'Active' => '1',
@@ -14279,6 +16700,31 @@ $Self->{'Process::Entity::Prefix'} =  {
 $Self->{'Process::NavBarOutput::CacheTTL'} =  '900';
 $Self->{'ProcessManagement::Transition::Debug::Enabled'} =  '0';
 $Self->{'ProductName'} =  'TESSERA';
+$Self->{'Public::ConfigItem::PermissionConditionColumns'}->{'Default'} =  [
+  'Number',
+  'Name',
+  'Class',
+  'InciState',
+  'DeplState',
+  'Created'
+];
+$Self->{'PublicColorDefinitions'} =  {
+  'BGDark' => '#bfbfce',
+  'BGLight' => '#f7f7f9',
+  'Highlight' => '#fef235',
+  'HoverDark' => '#6d83f2',
+  'HoverLight' => '#c4cdfa',
+  'MainDark' => '#00023c',
+  'MainHover' => '#000099',
+  'MainLight' => '#001bff',
+  'NotifyErr' => '#f9bcb2',
+  'NotifyOK' => '#c4cdfa',
+  'NotifyWarn' => '#fffccc',
+  'ShadowDark' => 'rgba(4,0,71,0.16)',
+  'ShadowMain' => 'rgba(0,27,255,0.24)',
+  'TextDark' => '#00023c',
+  'TextLight' => '#7f809d'
+};
 $Self->{'PublicFrontend::Active'} =  '1';
 $Self->{'PublicFrontend::CommonParam'}->{'Action'} =  'PublicFAQExplorer';
 $Self->{'PublicFrontend::HeaderMetaModule'}->{'3-FAQSearch'} =  {
@@ -14391,6 +16837,22 @@ $Self->{'PublicFrontend::Navigation'}->{'PublicFAQSearch'}->{'002-FAQ'} =  [
     'Type' => ''
   }
 ];
+$Self->{'PublicFrontend::Navigation'}->{'PublicITSMConfigItem'}->{'003-ITSMConfigItem'} =  [
+  {
+    'AccessKey' => '',
+    'Block' => '',
+    'Description' => 'Configuration Management Database.',
+    'Group' => [],
+    'GroupRo' => [],
+    'Link' => 'Action=PublicITSMConfigItem',
+    'LinkOption' => '',
+    'Name' => 'CMDB',
+    'NavBar' => 'Ticket',
+    'Prio' => '310',
+    'Type' => 'Menu',
+    'svgIcon' => 'var/httpd/htdocs/skins/Public/default/img/devices_black_24dp.svg'
+  }
+];
 $Self->{'Queue::EventModulePost'}->{'2300-UpdateQueue'} =  {
   'Event' => 'QueueUpdate',
   'Module' => 'Kernel::System::Queue::Event::TicketAcceleratorUpdate',
@@ -14431,6 +16893,7 @@ $Self->{'SendmailBcc'} =  '';
 $Self->{'SendmailModule'} =  'Kernel::System::Email::Sendmail';
 $Self->{'SendmailModule::CMD'} =  '/usr/sbin/sendmail -i -f';
 $Self->{'SendmailModule::Host'} =  'mail.example.com';
+$Self->{'SendmailModule::OAuth2Method'} =  'Basic';
 $Self->{'ServiceCatalog::CreateTypeServiceRelatedAcls'} =  '1';
 $Self->{'ServiceCatalog::CreateTypeServiceRelatedAcls::Options'} =  {
   'ACLDeploy' => '1',
@@ -14457,7 +16920,6 @@ $Self->{'SessionModule'} =  'Kernel::System::AuthSession::DB';
 $Self->{'SessionName'} =  'OTOBOAgentInterface';
 $Self->{'SessionSameSite'} =  'Lax';
 $Self->{'SessionTable'} =  'sessions';
-$Self->{'SessionUseCookie'} =  '1';
 $Self->{'SessionUseCookieAfterBrowserClose'} =  '0';
 $Self->{'ShowMotd'} =  '0';
 $Self->{'ShowUserTimeZoneSelectionNotification'} =  '1';
@@ -14515,6 +16977,9 @@ $Self->{'Stats::DefaultSelectedPermissions'} =  [
 $Self->{'Stats::DynamicObjectRegistration'}->{'ArticleList'} =  {
   'Module' => 'Kernel::System::Stats::Dynamic::ArticleList'
 };
+$Self->{'Stats::DynamicObjectRegistration'}->{'GovernanceObject'} =  {
+  'Module' => 'Kernel::System::Stats::Dynamic::GovernanceObject'
+};
 $Self->{'Stats::DynamicObjectRegistration'}->{'ITSMChangeManagement'} =  {
   'Module' => 'Kernel::System::Stats::Dynamic::ITSMChangeManagement'
 };
@@ -14538,6 +17003,9 @@ $Self->{'Stats::DynamicObjectRegistration'}->{'ITSMTicketFirstLevelSolutionRate'
 };
 $Self->{'Stats::DynamicObjectRegistration'}->{'ITSMTicketSolutionTimeAverage'} =  {
   'Module' => 'Kernel::System::Stats::Dynamic::ITSMTicketSolutionTimeAverage'
+};
+$Self->{'Stats::DynamicObjectRegistration'}->{'MELTObject'} =  {
+  'Module' => 'Kernel::System::Stats::Dynamic::MELTObject'
 };
 $Self->{'Stats::DynamicObjectRegistration'}->{'SurveyList'} =  {
   'Module' => 'Kernel::System::Stats::Dynamic::SurveyList'
@@ -14682,6 +17150,7 @@ $Self->{'SystemMaintenance::IsActiveDefaultNotification'} =  'We are performing 
 $Self->{'SystemMaintenance::TimeNotifyUpcomingMaintenance'} =  '120';
 $Self->{'SystemMonitoring::LinkTicketWithCI'} =  '0';
 $Self->{'SystemMonitoring::SetIncidentState'} =  '0';
+$Self->{'TESSERA::CMDB::VirtualAssetTag'}->{'Pattern'} =  '<ZTSM-Code>-VT-<running id>';
 $Self->{'Ticket::ArchiveSystem'} =  '0';
 $Self->{'Ticket::ArchiveSystem::RemoveSeenFlags'} =  '1';
 $Self->{'Ticket::ArchiveSystem::RemoveTicketWatchers'} =  '1';
@@ -14867,33 +17336,21 @@ $Self->{'Ticket::Frontend::AgentTicketAddtlITSMField'}->{'Subject'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketAddtlITSMField'}->{'TicketType'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketAddtlITSMField'}->{'Title'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Article'} =  'Internal';
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'ArticleCustomerVisible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Body'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'DynamicField'} =  {};
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'EditCustomerArticles'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'FormDraft'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'HistoryComment'} =  '%%ArticleEdit';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'HistoryType'} =  'ArticleEdit';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'InformAgent'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'InvolvedAgent'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'IsVisibleForCustomer'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'IsVisibleForCustomerDefault'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Note'} =  '1';
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'NoteMandatory'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Owner'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'OwnerMandatory'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Permission'} =  'note';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'ResponsibleMandatory'} =  '0';
@@ -14912,17 +17369,10 @@ $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'StateType'} =  [
 ];
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Subject'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'TicketType'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'TimeUnits'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketArticleEdit'}->{'Title'} =  '0';
+$Self->{'Ticket::Frontend::AgentTicketArticlePin'}->{'Permission'} =  'note';
+$Self->{'Ticket::Frontend::AgentTicketArticlePin'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketBounce'}->{'Permission'} =  'bounce';
-$Self->{'Ticket::Frontend::AgentTicketBounce'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketBounce'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketBounce'}->{'StateDefault'} =  'closed successful';
 $Self->{'Ticket::Frontend::AgentTicketBounce'}->{'StateType'} =  [
@@ -14932,14 +17382,6 @@ $Self->{'Ticket::Frontend::AgentTicketBounce'}->{'StateType'} =  [
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'IsVisibleForCustomerDefault'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'Owner'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'Priority'} =  '1';
-$Self->{'Ticket::Frontend::AgentTicketBulk'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'Responsible'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketBulk'}->{'State'} =  '1';
@@ -14968,14 +17410,6 @@ $Self->{'Ticket::Frontend::AgentTicketClose'}->{'Permission'} =  'close';
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketClose'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketClose'}->{'ResponsibleMandatory'} =  '0';
@@ -15000,14 +17434,6 @@ $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'DynamicField'} =  {
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'FormDraft'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'IsVisibleForCustomerDefault'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'Permission'} =  'compose';
-$Self->{'Ticket::Frontend::AgentTicketCompose'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketCompose'}->{'RichTextWidth'} =  '620';
@@ -15064,14 +17490,6 @@ $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'HistoryComment'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'HistoryType'} =  'EmailAgent';
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'IsVisibleForCustomer'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'Priority'} =  '3 normal';
-$Self->{'Ticket::Frontend::AgentTicketEmail'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'RichTextWidth'} =  '620';
 $Self->{'Ticket::Frontend::AgentTicketEmail'}->{'SLAMandatory'} =  '0';
@@ -15095,14 +17513,6 @@ $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'DynamicField'} =  {};
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'FormDraft'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'IsVisibleForCustomerDefault'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'Permission'} =  'compose';
-$Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketEmailOutbound'}->{'RichTextWidth'} =  '620';
@@ -15119,6 +17529,7 @@ $Self->{'Ticket::Frontend::AgentTicketEmailResend'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketEmailResend'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketEmailResend'}->{'RichTextWidth'} =  '620';
 $Self->{'Ticket::Frontend::AgentTicketEscalationView'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15152,14 +17563,6 @@ $Self->{'Ticket::Frontend::AgentTicketForward'}->{'DynamicField'} =  {};
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'FormDraft'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'IsVisibleForCustomerDefault'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'Permission'} =  'forward';
-$Self->{'Ticket::Frontend::AgentTicketForward'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketForward'}->{'RichTextWidth'} =  '620';
@@ -15186,14 +17589,6 @@ $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Permission'} =  'rw';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'ResponsibleMandatory'} =  '0';
@@ -15215,6 +17610,7 @@ $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Subject'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'TicketType'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketFreeText'}->{'Title'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketLockedView'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15289,14 +17685,6 @@ $Self->{'Ticket::Frontend::AgentTicketMove'}->{'NextScreen'} =  'TicketZoom';
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'Note'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'NoteMandatory'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'Priority'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketMove'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketMove'}->{'RichTextWidth'} =  '620';
@@ -15323,14 +17711,6 @@ $Self->{'Ticket::Frontend::AgentTicketNote'}->{'Permission'} =  'note';
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketNote'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketNote'}->{'ResponsibleMandatory'} =  '0';
@@ -15367,14 +17747,6 @@ $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'Permission'} =  'owner';
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketOwner'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketOwner'}->{'ResponsibleMandatory'} =  '0';
@@ -15411,14 +17783,6 @@ $Self->{'Ticket::Frontend::AgentTicketPending'}->{'Permission'} =  'pending';
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketPending'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPending'}->{'ResponsibleMandatory'} =  '0';
@@ -15447,14 +17811,6 @@ $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'HistoryComment'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'HistoryType'} =  'PhoneCallCustomer';
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'IsVisibleForCustomer'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'Priority'} =  '3 normal';
-$Self->{'Ticket::Frontend::AgentTicketPhone'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'RichTextWidth'} =  '620';
 $Self->{'Ticket::Frontend::AgentTicketPhone'}->{'SLAMandatory'} =  '0';
@@ -15481,14 +17837,6 @@ $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'FormDraft'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'HistoryComment'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'HistoryType'} =  'PhoneCallCustomer';
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'Permission'} =  'phone';
-$Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketPhoneInbound'}->{'RichTextWidth'} =  '475';
@@ -15507,14 +17855,6 @@ $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'FormDraft'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'HistoryComment'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'HistoryType'} =  'PhoneCallAgent';
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'Permission'} =  'phone';
-$Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'RichTextHeight'} =  '320';
 $Self->{'Ticket::Frontend::AgentTicketPhoneOutbound'}->{'RichTextWidth'} =  '475';
@@ -15533,12 +17873,14 @@ $Self->{'Ticket::Frontend::AgentTicketPrint'}->{'DynamicField'} =  {
   'ZTicket-Application' => '1',
   'ZTicket-ApprovalGroup' => '1',
   'ZTicket-ApprovalModel' => '1',
+  'ZTicket-BlueBook' => '1',
   'ZTicket-EndorsementGroup' => '1',
   'ZTicket-Env' => '1',
   'ZTicket-Location' => '1',
   'ZTicket-Owner' => '1',
   'ZTicket-OwnerGroup' => '1',
   'ZTicket-Role' => '1',
+  'ZTicket-Stage' => '1',
   'ZTicket-StateBook' => '1'
 };
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Body'} =  '';
@@ -15559,14 +17901,6 @@ $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Permission'} =  'priority';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Priority'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketPriority'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Responsible'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'ResponsibleMandatory'} =  '0';
@@ -15587,14 +17921,6 @@ $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'StateType'} =  [
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Subject'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'TicketType'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketPriority'}->{'Title'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketProcess'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketProcess'}->{'SplitLinkType'} =  {
   'Direction' => 'Target',
   'LinkType' => 'ParentChild'
@@ -15609,6 +17935,7 @@ $Self->{'Ticket::Frontend::AgentTicketProcess'}->{'StateType'} =  [
 $Self->{'Ticket::Frontend::AgentTicketProcess::CustomerIDReadOnly'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketQueue'}->{'Blink'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketQueue'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15652,7 +17979,7 @@ $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'ContentType'} =  'text/pla
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'HistoryComment'} =  'Ticket was closed';
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'HistoryType'} =  'AddNote';
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'IsVisibleForCustomer'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'Permission'} =  'close';
+$Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'Permission'} =  'rw';
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'RequiredLock'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'SenderType'} =  'agent';
 $Self->{'Ticket::Frontend::AgentTicketQuickClose'}->{'State'} =  'closed successful';
@@ -15673,14 +18000,6 @@ $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Permission'} =  'responsi
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Priority'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'QueueMandatory'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'QuickDateButtons'} =  [
-  {
-    '+1 day' => '+1'
-  },
-  {
-    '+1 week' => '+7'
-  }
-];
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'RequiredLock'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Responsible'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'ResponsibleMandatory'} =  '1';
@@ -15700,8 +18019,9 @@ $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'StateType'} =  [
 ];
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Subject'} =  '';
 $Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'TicketType'} =  '0';
-$Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Title'} =  '1';
+$Self->{'Ticket::Frontend::AgentTicketResponsible'}->{'Title'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketResponsibleView'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15732,6 +18052,7 @@ $Self->{'Ticket::Frontend::AgentTicketResponsibleView'}->{'Order::Default'} =  '
 $Self->{'Ticket::Frontend::AgentTicketResponsibleView'}->{'SortBy::Default'} =  'Age';
 $Self->{'Ticket::Frontend::AgentTicketSearch'}->{'ArticleCreateTime'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketSearch'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15803,6 +18124,7 @@ $Self->{'Ticket::Frontend::AgentTicketSearch'}->{'SearchPageShown'} =  '40';
 $Self->{'Ticket::Frontend::AgentTicketSearch'}->{'SearchViewableTicketLines'} =  '10';
 $Self->{'Ticket::Frontend::AgentTicketSearch'}->{'SortBy::Default'} =  'Age';
 $Self->{'Ticket::Frontend::AgentTicketService'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15835,6 +18157,7 @@ $Self->{'Ticket::Frontend::AgentTicketService'}->{'SortBy::Default'} =  'Age';
 $Self->{'Ticket::Frontend::AgentTicketService'}->{'StripEmptyLines'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketService'}->{'ViewAllPossibleTickets'} =  '0';
 $Self->{'Ticket::Frontend::AgentTicketStatusView'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15864,6 +18187,7 @@ $Self->{'Ticket::Frontend::AgentTicketStatusView'}->{'DefaultColumns'} =  {
 $Self->{'Ticket::Frontend::AgentTicketStatusView'}->{'Order::Default'} =  'Down';
 $Self->{'Ticket::Frontend::AgentTicketStatusView'}->{'SortBy::Default'} =  'Age';
 $Self->{'Ticket::Frontend::AgentTicketWatchView'}->{'DefaultColumns'} =  {
+  'AccountedTime' => '1',
   'Age' => '2',
   'Changed' => '1',
   'Created' => '1',
@@ -15892,16 +18216,31 @@ $Self->{'Ticket::Frontend::AgentTicketWatchView'}->{'DefaultColumns'} =  {
 };
 $Self->{'Ticket::Frontend::AgentTicketWatchView'}->{'Order::Default'} =  'Up';
 $Self->{'Ticket::Frontend::AgentTicketWatchView'}->{'SortBy::Default'} =  'Age';
+$Self->{'Ticket::Frontend::AgentTicketZoom'}->{'ArticleListShowTimeUnits'} =  '1';
 $Self->{'Ticket::Frontend::AgentTicketZoom'}->{'DynamicField'} =  {
-  'ITSMCriticality' => '1',
-  'ITSMDecisionDate' => '1',
-  'ITSMDecisionResult' => '1',
-  'ITSMDueDate' => '1',
-  'ITSMImpact' => '1',
-  'ITSMRecoveryStartTime' => '1',
-  'ITSMRepairStartTime' => '1',
-  'ITSMReviewRequired' => '1',
-  'MasterSlave' => '1'
+  'FirewallPolicyRule' => '1',
+  'ITSMCriticality' => '0',
+  'ITSMDecisionDate' => '0',
+  'ITSMDecisionResult' => '0',
+  'ITSMDueDate' => '0',
+  'ITSMImpact' => '0',
+  'ITSMRecoveryStartTime' => '0',
+  'ITSMRepairStartTime' => '0',
+  'ITSMReviewRequired' => '0',
+  'MasterSlave' => '0',
+  'ZIN-Iteration' => '1',
+  'ZIN-Outcome' => '1',
+  'ZRM-RiskAssessment' => '1',
+  'ZTicket-BlueBook' => '1',
+  'ZTicket-BlueLevel' => '1',
+  'ZTicket-BusinessRisk' => '1',
+  'ZTicket-Chapter' => '1',
+  'ZTicket-GovernanceRisk' => '1',
+  'ZTicket-Mandatory' => '1',
+  'ZTicket-Owner' => '1',
+  'ZTicket-OwnerGroup' => '1',
+  'ZTicket-StateBook' => '1',
+  'ZTicket-TechnicalRisk' => '1'
 };
 $Self->{'Ticket::Frontend::AgentTicketZoom'}->{'DynamicFieldWidgetDisplay'} =  {
   'NavBarName' => 'Dynamic Fields',
@@ -15937,57 +18276,10 @@ $Self->{'Ticket::Frontend::AgentTicketZoom'}->{'Widgets'}->{'0300-LinkTable'} = 
   'Module' => 'Kernel::Output::HTML::TicketZoom::LinkTable'
 };
 $Self->{'Ticket::Frontend::AgentZoomExpand'} =  '0';
-$Self->{'Ticket::Frontend::Article::Actions'}->{'Chat'} =  {
-  'AgentTicketCompose' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketCompose',
-    'Prio' => '100',
-    'Valid' => '1'
-  },
-  'AgentTicketForward' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketForward',
-    'Prio' => '200',
-    'Valid' => '1'
-  },
-  'AgentTicketPrint' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketPrint',
-    'Prio' => '500',
-    'Valid' => '1'
-  },
-  'ArticlePin' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::ArticlePin',
-    'Prio' => '800',
-    'Valid' => '1'
-  },
-  'MarkArticleSeenUnseen' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::MarkArticleSeenUnseen',
-    'Prio' => '300',
-    'Valid' => '1'
-  },
-  'MarkAsImportant' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::MarkAsImportant',
-    'Prio' => '700',
-    'Valid' => '1'
-  }
-};
-$Self->{'Ticket::Frontend::Article::Actions'}->{'Email'} =  {
-  'AgentTicketArticleDelete' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleDelete',
-    'Prio' => '20',
-    'Valid' => '1'
-  },
+$Self->{'Ticket::Frontend::Article::Actions::Email'}->{'000-Ticket'} =  {
   'AgentTicketArticleEdit' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleEdit',
-    'Prio' => '50',
-    'Valid' => '1'
-  },
-  'AgentTicketArticleRestore' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleRestore',
-    'Prio' => '10',
-    'Valid' => '1'
-  },
-  'AgentTicketArticleVersion' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleVersion',
-    'Prio' => '30',
+    'Prio' => '40',
     'Valid' => '1'
   },
   'AgentTicketBounce' => {
@@ -16046,7 +18338,14 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Email'} =  {
     'Valid' => '1'
   }
 };
-$Self->{'Ticket::Frontend::Article::Actions'}->{'Internal'} =  {
+$Self->{'Ticket::Frontend::Article::Actions::Email'}->{'001-AgentTicketArticlePin'} =  {
+  'ArticlePin' => {
+    'Module' => 'Kernel::Output::HTML::ArticleAction::ArticlePin',
+    'Prio' => '1100',
+    'Valid' => '1'
+  }
+};
+$Self->{'Ticket::Frontend::Article::Actions::Internal'}->{'000-Ticket'} =  {
   'AgentTicketArticleDelete' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleDelete',
     'Prio' => '20',
@@ -16102,14 +18401,9 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Internal'} =  {
     'Prio' => '500',
     'Valid' => '1'
   },
-  'ArticlePin' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::ArticlePin',
-    'Prio' => '1000',
-    'Valid' => '1'
-  },
   'MarkArticleSeenUnseen' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::MarkArticleSeenUnseen',
-    'Prio' => '900',
+    'Prio' => '1000',
     'Valid' => '1'
   },
   'MarkAsImportant' => {
@@ -16118,14 +18412,16 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Internal'} =  {
     'Valid' => '1'
   }
 };
-$Self->{'Ticket::Frontend::Article::Actions'}->{'Invalid'} =  {
+$Self->{'Ticket::Frontend::Article::Actions::Internal'}->{'001-AgentTicketArticlePin'} =  {
+  'ArticlePin' => {
+    'Module' => 'Kernel::Output::HTML::ArticleAction::ArticlePin',
+    'Prio' => '1100',
+    'Valid' => '1'
+  }
+};
+$Self->{'Ticket::Frontend::Article::Actions::Invalid'}->{'000-Ticket'} =  {
   'GetHelpLink' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::GetHelpLink',
-    'Prio' => '100',
-    'Valid' => '1'
-  },
-  'MarkArticleSeenUnseen' => {
-    'Module' => 'Kernel::Output::HTML::ArticleAction::MarkArticleSeenUnseen',
     'Prio' => '100',
     'Valid' => '1'
   },
@@ -16135,7 +18431,7 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Invalid'} =  {
     'Valid' => '1'
   }
 };
-$Self->{'Ticket::Frontend::Article::Actions'}->{'Phone'} =  {
+$Self->{'Ticket::Frontend::Article::Actions::Phone'}->{'000-Ticket'} =  {
   'AgentTicketArticleDelete' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleDelete',
     'Prio' => '20',
@@ -16143,7 +18439,7 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Phone'} =  {
   },
   'AgentTicketArticleEdit' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::AgentTicketArticleEdit',
-    'Prio' => '1100',
+    'Prio' => '40',
     'Valid' => '1'
   },
   'AgentTicketArticleRestore' => {
@@ -16193,12 +18489,19 @@ $Self->{'Ticket::Frontend::Article::Actions'}->{'Phone'} =  {
   },
   'MarkArticleSeenUnseen' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::MarkArticleSeenUnseen',
-    'Prio' => '900',
+    'Prio' => '1000',
     'Valid' => '1'
   },
   'MarkAsImportant' => {
     'Module' => 'Kernel::Output::HTML::ArticleAction::MarkAsImportant',
     'Prio' => '700',
+    'Valid' => '1'
+  }
+};
+$Self->{'Ticket::Frontend::Article::Actions::Phone'}->{'001-AgentTicketArticlePin'} =  {
+  'ArticlePin' => {
+    'Module' => 'Kernel::Output::HTML::ArticleAction::ArticlePin',
+    'Prio' => '1100',
     'Valid' => '1'
   }
 };
@@ -16249,7 +18552,7 @@ $Self->{'Ticket::Frontend::BulkModule'}->{'010-MasterSlave'} =  {
 };
 $Self->{'Ticket::Frontend::ComposeAddCustomerAddress'} =  '1';
 $Self->{'Ticket::Frontend::ComposeReplaceSenderAddress'} =  '0';
-$Self->{'Ticket::Frontend::CustomerDisableCompanyTicketAccess'} =  '0';
+$Self->{'Ticket::Frontend::CustomerDisableCompanyTicketAccess'} =  '1';
 $Self->{'Ticket::Frontend::CustomerInfoCompose'} =  '1';
 $Self->{'Ticket::Frontend::CustomerInfoComposeMaxSize'} =  '22';
 $Self->{'Ticket::Frontend::CustomerInfoZoomMaxSize'} =  '40';
@@ -16278,8 +18581,6 @@ $Self->{'Ticket::Frontend::CustomerTicketOverview'}->{'DynamicField'} =  {
   'ZTicket-Location' => '2',
   'ZTicket-Parent' => '1'
 };
-$Self->{'Ticket::Frontend::CustomerTicketOverview'}->{'Owner'} =  '0';
-$Self->{'Ticket::Frontend::CustomerTicketOverview'}->{'Queue'} =  '0';
 $Self->{'Ticket::Frontend::CustomerTicketOverviewSortable'} =  'Sortable';
 $Self->{'Ticket::Frontend::CustomerTicketPrint'}->{'CustomerInformation'} =  '0';
 $Self->{'Ticket::Frontend::CustomerTicketPrint'}->{'DynamicField'} =  {
@@ -16309,6 +18610,7 @@ $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'SearchCSVData'} =  [
 ];
 $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'SearchCSVDynamicField'} =  {};
 $Self->{'Ticket::Frontend::CustomerTicketSearch'}->{'SearchOverviewDynamicField'} =  {};
+$Self->{'Ticket::Frontend::CustomerTicketZTSMAction'}->{'ConfirmLoopbackState'} =  'diagnose';
 $Self->{'Ticket::Frontend::CustomerTicketZoom'}->{'AttributesView'} =  {
   'Owner' => '0',
   'Priority' => '1',
@@ -16360,7 +18662,7 @@ $Self->{'Ticket::Frontend::DynamicFieldsZoomMaxSizeArticle'} =  '160';
 $Self->{'Ticket::Frontend::DynamicFieldsZoomMaxSizeSidebar'} =  '40';
 $Self->{'Ticket::Frontend::HTMLArticleHeightDefault'} =  '100';
 $Self->{'Ticket::Frontend::HTMLArticleHeightMax'} =  '2500';
-$Self->{'Ticket::Frontend::HistoryOrder'} =  'normal';
+$Self->{'Ticket::Frontend::HistoryOrder'} =  'reverse';
 $Self->{'Ticket::Frontend::HistoryTypes'}->{'000-Framework'} =  {
   'AddNote' => 'Added note (%s).',
   'ArchiveFlagUpdate' => 'Changed archive state to "%s".',
@@ -16645,6 +18947,15 @@ $Self->{'Ticket::Frontend::MenuModule'}->{'430-Merge'} =  {
   'PopupType' => 'TicketAction',
   'Target' => ''
 };
+$Self->{'Ticket::Frontend::MenuModule'}->{'430-QuickClose'} =  {
+  'Action' => 'AgentTicketQuickClose',
+  'Description' => 'Quick close this ticket.',
+  'Link' => 'Action=AgentTicketQuickClose;TicketID=[% Data.TicketID | html %]',
+  'Module' => 'Kernel::Output::HTML::TicketMenu::Generic',
+  'Name' => 'Quick Close',
+  'PopupType' => 'TicketAction',
+  'Target' => ''
+};
 $Self->{'Ticket::Frontend::MenuModule'}->{'440-Pending'} =  {
   'Action' => 'AgentTicketPending',
   'ClusterName' => '',
@@ -16654,6 +18965,15 @@ $Self->{'Ticket::Frontend::MenuModule'}->{'440-Pending'} =  {
   'Module' => 'Kernel::Output::HTML::TicketMenu::Generic',
   'Name' => 'Pending',
   'PopupType' => 'TicketAction',
+  'Target' => ''
+};
+$Self->{'Ticket::Frontend::MenuModule'}->{'440-TESSERATable'} =  {
+  'Action' => 'AgentTicketTESSERATable',
+  'Description' => 'Export this ticket as CSV or XLSX.',
+  'Link' => 'Action=AgentTicketTESSERATable;TicketID=[% Data.TicketID | html %]',
+  'Module' => 'Kernel::Output::HTML::TicketMenu::Generic',
+  'Name' => 'Table Export',
+  'PopupType' => '',
   'Target' => ''
 };
 $Self->{'Ticket::Frontend::MenuModule'}->{'448-Watch'} =  {
@@ -16679,11 +18999,12 @@ $Self->{'Ticket::Frontend::MenuModule'}->{'450-Close'} =  {
 $Self->{'Ticket::Frontend::MenuModule'}->{'451-QuickClose'} =  {
   'Action' => 'AgentTicketQuickClose',
   'Description' => 'Close this ticket',
-  'Link' => 'Action=AgentTicketQuickClose;TicketID=[% Data.TicketID | html %]',
   'Module' => 'Kernel::Output::HTML::TicketMenu::Generic',
   'Name' => 'Quick Close',
   'PopupType' => '',
-  'Target' => ''
+  'Subaction' => '',
+  'Target' => '',
+  'Type' => 'Form'
 };
 $Self->{'Ticket::Frontend::MenuModule'}->{'480-MasterSlave'} =  {
   'Action' => 'AgentTicketMasterSlave',
@@ -16743,7 +19064,7 @@ $Self->{'Ticket::Frontend::MenuModule'}->{'9000-ShowHideDeletedArticles'} =  {
   'ClusterPriority' => '9000',
   'Description' => 'Show or Hide deleted articles.',
   'Module' => 'Kernel::Output::HTML::TicketMenu::ShowHideDeletedArticles',
-  'Name' => 'ShowHideDeletedArticles',
+  'Name' => 'Show or Hide Deleted Articles',
   'Target' => ''
 };
 $Self->{'Ticket::Frontend::MergeText'} =  'Your email with ticket number "<OTOBO_TICKET>" is merged to "<OTOBO_MERGE_TO_TICKET>".';
@@ -16894,6 +19215,9 @@ $Self->{'Ticket::Frontend::ResponseFormat'} =  '[% Data.Salutation | html %]
 [% Data.CreateTime | Localize("TimeShort") %] - [% Data.OrigFromName | html %] [% Translate("wrote") | html %]:
 [% Data.Body | html %]
 ';
+$Self->{'Ticket::Frontend::RestorePendingInformation'}->{'Actions'} =  {
+  'AgentTicketPending' => '1'
+};
 $Self->{'Ticket::Frontend::SeparateDynamicFields'} =  {
   'TitleCategory' => '0',
   'TitleDynamicFields' => '0',
@@ -16921,10 +19245,32 @@ $Self->{'Ticket::InvalidOwner::StateChange'} =  {
 };
 $Self->{'Ticket::MergeDynamicFields'} =  [];
 $Self->{'Ticket::NewArticleIgnoreSystemSender'} =  '0';
-$Self->{'Ticket::NumberGenerator'} =  'Kernel::System::Ticket::Number::DateChecksum';
+$Self->{'Ticket::NumberGenerator'} =  'Kernel::System::Ticket::Number::TESSERAIdentity';
 $Self->{'Ticket::NumberGenerator::CheckSystemID'} =  '1';
 $Self->{'Ticket::NumberGenerator::Date::UseFormattedCounter'} =  '0';
 $Self->{'Ticket::NumberGenerator::MinCounterSize'} =  '5';
+$Self->{'Ticket::NumberGenerator::TESSERAIdentity'} =  {
+  'ChildSequencePadding' => '3',
+  'ResetPolicy' => 'Yearly',
+  'SequencePadding' => '7',
+  'SequenceScope' => 'SystemYear',
+  'SystemIdentity' => 'ICAT',
+  'TypeCodeLength' => '2',
+  'TypeCodes' => {
+    'Approval' => 'AP',
+    'Assessment' => 'AS',
+    'Change' => 'CH',
+    'Confirmation' => 'CF',
+    'Endorsement' => 'EN',
+    'Exception' => 'EX',
+    'FollowUp' => 'FU',
+    'Incident' => 'IN',
+    'Problem' => 'PR',
+    'ServiceRequest' => 'SE',
+    'Task' => 'TA',
+    'Verification' => 'VE'
+  }
+};
 $Self->{'Ticket::OwnerResetOnUnlock'} =  '1';
 $Self->{'Ticket::PendingAutoStateType'} =  [
   'pending auto'
@@ -17942,6 +20288,7 @@ $Self->{'TimeInputFormat'} =  'Option';
 $Self->{'TimeInputMinutesStep'} =  '1';
 $Self->{'TimeShowAlwaysLong'} =  '0';
 $Self->{'TimeShowCompleteDescription'} =  '0';
+$Self->{'TimeShowLocalization'} =  '1';
 $Self->{'TimeVacationDays'} =  {
   '1' => {
     '1' => 'New Year\'s Day'
@@ -18957,6 +21304,32 @@ $Self->{'WebMaxFileUpload'} =  '48000000';
 $Self->{'WebUploadCacheModule'} =  'Kernel::System::Web::UploadCache::DB';
 $Self->{'WebUserAgent::DisableSSLVerification'} =  '0';
 $Self->{'WebUserAgent::Timeout'} =  '15';
+$Self->{'ZTSM::Provisioning::HostnamePolicy'} =  {
+  'CodeDynamicFields' => {
+    'ConfigItem' => 'ZTAM-Code',
+    'GovernanceObject' => 'ZTSM-Code',
+    'ZCompute-Image' => 'ZTAM-Code',
+    'ZTicket-NetworkPool' => 'ZTAM-Code'
+  },
+  'EnforceGlobalPolicy' => '0',
+  'RunningNumberScope' => 'ApplicationYear',
+  'RunningNumberWidth' => '3',
+  'SegmentPositions' => {
+    'ZCompute-CpuCore' => '0',
+    'ZCompute-GPU' => '0',
+    'ZCompute-Image' => '0',
+    'ZCompute-RAM' => '0',
+    'ZStorage-FS' => '0',
+    'ZTSM-RunningNumber' => '0',
+    'ZTicket-Application' => '0',
+    'ZTicket-Custom' => '1',
+    'ZTicket-Env' => '0',
+    'ZTicket-FunctionProfile' => '0',
+    'ZTicket-Location' => '0',
+    'ZTicket-NetworkPool' => '0'
+  },
+  'Separator' => ''
+};
 $Self->{'Znuny4OTOBOAdvancedDynamicFields::DynamicFieldValid'} =  '1';
     return;
 }

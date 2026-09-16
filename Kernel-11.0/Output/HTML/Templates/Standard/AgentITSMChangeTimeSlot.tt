@@ -1,0 +1,52 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2021 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<form action="[% Env("CGIHandle") %]" method="post" enctype="multipart/form-data" name="compose" id="MoveTimeSlotForm" class="Validate PreventMultipleSubmits">
+    <input type="hidden" name="Action"    value="[% Env("Action") %]" />
+    <input type="hidden" name="Subaction" value="MoveTimeSlot" />
+    <input type="hidden" name="ChangeID"  value="[% Data.ChangeID | html %]" />
+
+    <div class="LayoutPopup ARIARoleMain">
+        <div class="Header">
+            <h1>[% Translate("Move Time Slot") | html %] [% Config("ITSMChange::Hook") %] [% Data.ChangeNumber %]</h1>
+            <p>
+                <a class="CancelClosePopup" href="#">[% Translate("Cancel & close") | html %]</a>
+            </p>
+        </div>
+        <div class="Content">
+            <fieldset class="TableLike FixedLabel">
+                <label for="MoveTimeType">[% Translate("Time type") | html %]:</label>
+                <div class="Field">
+                    [% Data.MoveTimeTypeSelectionString %]
+                </div>
+                <div class="Clear"></div>
+
+                <label>[% Translate("New time") | html %]:</label>
+                <div class="Field">
+                    [% Data.MoveTimeSelectionString %]
+                    <div id="MoveTimeDayServerError" class="TooltipErrorMessage"><p>[% Translate("Date invalid!") | html %]</p></div>
+                    <div id="MoveTimeHourServerError" class="TooltipErrorMessage"><p>[% Translate("Date invalid!") | html %]</p></div>
+                </div>
+                <div class="Clear"></div>
+            </fieldset>
+        </div>
+        <div class="Footer">
+            <button class="Primary CallForAction" id="SubmitMoveTimeSlot" accesskey="g" title="[% Translate("Move") | html %] (g)" type="submit" value="[% Translate("Move") | html %]">
+                <span><i class="fa fa-check-square-o"></i> [% Translate("Move") | html %]</span>
+            </button>
+        </div>
+    </div>
+</form>

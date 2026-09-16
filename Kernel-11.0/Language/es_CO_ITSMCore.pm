@@ -1,0 +1,223 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+package Kernel::Language::es_CO_ITSMCore;
+
+use strict;
+use warnings;
+use utf8;
+
+sub Data {
+    my $Self = shift;
+
+    # Template: AdminITSMCIPAllocate
+    $Self->{Translation}->{'Criticality ↔ Impact ↔ Priority'} = 'Criticidad ↔ Impacto ↔ Prioridad';
+    $Self->{Translation}->{'Manage the priority result of combinating Criticality ↔ Impact.'} =
+        'Gestionar la prioridad es la combinación entre Criticidad ↔ Impacto.';
+    $Self->{Translation}->{'Priority allocation'} = 'Asignar Prioridad';
+
+    # Template: AdminSLA
+    $Self->{Translation}->{'Minimum Time Between Incidents'} = 'Tiempo mínimo entre incidentes';
+
+    # Template: AdminService
+    $Self->{Translation}->{'Criticality'} = 'Criticidad';
+
+    # Template: AgentITSMSLAZoom
+    $Self->{Translation}->{'SLA Information'} = 'Información de SLA';
+    $Self->{Translation}->{'Last changed'} = 'Último cambio';
+    $Self->{Translation}->{'Last changed by'} = 'Último cambio por';
+    $Self->{Translation}->{'Associated Services'} = 'Servicios asociados';
+
+    # Template: AgentITSMServiceZoom
+    $Self->{Translation}->{'Service Information'} = 'Información del Servicio';
+    $Self->{Translation}->{'Current incident state'} = 'Estado actual del incidente';
+    $Self->{Translation}->{'Associated SLAs'} = 'SLAs asociados';
+
+    # Template: TicketInformation
+    $Self->{Translation}->{'Service Incident State'} = '';
+    $Self->{Translation}->{'Service Criticality'} = '';
+
+    # Perl Module: Kernel/Modules/AdminITSMCIPAllocate.pm
+    $Self->{Translation}->{'Impact'} = 'Impacto';
+
+    # Perl Module: Kernel/Modules/AgentITSMSLAPrint.pm
+    $Self->{Translation}->{'No SLAID is given!'} = '';
+    $Self->{Translation}->{'SLAID %s not found in database!'} = 'SLAID %s no encontrado en la base de datos!';
+    $Self->{Translation}->{'Calendar Default'} = 'Calendario por defecto';
+
+    # Perl Module: Kernel/Modules/AgentITSMSLAZoom.pm
+    $Self->{Translation}->{'operational'} = 'operacional';
+    $Self->{Translation}->{'warning'} = 'advertencia';
+    $Self->{Translation}->{'incident'} = 'incidente';
+
+    # Perl Module: Kernel/Modules/AgentITSMServicePrint.pm
+    $Self->{Translation}->{'No ServiceID is given!'} = '';
+    $Self->{Translation}->{'ServiceID %s not found in database!'} = 'ServiceID %s no encontrado en la base de datos!';
+    $Self->{Translation}->{'Current Incident State'} = 'Estado actual del incidente';
+
+    # Perl Module: Kernel/Output/HTML/LinkObject/Service.pm
+    $Self->{Translation}->{'Incident State'} = 'Estado del Incidente';
+
+    # Database XML / SOPM Definition: ITSMCore.sopm
+    $Self->{Translation}->{'Operational'} = 'Operacional';
+    $Self->{Translation}->{'Incident'} = 'Incidente';
+    $Self->{Translation}->{'End User Service'} = 'Servicio de Usuario Final';
+    $Self->{Translation}->{'Front End'} = 'Front End';
+    $Self->{Translation}->{'Back End'} = 'Back End';
+    $Self->{Translation}->{'IT Management'} = 'Gestión de TI';
+    $Self->{Translation}->{'Reporting'} = 'Informes';
+    $Self->{Translation}->{'IT Operational'} = 'TI Operacional';
+    $Self->{Translation}->{'Demonstration'} = 'Demostración';
+    $Self->{Translation}->{'Project'} = 'Proyecto';
+    $Self->{Translation}->{'Underpinning Contract'} = 'Contrato de Respaldo';
+    $Self->{Translation}->{'Other'} = 'Otro';
+    $Self->{Translation}->{'Availability'} = 'Disponibilidad';
+    $Self->{Translation}->{'Response Time'} = 'Tiempo de respuesta';
+    $Self->{Translation}->{'Recovery Time'} = 'Tiempo de recuperación';
+    $Self->{Translation}->{'Resolution Rate'} = 'Tasa de resolución';
+    $Self->{Translation}->{'Transactions'} = 'Transacciones';
+    $Self->{Translation}->{'Errors'} = 'Errores';
+
+    # SysConfig
+    $Self->{Translation}->{'Alternative to'} = 'Alternativa a';
+    $Self->{Translation}->{'Both'} = 'Ambos';
+    $Self->{Translation}->{'CIPAllocation: Overwrite priority based on Criticality and Impact. Default fallback: Frontend::CIPAllocationDefault.'} =
+        '';
+    $Self->{Translation}->{'Connected to'} = 'Conectado a';
+    $Self->{Translation}->{'Default behavior of priority allocation in the frontends based on Criticality and Impact. Can be overruled by frontend specific PriorityByCIP settings.'} =
+        '';
+    $Self->{Translation}->{'Define Actions where a settings button is available in the linked objects widget (LinkObject::ViewMode = "complex"). Please note that these Actions must have registered the following JS and CSS files: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js and Core.Agent.LinkObject.js.'} =
+        'Defina acciones donde un botón de configuración esté disponible en el widget de objetos vinculados (LinkObject::ViewMode = "complejo"). Tenga en cuenta que estas acciones deben haber registrado los siguientes archivos JS y CSS: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js y Core.Agent .LinkObject.js.';
+    $Self->{Translation}->{'Define which columns are shown in the linked Services widget (LinkObject::ViewMode = "complex"). Note: Only Service attributes are allowed for DefaultColumns. Possible settings: 0 = Disabled, 1 = Available, 2 = Enabled by default.'} =
+        'Defina qué columnas se muestran en el widget de Servicios vinculados (LinkObject::ViewMode = "complex"). Nota: Solo se permiten atributos de servicio para DefaultColumns. Configuraciones posibles: 0 = Deshabilitado, 1 = Disponible, 2 = Habilitado por defecto.';
+    $Self->{Translation}->{'Defines the list of online repositories. Another installation can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".'} =
+        '';
+    $Self->{Translation}->{'Depends on'} = 'Depende de';
+    $Self->{Translation}->{'Enforce'} = '';
+    $Self->{Translation}->{'Frontend module registration for the AdminITSMCIPAllocate configuration in the admin area.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMSLA object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMSLAPrint object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMSLAZoom object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMService object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMServicePrint object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'Frontend module registration for the AgentITSMServiceZoom object in the agent interface.'} =
+        '';
+    $Self->{Translation}->{'ITSM SLA Overview.'} = '';
+    $Self->{Translation}->{'ITSM Service Overview.'} = '';
+    $Self->{Translation}->{'Incident State Type'} = '';
+    $Self->{Translation}->{'Includes'} = '';
+    $Self->{Translation}->{'Located in'} = '';
+    $Self->{Translation}->{'Location of'} = '';
+    $Self->{Translation}->{'Manage priority matrix.'} = '';
+    $Self->{Translation}->{'Manage the criticality - impact - priority matrix.'} = '';
+    $Self->{Translation}->{'Module to show the Back menu item in SLA menu.'} = '';
+    $Self->{Translation}->{'Module to show the Back menu item in service menu.'} = '';
+    $Self->{Translation}->{'Module to show the Link menu item in service menu.'} = '';
+    $Self->{Translation}->{'Module to show the Print menu item in SLA menu.'} = '';
+    $Self->{Translation}->{'Module to show the Print menu item in service menu.'} = '';
+    $Self->{Translation}->{'Off'} = '';
+    $Self->{Translation}->{'Parameters for the incident states in the preference view.'} = '';
+    $Self->{Translation}->{'Part of'} = '';
+    $Self->{Translation}->{'Relevant to'} = '';
+    $Self->{Translation}->{'Required for'} = '';
+    $Self->{Translation}->{'SLA Overview'} = '';
+    $Self->{Translation}->{'SLA Print.'} = '';
+    $Self->{Translation}->{'SLA Zoom.'} = '';
+    $Self->{Translation}->{'Service Overview'} = '';
+    $Self->{Translation}->{'Service Print.'} = '';
+    $Self->{Translation}->{'Service Zoom.'} = '';
+    $Self->{Translation}->{'Service-Area'} = '';
+    $Self->{Translation}->{'Set the type and direction of links to be used to calculate the incident state. The key is the name of the link type (as defined in LinkObject::Type), and the value is the direction of the IncidentLinkType that should be followed to calculate the incident state. For example if the IncidentLinkType is set to \'DependsOn\', and the Direction is \'Source\', only \'Depends on\' links will be followed (and not the opposite link \'Required for\') to calculate the incident state. You can add more link types ad directions as you like, e.g. \'Includes\' with the direction \'Target\'. All link types defined in the sysconfig options LinkObject::Type are possible and the direction can be \'Source\', \'Target\', or \'Both\'. IMPORTANT: AFTER YOU MAKE CHANGES TO THIS SYSCONFIG OPTION YOU NEED TO RUN THE CONSOLE COMMAND bin/otobo.Console.pl Admin::ITSM::IncidentState::Recalculate SO THAT ALL INCIDENT STATES WILL BE RECALCULATED BASED ON THE NEW SETTINGS!'} =
+        '';
+    $Self->{Translation}->{'Show the current service incident state signal in the ticket information.'} =
+        '';
+    $Self->{Translation}->{'Source'} = '';
+    $Self->{Translation}->{'Suggest'} = '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMChange\' object can be linked with \'Ticket\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'FAQ\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'FAQ\' objects using the \'ParentChild\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'FAQ\' objects using the \'RelevantTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Service\' objects using the \'AlternativeTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Service\' objects using the \'DependsOn\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Service\' objects using the \'RelevantTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Ticket\' objects using the \'AlternativeTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Ticket\' objects using the \'DependsOn\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'Ticket\' objects using the \'RelevantTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'AlternativeTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'ConnectedTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'DependsOn\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'Includes\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'LocationOf\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'RelevantTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'ITSMConfigItem\' objects using the \'DependsOn\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'ITSMConfigItem\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'Service\' objects using the \'DependsOn\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'Service\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'Ticket\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'Service\' object can be linked with \'FAQ\' objects using the \'Normal\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'Service\' object can be linked with \'FAQ\' objects using the \'ParentChild\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines that a \'Service\' object can be linked with \'FAQ\' objects using the \'RelevantTo\' link type.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'AlternativeTo\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'ConnectedTo\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'DependsOn\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'Includes\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'LocationOf\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'This setting defines the link type \'RelevantTo\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
+        '';
+    $Self->{Translation}->{'Width of ITSM textareas.'} = '';
+
+
+    push @{ $Self->{JavaScriptStrings} // [] }, (
+    );
+
+}
+
+1;

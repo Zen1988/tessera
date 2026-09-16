@@ -1,7 +1,7 @@
 # --
 # OTOBO is a web-based ticketing system for service organisations.
 # --
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -12,7 +12,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
-
 
 package Kernel::Modules::AgentTicketArticlePin;
 
@@ -38,9 +37,9 @@ sub Run {
 
     my ( $Self, %Param ) = @_;
 
-    my $ArticleObject   = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-    my $LayoutObject    = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $ParamObject     = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ParamObject   = $Kernel::OM->Get('Kernel::System::Web::Request');
 
     # Check needed stuff.
     for my $Needed (qw(TicketID ArticleID)) {
@@ -50,8 +49,9 @@ sub Run {
                 Message  => "Need $Needed!",
             );
             return;
-        } else {
-            $Self->{$Needed} = $ParamObject->GetParam( Param => $Needed ),
+        }
+        else {
+            $Self->{$Needed} = $ParamObject->GetParam( Param => $Needed );
         }
     }
 

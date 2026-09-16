@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -47,7 +47,13 @@ sub new {
     );
 
     # TODO Adjust GenericAgent module to handle multivalue and set fields correctly
-    $Self->{DynamicField}->@* = grep { !$_->{Config}{MultiValue} && $_->{FieldType} ne 'Set' } $DynamicField->@*;
+    $Self->{DynamicField}->@* = grep {
+        my $IsSetField = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->HasBehavior(
+            DynamicFieldConfig => $_,
+            Behavior           => 'IsSetField',
+        );
+        !$_->{Config}{MultiValue} && !$IsSetField
+    } $DynamicField->@*;
 
     return $Self;
 }
@@ -533,6 +539,7 @@ sub Run {
     $LayoutObject->Block(
         Name => 'Filter',
     );
+    $LayoutObject->Block( Name => 'ImportExportWidget' );
     $LayoutObject->Block(
         Name => 'Overview',
     );

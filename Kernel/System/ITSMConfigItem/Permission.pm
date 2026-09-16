@@ -168,7 +168,7 @@ sub CustomerPermission {
     my ( $Self, %Param ) = @_;
 
     # TESSERA customer ConfigItem detail access is governed exclusively by
-    # ContractEntitlement, SupportProfile, and an ASSET SupportAssignment.
+    # ContractEntitlement, SupportProfile, and a TESSERA::CMDB::READ SupportAssignment.
     # Legacy group/company/condition grants must not bypass this boundary.
     return $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->ConfigItemDetailAccessCheck(
         ConfigItemID    => $Param{ConfigItemID},

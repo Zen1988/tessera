@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2023 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -42,56 +42,38 @@ sub new {
 
     # field types which are usable as attribute df
     $Self->{IsAttributeFieldCapable} = {
-
-        # see https://ncs.com.sg
-        Agent    => 0,
+        Agent    => 1,
         Checkbox => 1,
 
-        # see https://ncs.com.sg
-        ContactWD => 0,
+        # see https://github.com/RotherOSS/otobo/issues/3809
+        ContactWD       => 0,
+        CustomerCompany => 1,
+        CustomerUser    => 1,
 
-        # see https://ncs.com.sg
-        CustomerCompany => 0,
+        # see https://github.com/RotherOSS/otobo/issues/3793
+        Database              => 0,
+        Date                  => 1,
+        DateTime              => 1,
+        Dropdown              => 1,
+        FAQ                   => 1,
+        GeneralCatalog        => 1,
+        ITSMConfigItem        => 1,
+        ITSMConfigItemVersion => 1,
 
-        # see https://ncs.com.sg
-        CustomerUser => 0,
-
-        # see https://ncs.com.sg
-        Database => 0,
-        Date     => 1,
-        DateTime => 1,
-        Dropdown => 1,
-
-        # see https://ncs.com.sg
-        FAQ            => 0,
-        GeneralCatalog => 1,
-
-        # see https://ncs.com.sg
-        ITSMConfigItem => 0,
-
-        # see https://ncs.com.sg
-        ITSMConfigItemVersion => 0,
-
-        # see https://ncs.com.sg
+        # see https://github.com/RotherOSS/otobo/issues/3789
         Lens        => 0,
         Multiselect => 1,
 
-        # see https://ncs.com.sg and https://ncs.com.sg
-        RichText => 0,
+        # see https://github.com/RotherOSS/otobo/issues/3720 and https://github.com/RotherOSS/otobo/issues/3815
+        RichText              => 0,
+        ScriptTemplateToolkit => 1,
+        Set                   => 1,
+        Text                  => 1,
+        TextArea              => 1,
+        Ticket                => 1,
+        Title                 => 1,
 
-        # see https://ncs.com.sg
-        ScriptTemplateToolkit => 0,
-
-        # works in general, see https://ncs.com.sg
-        Set      => 1,
-        Text     => 1,
-        TextArea => 1,
-
-        # see https://ncs.com.sg
-        Ticket => 0,
-        Title  => 1,
-
-        # see https://ncs.com.sg
+        # see https://github.com/RotherOSS/otobo/issues/3446
         WebService => 0,
     };
 
@@ -227,10 +209,12 @@ sub _Add {
     my $FieldTypeName  = $ConfigObject->Get('DynamicFields::Driver')->{ $GetParam{FieldType} }->{DisplayName}      || '';
 
     # check namespace validity
-    my $Namespaces = $ConfigObject->Get('DynamicField::Namespaces');
-    my $Namespace  = '';
-    if ( IsArrayRefWithData($Namespaces) && $GetParam{NamespaceFilter} ) {
-        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } $Namespaces->@* ) ? $GetParam{NamespaceFilter} : '';
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    my $Namespace = '';
+    if ( @DFNamespaces && $GetParam{NamespaceFilter} ) {
+        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } @DFNamespaces ) ? $GetParam{NamespaceFilter} : '';
     }
 
     return $Self->_ShowScreen(
@@ -850,7 +834,7 @@ sub _ShowScreen {
         # check for namespace
         if ( $Param{Name} =~ /(.*)-(.*)/ ) {
             $Namespace = $1;
-            $Param{PlainFieldName} = $2 unless $Param{CloneFieldID};
+            $Param{PlainFieldName} = $2;
         }
         else {
             $Param{PlainFieldName} = $Param{Name};
@@ -912,7 +896,7 @@ sub _ShowScreen {
         Class         => 'Modernize W75pc Validate_Number',
     );
 
-    # Selections may be set up in a declaritive way
+    # Selections may be set up in a declarative way
     my $FieldType = $Param{FieldType};
     if ( $Self->{FieldTypeSettings}->{$FieldType} ) {
         for my $Setting ( $Self->{FieldTypeSettings}->{$FieldType}->@* ) {
@@ -954,10 +938,12 @@ sub _ShowScreen {
         }
     }
 
-    my $NamespaceList = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    if (@DFNamespaces) {
         my $NamespaceStrg = $LayoutObject->BuildSelection(
-            Data          => $NamespaceList,
+            Data          => \@DFNamespaces,
             Name          => 'Namespace',
             SelectedValue => $Namespace || '',
             PossibleNone  => 1,
@@ -1079,7 +1065,7 @@ sub _ShowScreen {
         );
     }
 
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    if (@DFNamespaces) {
         if ( IsStringWithData( $Param{NamespaceFilter} ) ) {
             $FilterStrg .= ";NamespaceFilter=" . $LayoutObject->Output(
                 Template => '[% Data.Filter | uri %]',

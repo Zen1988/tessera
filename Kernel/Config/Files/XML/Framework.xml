@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otobo_config version="2.0" init="Framework">
     <Setting Name="SecureMode" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">Enabling SecureMode disables the web installer (https://ncs.com.sg) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
+        <Description Translatable="1">Enabling SecureMode disables the web installer (http://yourhost.example.com/otobo/installer.pl) and the migrations. This is done in order to prevent the system from being hijacked. When SecureMode is not enabled the system can be reinstalled. In this case the current basic configuration will be used to pre-populate the questions within the installer script. Enabling SecureMode also enables GenericAgent, PackageManager and SQL Box.</Description>
         <Navigation>Core</Navigation>
         <Value>
             <Item ValueType="Checkbox">0</Item>
@@ -25,7 +25,7 @@
         <Description Translatable="1">Enables or disables the caching for templates. WARNING: Do NOT disable template caching for production environments for it will cause a massive performance drop! This setting should only be disabled for debugging reasons!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="Checkbox">0</Item>
+            <Item ValueType="Checkbox">1</Item>
         </Value>
     </Setting>
     <Setting Name="ConfigLevel" Required="1" Valid="1">
@@ -54,7 +54,7 @@
         </Value>
     </Setting>
     <Setting Name="SystemID" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">Defines the system identifier. Every ticket number and http session string contains this ID. This ensures that only tickets which belong to your system will be processed as follow-ups (useful when communicating between two instances of OTOBO).</Description>
+        <Description Translatable="1">Defines the system identifier. Every ticket number contains this ID. This ensures that only tickets which belong to your system will be processed as follow-ups (useful when communicating between two instances of OTOBO). The SystemID may also be used in HTTP session backends.</Description>
         <Navigation>Core</Navigation>
         <Value>
             <Item ValueType="String" ValueRegex="^\d+$">10</Item>
@@ -253,7 +253,7 @@
         </Value>
     </Setting>
     <Setting Name="DefaultTheme" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://ncs.com.sg</Description>
+        <Description Translatable="1">Defines the default frontend (HTML) theme to be used by the agents and customers. If you like, you can add your own theme. Please refer the administrator manual located at https://doc.otobo.org/.</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
             <Item ValueType="String" ValueRegex="">Standard</Item>
@@ -356,7 +356,7 @@
         </Value>
     </Setting>
    <Setting Name="SkinColorDefinition::highcontrast" Required="1" Valid="1">
-        <Description Translatable="1">Color definitions for Agent interface highcontrast skin.</Description>
+        <Description Translatable="1">Color definitions for agent interface high contrast skin.</Description>
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
@@ -392,12 +392,12 @@
                 <Item Key="InternalName">highcontrast</Item>
                 <Item Key="VisibleName" Translatable="1">High Contrast</Item>
                 <Item Key="Description" Translatable="1">High contrast skin for visually impaired users.</Item>
-                <Item Key="HomePage">https://ncs.com.sg</Item>
+                <Item Key="HomePage">www.otobo.org</Item>
             </Hash>
         </Value>
     </Setting>
    <Setting Name="CustomerSkinColorDefinition::highcontrast" Required="1" Valid="1">
-        <Description Translatable="1">Color definitions for Customer Interface highcontrast skin.</Description>
+        <Description Translatable="1">Color definitions for customer interface high contrast skin.</Description>
         <Navigation>Frontend::Customer</Navigation>
         <Value>
             <Hash>
@@ -423,11 +423,11 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">common/img/TESSERA/TESSERA_MARK_v2.svg</Item>
-                <Item Key="StyleTop">10px</Item>
+                <Item Key="URL">skins/Agent/default/img/logo_bg.png</Item>
+                <Item Key="StyleTop">0px</Item>
                 <Item Key="StyleRight">24px</Item>
-                <Item Key="StyleHeight">42px</Item>
-                <Item Key="StyleWidth">42px</Item>
+                <Item Key="StyleHeight">110px</Item>
+                <Item Key="StyleWidth">300px</Item>
             </Hash>
         </Value>
     </Setting>
@@ -436,11 +436,11 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">common/img/TESSERA/TESSERA_MARK_v2.svg</Item>
-                <Item Key="StyleTop">10px</Item>
+                <Item Key="URL">skins/Agent/default/img/logo_bg.png</Item>
+                <Item Key="StyleTop">7px</Item>
                 <Item Key="StyleRight">24px</Item>
-                <Item Key="StyleHeight">42px</Item>
-                <Item Key="StyleWidth">42px</Item>
+                <Item Key="StyleHeight">55px</Item>
+                <Item Key="StyleWidth">300px</Item>
             </Hash>
         </Value>
     </Setting>
@@ -449,9 +449,8 @@
         <Navigation>Frontend::Agent</Navigation>
         <Value>
             <Hash>
-                <Item Key="URL">common/img/TESSERA/TESSERA_LOGIN_v2.svg</Item>
-                <Item Key="StyleHeight">198px</Item>
-                <Item Key="StyleWidth">320px</Item>
+                <Item Key="URL">skins/Agent/default/img/Otobo_Wortmarke_Digital_Blau_RGB.svg</Item>
+                <Item Key="StyleHeight">150px</Item>
             </Hash>
         </Value>
     </Setting>
@@ -508,15 +507,8 @@
             <Item ValueType="String" ValueRegex="">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;js/thirdparty/ckeditor5-47.6.1/</Item>
         </Value>
     </Setting>
-    <Setting Name="Frontend::RichTextWidth" Required="1" Valid="1">
-        <Description Translatable="1">Defines the width for the rich text editor component. Enter number (pixels) or percent value (relative).</Description>
-        <Navigation>Frontend::Base</Navigation>
-        <Value>
-            <Item ValueType="String" ValueRegex="^\d+%?$">620</Item>
-        </Value>
-    </Setting>
     <Setting Name="Frontend::RichTextHeight" Required="1" Valid="1">
-        <Description Translatable="1">Defines the height for the rich text editor component. Enter number (pixels) or percent value (relative).</Description>
+        <Description Translatable="1">Defines the initial height for the rich text editor component. Enter number (pixels).</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
             <Item ValueType="String" ValueRegex="^\d+%?$">320</Item>
@@ -576,6 +568,286 @@
         <Navigation>Frontend::Base</Navigation>
         <Value>
             <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::CKEditorPlugins" Required="1" Valid="1">
+        <Description Translatable="1">List of Active CKEditor Plugins. (Only used if `Frontend::RichText::EnhancedMode` is enabled).</Description>
+        <Navigation>Frontend::Base</Navigation>
+        <Value>
+            <Array>
+                <Item>Alignment</Item>
+                <Item>Autoformat</Item>
+                <Item>BlockQuote</Item>
+                <Item>Bold</Item>
+                <Item>CodeBlock</Item>
+                <Item>DataFilter</Item>
+                <Item>DataSchema</Item>
+                <Item>FindAndReplace</Item>
+                <Item>FontColor</Item>
+                <Item>FontFamily</Item>
+                <Item>FontSize</Item>
+                <Item>FontBackgroundColor</Item>
+                <Item>GeneralHtmlSupport</Item>
+                <Item>Heading</Item>
+                <Item>HorizontalLine</Item>
+                <Item>Image</Item>
+                <Item>ImageResize</Item>
+                <Item>ImageStyle</Item>
+                <Item>ImageUpload</Item>
+                <Item>ImageToolbar</Item>
+                <Item>ImageInsert</Item>
+                <Item>Indent</Item>
+                <Item>IndentBlock</Item>
+                <Item>Italic</Item>
+                <Item>Link</Item>
+                <Item>List</Item>
+                <Item>Paragraph</Item>
+                <Item>RemoveFormat</Item>
+                <Item>SelectAll</Item>
+                <Item>SimpleUploadAdapter</Item>
+                <Item>SourceEditing</Item>
+                <Item>SpecialCharacters</Item>
+                <Item>SpecialCharactersEssentials</Item>
+                <Item>Strikethrough</Item>
+                <Item>Table</Item>
+                <Item>TableCellProperties</Item>
+                <Item>TableColumnResize</Item>
+                <Item>TableProperties</Item>
+                <Item>TableToolbar</Item>
+                <Item>Underline</Item>
+                <Item>Undo</Item>
+                <Item>PasteFromOffice</Item>
+                <Item>Fullscreen</Item>
+                <Item>TodoList</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::EnhancedCKEditorToolbar" Required="1" Valid="1">
+        <Description Translatable="1">Controls shown in the enhanced mode CKEditor toolbar. Each array defines a button group that will be visibly separated in the editor. (Only used if `Frontend::RichText::EnhancedMode` is enabled).</Description>
+        <Navigation>Frontend::Base</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem>
+                    <Array>
+                    </Array>
+                </DefaultItem>
+                <Item>
+                    <Array>
+                        <Item>heading</Item>
+                        <Item>bold</Item>
+                        <Item>italic</Item>
+                        <Item>underline</Item>
+                        <Item>strikethrough</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>bulletedList</Item>
+                        <Item>numberedList</Item>
+                        <Item>todoList</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>insertTable</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>indent</Item>
+                        <Item>outdent</Item>
+                        <Item>alignment</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>link</Item>
+                        <Item>undo</Item>
+                        <Item>redo</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>insertImage</Item>
+                        <Item>horizontalLine</Item>
+                        <Item>blockQuote</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>findAndReplace</Item>
+                        <Item>fontColor</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fontBackgroundColor</Item>
+                        <Item>removeFormat</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>sourceEditing</Item>
+                        <Item>specialCharacters</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fontFamily</Item>
+                        <Item>fontSize</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>codeBlock</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fullscreen</Item>
+                    </Array>
+                </Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::CKEditorPlugins" Required="1" Valid="1">
+        <Description Translatable="1">List of Active CKEditor Plugins. (Only used if `CustomerFrontend::RichText::EnhancedMode` is enabled).</Description>
+        <Navigation>Frontend::Base</Navigation>
+        <Value>
+            <Array>
+                <Item>Alignment</Item>
+                <Item>Autoformat</Item>
+                <Item>BlockQuote</Item>
+                <Item>Bold</Item>
+                <Item>CodeBlock</Item>
+                <Item>DataFilter</Item>
+                <Item>DataSchema</Item>
+                <Item>FindAndReplace</Item>
+                <Item>FontColor</Item>
+                <Item>FontFamily</Item>
+                <Item>FontSize</Item>
+                <Item>FontBackgroundColor</Item>
+                <Item>GeneralHtmlSupport</Item>
+                <Item>Heading</Item>
+                <Item>HorizontalLine</Item>
+                <Item>Image</Item>
+                <Item>ImageResize</Item>
+                <Item>ImageStyle</Item>
+                <Item>ImageUpload</Item>
+                <Item>ImageToolbar</Item>
+                <Item>ImageInsert</Item>
+                <Item>Indent</Item>
+                <Item>IndentBlock</Item>
+                <Item>Italic</Item>
+                <Item>Link</Item>
+                <Item>List</Item>
+                <Item>Paragraph</Item>
+                <Item>RemoveFormat</Item>
+                <Item>SelectAll</Item>
+                <Item>SimpleUploadAdapter</Item>
+                <Item>SourceEditing</Item>
+                <Item>SpecialCharacters</Item>
+                <Item>SpecialCharactersEssentials</Item>
+                <Item>Strikethrough</Item>
+                <Item>Table</Item>
+                <Item>TableCellProperties</Item>
+                <Item>TableColumnResize</Item>
+                <Item>TableProperties</Item>
+                <Item>TableToolbar</Item>
+                <Item>Underline</Item>
+                <Item>Undo</Item>
+                <Item>PasteFromOffice</Item>
+                <Item>Fullscreen</Item>
+                <Item>TodoList</Item>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::EnhancedCKEditorToolbar" Required="1" Valid="1">
+        <Description Translatable="1">Controls shown in the enhanced mode CKEditor toolbar. Each array defines a button group that will be visibly separated in the editor. (Only used if `CustomerFrontend::RichText::EnhancedMode` is enabled).</Description>
+        <Navigation>Frontend::Base</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem>
+                    <Array>
+                    </Array>
+                </DefaultItem>
+                <Item>
+                    <Array>
+                        <Item>heading</Item>
+                        <Item>bold</Item>
+                        <Item>italic</Item>
+                        <Item>underline</Item>
+                        <Item>strikethrough</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>bulletedList</Item>
+                        <Item>numberedList</Item>
+                        <Item>todoList</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>insertTable</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>indent</Item>
+                        <Item>outdent</Item>
+                        <Item>alignment</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>link</Item>
+                        <Item>undo</Item>
+                        <Item>redo</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>insertImage</Item>
+                        <Item>horizontalLine</Item>
+                        <Item>blockQuote</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>findAndReplace</Item>
+                        <Item>fontColor</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fontBackgroundColor</Item>
+                        <Item>removeFormat</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>sourceEditing</Item>
+                        <Item>specialCharacters</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fontFamily</Item>
+                        <Item>fontSize</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>codeBlock</Item>
+                    </Array>
+                </Item>
+                <Item>
+                    <Array>
+                        <Item>fullscreen</Item>
+                    </Array>
+                </Item>
+            </Array>
         </Value>
     </Setting>
     <Setting Name="DisableLoginAutocomplete" Required="0" Valid="1">
@@ -649,6 +921,25 @@
         <Navigation>Core::Time</Navigation>
         <Value>
             <Item ValueType="Checkbox">0</Item>
+        </Value>
+    </Setting>
+    <Setting Name="TimeShowLocalization" Required="1" Valid="1">
+        <Description Translatable="1">Shows time with localization indicator (01.01.1970 00:01 (Europe/Berlin)), if enabled; or without (01.01.1970 00:01), if not enabled.</Description>
+        <Navigation>Core::Time</Navigation>
+        <Value>
+            <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::TimeShowCreatedAt" Required="0" Valid="0">
+        <Description Translatable="1">Shows creation date instead of age in the customer interface if ticket is older than configured value (days).</Description>
+        <Navigation>Frontend::Customer</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="1">
+                <Item ValueType="Option" Value="0" Translatable="1">always</Item>
+                <Item ValueType="Option" Value="1" Translatable="1">1 day</Item>
+                <Item ValueType="Option" Value="2" Translatable="1">2 days</Item>
+                <Item ValueType="Option" Value="7" Translatable="1">7 days</Item>
+            </Item>
         </Value>
     </Setting>
     <Setting Name="AttachmentDownloadType" Required="1" Valid="1">
@@ -974,7 +1265,7 @@
         <Description Translatable="1">Defines an alternate URL, where the logout link refers to.</Description>
         <Navigation>Frontend::Agent</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">https://ncs.com.sg</Item>
+            <Item ValueType="String" ValueRegex="">http://host.example.com/thanks-for-using-otobo.html</Item>
         </Value>
     </Setting>
     <Setting Name="PreApplicationModule###AgentInfo" Required="0" Valid="0" ConfigLevel="300">
@@ -1164,13 +1455,6 @@
     </Setting>
     <Setting Name="SessionDeleteIfTimeToOld" Required="1" Valid="1">
         <Description Translatable="1">Deletes requested sessions if they have timed out.</Description>
-        <Navigation>Core::Session</Navigation>
-        <Value>
-            <Item ValueType="Checkbox">1</Item>
-        </Value>
-    </Setting>
-    <Setting Name="SessionUseCookie" Required="1" Valid="1">
-        <Description Translatable="1">Makes the session management use html cookies. If html cookies are disabled or if the client browser disabled html cookies, then the system will work as usual and append the session id to the links.</Description>
         <Navigation>Core::Session</Navigation>
         <Value>
             <Item ValueType="Checkbox">1</Item>
@@ -2835,6 +3119,7 @@
         <Navigation>Core::Package</Navigation>
         <Value>
             <Array>
+                <Item>https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml</Item>
             </Array>
         </Value>
     </Setting>
@@ -2843,6 +3128,7 @@
         <Navigation>Core::Package</Navigation>
         <Value>
             <Hash>
+                <Item Key="ftp://ftp.example.com/pub/otobo/misc/packages/">[Example] ftp://ftp.example.com/</Item>
             </Hash>
         </Value>
     </Setting>
@@ -2878,7 +3164,7 @@
         <Description Translatable="1">Toggles display of OTOBO FeatureAddons list in PackageManager.</Description>
         <Navigation>Core::Package</Navigation>
         <Value>
-            <Item ValueType="Checkbox">0</Item>
+            <Item ValueType="Checkbox">1</Item>
         </Value>
     </Setting>
     <Setting Name="Package::AllowNotVerifiedPackages" Required="0" Valid="1" ConfigLevel="100">
@@ -2906,7 +3192,7 @@
         <Value>
             <Hash>
                 <Item Key="Module">Kernel::System::Package::Event::SupportDataSend</Item>
-                <Item Key="Event"></Item>
+                <Item Key="Event">Package(?:Install|Reinstall|Upgrade|Uninstall)</Item>
                 <Item Key="Transaction">1</Item>
             </Hash>
         </Value>
@@ -2954,7 +3240,8 @@
         <Description Translatable="1">Specifies the path of the file for the logo in the page header (gif|jpg|png, 700 x 100 pixel).</Description>
         <Navigation>Core::PDF</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">&lt;OTOBO_CONFIG_Home&gt;/var/logo-otobo.png</Item>
+            <!-- the modifier 'i' is for ignoring case, works for both Perl and JavaScript regex -->
+            <Item ValueType="String" ValueRegex="\.(?i:gif|jpeg|jpg|png)$">&lt;OTOBO_CONFIG_Home&gt;/var/logo-otobo.png</Item>
         </Value>
     </Setting>
     <Setting Name="PDF::PageSize" Required="1" Valid="1">
@@ -3810,7 +4097,7 @@ You can log in via the following URL:
         <Description Translatable="1">Enables customers to create their own accounts.</Description>
         <Navigation>Frontend::Customer</Navigation>
         <Value>
-            <Item ValueType="Checkbox">0</Item>
+            <Item ValueType="Checkbox">1</Item>
         </Value>
     </Setting>
     <Setting Name="CustomerPanelCreateAccount::MailRestrictions::Whitelist" Required="0" Valid="0">
@@ -3910,7 +4197,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="Customer::AuthModule::DB::CryptType" Required="1" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">If "DB" was selected for Customer::AuthModule, the encryption type of passwords must be specified.</Description>
+        <Description Translatable="1">If "DB" was selected for Customer::AuthModule, the encryption type of passwords must be specified. It is discouraged to configure the not really secure algorithms like 'md5', 'apr1', 'crypt', and 'plain'.</Description>
         <Navigation>Core::Auth::Customer</Navigation>
         <Value>
             <Item ValueType="Select" SelectedID="sha2">
@@ -3957,7 +4244,7 @@ via the Preferences button after logging in.
         <Description Translatable="1">If "DB" was selected for Customer::AuthModule, the DSN for the connection to the customer table must be specified.</Description>
         <Navigation>Core::Auth::Customer</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">DBI:mysql:database=customerdb;host=customerdbhost</Item>
+            <Item ValueType="String" ValueRegex="">DBI:MariaDB:database=customerdb;host=customerdbhost</Item>
         </Value>
     </Setting>
     <Setting Name="Customer::AuthModule::DB::Attribute" Required="0" Valid="0" ConfigLevel="200">
@@ -3965,10 +4252,10 @@ via the Preferences button after logging in.
         <Navigation>Core::Auth::Customer</Navigation>
         <Value>
             <Hash>
-                <Item Key="mysql_ssl">1</Item>
-                <Item Key="mysql_client_cert">/opt/otobo/tls/client-cert.pem</Item>
-                <Item Key="mysql_client_key">/opt/otobo/tls/client-key.pem</Item>
-                <Item Key="mysql_ssl_optional">1</Item>
+                <Item Key="mariadb_ssl">1</Item>
+                <Item Key="mariadb_client_cert">/opt/otobo/tls/client-cert.pem</Item>
+                <Item Key="mariadb_client_key">/opt/otobo/tls/client-key.pem</Item>
+                <Item Key="mariadb_ssl_optional">1</Item>
             </Hash>
         </Value>
     </Setting>
@@ -5317,6 +5604,41 @@ via the Preferences button after logging in.
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="Frontend::Module###AdminGroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Group Import Export</Item>
+                    <Item Key="Title">GroupImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminGroupImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.GroupImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
     <Setting Name="Frontend::Module###AdminUserGroup" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for the agent interface.</Description>
         <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
@@ -5937,6 +6259,41 @@ via the Preferences button after logging in.
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="Frontend::Module###AdminRoleImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Role Import Export</Item>
+                    <Item Key="Title">RoleImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminRoleImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.RoleImportExport.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
     <Setting Name="Frontend::Module###AdminRoleUser" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for the agent interface.</Description>
         <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
@@ -6074,6 +6431,41 @@ via the Preferences button after logging in.
                 <Item Key="Description" Translatable="1">Link roles to groups.</Item>
                 <Item Key="IconBig">fa-circle-o</Item>
                 <Item Key="IconSmall">fa-users</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminRoleGroupImportExport" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the admin interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Role-Group Relations Import Export</Item>
+                    <Item Key="Title">RoleGroupImportExport</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminRoleGroupImportExport###003-ImportExportStandardObjects" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.RoleGroupImportExport.js</Item>
+                    </Array>
+                </Item>
             </Hash>
         </Value>
     </Setting>
@@ -7350,9 +7742,6 @@ via the Preferences button after logging in.
             <Hash>
                 <Item Key="LoginText" Translatable="1">Your Tickets. Your OTOBO.</Item>
                 <Item Key="Background">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;common/img/LoginBG.jpg</Item>
-                <Item Key="RequestAccountLink">/public.pl?Action=PublicFAQZoom;ItemID=1</Item>
-                <Item Key="RequestAccountText" Translatable="1">Request Account</Item>
-                <Item Key="RequestAccountNewTab">0</Item>
             </Hash>
         </Value>
     </Setting>
@@ -7471,7 +7860,7 @@ via the Preferences button after logging in.
 
     <!-- setup of the tiles, <OTOBO_CONFIG_SettingName> is replaced in the Config entry -->
     <Setting Name="CustomerDashboard::Tiles###NewTicket" Required="0" Valid="1">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7486,27 +7875,28 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###FeaturedLink-01" Required="0" Valid="1">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
                 <Item Key="Order">2</Item>
-                <Item Key="Module">Kernel::Output::HTML::CustomerDashboard::TileFeaturedFAQ</Item>
-                <Item Key="Template">Dashboard/TileFeaturedFAQ</Item>
+                <Item Key="Template">Dashboard/TileFeaturedLink</Item>
                 <Item Key="Config">
                     <Hash>
-                        <Item Key="CategoryName">Announcement</Item>
-                        <Item Key="StartField">ZFAQ-Start</Item>
-                        <Item Key="ExpiryField">ZFAQ-Expiry</Item>
-                        <Item Key="Limit">5</Item>
-                        <Item Key="EmptyText">No current announcements.</Item>
+                        <Item Key="TextColor">#ffffff</Item>
+                        <Item Key="BackgroundImage">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;common/img/Dashboard/dashboard_bgfl.png</Item>
+                        <Item Key="HeaderText">OTOBO 11.1 | Service Management</Item>
+                        <Item Key="MainText">OTOBO 11.1 is packed with quality-of-life improvements, and delivers real added value in the areas of modelling, integration &amp; system connectivity, and administration.</Item>
+                        <Item Key="FooterText">Explore &gt;</Item>
+                        <Item Key="Link">https://otobo.io/en/otobo-11-1/</Item>
+                        <Item Key="NewTab">0</Item>
                     </Hash>
                 </Item>
             </Hash>
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###TicketList-01" Required="0" Valid="1">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7526,7 +7916,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###PlainText-01" Required="0" Valid="0">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7544,7 +7934,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###ToolBox-01" Required="0" Valid="1">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7556,9 +7946,9 @@ via the Preferences button after logging in.
                         <Item Key="TextColor">#00023c</Item>
                         <Item Key="Links">
                             <Hash>
-                                <Item Key="#">1</Item>
-                                <Item Key="#tool-2">2</Item>
-                                <Item Key="#tool-3">3</Item>
+                                <Item Key="https://www.otobo.io">1</Item>
+                                <Item Key="https://www.openstreetmap.org">2</Item>
+                                <Item Key="https://www.wikipedia.org">3</Item>
                             </Hash>
                         </Item>
                         <Item Key="Images">
@@ -7581,7 +7971,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###PlainPicture-01" Required="0" Valid="0">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7598,7 +7988,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="CustomerDashboard::Tiles###InfoTile-01" Required="0" Valid="1">
-        <Description Translatable="1">Tile registration for the CustomerDashboard. Module is required. Optionally, an order for items can be set. The order must have the name of the item as key and the desired position as integer value.</Description>
+        <Description Translatable="1">Tile registration for the customer dashboard. Module is required. Optionally, an order for items can be set. The order must have the name of the item as key and the desired position as integer value.</Description>
         <Navigation>Frontend::Customer::View::Dashboard::Tiles</Navigation>
         <Value>
             <Hash>
@@ -7690,7 +8080,7 @@ via the Preferences button after logging in.
                         </Array>
                     </Item>
                     <Item Key="Description">Admin</Item>
-                    <Item Key="Title" Translatable="1">CustomerDashboard Info Tile</Item>
+                    <Item Key="Title" Translatable="1">Customer Dashboard Info Tile</Item>
                     <Item Key="NavBarName">Admin</Item>
                 </Hash>
             </Item>
@@ -8198,7 +8588,7 @@ via the Preferences button after logging in.
         <Description Translatable="1">OTOBO can use one or more readonly mirror databases for expensive operations like fulltext search or statistics generation. Here you can specify the DSN for the first mirror database.</Description>
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+            <Item ValueType="String" ValueRegex="">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
         </Value>
     </Setting>
     <Setting Name="Core::MirrorDB::User" Required="0" Valid="0" ConfigLevel="200">
@@ -8220,7 +8610,7 @@ via the Preferences button after logging in.
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
             <Hash>
-                <Item Key="DSN">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+                <Item Key="DSN">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
                 <Item Key="User">some_user</Item>
                 <Item Key="Password" ValueType="Password">some_password</Item>
             </Hash>
@@ -8231,7 +8621,7 @@ via the Preferences button after logging in.
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
             <Hash>
-                <Item Key="DSN">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+                <Item Key="DSN">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
                 <Item Key="User">some_user</Item>
                 <Item Key="Password" ValueType="Password">some_password</Item>
             </Hash>
@@ -8242,7 +8632,7 @@ via the Preferences button after logging in.
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
             <Hash>
-                <Item Key="DSN">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+                <Item Key="DSN">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
                 <Item Key="User">some_user</Item>
                 <Item Key="Password" ValueType="Password">some_password</Item>
             </Hash>
@@ -8253,7 +8643,7 @@ via the Preferences button after logging in.
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
             <Hash>
-                <Item Key="DSN">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+                <Item Key="DSN">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
                 <Item Key="User">some_user</Item>
                 <Item Key="Password" ValueType="Password">some_password</Item>
             </Hash>
@@ -8264,7 +8654,7 @@ via the Preferences button after logging in.
         <Navigation>Core::DB::Mirror</Navigation>
         <Value>
             <Hash>
-                <Item Key="DSN">DBI:mysql:database=mirrordb;host=mirrordbhost</Item>
+                <Item Key="DSN">DBI:MariaDB:database=mirrordb;host=mirrordbhost</Item>
                 <Item Key="User">some_user</Item>
                 <Item Key="Password" ValueType="Password">some_password</Item>
             </Hash>
@@ -8333,8 +8723,8 @@ via the Preferences button after logging in.
                 <Item Key="Module">Kernel::Output::HTML::Dashboard::RSS</Item>
                 <Item Key="Title" Translatable="1">Custom RSS Feed</Item>
                 <Item Key="Description" Translatable="1">OTOBO News</Item>
-                <Item Key="URL">https://ncs.com.sg</Item>
-                <Item Key="URL_de">https://ncs.com.sg</Item>
+                <Item Key="URL">https://otobo.io/en/feed/</Item>
+                <Item Key="URL_de">https://otobo.io/de/feed/</Item>
                 <Item Key="Block">ContentSmall</Item>
                 <Item Key="Limit">6</Item>
                 <Item Key="Group"></Item>
@@ -8370,11 +8760,11 @@ via the Preferences button after logging in.
                 <Item Key="Title" Translatable="1">A picture</Item>
                 <Item Key="Description" Translatable="1">Some picture description!</Item>
                 <Item Key="Block">ContentLarge</Item>
-                <Item Key="URL">https://ncs.com.sg</Item>
+                <Item Key="URL">https://otobo.io/wp-content/uploads/2024/06/Tile-OTOBO-Self-Service-Portal.jpg</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
-                <Item Key="Link">https://ncs.com.sg</Item>
-                <Item Key="LinkTitle">https://ncs.com.sg</Item>
+                <Item Key="Link">https://otobo.org/</Item>
+                <Item Key="LinkTitle">https://otobo.org/</Item>
                 <Item Key="Width">198</Item>
                 <Item Key="Height">140</Item>
                 <Item Key="Mandatory">0</Item>
@@ -8404,10 +8794,10 @@ via the Preferences button after logging in.
                 <Item Key="Title" Translatable="1">A Website</Item>
                 <Item Key="Description" Translatable="1">Some description!</Item>
                 <Item Key="Block">ContentLarge</Item>
-                <Item Key="URL">https://ncs.com.sg</Item>
+                <Item Key="URL">https://www.otobo.org/</Item>
                 <Item Key="Group"></Item>
                 <Item Key="Default">1</Item>
-                <Item Key="Link">https://ncs.com.sg</Item>
+                <Item Key="Link">https://otobo.org/</Item>
                 <Item Key="LinkTitle">OTOBO.org/</Item>
                 <Item Key="Width">1024</Item>
                 <Item Key="Height">800</Item>
@@ -8862,7 +9252,7 @@ via the Preferences button after logging in.
                 <Item Key="InternalName">default</Item>
                 <Item Key="VisibleName" Translatable="1">Default</Item>
                 <Item Key="Description" Translatable="1">This is the default orange - black skin.</Item>
-                <Item Key="HomePage">https://ncs.com.sg</Item>
+                <Item Key="HomePage">www.otobo.org</Item>
             </Hash>
         </Value>
     </Setting>
@@ -8874,7 +9264,7 @@ via the Preferences button after logging in.
                 <Item Key="InternalName">highcontrast</Item>
                 <Item Key="VisibleName" Translatable="1">High Contrast</Item>
                 <Item Key="Description" Translatable="1">High contrast skin for visually impaired users.</Item>
-                <Item Key="HomePage">www.otrs.com</Item>
+                <Item Key="HomePage">www.otobo.io</Item>
             </Hash>
         </Value>
     </Setting>
@@ -8903,7 +9293,7 @@ via the Preferences button after logging in.
                 <Item Key="InternalName">default</Item>
                 <Item Key="VisibleName" Translatable="1">Default</Item>
                 <Item Key="Description" Translatable="1">This is the default orange - black skin for the customer interface.</Item>
-                <Item Key="HomePage">https://ncs.com.sg</Item>
+                <Item Key="HomePage">www.otobo.org</Item>
             </Hash>
         </Value>
     </Setting>
@@ -9601,7 +9991,7 @@ via the Preferences button after logging in.
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Array>
-                <Item>Junk</Item>
+                <DefaultItem ValueType="Entity" ValueEntityType="Queue" ValueRegex=""></DefaultItem>
             </Array>
         </Value>
     </Setting>
@@ -9648,7 +10038,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="Elasticsearch::TicketStoreFields" Required="0" Valid="1" ConfigLevel="100">
-        <Description Translatable="1">Fields stored in the ticket index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory. If fields are added which can be updated (especially DynamicFields), their respective update event has to be added to the TicketManagement invoker of the Elasticsearch webservice!</Description>
+        <Description Translatable="1">Fields stored in the ticket index which are used for other things besides fulltext searches. For the complete functionality all fields are mandatory. If fields are added which can be updated (especially dynamic fields), their respective update event has to be added to the TicketManagement invoker of the Elasticsearch web service!</Description>
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Hash>
@@ -9677,7 +10067,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="Elasticsearch::TicketSearchFields" Required="0" Valid="1">
-        <Description Translatable="1">Fields of the ticket index, used for the ticket fulltext search. Fields are also stored, but are not mandatory for the overall functionality. If fields are added which can be updated (especially DynamicFields), their respective update event has to be added to the TicketManagement invoker of the Elasticsearch webservice!</Description>
+        <Description Translatable="1">Fields of the ticket index, used for the ticket fulltext search. Fields are also stored, but are not mandatory for the overall functionality. If fields are added which can be updated (especially dynamic fields), their respective update event has to be added to the TicketManagement invoker of the Elasticsearch web service!</Description>
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Hash>
@@ -10150,7 +10540,7 @@ via the Preferences button after logging in.
                         </Item>
                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
-                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
+                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
                         <Item Key="LinkOption">target="_blank"</Item>
                         <Item Key="NavBar">JumptoExternalURL</Item>
                         <Item Key="Type">Menu</Item>
@@ -10204,7 +10594,7 @@ via the Preferences button after logging in.
                         </Item>
                         <Item Key="Description" Translatable="1">Open the OTOBO home page in a new window</Item>
                         <Item Key="Name" Translatable="1">Jump to OTOBO!</Item>
-                        <Item Key="Link">Action=ExternalURLJump;URL=https://ncs.com.sg</Item>
+                        <Item Key="Link">Action=ExternalURLJump;URL=http://otobo.io/</Item>
                         <Item Key="LinkOption">target="_blank"</Item>
                         <Item Key="NavBar">Ticket</Item>
                         <Item Key="Type">Menu</Item>
@@ -10317,15 +10707,8 @@ via the Preferences button after logging in.
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="PhantomJS::Bin" Required="0" Valid="0">
-        <Description Translatable="1">Defines the path to the PhantomJS binary. You can use a static build from http://phantomjs.org/download.html for an easy installation process.</Description>
-        <Navigation>Core::PhantomJS</Navigation>
-        <Value>
-            <Item ValueRegex="" ValueType="File">/usr/bin/phantomjs</Item>
-        </Value>
-    </Setting>
     <Setting Name="GoogleChrome::Bin" Required="0" Valid="0">
-        <Description Translatable="1">Defines the path to the Google Chrome or Chromium binary. If set, this binary will be used instead of PhantomJS::Bin.</Description>
+        <Description Translatable="1">Defines the path to the Google Chrome or Chromium binary.</Description>
         <Navigation>Core::GoogleChrome</Navigation>
         <Value>
             <Item ValueRegex="" ValueType="File">/usr/bin/chromium</Item>
@@ -10452,4 +10835,280 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
 
+    <!-- Elasticsearch configs-->
+
+    <Setting Name="Frontend::Module###AgentElasticsearch" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="Group">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Elastic Module</Item>
+                    <Item Key="Title"></Item>
+                    <Item Key="NavBarName">Dashboard</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentElasticsearch###001-Framework" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                        <Item>Core.Agent.Dashboard.css</Item>
+                        <Item>Core.AllocationList.css</Item>
+                        <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.css</Item>
+                        <Item>thirdparty/nvd3-1.7.1/nv.d3.css</Item>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>thirdparty/momentjs-2.29.3/moment.min.js</Item>
+                        <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.js</Item>
+                        <Item>thirdparty/d3-3.5.6/d3.min.js</Item>
+                        <Item>thirdparty/nvd3-1.7.1/nvd3.min.js</Item>
+                        <Item>thirdparty/nvd3-1.7.1/models/OTOBOLineChart.js</Item>
+                        <Item>thirdparty/nvd3-1.7.1/models/OTOBOMultiBarChart.js</Item>
+                        <Item>thirdparty/nvd3-1.7.1/models/OTOBOStackedAreaChart.js</Item>
+                        <Item>thirdparty/canvg-1.4/rgbcolor.js</Item>
+                        <Item>thirdparty/canvg-1.4/StackBlur.js</Item>
+                        <Item>thirdparty/canvg-1.4/canvg.js</Item>
+                        <Item>thirdparty/StringView-8/stringview.js</Item>
+                        <Item>Core.UI.AdvancedChart.js</Item>
+                        <Item>Core.UI.AllocationList.js</Item>
+                        <Item>Core.Agent.TableFilters.js</Item>
+                        <Item>Core.Agent.Dashboard.js</Item>
+                        <Item>Core.Agent.Statistics.ParamsWidget.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+
+    <!-- Elasticsearch Widget Configs -->
+
+    <Setting Name="ElasticsearchWidgetBackend###01-ElasticsearchTickets" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Elasticsearch::ElasticsearchTicketGeneric</Item>
+                <Item Key="Name" Translatable="1">Tickets</Item>
+                <Item Key="Permission">AgentTicketZoom</Item>
+                <Item Key="Default">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ElasticsearchWidgetBackend###02-ElasticsearchCustomerCompany" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Elasticsearch::ElasticsearchCustomerGeneric</Item>
+                <Item Key="Name" Translatable="1">Customers</Item>
+                <Item Key="Permission">AgentCustomerInformationCenter</Item>
+                <Item Key="Default">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="ElasticsearchWidgetBackend###03-ElasticsearchCustomerUser" Required="0" Valid="1">
+        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Navigation>Core::Elasticsearch::Settings</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::Output::HTML::Elasticsearch::ElasticsearchCustomerUserGeneric</Item>
+                <Item Key="Name" Translatable="1">Customer Users</Item>
+                <Item Key="Permission">AgentCustomerUserInformationCenter</Item>
+                <Item Key="Default">1</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <!-- OIDC/OAuth2 -->
+    <Setting Name="Frontend::Module###AdminOAuthTokenStore" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Admin</Item>
+                    <Item Key="Title" Translatable="1">OAuth Tokens</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminOAuthTokenStore###001-Framework" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.OAuth2Module.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AdminOAuthTokenStore###001-Framework" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AdminOAuthTokenStore" Required="0" Valid="1">
+        <Description Translatable="1">Admin area navigation for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Group">
+                    <Array>
+                        <Item>admin</Item>
+                    </Array>
+                </Item>
+                <Item Key="GroupRo">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+                <Item Key="Name" Translatable="1">OAuth Functional Accounts</Item>
+                <Item Key="Block">Administration</Item>
+                <Item Key="Description" Translatable="1">Functional Account and Token Management.</Item>
+                <Item Key="IconBig">fa-circle-o</Item>
+                <Item Key="IconSmall"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Module###AdminOIDCProfiles" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description">Admin</Item>
+                    <Item Key="Title" Translatable="1">OIDC Profiles</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AdminOIDCProfiles###001-Framework" Required="0" Valid="0">
+        <Description Translatable="1">Main menu item registration.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="FrontendNavigation">
+                    <Hash>
+                    </Hash>
+                </DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AdminOIDCProfiles" Required="0" Valid="1">
+        <Description Translatable="1">Admin area navigation for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Group">
+                    <Array>
+                        <Item>admin</Item>
+                    </Array>
+                </Item>
+                <Item Key="GroupRo">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+                <Item Key="Name" Translatable="1">OIDC Profile Management</Item>
+                <Item Key="Block">Administration</Item>
+                <Item Key="Description" Translatable="1">Manage OpendID Connect OAuth2 Profiles.</Item>
+                <Item Key="IconBig">fa-circle-o</Item>
+                <Item Key="IconSmall"></Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TokenStoreUpdater" Required="0" Valid="1" ConfigLevel="100">
+         <Description Translatable="1">Executes a custom command or module. Note: if module is used, function is required.</Description>
+         <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+         <Value>
+             <Hash>
+                 <Item Key="TaskName">TokenStoreUpdater</Item>
+                 <Item Key="Schedule">0 * * * *</Item>
+                 <Item Key="Module">Kernel::System::OpenIDConnect::TokenStoreUpdater</Item>
+                 <Item Key="Function">Run</Item>
+                 <Item Key="MaximumParallelInstances">1</Item>
+                 <Item Key="Params">
+                     <Array>
+                        <Item>Interval</Item>
+                        <Item>3600</Item>
+                     </Array>
+                 </Item>
+             </Hash>
+         </Value>
+    </Setting>
+    <!-- OIDC/mail-->
+    <Setting Name="SendmailModule::OAuth2FunctionalAccount" Required="0" Valid="0" ConfigLevel="200">
+        <Description Translatable="1">If 'XOAUTH2' or 'OAUTHBEARER' is selected in the 'SendmailModule::OAuth2Method' setting, then this setting needs to be enabled and set to a valid OIDC Functional Account. OIDC Accounts can be configured in the Admin UI 'OAuth Functional Accounts' Module.</Description>
+        <Navigation>Core::Email</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="">FunctionalAccount</Item>
+        </Value>
+    </Setting>
+    <Setting Name="SendmailModule::OAuth2Method" Required="0" Valid="1" ConfigLevel="200">
+        <Description Translatable="1">The authentication method to use for SMTP Authentication, defaults to 'Basic Auth'. If 'XOAUTH2' or 'OAUTHBEARER' is selected, then the '"SendmailModule '"SendmailModule::OAuth2FunctionalAccount' setting needs to be enabled and set to a valid OIDC Functional Account.  OIDC Accounts can be configured in the Admin UI  'OAuth Functional Accounts' Module.</Description>
+        <Navigation>Core::Email</Navigation>
+        <Value>
+            <Item ValueType="Select" SelectedID="Basic">
+                <Item ValueType="Option" Value="Basic" Translatable="1">Basic Auth</Item>
+                <Item ValueType="Option" Value="XOAUTH2" Translatable="1">XOAUTH2</Item>
+                <Item ValueType="Option" Value="OAUTHBEARER" Translatable="1">OAUTHBEARER</Item>
+            </Item>
+        </Value>
+    </Setting>
+
+    <!-- Namespaces -->
+    <Setting Name="Namespaces###Global" Required="0" Valid="0">
+        <Description Translatable="1">Define possible namespaces for global usage (currently dynamic fields and process elements). Must only contain alphanumeric characters. A namespace must not be longer than 64 characters. Namespace plus dynamic field name must not exceed 190 characters.</Description>
+        <Navigation>Core::Namespaces</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="String" ValueRegex="^[a-zA-Z0-9]{1,64}$"></DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <!-- End Namespaces -->
 </otobo_config>

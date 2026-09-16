@@ -6,7 +6,7 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 # For possible search options see:
-# https://ncs.com.sg -> TicketSearch()
+# http://otobo.github.io/doc/api/otobo/stable/Perl/Kernel/System/Ticket/TicketSearch.pm.html -> TicketSearch()
 # Examples see below
 # --
 

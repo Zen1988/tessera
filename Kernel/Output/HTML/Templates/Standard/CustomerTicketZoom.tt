@@ -1038,6 +1038,23 @@
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField:first-of-type {
                         margin-top: 8px;
                     }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan {
+                        margin: 0 0 18px;
+                        padding: 16px 18px;
+                        border: 1px solid #d5dbea;
+                        border-left: 4px solid #5a67d8;
+                        border-radius: 6px;
+                        background: #f7f8fc;
+                        color: #17203a;
+                    }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan h3 {
+                        margin: 0 0 8px;
+                        font-size: 15px;
+                    }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan p {
+                        margin: 0;
+                        line-height: 1.55;
+                    }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > label,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label {
                         position: absolute;

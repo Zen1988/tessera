@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -19,19 +19,20 @@ package Kernel::Modules::AgentTicketMerge;
 use strict;
 use warnings;
 
+# core modules
+
+# CPAN modules
+
+# OTOBO modules
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language              qw(Translatable);
-use Mail::Address                 ();
 
 our $ObjectManagerDisabled = 1;
 
 sub new {
     my ( $Type, %Param ) = @_;
 
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
-    return $Self;
+    return bless {%Param}, $Type;
 }
 
 sub Run {
@@ -221,18 +222,15 @@ sub Run {
 
             # check forward email address(es)
             if ( $GetParam{To} ) {
-                for my $Email ( Mail::Address->parse( $GetParam{To} ) ) {
-                    my $Address = $Email->address();
-                    if (
-                        $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressIsLocalAddress( Address => $Address )
-                        )
-                    {
+                my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+                for my $Email ( $EmailAddressObject->ParseAddressLine( Line => $GetParam{To} ) ) {
+                    if ( $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressIsLocalAddress( AddressObject => $Email ) ) {
                         $LayoutObject->Block( Name => 'ToCustomerGenericServerErrorMsg' );
                         $Error{'ToInvalid'} = 'ServerError';
                     }
 
                     # check email address
-                    elsif ( !$CheckItemObject->CheckEmail( Address => $Address ) ) {
+                    elsif ( !$CheckItemObject->CheckEmail( AddressObject => $Email ) ) {
                         my $ToErrorMsg =
                             'To'
                             . $CheckItemObject->CheckErrorType()
@@ -470,7 +468,7 @@ sub Run {
         }
 
         my %Address = $Kernel::OM->Get('Kernel::System::Queue')->GetSystemAddress( QueueID => $Ticket{QueueID} );
-        $Article{From} = "$Address{RealName} <$Address{Email}>";
+        $Article{From} = $Address{FormattedAddress};
 
         # add salutation and signature to body
         if ( $LayoutObject->{BrowserRichText} ) {

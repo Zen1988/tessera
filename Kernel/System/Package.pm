@@ -16,7 +16,7 @@
 
 package Kernel::System::Package;
 
-use v5.24;
+use v5.26;
 use strict;
 use warnings;
 use namespace::autoclean;
@@ -25,6 +25,7 @@ use utf8;
 use parent qw(Kernel::System::EventHandler);
 
 # core modules
+use List::Util   qw (any);
 use MIME::Base64 qw(decode_base64 encode_base64);
 use File::Copy   qw(copy move);
 
@@ -401,7 +402,14 @@ sub RepositoryAdd {
     my $FileName = $Structure{Name}->{Content} . '-' . $Structure{Version}->{Content} . '.xml';
 
     my $Content = $Param{String};
-    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+    my %ExtraDoParams;
+    if ( $DBObject->GetDatabaseFunction('DirectBlob') ) {
+
+        # Make sure that the content is passed as a byte array and is bound as binary
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Content );
+        $ExtraDoParams{BindAsBinary} = [ 0, 0, 0, 0, 1 ];
+    }
+    else {
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Content );
         $Content = encode_base64($Content);
     }
@@ -414,9 +422,13 @@ sub RepositoryAdd {
             . Translatable('not installed') . '\', '
             . ' current_timestamp, 1, current_timestamp, 1)',
         Bind => [
-            \$Structure{Name}->{Content},   \$Structure{Version}->{Content},
-            \$Structure{Vendor}->{Content}, \$FileName, \$Content,
+            \$Structure{Name}->{Content},
+            \$Structure{Version}->{Content},
+            \$Structure{Vendor}->{Content},
+            \$FileName,
+            \$Content,
         ],
+        %ExtraDoParams,
     );
 
     # cleanup cache
@@ -554,7 +566,7 @@ sub PackageInstall {
         );
     }
 
-    # check if one of this files is already intalled by an other package
+    # check if one of those files is already installed by an other package
     if ( %Structure && !$Param{Force} ) {
         return unless $Self->_PackageFileCheck(
             Structure => \%Structure,
@@ -1715,13 +1727,12 @@ sub DeployCheck {
                 Priority => 'error',
                 Message  => "$Needed not defined!",
             );
+
             return;
         }
     }
 
-    if ( !defined $Param{Log} ) {
-        $Param{Log} = 1;
-    }
+    $Param{Log} //= 1;
 
     my $Package   = $Self->RepositoryGet( %Param, Result => 'SCALAR' );
     my %Structure = $Self->PackageParse( String => $Package );
@@ -2681,12 +2692,17 @@ sub PackageExport {
 
 =head2 PackageIsInstalled()
 
-returns true if the package is already installed
+returns true if the package is already installed.
 
-    $PackageObject->PackageIsInstalled(
+    my $IsInstalled = $PackageObject->PackageIsInstalled(
         String => $PackageString,    # Attribute String or Name is required
         Name   => $NameOfThePackage,
     );
+
+The answer is based on information from the database table I<package_repository>.
+During upgrades it is not guaranteed that the package files actually exist.
+
+Returns 0 or 1.
 
 =cut
 
@@ -2699,6 +2715,7 @@ sub PackageIsInstalled {
             Priority => 'error',
             Message  => 'Need String (PackageString) or Name (Name of the package)!',
         );
+
         return;
     }
 
@@ -2710,19 +2727,17 @@ sub PackageIsInstalled {
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-    $DBObject->Prepare(
-        SQL => "SELECT name FROM package_repository "
-            . "WHERE name = ? AND install_status = 'installed'",
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
+    my ($Name) = $DBObject->SelectRowArray(
+        SQL => <<~'END_SQL',
+            SELECT name
+              FROM package_repository
+              WHERE name           = ?
+                AND install_status = 'installed'
+            END_SQL
+        Bind => [ \$Param{Name} ],
     );
 
-    my $Flag = 0;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Flag = 1;
-    }
-
-    return $Flag;
+    return defined $Name ? 1 : 0;
 }
 
 =head2 PackageInstallDefaultFiles()
@@ -2854,7 +2869,7 @@ sub PackageFileGetMD5Sum {
         Type  => 'PackageFileGetMD5Sum',
         Key   => $CacheKey,
         Value => \%MD5SumLookup,
-        TTL   => 6 * 30 * 24 * 60 * 60,    # 6 Months (Aprox)
+        TTL   => 6 * 30 * 24 * 60 * 60,    # 6 Months (approximately)
     );
 
     return \%MD5SumLookup;
@@ -2941,11 +2956,11 @@ sub AnalyzePackageFrameworkRequirements {
                 # check for minimum or maximum required framework, if it was defined
                 if ( $FrameworkMinimum || $FrameworkMaximum ) {
 
-                    # prepare hash for framework comparsion
-                    my %FrameworkComparsion;
-                    $FrameworkComparsion{MinimumFrameworkRequired} = $FrameworkMinimum;
-                    $FrameworkComparsion{MaximumFrameworkRequired} = $FrameworkMaximum;
-                    $FrameworkComparsion{CurrentFramework}         = $CurrentFramework;
+                    # prepare hash for framework comparison
+                    my %FrameworkComparison;
+                    $FrameworkComparison{MinimumFrameworkRequired} = $FrameworkMinimum;
+                    $FrameworkComparison{MaximumFrameworkRequired} = $FrameworkMaximum;
+                    $FrameworkComparison{CurrentFramework}         = $CurrentFramework;
 
                     # prepare version parts hash
                     my %VersionParts;
@@ -2954,7 +2969,7 @@ sub AnalyzePackageFrameworkRequirements {
                     for my $Type (qw(MinimumFrameworkRequired MaximumFrameworkRequired CurrentFramework)) {
 
                         # split version string
-                        my @ThisVersionParts = split /\./, $FrameworkComparsion{$Type};
+                        my @ThisVersionParts = split /\./, $FrameworkComparison{$Type};
                         $VersionParts{$Type} = \@ThisVersionParts;
                     }
 
@@ -2972,7 +2987,7 @@ sub AnalyzePackageFrameworkRequirements {
                                 if $VersionParts{MinimumFrameworkRequired}->[$Count] eq
                                 $VersionParts{CurrentFramework}->[$Count];
 
-                            # skip current framework verion parts containing "x"
+                            # skip current framework version parts containing "x"
                             next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
 
                             if (
@@ -3009,7 +3024,7 @@ sub AnalyzePackageFrameworkRequirements {
                                 if $VersionParts{MaximumFrameworkRequired}->[$Count] eq
                                 $VersionParts{CurrentFramework}->[$Count];
 
-                            # skip current framework verion parts containing "x"
+                            # skip current framework version parts containing "x"
                             next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
 
                             if (
@@ -3342,8 +3357,26 @@ sub _GetIntegratedPackages {
                 'TicketTimeUnitsMandatoryOnlyWithArticle',
             ],
 
-            # future releases
-            1 => [],
+            # released in june 2026
+            1 => [
+                'CK5-FullWindowMode',
+                'CustomerAgeShowCreated',
+                'CustomerTicketSearch',
+                'Elasticsearch-Extension',
+                'ExtendedArticleEdit',
+                'HideShowForAgentTicketCompose',
+                'ImportExportCustomerCompany',
+                'ImportExportStandardObjects',
+                'ImportExportTicket',    # integrated when ImportExport console commands were added
+                'PostMasterXFromHeader',
+                'ProcessTicketTemplates',
+                'RestorePendingInformation',
+                'RotherOSS-AccountedTimeInViews',
+                'TicketUpdateOperationExternalIdentifier',
+                'OAuth2',
+                'OAuth2-Mail',
+                'Elasticsearch-FAQ',
+            ],
         }
     };
 }
@@ -3354,8 +3387,8 @@ Gets a list of packages and its corresponding install order including is package
     install order means to install first.
 
     my %Result = $PackageObject->PackageInstallOrderListGet(
-        InstalledPackages => \@PakageList,      # as returned from RepositoryList(Result => 'short')
-        OnlinePackages    => \@PakageList,      # as returned from PackageOnlineList()
+        InstalledPackages => \@PackageList,      # as returned from RepositoryList(Result => 'short')
+        OnlinePackages    => \@PackageList,      # as returned from PackageOnlineList()
     );
 
     %Result = (
@@ -3488,7 +3521,7 @@ sub PackageUpgradeAllIsRunning {
     my @List = $Kernel::OM->Get('Kernel::System::Scheduler')->TaskList(
         Type => 'AsynchronousExecutor',
     );
-    if ( grep { $_->{Name} eq 'Kernel::System::Package-PackageUpgradeAll()' } @List ) {
+    if ( any { $_->{Name} eq 'Kernel::System::Package-PackageUpgradeAll()' } @List ) {
         $IsRunning = 1;
     }
 
@@ -4762,7 +4795,7 @@ sub _CheckDBInstalledOrMerged {
     PART:
     for my $Part ( @{ $Param{Database} } ) {
 
-        if ( $Use eq 0 ) {
+        if ( $Use == 0 ) {
 
             if (
                 $Part->{TagType} eq 'End'
@@ -5044,7 +5077,7 @@ Helper function for PackageInstallOrderListGet() to process the packages and its
         }
         InstallOrder => {           # current install order
             PackageA => 2,
-            PacakgeB => 1,
+            PackageB => 1,
             # ...
         },
         Failed => {                 # current failed packages or dependencies

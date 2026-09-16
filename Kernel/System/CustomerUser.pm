@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -147,7 +147,7 @@ sub CustomerSourceList {
 
 =head2 CustomerSearch()
 
-to search users
+to search customer users
 
     # text search
     my %List = $CustomerUserObject->CustomerSearch(
@@ -173,6 +173,13 @@ to search users
         CustomerID       => 'CustomerID123',
         Valid            => 1,                # (optional) default 1
     );
+
+Returns a hash like:
+
+    {
+        'tina' => '"Tina Tester" <tina@example.com>',
+        'toni' => '"Toni Tester" <toni@example.com>',
+    }
 
 =cut
 
@@ -1013,11 +1020,12 @@ sub CustomerUserUpdate {
     }
 
     # check if user exists
-    my %User = $Self->CustomerUserDataGet( User => $Param{ID} || $Param{UserLogin} );
+    my $UserLogin = $Param{ID} || $Param{UserLogin};
+    my %User      = $Self->CustomerUserDataGet( User => $UserLogin );
     if ( !%User ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "No such user '$Param{UserLogin}'!",
+            Message  => "No such user '$UserLogin'!",
         );
         return;
     }

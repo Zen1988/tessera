@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,7 +23,7 @@ use utf8;
 our $ObjectManagerDisabled = 1;
 
 # core modules
-use List::Util qw(any);
+use List::Util qw(any none);
 use POSIX      qw(ceil);
 
 # CPAN modules
@@ -344,6 +344,8 @@ sub Run {
 
     if ( $Self->{Subaction} eq 'MarkAsImportant' ) {
 
+        $LayoutObject->ChallengeTokenCheck();
+
         # Owner and Responsible can mark articles as important or remove mark
         if (
             $Self->{UserID} == $Ticket{OwnerID}
@@ -399,10 +401,64 @@ sub Run {
 
         my $FormDraftID = $ParamObject->GetParam( Param => 'FormDraftID' ) || '';
         if ($FormDraftID) {
-            $Response{Success} = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftDelete(
+
+            # fetch form draft to check permissions and ticket lock
+            #   NOTE: passing the object id ensures verification that form draft belongs to ticket
+            my $FormDraftObject = $Kernel::OM->Get('Kernel::System::FormDraft');
+            my $FormDraft       = $FormDraftObject->FormDraftGet(
                 FormDraftID => $FormDraftID,
-                UserID      => $Self->{UserID},
+                ObjectID    => $Self->{TicketID},
             );
+
+            if ( IsHashRefWithData($FormDraft) ) {
+
+                # use config of form draft action for checks
+                my $Config = $ConfigObject->Get( 'Ticket::Frontend::' . $FormDraft->{Action} );
+
+                # check if action is allowed as per ACLs
+                if ( $AclActionLookup{ $FormDraft->{Action} } && IsHashRefWithData($Config) ) {
+
+                    # ticket lock check
+                    #   NOTE: owner status overrules permission check in this case
+                    if ( $Config->{RequiredLock} && $TicketObject->TicketLockGet( TicketID => $Self->{TicketID} ) ) {
+                        my $AccessOk = $TicketObject->OwnerCheck(
+                            TicketID => $Self->{TicketID},
+                            OwnerID  => $Self->{UserID},
+                        );
+                        if ( !$AccessOk ) {
+                            $Response{Error} = $LayoutObject->{LanguageObject}->Translate("Sorry, you need to be the ticket owner to perform this action.");
+                        }
+                    }
+
+                    # permission check
+                    else {
+                        if ( $Config->{Permission} ) {
+                            my $AccessOk = $TicketObject->TicketPermission(
+                                Type     => $Config->{Permission},
+                                TicketID => $Self->{TicketID},
+                                UserID   => $Self->{UserID},
+                                LogNo    => 1,
+                            );
+                            if ( !$AccessOk ) {
+                                $Response{Error} = $LayoutObject->{LanguageObject}->Translate("No permission.");
+                            }
+                        }
+                    }
+
+                    if ( !$Response{Error} ) {
+                        $Response{Success} = $FormDraftObject->FormDraftDelete(
+                            FormDraftID => $FormDraftID,
+                            ObjectID    => $Self->{TicketID},
+                        );
+                    }
+                }
+                else {
+                    $Response{Error} = $LayoutObject->{LanguageObject}->Translate("No permission.");
+                }
+            }
+            else {
+                $Response{Error} = $LayoutObject->{LanguageObject}->Translate("Could not delete form draft.");
+            }
         }
         else {
             $Response{Error} = $LayoutObject->{LanguageObject}->Translate("Missing FormDraftID!");
@@ -1084,7 +1140,7 @@ sub MaskAgentZoom {
 
         next WIDGET unless $Success;
 
-        my $Module = eval { $Config->{Module}->new(%$Self) };
+        my $Module = eval { $Config->{Module}->new( $Self->%* ) };
         if ( !$Module ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -1161,7 +1217,7 @@ sub MaskAgentZoom {
 
         ARTICLE:
         for my $ArticleTmp (@ArticleBoxShown) {
-            my %Article = %$ArticleTmp;
+            my %Article = $ArticleTmp->%*;
 
             $ArticleWidgetsHTML .= $Self->_ArticleItem(
                 Ticket            => \%Ticket,
@@ -1242,7 +1298,9 @@ sub MaskAgentZoom {
                 ACL    => \%AclAction,
                 Config => $Menus{$Menu},
             );
-            next MENU if !$Item;
+
+            next MENU unless $Item;
+
             if ( $Menus{$Menu}->{PopupType} ) {
                 $Item->{Class} = "AsPopup PopupType_$Menus{$Menu}->{PopupType}";
             }
@@ -1294,7 +1352,19 @@ sub MaskAgentZoom {
                     Data => $ZoomMenuItems{$Item},
                 );
             }
+            elsif ( $ZoomMenuItems{$Item}{Config}{Type} && $ZoomMenuItems{$Item}{Config}{Type} eq 'Form' ) {
+                $LayoutObject->Block(
+                    Name => 'TicketMenuItem',
+                );
+                $LayoutObject->Block(
+                    Name => 'TicketMenuFormGeneric',
+                    Data => $ZoomMenuItems{$Item},
+                );
+            }
             else {
+                $LayoutObject->Block(
+                    Name => 'TicketMenuItem',
+                );
                 $LayoutObject->Block(
                     Name => 'TicketMenu',
                     Data => $ZoomMenuItems{$Item},
@@ -1416,12 +1486,13 @@ sub MaskAgentZoom {
     );
     ACTION:
     for my $Action (qw(AgentTicketCompose AgentTicketForward)) {
-        next ACTION if !$ConfigObject->Get('Frontend::Module')->{$Action};
-        next ACTION if !$AclActionLookup{$Action};
+
+        next ACTION unless $ConfigObject->Get('Frontend::Module')->{$Action};
+        next ACTION unless $AclActionLookup{$Action};
 
         my $Config = $ConfigObject->Get( 'Ticket::Frontend::' . $Action );
         if ( $Config->{Permission} ) {
-            next ACTION if !$TicketObject->TicketPermission(
+            next ACTION unless $TicketObject->TicketPermission(
                 Type     => $Config->{Permission},
                 TicketID => $Ticket{TicketID},
                 UserID   => $Self->{UserID},
@@ -1436,12 +1507,12 @@ sub MaskAgentZoom {
     my $FormDraftList = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftListGet(
         ObjectType => 'Ticket',
         ObjectID   => $Self->{TicketID},
-        UserID     => $Self->{UserID},
     );
     if ( IsArrayRefWithData($FormDraftList) ) {
         FormDraft:
         for my $FormDraft ( @{$FormDraftList} ) {
             next FormDraft if !$ActionLookup{ $FormDraft->{Action} };
+
             push @{ $ShownFormDraftEntries{ $FormDraft->{Action} } }, $FormDraft;
         }
     }
@@ -1478,7 +1549,6 @@ sub MaskAgentZoom {
         {
             my $ActionData = $ActionLookup{$Action};
 
-            SHOWNFormDraftACTIONENTRY:
             for my $ShownFormDraftActionEntry (
                 sort {
                     $a->{Title}
@@ -1609,7 +1679,7 @@ sub MaskAgentZoom {
             $ProcessEntityIDField = 'DynamicField_'
                 . $ConfigObject->Get("Process::DynamicFieldProcessManagementProcessID");
 
-            # get the DF where the AtivityEntityID is stored
+            # get the DF where the ActivityEntityID is stored
             my $ActivityEntityIDField = 'DynamicField_'
                 . $ConfigObject->Get("Process::DynamicFieldProcessManagementActivityID");
 
@@ -1620,7 +1690,14 @@ sub MaskAgentZoom {
 
             # get next activity dialogs
             if ( $Ticket{$ActivityEntityIDField} ) {
-                $NextActivityDialogs = ${ActivityData}->{ActivityDialog} || {};
+
+                # protection against autovivification
+                if ( IsHashRefWithData($ActivityData) && IsHashRefWithData( $ActivityData->{ActivityDialog} ) ) {
+                    $NextActivityDialogs = ${ActivityData}->{ActivityDialog};
+                }
+                else {
+                    $NextActivityDialogs = {};
+                }
             }
             $ActivityName = $ActivityData->{Name};
         }
@@ -1818,7 +1895,7 @@ sub MaskAgentZoom {
                 my $ShowGroupTitle = 0;
                 for my $Field (@FieldsWidget) {
 
-                    if ( grep { $_ eq $Field->{Name} } @GroupFields ) {
+                    if ( any { $_ eq $Field->{Name} } @GroupFields ) {
 
                         $ShowGroupTitle = 1;
                         $LayoutObject->Block(
@@ -1830,6 +1907,20 @@ sub MaskAgentZoom {
                         );
 
                         my $DFConfig = $DynamicFieldLookup{ $Field->{Name} };
+
+                        # if we are dealing with a lens field pointing to a Set, get the config of the Set
+                        if ( $DFConfig->{FieldType} eq 'Lens' ) {
+                            my $AttributeDF = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+                                ID => $DFConfig->{Config}{AttributeDF},
+                            );
+                            if ( $AttributeDF->{FieldType} eq 'Set' ) {
+                                $DFConfig = {
+                                    $AttributeDF->%*,
+                                    Name  => $DFConfig->{Name},
+                                    Label => $DFConfig->{Label},
+                                };
+                            }
+                        }
 
                         # set field
                         if ( $DFConfig->{FieldType} eq 'Set' ) {
@@ -1993,7 +2084,7 @@ sub MaskAgentZoom {
         my @RemainingFieldsWidget;
         for my $Field (@FieldsWidget) {
 
-            if ( !grep { $_ eq $Field->{Name} } @FieldsInAGroup ) {
+            if ( none { $_ eq $Field->{Name} } @FieldsInAGroup ) {
                 push @RemainingFieldsWidget, $Field;
             }
         }
@@ -2019,6 +2110,20 @@ sub MaskAgentZoom {
             );
 
             my ($DFConfig) = grep { $_->{Name} eq $Field->{Name} } $DynamicField->@*;
+
+            # if we are dealing with a lens field pointing to a Set, get the config of the Set
+            if ( $DFConfig->{FieldType} eq 'Lens' ) {
+                my $AttributeDF = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+                    ID => $DFConfig->{Config}{AttributeDF},
+                );
+                if ( $AttributeDF->{FieldType} eq 'Set' ) {
+                    $DFConfig = {
+                        $AttributeDF->%*,
+                        Name  => $DFConfig->{Name},
+                        Label => $DFConfig->{Label},
+                    };
+                }
+            }
 
             # set field
             if ( $DFConfig->{FieldType} eq 'Set' ) {
@@ -2443,9 +2548,28 @@ sub _ArticleTree {
             },
         );
 
+        # fetching accounted times of all articles to check if we display the column
+        my %ArticleAccountedTimes;
+        my $ShowTimeUnits = 0;
+        if ( $Self->{Config}{ArticleListShowTimeUnits} ) {
+            for my $ArticleTmp (@ArticleBox) {
+
+                # Get accounted time for article using ArticleAccountedTimeGet
+                $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} } = $ArticleObject->ArticleAccountedTimeGet(
+                    ArticleID => $ArticleTmp->{ArticleID},
+                );
+            }
+            $ShowTimeUnits = ( any { $_ != 0 } values %ArticleAccountedTimes ) ? 1 : 0;
+            if ($ShowTimeUnits) {
+                $LayoutObject->Block(
+                    Name => 'TimeUnitHeader',
+                );
+            }
+        }
+
         ARTICLE:
         for my $ArticleTmp (@ArticleBox) {
-            my %Article = %$ArticleTmp;
+            my %Article = $ArticleTmp->%*;
 
             # article filter is activated in sysconfig and there are articles
             # that passed the filter
@@ -2527,6 +2651,17 @@ sub _ArticleTree {
                 ShowDeletedArticles => $Self->{ShowDeletedArticles}
             );
 
+            if ($ShowTimeUnits) {
+
+                my %TimeUnitField = (
+                    Value => $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} },
+                    Label => 'Time Unit'
+                );
+                $Article{TimeUnit} = $ArticleAccountedTimes{ $ArticleTmp->{ArticleID} };
+
+                $ArticleFields{TimeUnit} = \%TimeUnitField;
+            }
+
             # Get transmission status information for email articles.
             my $TransmissionStatus;
             if ( $Article{ChannelName} && $Article{ChannelName} eq 'Email' ) {
@@ -2548,6 +2683,7 @@ sub _ArticleTree {
                     TransmissionStatus => $TransmissionStatus,
                     ZoomExpand         => $Self->{ZoomExpand},
                     ZoomExpandSort     => $Self->{ZoomExpandSort},
+                    ShowTimeUnits      => $ShowTimeUnits,
                 },
             );
 
@@ -2730,7 +2866,7 @@ sub _ArticleTree {
         {
             for my $EventType ( sort keys %{ $Self->{HistoryTypeMapping} } ) {
                 if (
-                    $EventType ne 'NewTicket' && !grep { $_ eq $EventType }
+                    $EventType ne 'NewTicket' && none { $_ eq $EventType }
                     @{ $Self->{EventTypeFilter}->{EventTypeID} }
                     )
                 {
@@ -2914,23 +3050,23 @@ sub _ArticleTree {
 
                 $Item->{Class} = 'TypeNoteInternal';
             }
-            elsif ( grep { $_ eq $Item->{HistoryType} } @TypesTicketAction ) {
+            elsif ( any { $_ eq $Item->{HistoryType} } @TypesTicketAction ) {
                 $Item->{Class} = 'TypeTicketAction';
             }
-            elsif ( grep { $_ eq $Item->{HistoryType} } @TypesTicketAutoAction ) {
+            elsif ( any { $_ eq $Item->{HistoryType} } @TypesTicketAutoAction ) {
                 $Item->{Class} = 'TypeTicketAutoAction';
             }
-            elsif ( grep { $_ eq $Item->{HistoryType} } @TypesInternal ) {
+            elsif ( any { $_ eq $Item->{HistoryType} } @TypesInternal ) {
                 $Item->{Class} = 'TypeNoteInternal';
             }
-            elsif ( grep { $_ eq $Item->{HistoryType} } @TypesIncoming ) {
+            elsif ( any { $_ eq $Item->{HistoryType} } @TypesIncoming ) {
                 $Item->{Class} = 'TypeIncoming';
             }
-            elsif ( grep { $_ eq $Item->{HistoryType} } @TypesOutgoing ) {
+            elsif ( any { $_ eq $Item->{HistoryType} } @TypesOutgoing ) {
                 $Item->{Class} = 'TypeOutgoing';
             }
 
-            if ( grep { $_ eq $Item->{HistoryType} } @TypesDodge ) {
+            if ( any { $_ eq $Item->{HistoryType} } @TypesDodge ) {
                 next HISTORYITEM;
             }
 
@@ -2958,7 +3094,7 @@ sub _ArticleTree {
             }
 
             # remove article information from types which should not display articles
-            if ( !grep { $_ eq $Item->{HistoryType} } @TypesWithArticles ) {
+            if ( none { $_ eq $Item->{HistoryType} } @TypesWithArticles ) {
                 delete $Item->{ArticleID};
             }
 
@@ -3053,7 +3189,7 @@ sub _ArticleTree {
             $Item->{HistoryTypeReadable} = $Self->{HistoryTypeMapping}->{ $Item->{HistoryType} }
                 || $Item->{HistoryType};
 
-            # group items which happened (nearly) coincidently together
+            # group items which happened (nearly) coincidentally together
             my $CreateSystemTimeObject = $Kernel::OM->Create(
                 'Kernel::System::DateTime',
                 ObjectParams => {
@@ -3098,7 +3234,7 @@ sub _ArticleTree {
             for my $SubItem ( sort $SortByArticle @{ $HistoryItems{$Item} } ) {
                 $SubItem->{Counter} = $ItemCounter++;
 
-                if ( grep { $_ eq $SubItem->{HistoryType} } @TypesRight ) {
+                if ( any { $_ eq $SubItem->{HistoryType} } @TypesRight ) {
                     $SubItem->{Orientation} = 'Right';
                 }
                 else {

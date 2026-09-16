@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -290,7 +290,7 @@ sub EditScreen {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    $Frontend{BrowserFound} = $ConfigObject->Get('PhantomJS::Bin') || $ConfigObject->Get('GoogleChrome::Bin') ? 1 : 0;
+    $Frontend{BrowserFound} = $ConfigObject->Get('GoogleChrome::Bin') ? 1 : 0;
 
     my %Format = %{ $ConfigObject->Get('Stats::Format') || {} };
 
@@ -819,7 +819,7 @@ sub StatsAddWidgetAJAX {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    my $BrowserFound = $ConfigObject->Get('PhantomJS::Bin') || $ConfigObject->Get('GoogleChrome::Bin') ? 1 : 0;
+    my $BrowserFound = $ConfigObject->Get('GoogleChrome::Bin') ? 1 : 0;
     my %Format       = %{ $ConfigObject->Get('Stats::Format') || {} };
 
     my %FilteredFormats;

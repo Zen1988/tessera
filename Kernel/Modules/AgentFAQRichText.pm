@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -228,14 +228,9 @@ sub Run {
             # Extract the actual MIME type from the content type, which also contains the filename.
             my ($MimeType) = $Attachment{ContentType} =~ m{^(.+/.+); [ ] name=.+$}xms;
 
-            my $Session = '';
-            if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-                $Session = '&' . $Self->{SessionName} . '=' . $Self->{SessionID};
-            }
-
             # Create the new inline image URL.
             my $InlineImage = $LayoutObject->{Baselink}
-                . "Action=PictureUpload;FormID=$FormID;ContentID=$ContentIDNew$Session";
+                . "Action=PictureUpload;FormID=$FormID;ContentID=$ContentIDNew";
 
             # Replace the image URL with the inline image.
             $FieldContent =~ s{\Q$URL\E}{$InlineImage}xms;

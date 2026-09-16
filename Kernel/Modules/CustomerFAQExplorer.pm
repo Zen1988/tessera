@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -136,14 +136,14 @@ sub Run {
 
     # show search results
     if ( $Self->{Subaction} && $Self->{Subaction} eq 'Search' ) {
-        my $SearchName = Translatable("Search") . ":";
+        my $SearchName = $LayoutObject->{LanguageObject}->Translate("Search") . ":";
         for my $Mode (qw/Keyword What/) {
             my $String = $ParamObject->GetParam( Param => $Mode );
             if ($String) {
                 $Search{$Mode}    = $String;
                 $FAQSearch{$Mode} = "*$String*";
                 my $ModeName = $Mode eq 'What' ? 'Fulltext' : $Mode;
-                $SearchName .= " " . Translatable($ModeName) . " \"$String\";";
+                $SearchName .= " " . $LayoutObject->{LanguageObject}->Translate($ModeName) . " \"$String\";";
             }
         }
 

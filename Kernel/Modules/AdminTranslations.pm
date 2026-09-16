@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -574,7 +574,7 @@ sub Run {
             $Message = $LayoutObject->{LanguageObject}->Translate('Nothing to do!');
         }
         else {
-            $Message = $LayoutObject->{LanguageObject}->Translate('Errors ocurred when trying to deploy translation. Please check system logs!');
+            $Message = $LayoutObject->{LanguageObject}->Translate('Errors occurred when trying to deploy translation. Please check system logs!');
         }
 
         my %Response = (
@@ -869,21 +869,20 @@ sub _Overview {
 
     my %Collected;
     my %CollectedDraft;
+
+    # Get base translations from core installation.
+    # This is used for indicating whether a custom translation overwrites a base translation.
     my %BaseTranslations;
+    {
+        my %BaseData = %{
+            $TranslationsObject->ReadExistingTranslationFile(
+                UserLanguage => $LanguageID
+            )
+        };
 
-    # Get base translations from core installation
-    my %BaseData = %{
-        $TranslationsObject->ReadExistingTranslationFile(
-            UserLanguage => $LanguageID
-        )
-    };
-
-    # if there are any custom translations, they are collected
-    if ( %BaseData && defined $BaseData{Translation} ) {
-        my %Strings = %{ $BaseData{Translation} };
-
-        for my $Custom ( sort keys %Strings ) {
-            $BaseTranslations{$Custom} = $Strings{$Custom};
+        # collect the base translation if there are any
+        if ( %BaseData && defined $BaseData{Translation} ) {
+            %BaseTranslations = $BaseData{Translation}->%*;
         }
     }
 
@@ -954,7 +953,7 @@ sub _Overview {
         }
     );
 
-    # if there are any custom translations, they are shown
+    # if there are any active custom translations, they are shown
     if (@LanguageData) {
 
         # Write values from translation file into tt

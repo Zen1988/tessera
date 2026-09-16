@@ -1,0 +1,64 @@
+<div class="MainBox ARIARoleMain">
+    <h1>[% Translate("Transform ConfigItem") | html %]</h1>
+
+[% IF Data.ErrorMessage %]
+    <div class="MessageBox Error">
+        <p>[% Data.ErrorMessage | html %]</p>
+    </div>
+[% END %]
+
+    <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+        <input type="hidden" name="Action" value="AgentGovernanceObjectTransform"/>
+        <input type="hidden" name="Subaction" value="Copy"/>
+        <input type="hidden" id="ChallengeToken" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]"/>
+
+        <fieldset class="TableLike">
+            <label for="ConfigItemID" class="Mandatory"><span class="Marker">*</span> ConfigItemID</label>
+            <div class="Field">
+                <input type="text" id="ConfigItemID" name="ConfigItemID" value="[% Data.ConfigItemID | html %]" class="W25pc Validate_Required"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Class">[% Translate("Governance Class") | html %]</label>
+            <div class="Field">
+                <input type="text" id="Class" name="Class" value="[% Data.Class | html %]" class="W50pc"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="GOID">GOID</label>
+            <div class="Field">
+                <input type="text" id="GOID" name="GOID" value="[% Data.GOID | html %]" class="W50pc"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="ZTSMCode">ZTSM Code</label>
+            <div class="Field">
+                <input type="text" id="ZTSMCode" name="ZTSMCode" value="[% Data.ZTSMCode | html %]" class="W50pc"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="ZTSMStatus">ZTSM Status</label>
+            <div class="Field">
+                <input type="text" id="ZTSMStatus" name="ZTSMStatus" value="[% Data.ZTSMStatus | html %]" class="W50pc"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Name">[% Translate("Name") | html %]</label>
+            <div class="Field">
+                <input type="text" id="Name" name="Name" value="[% Data.Name | html %]" class="W75pc"/>
+            </div>
+            <div class="Clear"></div>
+
+            <label for="Description">[% Translate("Description") | html %]</label>
+            <div class="Field">
+                <textarea id="Description" name="Description" rows="5" class="W75pc">[% Data.Description | html %]</textarea>
+            </div>
+            <div class="Clear"></div>
+        </fieldset>
+
+        <div class="Buttons">
+            <button class="Primary" type="submit" value="Submit">[% Translate("Copy") | html %]</button>
+            <a class="CancelClosePopup" href="[% Env("Baselink") %]Action=AgentGovernanceObject">[% Translate("Cancel") | html %]</a>
+        </div>
+    </form>
+</div>

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -19,16 +19,17 @@ package Kernel::System::EmailParser;
 use v5.24;
 use strict;
 use warnings;
+use namespace::autoclean;
+use utf8;
 
 # core modules
 use MIME::Base64      qw(decode_base64);
 use MIME::QuotedPrint ();
 
 # CPAN modules
-use Mail::Internet ();
-use MIME::Parser   ();
-use MIME::Words    qw(decode_mimewords);
-use Mail::Address  ();
+use MIME::Parser       ();
+use MIME::Words        qw(decode_mimewords);
+use Email::Address::XS ();
 
 # OTOBO modules
 
@@ -82,14 +83,6 @@ when an email has been already parsed or a C<MIME::Entity> object has been const
         Email        => $EmailString,
     );
 
-Sometimes it is useful to have an empty instance on which helper methods can be called.
-In the case the parameter C<Mode> must be passed with the value "Standalone".
-
-    my $ParserObject = Kernel::System::EmailParser->new(
-        Mode         => 'Standalone',
-        Debug        => 0,
-    );
-
 The parameter C<Debug> can be used to activate debug output. The default is off.
 
 The parameter C<NoHTMLChecks> may be used to suppress the generation of the plain text message when there
@@ -106,9 +99,6 @@ sub new {
     # get debug level from parent
     $Self->{Debug} = $Param{Debug} || 0;
 
-    # create empty object just for accessing the helper methods
-    return $Self if ( $Param{Mode} && $Param{Mode} eq 'Standalone' );
-
     # Check the parameters when the method is not called for standalone mode. The email must be passed
     # either as text in the parameter Email or as an instance of MIME::Entity in the parameter Entity.
     if ( !$Param{Email} && !$Param{Entity} ) {
@@ -120,34 +110,27 @@ sub new {
     if ( $Param{Email} ) {
 
         # check if Email is a reference to a string
+        my $StringRef;
         if ( ref $Param{Email} eq 'SCALAR' ) {
-            my @Content = split /\n/, $Param{Email}->$*;
-            for my $Line (@Content) {
-                $Line .= "\n";
-            }
-            $Param{Email} = \@Content;
+            $StringRef = $Param{Email};
+            $Param{Email} = [
+                map { $_ . "\n" } split /\n/, $Param{Email}->$*
+            ];
         }
 
         # check if Email is a plain string
-        if ( ref $Param{Email} eq '' ) {
-            my @Content = split /\n/, $Param{Email};
-            for my $Line (@Content) {
-                $Line .= "\n";
-            }
-            $Param{Email} = \@Content;
+        elsif ( ref $Param{Email} eq '' ) {
+            $StringRef = \$Param{Email};
         }
+
+        # $Param{Email} is arrayref
         else {
-            # nothing to to as $Param{Email} is expected to already be an array of newline terminated strings
+            my $String = join '', $Param{Email}->@*;
+            $StringRef = \$String;
         }
 
         # for GetPlainEmail()
-        $Self->{OriginalEmail} = join '', $Param{Email}->@*;
-
-        # create Mail::Internet object
-        $Self->{Email} = Mail::Internet->new( $Param{Email} );
-
-        # get a Mail::Header object from the Mail::Internet object
-        $Self->{HeaderObject} = $Self->{Email}->head;
+        $Self->{OriginalStringRef} = $StringRef;
 
         # create MIME::Parser object
         my $Parser = MIME::Parser->new();
@@ -160,23 +143,27 @@ sub new {
         $Parser->extract_nested_messages(0);
 
         # finally parse the email
-        $Self->{ParserParts} = $Parser->parse_data( $Self->{Email}->as_string() );
+        $Self->{ParserParts} = $Parser->parse_data($StringRef);
     }
     else {
 
         # an instance of MIME::Entity was passed
-        $Self->{ParserParts}  = $Param{Entity};
-        $Self->{HeaderObject} = $Param{Entity}->head;    # this time a MIME::Head object
-        $Self->{EntityMode}   = 1;
+        $Self->{ParserParts} = $Param{Entity};
+        $Self->{EntityMode}  = 1;
     }
+
+    # Get a MIME::Head object from the toplevel MIME::Entity object.
+    # This is irrespective whether the MIME entity was created in or passed into this constructor.
+    # MIME::Head inherits from Mail::Header.
+    $Self->{HeaderObject} = $Self->{ParserParts}->head->fold;
 
     # get NoHTMLChecks param
     if ( $Param{NoHTMLChecks} ) {
         $Self->{NoHTMLChecks} = $Param{NoHTMLChecks};
     }
 
-    # mangle the already parsed emails, specifically generate the array of attachments
-    $Self->GetMessageBody();
+    # mangle the already parsed email, specifically generate the array of attachments
+    $Self->GetMessageBody;
 
     return $Self;
 }
@@ -196,7 +183,8 @@ not to be confused with I<referring to text/plain>.
 sub GetPlainEmail {
     my $Self = shift;
 
-    return $Self->{OriginalEmail} || $Self->{Email}->as_string;
+    return $Self->{OriginalStringRef}->$* if $Self->{OriginalStringRef};
+    return $Self->{ParserParts}->stringify;
 }
 
 =head2 GetParam()
@@ -239,16 +227,17 @@ sub GetParam {
     my $ReturnLine;
 
     # We need to split address lists before decoding; see "6.2. Display of 'encoded-word's"
-    # in RFC 2047. Mail::Address routines will quote stuff if necessary (i.e. comma
-    # or semicolon found in phrase).
+    # in RFC 2047. Email::Address::XS routines will routinely put the phrase between quotation marks
+    # when there are special characters, including semicolons, tabs, and simple spaces.
+    # Quotes that are already in the input are not preserved when they are around simple words.
     if ( $What =~ m/^(From|To|Cc)/ ) {
-        for my $Address ( Mail::Address->parse($Line) ) {
-            $Address->phrase( $Self->_DecodeString( String => $Address->phrase() ) );
-            $Address->address( $Self->_DecodeString( String => $Address->address() ) );
-            $Address->comment( $Self->_DecodeString( String => $Address->comment() ) );
-            $ReturnLine .= ', ' if $ReturnLine;
-            $ReturnLine .= $Address->format();
+        my @Addresses = Email::Address::XS->parse($Line);
+        for my $Address (@Addresses) {
+            $Address->phrase( $Self->_DecodeString( String => $Address->phrase ) );
+            $Address->address( $Self->_DecodeString( String => $Address->address ) );
+            $Address->comment( $Self->_DecodeString( String => $Address->comment ) );
         }
+        $ReturnLine = join ', ', map { $_->format } @Addresses;
     }
     else {
         $ReturnLine = $Self->_DecodeString( String => $Line );
@@ -265,98 +254,6 @@ sub GetParam {
     }
 
     return $ReturnLine;
-}
-
-=head2 GetEmailAddress()
-
-To get the senders email address back.
-
-    my $SenderEmail = $ParserObject->GetEmailAddress(
-        Email => 'Juergen Weber <juergen.qeber@air.com>',
-    );
-
-This method can be used in standalone mode.
-
-=cut
-
-sub GetEmailAddress {
-    my ( $Self, %Param ) = @_;
-
-    my $Email = '';
-    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
-        $Email = $EmailSplit->address();
-    }
-
-    # return if no email address is there
-    return if $Email !~ /@/;
-
-    # return email address
-    return $Email;
-}
-
-=head2 GetRealname()
-
-to get the sender's C<RealName> aka phrase.
-
-    my $Realname = $ParserObject->GetRealname(
-        Email => 'Juergen Weber <juergen.qeber@air.com>',
-    );
-
-Returns:
-
-    'Juergen Weber'
-
-This method can be used in standalone mode.
-
-=cut
-
-sub GetRealname {
-    my ( $Self, %Param ) = @_;
-
-    my $Realname = '';
-
-    # find "NamePart, NamePart" <some@example.com> (get not recognized by Mail::Address)
-    if ( $Param{Email} =~ /"(.+?)"\s+?\<.+?@.+?\..+?\>/ ) {
-        $Realname = $1;
-
-        # removes unnecessary blank spaces, if the string has quotes.
-        # This is because of bug 6059
-        $Realname =~ s/"\s+?(.+?)\s+?"/"$1"/g;
-
-        return $Realname;
-    }
-
-    # fallback of Mail::Address
-    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
-        $Realname = $EmailSplit->phrase();
-    }
-
-    return $Realname;
-}
-
-=head2 SplitAddressLine()
-
-To get an array of email addresses of an To, Cc or Bcc line back.
-
-    my @Addresses = $ParserObject->SplitAddressLine(
-        Line => 'Juergen Weber <juergen.qeber@air.com>, me@example.com, hans@example.com (Hans Huber)',
-    );
-
-This returns an array with ('Juergen Weber <juergen.qeber@air.com>', 'me@example.com', 'hans@example.com (Hans Huber)').
-
-This method can be used in standalone mode.
-
-=cut
-
-sub SplitAddressLine {
-    my ( $Self, %Param ) = @_;
-
-    my @GetParam;
-    for my $Line ( $Self->_MailAddressParse( Email => $Param{Line} ) ) {
-        push @GetParam, $Line->format();
-    }
-
-    return @GetParam;
 }
 
 =head2 GetContentType()
@@ -379,18 +276,17 @@ sub GetContentType {
 
 =head2 GetContentDisposition()
 
-Returns the message body (or from the first attachment) "ContentDisposition" header.
+returns the message header I<Content-Disposition>.
 
     my $ContentDisposition = $ParserObject->GetContentDisposition();
 
-    (e. g. 'Content-Disposition: attachment; filename="test-123"')
+For example: I<attachment; filename="otobo_user_guide.pdf">
 
 =cut
 
 sub GetContentDisposition {
     my $Self = shift;
 
-    return $Self->{ContentDisposition} if $Self->{ContentDisposition};
     return $Self->GetParam( WHAT => 'Content-Disposition' );
 }
 
@@ -578,17 +474,9 @@ sub GetMessageBody {
                 Message  => q{It's a plain (not MIME) email!},
             );
         }
-        my $BodyStrg = join '', @{ $Self->{Email}->body };
 
-        # quoted printable!
-        if ( $Self->GetParam( WHAT => 'Content-Transfer-Encoding' ) =~ /quoted-printable/i ) {
-            $BodyStrg = MIME::QuotedPrint::decode($BodyStrg);
-        }
-
-        # base64 decode
-        elsif ( $Self->GetParam( WHAT => 'Content-Transfer-Encoding' ) =~ /base64/i ) {
-            $BodyStrg = decode_base64($BodyStrg);
-        }
+        # This does the decoding for the Content-Transfer-Encoding, e.g. quoted-printable or base64
+        my $BodyStrg = $Self->{ParserParts}->bodyhandle->as_string;
 
         # charset decode
         if ( $Self->GetCharset() ) {
@@ -1238,30 +1126,6 @@ sub _DecodeString {
     }
 
     return $DecodedString;
-}
-
-=head2 _MailAddressParse()
-
-    my @Chunks = $ParserObject->_MailAddressParse(Email => $Email);
-
-Wrapper for C<Mail::Address->parse($Email)>, but cache it, since it's
-not too fast, and often called.
-
-=cut
-
-sub _MailAddressParse {
-    my ( $Self, %Param ) = @_;
-
-    my $Email = $Param{Email};
-
-    my $Cache = $Self->{EmailCache};
-
-    return $Cache->{$Email}->@* if $Cache->{$Email};
-
-    my @Chunks = Mail::Address->parse($Email);
-    $Cache->{$Email} = \@Chunks;
-
-    return @Chunks;
 }
 
 =end Internal:

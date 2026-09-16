@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -81,7 +81,9 @@ sub LoadPreferences {
     # set current time stamp if different to "current_timestamp"
     $Self->{'DB::CurrentTimestamp'} = '';
 
-    # set encoding of selected data to utf8
+    # DBD::MariaDB provides sane Perl strings.
+    # But traditionally OTOBO expect that the utf8-flag is on.
+    # even for binary data
     $Self->{'DB::Encode'} = 1;
 
     # shell setting
@@ -89,11 +91,6 @@ sub LoadPreferences {
     $Self->{'DB::ShellCommit'} = ';';
 
     #$Self->{'DB::ShellConnect'} = '';
-
-    # init sql setting on db connect
-    if ( !$Kernel::OM->Get('Kernel::Config')->Get('Database::ShellOutput') ) {
-        $Self->{'DB::Connect'} = 'SET NAMES utf8mb4';
-    }
 
     return 1;
 }
@@ -222,6 +219,7 @@ sub TableCreate {
             push @{ $Foreign{$ForeignKey} }, $Tag;
         }
     }
+
     for my $Tag (@Column) {
 
         # type translation
@@ -850,13 +848,16 @@ sub Insert {
     return $SQL;
 }
 
+# This method changes the attribute 'Type' of the passed in hashref
 sub _TypeTranslation {
     my ( $Self, $Tag ) = @_;
 
-    if ( $Tag->{Type} =~ /^DATE$/i ) {
+    # The types SMALLINT, BIGINT, INTEGER, DECIMAL, and LONGBLOB are supported natively
+
+    if ( $Tag->{Type} =~ m/^DATE$/i ) {
         $Tag->{Type} = 'DATETIME';
     }
-    if ( $Tag->{Type} =~ /^VARCHAR$/i ) {
+    elsif ( $Tag->{Type} =~ m/^VARCHAR$/i ) {
         if ( $Tag->{Size} > 16777215 ) {
             $Tag->{Type} = 'LONGTEXT';
         }
@@ -870,7 +871,7 @@ sub _TypeTranslation {
             $Tag->{Type} = 'VARCHAR (' . $Tag->{Size} . ')';
         }
     }
-    if ( $Tag->{Type} =~ /^DECIMAL$/i ) {
+    elsif ( $Tag->{Type} =~ m/^DECIMAL$/i ) {
         $Tag->{Type} = 'DECIMAL (' . $Tag->{Size} . ')';
     }
 

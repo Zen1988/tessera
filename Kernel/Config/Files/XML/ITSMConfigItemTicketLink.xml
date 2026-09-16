@@ -725,4 +725,15 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="ITSMConfigItem::EventModulePost###200-LicenseUpdate" Required="0" Valid="1">
+        <Description Translatable="1">License accounting configuration item event module.</Description>
+        <Navigation>Core::Event::ITSMConfigItem</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::ITSMConfigItem::Event::CountLicenseLinks</Item>
+                <Item Key="Event">(DeploymentStateUpdate|ConfigItemDynamicFieldUpdate_|Delete)</Item>
+                <Item Key="Transaction">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
 </otobo_config>

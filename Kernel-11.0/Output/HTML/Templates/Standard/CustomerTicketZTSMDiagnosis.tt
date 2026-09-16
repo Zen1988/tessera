@@ -1,0 +1,182 @@
+# --
+# Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMDiagnosis.tt
+# --
+
+[% IF Data.Inline %]
+<div class="ZTSMDiagnosisPage ZTSMDiagnosisInline">
+[% ELSE %]
+<div id="oooContent" class="TicketZoom ZTSMDiagnosisPage ARIARoleMain">
+[% END %]
+    <style>
+        .ZTSMDiagnosisPage .ZTSMDiagnosisLayout {
+            --ZTSMNavigationOffset: 56px;
+            width: 100%;
+            max-width: 980px;
+            min-height: 100vh;
+            padding: 18px 18px 32px calc(var(--ZTSMNavigationOffset) + 28px);
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisInline .ZTSMDiagnosisLayout {
+            max-width: none;
+            min-height: 0;
+            padding: 0;
+            background: transparent;
+        }
+        .ZTSMDiagnosisShell {
+            width: 100%;
+        }
+        .ZTSMDiagnosisShell h1 {
+            margin: 0 0 12px;
+            color: #07104a;
+            font-size: 16px;
+            line-height: 1.3;
+        }
+        .ZTSMDiagnosisFields {
+            display: grid;
+            gap: 12px;
+        }
+        .ZTSMDiagnosisField {
+            display: grid;
+            gap: 4px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisFieldLarge {
+            min-height: 120px;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan {
+            min-height: 180px;
+        }
+        .ZTSMDiagnosisField label {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .ZTSMDiagnosisField .Field,
+        .ZTSMDiagnosisField .Value,
+        .ZTSMDiagnosisField input,
+        .ZTSMDiagnosisField select,
+        .ZTSMDiagnosisField textarea,
+        .ZTSMDiagnosisField .InputField_Container {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisField input,
+        .ZTSMDiagnosisField select {
+            min-height: 34px;
+            padding: 6px 10px;
+        }
+        .ZTSMDiagnosisField textarea {
+            min-height: 96px;
+            resize: vertical;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan textarea {
+            min-height: 156px;
+        }
+        .ZTSMDiagnosisField .RichTextHolder {
+            width: 100%;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisField .RichTextHolder textarea.RichText {
+            display: block;
+            min-height: 112px;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan .RichTextHolder textarea.RichText {
+            min-height: 172px;
+        }
+        .ZTSMDiagnosisField .ck.ck-editor,
+        .ZTSMDiagnosisField .ck.ck-editor__main,
+        .ZTSMDiagnosisField .ck.ck-editor__editable {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ZTSMDiagnosisField .ck.ck-editor__editable_inline {
+            min-height: 112px;
+        }
+        .ZTSMDiagnosisField_ZIN-Plan .ck.ck-editor__editable_inline {
+            min-height: 172px;
+        }
+        .ZTSMDiagnosisActions {
+            margin-top: 12px;
+            text-align: right;
+        }
+        @media (max-width: 760px) {
+            .ZTSMDiagnosisPage .ZTSMDiagnosisLayout {
+                padding-left: 18px;
+            }
+        }
+    </style>
+
+    [% IF Data.Inline %]
+    <div class="ZTSMDiagnosisLayout">
+    [% ELSE %]
+    <div id="oooMainBox" class="ZTSMDiagnosisLayout">
+    [% END %]
+        <div class="ZTSMDiagnosisShell">
+            <h1>[% Translate("Diagnosis") | html %] [% Data.TicketNumber | html %]</h1>
+            <form action="[% Env("CGIHandle") | html %]" method="post" enctype="multipart/form-data" class="Validate PreventMultipleSubmits">
+                <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
+                <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
+                <input type="hidden" name="RuntimeAction" value="Diagnose"/>
+                <input type="hidden" name="Subaction" value="SubmitDiagnosis"/>
+                <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
+
+                [% Data.FieldsHTML %]
+
+                <div class="ZTSMDiagnosisActions">
+                    [% IF Data.Inline %]
+                    <button type="button" class="CloseButton oooXS">[% Translate("Discard") | html %]</button>
+                    [% ELSE %]
+                    <a class="Button" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %]">[% Translate("Cancel") | html %]</a>
+                    [% END %]
+                    <button type="submit" class="Primary">[% Translate("Submit Diagnosis") | html %]</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var root = document.currentScript ? document.currentScript.closest('.ZTSMDiagnosisPage') : null;
+        root = root || document.querySelector('.ZTSMDiagnosisPage');
+
+        function syncNavigationOffset() {
+            var mainBox = root ? root.querySelector('.ZTSMDiagnosisLayout') : null;
+            var navigation = document.getElementById('oooNavigation');
+            if (!mainBox || !navigation) {
+                return;
+            }
+            mainBox.style.setProperty('--ZTSMNavigationOffset', navigation.getBoundingClientRect().width + 'px');
+        }
+
+        function initRichText() {
+            if (!window.jQuery || !window.Core || !Core.UI || !Core.UI.RichTextEditor || typeof Core.UI.RichTextEditor.InitEditor !== 'function') {
+                return;
+            }
+            window.jQuery(root || document).find('textarea.RichText, textarea.DynamicFieldRichText').each(function () {
+                var field = window.jQuery(this);
+                if (field.data('ZTSMDiagnosisRichTextReady')) {
+                    return;
+                }
+                if (this.closest && this.closest('.RichTextHolder') && this.closest('.RichTextHolder').querySelector('.ck.ck-editor, .ck-editor, .cke_chrome')) {
+                    field.data('ZTSMDiagnosisRichTextReady', true);
+                    return;
+                }
+                Core.UI.RichTextEditor.InitEditor(field);
+                field.data('ZTSMDiagnosisRichTextReady', true);
+            });
+        }
+
+        syncNavigationOffset();
+        initRichText();
+        window.addEventListener('resize', syncNavigationOffset);
+    }());
+    </script>
+</div>

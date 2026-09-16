@@ -1,0 +1,51 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+[% IF Data.FullPage %]
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header"><h1>[% Translate("Delete Governance Object") | html %]</h1></div>
+    <div class="Content">
+[% END %]
+<fieldset class="TableLike W300px">
+
+    <label>[% Translate("Name") | html %]:</label>
+    <p class="Value">
+        [% Data.Name | html %]
+    </p>
+    <div class="Clear"></div>
+
+    <label>[% Translate("Number") | html %]:</label>
+    <p class="Value">
+        [% Translate(Data.Number) | html %]
+    </p>
+    <div class="Clear"></div>
+
+
+</fieldset>
+<p class="SpacingTop Center">
+    [% Translate("Do you really want to delete this Governance Object?") | html %]
+</p>
+[% IF Data.FullPage %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Center SpacingTop">
+            <input type="hidden" name="Action" value="AgentGovernanceObjectDelete"/>
+            <input type="hidden" name="Subaction" value="GovernanceObjectDelete"/>
+            <input type="hidden" name="GovernanceObjectID" value="[% Data.GovernanceObjectID | html %]"/>
+            <input type="hidden" name="ChallengeToken" value="[% Env("ChallengeToken") | html %]"/>
+            <button class="CallForAction Primary" type="submit"><span>[% Translate("Delete") | html %]</span></button>
+            <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]"><span>[% Translate("Cancel") | html %]</span></a>
+        </form>
+    </div>
+</div>
+[% END %]

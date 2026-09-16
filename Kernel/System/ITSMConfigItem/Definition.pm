@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1156,7 +1156,7 @@ sub DefinitionSetOutOfSync {
         }
 
         for my $FieldID ( $Param{Classes}{$ClassID}->@* ) {
-            if ( !grep { $_ == $FieldID } $Current{$ClassID}->@* ) {
+            if ( none { $_ == $FieldID } $Current{$ClassID}->@* ) {
                 push @{ $New{$ClassID} }, $FieldID;
             }
         }
@@ -1308,12 +1308,19 @@ sub DefinitionSync {
             next CLASS unless $NeedsSync;
         }
 
-        $Self->DefinitionAdd(
+        my $Result = $Self->DefinitionAdd(
             ClassID    => $ClassID,
             Definition => $Definition->{Definition},
             UserID     => 1,
             Force      => 1,
         );
+        if ( !$Result->{Success} ) {
+            my $ErrorMessage = sprintf $Result->{Error}, $Result->{ErrorArgs}->@*;
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $ErrorMessage,
+            );
+        }
     }
 
     return 1;
@@ -1686,13 +1693,15 @@ sub ClassImport {
 
         # Get current setting value.
         my %Setting = $SysConfigObject->SettingGet(
-            Name => 'DynamicField::Namespaces',
+            Name => 'Namespaces###DynamicField',
         );
 
         # ensure compatibility with unit tests
-        my $ExistingNamespaces = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces') || [];
-        my %AllNamespaces      = (
-            ( map { $_ => 1 } $ExistingNamespaces->@* ),
+        my @ExistingNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+            Scope => 'DynamicField',
+        );
+        my %AllNamespaces = (
+            ( map { $_ => 1 } @ExistingNamespaces ),
             %Namespaces,
         );
 
@@ -1700,7 +1709,7 @@ sub ClassImport {
         my $UpdateNamespaces = 0;
         NEWNAMESPACE:
         for my $NewNamespace ( keys %AllNamespaces ) {
-            if ( none { $NewNamespace eq $_ } $ExistingNamespaces->@* ) {
+            if ( none { $NewNamespace eq $_ } @ExistingNamespaces ) {
                 $UpdateNamespaces = 1;
                 last NEWNAMESPACE;
             }
@@ -1715,7 +1724,7 @@ sub ClassImport {
 
             # Update setting with modified data
             my %Result = $SysConfigObject->SettingUpdate(
-                Name              => 'DynamicField::Namespaces',
+                Name              => 'Namespaces###DynamicField',
                 IsValid           => 1,
                 EffectiveValue    => [ keys %AllNamespaces ],
                 ExclusiveLockGUID => $ExclusiveLockGUID,
@@ -1724,7 +1733,7 @@ sub ClassImport {
             if ( !$Result{Success} ) {
                 return {
                     Success      => 0,
-                    ErrorMessage => 'Could not update setting DynamicField::Namespaces.',
+                    ErrorMessage => 'Could not update setting Namespaces###DynamicField.',
                 };
             }
 
@@ -1735,15 +1744,15 @@ sub ClassImport {
             if ( !$Success ) {
                 return {
                     Success      => 0,
-                    ErrorMessage => 'Could not unlock setting DynamicField::Namespaces.',
+                    ErrorMessage => 'Could not unlock setting Namespaces###DynamicField.',
                 };
             }
 
             my %DeploymentResult = $SysConfigObject->ConfigurationDeploy(
-                Comments      => "ClassImport updating DynamicField::Namespaces",
+                Comments      => "ClassImport updating Namespaces###DynamicField",
                 UserID        => 1,
                 Force         => 1,
-                DirtySettings => ['DynamicField::Namespaces'],
+                DirtySettings => ['Namespaces###DynamicField'],
             );
 
             if ( !$DeploymentResult{Success} ) {
@@ -1924,12 +1933,12 @@ sub ClassExport {
                 }
 
                 # single-value attributes
-                elsif ( grep { $_ eq $PreferenceKey } qw(NameModule NumberModule VersionStringModule) ) {
+                elsif ( any { $_ eq $PreferenceKey } qw(NameModule NumberModule VersionStringModule) ) {
                     $ExportItem{Class}{$PreferenceKey} = $ClassPreferences{$PreferenceKey}[0];
                 }
 
                 # multi-value attributes
-                elsif ( grep { $_ eq $PreferenceKey } qw(Categories VersionTrigger) ) {
+                elsif ( any { $_ eq $PreferenceKey } qw(Categories VersionTrigger) ) {
                     $ExportItem{Class}{$PreferenceKey} = $ClassPreferences{$PreferenceKey};
                 }
             }
@@ -1968,7 +1977,7 @@ sub ClassExport {
 =head2 _ProcessRoles
 
 For convenience the YAML for a config item class may contain a subtree called Roles. Usually these Roles
-load other YAML documents which contain a Section hash. These section a merged into the toplevel Section hash.
+load other YAML documents which contain a Section hash. These section a merged into the top-level Section hash.
 The keys of the merged in sections are the Role key joined with the loaded section name. The join marker is C<::>.
 
 The passed in hash reference is modified in place.
@@ -2282,7 +2291,7 @@ sub _DefinitionDynamicFieldGet {
             my $DynamicField = $DynamicFieldObject->DynamicFieldGet( Name => $Name );
 
             # only return valid dynamic fields
-            next DYNAMICFIELD unless $DynamicField;
+            next DYNAMICFIELD unless $DynamicField->%*;
             next DYNAMICFIELD unless $DynamicField->{ValidID} eq '1';
 
             # for set fields also the contained dynamic fields have to be versioned
@@ -2358,7 +2367,7 @@ sub _DynamicFieldConfigTransform {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
 
-    if ( grep { $Param{DynamicFieldConfig}{FieldType} eq $_ } qw(Agent ConfigItem ConfigItemVersion CustomerCompany CustomerUser FAQ Ticket) ) {
+    if ( any { $Param{DynamicFieldConfig}{FieldType} eq $_ } qw(Agent ConfigItem ConfigItemVersion CustomerCompany CustomerUser FAQ Ticket) ) {
 
         # needed transformation: Name -> ID
         if ( $Param{Action} eq 'Import' ) {
@@ -2488,7 +2497,7 @@ changed.
 sub _DefinitionCreateAfterRoleCreate {
     my ( $Self, %Param ) = @_;
 
-    # get the name of the roled the name of the role to the role definition
+    # get the name of the role to the role definition
     my $RoleName;
     {
         my $RoleID      = $Param{RoleID};

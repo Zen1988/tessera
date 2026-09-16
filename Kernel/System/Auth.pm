@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -184,29 +184,26 @@ sub Auth {
         # A failed two factor auth after successful sync will result
         # in a new or updated user but no information or permission leak.
 
-        # Get the explicitly configured auth sync backend for the current auth backend,
-        # which has just verified the authentication.
+        # Sync via the explicitly configured auth sync backend for the current auth backend.
+        # This is the backend which has just verified the authentication.
         # $AuthSyncBackend must be the key for one of the already loaded auth sync backends.
-        my $AuthSyncBackend =
-            $ConfigObject->Get("AuthModule::UseSyncBackend$Count")
-            //
-            $ConfigObject->Get("AuthModule{$Count}::UseSyncBackend");
-
-        # for backwards compatibility, OTRS 3.1.1, 3.1.2 and 3.1.3 used this wrong format (see bug#8387)
-
-        # sync with configured auth backend
+        # Only a single backend is supported in this case.
+        my $AuthSyncBackend = $ConfigObject->Get("AuthModule::UseSyncBackend$Count");
         if ( defined $AuthSyncBackend ) {
 
-            # if $AuthSyncBackend is defined but empty, don't sync with any backend
             if ($AuthSyncBackend) {
 
-                # sync configured backend
+                # sync via the configured backend
                 $Self->{$AuthSyncBackend}->Sync( %Param, User => $User );
+            }
+            else {
+                # do nothing
+                # if $AuthSyncBackend is defined but empty, don't sync with any backend
             }
         }
 
-        # Run all of the potentially 11 sync backends, creating the user
-        # in the database on the first match.
+        # When there sync backend is not declared then run all of the potentially 11 sync backends.
+        # The user is created in the database on the first match.
         # This means that different backend can provide different pieces,
         # or that later backends may overwrite data from previous backends.
         else {

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,6 +25,8 @@ use v5.24;
 use strict;
 use warnings;
 use utf8;
+use experimental 'bitwise'; # can be removed when "use v5.28" is active
+use feature 'bitwise';      # can be removed when "use v5.28" is active
 
 # core modules
 use Digest::MD5    qw(md5_hex);
@@ -37,6 +39,7 @@ use File::stat     qw(stat);
 use Try::Tiny;
 
 # OTOBO modules
+use Kernel::MinimalPerlVersion    ();
 use Kernel::System::ModuleRefresh (); # based on Module::Refresh
 
 our @EXPORT = qw(Translatable); ## no critic qw(Modules::ProhibitAutomaticExportation)
@@ -142,8 +145,9 @@ sub LoadDefaults {
     $Self->{DatabasePw} = 'some-pass';
 
     # DatabaseDSN
-    # The database DSN for MySQL ==> more: "perldoc DBD::mysql"
-    $Self->{DatabaseDSN} = "DBI:mysql:database=<OTOBO_CONFIG_Database>;host=<OTOBO_CONFIG_DatabaseHost>;";
+    # The database DSN for MySQL and MariaDB ==> more: "perldoc DBD::MariaDB"
+    # Note that internally a DSN starting with 'DBI:mysql' would be switched to 'DBI:MariaDB'
+    $Self->{DatabaseDSN} = "DBI:MariaDB:database=<OTOBO_CONFIG_Database>;host=<OTOBO_CONFIG_DatabaseHost>;";
 
     # The database DSN for PostgreSQL ==> more: "perldoc DBD::Pg"
 #    $Self->{DatabaseDSN} = "DBI:Pg:dbname=<OTOBO_CONFIG_Database>;host=<OTOBO_CONFIG_DatabaseHost>;";
@@ -161,24 +165,33 @@ sub LoadDefaults {
     # Set the attributes needed for encrypted database connections here.
     $Self->{DatabaseAttribute} = {};
 
-    # Activate these attributes when the connection to the MariaDB or MySQL database is secured by TLS.
+    # Activate 'mariadb_ssl_*' attributes when the connection to the MariaDB or MySQL database is secured by TLS.
     # For a list of all supported parameters see https://metacpan.org/pod/DBD::mysql#connect
     # Note that these attributes apply only to the main database connections. Depending on the
     # setup, the customer database may also use the main connection.
     #
-    #    mysql_ssl             : boolean, enforce encryption with TLS
-    #    mysql_ssl_ca          : specify the certificate authority file
-    #                            Do not specify this with self signed certificates.
-    #                            See https://serverfault.com/questions/399487/cant-connect-to-mysql-using-self-signed-ssl-certificate
-    #    mysql_ssl_client_cert : PEM certificate
-    #    mysql_ssl_client_key  : private key of the client, the server must have the public key
-    #    mysql_ssl_optional    : boolean workarounda for strange behavior when connecting
-    #                            see  https://github.com/perl5-dbi/DBD-mysql/issues/333#issuecomment-888972939
+    #    mariadb_ssl                    : boolean, enforce encryption with TLS
+    #    mariadb_ssl_ca                 : specify the certificate authority file
+    #                                     Do not specify this with self signed certificates.
+    #                                     See https://serverfault.com/questions/399487/cant-connect-to-mysql-using-self-signed-ssl-certificate
+    #    mariadb_ssl_client_cert        : PEM certificate
+    #    mariadb_ssl_client_key         : private key of the client, the server must have the public key
+    #    mariadb_ssl_optional           : boolean workarounda for strange behavior when connecting
+    #                                     see  https://github.com/perl5-dbi/DBD-mysql/issues/333#issuecomment-888972939
+    #    mariadb_ssl_verify_server_cert : activate check of the server certificate
+    #
+    # This example prohibits the fallback to unsecured communication. Beware that DBD::MariaDB seems to be banning
+    # settings where man in the middle attacks are possible. When mariadb_ssl_optional = 0 is set
+    # then mariadb_ssl_verify_server_cert => 1 must also be passed. This means that the server certificate CN
+    # must be the DNS name which the client uses to connect to the server. In the Docker use case that CN is db.
+    #Alternatively specifying a subject alternative name SAN should work to. But this hasn't been tested.
 #    $Self->{DatabaseAttribute} = {
-#        mysql_ssl             => 1,
-#        mysql_ssl_client_cert => '/opt/otobo/tls/client-cert.pem',
-#        mysql_ssl_client_key  => '/opt/otobo/tls/client-key.pem',
-#        mysql_ssl_optional    => 1,
+#        mariadb_ssl                    => 1,
+#        mariadb_ssl_ca_file            => '/opt/otobo/tls/ca-cert.pem',
+#        mariadb_ssl_client_cert        => '/opt/otobo/tls/client-cert.pem',
+#        mariadb_ssl_client_key         => '/opt/otobo/tls/client-key.pem',
+#        mariadb_ssl_optional           => 0,
+#        mariadb_ssl_verify_server_cert => 1,
 #    };
 
     # Setup for all database connections.
@@ -217,6 +230,7 @@ sub LoadDefaults {
     # --------------------------------------------------- #
     # default valid
     $Self->{DefaultValid} = 'valid';
+    $Self->{ValidateInputParams} = 1;
 
     # default language
     # (the default frontend language) [default: en]
@@ -421,7 +435,7 @@ sub LoadDefaults {
     $Self->{CheckEmailAddresses} = 1;
 
     # CheckMXRecord
-    # (Check mx recorde of used email addresses)
+    # (Check mx records of used email addresses)
     $Self->{CheckMXRecord} = 1;
 
     # CheckEmailValidAddress
@@ -495,7 +509,9 @@ sub LoadDefaults {
     # example values: AuthSyncBackend, AuthSyncBackend2
 #    $Self->{'AuthModule::UseSyncBackend'} = '';
 
-    # password crypt type (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
+    # crypt type of user passwords in the database (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
+    # It is discouraged to change this setting. The internally used default is 'sha2'.
+    # At least 'md5', 'apr1', 'crypt', and 'plain' are considered to be not really secure.
 #    $Self->{'AuthModule::DB::CryptType'} = 'sha2';
 
     # If "bcrypt" was selected for CryptType, use cost specified here for bcrypt hashing.
@@ -506,8 +522,21 @@ sub LoadDefaults {
     # (take care that Net::LDAP is installed!)
 #    $Self->{AuthModule} = 'Kernel::System::Auth::LDAP';
 #    $Self->{'AuthModule::LDAP::Host'} = 'ldap.example.com';
+#        to use ldaps protocol, specify url with ldaps:// scheme
+#            for example 'ldaps://ldap.example.com'
+#        to use a port different from ldaps default (636)
+#        specify the port as part of the URL:
+#            for example 'ldaps://ldap.example.com:737'
 #    $Self->{'AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
 #    $Self->{'AuthModule::LDAP::UID'} = 'uid';
+
+# to verify TLS certificates with ldaps protocol, configure
+#    $Self->{'AuthModule::LDAP::Params'} = {
+#        verify => 'require',
+#    };
+
+# alternatively to using ldaps, you can also use StartTLS
+#    $Self->{'AuthModule::LDAP::StartTLS'} = 'required';
 
     # Check if the user is allowed to auth in a posixGroup
     # (e. g. user needs to be in a group xyz to use otobo)
@@ -525,7 +554,7 @@ sub LoadDefaults {
 
     # in case you want to add always one filter to each ldap query, use
     # this option. e. g. AlwaysFilter => '(mail=*)' or AlwaysFilter => '(objectclass=user)'
-    # or if you want to filter with a locigal OR-Expression, like AlwaysFilter => '(|(mail=*abc.com)(mail=*xyz.com))'
+    # or if you want to filter with a logical OR-Expression, like AlwaysFilter => '(|(mail=*abc.com)(mail=*xyz.com))'
 #    $Self->{'AuthModule::LDAP::AlwaysFilter'} = '';
 
     # in case you want to add a suffix to each login name, then
@@ -547,8 +576,6 @@ sub LoadDefaults {
 #        async   => 0,
 #        version => 3,
 #    };
-    # Net::LDAP::start_tls verify type (if needed - for more info see Net::LDAP::start_tls)
-#    $Self->{'AuthModule::LDAP::StartTLS'} = 'required';
 
     # Die if backend can't work, e. g. can't connect to server.
 #    $Self->{'AuthModule::LDAP::Die'} = 1;
@@ -569,7 +596,7 @@ sub LoadDefaults {
     # for the latter the Action must be "Login"
 #    $Self->{'AuthModule::OpenIDConnect::Config'}{ClientSettings} = {
 #        ClientID    => 'abc123',
-#        RedirectURI => 'https://ncs.com.sg',
+#        RedirectURI => 'https://my.otobo.server/otobo/index.pl?Action=Login',
 #    };
     # For the authorization code flow the client secret has to be provided
 #    $Self->{'AuthModule::OpenIDConnect::Config'}{ClientSettings}{ClientSecret} = 's3cr3t';
@@ -593,7 +620,7 @@ sub LoadDefaults {
 #        UseNonce   => 1,      # add a nonce to request and token (this is primarily important for the implicit flow where it is enabled by default)
 #        RandLength => 22,     # length for state and nonce random strings - default: 22
 #        RandTTL    => 60 * 5, # valid time period for state and nonce (roughly the time a user can take to authenticate) - default: 300 s
-#        Leeway     => 2,      # leeway for small time differences between the OTOBO server and the OpenID provier - default: 2 s
+#        Leeway     => 2,      # leeway for small time differences between the OTOBO server and the OpenID provider - default: 2 s
 #    };
     # Optionally enable user authorization via the id token - hashes can be used for complex claims
 #    $Self->{'AuthModule::OpenIDConnect::RoleMap'} = {
@@ -630,8 +657,8 @@ sub LoadDefaults {
     # Note:
     # If you use this module, you should use as fallback the following
     # config settings if user isn't login through apache ($ENV{REMOTE_USER}).
-#    $Self->{LoginURL} = 'https://ncs.com.sg';
-#    $Self->{LogoutURL} = 'https://ncs.com.sg';
+#    $Self->{LoginURL} = 'http://host.example.com/not-authorised-for-otobo.html';
+#    $Self->{LogoutURL} = 'http://host.example.com/thanks-for-using-otobo.html';
 
     # This is example configuration to auth. agents against a radius server.
 #    $Self->{'AuthModule'} = 'Kernel::System::Auth::Radius';
@@ -669,13 +696,27 @@ sub LoadDefaults {
 
     # --------------------------------------------------- #
     # authentication sync settings                        #
-    # (enable agent data sync. after succsessful          #
+    # (enable agent data sync. after successful           #
     # authentication)                                     #
     # --------------------------------------------------- #
     # This is an example configuration for an LDAP auth sync. backend.
     # (take care that Net::LDAP is installed!)
 #    $Self->{AuthSyncModule} = 'Kernel::System::Auth::Sync::LDAP';
 #    $Self->{'AuthSyncModule::LDAP::Host'} = 'ldap.example.com';
+#        to use ldaps protocol, specify url with ldaps:// scheme
+#            for example 'ldaps://ldap.example.com'
+#        to use a port different from ldaps default (636)
+#        specify the port as part of the URL:
+#            for example 'ldaps://ldap.example.com:737'
+
+# to verify TLS certificates with ldaps protocol, configure
+#    $Self->{'AuthSyncModule::LDAP::Params'} = {
+#        verify => 'require',
+#    };
+
+# alternatively to using ldaps, you can also use StartTLS
+#    $Self->{'AuthSyncModule::LDAP::StartTLS'} = 'required';
+
 #    $Self->{'AuthSyncModule::LDAP::BaseDN'} = 'dc=example,dc=com';
 #    $Self->{'AuthSyncModule::LDAP::UID'} = 'uid';
 #    $Self->{'AuthSyncModule::LDAP::GroupDN'} = 'cn=otoboallow,ou=posixGroups,dc=example,dc=com';
@@ -710,8 +751,6 @@ sub LoadDefaults {
 #        async   => 0,
 #        version => 3,
 #    };
-    # Net::LDAP::start_tls verify type (if needed - for more info see Net::LDAP::start_tls)
-#    $Self->{'AuthSyncModule::LDAP::StartTLS'} = 'required';
 
 
     # Die if backend can't work, e. g. can't connect to server.
@@ -933,7 +972,7 @@ sub LoadDefaults {
 
     # SessionDeleteIfNotRemoteID
     # (Delete session if the session id is used with an
-    # invalied remote IP?) [0|1]
+    # invalid remote IP?) [0|1]
     $Self->{SessionDeleteIfNotRemoteID} = 1;
 
     # SessionMaxTime
@@ -949,20 +988,12 @@ sub LoadDefaults {
     # (Delete session's witch are requested and to old?) [0|1]
     $Self->{SessionDeleteIfTimeToOld} = 1;
 
-    # SessionUseCookie
-    # (Should the session management use html cookies?
-    # It's more comfortable to send links -==> if you have a valid
-    # session, you don't have to login again.) [0|1]
-    # Note: If the client browser disabled html cookies, the system
-    # will work as usual, append SessionID to links!
-    $Self->{SessionUseCookie} = 1;
-
     # SessionUseCookieAfterBrowserClose
     # (store cookies in browser after closing a browser) [0|1]
     $Self->{SessionUseCookieAfterBrowserClose} = 0;
 
     # SessionDir
-    # directory for all sessen id information (just needed if
+    # directory for all session id information (just needed if
     # $Self->{SessionModule}='Kernel::System::AuthSession::FS)
     $Self->{SessionDir} = '<OTOBO_CONFIG_Home>/var/sessions';
 
@@ -1024,7 +1055,7 @@ sub LoadDefaults {
     $Self->{WebMaxFileUpload} = 48000000;
 
     # WebUploadCacheModule
-    # (select you WebUploadCacheModule module, default DB [DB|FS])
+    # (select your WebUploadCacheModule module, default DB [DB|FS])
     $Self->{WebUploadCacheModule} = 'Kernel::System::Web::UploadCache::DB';
 
 #    $Self->{WebUploadCacheModule} = 'Kernel::System::Web::UploadCache::FS';
@@ -1078,7 +1109,10 @@ sub LoadDefaults {
     # article dir
     $Self->{'Ticket::Article::Backend::MIMEBase::ArticleDataDir'} = '<OTOBO_CONFIG_Home>/var/article';
 
-    # html template dirs
+    # HTML template dirs
+    #
+    # TemplateDir is also used for assembling the path Kernel/Output/HMTL/Layout/,
+    # which holds the base classes of the Kernel::Output::HTML::Layout module
     $Self->{TemplateDir}       = '<OTOBO_CONFIG_Home>/Kernel/Output';
     $Self->{CustomTemplateDir} = '<OTOBO_CONFIG_Home>/Custom/Kernel/Output';
 
@@ -1232,7 +1266,7 @@ sub LoadDefaults {
     # --------------------------------------------------- #
 
     # Package::RepositoryRoot
-    # (get online repository list, use the fist availabe result)
+    # (get online repository list, use the fist available result)
     $Self->{'Package::RepositoryRoot'} = [
         'https://ftp.otobo.org/pub/otobo/misc/packages/repository.xml',
     ];
@@ -1401,7 +1435,7 @@ You can log in via the following URL:
 
     # CustomerGroupSupport (0 = compatible to previous behavior)
     # (if this is 1, the you need to set the group <-> customer user
-    # relations! https://ncs.com.sg
+    # relations! http://host/otobo/index.pl?Action=AdminCustomerUserGroup
     # otherway, each user is ro/rw in each group!)
     $Self->{CustomerGroupSupport} = 0;
 
@@ -1452,7 +1486,7 @@ You can log in via the following URL:
     $Self->{CustomerPanelLostPassword} = 1;
 
     # CustomerPanelCreateAccount
-    # (use create cutomer account self feature)
+    # (use create customer account self feature)
     $Self->{CustomerPanelCreateAccount} = 1;
 
     # --------------------------------------------------- #
@@ -1500,20 +1534,36 @@ via the Preferences button after logging in.
     $Self->{'Customer::AuthModule::DB::CustomerKey'}      = 'login';
     $Self->{'Customer::AuthModule::DB::CustomerPassword'} = 'pw';
 
-#    $Self->{'Customer::AuthModule::DB::DSN'} = "DBI:mysql:database=customerdb;host=customerdbhost";
+#    $Self->{'Customer::AuthModule::DB::DSN'} = "DBI:MariaDB:database=customerdb;host=customerdbhost";
 #    $Self->{'Customer::AuthModule::DB::User'} = "some_user";
 #    $Self->{'Customer::AuthModule::DB::Password'} = "some_password";
 
     # if you use odbc or you want to define a database type (without autodetection)
 #    $Self->{'Customer::AuthModule::DB::Type'} = 'mysql';
 
-    # password crypt type (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
+    # crypt type of customer passwords in the database (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
+    # It is discouraged to change this setting. The internally used default is 'sha2'.
+    # At least 'md5', 'apr1', 'crypt', and 'plain' are considered to be not really secure.
 #    $Self->{'Customer::AuthModule::DB::CryptType'} = 'sha2';
 
     # This is an example configuration for an LDAP auth. backend.
     # (take care that Net::LDAP is installed!)
 #    $Self->{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::LDAP';
 #    $Self->{'Customer::AuthModule::LDAP::Host'} = 'ldap.example.com';
+#        to use ldaps protocol, specify url with ldaps:// scheme
+#            for example 'ldaps://ldap.example.com'
+#        to use a port different from ldaps default (636)
+#        specify the port as part of the URL:
+#            for example 'ldaps://ldap.example.com:737'
+
+# to verify TLS certificates with ldaps protocol, configure
+#    $Self->{'Customer::AuthModule::LDAP::Params'} = {
+#        verify => 'require',
+#    };
+
+# alternatively to using ldaps, you can also use StartTLS
+#    $Self->{'Customer::AuthModule::LDAP::StartTLS'} = 'required';
+
 #    $Self->{'Customer::AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
 #    $Self->{'Customer::AuthModule::LDAP::UID'} = 'uid';
 
@@ -1569,7 +1619,7 @@ via the Preferences button after logging in.
     # for the latter the Action must be "Login"
 #    $Self->{'Customer::AuthModule::OpenIDConnect::Config'}{ClientSettings} = {
 #        ClientID    => 'abc123',
-#        RedirectURI => 'https://ncs.com.sg',
+#        RedirectURI => 'https://my.otobo.server/otobo/customer.pl?Action=Login',
 #    };
     # For the authorization code flow the client secret has to be provided
 #    $Self->{'Customer::AuthModule::OpenIDConnect::Config'}{ClientSettings}{ClientSecret} = 's3cr3t';
@@ -1593,7 +1643,7 @@ via the Preferences button after logging in.
 #        UseNonce   => 1,      # add a nonce to request and token (this is primarily important for the implicit flow where it is enabled by default)
 #        RandLength => 22,     # length for state and nonce random strings - default: 22
 #        RandTTL    => 60 * 5, # valid time period for state and nonce (roughly the time a user can take to authenticate) - default: 300 s
-#        Leeway     => 2,      # leeway for small time differences between the OTOBO server and the OpenID provier - default: 2 s
+#        Leeway     => 2,      # leeway for small time differences between the OTOBO server and the OpenID provider - default: 2 s
 #    };
     # For debugging purposes you can dump all IDTokens received to the log
 #    $Self->{'Customer::AuthModule::OpenIDConnect::Debug'}->{'LogIDToken'} = 1;
@@ -1612,8 +1662,8 @@ via the Preferences button after logging in.
 #    $Self->{'Customer::AuthModule::HTTPBasicAuth::ReplaceRegExp'} = '^(.+?)@.+?$';
     # If you use this module, you should use as fallback the following
     # config settings if user isn't login through apache ($ENV{REMOTE_USER})
-#    $Self->{CustomerPanelLoginURL} = 'https://ncs.com.sg';
-#    $Self->{CustomerPanelLogoutURL} = 'https://ncs.com.sg';
+#    $Self->{CustomerPanelLoginURL} = 'http://host.example.com/not-authorised-for-otobo.html';
+#    $Self->{CustomerPanelLogoutURL} = 'http://host.example.com/thanks-for-using-otobo.html';
 
     # This is example configuration to auth. agents against a radius server
 #    $Self->{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';
@@ -1665,7 +1715,7 @@ via the Preferences button after logging in.
             # required settings
 #            DSN  => 'DBI:odbc:yourdsn',
 #            Type => 'mssql', # only for ODBC connections
-#            DSN => 'DBI:mysql:database=customerdb;host=customerdbhost',
+#            DSN => 'DBI:MariaDB:database=customerdb;host=customerdbhost',
 #            # Extra connect attributes can be used for secured connections
 #            Attribute => {
 #                mysql_ssl             => 1,
@@ -1781,7 +1831,7 @@ via the Preferences button after logging in.
 #        Module => 'Kernel::System::CustomerUser::LDAP',
 #        Params => {
 #            # ldap host
-#            Host => 'bay.csuhayward.edu',
+#            Host => 'ldaps://bay.csuhayward.edu',
 #            # ldap base dn
 #            BaseDN => 'ou=seas,o=csuh',
 #            # search scope (one|sub)
@@ -1803,6 +1853,7 @@ via the Preferences button after logging in.
 #                timeout => 120,
 #                async   => 0,
 #                version => 3,
+#                verify  => 'require',
 #            },
 #        },
 #        # customer unique id
@@ -1861,7 +1912,7 @@ via the Preferences button after logging in.
             # required settings
 #            DSN  => 'DBI:odbc:yourdsn',
 #            Type => 'mssql', # only for ODBC connections
-#            DSN => 'DBI:mysql:database=customerdb;host=customerdbhost',
+#            DSN => 'DBI:MariaDB:database=customerdb;host=customerdbhost',
 #            # Extra connect attributes can be used for secured connections
 #            Attribute => {
 #                mysql_ssl             => 1,
@@ -2467,7 +2518,7 @@ sub AutoloadPerlPackages {
 
         my $ConfigValue = $AutoloadConfiguration{$ConfigKey};
 
-        next CONFIGKEY if ref $ConfigValue ne 'ARRAY';
+        next CONFIGKEY unless ref $ConfigValue eq 'ARRAY';
 
         PACKAGE:
         for my $Package ( @{$ConfigValue} ) {
@@ -2487,7 +2538,7 @@ sub AutoloadPerlPackages {
                 require $FileName . '.pm'; ## nofilter(TidyAll::Plugin::OTOBO::Perl::Require)
             }
             catch {
-                print STDERR "ERROR: $_!\n";
+                say STDERR "ERROR: $_";
             }
         }
     }

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -105,7 +105,7 @@ sub Run {
     if ( !$Export ) {
         my %Result;
         $Result{Message}    = $Self->{LanguageObject}->Translate("Migrate configuration settings.");
-        $Result{Comment}    = $Self->{LanguageObject}->Translate("An error occurred during SysConfig data migration or no configuration exists.");
+        $Result{Comment}    = $Self->{LanguageObject}->Translate("An error occurred during system configuration data migration or no configuration exists.");
         $Result{Successful} = 1;
 
         return \%Result;
@@ -181,7 +181,7 @@ sub Run {
 
         return {
             Message    => $Self->{LanguageObject}->Translate("Migrate configuration settings."),
-            Comment    => $Self->{LanguageObject}->Translate("An error occurred during SysConfig migration when writing XML to DB."),
+            Comment    => $Self->{LanguageObject}->Translate("An error occurred during system configuration migration when writing XML to DB."),
             Successful => 0,
         };
     }

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,8 @@
 # --
 
 package Kernel::Config;
+
+=for stopwords redis
 
 =head1 NAME
 
@@ -53,8 +55,8 @@ the MySQL database is running in a separate container.
 
 =item DatabasePw
 
-A different default password is used in the Docker case, as that potential
-mixups with a database running on the Docker host are less likely.
+A different default password is used in the Docker case. This is meant to make
+mix-ups with a database running on the Docker host less likely.
 
 =item LogModule and LogModule::LogFile
 
@@ -64,9 +66,9 @@ As this specific location as it is located on the volume that is visible from th
 
 =item Cache::Module and Cache::Redis
 
-Use Redis as the caching backend. In out of the box Docker based installation the
-Redis server is running in the same local network as the web server. The host name is
-simply I<redis> (with "Holding back the years" quietly playing in the background).
+Up to OTOBO 11.0.x the default caching backend was chosen to be Redis.
+This has changed in OTOBO 11.1.x. The default cache backend under Docker is
+now C<FileStorable> just like in native installations.
 
 =item TestHTTPHostname
 
@@ -107,8 +109,9 @@ sub Load {
     # for crypted passwords
     $Self->{DatabasePw} = 'otobo-docker-databasepw';
 
-    # The database DSN for MySQL ==> more: "perldoc DBD::mysql"
-    $Self->{DatabaseDSN} = "DBI:mysql:database=$Self->{Database};host=$Self->{DatabaseHost};";
+    # The database DSN for MySQL and MariaDB ==> more: "perldoc DBD::MariaDB"
+    # Note that internally a DSN starting with 'DBI:mysql' would be switched to 'DBI:MariaDB'
+    $Self->{DatabaseDSN} = "DBI:MariaDB:database=$Self->{Database};host=$Self->{DatabaseHost};";
 
     # The database DSN for PostgreSQL ==> more: "perldoc DBD::Pg"
     # if you want to use a local socket connection
@@ -138,9 +141,6 @@ sub Load {
     # ---------------------------------------------------- #
     $Self->{'LogModule'}                   = 'Kernel::System::Log::File';
     $Self->{'LogModule::LogFile'}          = '/opt/otobo/var/log/otobo.log';
-    $Self->{'Cache::Module'}               = 'Kernel::System::Cache::Redis';
-    $Self->{'Cache::Redis'}->{'RedisFast'} = 1;
-    $Self->{'Cache::Redis'}->{'Server'}    = 'redis:6379';
     $Self->{'TestHTTPHostname'}            = 'web:5000';
 
     # -------------------------------------------------#
@@ -159,8 +159,8 @@ sub Load {
     # config settings taken from Kernel/Config/Defaults.pm #
     # ---------------------------------------------------- #
 
-    # $Self->{SessionUseCookie} = 0;
-    # $Self->{CheckMXRecord} = 0;
+    # for example:
+    #$Self->{CheckMXRecord} = 0;
 
     # ---------------------------------------------------- #
     # end of your own config options!!!                    #

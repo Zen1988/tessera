@@ -419,14 +419,14 @@
         <Description Translatable="1">This option defines the dynamic field in which a Process Management process entity id is stored.</Description>
         <Navigation>Core::ProcessManagement</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">ProcessManagementProcessID</Item>
+            <Item ValueType="Entity" ValueEntityType="DynamicField" ValueEntitySubType="Ticket" ValueRegex="">ProcessManagementProcessID</Item>
         </Value>
     </Setting>
     <Setting Name="Process::DynamicFieldProcessManagementActivityID" Required="1" Valid="1">
         <Description Translatable="1">This option defines the dynamic field in which a Process Management activity entity id is stored.</Description>
         <Navigation>Core::ProcessManagement</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">ProcessManagementActivityID</Item>
+            <Item ValueType="Entity" ValueEntityType="DynamicField" ValueEntitySubType="Ticket" ValueRegex="">ProcessManagementActivityID</Item>
         </Value>
     </Setting>
     <Setting Name="Process::DefaultQueue" Required="1" Valid="1">
@@ -684,7 +684,7 @@
             <Item ValueType="Checkbox">1</Item>
         </Value>
     </Setting>
-    <Setting Name="Ticket::Frontend::AgentTicketProcess###QuickDateButtons" Required="0" Valid="1">
+    <Setting Name="Ticket::Frontend::AgentTicketProcess###QuickDateButtons" Required="0" Valid="0">
         <Description Translatable="1">This option sets additional quick date buttons to pending dates. For ordering purposes one hash entry per array segment has to be set. The key is the button name, value is the value, where a single number n sets the date to n days from now, +n adds n days to the currently set date, and -n subtracts them.</Description>
         <Navigation>Frontend::Agent::View::TicketProcess</Navigation>
         <Value>
@@ -713,4 +713,17 @@
             <Item ValueType="Checkbox">0</Item>
         </Value>
     </Setting>
+
+    <!-- Namespaces -->
+    <Setting Name="Namespaces###ProcessManagement" Required="0" Valid="0">
+        <Description Translatable="1">Define possible namespaces specifically for process elements. Must only contain alphanumeric characters. A namespace must not be longer than 64 characters.</Description>
+        <Navigation>Core::Namespaces</Navigation>
+        <Value>
+            <Array>
+                <DefaultItem ValueType="String" ValueRegex="^[a-zA-Z0-9]{1,64}$"></DefaultItem>
+            </Array>
+        </Value>
+    </Setting>
+    <!-- End Namespaces -->
+
 </otobo_config>

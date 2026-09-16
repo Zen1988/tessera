@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -95,6 +95,11 @@ sub Params {
             Value    => '12345 (set dynamic field value of other than the process ticket itself)',
             Optional => 1,
         },
+        {
+            Key      => 'ExternalSource',
+            Value    => '1 (treat value as external source for reference fields)',
+            Optional => 1,
+        },
     );
 
     return @Params;
@@ -181,6 +186,11 @@ sub Run {
         $TicketID = $Param{Ticket}->{TicketID};
     }
 
+    my %ExternalSource;
+    if ( delete $Param{Config}{ExternalSource} ) {
+        $ExternalSource{ExternalSource} = 1;
+    }
+
     for my $CurrentDynamicField ( sort keys %{ $Param{Config} } ) {
 
         # get required DynamicField config
@@ -216,6 +226,7 @@ sub Run {
             Value              => $Param{Config}->{$CurrentDynamicField},
             UserID             => $Param{UserID},
             EditFieldValue     => 0,
+            %ExternalSource,
         );
 
         # check if everything went right

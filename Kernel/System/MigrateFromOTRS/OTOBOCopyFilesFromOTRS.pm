@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -153,7 +153,7 @@ sub Run {
 
         return {
             Message    => $Self->{LanguageObject}->Translate($Message),
-            Comment    => $Self->{LanguageObject}->Translate( "Can't access OTRS Home: %s!", $Param{OTRSData}->{OTRSHome} ),
+            Comment    => $Self->{LanguageObject}->Translate( "Can't access OTRS home directory: %s!", $Param{OTRSData}->{OTRSHome} ),
             Successful => 0,
         };
     }
@@ -251,7 +251,7 @@ sub Run {
         # Note that the original setup with variables won't be preserved. E.g.
         #     $Self->{'DatabaseDSN'} = "DBI:Pg:dbname=$Self->{Database};host=$Self->{DatabaseHost}";
         # in the original OTOBO Kernel/Config.pm will end up as
-        #     $Self->{'DatabaseDSN'} = "DBI:mysql:database=otobo;host=127.0.0.1;"; # from original OTOBO config
+        #     $Self->{'DatabaseDSN'} = "DBI:MariaDB:database=otobo;host=127.0.0.1;"; # from original OTOBO config
         # after the migration.
         if ( $OTOBOPathFile =~ m/Config\.pm/ ) {
 

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,11 +40,12 @@ sub Configure {
     $Self->Description('Execute unit test scripts in scripts/test using TAP::Harness.');
     $Self->AddOption(
         Name        => 'directory',
-        Description => 'Can be specified several times. Run only test files in the specified sub directories of scripts/test. The path is relative to scripts/test/.',
-        Required    => 0,
-        HasValue    => 1,
-        Multiple    => 1,
-        ValueRegex  => qr/.*/smx,
+        Description =>
+            'Can be specified several times. Run only test files in the specified sub directories of scripts/test. The path is relative to scripts/test/.',
+        Required   => 0,
+        HasValue   => 1,
+        Multiple   => 1,
+        ValueRegex => qr/.*/smx,
     );
     $Self->AddOption(
         Name        => 'test',
@@ -98,6 +99,8 @@ sub Configure {
         ValueRegex  => qr/.*/smx,
         Multiple    => 1
     );
+
+    # none, one or multiple directories or scripts can be passed
     $Self->AddArgument(
         Name        => 'test-script-path',
         Description => "Paths to directories with test scripts or to single test scripts. All other test selection options will be ignored.",
@@ -125,15 +128,15 @@ sub Run {
     );
 
     my $FunctionResult = $Kernel::OM->Get('Kernel::System::UnitTest')->Run(
-        Tests            => $Self->GetOption('test'),
-        TestScriptPathes => $Self->GetArgument('test-script-path'),
-        Directory        => $Self->GetOption('directory'),
-        SOPMFiles        => $Self->GetOption('sopm'),
-        Packages         => $Self->GetOption('package'),
-        Verbose          => $Self->GetOption('verbose'),
-        Merge            => $Self->GetOption('merge'),
-        Shuffle          => $Self->GetOption('shuffle'),
-        PostTestScripts  => $Self->GetOption('post-test-script'),
+        Tests           => $Self->GetOption('test'),
+        TestScriptPaths => $Self->GetArgument('test-script-path'),
+        Directory       => $Self->GetOption('directory'),
+        SOPMFiles       => $Self->GetOption('sopm'),
+        Packages        => $Self->GetOption('package'),
+        Verbose         => $Self->GetOption('verbose'),
+        Merge           => $Self->GetOption('merge'),
+        Shuffle         => $Self->GetOption('shuffle'),
+        PostTestScripts => $Self->GetOption('post-test-script'),
     );
 
     return $Self->ExitCodeOk if $FunctionResult;

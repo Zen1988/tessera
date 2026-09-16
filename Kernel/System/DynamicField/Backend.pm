@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::Valid',
     'Kernel::System::Web::FormCache',
 );
 
@@ -68,7 +69,7 @@ sub new {
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    # get the Dynamic Field Backends configuration
+    # get the Dynamic Field Backend configurations
     my $DynamicFieldsConfig = $ConfigObject->Get('DynamicFields::Driver');
 
     # check Configuration format
@@ -85,6 +86,7 @@ sub new {
     my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
     # create all registered backend modules
+    FIELDTYPE:
     for my $FieldType ( sort keys %{$DynamicFieldsConfig} ) {
 
         # check if the registration for each field type is valid
@@ -94,7 +96,7 @@ sub new {
                 Message  => "Registration for field type $FieldType is invalid!",
             );
 
-            return;
+            next FIELDTYPE;
         }
 
         # set the backend file
@@ -107,7 +109,7 @@ sub new {
                 Message  => "Can't load dynamic field backend module for field type $FieldType!",
             );
 
-            return;
+            next FIELDTYPE;
         }
 
         # create a backend object
@@ -119,7 +121,7 @@ sub new {
                 Message  => "Couldn't create a backend object for field type $FieldType!",
             );
 
-            return;
+            next FIELDTYPE;
         }
 
         if ( ref $BackendObject ne $BackendModule ) {
@@ -128,7 +130,7 @@ sub new {
                 Message  => "Backend object for field type $FieldType was not created successfully!",
             );
 
-            return;
+            next FIELDTYPE;
         }
 
         # remember the backend object
@@ -142,6 +144,7 @@ sub new {
     if ( IsHashRefWithData($DynamicFieldObjectTypeConfig) ) {
 
         # create all registered ObjectType handler modules
+        OBJECTTYPE:
         for my $ObjectType ( sort keys %{$DynamicFieldObjectTypeConfig} ) {
 
             # check if the registration for each field type is valid
@@ -151,7 +154,7 @@ sub new {
                     Message  => "Registration for object type $ObjectType is invalid!",
                 );
 
-                return;
+                next OBJECTTYPE;
             }
 
             # set the backend file
@@ -165,7 +168,7 @@ sub new {
                         "Can't load dynamic field object handler module for object type $ObjectType!",
                 );
 
-                return;
+                next OBJECTTYPE;
             }
 
             # create a backend object
@@ -180,7 +183,7 @@ sub new {
                     Message  => "Couldn't create a handler object for object type $ObjectType!",
                 );
 
-                return;
+                next OBJECTTYPE;
             }
 
             if ( ref $ObjectHandlerObject ne $ObjectHandlerModule ) {
@@ -189,7 +192,7 @@ sub new {
                     Message  => "Handler object for object type $ObjectType was not created successfully!",
                 );
 
-                return;
+                next OBJECTTYPE;
             }
 
             # remember the backend object
@@ -214,7 +217,12 @@ sub new {
 
         # check if module can be loaded
         if ( !$MainObject->RequireBaseClass( $Extension->{Module} ) ) {
-            die "Can't load dynamic fields backend module $Extension->{Backend}! $@";
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Can't load dynamic fields backend module $Extension->{Backend}! $@",
+            );
+
+            next EXTENSION;
         }
     }
 
@@ -246,7 +254,7 @@ creates the field and label HTML to be used in edit masks.
         ServerError          => 1,                        # 0 or 1,
         ErrorMessage         => $ErrorMessage,            # Optional or a default will be used in error case
         UseDefaultValue      => 1,                        # 0 or 1, 1 default
-        OverridePossibleNone => 1,                        # Optional, 0 or 1. If defined orverrides the Possible None
+        OverridePossibleNone => 1,                        # Optional, 0 or 1. If defined overrides the Possible None
                                                           #     setting of all dynamic fields (where applies) with the
                                                           #     defined value
         ConfirmationNeeded   => 0,                        # Optional, 0 or 1, default 0. To display a confirmation element
@@ -254,7 +262,7 @@ creates the field and label HTML to be used in edit masks.
         AJAXUpdate           => 1,                        # Optional, 0 ir 1. To create JS code for field change to update
                                                           #     the form using ACLs triggered by the field.
         UpdatableFields      => [                         # Optional, to use if AJAXUpdate is 1. List of fields to display a
-            'NetxStateID',                                #     spinning wheel when reloading via AJAXUpdate.
+            'NextStateID',                                #     spinning wheel when reloading via AJAXUpdate.
             'PriorityID',
         ],
         MaxLength            => 100                       # Optional, defines the maximum number of characters on fields
@@ -2289,14 +2297,14 @@ checks if the dynamic field as an specified behavior
 
     my $HasBehavior = $BackendObject->HasBehavior(
         DynamicFieldConfig => $DynamicFieldConfig,       # complete config of the DynamicField
-        Behavior           => 'Some Behavior',           # 'IsACLReducible' to be reduded by ACLs
+        Behavior           => 'Some Behavior',           # 'IsACLReducible' to be reduced by ACLs
                                                          #    and updatable via AJAX
                                                          # 'IsNotificationEventCondition' to be used
                                                          #     in the notification events as a
                                                          #     ticket condition
                                                          # 'IsSortable' to sort by this field in
                                                          #     "Small" overviews
-                                                         # 'IsFiltrable' to enable columnwise filtering
+                                                         # 'IsFiltrable' to enable column-wise filtering
                                                          #     in ticket lists
                                                          # 'IsStatsCondition' to be used in
                                                          #     Statistics as a condition
@@ -2304,7 +2312,7 @@ checks if the dynamic field as an specified behavior
                                                          #     the field usable in the customer
                                                          #     interface
                                                          # 'IsHTMLContent' to indicate that there is
-                                                         #     HTML content (avoid double cnversion to HTML)
+                                                         #     HTML content (avoid double conversion to HTML)
                                                          # 'IsLikeOperatorCapable' to perform likewise
                                                          #     search in ValueSearch function
                                                          # 'IsHiddenInTicketInformation' to hide the field
@@ -2312,7 +2320,7 @@ checks if the dynamic field as an specified behavior
                                                          # 'IsReferenceField' to indicate that the field
                                                          #     is of type reference
                                                          # 'IsScriptField' to indicate that the field
-                                                         #     is a script field with an evaluatable
+                                                         #     is a script field with an evaluate-able
                                                          #     expression
                                                          # 'IsSetCapable' to be used within Set fields
                                                          # 'SetsDynamicContent' to define that the field
@@ -2833,7 +2841,7 @@ The following functions should be only used if the dynamic field has IsFiltrable
 get the list of distinct values for a dynamic field from a list of tickets
 
     my $ColumnFilterValues = $BackendObject->ColumnFilterValuesGet(
-        DynamicFieldConfig => $DynamicFieldConfig,      #DynamicField configuraction
+        DynamicFieldConfig => $DynamicFieldConfig,      #DynamicField configuration
         LayoutObject       => $LayoutObject,
         TicketIDs          => [23, 1, 56, 74],          # array ref list of ticket IDs
     );
@@ -3216,6 +3224,232 @@ sub GetFieldState {
     }
 
     return;
+}
+
+=head2 BuildAJAXReturn()
+
+Used from Ticket Masks and returns an array of hashes which can just be pushed into @DynamicFieldAJAX.
+
+    my $Return = $BackendObject->BuildAJAXReturn(
+        DynamicFieldConfigs => $DFConfigs,         # the DF configs hash { name => config } to build AJAX for
+        GetParam            => $GetParam,          # current DF values as in Ticket Mask $GetParam
+        DynFieldStates      => $DynFieldStates,    # current ACL Dynamic Field states (visibility etc)
+    );
+
+Returns:
+
+    $Return = [
+        { ... },
+        { ... },
+    ];
+
+=cut
+
+sub BuildAJAXReturn {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(DynamicFieldConfigs GetParam DynFieldStates)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+
+            return;
+        }
+    }
+
+    my $DynamicFieldConfigs = $Param{DynamicFieldConfigs};
+    my $GetParam            = $Param{GetParam};
+    my $DynFieldStates      = $Param{DynFieldStates};
+    my $IDSuffix            = $Param{IDSuffix} // '';
+
+    my @DynamicFieldAJAX;    # return value
+
+    # cycle through the activated Dynamic Fields for this screen
+    DYNAMICFIELD:
+    for my $Name ( sort keys $DynFieldStates->{Fields}->%* ) {
+
+        my $DynamicFieldConfig = $DynamicFieldConfigs->{$Name};
+
+        if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} eq 'ARRAY' ) {
+            for my $i ( 0 .. $#{ $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} } ) {
+                my $DataValues = $DynFieldStates->{Fields}{$Name}{NotACLReducible}
+                    ? ( $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] // '' )
+                    :
+                    (
+                        $Self->BuildSelectionDataGet(
+                            DynamicFieldConfig => $DynamicFieldConfig,
+                            PossibleValues     => $DynFieldStates->{Fields}{$Name}{PossibleValues},
+                            Value              => [ $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i] ],
+                        )
+                        || $DynFieldStates->{Fields}{$Name}{PossibleValues}
+                    );
+
+                # add dynamic field to the list of fields to update
+                push @DynamicFieldAJAX, {
+                    Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . "_$i",
+                    Data        => $DataValues,
+                    SelectedID  => $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"}[$i],
+                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                    Max         => 100,
+                };
+            }
+
+            # add template value for keeping templates in line with ACLs
+            if ( !$DynFieldStates->{Fields}{$Name}{NotACLReducible} ) {
+                my $DataValues = (
+                    $Self->BuildSelectionDataGet(
+                        DynamicFieldConfig => $DynamicFieldConfig,
+                        PossibleValues     => $DynFieldStates->{Fields}{$Name}{PossibleValues},
+                        Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
+                        )
+                        || $DynFieldStates->{Fields}{$Name}{PossibleValues}
+                );
+
+                # add dynamic field to the list of fields to update
+                push @DynamicFieldAJAX, {
+                    Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . '_Template',
+                    Data        => $DataValues,
+                    SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
+                    Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                    Max         => 100,
+                };
+            }
+
+            next DYNAMICFIELD;
+        }
+
+        my $DataValues = $DynFieldStates->{Fields}{$Name}{NotACLReducible}
+            ? ( $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"} // '' )
+            :
+            (
+                $Self->BuildSelectionDataGet(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    PossibleValues     => $DynFieldStates->{Fields}{$Name}{PossibleValues},
+                    Value              => $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"},
+                )
+                || $DynFieldStates->{Fields}{$Name}{PossibleValues}
+            );
+
+        # add dynamic field to the list of fields to update
+        push @DynamicFieldAJAX, {
+            Name        => 'DynamicField_' . $DynamicFieldConfig->{Name},
+            Data        => $DataValues,
+            SelectedID  => $GetParam->{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"},
+            Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+            Max         => 100,
+        };
+    }
+
+    for my $SetField ( values $DynFieldStates->{Sets}->%* ) {
+
+        my $DynamicFieldConfig = $SetField->{DynamicFieldConfig};
+
+        # the frontend name is the name of the inner field including its index or the '_Template' suffix
+        DYNAMICFIELD:
+        for my $FrontendName ( keys $SetField->{FieldStates}->%* ) {
+
+            if ( $DynamicFieldConfig->{Config}{MultiValue} && ref $SetField->{Values}{$FrontendName} eq 'ARRAY' ) {
+                for my $i ( 0 .. $#{ $SetField->{Values}{$FrontendName} } ) {
+                    my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
+                        ? ( $SetField->{Values}{$FrontendName}[$i] // '' )
+                        :
+                        (
+                            $Self->BuildSelectionDataGet(
+                                DynamicFieldConfig => $DynamicFieldConfig,
+                                PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
+                                Value              => [ $SetField->{Values}{$FrontendName}[$i] ],
+                            )
+                            || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
+                        );
+
+                    # add dynamic field to the list of fields to update
+                    push @DynamicFieldAJAX, {
+                        Name        => 'DynamicField_' . $FrontendName . "_$i",
+                        Data        => $DataValues,
+                        SelectedID  => $SetField->{Values}{$FrontendName}[$i],
+                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                        Max         => 100,
+                    };
+                }
+
+                # add template value for keeping templates in line with ACLs
+                if ( !$SetField->{FieldStates}{$FrontendName}{NotACLReducible} ) {
+                    my $DataValues = (
+                        $Self->BuildSelectionDataGet(
+                            DynamicFieldConfig => $DynamicFieldConfig,
+                            PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
+                            Value              => [ $DynamicFieldConfig->{Config}{DefaultValue} // '' ],
+                            )
+                            || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
+                    );
+
+                    # add dynamic field to the list of fields to update
+                    push @DynamicFieldAJAX, {
+                        Name        => 'DynamicField_' . $DynamicFieldConfig->{Name} . '_Template',
+                        Data        => $DataValues,
+                        SelectedID  => $DynamicFieldConfig->{Config}{DefaultValue} // '',
+                        Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                        Max         => 100,
+                    };
+                }
+
+                next DYNAMICFIELD;
+            }
+
+            my $DataValues = $SetField->{FieldStates}{$FrontendName}{NotACLReducible}
+                ? ( $SetField->{Values}{$FrontendName} // '' )
+                :
+                (
+                    $Self->BuildSelectionDataGet(
+                        DynamicFieldConfig => $DynamicFieldConfig,
+                        PossibleValues     => $SetField->{FieldStates}{$FrontendName}{PossibleValues},
+                        Value              => $SetField->{Values}{$FrontendName},
+                    )
+                    || $SetField->{FieldStates}{$FrontendName}{PossibleValues}
+                );
+
+            # add dynamic field to the list of fields to update
+            push @DynamicFieldAJAX, {
+                Name        => 'DynamicField_' . $FrontendName,
+                Data        => $DataValues,
+                SelectedID  => $SetField->{Values}{$FrontendName},
+                Translation => $DynamicFieldConfig->{Config}{TranslatableValues} || 0,
+                Max         => 100,
+            };
+        }
+    }
+
+    # attach process suffix to dynamic field names in visibility hash
+    my %VisibilitySuffixed = $DynFieldStates->{Visibility}->%*;
+    if ($IDSuffix) {
+
+        my %VisibilityMapping;
+        for my $VisibilityKey ( keys $DynFieldStates->{Visibility}->%* ) {
+
+            my $VisibilityValue = $DynFieldStates->{Visibility}->{$VisibilityKey};
+            my $Index           = '';
+            if ( $VisibilityKey =~ m/((_[0-9]+)?(_[0-9]+)?(_Template)?)$/ ) {
+                $Index = $1;
+                $VisibilityKey =~ s/$Index//;
+            }
+            $VisibilityKey .= $IDSuffix . $Index;
+            $VisibilityMapping{$VisibilityKey} = $VisibilityValue;
+        }
+
+        %VisibilitySuffixed = %VisibilityMapping;
+    }
+
+    if ( IsHashRefWithData( $DynFieldStates->{Visibility} ) ) {
+        push @DynamicFieldAJAX, {
+            Name => 'Restrictions_Visibility',
+            Data => \%VisibilitySuffixed,
+        };
+    }
+
+    return @DynamicFieldAJAX;
 }
 
 1;

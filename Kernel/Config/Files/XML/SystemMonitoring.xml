@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <otobo_config version="2.0" init="Application">
     <Setting Name="PostMaster::PreFilterModule###1-SystemMonitoring" Required="0" Valid="1">
-        <Description Translatable="1">Basic mail interface to System Monitoring Suites. Use this block if the filter should run AFTER PostMasterFilter.</Description>
+        <Description Translatable="1">Basic mail interface to System Monitoring Suites. Use this block if the filter should run BEFORE PostMasterFilter.</Description>
         <Navigation>Core::Email::PostMaster</Navigation>
         <Value>
             <Hash>

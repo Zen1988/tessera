@@ -973,7 +973,10 @@ sub _SetValueFromDocument {
                 UserID             => $Param{UserID},
             );
 
-            $ImportRow{$FieldName} = defined $ImportValue ? $ImportValue : '';
+            $ImportRow{$FieldName} = $Self->_SetChildImportValue(
+                DynamicFieldConfig => $InnerField,
+                Value              => $ImportValue,
+            );
         }
 
         # DynamicField Set edit widgets can otherwise fall back to a first
@@ -982,13 +985,35 @@ sub _SetValueFromDocument {
         for my $FieldName ( sort keys %{$IncludedFields} ) {
             next MISSINGFIELD if exists $ImportRow{$FieldName};
 
-            $ImportRow{$FieldName} = '';
+            $ImportRow{$FieldName} = $Self->_SetChildImportValue(
+                DynamicFieldConfig => $IncludedFields->{$FieldName},
+                Value              => undef,
+            );
         }
 
         push @Rows, \%ImportRow;
     }
 
     return \@Rows;
+}
+
+sub _SetChildImportValue {
+    my ( $Self, %Param ) = @_;
+
+    my $Field = $Param{DynamicFieldConfig};
+    my $Value = $Param{Value};
+
+    # BaseEntity consumes one array per Set row, even for single selections.
+    # A scalar blank crashes its Set flattening; an empty array clears the row.
+    if ( $Self->_IsPortableObjectReference($Field)
+        || ( $Field->{FieldType} || '' ) eq 'GeneralCatalog' )
+    {
+        return $Value if ref $Value eq 'ARRAY';
+        return [] if !defined $Value || (!ref $Value && $Value eq '');
+        return [$Value];
+    }
+
+    return defined $Value ? $Value : '';
 }
 
 sub _IncludedDynamicFieldsGet {

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@ use utf8;
 use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 # core modules
-use Time::Local qw(timegm);
 
 # CPAN modules
 
@@ -37,7 +36,6 @@ use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
-    'Kernel::System::CustomerUser',
     'Kernel::System::DB',
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Log',
@@ -96,7 +94,6 @@ sub ValueSet {
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
-    my $Prefix          = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
     my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
 
     # check values
@@ -234,8 +231,8 @@ sub EditFieldRender {
     my @ValueParts;
     for my $ValueItem ( $Value->@* ) {
         $ValueItem //= '';
-        my ( $Year, $Month, $Day, $Hour, $Minute, $Second ) = $ValueItem =~
-            m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : ( \d{2} ) \z }xms;
+        my ( $Year, $Month, $Day, $Hour, $Minute ) = $ValueItem =~
+            m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : \d{2} \z }xms;
 
         # If a value is sent this value must be active, then the Used part needs to be set to 1
         #   otherwise user can easily forget to mark the checkbox and this could lead into data
@@ -288,15 +285,6 @@ sub EditFieldRender {
             YearPeriodPast   => $FieldConfig->{YearsInPast}   || 0,
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
         );
-    }
-    else {
-        %YearsPeriodRange = (
-            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
-            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
-        );
-    }
-    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
-        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
     }
 
     # date restrictions
@@ -651,35 +639,8 @@ sub EditFieldValueValidate {
     my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
 
     # get time object
-    my $DateTimeObject       = $Kernel::OM->Create('Kernel::System::DateTime');
-    my $SystemTime           = $DateTimeObject->ToEpoch();
-    my $BrowserOffsetMinutes = $Param{ParamObject}
-        ? $Param{ParamObject}->GetParam( Param => 'ZTSMServiceBrowserTimezoneOffset' )
-        : undef;
-    if ( defined $BrowserOffsetMinutes && $BrowserOffsetMinutes !~ m{\A-?\d+\z} ) {
-        $BrowserOffsetMinutes = undef;
-    }
-    if ( defined $BrowserOffsetMinutes && ( $BrowserOffsetMinutes < -840 || $BrowserOffsetMinutes > 840 ) ) {
-        $BrowserOffsetMinutes = undef;
-    }
-    my $CustomerUserTimeZone;
-    if ( $Param{CustomerUserID} ) {
-        my %CustomerUserPreferences = $Kernel::OM->Get('Kernel::System::CustomerUser')->GetPreferences(
-            UserID => $Param{CustomerUserID},
-        );
-        $CustomerUserTimeZone = $CustomerUserPreferences{UserTimeZone};
-    }
-    if (
-        $CustomerUserTimeZone
-        && !Kernel::System::DateTime->IsTimeZoneValid( TimeZone => $CustomerUserTimeZone )
-        )
-    {
-        $CustomerUserTimeZone = undef;
-    }
-
-    my $UserTimeZone = $CustomerUserTimeZone
-        || ( $Param{LayoutObject} && $Param{LayoutObject}->{UserTimeZone} )
-        || $DateTimeObject->OTOBOTimeZoneGet();
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $SystemTime     = $DateTimeObject->ToEpoch();
     my $HasValue;
     for my $ValueItem ( $Value->@* ) {
         $HasValue ||= $ValueItem->{ $Prefix . 'Used' };
@@ -696,98 +657,18 @@ sub EditFieldValueValidate {
                 $Year . '-' . $Month . '-' . $Day . ' '
                 . $Hour . ':' . $Minute . ':' . $Second;
 
-            my $ValueDateTimeObject;
-            my $ValueItemSystemTime;
-            if ( defined $BrowserOffsetMinutes ) {
-                $ValueItemSystemTime = eval {
-                    timegm( $Second, $Minute, $Hour, $Day, $Month - 1, $Year ) + ( $BrowserOffsetMinutes * 60 );
-                };
-                if ($@) {
-                    $ValueItemSystemTime = undef;
-                }
-            }
-            else {
-                $ValueDateTimeObject = $Kernel::OM->Create(
-                    'Kernel::System::DateTime',
-                    ObjectParams => {
-                        Year     => $Year,
-                        Month    => $Month,
-                        Day      => $Day,
-                        Hour     => $Hour,
-                        Minute   => $Minute,
-                        Second   => $Second,
-                        TimeZone => $UserTimeZone,
-                    },
-                );
-                $ValueItemSystemTime = $ValueDateTimeObject ? $ValueDateTimeObject->ToEpoch() : undef;
-            }
-
-            my $DeltaSeconds = defined $ValueItemSystemTime ? $ValueItemSystemTime - $SystemTime : undef;
-
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => sprintf(
-                    'TESSERA DateTime restriction check field=%s restriction=%s raw="%s" comparedAs="%s" userTimeZone=%s customerUserTimeZone=%s browserOffsetMinutes=%s valueEpoch=%s systemEpoch=%s deltaSeconds=%s source=%s layoutObject=%s',
-                    $Param{DynamicFieldConfig}->{Name} || '',
-                    $DateRestriction || '',
-                    $ManualTimeStamp || '',
-                    $ManualTimeStamp || '',
-                    $UserTimeZone || '',
-                    $CustomerUserTimeZone || '',
-                    defined $BrowserOffsetMinutes ? $BrowserOffsetMinutes : 'undef',
-                    defined $ValueItemSystemTime ? $ValueItemSystemTime : 'undef',
-                    defined $SystemTime          ? $SystemTime          : 'undef',
-                    defined $DeltaSeconds        ? $DeltaSeconds        : 'undef',
-                    defined $BrowserOffsetMinutes ? 'browser-offset' : 'user-timezone',
-                    $Param{LayoutObject} ? 1 : 0,
-                ),
+            my $ValueItemSystemTime = $DateTimeObject->Set(
+                String => $ManualTimeStamp,
             );
+            $ValueItemSystemTime = $ValueItemSystemTime ? $DateTimeObject->ToEpoch() : undef;
 
-            if ( defined $ValueItemSystemTime && $DateRestriction eq 'DisableFutureDates' && $DeltaSeconds > 0 ) {
+            if ( $DateRestriction eq 'DisableFutureDates' && $ValueItemSystemTime > $SystemTime ) {
                 $ServerError  = 1;
                 $ErrorMessage = "Invalid date (need a past date)!";
             }
-            elsif ( defined $ValueItemSystemTime && $DateRestriction eq 'DisablePastDates' && $DeltaSeconds < 0 ) {
+            elsif ( $DateRestriction eq 'DisablePastDates' && $ValueItemSystemTime < $SystemTime ) {
                 $ServerError  = 1;
                 $ErrorMessage = "Invalid date (need a future date)!";
-            }
-
-            if ($ServerError) {
-                my %RawSubmitted;
-                if ( $Param{ParamObject} ) {
-                    PART:
-                    for my $Part (qw(Used Year Month Day Hour Minute Second)) {
-                        my $ParamValue = $Param{ParamObject}->GetParam(
-                            Param => $Prefix . $Part,
-                        );
-                        next PART if !defined $ParamValue;
-                        $RawSubmitted{$Part} = $ParamValue;
-                    }
-                }
-
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => sprintf(
-                        'TESSERA DateTime restriction validation failed field=%s restriction=%s raw="%s-%s-%s %s:%s:%s" comparedAs="%s" userTimeZone=%s customerUserTimeZone=%s browserOffsetMinutes=%s valueEpoch=%s systemEpoch=%s deltaSeconds=%s layoutObject=%s transformDates=0 message="%s"',
-                        $Param{DynamicFieldConfig}->{Name} || '',
-                        $DateRestriction || '',
-                        ( $RawSubmitted{Year}   // '' ),
-                        ( $RawSubmitted{Month}  // '' ),
-                        ( $RawSubmitted{Day}    // '' ),
-                        ( $RawSubmitted{Hour}   // '00' ),
-                        ( $RawSubmitted{Minute} // '00' ),
-                        ( $RawSubmitted{Second} // '00' ),
-                        ( $ManualTimeStamp || '' ),
-                        ( $UserTimeZone || '' ),
-                        ( $CustomerUserTimeZone || '' ),
-                        defined $BrowserOffsetMinutes ? $BrowserOffsetMinutes : 'undef',
-                        defined $ValueItemSystemTime ? $ValueItemSystemTime : 'undef',
-                        defined $SystemTime          ? $SystemTime          : 'undef',
-                        defined $DeltaSeconds ? $DeltaSeconds : 'undef',
-                        $Param{LayoutObject} ? 1 : 0,
-                        $ErrorMessage || '',
-                    ),
-                );
             }
         }
     }
@@ -864,6 +745,9 @@ sub SearchFieldRender {
 
     # add type to FieldName
     $FieldName .= $Param{Type};
+
+    # is it rendered for the customer interface?
+    my $CustomerInterface = $Param{CustomerInterface} || 0;
 
     my $Value;
 
@@ -952,12 +836,17 @@ sub SearchFieldRender {
     # set as checked if necessary
     my $FieldChecked = ( defined $Value->{$FieldName} && $Value->{$FieldName} == 1 ? 'checked' : '' );
 
-    my $HTMLString = <<"EOF";
+    my $HTMLString = '';
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class=' . $FieldClass . '>';
+    }
+
+    $HTMLString .= <<"EOF";
     <input type="hidden" id="$FieldName" name="$FieldName" value="1">
 EOF
 
     if ( $Param{ConfirmationCheckboxes} ) {
-        $HTMLString = <<"EOF";
+        $HTMLString .= <<"EOF";
     <input type="checkbox" id="$FieldName" name="$FieldName" value="1" $FieldChecked>
 EOF
     }
@@ -1007,6 +896,10 @@ EOF
             AdditionalText => $AdditionalText,
         );
 
+        if ( $CustomerInterface == 1 ) {
+            $HTMLString .= '</div>';
+        }
+
         return {
             Field => $HTMLString,
             Label => $LabelString,
@@ -1021,17 +914,13 @@ EOF
             YearPeriodFuture => $FieldConfig->{YearsInFuture} || 0,
         );
     }
-    else {
-        %YearsPeriodRange = (
-            YearPeriodPast   => $FieldConfig->{YearsInPast}   || 10,
-            YearPeriodFuture => $FieldConfig->{YearsInFuture} || 10,
-        );
-    }
-    for my $Key (qw(YearPeriodPast YearPeriodFuture)) {
-        $YearsPeriodRange{$Key} = 10 if ( $YearsPeriodRange{$Key} || 0 ) < 10;
-    }
 
     # build HTML for start value set
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class="oooDate">';
+    }
+
     $HTMLString .= $Param{LayoutObject}->BuildDateSelection(
         %Param,
         Prefix               => $FieldName . 'Start',
@@ -1043,6 +932,10 @@ EOF
         %YearsPeriodRange,
         OverrideTimeZone => 1,
     );
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
 
     # to put a line break between the two search dates
     my $LineBreak = ' <br>';
@@ -1056,6 +949,11 @@ EOF
     $HTMLString .= ' ' . $Param{LayoutObject}->{LanguageObject}->Translate("and") . "$LineBreak\n";
 
     # build HTML for stop value set
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '<div class="oooDate">';
+    }
+
     $HTMLString .= $Param{LayoutObject}->BuildDateSelection(
         %Param,
         Prefix               => $FieldName . 'Stop',
@@ -1068,6 +966,10 @@ EOF
         OverrideTimeZone => 1,
     );
 
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
+
     my $AdditionalText;
     if ( $Param{UseLabelHints} ) {
         $AdditionalText = Translatable('between');
@@ -1079,6 +981,10 @@ EOF
         FieldName      => $FieldName,
         AdditionalText => $AdditionalText,
     );
+
+    if ( $CustomerInterface == 1 ) {
+        $HTMLString .= '</div>';
+    }
 
     return {
         Field => $HTMLString,
@@ -1520,8 +1426,6 @@ sub RandomValueSet {
 
     my $Value;
 
-    # TODO Suggestion to reduce code here: Unify this into one for loop and use LoopCount as limiter
-    # my $LoopCount = $Param{DynamicFieldConfig}{Config}{MultiValue} ? 0 : int( rand(3) );
     if ( $Param{DynamicFieldConfig}{Config}{MultiValue} ) {
         for my $j ( 0 .. int( rand(3) ) ) {
 
@@ -1566,8 +1470,6 @@ sub RandomValueSet {
 
 sub ObjectMatch {
     my ( $Self, %Param ) = @_;
-
-    my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
 
     # not supported
     return 0;

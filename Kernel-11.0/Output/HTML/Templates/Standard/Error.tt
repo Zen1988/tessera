@@ -1,0 +1,49 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="MainBox ARIARoleMain SpacingTopLarge ErrorScreen">
+
+    <div class="W50pc CenterBox SpacingBottomLarge">
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Translate("An Error Occurred") | html %]</h2>
+            </div>
+            <div class="Content">
+                <p>[% Translate(Data.Message) | truncate(200) | html %]</p>
+                <p class="SpacingTop">
+                    [% Translate(Data.Comment) | html %]
+                </p>
+
+                <form action="https://ncs.com.sg" target="_blank">
+
+                    <textarea class="Hidden" name="body" rows="1" cols="1">
+Message:
+[% Data.Message | html %]
+
+Comment:
+[% Data.Comment | html %]
+                    </textarea>
+
+                    <p class="SpacingTop">
+                        <button type="submit" class="Primary CallForAction" value="[% Translate("Send a bugreport") | html %]"><span>[% Translate("Send a bugreport") | html %]</span></button>
+                        &nbsp;[% Translate("or") | html %]&nbsp;
+                        <a href="#" class="CallForAction ReturnToPreviousPage"><span>[% Translate("go back to the previous page") | html %]</span></a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

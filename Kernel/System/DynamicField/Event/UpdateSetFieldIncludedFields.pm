@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -59,8 +59,7 @@ sub Run {
     }
 
     # TODO refine checks based upon event
-    return 1 if ( $Param{Data}{NewData}{FieldType} || '' ) ne 'Set'
-        && ( $Param{Data}{NewData}{FieldType} || '' ) ne 'DynamicFieldGroup';
+    return 1 if $Param{Data}{NewData}{FieldType} ne 'Set';
     return   if none { $Param{Event} eq $_ } qw(DynamicFieldAdd DynamicFieldDelete DynamicFieldUpdate);
 
     my $DynamicFieldObject    = $Kernel::OM->Get('Kernel::System::DynamicField');
@@ -100,7 +99,7 @@ sub Run {
             my $PartOfSet = ( any { $_->{ID} eq $IncludedFieldConfig->{ID} } values $IncludedFields->%* ) ? $SetDynamicFieldConfig->{ID} : 0;
 
             # skip field if nothing changed
-            next FIELD if $PartOfSet && grep { $_->{ID} eq $IncludedFieldConfig->{ID} } values $OldIncludedFields->%*;
+            next FIELD if $PartOfSet && any { $_->{ID} eq $IncludedFieldConfig->{ID} } values $OldIncludedFields->%*;
 
             $DynamicFieldObject->DynamicFieldUpdate(
                 $IncludedFieldConfig->%*,

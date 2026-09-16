@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -23,7 +23,6 @@ use warnings;
 # core modules
 
 # CPAN modules
-use Mail::Address  ();
 use Mail::Internet ();
 use MIME::Entity   ();
 use MIME::Parser   ();
@@ -41,6 +40,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::MailQueue',
     'Kernel::System::CommunicationLog',
+    'Kernel::System::EmailAddress',
 );
 
 =head1 NAME
@@ -301,9 +301,7 @@ sub Send {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # Check from
-    if ( !$Param{From} ) {
-        $Param{From} = $ConfigObject->Get('AdminEmail') || 'otobo@localhost';
-    }
+    $Param{From} ||= $ConfigObject->Get('AdminEmail') || 'otobo@localhost';
 
     # Map ReplyTo into Reply-To if present.
     if ( $Param{ReplyTo} ) {
@@ -598,17 +596,13 @@ sub Send {
 
     # get recipients
     my @ToArray;
-    my $To = '';    # only used for logging
-
+    my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
     RECIPIENT:
     for my $Recipient (qw(To Cc Bcc)) {
-        next RECIPIENT if !$Param{$Recipient};
-        for my $Email ( Mail::Address->parse( $Param{$Recipient} ) ) {
-            push( @ToArray, $Email->address() );
-            if ($To) {
-                $To .= ', ';
-            }
-            $To .= $Email->address();
+        next RECIPIENT unless $Param{$Recipient};
+
+        for my $Email ( $EmailAddressObject->ParseAddressLine( Line => $Param{$Recipient} ) ) {
+            push @ToArray, $EmailAddressObject->GetAddress( AddressObject => $Email );
         }
     }
 
@@ -616,14 +610,16 @@ sub Send {
     my $SendmailBcc = $ConfigObject->Get('SendmailBcc');
     if ($SendmailBcc) {
         push @ToArray, $SendmailBcc;
-        $To .= ', ' . $SendmailBcc;
     }
+
+    # comma separated list used for logging and error messages
+    my $To = join ', ', @ToArray;
 
     # set envelope sender for replies
     my $RealFrom = $ConfigObject->Get('SendmailEnvelopeFrom') || '';
     if ( !$RealFrom ) {
-        my @Sender = Mail::Address->parse( $Param{From} );
-        $RealFrom = $Sender[0]->address();
+        my ($Sender) = $EmailAddressObject->ParseAddressLine( Line => $Param{From} );
+        $RealFrom = $EmailAddressObject->GetAddress( AddressObject => $Sender );
     }
 
     # set envelope sender for auto-responses and notifications
@@ -900,8 +896,9 @@ sub Bounce {
     my $EmailObject = Mail::Internet->new( \@EmailPlain );
 
     # get sender
-    my @Sender   = Mail::Address->parse( $Param{From} );
-    my $RealFrom = $Sender[0]->address();
+    my $EmailAddressObject = $Kernel::OM->Get('Kernel::System::EmailAddress');
+    my ($Sender)           = $EmailAddressObject->ParseAddressLine( Line => $Param{From} );
+    my $RealFrom           = $EmailAddressObject->GetAddress( AddressObject => $Sender );
 
     # add ReSent header (see https://www.ietf.org/rfc/rfc2822.txt A.3. Resent messages)
     my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
@@ -1095,7 +1092,7 @@ sub _CreateMimeEntity {
         my $Product = $ConfigObject->Get('Product');
         my $Version = $ConfigObject->Get('Version');
         $Header{'X-Mailer'}     = "$Product Mail Service ($Version)";
-        $Header{'X-Powered-By'} = 'OTOBO (https://ncs.com.sg)';
+        $Header{'X-Powered-By'} = 'OTOBO (https://otobo.org/)';
     }
     $Header{Type} = $Param{MimeType} || 'text/plain';
 

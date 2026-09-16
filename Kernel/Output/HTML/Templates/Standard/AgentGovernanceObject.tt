@@ -1,0 +1,35 @@
+<div class="MainBox ARIARoleMain">
+    <div class="Header">
+        <h1>GovernanceDB</h1>
+        <div class="Actions">
+            <a class="CallForAction" href="[% Env("Baselink") %]Action=AgentGovernanceObjectAdd"><span>Add Governance Object</span></a>
+        </div>
+    </div>
+
+    <div class="Content">
+        <table class="DataTable">
+            <thead>
+                <tr>
+                    <th>GOID</th>
+                    <th>ZTSM Code</th>
+                    <th>ZTSM Status</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Changed</th>
+                </tr>
+            </thead>
+            <tbody>
+[% RenderBlockStart("ObjectRow") %]
+                <tr>
+                    <td><a href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;ObjectID=[% Data.ObjectID | html %]">[% Data.GOID | html %]</a></td>
+                    <td>[% Data.ZTSMCode | html %]</td>
+                    <td>[% Data.ZTSMStatus | html %]</td>
+                    <td>[% Data.Name | html %]</td>
+                    <td>[% Data.Description | html %]</td>
+                    <td>[% Data.ChangeTime | html %]</td>
+                </tr>
+[% RenderBlockEnd("ObjectRow") %]
+            </tbody>
+        </table>
+    </div>
+</div>

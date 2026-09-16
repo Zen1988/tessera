@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -24,9 +24,9 @@ sub Data {
     my $Self = shift;
 
     # Template: AdminGenericInterfaceOperationConfigItem
-    $Self->{Translation}->{'General operation data'} = '';
-    $Self->{Translation}->{'Settings for incoming request data'} = '';
-    $Self->{Translation}->{'Settings for outgoing response data'} = '';
+    $Self->{Translation}->{'General operation data'} = 'Загальні експлуатаційні дані';
+    $Self->{Translation}->{'Settings for incoming request data'} = 'Налаштування вхідних даних запиту';
+    $Self->{Translation}->{'Settings for outgoing response data'} = 'Налаштування вихідних даних відповіді';
 
     # Template: AdminITSMConfigItem
     $Self->{Translation}->{'Config Item Management'} = 'Керування елементами конфігурації';
@@ -105,9 +105,6 @@ sub Data {
     # Template: CustomerITSMConfigItemSearch
     $Self->{Translation}->{'ConfigItem Search'} = 'Пошук елемента конфігурації';
 
-    # Template: AdminACL
-    $Self->{Translation}->{'Object Type'} = 'Тип об\'єкта';
-
     # JS Template: ClassImportConfirm
     $Self->{Translation}->{'The following classes will be imported'} = 'Буде імпортовано наступні класи';
     $Self->{Translation}->{'The following roles will be imported'} = 'Будуть імпортовані наступні ролі';
@@ -152,6 +149,8 @@ sub Data {
     $Self->{Translation}->{'Name updated (new=%s, old=%s)'} = 'Ім\'я оновлено (нове=%s, старе=%s)';
     $Self->{Translation}->{'Attribute %s updated from "%s" to "%s"'} = 'Атрибут %s змінено з "%s" на "%s"';
     $Self->{Translation}->{'Version %s deleted'} = 'Видалено версію %s';
+    $Self->{Translation}->{'File "%s" uploaded'} = '';
+    $Self->{Translation}->{'File "%s" removed'} = '';
 
     # Perl Module: Kernel/Modules/AgentITSMConfigItemPrint.pm
     $Self->{Translation}->{'No ConfigItemID or VersionID is given!'} = 'ConfigItemID або VersionID не вказуються!';
@@ -159,6 +158,7 @@ sub Data {
     $Self->{Translation}->{'ConfigItemID %s not found in database!'} = 'ConfigItemID %s не знайдено в базі даних!';
     $Self->{Translation}->{'ConfigItem'} = 'ConfigItem';
     $Self->{Translation}->{'printed by %s at %s'} = 'надруковано за допомогою %s в %s';
+    $Self->{Translation}->{'Referenced by'} = 'Посилання';
 
     # Perl Module: Kernel/Modules/AgentITSMConfigItemSearch.pm
     $Self->{Translation}->{'Invalid ClassID!'} = 'Неправильний ClassID!';
@@ -195,19 +195,21 @@ sub Data {
     $Self->{Translation}->{'Class restrictions for the config item'} = 'Обмеження класів для елемента конфігурації';
     $Self->{Translation}->{'Select one or more classes to restrict selectable config items'} =
         'Виберіть один або декілька класів, щоб обмежити вибір елементів конфігурації';
-    $Self->{Translation}->{'Link type'} = 'Тип посилання';
-    $Self->{Translation}->{'Select the link type.'} = 'Виберіть тип посилання.';
-    $Self->{Translation}->{'Forwards: Referencing (Source) -> Referenced (Target)'} = 'Вперед: Посилання (Джерело) -> Посилання (Ціль)';
-    $Self->{Translation}->{'Backwards: Referenced (Source) -> Referencing (Target)'} = 'Назад: Посилання (джерело) -> Посилання (мета)';
-    $Self->{Translation}->{'Link Direction'} = 'Напрямок посилання';
-    $Self->{Translation}->{'The referencing object is the one containing this dynamic field, the referenced object is the one selected as value of the dynamic field.'} =
-        'Об\'єкт-посилання - це об\'єкт, що містить це динамічне поле, об\'єкт, на який посилаються, - це об\'єкт, вибраний як значення динамічного поля.';
+    $Self->{Translation}->{'Deployment state restrictions for the config item'} = 'Обмеження класів для елемента конфігурації';
+    $Self->{Translation}->{'Select one or more deployment states to restrict selectable config items'} =
+        'Виберіть один або декілька класів, щоб обмежити вибір елементів конфігурації';
     $Self->{Translation}->{'Dynamic (ConfigItem)'} = 'Динамічний (ConfigItem)';
     $Self->{Translation}->{'Static (Version)'} = 'Статичний (версія)';
     $Self->{Translation}->{'Link Referencing Type'} = 'Тип посилання на посилання';
     $Self->{Translation}->{'Whether this link applies to the ConfigItem or the static version of the referencing object. Current Incident State calculation only is performed on dynamic links.'} =
         'Чи стосується це посилання ConfigItem або статичної версії об\'єкта, на який посилається посилання. Для динамічних посилань виконується лише обчислення поточного стану інциденту.';
     $Self->{Translation}->{'Select the attribute which config items will be searched by'} = 'Виберіть атрибут, за яким буде здійснюватися пошук елементів конфігурації';
+    $Self->{Translation}->{'External-source key'} = '';
+    $Self->{Translation}->{'Select the type of display'} = '';
+
+    # Perl Module: Kernel/System/DynamicField/Driver/ConfigItemVersion.pm
+    $Self->{Translation}->{'Activate this option to display values as a tree, grouped by config items.'} =
+        '';
 
     # Perl Module: Kernel/System/ITSMConfigItem/Definition.pm
     $Self->{Translation}->{'Base structure is not valid. Please provide a hash with data in YAML format.'} =
@@ -222,10 +224,10 @@ sub Data {
 
     # Perl Module: Kernel/System/ImportExport/ObjectBackend/ITSMConfigItem.pm
     $Self->{Translation}->{'Maximum number of one element'} = 'Максимальна кількість одного елемента';
-    $Self->{Translation}->{'Empty fields indicate that the current values are kept'} = 'Порожні поля означають, що поточні значення зберігаються';
-    $Self->{Translation}->{'Import/Export attachments (as the last entries per line)'} = '';
-    $Self->{Translation}->{'Version String'} = '';
-    $Self->{Translation}->{'Skipped'} = 'Пропущено.';
+    $Self->{Translation}->{'Maximum number of one Set dynamic field element'} = '';
+    $Self->{Translation}->{'Maximum number of one element within a Set dynamic field element'} =
+        '';
+    $Self->{Translation}->{'Version String'} = 'Рядок версії';
 
     # Perl Module: Kernel/Modules/AdminDynamicField.pm
     $Self->{Translation}->{'Error synchronizing the definitions. Please check the log.'} = 'Помилка синхронізації визначень. Будь ласка, перевірте лог.';
@@ -250,13 +252,18 @@ sub Data {
     # SysConfig
     $Self->{Translation}->{'0 - Hidden'} = '0 - Приховано';
     $Self->{Translation}->{'1 - Shown'} = '1 - Показано';
+    $Self->{Translation}->{'A mapping of inner field names used in the Process Management TransitionActions ConfigItemAdd and -Update. The keys are the names of the set inner fields of the set with object type ticket which will be used to create/update the CI, and the values are the names of the inner fields of the set with object type ITSMConfigItem.'} =
+        '';
     $Self->{Translation}->{'Allows extended search conditions in config item search of the agent interface. With this feature you can search e. g. config item name with this kind of conditions like "(*key1*&&*key2*)" or "(*key1*||*key2*)".'} =
         'Дозволяє використовувати розширені умови пошуку для пошуку елементів конфігурації в інтерфейсі агента. За допомогою цієї функції ви можете шукати, наприклад, назву елемента конфігурації з такими умовами, як "(*key1*&&*key2*)" або "(*key1*||*key2*)".';
     $Self->{Translation}->{'Allows extended search conditions in config item search of the customer interface. With this feature you can search e. g. config item name with this kind of conditions like "(*key1*&&*key2*)" or "(*key1*||*key2*)".'} =
         'Дозволяє розширені умови пошуку у пошуку елементів конфігурації в інтерфейсі клієнта. За допомогою цієї функції ви можете шукати, наприклад, назву елемента конфігурації з такими умовами, як "(*key1*&&*key2*)" або "(*key1*||*key2*)".';
     $Self->{Translation}->{'Assigned CIs'} = 'Призначені КІ';
-    $Self->{Translation}->{'At a specific time point create a ticket for config items, if the configured requirements are met. The time point is determined by the value of the field configured under "TimeCIKey" of the ConfigItem, and modified by "TimeModifier". If the latter can be either just a number, or a sign (+/-), a number, and an unit (d/h/m): "7" is equivalent to "+7d". The DynamicField "Ticket->DynamicField" will be used to mark created tickets - it has to exist. The flags \<OTOBO_CONFIGITEM_X\> where X can be NAME, NUMBER and DATE, will be substituted with the respective values in "Ticket->Text".'} =
-        'У певний момент часу створити тікет для елементів конфігурації, якщо виконані задані вимоги. Точка часу визначається значенням поля, налаштованого в "TimeCIKey" елемента конфігурації та зміненого за допомогою "TimeModifier". Останній може бути як просто числом, так і знаком (+/-), числом та одиницею виміру (д/год/м): "7" еквівалентно "+7д". Динамічне поле DynamicField "Ticket->DynamicField" буде використовуватися для позначення створених квитків - воно повинно існувати. Прапори \<OTOBO_CONFIGITEM_X\>, де X може бути NAME, NUMBER і DATE, будуть замінені відповідними значеннями у "Ticket->Text".';
+    $Self->{Translation}->{'AssignedToEntity'} = '';
+    $Self->{Translation}->{'At a specific time point create a ticket for config items, if the configured requirements are met. The time point is determined by the value of the dynamic field of type date configured under "TimeCIKey" of the ConfigItem, and modified by "TimeModifier". If the latter can be either just a number, or a sign (+/-), a number, and an unit (d/h/m): "7" is equivalent to "+7d". The DynamicField "Ticket->DynamicField" will be used to mark created tickets - it has to exist. The flags \<OTOBO_CONFIGITEM_X\> where X can be NAME, NUMBER and DATE, will be substituted with the respective values in "Ticket->Text".'} =
+        '';
+    $Self->{Translation}->{'Attributes for licenses counting, where "TotalLicensesDF", "AvailableLicensesDF" and "LicenseReferenceDF" are the names of the dynamic fields used to track the remaining licenses. If used, only deployment states in "ValidDeplStates" are considered. If a threshold is defined in "MinimumLicenses", a ticket will automatically be created if less licenses are available. For this, the checkbox dynamic field "Ticket->DynamicField" must exist. The tags \<OTOBO_CONFIGITEM_X\> where X can be NAME, NUMBER, LICENSES_AVAIL and LICENSES_MIN, will be substituted with the respective values in "Ticket->Text" by the config item name, number, available licenses, and minimum required available licenses, respectively.'} =
+        '';
     $Self->{Translation}->{'CIs assigned to customer company'} = 'КІ, призначені компанії-клієнту';
     $Self->{Translation}->{'CIs assigned to customer user'} = 'Пілот';
     $Self->{Translation}->{'CMDB Settings'} = 'Налаштування CMDB';
@@ -267,26 +274,19 @@ sub Data {
     $Self->{Translation}->{'Choose a module to enforce a version string scheme.'} = 'Виберіть модуль для застосування схеми рядків версій.';
     $Self->{Translation}->{'Choose attributes to trigger the creation of a new version.'} = 'Виберіть атрибути, щоб запустити створення нової версії.';
     $Self->{Translation}->{'Choose categories to assign to this config item class.'} = 'Виберіть категорії, які слід призначити цьому класу елементів конфігурації.';
+    $Self->{Translation}->{'Color definitions for the public interface.'} = '';
     $Self->{Translation}->{'Column config item filters for ConfigItem Overview.'} = 'Фільтри елементів конфігурації стовпця для Огляду елементів конфігурації.';
     $Self->{Translation}->{'Columns that can be filtered in the config item overview of the agent interface. Note: Only Config Item attributes and Dynamic Fields (DynamicField_NameX) are allowed.'} =
         'Стовпці, які можна відфільтрувати в огляді елементів конфігурації в інтерфейсі агента. Примітка: Допускаються лише атрибути елементів конфігурації та динамічні поля (DynamicField_NameX).';
-    $Self->{Translation}->{'Columns that can be filtered in the config item overview of the customer interface. Note: Only Config Item attributes and Dynamic Fields (DynamicField_NameX) are allowed.'} =
-        'Стовпці, які можна відфільтрувати в огляді елементів конфігурації в клієнтському інтерфейсі. Примітка: Допускаються лише атрибути елементів конфігурації та динамічні поля (DynamicField_NameX).';
-    $Self->{Translation}->{'Columns that can be filtered in the config item search result overview of the agent interface. Note: Only Config Item attributes and Dynamic Fields (DynamicField_NameX) are allowed.'} =
-        'Стовпці, які можна відфільтрувати в огляді результатів пошуку елементів конфігурації в інтерфейсі агента. Примітка: Допускаються лише атрибути елементів конфігурації та динамічні поля (DynamicField_NameX).';
     $Self->{Translation}->{'Config Items'} = 'Елементи конфігурації';
     $Self->{Translation}->{'Config item add.'} = 'Додати елемент конфігурації.';
     $Self->{Translation}->{'Config item edit.'} = 'Редагування елементів конфігурації.';
-    $Self->{Translation}->{'Config item event module that count the licenses for OTOBOCILicenseCount feature.'} =
-        'Налаштуйте елемент події модуля підрахунку ліцензій для функції OTOBOCILicenseCount.';
+    $Self->{Translation}->{'Config item event module that enables accounting licenses for a given config item.'} =
+        '';
     $Self->{Translation}->{'Config item event module that enables logging to history in the agent interface.'} =
         'Налаштування модуля подій, який дозволяє записувати історію в інтерфейсі агента.';
     $Self->{Translation}->{'Config item event module that updates config items to their current definition.'} =
         'Модуль подій для елементів конфігурації, який оновлює елементи конфігурації до їх поточного визначення.';
-    $Self->{Translation}->{'Config item event module that updates the table configitem_ĺink.'} =
-        'Модуль події елементу конфігурації, який оновлює таблицю configitem_ĺink.';
-    $Self->{Translation}->{'Config item event module updates the current incident state.'} =
-        'Модуль подій конфігурації оновлює поточний стан інциденту.';
     $Self->{Translation}->{'Config item history.'} = 'Історія елементів конфігурації.';
     $Self->{Translation}->{'Config item print.'} = 'Друк елемента конфігурації.';
     $Self->{Translation}->{'Config item zoom.'} = 'Масштаб елемента конфігурації.';
@@ -302,6 +302,14 @@ sub Data {
     $Self->{Translation}->{'Configuration item bulk module.'} = 'Елемент конфігурації масового модуля.';
     $Self->{Translation}->{'Configuration item search backend router of the agent interface.'} =
         'Конфігурація елемента пошуку бекенд-маршрутизатора інтерфейсу агента.';
+    $Self->{Translation}->{'Configure the columns which are available for viewing Permission Conditions in the customer interface, when the corresponding Permission Condition Columns are not specifically configured. This setting is used as a fallback for the other Permission Condition Columns settings.'} =
+        '';
+    $Self->{Translation}->{'Configure the columns which are available for viewing Permission Conditions in the public interface, when the corresponding Permission Condition Columns are not specifically configured. This setting is used as a fallback for the other Permission Condition Columns settings.'} =
+        '';
+    $Self->{Translation}->{'Configure the columns which are available when viewing the corresponding Permission Condition in the customer interface.'} =
+        '';
+    $Self->{Translation}->{'Configure the columns which are available when viewing the corresponding Permission Condition in the public interface.'} =
+        '';
     $Self->{Translation}->{'Create and manage the definitions for Configuration Items.'} = 'Створюйте та керуйте визначеннями для елементів конфігурації.';
     $Self->{Translation}->{'Creates Tickets for ConfigItems at specific time points.'} = 'Створює квитки для ConfigItems у певні моменти часу.';
     $Self->{Translation}->{'Customers can see historic CI versions.'} = 'Клієнти можуть переглядати історичні версії CI.';
@@ -315,6 +323,10 @@ sub Data {
         'Визначте дії, для яких кнопка налаштувань доступна у віджеті пов\'язаних об\'єктів (LinkObject::ViewMode = "complex"). Зверніть увагу, що в цих діях повинні бути зареєстровані наступні JS і CSS файли: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js і Core.Agent.LinkObject.js.';
     $Self->{Translation}->{'Define a Template::Toolkit scheme for version strings. Only used if Version String Module is set to TemplateToolkit.'} =
         'Визначає схему Template::Toolkit для рядків версій. Використовується лише у випадку, якщо модуль рядків версій має значення TemplateToolkit.';
+    $Self->{Translation}->{'Define a list of dynamic field object types which are allowed to be assigned to actions of this package via the dynamic field screens interface.'} =
+        '';
+    $Self->{Translation}->{'Define a set of conditions under which a config item can be publicly seen. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.'} =
+        '';
     $Self->{Translation}->{'Define a set of conditions under which a customer is allowed to see a config item. Conditions can optionally be restricted to certain customer groups. Name is the only mandatory attribute. If no other options are given, all config items will be visible under that category.'} =
         'Визначте набір умов, за яких користувачеві дозволено бачити елемент конфігурації. За бажанням, умови можуть бути обмежені певними групами користувачів. Єдиним обов\'язковим атрибутом є назва. Якщо не вказано жодних інших параметрів, всі елементи конфігурації будуть видимими у цій категорії.';
     $Self->{Translation}->{'Defines Required permissions to delete ITSM configuration items using the Generic Interface.'} =
@@ -324,7 +336,7 @@ sub Data {
     $Self->{Translation}->{'Defines Required permissions to search ITSM configuration items using the Generic Interface.'} =
         'Визначає необхідні дозволи для пошуку елементів конфігурації ITSM за допомогою загального інтерфейсу.';
     $Self->{Translation}->{'Defines Required permissions to set ITSM configuration items using the Generic Interface.'} =
-        '';
+        'Визначає необхідні дозволи для налаштування елементів конфігурації ITSM за допомогою загального інтерфейсу.';
     $Self->{Translation}->{'Defines an overview module to show the small view of a configuration item list.'} =
         'Визначає модуль огляду для відображення невеликого списку елементів конфігурації.';
     $Self->{Translation}->{'Defines if the link type labels must be shown in the node connections.'} =
@@ -337,12 +349,16 @@ sub Data {
         'Визначає атрибут за замовчуванням для сортування елементів конфігурації у результатах пошуку елементів конфігурації в інтерфейсі агента.';
     $Self->{Translation}->{'Defines the default config item attribute for config item sorting of the config item search result of the customer interface.'} =
         'Визначає атрибут за замовчуванням для сортування елементів конфігурації у результатах пошуку елементів конфігурації у клієнтському інтерфейсі.';
+    $Self->{Translation}->{'Defines the default config item attribute for config item sorting of the config item search result of the public interface.'} =
+        '';
     $Self->{Translation}->{'Defines the default config item attribute for config item sorting of the config item search result of this operation.'} =
         'Визначає атрибут за замовчуванням для сортування елементів конфігурації у результатах пошуку елементів конфігурації за цією операцією.';
     $Self->{Translation}->{'Defines the default config item order in the config item search result of the agent interface. Up: oldest on top. Down: latest on top.'} =
         'Визначає порядок елементів конфігурації за замовчуванням у результатах пошуку елементів конфігурації в інтерфейсі агента. Вгору: найстаріші зверху. Вниз: найновіші зверху.';
     $Self->{Translation}->{'Defines the default config item order in the config item search result of the customer interface. Up: oldest on top. Down: latest on top.'} =
         'Визначає порядок елементів конфігурації за замовчуванням у результатах пошуку елементів конфігурації у клієнтському інтерфейсі. Вгору: найстаріші зверху. Вниз: найновіші зверху.';
+    $Self->{Translation}->{'Defines the default config item order in the config item search result of the public interface. Up: oldest on top. Down: latest on top.'} =
+        '';
     $Self->{Translation}->{'Defines the default config item order in the config item search result of the this operation. Up: oldest on top. Down: latest on top.'} =
         'Визначає порядок елементів конфігурації за замовчуванням у результатах пошуку елементів конфігурації для цієї операції. Вгору: найстаріший зверху. Вниз: найновіший зверху.';
     $Self->{Translation}->{'Defines the default displayed columns of CIs in the config item overview depending on the CI class. Each entry must consist of a class name and an array of available fields for the corresponding class. Dynamic field entries have to honor the scheme DynamicField_FieldName.'} =
@@ -354,6 +370,8 @@ sub Data {
         'Визначає типовий атрибут пошуку елемента конфігурації, який буде показано на екрані пошуку елемента конфігурації. Приклад: "Ключ" має містити назву динамічного поля, у цьому випадку \'X\', "Зміст" має містити значення динамічного поля залежно від типу динамічного поля, Текст: \'текст\', Випадаючий список: \'1\', Дата/Час: \'Search_DynamicField_XTimeSlotStartYear=1974; Search_DynamicField_XTimeSlotStartMonth=01; Search_DynamicField_XTimeSlotStartDay=26; Search_DynamicField_XTimeSlotStartHour=00; Search_DynamicField_XTimeSlotStartMinute=00; Search_DynamicField_XTimeSlotStartSecond=00; Search_DynamicField_XTimeSlotStopYear=2013; Search_DynamicField_XTimeSlotStopMonth=01; Search_DynamicField_XTimeSlotStopDay=26; Search_DynamicField_XTimeSlotStopHour=23; Search_DynamicField_XTimeSlotStopMinute=59; Search_DynamicField_XTimeSlotStopSecond=59;\' та або \'Search_DynamicField_XTimePointFormat=week; Search_DynamicField_XTimePointStart=Before; Search_DynamicField_XTimePointValue=7\';.';
     $Self->{Translation}->{'Defines the default subobject of the class \'ITSMConfigItem\'.'} =
         'Визначає підоб\'єкт за замовчуванням класу \'ITSMConfigItem\'.';
+    $Self->{Translation}->{'Defines the disabled columns of CIs in the config item overview depending on the CI class. Each entry must consist of a class name and an array of available fields for the corresponding class. Dynamic field entries have to honor the scheme DynamicField_FieldName.'} =
+        'Визначає доступні стовпці CI в огляді елементів конфігурації залежно від класу CI. Кожен запис має складатися з назви класу та масиву доступних полів для відповідного класу. Записи динамічних полів повинні відповідати схемі DynamicField_FieldName.';
     $Self->{Translation}->{'Defines the height for the rich text editor component for this screen. Enter number (pixels) or percent value (relative).'} =
         'Визначає висоту компонента редактора розширеного тексту для цього екрана. Введіть число (пікселі) або значення у відсотках (відносне).';
     $Self->{Translation}->{'Defines the number of rows for the CI definition editor in the admin interface.'} =
@@ -370,6 +388,8 @@ sub Data {
         'Визначає межу пошуку для екрана CustomerITSMConfigItem.';
     $Self->{Translation}->{'Defines the search limit for the CustomerITSMConfigItemSearch screen.'} =
         'Визначає межу пошуку для екрана CustomerITSMConfigItemSearch.';
+    $Self->{Translation}->{'Defines the search limit for the PublicITSMConfigItemSearch screen.'} =
+        '';
     $Self->{Translation}->{'Defines the shown columns of CIs in the link table complex view for all CI classes. If there is no entry, then the default columns are shown.'} =
         'Визначає стовпці КІ, що відображаються в комплексному поданні таблиці посилань для всіх класів КІ. Якщо запис відсутній, то показуються стовпці за замовчуванням.';
     $Self->{Translation}->{'Defines the shown columns of CIs in the link table complex view, depending on the CI class. Each entry must be prefixed with the class name and double colons (i.e. Computer::). There are a few CI-Attributes that common to all CIs (example for the class Computer: Computer::Name, Computer::CurDeplState, Computer::CreateTime). To show individual CI-Attributes as defined in the CI-Definition, the following scheme must be used (example for the class Computer): Computer::HardDisk::1, Computer::HardDisk::1::Capacity::1, Computer::HardDisk::2, Computer::HardDisk::2::Capacity::1. If there is no entry for a CI class, then the default columns are shown.'} =
@@ -396,6 +416,8 @@ sub Data {
         'Динамічні поля, показані на додатковому екрані полів ITSM в інтерфейсі агента.';
     $Self->{Translation}->{'Dynamic fields shown in the config item overview screen of the customer interface.'} =
         'Динамічні поля, що відображаються на екрані огляду елементів конфігурації клієнтського інтерфейсу.';
+    $Self->{Translation}->{'Dynamic fields shown in the config item overview screen of the public interface.'} =
+        '';
     $Self->{Translation}->{'Dynamic fields shown in the config item search screen of the agent interface.'} =
         'Динамічні поля, що відображаються на екрані пошуку елементів конфігурації в інтерфейсі агента.';
     $Self->{Translation}->{'Enables configuration item bulk action feature for the agent frontend to work on more than one configuration item at a time.'} =
@@ -412,18 +434,32 @@ sub Data {
         'Поля, що зберігаються в індексі елементів конфігурації, які використовуються для інших цілей, окрім повнотекстового пошуку. Для повної функціональності всі поля є обов\'язковими.';
     $Self->{Translation}->{'For every webservice (key) an array of classes (value) can be defined on which the import is restricted. For all chosen classes, or all existing classes the identifying attributes will have to be chosen in the invoker config.'} =
         'Для кожного веб-сервісу (ключ) можна визначити масив класів (значення), для яких імпорт обмежено. Для всіх вибраних класів або всіх існуючих класів потрібно буде вибрати ідентифікаційні атрибути у конфігурації інвокера.';
+    $Self->{Translation}->{'GenericInterface module registration for the ConfigItemCreate invoker layer.'} =
+        'Реєстрація модуля GenericInterface для шару виклику ConfigItemFetch.';
     $Self->{Translation}->{'GenericInterface module registration for the ConfigItemFetch invoker layer.'} =
+        'Реєстрація модуля GenericInterface для шару виклику ConfigItemFetch.';
+    $Self->{Translation}->{'GenericInterface module registration for the ConfigItemUpdate invoker layer.'} =
         'Реєстрація модуля GenericInterface для шару виклику ConfigItemFetch.';
     $Self->{Translation}->{'ITSM ConfigItem'} = 'ITSM ConfigItem';
     $Self->{Translation}->{'ITSM config item overview.'} = 'Огляд елементів конфігурації ITSM.';
-    $Self->{Translation}->{'If this option is activated, linked items are only counted if they belong to one of the listed classes.'} =
-        'Якщо ця опція активована, пов\'язані елементи враховуються, тільки якщо вони належать до одного з перелічених класів.';
     $Self->{Translation}->{'InciState'} = 'InciState';
     $Self->{Translation}->{'IncidentState'} = 'IncidentState';
+    $Self->{Translation}->{'Includes classes in the config item search of the public interface.'} =
+        '';
     $Self->{Translation}->{'Includes deployment states in the config item search of the customer interface.'} =
         'Включає стани розгортання до пошуку елементів конфігурації у клієнтському інтерфейсі.';
+    $Self->{Translation}->{'Includes deployment states in the config item search of the public interface.'} =
+        '';
     $Self->{Translation}->{'Includes incident states in the config item search of the customer interface.'} =
         'Включає стани інцидентів у пошук елементів конфігурації клієнтського інтерфейсу.';
+    $Self->{Translation}->{'Includes incident states in the config item search of the public interface.'} =
+        '';
+    $Self->{Translation}->{'Includes the name in the config item search of the public interface.'} =
+        '';
+    $Self->{Translation}->{'Includes the number in the config item search of the public interface.'} =
+        '';
+    $Self->{Translation}->{'License accounting configuration item event module.'} = '';
+    $Self->{Translation}->{'Loader module registration for the public interface.'} = '';
     $Self->{Translation}->{'Maximum number of config items to be displayed in the result of this operation.'} =
         'Максимальна кількість елементів конфігурації, які буде відображено в результаті цієї операції.';
     $Self->{Translation}->{'Module to check the group responsible for a class.'} = 'Модуль для перевірки групи, відповідальної за клас.';
@@ -436,6 +472,8 @@ sub Data {
         'Кількість елементів конфігурації, які будуть відображатися на кожній сторінці результатів пошуку в інтерфейсі агента.';
     $Self->{Translation}->{'Number of config items to be displayed in each page of a search result in the customer interface.'} =
         'Кількість елементів конфігурації, які будуть відображатися на кожній сторінці результатів пошуку в інтерфейсі клієнта.';
+    $Self->{Translation}->{'Number of config items to be displayed in each page of the public interface.'} =
+        '';
     $Self->{Translation}->{'Objects to search for, how many entries and which attributs to show. ConfigItem attributes have to explicitly be stored via Elasticsearch.'} =
         'Об\'єкти для пошуку, кількість записів і які атрибути показувати. Атрибути ConfigItem мають бути явно збережені через Elasticsearch.';
     $Self->{Translation}->{'Overview.'} = 'Огляд.';
@@ -443,8 +481,10 @@ sub Data {
         'Параметри категорій для класів елементів конфігурації у вікні налаштувань інтерфейсу агента.';
     $Self->{Translation}->{'Parameters for the column filters of the small config item overview. Please note: setting \'Active\' to 0 will only prevent agents from editing settings of this group in their personal preferences, but will still allow administrators to edit the settings of another user\'s behalf. Use \'PreferenceGroup\' to control in which area these settings should be shown in the user interface.'} =
         'Параметри для фільтрів стовпців в огляді малих елементів конфігурації. Зверніть увагу: встановлення значення "Активний" на 0 лише заборонить агентам редагувати налаштування цієї групи у своїх особистих налаштуваннях, але дозволить адміністраторам редагувати налаштування від імені іншого користувача. Використовуйте "PreferenceGroup", щоб контролювати, в якій області користувацького інтерфейсу відображати ці налаштування.';
-    $Self->{Translation}->{'Parameters for the dashboard backend of the customer company config item overview of the agent interface . "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin.'} =
-        'Параметри для бекенду дашборду компанії-замовника елемент конфігурації огляду інтерфейсу агента. "Limit" - кількість записів, що відображаються за замовчуванням. "Group" використовується для обмеження доступу до плагіна (наприклад, Group: admin;group1;group2;). "Default" визначає, чи буде плагін увімкнений за замовчуванням, чи користувачеві потрібно увімкнути його вручну. "CacheTTLLocal" - час кешування плагіна в хвилинах.';
+    $Self->{Translation}->{'Parameters for the dashboard backend of the customer company config item overview show in the agent interface. "Limit" is the number of entries shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is to specify which customer company reference dynamic field is used to filter for the selected customer company. "ShownClasses" is a list to optionally restrict classes of the shown config items. Leaving this list empty defaults to all classes which match the customer company in the dynamic field configured in "ConfigItemKey".'} =
+        '';
+    $Self->{Translation}->{'Parameters for the dashboard backend of the customer company config item overview shown in the agent interface. "Limit" is the number of entries per config item class shown by default. "Group" is used to restrict the access to the plugin (e. g. Group: admin;group1;group2;). "Default" determines if the plugin is enabled by default or if the user needs to enable it manually. "CacheTTLLocal" is the cache time in minutes for the plugin. "ConfigItemKey" is to specify which customer user reference dynamic field is used to filter for the selected customer user. "ShownClasses" is a list to optionally restrict classes of the shown config items. Leaving this list empty defaults to all classes which match the customer user in the dynamic field configured in "ConfigItemKey".'} =
+        '';
     $Self->{Translation}->{'Parameters for the deployment states color in the preferences view of the agent interface.'} =
         'Параметри для станів розгортання позначаються кольором у вікні налаштувань інтерфейсу агента.';
     $Self->{Translation}->{'Parameters for the deployment states in the preferences view of the agent interface.'} =
@@ -466,6 +506,9 @@ sub Data {
     $Self->{Translation}->{'Performs the configured action for each event (as an Invoker) for each configured Webservice.'} =
         'Виконує налаштовану дію для кожної події (як інвокер) для кожного налаштованого вебсервісу.';
     $Self->{Translation}->{'Permission Group'} = 'Група дозволів';
+    $Self->{Translation}->{'Public users can see historic CI versions.'} = '';
+    $Self->{Translation}->{'Public users have the possibility to manually switch between historic CI versions.'} =
+        '';
     $Self->{Translation}->{'Required permissions to use the ITSM configuration item attachment action in the agent interface.'} =
         'Необхідні дозволи для використання дії прикріплення елемента конфігурації ITSM в інтерфейсі агента.';
     $Self->{Translation}->{'Required permissions to use the ITSM configuration item screen in the agent interface.'} =
@@ -523,34 +566,259 @@ sub Data {
     $Self->{Translation}->{'The default category which is shown, if none is selected.'} = 'Категорія за замовчуванням, яка відображається, якщо не вибрано жодної.';
     $Self->{Translation}->{'The identifier for a configuration item, e.g. ConfigItem#, MyConfigItem#. The default is ConfigItem#.'} =
         'Ідентифікатор елемента конфігурації, наприклад, ConfigItem#, MyConfigItem#. За замовчуванням це ConfigItem#.';
+    $Self->{Translation}->{'Title for the public interface overview.'} = '';
+    $Self->{Translation}->{'Title for the public interface search.'} = '';
     $Self->{Translation}->{'Triggers ConfigItemFetch invoker automatically.'} = 'Автоматично запускає викличник ConfigItemFetch.';
     $Self->{Translation}->{'Version String Expression'} = 'Вираз рядка версії';
     $Self->{Translation}->{'Version String Module'} = 'Модуль рядка версії';
     $Self->{Translation}->{'Version Trigger'} = 'Тригер версії';
+    $Self->{Translation}->{'Whether fields should be automatically filled (1), and in that case also be hidden from ticket formulars (2).'} =
+        '';
     $Self->{Translation}->{'Whether the execution of ConfigItemACL can be avoided by checking cached field dependencies. This can improve loading times of formulars, but has to be disabled, if ACLModules are to be used for ITSMConfigItem- and Form-ReturnTypes.'} =
         'Чи можна уникнути виконання ConfigItemACL шляхом перевірки кешованих залежностей полів. Це може покращити час завантаження формул, але його слід вимкнути, якщо ACLM-модулі буде використано для ITSMConfigItem- і Form-ReturnTypes.';
     $Self->{Translation}->{'Which general information is shown in the header.'} = 'Яка загальна інформація відображається в заголовку.';
-    $Self->{Translation}->{'With this option it´s possible to fill automaticly a CI field, depending on the count of linked CI´s with the existing type DependsOn.'} =
-        'За допомогою цієї опції можна автоматично заповнити поле КІ залежно від кількості пов\'язаних КІ з існуючим типом DependsOn.';
-    $Self->{Translation}->{'With this option it´s possible to fill automaticly a CI field, depending on the count of linked CI´s.'} =
-        'За допомогою цієї опції можна автоматично заповнити поле КІ залежно від кількості пов\'язаних КІ.';
-    $Self->{Translation}->{'With this option it´s possible to fill automaticly a CI field, depending on the count of linked CI´s. The setting CounterClassName include the name of the class and CounterFieldName is used to store the count of used licence.'} =
-        'За допомогою цієї опції можна автоматично заповнити поле CI залежно від кількості пов\'язаних CI. Параметр CounterClassName містить назву класу, а CounterFieldName використовується для зберігання кількості використаних ліцензій.';
     $Self->{Translation}->{'class'} = 'клас';
     $Self->{Translation}->{'global'} = 'глобальний';
     $Self->{Translation}->{'postproductive'} = 'постпродуктивний';
     $Self->{Translation}->{'preproductive'} = 'препродуктивний';
     $Self->{Translation}->{'productive'} = 'продуктивний';
 
+    # Ready to adopt classes: IT-Servicemanagement-11_0_3
+    $Self->{Translation}->{'10U: 17.5 inches (44.45 cm)'} = '10U: 17,5 дюймів (44,45 см)';
+    $Self->{Translation}->{'12U: 21 inches (53.34 cm)'} = '12U: 21 дюйм (53,34 см)';
+    $Self->{Translation}->{'15U: 26.25 inches (66.68 cm)'} = '15U: 26,25 дюйма (66,68 см)';
+    $Self->{Translation}->{'18U: 31.5 inches (80.01 cm)'} = '18U: 31,5 дюйма (80,01 см)';
+    $Self->{Translation}->{'19-inch Rack'} = '19-дюймова стійка';
+    $Self->{Translation}->{'1U: 1.75 inches (4.45 cm)'} = '1U: 1,75 дюйма (4,45 см)';
+    $Self->{Translation}->{'20U: 35 inches (88.9 cm)'} = '20U: 35 дюймів (88,9 см)';
+    $Self->{Translation}->{'21-inch Rack'} = '21-дюймова стійка';
+    $Self->{Translation}->{'22U: 38.5 inches (97.79 cm)'} = '22U: 38,5 дюймів (97,79 см)';
+    $Self->{Translation}->{'23-inch Rack'} = '23-дюймова стійка';
+    $Self->{Translation}->{'23.6 inches (600 mm)'} = '23,6 дюйма (600 мм)';
+    $Self->{Translation}->{'24U: 42 inches (106.68 cm)'} = '24U: 42 дюйми (106,68 см)';
+    $Self->{Translation}->{'27U: 47.25 inches (120.02 cm)'} = '27U: 47,25 дюймів (120,02 см)';
+    $Self->{Translation}->{'2U: 3.5 inches (8.89 cm)'} = '2U: 3,5 дюйма (8,89 см)';
+    $Self->{Translation}->{'30U: 52.5 inches (133.35 cm)'} = '30U: 52,5 дюйма (133,35 см)';
+    $Self->{Translation}->{'31.5 inches (800 mm)'} = '31,5 дюйма (800 мм)';
+    $Self->{Translation}->{'33U: 57.75 inches (146.68 cm)'} = '33U: 57,75 дюймів (146,68 см)';
+    $Self->{Translation}->{'35.4 inches (900 mm)'} = '35,4 дюйма (900 мм)';
+    $Self->{Translation}->{'36U: 63 inches (160.02 cm)'} = '36U: 63 дюйми (160,02 см)';
+    $Self->{Translation}->{'39.4 inches (1000 mm)'} = '39,4 дюйма (1000 мм)';
+    $Self->{Translation}->{'39U: 68.25 inches (173.35 cm)'} = '39U: 68,25 дюймів (173,35 см)';
+    $Self->{Translation}->{'3U: 5.25 inches (13.34 cm)'} = '3U: 5,25 дюйма (13,34 см)';
+    $Self->{Translation}->{'42U: 73.5 inches (186.69 cm)'} = '42U: 73,5 дюйма (186,69 см)';
+    $Self->{Translation}->{'43.3 inches (1100 mm):'} = '43,3 дюйма (1100 мм):';
+    $Self->{Translation}->{'45U: 78.75 inches (200.02 cm)'} = '45U: 78,75 дюймів (200,02 см)';
+    $Self->{Translation}->{'47.2 inches (1200 mm)'} = '47,2 дюйма (1200 мм)';
+    $Self->{Translation}->{'48U: 84 inches (213.36 cm)'} = '48U: 84 дюйми (213,36 см)';
+    $Self->{Translation}->{'4U: 7 inches (17.78 cm)'} = '4U: 7 дюймів (17,78 см)';
+    $Self->{Translation}->{'5U: 8.75 inches (22.23 cm)'} = '5U: 8,75 дюйма (22,23 см)';
+    $Self->{Translation}->{'6U: 10.5 inches (26.67 cm)'} = '6U: 10,5 дюймів (26,67 см)';
+    $Self->{Translation}->{'7U: 12.25 inches (31.12 cm)'} = '7U: 12,25 дюйма (31,12 см)';
+    $Self->{Translation}->{'8U: 14 inches (35.56 cm)'} = '8U: 14 дюймів (35,56 см)';
+    $Self->{Translation}->{'9U: 15.75 inches (40.01 cm)'} = '9U: 15,75 дюйма (40,01 см)';
+    $Self->{Translation}->{'AGPL (Affero General Public License)'} = '';
+    $Self->{Translation}->{'Accounting'} = 'Бухгалтерський облік';
+    $Self->{Translation}->{'Accounting Information'} = '';
+    $Self->{Translation}->{'Address Allocation'} = 'Присвоєння адреси';
+    $Self->{Translation}->{'Administrator'} = 'Адміністратор';
+    $Self->{Translation}->{'Analog Phone'} = 'Аналоговий телефон';
+    $Self->{Translation}->{'Apache License'} = '';
+    $Self->{Translation}->{'Appliance Type'} = 'Тип приладу';
+    $Self->{Translation}->{'BSD License (Berkeley Software Distribution License)'} = '';
+    $Self->{Translation}->{'Battery Capacity (Ah)'} = 'Ємність акумулятора (Ач)';
+    $Self->{Translation}->{'Battery Type'} = 'Тип батареї';
+    $Self->{Translation}->{'Building'} = 'будинок';
+    $Self->{Translation}->{'Bus Interface'} = 'Інтерфейс шини';
+    $Self->{Translation}->{'CC0 (Creative Commons Zero)'} = '';
+    $Self->{Translation}->{'CIDR'} = 'CIDR';
+    $Self->{Translation}->{'CPU'} = 'ПРОЦЕСОР';
+    $Self->{Translation}->{'CPU Class'} = 'Клас процесора';
+    $Self->{Translation}->{'Capacity (GB)'} = 'Ємність (ГБ)';
+    $Self->{Translation}->{'Capacity per graphics card'} = 'Потужність на одну відеокарту';
+    $Self->{Translation}->{'Card Number'} = 'Номер картки';
+    $Self->{Translation}->{'Card Reader'} = 'Зчитувач карток';
+    $Self->{Translation}->{'Card Type'} = 'Тип картки';
+    $Self->{Translation}->{'Client Certificates'} = 'Клієнтські сертифікати';
+    $Self->{Translation}->{'Client Software'} = 'Клієнтське програмне забезпечення';
+    $Self->{Translation}->{'Client category'} = 'Категорія клієнтів';
+    $Self->{Translation}->{'Clockrate'} = 'Тактова частота';
+    $Self->{Translation}->{'Clockspeed'} = 'Тактова частота';
+    $Self->{Translation}->{'Code Signing Certificates'} = 'Сертифікати кодового підпису';
+    $Self->{Translation}->{'Conference Phone'} = 'Конференц-телефон';
+    $Self->{Translation}->{'Consulting Agreement'} = 'Договір про надання консультацій';
+    $Self->{Translation}->{'Contact'} = 'Контакти';
+    $Self->{Translation}->{'Contact Distributor'} = 'Зв\'язатися з дистриб\'ютором';
+    $Self->{Translation}->{'Container Management'} = 'Управління контейнерами';
+    $Self->{Translation}->{'Contract'} = 'Контракт';
+    $Self->{Translation}->{'Contract Type'} = 'Тип контракту';
+    $Self->{Translation}->{'Contract period from'} = 'Період дії контракту від';
+    $Self->{Translation}->{'Contract period until'} = 'Термін дії контракту до';
+    $Self->{Translation}->{'Cordless Phone (DECT Phone)'} = 'Бездротовий телефон (DECT-телефон)';
+    $Self->{Translation}->{'Cost unit'} = 'Одиниця виміру витрат';
+    $Self->{Translation}->{'Count of licenses'} = 'Кількість ліцензій';
+    $Self->{Translation}->{'Creation Date'} = 'Дата створення';
+    $Self->{Translation}->{'Creative Commons'} = '';
+    $Self->{Translation}->{'Custom Rack'} = 'Спеціальний стелаж';
+    $Self->{Translation}->{'DHCP'} = 'DHCP';
+    $Self->{Translation}->{'DHCP Reserved'} = 'DHCP зарезервовано';
+    $Self->{Translation}->{'DNS-Server'} = 'DNS-сервер';
+    $Self->{Translation}->{'DVI'} = 'DVI';
+    $Self->{Translation}->{'Date of Invoice'} = 'Дата інвойсу';
+    $Self->{Translation}->{'Date of Order'} = 'Дата замовлення';
+    $Self->{Translation}->{'Date of Warranty'} = 'Дата початку дії гарантії';
+    $Self->{Translation}->{'Date of release'} = 'Дата випуску';
+    $Self->{Translation}->{'Desktop'} = 'Робочий стіл';
+    $Self->{Translation}->{'DisplayPort'} = 'DisplayPort';
+    $Self->{Translation}->{'Document Signing Certificates'} = 'Сертифікати підписання документів';
+    $Self->{Translation}->{'EPL (Eclipse Public License)'} = '';
+    $Self->{Translation}->{'ETSI Rack'} = 'ETSI Rack';
+    $Self->{Translation}->{'Email Certificates (S/MIME Certificates)'} = 'Сертифікати електронної пошти (S/MIME сертифікати)';
+    $Self->{Translation}->{'Embedded SIM (eSIM)'} = '';
+    $Self->{Translation}->{'Employment Contract'} = 'Трудовий договір';
+    $Self->{Translation}->{'End IP Address'} = 'Кінцева IP-адреса';
+    $Self->{Translation}->{'End of support'} = 'Кінець підтримки';
+    $Self->{Translation}->{'Expiry Date'} = 'Термін придатності';
+    $Self->{Translation}->{'External Hard Drive'} = 'Зовнішній жорсткий диск';
+    $Self->{Translation}->{'Firewall'} = 'Брандмауер';
+    $Self->{Translation}->{'Firmware'} = 'Прошивка';
+    $Self->{Translation}->{'Flywheel Energy Storage'} = 'Накопичувач енергії маховика';
+    $Self->{Translation}->{'Form Factor'} = 'Форм-фактор';
+    $Self->{Translation}->{'Franchise Agreement'} = 'Договір франчайзингу';
+    $Self->{Translation}->{'Freeware'} = 'Безкоштовне програмне забезпечення';
+    $Self->{Translation}->{'GPL (General Public License)'} = '';
+    $Self->{Translation}->{'General Information'} = 'Загальна інформація';
+    $Self->{Translation}->{'Graphics Cards'} = 'Відеокарти';
+    $Self->{Translation}->{'Graphics card'} = 'Відеокарта';
+    $Self->{Translation}->{'HDMI'} = 'HDMI';
+    $Self->{Translation}->{'Hardware'} = 'Апаратне забезпечення';
+    $Self->{Translation}->{'Hardware Model'} = 'Модель обладнання';
+    $Self->{Translation}->{'Hardware Weight'} = 'Вага обладнання';
+    $Self->{Translation}->{'Headset'} = 'Гарнітура';
+    $Self->{Translation}->{'IP Protocol'} = 'Протокол IP';
+    $Self->{Translation}->{'Identity and Access Management (IAM)'} = 'Управління ідентифікацією та доступом (IAM)';
+    $Self->{Translation}->{'Inventory Number'} = 'Інвентарний номер';
+    $Self->{Translation}->{'Inverstment costs'} = 'Інвестиційні витрати';
+    $Self->{Translation}->{'Invoice Number'} = 'Номер рахунку-фактури';
+    $Self->{Translation}->{'Keyboard'} = 'Клавіатура';
+    $Self->{Translation}->{'LCD Monitor (Liquid Crystal Display)'} = 'РК-монітор (рідкокристалічний дисплей)';
+    $Self->{Translation}->{'LED Monitor (Light Emitting Diode)'} = 'Світлодіодний монітор (світлодіоди)';
+    $Self->{Translation}->{'LGPL (Lesser General Public License)'} = '';
+    $Self->{Translation}->{'Landline Phone'} = 'Стаціонарний телефон';
+    $Self->{Translation}->{'Laptop'} = 'Ноутбук';
+    $Self->{Translation}->{'Latitude'} = 'Широта';
+    $Self->{Translation}->{'Layer 1: Physical Layer'} = 'Рівень 1: Фізичний рівень';
+    $Self->{Translation}->{'Layer 2: Data Link Layer'} = 'Рівень 2: Канальний рівень передачі даних';
+    $Self->{Translation}->{'Layer 3: Network Layer'} = 'Рівень 3: Мережевий рівень';
+    $Self->{Translation}->{'Layer 3: Network Layer (Supernet)'} = 'Рівень 3: Мережевий рівень (супермережа)';
+    $Self->{Translation}->{'Layer 4: Transport Layer'} = 'Рівень 4: Транспортний рівень';
+    $Self->{Translation}->{'Layer 5: Session Layer'} = 'Рівень 5: Рівень сеансу';
+    $Self->{Translation}->{'Layer 6: Presentation Layer'} = 'Рівень 6: Рівень презентації';
+    $Self->{Translation}->{'Layer 7: Application Layer'} = 'Рівень 7: прикладний рівень';
+    $Self->{Translation}->{'Lease Agreement'} = 'Договір оренди';
+    $Self->{Translation}->{'License Agreement'} = 'Ліцензійна угода';
+    $Self->{Translation}->{'License Count'} = '';
+    $Self->{Translation}->{'License Key'} = 'Ліцензійний ключ';
+    $Self->{Translation}->{'License Type'} = 'Тип ліцензії';
+    $Self->{Translation}->{'License period from'} = 'Термін дії ліцензії від';
+    $Self->{Translation}->{'License period until'} = 'Термін дії ліцензії до';
+    $Self->{Translation}->{'Lithium Iron Phosphate (LiFePO4) Battery'} = 'Літій-залізо-фосфатний (LiFePO4) акумулятор';
+    $Self->{Translation}->{'Lithium-Ion (Li-ion) Battery'} = 'Літій-іонний (Li-ion) акумулятор';
+    $Self->{Translation}->{'Loan Agreement'} = 'Кредитний договір';
+    $Self->{Translation}->{'Located in'} = 'Розташований в';
+    $Self->{Translation}->{'Longitude'} = 'Довгота';
+    $Self->{Translation}->{'MIT License'} = '';
+    $Self->{Translation}->{'MPL (Mozilla Public License)'} = '';
+    $Self->{Translation}->{'Manufacturer'} = 'Виробник';
+    $Self->{Translation}->{'Maximum Load Capacity (W)'} = 'Максимальна навантажувальна здатність (Вт)';
+    $Self->{Translation}->{'Memory'} = 'Пам\'ять';
+    $Self->{Translation}->{'Memory Type'} = 'Тип пам\'яті';
+    $Self->{Translation}->{'Micro SIM'} = '';
+    $Self->{Translation}->{'Mini-Rack'} = 'Міні-стелаж';
+    $Self->{Translation}->{'Mobile Number'} = 'Номер мобільного телефону';
+    $Self->{Translation}->{'Mobile/Embedded'} = 'Мобільний/вбудований';
+    $Self->{Translation}->{'Model'} = 'Модель';
+    $Self->{Translation}->{'Model Description'} = 'Опис моделі';
+    $Self->{Translation}->{'Monitor Resolution'} = 'Роздільна здатність монітора';
+    $Self->{Translation}->{'Monitor Size'} = 'Розмір монітора';
+    $Self->{Translation}->{'Mouse'} = 'Миша.';
+    $Self->{Translation}->{'Nano SIM'} = '';
+    $Self->{Translation}->{'Network'} = 'Мережа';
+    $Self->{Translation}->{'Network Info'} = 'Інформація про мережу';
+    $Self->{Translation}->{'Network Information'} = 'Інформація про мережу';
+    $Self->{Translation}->{'Network Layer'} = 'Мережевий рівень';
+    $Self->{Translation}->{'Nickel-Cadmium (NiCd) Battery'} = 'Нікель-кадмієві (NiCd) акумулятори';
+    $Self->{Translation}->{'Nickel-Metal Hydride (NiMH) Battery'} = 'Нікель-метал-гідридний (NiMH) акумулятор';
+    $Self->{Translation}->{'Non-Disclosure Agreement (NDA)'} = 'Угода про нерозголошення (NDA)';
+    $Self->{Translation}->{'Notebook'} = 'Блокнот';
+    $Self->{Translation}->{'Number of CPUs'} = 'Кількість процесорів';
+    $Self->{Translation}->{'Number of RAM modules'} = 'Кількість модулів оперативної пам\'яті';
+    $Self->{Translation}->{'Number of graphics cards'} = 'Кількість відеокарт';
+    $Self->{Translation}->{'OLED Monitor (Organic Light Emitting Diode)'} = 'OLED-монітор (органічний світлодіод)';
+    $Self->{Translation}->{'Operating costs'} = 'Операційні витрати';
+    $Self->{Translation}->{'Order Number'} = 'Номер замовлення';
+    $Self->{Translation}->{'Other'} = 'Інше';
+    $Self->{Translation}->{'Outputs'} = 'Результати';
+    $Self->{Translation}->{'PIN'} = 'ПІН-КОД';
+    $Self->{Translation}->{'PIN 2'} = 'PIN-КОД 2';
+    $Self->{Translation}->{'PUK'} = 'БЛЮВОТА';
+    $Self->{Translation}->{'PUK 2'} = 'PUK 2';
+    $Self->{Translation}->{'Partnership Agreement'} = 'Партнерська угода';
+    $Self->{Translation}->{'Perpetual licenses'} = '';
+    $Self->{Translation}->{'Phone / VoIP'} = '';
+    $Self->{Translation}->{'Phone Number'} = 'Номер телефону';
+    $Self->{Translation}->{'Phone Type'} = 'Тип телефону';
+    $Self->{Translation}->{'Physical Cores'} = 'Фізичні ядра';
+    $Self->{Translation}->{'Power Delivery'} = 'Постачання електроенергії';
+    $Self->{Translation}->{'Public Domain'} = '';
+    $Self->{Translation}->{'Purchased at'} = 'Придбано за адресою';
+    $Self->{Translation}->{'Rack Depth'} = 'Глибина стійки';
+    $Self->{Translation}->{'Rack Units (U)'} = 'Стелажні блоки (U)';
+    $Self->{Translation}->{'Room'} = 'Кімната';
+    $Self->{Translation}->{'SIM Card'} = 'SIM-карта';
+    $Self->{Translation}->{'SSL/TLS Certificates'} = 'Сертифікати SSL/TLS';
+    $Self->{Translation}->{'Sales Contract'} = 'Договір купівлі-продажу';
+    $Self->{Translation}->{'Satellite Phone'} = 'Супутниковий телефон';
+    $Self->{Translation}->{'Sealed Lead-Acid (SLA) Battery'} = 'Герметичний свинцево-кислотний (SLA) акумулятор';
+    $Self->{Translation}->{'Seat licenses'} = '';
+    $Self->{Translation}->{'Serialnumber'} = 'Серійний номер';
+    $Self->{Translation}->{'Server Software'} = 'Серверне програмне забезпечення';
+    $Self->{Translation}->{'Service Agreement'} = 'Договір про надання послуг';
+    $Self->{Translation}->{'Service Tag'} = 'Сервісний тег';
+    $Self->{Translation}->{'Shareware'} = '';
+    $Self->{Translation}->{'Socket Type'} = 'Тип розетки';
+    $Self->{Translation}->{'Software'} = 'Програмне забезпечення';
+    $Self->{Translation}->{'Speakers'} = 'Спікери';
+    $Self->{Translation}->{'Standard SIM'} = 'Стандарт';
+    $Self->{Translation}->{'Start IP Address'} = 'Початкова IP-адреса';
+    $Self->{Translation}->{'Storage'} = 'Зберігання';
+    $Self->{Translation}->{'Storage Partition'} = 'Розділ для зберігання';
+    $Self->{Translation}->{'Subscription-based licenses'} = '';
+    $Self->{Translation}->{'Subsidiary'} = 'Дочірнє підприємство';
+    $Self->{Translation}->{'Summary'} = 'Підсумок';
+    $Self->{Translation}->{'Thin Client'} = 'Тонкий клієнт';
+    $Self->{Translation}->{'Threads'} = 'Нитки';
+    $Self->{Translation}->{'Thunderbolt'} = 'Блискавка.';
+    $Self->{Translation}->{'Total Graphics card RAM (GB)'} = 'Загальний обсяг оперативної пам\'яті відеокарти (ГБ)';
+    $Self->{Translation}->{'Total RAM (GB)'} = 'Загальна оперативна пам\'ять (ГБ)';
+    $Self->{Translation}->{'Touchscreen Monitor'} = 'Сенсорний монітор';
+    $Self->{Translation}->{'Tower'} = 'Вежа';
+    $Self->{Translation}->{'USB Hub'} = 'USB-концентратор';
+    $Self->{Translation}->{'USB-C'} = 'USB-C';
+    $Self->{Translation}->{'VGA'} = 'VGA';
+    $Self->{Translation}->{'VPN'} = 'VPN';
+    $Self->{Translation}->{'VR Headset'} = 'VR-гарнітура';
+    $Self->{Translation}->{'Virtual Client'} = '';
+    $Self->{Translation}->{'VirtualLink'} = 'VirtualLink';
+    $Self->{Translation}->{'VoIP Phone'} = 'VoIP-телефон';
+    $Self->{Translation}->{'Volume licenses'} = '';
+    $Self->{Translation}->{'Webcam'} = 'Веб-камера';
+
 
     push @{ $Self->{JavaScriptStrings} // [] }, (
-    'Add all',
     'An error occurred during class import.',
     'An error occurred during communication.',
-    'An item with this name is already present.',
-    'Cancel',
     'Confirm',
-    'Delete',
     'Dismiss',
     'Do you want to proceed?',
     'Importing classes/roles and their related fields',
@@ -564,7 +832,6 @@ sub Data {
     'Submit',
     'The following classes will be imported',
     'The following roles will be imported',
-    'This item still contains sub items. Are you sure you want to remove this item including its sub items?',
     'Yes',
     );
 

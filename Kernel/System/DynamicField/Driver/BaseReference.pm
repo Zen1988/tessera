@@ -1,7 +1,7 @@
 # --
 # OTOBO is a web-based ticketing system for service organisations.
 # --
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -507,7 +507,7 @@ sub EditFieldValueValidate {
             push $LastSearchResults->@*, '';
         }
 
-        # in set case, we fetch the template values and either concat them to the search results
+        # in set case, we fetch the template values and either concatenate them to the search results
         #   or, if no search results are present, use the template values entirely
         if ( defined $Param{SetIndex} ) {
             my $TemplateName          = $DynamicFieldConfig->{Name} . '_Template';
@@ -706,7 +706,7 @@ sub SearchFieldRender {
     }
 
     # check and set class if necessary
-    my $FieldClass = $Self->{FieldCSSClass};    # for field specific JS
+    my $FieldClass = "W50pc $Self->{FieldCSSClass}";    # for field specific JS
 
     my $ValueEscaped = $Param{LayoutObject}->Ascii2Html(
         Text => $Value,
@@ -995,7 +995,7 @@ sub GetFieldTypeSettings {
             {
                 ConfigParamName => 'ReferencedObjectType',
                 Label           => Translatable('Referenced object type'),
-                Explanation     => Translatable('Select the type of the referenced object'),
+                Explanation     => Translatable('Select the type of the referenced object.'),
                 InputType       => 'Selection',
                 SelectionData   => { $Self->{ReferencedObjectType} => $Self->{ReferencedObjectType} },
                 PossibleNone    => 0,
@@ -1202,7 +1202,7 @@ sub PossibleValuesGet {
         );
         %PossibleValues = (
             %PossibleValues,
-            $ResultItem => $ItemDescription{Long},
+            $ResultItem => $ItemDescription{Normal},
         );
     }
 
@@ -1214,8 +1214,11 @@ sub GetFieldState {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
 
-    return () if !IsArrayRefWithData( $DynamicFieldConfig->{Config}{ReferenceFilterList} );
-    return () if none { $Param{ChangedElements}->{ $_->{EqualsObjectAttribute} // '' } } $DynamicFieldConfig->{Config}{ReferenceFilterList}->@*;
+    # in case of lens pointing to a reference field, execution is necessary
+    if ( !$Param{NeedsReset} ) {
+        return () if !IsArrayRefWithData( $DynamicFieldConfig->{Config}{ReferenceFilterList} );
+        return () if none { $Param{ChangedElements}->{ $_->{EqualsObjectAttribute} // '' } } $DynamicFieldConfig->{Config}{ReferenceFilterList}->@*;
+    }
 
     my $Value = $Param{GetParam}{DynamicField}{ 'DynamicField_' . $DynamicFieldConfig->{Name} };
 
@@ -1237,6 +1240,7 @@ sub GetFieldState {
 
         # value holds object id(s) at this point
         my @CheckedValues;
+        my %PossibleValues;
         my $ValueChanged = 0;
         ITEM:
         for my $ValueItem ( $Value->@* ) {
@@ -1261,17 +1265,33 @@ sub GetFieldState {
                 $ValueChanged = 1;
             }
             else {
+                my %Description = $Self->ObjectDescriptionGet(
+                    DynamicFieldConfig => $DynamicFieldConfig,
+                    ObjectID           => $ValueItem,
+                );
+                $PossibleValues{$ValueItem} = $Description{Long};
                 push @CheckedValues, $ValueItem;
             }
-        }
 
-        if ($ValueChanged) {
-            return (
-                NewValue => \@CheckedValues,
+            $Kernel::OM->Get('Kernel::System::Web::FormCache')->SetFormData(
+                LayoutObject => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
+                Key          => 'PossibleValues_DynamicField_' . $DynamicFieldConfig->{Name},
+                Value        => \@CheckedValues,
             );
         }
 
-        return ();
+        # PossibleValues are needed for display value in frontend
+        #   e.g. '"Tina Tester" <tina@example.com>' (CustomerUser MailString) vs. 'tina' (CustomerUserID)
+        if ($ValueChanged) {
+            return (
+                NewValue       => \@CheckedValues,
+                PossibleValues => \%PossibleValues,
+            );
+        }
+
+        return (
+            PossibleValues => \%PossibleValues,
+        );
     }
 
     # fetch possible values for dynamic field
@@ -1369,23 +1389,23 @@ sub _CreateAutoLinkObjectLink {
     );
 
     my $Links = $LinkList->{$SourceObject}->{$LinkType};
-    for my $LinkTypeKey ( keys %$Links ) {
+    for my $LinkTypeKey ( keys $Links->%* ) {
 
         my $References = $Links->{$LinkTypeKey};
-        for my $Key ( keys %$References ) {
+        for my $Key ( keys $References->%* ) {
 
-            return unless $Key != $SourceKey;
+            return if $Key == $SourceKey;
         }
     }
 
     # and the other way round
     $Links = $LinkList->{$TargetObject}->{$LinkType};
-    for my $LinkTypeKey ( keys %$Links ) {
+    for my $LinkTypeKey ( keys $Links->%* ) {
 
         my $References = $Links->{$LinkTypeKey};
-        for my $Key ( keys %$References ) {
+        for my $Key ( keys $References->%* ) {
 
-            return unless $Key != $TargetKey;
+            return if $Key == $TargetKey;
         }
     }
 

@@ -24,6 +24,7 @@ use utf8;
 use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData IsStringWithData);
 
 our @ObjectDependencies = (
+    'Kernel::System::DB',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::GeneralCatalog',
@@ -817,13 +818,22 @@ sub _ExistingObjectIDResolve {
 
     return if !IsStringWithData( $Param{Name} );
 
-    my @IDs = $MELTObjectObject->MELTObjectSearch(
-        Result   => 'ARRAY',
-        Limit    => 2,
-        ClassIDs => [ $Param{ClassID} ],
-        Name     => $Param{Name},
-        UserID   => 1,
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    return if !$DBObject->Prepare(
+        SQL => <<'SQL',
+SELECT ci.id
+FROM melt_object_item ci
+INNER JOIN melt_object_item_version v ON ci.last_version_id = v.id
+WHERE ci.class_id = ? AND v.name = ?
+SQL
+        Bind  => [ \$Param{ClassID}, \$Param{Name} ],
+        Limit => 2,
     );
+
+    my @IDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @IDs, $Row[0];
+    }
 
     return @IDs == 1 ? $IDs[0] : undef;
 }
@@ -882,4 +892,3 @@ sub _IsMELTObjectReference {
 }
 
 1;
-

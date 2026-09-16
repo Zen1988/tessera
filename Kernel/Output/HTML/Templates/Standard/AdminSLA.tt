@@ -2,9 +2,9 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
-# $origin: otobo - 6efdc7bf2a3325277cd79a60f0f2407f8ad59e87 - Kernel/Output/HTML/Templates/Standard/AdminSLA.tt
+# $origin: otobo - 6397f36ff09d085e4c31d5dda4110a73319f906d - Kernel/Output/HTML/Templates/Standard/AdminSLA.tt
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -87,6 +87,68 @@
             </div>
         </div>
 [% RenderBlockEnd("Filter") %]
+[% RenderBlockStart("ImportExportWidget") %]
+        <div class='WidgetSimple' id='SLAImportExportWidget'>
+            <div class='Header'>
+                <h1 class="InvisibleText">
+                    [% Translate("Import / Export") | html %]
+                </h1>
+            </div>
+
+            [% BreadcrumbPath = [
+                    {
+                        Name => Translate('Import / Export'),
+                    },
+                ]
+            %]
+
+            [% INCLUDE "Breadcrumb.tt" Path = BreadcrumbPath %]
+
+            <div class='Content'>
+                <p class='FieldExplanation'>
+                    [% Translate('Here you can upload a configuration file to import SLAs to your system. The file needs to be in .yml format as exported by the SLA management module.') | html %]
+                </p>
+                <ul class='ActionList SpacingTop'>
+                    <li>
+                        <form action='[% Env("CGIHandle") %]' method='post' enctype='multipart/form-data' class='Validate PreventMultipleSubmits'>
+                            <input type='hidden' name='ChallengeToken' value=[% Env("UserChallengeToken") | JSON %]>
+                            <input type='hidden' name='Action' value='AdminSLAImportExport'/>
+                            <input type='hidden' name='Subaction' value='Import'/>
+                            <input name='FileUpload' id='FileUpload' type='file' size='18' class='Fixed W100pc Validate_Required [% Data.FileUploadInvalid | html %]'/>
+                            <div id='FileUploadError' class='TooltipErrorMessage'>
+                                <p>
+                                    [% Translate('This field is required.') | html %]
+                                </p>
+                            </div>
+                            <div id='FileUploadServerError' class='TooltipErrorMessage'>
+                                <p>
+                                    % Translate('This field is required.') | html %]
+                                </p>
+                            </div>
+                            <fieldset class='SpacingTop'>
+                                <input type='checkbox' id='OverwriteExistingEntitiesExample' name='OverwriteExistingEntities' value='1'/>
+                                <label for='OverwriteExistingEntitiesExample'>
+                                    [% Translate('Overwrite existing entities') | html %]
+                                </label>
+                            </fieldset>
+                            <button class='CallForAction Fullsize Center SpacingTop' id='SLAImport' type='submit'>
+                                <span><i class='fa fa-upload'></i>
+                                    [% Translate('SLAs Import') | html %]
+                                </span>
+                            </button>
+                        </form>
+                    </li>
+                    <li>
+                        <a href='[% Env("Baselink") %]Action=AdminSLAImportExport;Subaction=Export' id='SLAExport' class='CallForAction Fullsize Center'>
+                            <span><i class='fa fa-download'></i>
+                                [% Translate('SLAs Export') | html %]
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+[% RenderBlockEnd("ImportExportWidget") %]
     </div>
 
     <div class="ContentColumn">
@@ -160,15 +222,13 @@
                             <div id="NameServerError" class="TooltipErrorMessage"><p>[% Translate("This field is required.") | html %]</p></div>
                         </div>
                         <div class="Clear"></div>
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
                         <label for="ServiceIDs">[% Translate("Type") | html %]:</label>
                         <div class="Field">
                             [% Data.TypeOptionStrg %]
                         </div>
                         <div class="Clear"></div>
-# ---
+# EO ITSMCore
 
                         <label for="ServiceIDs">[% Translate("Service") | html %]:</label>
                         <div class="Field">
@@ -214,16 +274,14 @@
                             </p>
                         </div>
                         <div class="Clear"></div>
-# ---
-# ITSMCore
-# ---
+# Rother OSS / ITSMCore
                         <label for="MinTimeBetweenIncidents">[% Translate("Minimum Time Between Incidents") | html %] ([% Translate("minutes") | html %]):</label>
                         <div class="Field">
                             <input type="text" name="MinTimeBetweenIncidents" id="MinTimeBetweenIncidents" value="[% Data.MinTimeBetweenIncidents | html %]" class="W25pc Validate_Number" maxlength="15"/>
                             <div id="MinTimeBetweenIncidentsError" class="TooltipErrorMessage"><p>[% Translate("Please write only numbers!") | html %]</p></div>
                         </div>
                         <div class="Clear"></div>
-# ---
+# EO ITSMCore
 
                         <label class="Mandatory" for="ValidID"><span class="Marker">*</span> [% Translate("Validity") | html %]:</label>
                         <div class="Field">

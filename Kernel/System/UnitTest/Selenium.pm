@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1233,26 +1233,28 @@ sub find_no_element_by_css_ok {
 
 =head2 get_selected_value
 
-Helper to get the value property of form elements, definded by using a Css Selector
+Helper to get the value property of form elements, defined by using a CSS Selector
 
 =cut
 
 sub get_selected_value {
-    my ( $Self, $CssSelector )  = @_;
+    my ( $Self, $CssSelector ) = @_;
 
     return $Self->execute_script("return \$('$CssSelector')[0].value;");
 }
 
+=for stopwords DOM
+
 =head2 get_value_by_id
 
-Helper to get the value property of form elements, similar to above helper,
-but using a DOM id and getElementById to allow for IDs that are not valid 
+Helper to get the value property of form elements, similar to the above helper,
+but using a DOM id and getElementById() to allow for IDs that are not valid
 CSS Selectors.
 
 =cut
 
 sub get_value_by_id {
-    my ( $Self, $ID )  = @_;
+    my ( $Self, $ID ) = @_;
 
     return $Self->execute_script("return document.getElementById('$ID').value;");
 }

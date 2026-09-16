@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@ sub Data {
     $Self->{Translation}->{'Criticality ↔ Impact ↔ Priority'} = 'Kritikusság ↔ Hatás ↔ Prioritás';
     $Self->{Translation}->{'Manage the priority result of combinating Criticality ↔ Impact.'} =
         'A Kritikusság ↔ Hatás összetétel prioritás eredményének kezelése.';
-    $Self->{Translation}->{'Priority allocation'} = 'Prioritás lefoglalás';
+    $Self->{Translation}->{'Priority allocation'} = 'Prioritáslefoglalás';
 
     # Template: AdminSLA
     $Self->{Translation}->{'Minimum Time Between Incidents'} = 'Az incidensek közti legkisebb idő';
@@ -37,18 +37,18 @@ sub Data {
 
     # Template: AgentITSMSLAZoom
     $Self->{Translation}->{'SLA Information'} = 'SLA információk';
-    $Self->{Translation}->{'Last changed'} = 'Utolsó módosítás';
+    $Self->{Translation}->{'Last changed'} = 'Utoljára módosítva';
     $Self->{Translation}->{'Last changed by'} = 'Utoljára módosította';
     $Self->{Translation}->{'Associated Services'} = 'Hozzárendelt szolgáltatások';
 
     # Template: AgentITSMServiceZoom
-    $Self->{Translation}->{'Service Information'} = 'Szolgáltatás információk';
+    $Self->{Translation}->{'Service Information'} = 'Szolgáltatásinformációk';
     $Self->{Translation}->{'Current incident state'} = 'Jelenlegi incidensállapot';
     $Self->{Translation}->{'Associated SLAs'} = 'Hozzárendelt SLA-k';
 
     # Template: TicketInformation
-    $Self->{Translation}->{'Service Incident State'} = '';
-    $Self->{Translation}->{'Service Criticality'} = '';
+    $Self->{Translation}->{'Service Incident State'} = 'Szolgáltatás incidensállapota';
+    $Self->{Translation}->{'Service Criticality'} = 'Szolgáltatás kritikussága';
 
     # Perl Module: Kernel/Modules/AdminITSMCIPAllocate.pm
     $Self->{Translation}->{'Impact'} = 'Hatás';
@@ -62,6 +62,7 @@ sub Data {
     $Self->{Translation}->{'operational'} = 'üzemképes';
     $Self->{Translation}->{'warning'} = 'figyelmeztetés';
     $Self->{Translation}->{'incident'} = 'incidens';
+    $Self->{Translation}->{'unknown'} = '';
 
     # Perl Module: Kernel/Modules/AgentITSMServicePrint.pm
     $Self->{Translation}->{'No ServiceID is given!'} = 'Nincs szolgáltatásazonosító megadva!';
@@ -70,6 +71,9 @@ sub Data {
 
     # Perl Module: Kernel/Output/HTML/LinkObject/Service.pm
     $Self->{Translation}->{'Incident State'} = 'Incidensállapot';
+
+    # Perl Module: Kernel/System/DynamicField/Driver/Service.pm
+    $Self->{Translation}->{'External-source key'} = 'Külső forrás kulcsa';
 
     # Database XML / SOPM Definition: ITSMCore.sopm
     $Self->{Translation}->{'Operational'} = 'Üzemképes';
@@ -93,20 +97,19 @@ sub Data {
 
     # SysConfig
     $Self->{Translation}->{'Alternative to'} = 'Alternatíva erre';
-    $Self->{Translation}->{'Both'} = 'Mindkettő';
     $Self->{Translation}->{'CIPAllocation: Overwrite priority based on Criticality and Impact. Default fallback: Frontend::CIPAllocationDefault.'} =
-        '';
+        'CIPAllocation: prioritás felülírása a kritikusság és hatás alapján. Alapértelmezett tartalék: Frontend::CIPAllocationDefault.';
     $Self->{Translation}->{'Connected to'} = 'Csatlakoztatva ide';
     $Self->{Translation}->{'Default behavior of priority allocation in the frontends based on Criticality and Impact. Can be overruled by frontend specific PriorityByCIP settings.'} =
-        '';
+        'A prioritáslefoglalás alapértelmezett viselkedése az előtétprogramokon a kritikusság és hatás alapján. Ezt az előtétprogramra jellemző PriorityByCIP beállítások felülbírálhatják.';
     $Self->{Translation}->{'Define Actions where a settings button is available in the linked objects widget (LinkObject::ViewMode = "complex"). Please note that these Actions must have registered the following JS and CSS files: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js and Core.Agent.LinkObject.js.'} =
         'Műveletek meghatározása, ahol egy beállítások gomb érhető el a kapcsolt objektumok felületi elemen (LinkObject::ViewMode = „összetett”). Ne feledje, hogy ezeknek a műveleteknek rendelkezniük kell a következő JS és CSS fájlok regisztrálásával: Core.AllocationList.css, Core.UI.AllocationList.js, Core.UI.Table.Sort.js, Core.Agent.TableFilters.js és Core.Agent.LinkObject.js.';
     $Self->{Translation}->{'Define which columns are shown in the linked Services widget (LinkObject::ViewMode = "complex"). Note: Only Service attributes are allowed for DefaultColumns. Possible settings: 0 = Disabled, 1 = Available, 2 = Enabled by default.'} =
         'Annak meghatározása, hogy mely oszlopok legyenek láthatók a kapcsolt szolgáltatások felületi elemen (LinkObject::ViewMode = „összetett”). Megjegyzés: csak szolgáltatás attribútumok engedélyezettek az alapértelmezett oszlopoknál. Lehetséges beállítások: 0 = letiltva, 1 = elérhető, 2 = alapértelmezetten engedélyezett.';
-    $Self->{Translation}->{'Defines the list of online repositories. Another installation can be used as repository, for example: Key="https://ncs.com.sg;File=" and Content="Some Name".'} =
-        '';
-    $Self->{Translation}->{'Depends on'} = 'Ettől függ';
-    $Self->{Translation}->{'Enforce'} = '';
+    $Self->{Translation}->{'Defines the list of online repositories. Another installation can be used as repository, for example: Key="http://example.com/otobo/public.pl?Action=PublicRepository;File=" and Content="Some Name".'} =
+        'Meghatározza az interneten lévő tárolók listáját. Egy másik telepítés is használható tárolóként, például: Kulcs=„http://example.com/otobo/public.pl?Action=PublicRepository;File=” és Tartalom=„Valamilyen név”.';
+    $Self->{Translation}->{'Depends on'} = 'Függ ettől';
+    $Self->{Translation}->{'Enforce'} = 'Erőltetés';
     $Self->{Translation}->{'Frontend module registration for the AdminITSMCIPAllocate configuration in the admin area.'} =
         'Előtétprogram modul regisztráció az adminisztrációs területen lévő kritikusság ↔ hatás ↔ prioritás lefoglalás beállításhoz.';
     $Self->{Translation}->{'Frontend module registration for the AgentITSMSLA object in the agent interface.'} =
@@ -123,10 +126,10 @@ sub Data {
         'Előtétprogram modul regisztráció az ügyintézői felületen lévő szolgáltatás nagyítás objektumhoz.';
     $Self->{Translation}->{'ITSM SLA Overview.'} = 'ITSM SLA áttekintés.';
     $Self->{Translation}->{'ITSM Service Overview.'} = 'ITSM szolgáltatás áttekintés.';
-    $Self->{Translation}->{'Incident State Type'} = 'Incidensállapot típus';
+    $Self->{Translation}->{'Incident State Type'} = 'Incidensállapot típusa';
     $Self->{Translation}->{'Includes'} = 'Tartalmazza';
-    $Self->{Translation}->{'Located in'} = '';
-    $Self->{Translation}->{'Location of'} = '';
+    $Self->{Translation}->{'Located in'} = 'Ebben található';
+    $Self->{Translation}->{'Location of'} = 'Ennek helye';
     $Self->{Translation}->{'Manage priority matrix.'} = 'Prioritásmátrix kezelése.';
     $Self->{Translation}->{'Manage the criticality - impact - priority matrix.'} = 'A kritikusság ↔ hatás ↔ prioritás mátrix kezelése.';
     $Self->{Translation}->{'Module to show the Back menu item in SLA menu.'} = 'Egy modul a Vissza menüpont megjelenítéséhez az SLA menüben.';
@@ -134,7 +137,7 @@ sub Data {
     $Self->{Translation}->{'Module to show the Link menu item in service menu.'} = 'Egy modul az Összekapcsolás menüpont megjelenítéséhez a szolgáltatás menüben.';
     $Self->{Translation}->{'Module to show the Print menu item in SLA menu.'} = 'Egy modul a Nyomtatás menüpont megjelenítéséhez az SLA menüben.';
     $Self->{Translation}->{'Module to show the Print menu item in service menu.'} = 'Egy modul a Nyomtatás menüpont megjelenítéséhez a szolgáltatás menüben.';
-    $Self->{Translation}->{'Off'} = '';
+    $Self->{Translation}->{'Off'} = 'Ki';
     $Self->{Translation}->{'Parameters for the incident states in the preference view.'} = 'Paraméterek az incidensállapotokhoz a beállítások nézetben.';
     $Self->{Translation}->{'Part of'} = 'Része ennek';
     $Self->{Translation}->{'Relevant to'} = 'Releváns ezzel';
@@ -147,11 +150,11 @@ sub Data {
     $Self->{Translation}->{'Service Zoom.'} = 'Szolgáltatás nagyítás.';
     $Self->{Translation}->{'Service-Area'} = 'Szolgáltatás terület';
     $Self->{Translation}->{'Set the type and direction of links to be used to calculate the incident state. The key is the name of the link type (as defined in LinkObject::Type), and the value is the direction of the IncidentLinkType that should be followed to calculate the incident state. For example if the IncidentLinkType is set to \'DependsOn\', and the Direction is \'Source\', only \'Depends on\' links will be followed (and not the opposite link \'Required for\') to calculate the incident state. You can add more link types ad directions as you like, e.g. \'Includes\' with the direction \'Target\'. All link types defined in the sysconfig options LinkObject::Type are possible and the direction can be \'Source\', \'Target\', or \'Both\'. IMPORTANT: AFTER YOU MAKE CHANGES TO THIS SYSCONFIG OPTION YOU NEED TO RUN THE CONSOLE COMMAND bin/otobo.Console.pl Admin::ITSM::IncidentState::Recalculate SO THAT ALL INCIDENT STATES WILL BE RECALCULATED BASED ON THE NEW SETTINGS!'} =
-        'A hivatkozások típusának és irányának beállítása, hogy használható legyen az incidensállapot kiszámításához. A kulcs a hivatkozástípus neve (ahogy a LinkObject::Type értékében van meghatározva), és az érték az IncidentLinkType iránya, amelyet követnie kell az incidensállapot kiszámításához. Például ha az IncidentLinkType „DependsOn” értékre van állítva, és az irány „Forrás”, akkor csak a „Depends on” hivatkozások lesznek követve (és nem az ellentétes „Required for” hivatkozás) az incidensállapot kiszámításához. Hozzáadhat további hivatkozástípusokat és irányokat, ahogy csak szeretné, például „Includes” a „Cél” iránnyal. Minden LinkObject::Type rendszerbeállítási lehetőségben meghatározott hivatkozástípus lehetséges, és az irány „Forrás”, „Cél” vagy „Mindkettő” lehet. FONTOS: MIUTÁN MÓDOSÍTÁSOKAT HAJTOTT VÉGRE EZEN A RENDSZERBEÁLLÍTÁSON, LE KELL FUTTATNIA A bin/otobo.Console.pl Admin::ITSM::IncidentState::Recalculate KONZOLPARANCSOT AZÉRT, HOGY MINDEN INCIDENSÁLLAPOT ÚJRA KISZÁMÍTÁSRA KERÜLJÖN AZ ÚJ BEÁLLÍTÁSOK ALAPJÁN!';
+        'A hivatkozások típusának és irányának beállítása, hogy használható legyen az incidensállapot kiszámításához A kulcs a hivatkozástípus neve (ahogy a LinkObject::Type értékében van meghatározva), és az érték az IncidentLinkType iránya, amelyet követnie kell az incidensállapot kiszámításához. Például ha az IncidentLinkType „DependsOn” értékre van állítva, és az irány „Forrás”, akkor csak a „Depends on” hivatkozások lesznek követve (és nem az ellentétes „Required for” hivatkozás) az incidensállapot kiszámításához. Hozzáadhat további hivatkozástípusokat és irányokat, ahogy csak szeretné, például „Includes” a „Cél” iránnyal. Minden LinkObject::Type rendszerbeállítási lehetőségben meghatározott hivatkozástípus lehetséges, és az irány „Forrás”, „Cél” vagy „Mindkettő” lehet. FONTOS: MIUTÁN VÁLTOZTATÁSOKAT HAJTOTT VÉGRE EZEN A RENDSZERBEÁLLÍTÁSON, LE KELL FUTTATNIA a „bin/otobo.Console.pl Admin::ITSM::IncidentState::Recalculate” KONZOLPARANCSOT AZÉRT, HOGY MINDEN INCIDENSÁLLAPOT ÚJRA KISZÁMÍTÁSRA KERÜLJÖN AZ ÚJ BEÁLLÍTÁSOK ALAPJÁN!';
     $Self->{Translation}->{'Show the current service incident state signal in the ticket information.'} =
-        '';
+        'A jelenlegi szolgáltatás incidensállapot-jelzőjének megjelenítése a jegyinformációkban.';
     $Self->{Translation}->{'Source'} = 'Forrás';
-    $Self->{Translation}->{'Suggest'} = '';
+    $Self->{Translation}->{'Suggest'} = 'Javaslat';
     $Self->{Translation}->{'This setting defines that a \'ITSMChange\' object can be linked with \'Ticket\' objects using the \'Normal\' link type.'} =
         'Ez a beállítás határozza meg, hogy egy „ITSMChange” objektum összeköthető-e a „Ticket” objektumokkal a „Normal” hivatkozástípus használatával.';
     $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with \'FAQ\' objects using the \'Normal\' link type.'} =
@@ -181,7 +184,7 @@ sub Data {
     $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'Includes\' link type.'} =
         'Ez a beállítás határozza meg, hogy egy „ITSMConfigItem” objektum összeköthető-e más „ITSMConfigItem” objektumokkal az „Includes” hivatkozástípus használatával.';
     $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'LocationOf\' link type.'} =
-        '';
+        'Ez a beállítás határozza meg, hogy egy „ITSMConfigItem” objektum összeköthető-e más „ITSMConfigItem” objektumokkal a „LocationOf” hivatkozástípus használatával.';
     $Self->{Translation}->{'This setting defines that a \'ITSMConfigItem\' object can be linked with other \'ITSMConfigItem\' objects using the \'RelevantTo\' link type.'} =
         'Ez a beállítás határozza meg, hogy egy „ITSMConfigItem” objektum összeköthető-e más „ITSMConfigItem” objektumokkal a „RelevantTo” hivatkozástípus használatával.';
     $Self->{Translation}->{'This setting defines that a \'ITSMWorkOrder\' object can be linked with \'ITSMConfigItem\' objects using the \'DependsOn\' link type.'} =
@@ -209,7 +212,7 @@ sub Data {
     $Self->{Translation}->{'This setting defines the link type \'Includes\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
         'Ez a beállítás határozza meg az „Includes” hivatkozástípust. Ha a forrásnév a célnév ugyanazt az értéket tartalmazza, akkor az eredményül kapott hivatkozás nem lesz irányított. Ha az értékek eltérnek, akkor az eredményül kapott hivatkozás irányított hivatkozás lesz.';
     $Self->{Translation}->{'This setting defines the link type \'LocationOf\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
-        '';
+        'Ez a beállítás határozza meg a „LocationOf” hivatkozástípust. Ha a forrásnév a célnév ugyanazt az értéket tartalmazza, akkor az eredményül kapott hivatkozás nem lesz irányított. Ha az értékek eltérnek, akkor az eredményül kapott hivatkozás irányított hivatkozás lesz.';
     $Self->{Translation}->{'This setting defines the link type \'RelevantTo\'. If the source name and the target name contain the same value, the resulting link is a non-directional one. If the values are different, the resulting link is a directional link.'} =
         'Ez a beállítás határozza meg a „RelevantTo” hivatkozástípust. Ha a forrásnév a célnév ugyanazt az értéket tartalmazza, akkor az eredményül kapott hivatkozás nem lesz irányított. Ha az értékek eltérnek, akkor az eredményül kapott hivatkozás irányított hivatkozás lesz.';
     $Self->{Translation}->{'Width of ITSM textareas.'} = 'Az ITSM szövegdobozok szélessége.';

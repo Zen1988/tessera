@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -141,10 +141,12 @@ sub _Add {
     my $FieldTypeName = $ConfigObject->Get('DynamicFields::Driver')->{ $GetParam{FieldType} }->{DisplayName} || '';
 
     # check namespace validity
-    my $Namespaces = $ConfigObject->Get('DynamicField::Namespaces');
-    my $Namespace  = '';
-    if ( IsArrayRefWithData($Namespaces) && $GetParam{NamespaceFilter} ) {
-        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } $Namespaces->@* ) ? $GetParam{NamespaceFilter} : '';
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    my $Namespace = '';
+    if ( @DFNamespaces && $GetParam{NamespaceFilter} ) {
+        $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } @DFNamespaces ) ? $GetParam{NamespaceFilter} : '';
     }
 
     return $Self->_ShowScreen(
@@ -201,7 +203,7 @@ sub _CheckInclude {
         );
         if ( !IsHashRefWithData($DynamicField) ) {
             $Errors{IncludeServerError}        = 'ServerError';
-            $Errors{IncludeServerErrorMessage} = sprintf( Translatable('No valid dynamic field "%s."'), $DFElement );
+            $Errors{IncludeServerErrorMessage} = sprintf( Translatable('No valid dynamic field "%s".'), $DFElement );
 
             return;
         }
@@ -215,6 +217,23 @@ sub _CheckInclude {
             $Errors{IncludeServerError} = 'ServerError';
             $Errors{IncludeServerErrorMessage}
                 = sprintf( Translatable('The dynamic field type "%s" of dynamic field "%s" can not be used in sets.'), $DynamicField->{FieldType}, $DFElement );
+
+            return;
+        }
+
+        # check if field is a lens which points to a Set
+        #   to prevent use of nested Sets
+        my $IsSetField = $DynamicFieldBackendObject->HasBehavior(
+            DynamicFieldConfig => $DynamicField,
+            Behavior           => 'IsSetField',
+        );
+        if ($IsSetField) {
+            $Errors{IncludeServerError} = 'ServerError';
+            $Errors{IncludeServerErrorMessage}
+                = sprintf(
+                    Translatable('The dynamic field "%s" can not be used in sets as it is either a Set field or a Lens field pointing to a Set field.'),
+                    $DFElement
+                );
 
             return;
         }
@@ -332,12 +351,11 @@ sub _AddAction {
     }
 
     for my $ConfigParam (
-        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue RenderLayout Namespace)
+        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue Namespace)
         )
     {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
-    $GetParam{RenderLayout} = 'Vertical' if ( $GetParam{RenderLayout} || '' ) ne 'Horizontal';
 
     my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
@@ -431,10 +449,9 @@ sub _AddAction {
 
     # set specific config
     my $FieldConfig = {
-        Tooltip      => $GetParam{Tooltip},
-        MultiValue   => $GetParam{MultiValue},
-        RenderLayout => $GetParam{RenderLayout} || 'Vertical',
-        Include      => \@Include,
+        Tooltip    => $GetParam{Tooltip},
+        MultiValue => $GetParam{MultiValue},
+        Include    => \@Include,
     };
 
     # create a new field
@@ -534,7 +551,7 @@ sub _Change {
     return $Self->_ShowScreen(
         %Param,
         %GetParam,
-        %${DynamicFieldData},
+        $DynamicFieldData->%*,
         %Config,
         ID             => $FieldID,
         Mode           => 'Change',
@@ -595,12 +612,11 @@ sub _ChangeAction {
     }
 
     for my $ConfigParam (
-        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue RenderLayout Namespace)
+        qw(ObjectType ObjectTypeName FieldType FieldTypeName ValidID Tooltip MultiValue Namespace)
         )
     {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
-    $GetParam{RenderLayout} = 'Vertical' if ( $GetParam{RenderLayout} || '' ) ne 'Horizontal';
 
     my @Include;
     if ( $GetParam{Include} ) {
@@ -736,10 +752,9 @@ sub _ChangeAction {
 
     # set specific config
     my $FieldConfig = {
-        Tooltip      => $GetParam{Tooltip},
-        MultiValue   => $GetParam{MultiValue},
-        RenderLayout => $GetParam{RenderLayout} || 'Vertical',
-        Include      => \@Include,
+        Tooltip    => $GetParam{Tooltip},
+        MultiValue => $GetParam{MultiValue},
+        Include    => \@Include,
     };
 
     # update dynamic field (FieldType and ObjectType cannot be changed; use old values)
@@ -852,7 +867,7 @@ sub _ShowScreen {
         # check for namespace
         if ( $Param{Name} =~ /(.*)-(.*)/ ) {
             $Namespace = $1;
-            $Param{PlainFieldName} = $2 unless $Param{CloneFieldID};
+            $Param{PlainFieldName} = $2;
         }
         else {
             $Param{PlainFieldName} = $Param{Name};
@@ -923,20 +938,12 @@ sub _ShowScreen {
         Class      => 'Modernize W50pc',
     );
 
-    my $RenderLayoutStrg = $LayoutObject->BuildSelection(
-        Data => {
-            Vertical   => Translatable('Vertical'),
-            Horizontal => Translatable('Horizontal'),
-        },
-        Name       => 'RenderLayout',
-        SelectedID => $Param{RenderLayout} || 'Vertical',
-        Class      => 'Modernize W50pc',
+    my @DFNamespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
     );
-
-    my $NamespaceList = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    if (@DFNamespaces) {
         my $NamespaceStrg = $LayoutObject->BuildSelection(
-            Data          => $NamespaceList,
+            Data          => \@DFNamespaces,
             Name          => 'Namespace',
             SelectedValue => $Namespace || '',
             PossibleNone  => 1,
@@ -1073,7 +1080,7 @@ sub _ShowScreen {
         );
     }
 
-    if ( IsArrayRefWithData($NamespaceList) ) {
+    if (@DFNamespaces) {
         if ( IsStringWithData( $Param{NamespaceFilter} ) ) {
             $FilterStrg .= ";NamespaceFilter=" . $LayoutObject->Output(
                 Template => '[% Data.Filter | uri %]',
@@ -1101,7 +1108,6 @@ sub _ShowScreen {
             ValidityStrg          => $ValidityStrg,
             DynamicFieldOrderStrg => $DynamicFieldOrderStrg,
             MultiValueStrg        => $MultiValueStrg,
-            RenderLayoutStrg      => $RenderLayoutStrg,
             ReadonlyInternalField => $ReadonlyInternalField,
         }
     );

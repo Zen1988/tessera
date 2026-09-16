@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,6 +40,7 @@ our @ObjectDependencies = (
     'Kernel::System::Main',
     'Kernel::System::Storable',
     'Kernel::System::SysConfig',
+    'Kernel::System::YAML',
 );
 
 sub Configure {
@@ -201,6 +202,9 @@ sub HandleLanguage {
         # remove underscores and/or version numbers and following from module name
         # i.e. FAQ_2_0 or FAQ20
         $Module =~ s/((_|\-)?(\d+))+$//gix;
+
+        # remove dashes from module name
+        $Module =~ s/-//g;
 
         # save module directory in target file
         $TargetFile = "$ModuleDirectory/Kernel/Language/${Language}_$Module.pm";
@@ -964,7 +968,7 @@ $Separator
 # OTOBO is a web-based ticketing system for service organisations.
 $Separator
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
 $Separator
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1124,10 +1128,10 @@ sub ExtractCMDBClassStrings {
 
             if ( IsHashRefWithData( $Definition->{Sections} ) ) {
                 for my $Section ( values $Definition->{Sections}->%* ) {
-                    if ( IsHashRefWithData( $Section ) && IsArrayRefWithData( $Section->{Content} ) ) {
+                    if ( IsHashRefWithData($Section) && IsArrayRefWithData( $Section->{Content} ) ) {
                         my @Headers = grep { $_->{Header} } $Section->{Content}->@*;
 
-                        for my $Header ( @Headers ) {
+                        for my $Header (@Headers) {
                             my $Word = $Header->{Header};
 
                             if ( $Word && !$Param{UsedWords}{$Word}++ ) {
@@ -1173,6 +1177,5 @@ sub ExtractCMDBClassStrings {
 
     return 1;
 }
-
 
 1;
