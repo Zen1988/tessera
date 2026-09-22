@@ -1,5 +1,51 @@
 # TESSERA Project Next Focus
 
+## Standalone Risk Calculation Framework - Confirmed Design, Pending Implementation
+
+- Framework is a standalone reusable governance object, not an implicitly selected ancestor
+  of Policy. IM8 is the user's Policy example; calculation frameworks may address infrastructure,
+  applications, suppliers or other assessment subjects.
+- Policy defines requirements. ControlObjective references applicable Policies. The current
+  ZRM-Policy reference is multi-value; Policy-to-Framework linkage has not been verified and
+  must not be assumed to exist.
+- Framework defines required inputs, likelihood/impact scales, formula or matrix, rating
+  thresholds and applicable object types. No multiplication formula is assumed universally.
+- Objects may attach applicable frameworks. Attachment declares applicability; PolicyEvaluation
+  explicitly selects the framework to execute and maps its inputs. Do not choose a framework
+  implicitly from Policy ancestry, reference ordering or the first matching attachment.
+- Missing/ambiguous selected frameworks, incompatible object types and invalid inputs produce
+  a calculation error rather than a guessed score. Business formulas remain authored rules.
+- Preserve one asset-level Risk identity while keeping separate assessment results by framework
+  and version, retaining input values, calculated results and contributing Control provenance.
+  Different frameworks must not overwrite each other's scores. Any overall Risk aggregation
+  requires an explicit authored rule; none is selected by this decision.
+- Before implementation, validate latest SOPM/OPM and exports and map this design to existing
+  classes/fields. No new class names, Dynamic Field names or executable YAML syntax are approved
+  by this conceptual decision. Define framework versioning and assessment storage next.
+- Once implemented and verified, move completed details to PROJECT_STATUS and remove this
+  pending section in accordance with the continuity contract.
+
+
+## ControlObjective Evaluation - Deployment and Next Decisions
+
+User confirmed 0.0.46 live discovery creates Controls. Local 0.0.47 implements authored
+VERSION 1 evaluation, calendar expressions, descendant/reference traversal and asset Risk
+assignment. Completed design is recorded in PROJECT_STATUS and the architecture document.
+
+- Install/test 0.0.47 with packaged evaluation/assignment YAML. Verify due dispatch, missing
+  date N/A, Pass short circuit, descendant impact, four asset classes and shared Risk reuse.
+- Confirm fresh install, upgrade/reinstall and actual daemon execution. Adapter tests do not
+  constitute live validation. Exercise limits before scanning large populations.
+- Define Risk resolution/reopening and contribution lifecycle. Passing checks perform no
+  descendant scans and do not close existing Risks; preserve history.
+- Define retirement/evaluation eligibility for historical Controls after PolicyFilter narrows.
+- Paginated discovery and further traversal operators remain future work; current discovery
+  maximum is 1000 and overflow fails rather than truncates.
+- CustomerUser remains deferred. Ticket discovery works; descendant traversal currently
+  requires a class-based CMDB/GovernanceObject/MELTObject target.
+- Keep business conditions, target classes, paths, thresholds and assignments in authored
+  policy. Never add Product/EOSL-specific engine branches or invent Dynamic Fields.
+
 ## Asset Import Through Service Request
 
 ### Confirmed boundary

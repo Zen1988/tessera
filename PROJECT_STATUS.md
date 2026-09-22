@@ -1,5 +1,103 @@
 # TESSERA Project Status
 
+## 2026-09-22 Standalone Framework Design Accepted
+
+- User requested recording the standalone risk calculation Framework design centrally.
+  Policy (IM8 example) expresses requirements; reusable Framework defines calculation rules;
+  PolicyEvaluation explicitly selects a framework and supplies inputs. Attachment expresses
+  applicability, not automatic execution. Detailed pending contract is in PROJECT_NEXT.
+- Reject implicit first-framework selection through multiple Policy links and hardcoded scoring
+  formulas. Preserve separate framework/version assessments and contributing Control evidence
+  on a shared asset Risk. Overall aggregation is undefined until explicitly authored.
+- Existing Policy-to-Framework linkage remains unverified. No fields/classes or new policy
+  syntax have been created; schema mapping, framework versioning and storage are next work.
+- User confirmed Risks became visible after the explicit immediate run of the saved policy.
+  This confirms that live path, not full scheduler/fresh-install/upgrade validation. Earlier
+  N/A versus direct evaluation discrepancy remains unresolved; do not claim a diagnosed fix.
+
+
+## 2026-09-22 Authored Control Evaluation - TESSERA-Base 0.0.47
+
+- User confirmed 0.0.46 live activation successfully created the Product Controls.
+- Implemented VERSION 1 target evaluation using generic CHECK.EXPECT expressions, optional
+  ON EMPTY behavior, pinned calendar TODAY arithmetic, authored descendant traversal and
+  affected-object reference matching. Product/EOSL/one-year threshold/asset classes/paths
+  exist only in the example policy, not engine-specific branches. Rejected hardcoded EOSL
+  checks and a VERSION 2 syntax change.
+- Product example checks only its own date. Less than one calendar year (expired included)
+  fails; exact boundary passes; unannounced date returns N/A. Pass/N/A perform no cascade.
+  On failure, include self and all descendants through ZTAM-Parent; descendants' own dates
+  do not gate impact. Match Workload/NetworkNode ZTAM-Model, StorageNode/PeripheralNode
+  ZTAM-Product and all four ZTAM-Runtime[*].ZTAM-Installed paths.
+- FieldAssignment maps typed findings; RETURN.IDENTITY selects an assigned destination
+  identity field. Example uses MELT-RelatedCI for one Risk per asset/destination class,
+  reusing across Products/objectives. Locks prevent concurrent identity creation; contribution
+  activities preserve provenance without overwriting existing single-valued MELT-Control.
+  RiskClass and CreateRisk remain authoritative. No new Dynamic Fields or bootstrap data.
+- Added five-minute due-Control evaluation dispatch. Successful runs persist result, evidence
+  and LastRun. Invalid/partial evaluation does not advance cycle or claim Pass. Earlier writes
+  may remain if a later write fails; retries reuse Risk identities.
+- Validation: 22 test files / 623 tests pass. Includes exact packaged YAML, generic numeric
+  replacement and six-month conditions, boundaries/leap day, no-read short circuits, deep
+  cascade, cycles/overflow, all four asset classes, Risk reuse and execution error handling.
+- Built local 0.0.47 OPM: 287 byte-matching payloads. SHA256: be6b60cbf76ad8641ac8ac1c9d970fbec0117077474be8fa8274d1fce4def95c.
+  Install/upgrade/reinstall and daemon execution have not been tested live.
+- Updated ScriptEngine architecture reference with executable examples and PROJECT_NEXT
+  with remaining work. Risk automatic closure/reopening and historical Control retirement
+  after filter narrowing remain undefined. Passing controls preserve Risk history. Ticket
+  discovery is supported but descendant traversal currently requires class-based targets;
+  CustomerUser remains deferred. Next: deploy 0.0.47 and test the supplied YAML end to end.
+
+
+## 2026-09-17 PolicyFilter Target Discovery — TESSERA-Base 0.0.46
+
+- Implemented VERSION 1 `RETURN: { FROM: ALL Targets, AS: Collection<ObjectType.Class> }` and a dedicated ControlDiscovery service. Supports any selected ITSMConfigItem/GovernanceObject/MELTObject class and Ticket targets (`Collection<Ticket>`). Product is only the packaged test example. CustomerUser was explicitly deferred by the user; no field was invented.
+- Saving an Active ControlObjective or its PolicyFilter triggers reconciliation after object-save events. An authoritative packaged five-minute daemon task discovers new matching targets while objectives remain Active. Inactive objectives do not create Controls; automatic Control dispatch now also skips inactive objectives.
+- Creates one Control per objective+typed target, using existing ZRM-CIInstance / ZRM-GOInstance / ZRM-MOInstance / ZRM-TKInstance plus ZRM-ControlObjective. Repeated runs reuse Controls without changing their result/evidence. Target type comes from PolicyFilter, not ControlClass. Product parent/child hierarchy and EOSL are not eligibility conditions.
+- New Controls resolve installed Control/Production/Operational catalog values by name and require the exported target fields. Discovery leaves result and last-run unset. Missing MELT, invalid scripts/types, unreadable targets, duplicate existing matches and incomplete scans fail closed. OTOBO objective-scoped PID locks coordinate discovery; partial creation retries preserve/reuse completed targets.
+- Added complete-search overflow detection: probes LIMIT+1 and creates nothing when the authored limit is exceeded. Existing engine maximum remains 1000; larger pagination is not implemented. Empty collections create nothing successfully. Filter narrowing preserves historical Controls. Diagnostics are written to the application log.
+- Prevented the legacy ticket applicability consumer from evaluating discovery collection YAML as scalar ticket rules. Existing typed field-assignment and failure-to-Risk behavior is unchanged; EOSL cascading and asset-level Risk reconciliation are NOT part of this increment.
+- Validation: all 21 TESSERA test files pass (578 tests), including 45 behavioral discovery assertions across all four adapters, repeat runs, new targets, inactive objectives, empty/over-limit scans, missing MELT, lock contention, native Ticket filters and the exact packaged Product YAML through the save handler. Changed runtime modules pass Perl syntax. XML registrations parse; all 284 OPM payloads byte-match source.
+- Local deliverable: Kernel/Package/TESSERA-Base-0.0.46.opm. User instructions and runnable filter: docs/architecture/tessera-script-engine.md; packaged example: var/governancedb/policy/control_discovery_products.yml. No live package installation or live backend/multi-worker validation performed. Current focus: deploy and test target coverage; then implement per-target evaluation and asset-level finding/event mapping as recorded in PROJECT_NEXT.
+
+## 2026-09-17 Generic Control Discovery Contract Revised
+
+- User clarified that EOSL is only an example. PolicyFilter defines all target objects receiving Controls, and should own target type/class selection instead of a separate conflicting ControlClass selector. Active ControlObjective should reconcile one Control per selected target.
+- For the example, select every Product, including parent/child and blank EOSL, and bind one Control to each Product. Each Product Control evaluates the policy and may cascade to affected assets. Blank EOSL skips the EOSL failure evaluation, not Control creation. This supersedes today's earlier failing-Product filter and per-asset Control proposals.
+- Control identity and Risk identity are distinct: Objective+target Product for Controls in this example; affected asset+destination class for Risk. Multiple Product Controls may contribute evidence to one asset Risk. Asset-first policies remain valid alternatives selected by authored scripts.
+- Removed the VERSION 2 assumption from the pending design; target the existing VERSION 1 language with implemented/tested additive capabilities. Earlier pseudo-YAML must not be treated as executable by changing its version header. Existing ControlClass data needs controlled compatibility/deprecation, not removal.
+- Rewrote PROJECT_NEXT's design section to match. Current focus: generic active-objective discovery/reconciliation first, then per-target evaluation and asset-level event mapping. Runtime changes and live testing have not been performed; activation-driven Control creation is intended behavior, not currently verified behavior.
+
+## 2026-09-17 ControlObjective Original Intent Reconciliation
+
+- Reviewed the August 11 filter/evaluation contract, August 14 target/Control contracts, August 17 failure-to-Risk behavior, August 20 typed field assignments, ScriptEngine KB, and current 0.0.45 SOPM/OPM. Relevant decoded payloads byte-match source.
+- Confirmed current user intent is Product-first: PolicyFilter selects announced EOSL dates below the one-year cutoff; PolicyEvaluation expands Products into Workload/NetworkNode/StorageNode/PeripheralNode findings; RiskClass selects the destination; FieldAssignment maps evidence. Blank EOSL means not announced and is skipped. Asset identity, not Control identity, governs Risk reuse.
+- Corrected today's stale PROJECT_NEXT design: Workload/NetworkNode use ZTAM-Model, StorageNode/PeripheralNode use ZTAM-Product; all four use Runtime/Installed. Replaced the earlier asset-first filter, missing-date UNKNOWN rule, and per-Control Risk identity. Historical completed-work records remain unchanged.
+- Corrected the earlier overbroad statement that PolicyFilter has no consumer: packaged legacy GenericAgent ZRMPolicyEvaluator consumes it for ticket applicability, but no consumer implements Product collection scanning. Current automatic Control runtime evaluates existing Controls only.
+- Read-only engine probes confirm proposed VERSION 2 is rejected and native SEARCH rejects BEFORE. The previously supplied scan YAML is a language proposal, not an executable test script. Existing field-assignment syntax and Risk creation do not supply nested reference expansion or asset-based identity reconciliation.
+- Current focus / next: implement and validate the generic pipeline recorded in PROJECT_NEXT before claiming the full YAML works. No runtime/package changes or live execution in this reconciliation. Original architecture aligns with separation of filter/evaluation/mapping, but historical implementation does not establish the new end-to-end capability.
+
+## 2026-09-17 Product EOSL ControlObjective Design Started
+
+- User confirmed scope: Product already expired or less than one year from EOSL, propagated to assets through Product Model and Runtime installed Product references, with all affected assets noncompliant. Existing MELT Risk is to be reused.
+- Verified exported `ZTAM-EoServiceLife`, `ZTAM-Model`, `ZTAM-Runtime` / `ZTAM-Installed`, Control `ZRM-Result` values, and MELT Risk links. Traced ControlRuntime and ScriptEngine: existing Control evaluation and failure-to-Risk are present, but objective-driven asset discovery/Control reconciliation and the complete typed calendar/Set scan are not implemented.
+- Recorded proposed architecture, exact field mappings, language gaps, recovery/deduplication rules, and acceptance tests in PROJECT_NEXT.md. No runtime code or package changes for this design. Current focus: implement generic scripting and Control discovery support before supplying executable EOSL policy; reject presenting proposed syntax as currently supported or storing an invented asset compliance field.
+
+## 2026-09-17 Preserve Version and AssetTag on Import Merge
+
+- User confirmed that blank incoming Version and `ZTAM-AssetTag` must preserve populated existing values. ConfigItem document import now resolves and reads the update target before applying defaults; omitted, empty, and whitespace-only values merge from the existing ConfigItem. Explicit nonblank values still replace them. Existing tags do not require Application resolution or trigger regeneration.
+- Removed the workbook controller's premature Version `1` default. New records still default Version to `1`; virtual tag generation only runs when no populated tag remains after merge. Blank Version and AssetTag no longer appear in preview's destructive-clear list; other field-clearing rules remain intact. No new fields or migrations; fresh installs, upgrades, and reinstalls share this behavior.
+- Built undeployed `TESSERA-Base-0.0.45.opm`, with 282 verified byte-matching payloads. Full suite passed 531 tests; the final expanded targeted suite passed 38 tests, adding preview-clear and workbook pass-through checks. Perl document syntax and diff checks passed.
+- Current focus / next: install and validate an update with blank Version/AssetTag against an existing asset in the target environment. Live deployment was not performed. Rejected resetting Version to `1` or replacing an existing tag with a newly generated tag on blank-cell updates. Existing duplicate resolution remains required; no blanket merge of unrelated blank fields was introduced.
+
+## 2026-09-17 Workload Import and Optional Virtual Asset Tag Fallback
+
+- Checked the supplied Workload workbook against all 333 reported failed row numbers: each has blank `ZTAM-Application` and `ZTAM-AssetTag`. The 1,992-created / 333-failed result is consistent with the existing Application requirement. The user subsequently confirmed the original result was valid. No workbook or live records were changed.
+- Before that confirmation, implemented the requested fallback for a resolved Application with an absent or whitespace-only `ZTSM-Code`: generate `tessera-virtualtag-<ConfigItemID>`. Applications with a code retain the configured pattern; supplied tags remain supported. Missing/unresolved Applications still fail before persistence, with an error naming Application rather than its code.
+- This supersedes the older decision to reject an otherwise resolved Application solely for missing `ZTSM-Code`. No fields, schema, bootstrap defaults, or administrator configuration were changed; the runtime-only change applies to fresh installs, upgrades, and reinstalls. Rejected generating a tag for missing Applications or using one shared literal tag for multiple assets.
+- Built local, undeployed `Kernel/Package/TESSERA-Base-0.0.44.opm` with 282 byte-matching payloads. All 20 TESSERA test files pass (515 tests), including behavioral import coverage for fallback, missing/unresolved Application, supplied tags, custom patterns, and stable update IDs. Perl syntax passes.
+- Current focus / next: no repair is required for this import result. The optional fallback package does not make the 333 blank-Application rows importable; populate valid Applications before retrying those rows. Live installation and end-to-end persistence validation have not been performed. Avoid blindly recreating the 1,992 successful rows on retry.
+
 ## 2026-09-16 Firewall Request Routing Investigation (Pending Runtime Data)
 
 - Follow-up workbook diagnosis: the supplied ATFM StateBook workbook has 21 BlueBook references across four rows, all authored under obsolete/unrecognized nested key `ZState-BlueBook`. The authoritative export, bootstrap Set definition, and StateBookReader use `ZState-Book`. `_SetValueFromDocument` skips unknown child keys and fills omitted defined children with blank values, explaining the blank Book fields shown in the live editor. All 21 class-prefixed BlueBook names match exactly one entry in the supplied 14-row BlueBook workbook. Correct the nested key to `ZState-Book` and update the existing StateBooks after validating BlueBook imports; no field alias or new Dynamic Field is needed. Live closure cause remains unverified.
