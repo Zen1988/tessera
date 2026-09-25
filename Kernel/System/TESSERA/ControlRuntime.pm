@@ -6,6 +6,7 @@ package Kernel::System::TESSERA::ControlRuntime;
 
 use strict;
 use warnings;
+use Digest::SHA qw(sha256_hex);
 
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
@@ -17,11 +18,25 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::TESSERA::PolicyEngine',
     'Kernel::System::Ticket',
+    'Kernel::System::YAML',
+    'Kernel::System::PID',
+    'Kernel::System::ITSMConfigItem::Activity',
 );
 
 sub new {
     my ( $Type, %Param ) = @_;
     return bless {}, $Type;
+}
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+    my $Results = $Self->DispatchDueControls( %Param, UserID => $Param{UserID} || 1 );
+    for my $Result (@{$Results}) {
+        next if ( $Result->{Status} || '' ) ne 'UNKNOWN';
+        $Kernel::OM->Get('Kernel::System::Log')->Log( Priority => 'error',
+            Message => 'Control evaluation ' . ( $Result->{ConfigItemID} || '?' ) . ': ' . ( $Result->{Reason} || 'UNKNOWN' ) );
+    }
+    return 1;
 }
 
 sub DispatchDueControls {
@@ -57,6 +72,11 @@ sub DispatchDueControls {
         );
         if ( ref $Objective ne 'HASH' || !%{$Objective} ) {
             push @Results, { ConfigItemID => $ConfigItemID, Status => 'UNKNOWN', Reason => 'ControlObjective cannot be resolved.' };
+            next CONTROL;
+        }
+
+        if ( ( $Objective->{ZTSMStatus} || '' ) ne 'Active' ) {
+            push @Results, { ConfigItemID => $ConfigItemID, Status => 'INACTIVE', Reason => 'ControlObjective is not Active.' };
             next CONTROL;
         }
 
@@ -197,6 +217,13 @@ sub ProcessFailedControl {
     return { Success => 0, RiskCreated => 0, Reason => 'The parent ControlObjective cannot be resolved.' }
         if ref $Objective ne 'HASH' || !%{$Objective} || ( $Objective->{Class} || '' ) ne 'ControlObjective';
 
+    # Per-target finding programs own Risk creation after a complete evaluation.
+    # A result-change event has no finding context and must not create a second Risk.
+    my $Program = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load(
+        Data => _Scalar( $Objective->{'DynamicField_ZRM-PolicyEvaluation'} ) || '' ) };
+    return { Success => 1, RiskCreated => 0 }
+        if ref $Program eq 'HASH' && exists $Program->{TARGET};
+
     return $Self->_RiskCreateOnFailure(
         Result       => $Result,
         Control      => $Control,
@@ -210,6 +237,12 @@ sub ProcessFailedControl {
 sub _AutomaticEvaluate {
     my ( $Self, %Param ) = @_;
     my $Source = _Scalar( $Param{Objective}->{'DynamicField_ZRM-PolicyEvaluation'} ) || '';
+    my $Script = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source ) };
+    if ( ref $Script eq 'HASH' && exists $Script->{TARGET} ) {
+        my $Result = eval { $Self->_TargetEvaluate( %Param, Script => $Script ) };
+        return $Result if !$@ && $Result;
+        return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => $@ || 'Target evaluation failed.' };
+    }
     my $Result = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->Evaluate(
         Source => $Source, Label => 'ZRM-PolicyEvaluation',
         Context => { CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective} },
@@ -228,6 +261,247 @@ sub _AutomaticEvaluate {
         ConfigItemID => $Param{ConfigItemID}, UserID => $Param{UserID},
     );
     return { ConfigItemID => $Param{ConfigItemID}, Status => $ControlResult, %{$Risk} };
+}
+
+sub _TargetEvaluate {
+    my ( $Self, %Param ) = @_;
+    my %Types = (
+        'ZRM-CIInstance' => ['ITSMConfigItem', 'ConfigItemID', 'ConfigItemGet'],
+        'ZRM-GOInstance' => ['GovernanceObject', 'GovernanceObjectID', 'GovernanceObjectGet'],
+        'ZRM-MOInstance' => ['MELTObject', 'MELTObjectID', 'MELTObjectGet'],
+        'ZRM-TKInstance' => ['Ticket', 'TicketID', 'TicketGet'],
+    );
+    my @Fields = grep { _Scalar( $Param{Control}{"DynamicField_$_"} ) } keys %Types;
+    die "Control must have exactly one target.\n" if @Fields != 1;
+    my ( $Kind, $IDKey, $Get ) = @{ $Types{ $Fields[0] } };
+    my $Object = $Kernel::OM->Get("Kernel::System::$Kind");
+    my %Get = ( $IDKey => _Scalar( $Param{Control}{"DynamicField_$Fields[0]"} ), DynamicFields => 1, UserID => $Param{UserID} );
+    my $This = $Kind eq 'Ticket' ? { $Object->$Get(%Get) } : $Object->$Get(%Get);
+    die "Control target cannot be read.\n" if ref $This ne 'HASH' || !%{$This};
+    my $Type = $Kind eq 'Ticket' ? $Kind : "$Kind.$This->{Class}";
+    my $Result = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->PolicyEvaluate(
+        Script => $Param{Script}, TargetType => $Type, Now => $Param{Now}, UserID => $Param{UserID},
+        Context => { THIS => $This, CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective} },
+    );
+    die (( $Result->{Error} || 'Target evaluation incomplete.' ) . "\n") if !$Result->{Success};
+    my @Risks;
+    if ( $Result->{Status} eq 'Fail' && _Truthy( _Scalar( $Param{Objective}{'DynamicField_ZRM-CreateRisk'} ) ) ) {
+        my $Assignment = $Kernel::OM->Get('Kernel::System::YAML')->Load(
+            Data => _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '' );
+        if ( ref $Assignment eq 'HASH' && ref $Assignment->{RETURN} eq 'HASH'
+            && ref $Assignment->{RETURN}->{'GROUP FINDINGS'} eq 'HASH' ) {
+            @Risks = @{ $Self->_GroupedFindingRisksCreate(
+                %Param, Evaluation => $Result, SourceObject => $This,
+                Destination => $Assignment->{RETURN}{AS},
+                Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'} ) };
+        }
+        else {
+            for my $Finding ( @{ $Result->{Findings} } ) {
+                push @Risks, $Self->_FindingRiskCreate( %Param, Finding => $Finding, Evaluation => $Result );
+            }
+        }
+    }
+    my $Body = 'Result: ' . $Result->{Status} . "\nTarget: " . ( $This->{Name} || $This->{Title} || $This->{$IDKey} )
+        . "\nField: " . ( $Result->{Field} || '' ) . "\nValue: " . ( $Result->{Value} // '' )
+        . "\nCondition: " . ( $Result->{Condition} || $Result->{Reason} || '' ) . "\nAffected objects: " . scalar( @{ $Result->{Findings} } );
+    die "Cannot record evaluation evidence.\n" if !$Kernel::OM->Get('Kernel::System::ITSMConfigItem::Activity')->ActivityAdd(
+        ConfigItemID => $Param{ConfigItemID}, EventType => 'PolicyEvaluation', Source => 'ControlRuntime',
+        Subject => 'Automatic Control evaluation: ' . $Result->{Status}, Body => $Body,
+        Payload => { %{$Result}, RiskObjects => \@Risks }, UserID => $Param{UserID},
+    );
+    die "Cannot store Control result.\n" if !$Self->_ConfigItemFieldSet(
+        ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-Result', Value => $Result->{Status}, UserID => $Param{UserID} );
+    my $Now = $Kernel::OM->Create('Kernel::System::DateTime', ObjectParams => { Epoch => $Param{Now} })->ToString();
+    die "Cannot store Control LastRun.\n" if !$Self->_ConfigItemFieldSet(
+        ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-LastRun', Value => $Now, UserID => $Param{UserID} );
+    return { Success => 1, ConfigItemID => $Param{ConfigItemID}, Status => $Result->{Status}, Findings => scalar @{ $Result->{Findings} }, RiskObjects => \@Risks };
+}
+
+sub _GroupedFindingRisksCreate {
+    my ( $Self, %Param ) = @_;
+    my $PlanData = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
+        Rule => $Param{Rule}, Destination => $Param{Destination},
+        RiskClass => _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ),
+        Source => $Param{SourceObject}, Control => $Param{Control},
+        Objective => $Param{Objective}, Evaluation => $Param{Evaluation},
+        ConfigItemID => $Param{ConfigItemID}, Now => $Param{Now}, UserID => $Param{UserID},
+    );
+    my ( $Kind, $Class ) = @{ $PlanData->{Class} };
+    my $IdentityField = $PlanData->{IdentityField};
+    my $Merge = $PlanData->{Merge};
+    my $SeverityRule = $PlanData->{SeverityRule};
+    my $Priority = $PlanData->{Priority};
+    my $PriorityByName = $PlanData->{PriorityByName};
+    my $Lifecycle = $PlanData->{Lifecycle};
+    my @Planned = @{ $PlanData->{Plans} };
+    my $GO = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $Prefix = $Kind eq 'MELTObject' ? 'ZTSM::MELT' : 'ZTSM::GovernanceObject';
+    my %Classes = reverse %{ $Catalog->ItemList( Class => "$Prefix\::Class", Valid => 1 ) || {} };
+    my %Statuses = reverse %{ $Catalog->ItemList( Class => "$Prefix\::Status", Valid => 1 ) || {} };
+    my $CreateStatusID = $Statuses{ $Lifecycle->{'CREATE STATUS'} };
+    my $ReuseStatusID = $Statuses{ $Lifecycle->{'REUSE STATUS'} };
+    die "Risk class or authored lifecycle status is unavailable.\n"
+        if !$Classes{$Class} || !$CreateStatusID || !$ReuseStatusID;
+    my $Object = $Kernel::OM->Get("Kernel::System::$Kind");
+    my $Search = $Kind . 'Search';
+    my $Get = $Kind . 'Get';
+    my $Add = $Kind . 'Add';
+    my $Update = $Kind . 'Update';
+    my $IDKey = $Kind . 'ID';
+    my @Results;
+    for my $Plan (@Planned) {
+        my $Lock = 'TESSERA.Finding.' . sha256_hex("$Kind\0$Class\0$IdentityField\0$Plan->{Identity}");
+        my $PID = $Kernel::OM->Get('Kernel::System::PID');
+        die "Risk identity is busy; retry on the next dispatch.\n" if !$PID->PIDCreate( Name => $Lock );
+        my $ID = eval {
+            my @Candidates = $Object->$Search( Result => 'ARRAY', Classes => [$Class],
+                ZTSMStatusIDs => [$ReuseStatusID], Limit => 10001,
+                "DynamicField_$IdentityField" => { Equals => $Plan->{Identity} }, UserID => $Param{UserID} );
+            die "Risk identity search is incomplete.\n" if @Candidates >= 10001;
+            my @Existing;
+            for my $CandidateID (@Candidates) {
+                my $Candidate = $Object->$Get( $IDKey => $CandidateID,
+                    DynamicFields => 1, UserID => $Param{UserID} );
+                die "Existing Risk cannot be read.\n"
+                    if ref $Candidate ne 'HASH' || $Candidate->{Class} ne $Class;
+                my $EventField = $Lifecycle->{'EVENT FIELD'};
+                next if $EventField
+                    && ( $Candidate->{"DynamicField_$EventField"} || '' ) eq $Lifecycle->{'CLOSED EVENT VALUE'};
+                push @Existing, $CandidateID;
+            }
+            die "Risk identity is ambiguous.\n" if @Existing > 1;
+            my $ObjectID = $Existing[0];
+            if ($ObjectID) {
+                my $Current = $Object->$Get( $IDKey => $ObjectID, DynamicFields => 1, UserID => $Param{UserID} );
+                die "Existing Risk cannot be read.\n" if ref $Current ne 'HASH' || $Current->{Class} ne $Class;
+                my %Changes;
+                for my $Field ( keys %{ $Plan->{Values} } ) {
+                    my $New = $Plan->{Values}{$Field};
+                    my $Old = $Current->{"DynamicField_$Field"};
+                    my $Mode = $Merge->{$Field} || 'REQUIRE_EQUAL';
+                    if ( $Mode eq 'UNION' ) {
+                        die "UNION requires an array.\n" if ref $New ne 'ARRAY';
+                        my @Old = ref $Old eq 'ARRAY' ? @{$Old} : grep { defined $_ && $_ ne '' } ($Old);
+                        my %Union = map { $_ => 1 } @Old, @{$New};
+                        my @Combined = sort { $a <=> $b } keys %Union;
+                        $Changes{"DynamicField_$Field"} = \@Combined
+                            if join(',', @Combined) ne join(',', sort { $a <=> $b } @Old);
+                    }
+                    elsif ( $Mode eq 'MAX_PRIORITY' ) {
+                        die "MAX_PRIORITY must target the authored severity field.\n"
+                            if $Field ne $SeverityRule->{FIELD};
+                        my $OldName = '';
+                        if ($Old) {
+                            my $ExistingSeverity = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')
+                                ->GroupedReferenceResolve( ID => $Old, AS => $SeverityRule->{AS}, UserID => $Param{UserID} );
+                            $OldName = $ExistingSeverity->{Name};
+                            die "Existing severity has no authored priority.\n" if !exists $PriorityByName->{$OldName};
+                        }
+                        $Changes{"DynamicField_$Field"} = $New
+                            if !$Old || $Priority > $PriorityByName->{$OldName};
+                    }
+                    elsif ( $Mode eq 'KEEP_FIRST' ) { next }
+                    elsif ( $Mode eq 'REQUIRE_EQUAL' ) {
+                        die "Existing Risk field $Field conflicts with assignment.\n"
+                            if !defined $Old || ref $Old || ref $New || "$Old" ne "$New";
+                    }
+                    else { die "Unsupported merge mode $Mode.\n" }
+                }
+                $Changes{Name} = $Plan->{Name} if ( $Current->{Name} || '' ) ne $Plan->{Name};
+                die "Risk reconciliation failed.\n" if %Changes && !$Object->$Update(
+                    $IDKey => $ObjectID, UserID => $Param{UserID}, %Changes );
+            }
+            else {
+                my %Fields = map { ( "DynamicField_$_" => $Plan->{Values}{$_} ) } keys %{ $Plan->{Values} };
+                if ( $Lifecycle->{'EVENT FIELD'} ) {
+                    my $Key = 'DynamicField_' . $Lifecycle->{'EVENT FIELD'};
+                    die "Lifecycle event field conflicts with assignment.\n" if exists $Fields{$Key};
+                    $Fields{$Key} = $Lifecycle->{'CREATE EVENT VALUE'};
+                }
+                $ObjectID = $Object->$Add( ClassID => $Classes{$Class}, ZTSMStatusID => $CreateStatusID,
+                    Name => $Plan->{Name}, UserID => $Param{UserID}, %Fields );
+                die "Risk creation failed.\n" if !$ObjectID;
+            }
+            for my $Finding ( @{ $Plan->{Findings} } ) {
+                die "Cannot append Risk evidence.\n"
+                    if !$Kernel::OM->Get("Kernel::System::$Kind\::Activity")->ActivityAdd(
+                        $IDKey => $ObjectID, EventType => 'ControlFinding', Source => 'ControlRuntime',
+                        Subject => 'Control finding: ' . ( $Param{Control}{Name} || $Param{ConfigItemID} ),
+                        Body => 'Policy finding for group ' . $Plan->{GroupID}
+                            . ' and item ' . $Plan->{ItemID},
+                        Payload => { ControlID => $Param{ConfigItemID}, ObjectiveID => $Param{Objective}{GovernanceObjectID},
+                            GroupID => $Plan->{GroupID}, ItemID => $Plan->{ItemID}, Finding => $Finding,
+                            EvaluationDate => $Param{Evaluation}{EvaluationDate} }, UserID => $Param{UserID} );
+            }
+            $ObjectID;
+        };
+        my $Error = $@;
+        $PID->PIDDelete( Name => $Lock );
+        die $Error if $Error;
+        push @Results, { ObjectType => $Kind, Class => $Class, ObjectID => $ID };
+    }
+    return \@Results;
+}
+
+
+sub _FindingRiskCreate {
+    my ( $Self, %Param ) = @_;
+    my $Target = _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ) || '';
+    $Target =~ s/^\@//;
+    die "Invalid RiskClass.\n" if $Target !~ /\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z/;
+    my ( $Kind, $Class ) = ($1, $2);
+    my $Source = _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '';
+    my $Script = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
+    my $IdentityField = ref $Script eq 'HASH' && ref $Script->{RETURN} eq 'HASH' ? $Script->{RETURN}->{IDENTITY} : '';
+    die "Finding assignments require RETURN IDENTITY with an assigned field.\n" if !$IdentityField;
+    my $Assignments = $Self->_RiskAssignmentsParse(
+        Source => $Source, ObjectType => $Kind, Class => $Class, ConfigItemID => $Param{ConfigItemID},
+        Context => { CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective}, FINDING => $Param{Finding} },
+    );
+    die (( $Assignments->{Error} || 'Risk assignments failed.' ) . "\n") if !$Assignments->{Success};
+    my $Values = $Assignments->{Values};
+    my $Identity = $Values->{$IdentityField};
+    die "Risk identity must be a populated scalar.\n" if !defined $Identity || ref $Identity || $Identity eq '';
+    my $PID = $Kernel::OM->Get('Kernel::System::PID');
+    my $Lock = 'TESSERA.Finding.' . sha256_hex("$Kind\0$Class\0$IdentityField\0$Identity");
+    die "Risk identity is busy; retry on the next dispatch.\n" if !$PID->PIDCreate( Name => $Lock );
+    my $RiskID = eval {
+        my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+        my $Prefix = $Kind eq 'MELTObject' ? 'ZTSM::MELT' : 'ZTSM::GovernanceObject';
+        my %Classes = reverse %{ $Catalog->ItemList( Class => "$Prefix\::Class", Valid => 1 ) || {} };
+        my %Statuses = reverse %{ $Catalog->ItemList( Class => "$Prefix\::Status", Valid => 1 ) || {} };
+        die "Risk destination or Active status is unavailable.\n" if !$Classes{$Class} || !$Statuses{Active};
+        my $Object = $Kernel::OM->Get("Kernel::System::$Kind");
+        my $Search = $Kind . 'Search';
+        my @Existing = $Object->$Search( Result => 'ARRAY', Classes => [$Class], Limit => 2,
+            "DynamicField_$IdentityField" => { Equals => $Identity }, UserID => $Param{UserID} );
+        die "Risk identity is ambiguous.\n" if @Existing > 1;
+        my $ID = $Existing[0];
+        if (!$ID) {
+            my $Add = $Kind . 'Add';
+            my %Fields = map { ("DynamicField_$_" => $Values->{$_}) } keys %{$Values};
+            $ID = $Object->$Add( ClassID => $Classes{$Class}, ZTSMStatusID => $Statuses{Active},
+                Name => 'Policy finding: ' . ( $Param{Finding}{Target}{Name} || $Param{Finding}{Asset}{Name} || $Identity ), UserID => $Param{UserID}, %Fields );
+            die "Risk creation failed.\n" if !$ID;
+        }
+        my $Body = 'Failing source: ' . ( $Param{Finding}{Source}{Name} || '' )
+            . "\nAffected target: " . ( $Param{Finding}{Target}{Name} || $Param{Finding}{Asset}{Name} || '' )
+            . "\n" . $Param{Evaluation}{Field} . ': ' . $Param{Evaluation}{Value}
+            . "\nCondition: " . $Param{Evaluation}{Condition};
+        $Body .= "\nReference: " . $_->{Path} . ' -> ' . ( $_->{Object}{Name} || '' ) for @{ $Param{Finding}{Matches} || [] };
+        die "Cannot append Risk evidence.\n" if !$Kernel::OM->Get("Kernel::System::$Kind\::Activity")->ActivityAdd(
+            $Kind . 'ID' => $ID, EventType => 'ControlFinding', Source => 'ControlRuntime',
+            Subject => 'Control finding: ' . ( $Param{Control}{Name} || $Param{ConfigItemID} ), Body => $Body,
+            Payload => { ControlID => $Param{ConfigItemID}, ObjectiveID => $Param{Objective}{GovernanceObjectID},
+                Finding => $Param{Finding}, Value => $Param{Evaluation}{Value}, Condition => $Param{Evaluation}{Condition}, EvaluationDate => $Param{Evaluation}{EvaluationDate}, TimeZone => $Param{Evaluation}{TimeZone} }, UserID => $Param{UserID},
+        );
+        $ID;
+    };
+    my $Error = $@;
+    $PID->PIDDelete( Name => $Lock );
+    die $Error if $Error;
+    return { ObjectType => $Kind, Class => $Class, ObjectID => $RiskID };
 }
 
 sub _RiskCreateOnFailure {

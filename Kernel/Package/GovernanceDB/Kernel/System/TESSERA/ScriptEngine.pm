@@ -11,6 +11,7 @@ use Scalar::Util qw(looks_like_number);
 
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
+    'Kernel::System::DynamicField',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Ticket',
@@ -24,6 +25,12 @@ sub new {
         TicketProvider => $Param{TicketProvider},
         MaxSearchLimit => $Param{MaxSearchLimit} || 1000,
     }, $Type;
+}
+
+sub PolicyEvaluate {
+    my ( $Self, %Param ) = @_;
+    require Kernel::System::TESSERA::PolicyEvaluation;
+    return Kernel::System::TESSERA::PolicyEvaluation->new( Engine => $Self )->Evaluate(%Param);
 }
 
 sub ScriptParse {
@@ -65,6 +72,8 @@ sub ScriptParse {
     for my $Search ( @{$Searches} ) {
         return { Success => 0, Status => 'UNKNOWN', Error => 'Each SEARCH entry must be a mapping.' }
             if ref $Search ne 'HASH';
+        $Search->{CLASS} ||= $Search->{FOR}
+            if ( $Search->{FOR} || '' ) =~ /\ATicket\z/;
         for my $Required ( 'FOR', 'CLASS', 'AS' ) {
             return { Success => 0, Status => 'UNKNOWN', Error => "SEARCH requires $Required." }
                 if !defined $Search->{$Required} || $Search->{$Required} eq '';
@@ -107,6 +116,7 @@ sub ScriptEvaluate {
     for my $Search ( @{ $Parsed->{Searches} } ) {
         my $Result = $Self->_ScriptSearch(
             Search    => $Search,
+            Complete  => $Param{Complete},
             Context   => $Context,
             Variables => \%Variables,
             UserID    => $Param{UserID} || 1,
@@ -173,13 +183,15 @@ sub _ScriptSearch {
                 For    => $Search->{FOR},
                 Class  => $Search->{CLASS},
                 Where  => \%ResolvedWhere,
-                Limit  => $Search->{LIMIT},
+                Limit  => $Search->{LIMIT} + ( $Param{Complete} ? 1 : 0 ),
                 UserID => $Param{UserID},
             );
         };
         return { Success => 0, Error => 'SEARCH provider failed: ' . $@ } if $@;
         return { Success => 0, Error => 'SEARCH provider must return an array reference.' }
             if ref $Values ne 'ARRAY';
+        return { Success => 0, Error => 'Complete SEARCH exceeded its LIMIT.' }
+            if $Param{Complete} && @{$Values} > $Search->{LIMIT};
         return { Success => 1, Value => $Values };
     }
 
@@ -188,6 +200,7 @@ sub _ScriptSearch {
         Class  => $Search->{CLASS},
         Where  => \%ResolvedWhere,
         Limit  => $Search->{LIMIT},
+        Complete => $Param{Complete},
         UserID => $Param{UserID},
     );
 }
@@ -195,10 +208,12 @@ sub _ScriptSearch {
 sub _ScriptNativeSearch {
     my ( $Self, %Param ) = @_;
 
+    return $Self->_ScriptFlatSearch(%Param) if $Param{For} =~ /\ATicket\z/;
+
     my %Search = (
         Result  => 'ARRAY',
         Classes => [ $Param{Class} ],
-        Limit   => $Param{Limit},
+        Limit   => $Param{Limit} + ( $Param{Complete} ? 1 : 0 ),
         UserID  => $Param{UserID},
     );
     for my $Field ( keys %{ $Param{Where} } ) {
@@ -229,6 +244,12 @@ sub _ScriptNativeSearch {
         $GetMethod = 'GovernanceObjectGet';
         $IDKey     = 'GovernanceObjectID';
     }
+    elsif ( $Param{For} eq 'MELTObject' ) {
+        $Object = eval { $Kernel::OM->Get('Kernel::System::MELTObject') };
+        return { Success => 0, Error => 'MELTObject is unavailable.' } if !$Object;
+        $GetMethod = 'MELTObjectGet';
+        $IDKey = 'MELTObjectID';
+    }
     elsif ( $Param{For} eq 'ITSMConfigItem' ) {
         $Object    = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
         $GetMethod = 'ConfigItemGet';
@@ -238,15 +259,52 @@ sub _ScriptNativeSearch {
         return { Success => 0, Error => "Unsupported SEARCH object type '$Param{For}'." };
     }
 
-    my $SearchMethod = $Param{For} eq 'GovernanceObject' ? 'GovernanceObjectSearch' : 'ConfigItemSearch';
+    my $SearchMethod = $Param{For} eq 'ITSMConfigItem' ? 'ConfigItemSearch' : $Param{For} . 'Search';
     my @IDs = eval { $Object->$SearchMethod(%Search) };
     return { Success => 0, Error => "SEARCH $Param{For}[$Param{Class}] failed: $@" } if $@;
+    return { Success => 0, Error => 'Complete SEARCH exceeded its LIMIT; no targets were reconciled.' }
+        if $Param{Complete} && @IDs > $Param{Limit};
     my @Objects;
     for my $ID (@IDs) {
         my $Item = eval { $Object->$GetMethod( $IDKey => $ID, DynamicFields => 1, Silent => 1 ) };
+        return { Success => 0, Error => "Complete SEARCH could not read target $ID." }
+            if $Param{Complete} && ( $@ || ref $Item ne 'HASH' || !%{$Item} );
         push @Objects, $Item if ref $Item eq 'HASH';
     }
     return { Success => 1, Value => \@Objects };
+}
+
+sub _ScriptFlatSearch {
+    my ( $Self, %Param ) = @_;
+    my $Kind = $Param{For};
+    return { Success => 0, Error => "$Kind does not have object classes; omit CLASS." }
+        if $Param{Class} ne $Kind;
+    my $Object = $Kernel::OM->Get("Kernel::System::$Kind");
+    my %Search = ( Result => 'ARRAY', Limit => $Param{Limit} + ( $Param{Complete} ? 1 : 0 ) );
+    $Search{UserID} = $Param{UserID} if $Kind eq 'Ticket';
+    my %TicketFields = ( Type => 'Types', State => 'States', StateType => 'StateType', Queue => 'Queues', CustomerUserID => 'CustomerUserLogin' );
+    for my $Field ( keys %{ $Param{Where} } ) {
+        my ($Op) = keys %{ $Param{Where}->{$Field} };
+        my $Value = $Param{Where}->{$Field}->{$Op};
+        return { Success => 0, Error => "$Kind field $Field supports EQUALS only." } if $Op ne 'EQUALS';
+        if ( $Kind eq 'Ticket' && $TicketFields{$Field} ) {
+            $Search{ $TicketFields{$Field} } = ref $Value eq 'ARRAY' ? $Value : [$Value];
+        }
+        else {
+            return { Success => 0, Error => "Unsupported $Kind search field $Field." };
+        }
+    }
+    my @IDs = $Object->TicketSearch(%Search);
+    return { Success => 0, Error => 'Complete SEARCH exceeded its LIMIT.' }
+        if $Param{Complete} && @IDs > $Param{Limit};
+    my @Values;
+    for my $ID (@IDs) {
+        my %Value = $Object->TicketGet( TicketID => $ID, DynamicFields => 1, UserID => $Param{UserID} );
+        return { Success => 0, Error => "Cannot read $Kind target $ID." } if !%Value;
+        $Value{Class} = $Kind;
+        push @Values, \%Value;
+    }
+    return { Success => 1, Value => \@Values };
 }
 
 sub _ScriptRequire {
@@ -343,6 +401,24 @@ sub _ScriptReturn {
     }
 
     my $From = $Return->{FROM} || '';
+    if ( $From =~ m{\AALL\s+(.+)\z}i ) {
+        my $Values = $Param{Variables}->{$1};
+        return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ALL requires a known collection.' }
+            if ref $Values ne 'ARRAY';
+        my $Type = $Return->{AS} || '';
+        return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ALL requires Collection<ObjectType.Class>.' }
+            if $Type !~ m{\ACollection<(ITSMConfigItem|GovernanceObject|MELTObject|Ticket)(?:\.([A-Za-z][A-Za-z0-9_-]*))?>\z};
+        my ( $ObjectType, $Class ) = ( $1, $2 );
+        my %IDKeys = ( ITSMConfigItem => 'ConfigItemID', GovernanceObject => 'GovernanceObjectID', MELTObject => 'MELTObjectID', Ticket => 'TicketID' );
+        my $IDKey = $IDKeys{$ObjectType};
+        return { Success => 0, Status => 'UNKNOWN', Error => 'Class is required for class-based object collections.' }
+            if !$Class && $ObjectType !~ /\ATicket\z/;
+        for my $Value (@{$Values}) {
+            return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN ALL target does not match its declared type.' }
+                if ref $Value ne 'HASH' || !$Value->{$IDKey} || ( $Class && ( $Value->{Class} || '' ) ne $Class );
+        }
+        return { Success => 1, Status => 'RETURNED', Value => $Values, ValueType => $Type };
+    }
     return { Success => 0, Status => 'UNKNOWN', Error => 'RETURN FROM must use FIRST <variable> or EXACTLY ONE <variable>.' }
         if $From !~ m{\A(FIRST|EXACTLY ONE)\s+(.+)\z}i;
     my ( $Mode, $Variable ) = ( uc($1), $2 );
@@ -937,6 +1013,255 @@ sub ValueEvaluate {
     );
 }
 
+sub ConditionEvaluate {
+    my ( $Self, %Param ) = @_;
+    return $Self->_ConditionEvaluate(
+        Expression => $Param{Expression},
+        Context => ref $Param{Context} eq 'HASH' ? $Param{Context} : {},
+    );
+}
+
+sub GroupedFieldAssignmentsEvaluate {
+    my ( $Self, %Param ) = @_;
+    my $Rule = $Param{Rule};
+    die "GROUP FINDINGS must be a mapping.\n" if ref $Rule ne 'HASH';
+    my ( $Kind, $Class ) = _GroupedClass( $Param{Destination} );
+    die "Risk destination does not match ControlObjective.ZRM-RiskClass.\n"
+        if ( $Param{Destination} || '' ) ne ( $Param{RiskClass} || '' );
+    my $GroupRule = $Rule->{'GROUP BY'};
+    my $EachRule = $Rule->{'FOR EACH'};
+    my $IdentityRule = $Rule->{IDENTITY};
+    my $Assignments = $Rule->{'FIELD ASSIGNMENTS'};
+    my $Merge = $Rule->{MERGE} || {};
+    my $SeverityRule = $Rule->{SEVERITY};
+    my $Lifecycle = $Rule->{LIFECYCLE} || { 'CREATE STATUS' => 'Active', 'REUSE STATUS' => 'Active' };
+    die "Grouped assignment needs GROUP BY, IDENTITY and FIELD ASSIGNMENTS mappings.\n"
+        if grep { ref $_ ne 'HASH' } ( $GroupRule, $IdentityRule, $Assignments, $Merge );
+    die "FOR EACH and SEVERITY must be mappings when supplied.\n"
+        if ( defined $EachRule && ref $EachRule ne 'HASH' )
+        || ( defined $SeverityRule && ref $SeverityRule ne 'HASH' );
+    die "LIFECYCLE must be a mapping with create and reuse statuses.\n"
+        if ref $Lifecycle ne 'HASH' || !$Lifecycle->{'CREATE STATUS'} || !$Lifecycle->{'REUSE STATUS'};
+    if ( $Lifecycle->{'EVENT FIELD'} ) {
+        my $Field = $Lifecycle->{'EVENT FIELD'};
+        my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Field );
+        die "Lifecycle event field is invalid.\n"
+            if $Field !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/ || !$Config
+            || ( $Config->{ObjectType} || '' ) ne $Kind
+            || !$Lifecycle->{'CREATE EVENT VALUE'} || !$Lifecycle->{'CLOSED EVENT VALUE'};
+    }
+    my $IdentityField = $IdentityRule->{FIELD} || '';
+    die "Grouped identity must name an assigned field.\n"
+        if $IdentityField !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/ || !exists $Assignments->{$IdentityField};
+    die "Severity field must be assigned with MAX_PRIORITY merge.\n"
+        if $SeverityRule && ( !$SeverityRule->{FIELD}
+        || !exists $Assignments->{ $SeverityRule->{FIELD} }
+        || ( $Merge->{ $SeverityRule->{FIELD} } || '' ) ne 'MAX_PRIORITY' );
+    die "Severity rules require a time zone.\n" if $SeverityRule && !$Rule->{'TIME ZONE'};
+
+    my %Base = (
+        SOURCE => $Param{Source},
+        CONTROL => $Param{Control},
+        CONTROLOBJECTIVE => $Param{Objective},
+        SCENARIO => { Value => $Rule->{SCENARIO} },
+        EVALUATION => { Now => $Param{Now}, TimeZone => $Rule->{'TIME ZONE'} },
+    );
+    my $GO = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my %Groups;
+    my $MembersAs = $GroupRule->{'MEMBERS AS'};
+    die "GROUP BY MEMBERS AS requires a valid alias when collecting members.\n"
+        if ( $GroupRule->{'MEMBER FROM'} || $GroupRule->{'INCLUDE MEMBERS'} )
+        && ( !$MembersAs || $MembersAs !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/ );
+    for my $Finding ( @{ $Param{Evaluation}{Findings} || [] } ) {
+        my %Context = ( %Base, FINDING => $Finding );
+        my $Origin = _GroupedPath( \%Context, $GroupRule->{FROM} );
+        my $GroupID = _GroupedField( $Origin, $GroupRule->{FIELD} );
+        die "Finding group reference is missing or ambiguous.\n"
+            if !defined $GroupID || ref $GroupID || $GroupID !~ /\A\d+\z/ || !$GroupID;
+        if ( $GroupRule->{'MEMBER FROM'} ) {
+            my $MemberID = _GroupedPath( \%Context, $GroupRule->{'MEMBER FROM'} );
+            die "Finding member ID is missing or ambiguous.\n"
+                if !defined $MemberID || ref $MemberID || $MemberID !~ /\A\d+\z/ || !$MemberID;
+            $Groups{$GroupID}{MemberIDs}{$MemberID} = 1;
+        }
+        push @{ $Groups{$GroupID}{Findings} }, $Finding;
+    }
+    if ( $GroupRule->{'INCLUDE MEMBERS'} ) {
+        die "GROUP BY INCLUDE MEMBERS must be a list of paths.\n"
+            if ref $GroupRule->{'INCLUDE MEMBERS'} ne 'ARRAY';
+        for my $Path ( @{ $GroupRule->{'INCLUDE MEMBERS'} } ) {
+            my $ID = _GroupedPath( \%Base, $Path );
+            die "GROUP BY included member ID is invalid.\n"
+                if !defined $ID || ref $ID || $ID !~ /\A\d+\z/ || !$ID;
+            $Groups{$_}{MemberIDs}{$ID} = 1 for keys %Groups;
+        }
+    }
+    for my $GroupID ( keys %Groups ) {
+        my $Group = _GroupedResolve( $GO, $GroupID, $GroupRule->{AS}, $Param{UserID} );
+        my %GroupObject = %{$Group};
+        if ($MembersAs) {
+            die "GROUP BY member alias conflicts with an object field.\n"
+                if exists $GroupObject{$MembersAs} || exists $GroupObject{"DynamicField_$MembersAs"};
+            $GroupObject{$MembersAs} = [ sort { $a <=> $b } keys %{ $Groups{$GroupID}{MemberIDs} || {} } ];
+        }
+        $Groups{$GroupID}{Object} = \%GroupObject;
+    }
+
+    my @ItemIDs = (0);
+    my %Items = ( 0 => {} );
+    if ($EachRule) {
+        my $ItemValues = _GroupedPath( \%Base, $EachRule->{FROM} );
+        @ItemIDs = ref $ItemValues eq 'ARRAY' ? @{$ItemValues} : ($ItemValues);
+        die "FOR EACH source is empty.\n" if !@ItemIDs;
+        die "FOR EACH source contains an invalid object ID.\n"
+            if grep { !defined $_ || ref $_ || $_ !~ /^\d+$/ || !$_ } @ItemIDs;
+        my %Seen;
+        @ItemIDs = grep { !$Seen{$_}++ } @ItemIDs;
+        %Items = map { $_ => _GroupedResolve( $GO, $_, $EachRule->{AS}, $Param{UserID} ) } @ItemIDs;
+    }
+
+    my ( $Severity, $Priority, $PriorityByName );
+    ( $Severity, $Priority, $PriorityByName ) = $Self->_GroupedSeverity(
+        Rule => $SeverityRule, Context => \%Base, UserID => $Param{UserID} ) if $SeverityRule;
+    my @Planned;
+    for my $GroupID ( sort { $a <=> $b } keys %Groups ) {
+        for my $ItemID ( sort { $a <=> $b } @ItemIDs ) {
+            my %Context = ( %Base, GROUP => $Groups{$GroupID}{Object}, ITEM => $Items{$ItemID},
+                SEVERITY => $Severity );
+            for my $Alias ( sort keys %{ $Rule->{RESOLVE} || {} } ) {
+                die "Invalid resolver alias.\n" if $Alias !~ /\A[A-Z][A-Z0-9_]*\z/ || exists $Context{$Alias};
+                my $Resolver = $Rule->{RESOLVE}{$Alias};
+                die "Resolver must be a mapping.\n" if ref $Resolver ne 'HASH';
+                my $ID = _GroupedPath( \%Context, $Resolver->{FROM} );
+                $Context{$Alias} = _GroupedResolve( $GO, $ID, $Resolver->{AS}, $Param{UserID} );
+            }
+            my $Identity = _GroupedTemplate( $IdentityRule->{TEMPLATE}, \%Context );
+            die "Grouped identity is empty.\n" if !$Identity;
+            $Context{IDENTITY} = { Value => $Identity };
+            my $Name = _GroupedTemplate( $Rule->{NAME}, \%Context );
+            die "Grouped Risk name is empty.\n" if !$Name;
+            my %Values;
+            for my $Field ( sort keys %{$Assignments} ) {
+                die "Invalid assignment field.\n" if $Field !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/;
+                my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Field );
+                die "Assignment field $Field does not belong to $Kind.\n"
+                    if !$Config || ( $Config->{ObjectType} || '' ) ne $Kind;
+                my $Expression = $Assignments->{$Field};
+                die "Assignment expression must be a scalar path.\n"
+                    if ref $Expression || $Expression !~ /\A\@[A-Z][A-Z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_-]*)+\z/;
+                $Values{$Field} = _GroupedPath( \%Context, substr( $Expression, 1 ) );
+            }
+            die "Identity field does not match its template.\n"
+                if !defined $Values{$IdentityField} || ref $Values{$IdentityField}
+                || "$Values{$IdentityField}" ne $Identity;
+            push @Planned, { GroupID => $GroupID, ItemID => $ItemID,
+                Identity => $Identity, Name => $Name, Values => \%Values,
+                Findings => $Groups{$GroupID}{Findings} };
+        }
+    }
+
+    return {
+        Class => [ $Kind, $Class ], IdentityField => $IdentityField,
+        Plans => \@Planned, Merge => $Merge, SeverityRule => $SeverityRule,
+        Priority => $Priority, PriorityByName => $PriorityByName,
+        Lifecycle => $Lifecycle,
+    };
+}
+
+sub _GroupedSeverity {
+    my ( $Self, %Param ) = @_;
+    my $Rule = $Param{Rule};
+    die "Severity requires AS, FIELD and ordered RULES.\n"
+        if !$Rule->{AS} || !$Rule->{FIELD} || ref $Rule->{RULES} ne 'ARRAY' || !@{ $Rule->{RULES} };
+    my %Priorities;
+    my ( $Chosen, $Priority );
+    for my $Band ( @{ $Rule->{RULES} } ) {
+        die "Severity rule needs WHEN, NAME and positive PRIORITY.\n"
+            if ref $Band ne 'HASH' || !$Band->{WHEN} || !$Band->{NAME}
+            || !defined $Band->{PRIORITY} || $Band->{PRIORITY} !~ /\A\d+\z/ || !$Band->{PRIORITY};
+        die "Severity name is repeated.\n" if exists $Priorities{ $Band->{NAME} };
+        $Priorities{ $Band->{NAME} } = $Band->{PRIORITY};
+        my $Match = $Self->ConditionEvaluate( Expression => $Band->{WHEN}, Context => $Param{Context} );
+        die "Severity condition is unknown: $Match->{Reason}\n" if $Match->{Status} eq 'UNKNOWN';
+        if ( !$Chosen && $Match->{Value} ) { $Chosen = $Band->{NAME}; $Priority = $Band->{PRIORITY} }
+    }
+    die "No severity rule matched.\n" if !$Chosen;
+    my $GO = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my ( $Kind, $Class ) = _GroupedClass( $Rule->{AS} );
+    die "Severity must resolve a GovernanceObject.\n" if $Kind ne 'GovernanceObject';
+    my @IDs = $GO->GovernanceObjectSearch( Result => 'ARRAY', Classes => [$Class],
+        Name => $Chosen, Limit => 10000, UserID => $Param{UserID} );
+    my @Exact;
+    for my $ID (@IDs) {
+        my $Item = $GO->GovernanceObjectGet( GovernanceObjectID => $ID, UserID => $Param{UserID} );
+        push @Exact, $Item if ref $Item eq 'HASH' && $Item->{Class} eq $Class
+            && ( $Item->{Name} || '' ) eq $Chosen && ( $Item->{ZTSMStatus} || '' ) eq 'Active';
+    }
+    die "Severity '$Chosen' is missing or ambiguous.\n" if @Exact != 1;
+    return ( $Exact[0], $Priority, \%Priorities );
+}
+
+sub GroupedReferenceResolve {
+    my ( $Self, %Param ) = @_;
+    return _GroupedResolve(
+        $Kernel::OM->Get('Kernel::System::GovernanceObject'),
+        $Param{ID}, $Param{AS}, $Param{UserID},
+    );
+}
+
+sub _GroupedResolve {
+    my ( $GO, $ID, $Specification, $UserID ) = @_;
+    my ( $Kind, $Class ) = _GroupedClass( $Specification );
+    die "Grouped reference must target GovernanceObject.\n" if $Kind ne 'GovernanceObject';
+    die "Grouped reference is missing or ambiguous.\n" if !defined $ID || ref $ID || $ID !~ /\A\d+\z/ || !$ID;
+    my $Object = $GO->GovernanceObjectGet( GovernanceObjectID => $ID, DynamicFields => 1, UserID => $UserID );
+    die "Grouped reference does not match $Specification.\n"
+        if ref $Object ne 'HASH' || ( $Object->{Class} || '' ) ne $Class;
+    return $Object;
+}
+
+sub _GroupedClass {
+    my ($Specification) = @_;
+    die "Invalid object class '$Specification'.\n"
+        if !$Specification || $Specification !~ /\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z/;
+    return ( $1, $2 );
+}
+
+sub _GroupedPath {
+    my ( $Context, $Path ) = @_;
+    die "Invalid assignment path.\n" if !$Path || $Path !~ /\A[A-Z][A-Z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_-]*)+\z/;
+    my ( $Root, @Parts ) = split /\./, $Path;
+    my $Value = $Context->{$Root};
+    for my $Part (@Parts) {
+        die "Assignment path '$Path' cannot be resolved.\n" if ref $Value ne 'HASH';
+        $Value = _GroupedField( $Value, $Part );
+        die "Assignment path '$Path' is missing.\n" if !defined $Value;
+    }
+    return $Value;
+}
+
+sub _GroupedField {
+    my ( $Object, $Field ) = @_;
+    die "Invalid source field.\n" if ref $Object ne 'HASH' || !$Field || $Field !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/;
+    return $Object->{$Field} if exists $Object->{$Field};
+    return $Object->{"DynamicField_$Field"};
+}
+
+sub _GroupedTemplate {
+    my ( $Template, $Context ) = @_;
+    die "Invalid assignment template.\n" if !defined $Template || ref $Template;
+    $Template =~ s/\{([A-Z][A-Z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_-]*)+)\}/_GroupedTemplateValue($Context,$1)/ge;
+    die "Unresolved assignment template.\n" if $Template =~ /[{}]/;
+    return $Template;
+}
+
+sub _GroupedTemplateValue {
+    my ( $Context, $Path ) = @_;
+    my $Value = _GroupedPath( $Context, $Path );
+    die "Template path '$Path' must be a scalar.\n" if ref $Value;
+    return $Value;
+}
+
 sub FieldAssignmentsEvaluate {
     my ( $Self, %Param ) = @_;
 
@@ -1091,7 +1416,7 @@ sub _Value {
         my $Type  = uc $1;
         my $Inner = $Self->_Value( Expression => $2, Context => $Param{Context} );
         return $Inner if !$Inner->{Known};
-        return $Self->_Convert( Type => $Type, Value => $Inner->{Value} );
+        return $Self->_Convert( Type => $Type, Value => $Inner->{Value}, Context => $Param{Context} );
     }
 
     if ( $Expression =~ m{\APRODUCT\s+OF\s*\[(.*)\]\z}i ) {
@@ -1127,6 +1452,20 @@ sub _Value {
             Known => 1,
             Value => $Operator eq '*' ? $Left->{Value} * $Right->{Value} : $Left->{Value} / $Right->{Value},
         };
+    }
+
+    if ( $Expression =~ m{\ATODAY(?:\s*\+\s*(\d+)\s+(DAY|MONTH|YEAR)S?)?\z}i ) {
+        my ( $Amount, $Unit ) = ( $1 || 0, lc( $2 || 'day' ) . 's' );
+        require DateTime;
+        my $Evaluation = $Param{Context}->{EVALUATION};
+        return { Known => 0, Reason => 'TODAY requires a pinned evaluation clock and timezone.' }
+            if ref $Evaluation ne 'HASH' || !defined $Evaluation->{Now} || !$Evaluation->{TimeZone};
+        my $Date = eval {
+            DateTime->from_epoch( epoch => $Evaluation->{Now}, time_zone => $Evaluation->{TimeZone} )
+                ->truncate( to => 'day' )->add( $Unit => $Amount, end_of_month => 'limit' )->ymd;
+        };
+        return { Known => 0, Reason => "Invalid calendar expression: $@" } if $@;
+        return { Known => 1, Value => $Date };
     }
 
     if ( $Expression =~ m{\A(\d+)\s+(DAY|DAYS|WEEK|WEEKS|MONTH|MONTHS|YEAR|YEARS)\s+AGO\z}i ) {
@@ -1194,6 +1533,17 @@ sub _Convert {
     }
     if ( $Param{Type} eq 'STRING' ) {
         return { Known => 1, Value => "$Value" };
+    }
+
+    if ( $Param{Type} eq 'DATE' && ref $Param{Context}->{EVALUATION} eq 'HASH' ) {
+        return { Known => 0, Reason => "DATE requires an ISO date, got '$Value'." }
+            if $Value !~ m{\A(\d{4})-(\d{2})-(\d{2})(?: 00:00:00)?\z};
+        my ( $Year, $Month, $Day ) = ( $1, $2, $3 );
+        require DateTime;
+        my $Epoch = eval { DateTime->new( year => $Year, month => $Month, day => $Day,
+            time_zone => $Param{Context}->{EVALUATION}->{TimeZone} )->epoch };
+        return { Known => 0, Reason => "DATE cannot convert '$Value'." } if $@;
+        return { Known => 1, Value => $Epoch };
     }
 
     my $DateTime = eval {

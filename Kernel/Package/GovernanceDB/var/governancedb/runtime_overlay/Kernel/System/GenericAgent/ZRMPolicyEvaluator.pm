@@ -65,6 +65,14 @@ sub Run {
         next CONTROL if !defined $Filter || $Filter eq '';
         next CONTROL if !defined $Policy || $Policy eq '';
 
+        # Collection filters belong to target discovery, not ticket applicability.
+        if ( $Filter =~ m{^\s*(?:VERSION|SEARCH|RETURN)\s*:}m ) {
+            my $Parsed = $PolicyEngine->ScriptParse( Source => $Filter );
+            next CONTROL if $Parsed->{Success}
+                && ref $Parsed->{Script}->{RETURN} eq 'HASH'
+                && ( $Parsed->{Script}->{RETURN}->{AS} || '' ) =~ m{\ACollection<};
+        }
+
         my %Context = (
             TICKET           => \%Ticket,
             CONTROLOBJECTIVE => $Control,

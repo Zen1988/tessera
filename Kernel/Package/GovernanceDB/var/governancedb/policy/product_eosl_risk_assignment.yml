@@ -1,0 +1,57 @@
+VERSION: 1
+RETURN:
+  AS: MELTObject.Risk
+  GROUP FINDINGS:
+    SCENARIO: Product EOSL compliance
+    TIME ZONE: Asia/Singapore
+    GROUP BY:
+      FROM: FINDING.Asset
+      FIELD: ZTAM-Application
+      AS: GovernanceObject.Application
+      MEMBER FROM: FINDING.Asset.ConfigItemID
+      MEMBERS AS: AssetIDs
+      INCLUDE MEMBERS:
+        - SOURCE.ConfigItemID
+    FOR EACH:
+      FROM: CONTROLOBJECTIVE.ZRM-RiskStmt
+      AS: GovernanceObject.RiskStatement
+    RESOLVE:
+      RMF:
+        FROM: ITEM.ZRM-RMF
+        AS: GovernanceObject.Framework
+    IDENTITY:
+      FIELD: MELT-Reference
+      TEMPLATE: '{SCENARIO.Value}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}:{SOURCE.ConfigItemID}'
+    LIFECYCLE:
+      CREATE STATUS: Active
+      REUSE STATUS: Active
+      EVENT FIELD: MELT-EventStatus
+      CREATE EVENT VALUE: Active
+      CLOSED EVENT VALUE: Closed
+    NAME: '{GROUP.Name}: {ITEM.ZRM-Annex} - {ITEM.Name} - {SOURCE.Name}'
+    FIELD ASSIGNMENTS:
+      MELT-RelatedGO: '@GROUP.GovernanceObjectID'
+      MELT-RiskStmt: '@ITEM.GovernanceObjectID'
+      MELT-RMF: '@RMF.GovernanceObjectID'
+      MELT-Reference: '@IDENTITY.Value'
+      MELT-RelatedCI: '@GROUP.AssetIDs'
+      MELT-EventSeverity: '@SEVERITY.GovernanceObjectID'
+      MELT-Source: '@SCENARIO.Value'
+      MELT-Control: '@CONTROL.ConfigItemID'
+    MERGE:
+      MELT-RelatedCI: UNION
+      MELT-EventSeverity: MAX_PRIORITY
+      MELT-Control: KEEP_FIRST
+    SEVERITY:
+      AS: GovernanceObject.EventSeverity
+      FIELD: MELT-EventSeverity
+      RULES:
+        - WHEN: 'DATE(@SOURCE.ZTAM-EoServiceLife) IS ON OR BEFORE DATE(TODAY)'
+          NAME: Critical
+          PRIORITY: 3
+        - WHEN: 'DATE(@SOURCE.ZTAM-EoServiceLife) IS LESS THAN DATE(TODAY + 6 MONTHS)'
+          NAME: High
+          PRIORITY: 2
+        - WHEN: 'DATE(@SOURCE.ZTAM-EoServiceLife) IS LESS THAN DATE(TODAY + 1 YEAR)'
+          NAME: Medium
+          PRIORITY: 1

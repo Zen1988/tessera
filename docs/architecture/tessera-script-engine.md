@@ -1,5 +1,174 @@
 # TESSERA ScriptEngine Knowledge Base
 
+## Language boundary
+
+TESSERA YAML is a versioned, English-like programming language for governance
+policies and automation. A program declares typed targets, searches, conditions,
+grouping, calculations, assignments and actions. ScriptEngine interprets those
+declarations against live object data. Perl provides reusable adapters for
+CMDB/GovernanceObject/Ticket access, DateTime calendar operations, persistence,
+locking and external execution. A new policy supplies a new YAML program; it
+does not require a Perl module for that policy.
+
+`RETURN.GROUP FINDINGS` is one reusable language operator. `GROUP BY`,
+`IDENTITY` and `FIELD ASSIGNMENTS` are required; `FOR EACH`, `RESOLVE`, `MERGE`
+and `SEVERITY` are optional according to the program. ScriptEngine resolves
+the program into a validated assignment plan. ControlRuntime applies the plan
+and records evidence. The Product EOSL program demonstrates these operators;
+its field names, date conditions and severity bands are authored in YAML.
+`GROUP BY.MEMBER FROM` and `MEMBERS AS` select an optional collection from
+the finding shape. A Contract program can choose ContractEntitlement members
+without changing Perl or supplying an `Asset` property.
+
+An external action such as AWX needs a reusable, typed execution adapter with
+credential handling, timeouts, results and evidence before a YAML program can
+call it. The current EOSL assignment does not implement AWX execution.
+
+## Control discovery and authored evaluation (0.0.46 / 0.0.47)
+
+VERSION remains 1. PolicyFilter discovers Control targets; PolicyEvaluation checks each
+bound target and expands failing findings; FieldAssignment maps findings into RiskClass.
+Product/EOSL is an authored example, never an engine-specific rule.
+
+### PolicyFilter (0.0.46, confirmed live)
+
+An Active objective save and the five-minute discovery daemon reconcile one Control per
+objective and typed target. Inactive objectives are skipped. ControlClass is not a selector.
+Supported SEARCH FOR / RETURN AS / Control fields:
+
+| FOR | AS | Control field |
+| --- | --- | --- |
+| ITSMConfigItem | Collection<ITSMConfigItem.ClassName> | ZRM-CIInstance |
+| GovernanceObject | Collection<GovernanceObject.ClassName> | ZRM-GOInstance |
+| MELTObject | Collection<MELTObject.ClassName> | ZRM-MOInstance |
+| Ticket | Collection<Ticket> | ZRM-TKInstance |
+
+Class-based searches specify CLASS; Ticket omits CLASS. RETURN FROM: ALL Targets returns
+the full typed collection, including empty collections. WHERE EQUALS/CONTAINS remain
+available. Searches probe LIMIT+1 and reject incomplete populations, maximum 1000.
+Repeated runs reuse Controls. Narrowing filters preserves historical Controls. CustomerUser
+is deferred. Legacy scalar ticket applicability does not consume this collection program.
+
+### PolicyEvaluation and findings (0.0.47, local validation)
+
+The packaged examples under var/governancedb/policy are paste-ready:
+control_discovery_products.yml -> ZRM-PolicyFilter;
+product_eosl_evaluation.yml -> ZRM-PolicyEvaluation;
+product_eosl_risk_assignment.yml -> ZRM-FieldAssignment.
+Use Active objective, automatic type, supported ControlCycle (e.g. daily), CreateRisk enabled
+and RiskClass MELTObject.Risk. The five-minute evaluation daemon dispatches due Controls.
+
+TARGET must match the bound type/class. CHECK.EXPECT uses existing ScriptEngine expressions
+(numeric/string/date conditions). Optional CHECK.ON EMPTY specifies FIELD, RETURN Pass or
+N/A, and REASON. Unknown fields or malformed populated dates are errors, not missing data.
+TIME ZONE and the pinned evaluation clock govern TODAY and TODAY + N DAYS/MONTHS/YEARS.
+Calendar arithmetic clamps month-end/leap-day boundaries. Pass and empty-value returns
+perform no descendant or affected-object searches.
+
+ON FAIL.DESCENDANTS uses authored FOR, CLASS, PARENT FIELD, INCLUDE SELF, MAX DEPTH and
+LIMIT. It follows inverse parent references to the last leaf without evaluating descendants'
+own conditions. Cycles are visited once; depth/count overflow returns UNKNOWN. This
+operation supports class-based ITSMConfigItem, GovernanceObject and MELTObject targets,
+not Ticket hierarchies. ON FAIL.AFFECTED lists FOR, CLASS, LIMIT and REFERENCES. Direct
+fields and Set[*].Child paths match selected identities. Traversal is bounded to 1000
+objects/100 levels; affected class scans allow 100000. Overflow never silently truncates.
+
+For a control on the bound object itself, `ON FAIL: { EMIT FINDING: THIS }` emits
+one finding with `Target`, `TargetType` and `Source`. It performs no graph search
+and works for ITSMConfigItem, GovernanceObject, MELTObject and Ticket targets.
+`FINDING.Target` can be read by FieldAssignment. The Control remains a CI execution
+record; the authored target can be any of these four supported object kinds.
+
+The example checks only the current Product date. EOSL strictly before today plus one
+calendar year fails, including expired dates. Exactly one year passes. Blank EOSL is N/A
+(not announced). A failing source includes itself and all descendants regardless of their
+dates. Workload/NetworkNode reference ZTAM-Model; StorageNode/PeripheralNode reference
+ZTAM-Product; all four also use ZTAM-Runtime[*].ZTAM-Installed. HostedService indirection
+is not implied. These field names, classes, threshold and relationships live in YAML.
+
+FINDING exposes Asset, Source, AssetType and Matches (Path/Object). Assignment RETURN.AS
+selects the destination type. `RETURN.GROUP FINDINGS` selects an authored group path,
+iteration path, reference lookups, identity template, Risk name, Dynamic Field assignments,
+merge modes and ordered severity conditions. The Product EOSL script groups affected assets
+by Application, then iterates the ControlObjective's RiskStatements. Its identity is one
+active Risk per scenario, Application, RiskStatement and source Product. The backend locks that identity, resolves
+the authored references, unions CI links, keeps the highest authored severity priority and
+records each contribution. The source Product and affected assets are linked in
+`MELT-RelatedCI`. A closed Risk stays closed; the next failure starts a new
+episode for the same identity. `MELT-Control` keeps the first creating Control because it is
+single-valued; activities preserve subsequent Controls. CreateRisk gates creation. No new
+Dynamic Fields are introduced. The earlier scalar `RETURN.IDENTITY` assignment remains
+supported for existing scripts.
+
+Successful runs record evidence, result and LastRun. Errors do not advance the cycle or
+claim Pass. Earlier successful writes can remain after a later write failure; retries reuse
+Risk identities. Automatic Risk closure/reopening is not implemented. Passing Controls do
+not scan descendants to resolve old Risks. Historical Controls retained after filter narrowing
+still need an explicit retirement decision. Fresh install/upgrade/reinstall use the same
+packaged modules and scheduler settings; live deployment validation remains outstanding.
+
+### Exact evaluation example
+
+```yaml
+VERSION: 1
+TARGET: ITSMConfigItem.Product
+TIME ZONE: Asia/Singapore
+CHECK:
+  ON EMPTY:
+    FIELD: ZTAM-EoServiceLife
+    RETURN: N/A
+    REASON: End of service life is not announced.
+  EXPECT: 'DATE(@THIS.ZTAM-EoServiceLife) IS ON OR AFTER DATE(TODAY + 1 YEAR)'
+ON FAIL:
+  DESCENDANTS:
+    FOR: ITSMConfigItem
+    CLASS: Product
+    PARENT FIELD: ZTAM-Parent
+    INCLUDE SELF: 1
+    MAX DEPTH: 64
+    LIMIT: 1000
+  AFFECTED:
+    - FOR: ITSMConfigItem
+      CLASS: Workload
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: NetworkNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: StorageNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: PeripheralNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']
+```
+
+### Exact field assignment example
+
+The executable Product EOSL assignment is
+`Kernel/Package/GovernanceDB/var/governancedb/policy/product_eosl_risk_assignment.yml`.
+Set that content in the applicable ControlObjective's `ZRM-FieldAssignment` after installing
+the package. The package preserves administrator-owned ControlObjective records and does not
+change their existing field assignment during installation.
+
+### Exact discovery example
+
+```yaml
+VERSION: 1
+SEARCH:
+  FOR: ITSMConfigItem
+  CLASS: Product
+  AS: Targets
+  LIMIT: 1000
+RETURN:
+  FROM: ALL Targets
+  AS: Collection<ITSMConfigItem.Product>
+```
+
+
 ## Execution Context Contract
 
 TESSERA scripts separate the object that owns the program from the runtime object being evaluated:

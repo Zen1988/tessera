@@ -15,6 +15,7 @@ use parent qw(Kernel::System::TESSERA::ScriptEngine);
 # than inheriting this declaration from ScriptEngine.
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
+    'Kernel::System::DynamicField',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Ticket',

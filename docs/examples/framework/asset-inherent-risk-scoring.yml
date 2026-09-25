@@ -1,0 +1,87 @@
+# Intended destination: Framework.ZRM-RiskScoringEngine.
+# Design draft only: the current runtime does not execute this YAML.
+# The current RiskStatement selects this Framework through exported ZRM-RMF.
+VERSION: 1
+ASSESSMENT: INHERENT
+APPLIES TO:
+  - ITSMConfigItem.Workload
+  - ITSMConfigItem.NetworkNode
+  - ITSMConfigItem.PeripheralNode
+  - ITSMConfigItem.StorageNode
+
+RISK STATEMENTS:
+  FROM: CURRENT CONTROL OBJECTIVE.ZRM-RiskStmt
+  CLASS: GovernanceObject.RiskStatement
+  ON EMPTY: ERROR
+  FOR EACH: SCORE SEPARATELY
+
+BASE:
+  IMPACT:
+    FROM: CURRENT RISK STATEMENT.ZRM-BaseImpact
+  LIKELIHOOD:
+    FROM: CURRENT RISK STATEMENT.ZRM-BaseLikelihood
+  VALID RANGE: [1, 5]
+
+FACTOR RULE:
+  EFFECTIVE RANGE: (0, 1]
+  WHEN ZERO: 1
+  WHEN ABOVE ONE: 1
+  WHEN MISSING: 1
+  WHEN NEGATIVE OR NONNUMERIC: ERROR
+
+FACTORS:
+  - REFERENCE: ZTAM-Environment
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTAM-Application.ZTSMAppSystem-CriticalityProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTAM-Application.ZTSMAppSystem-DataClassificationProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTAM-Application.ZTSMAppSystem-ExposureProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTAM-Application.ZTSMAppSystem-ServiceTier
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTAM-FunctionProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+
+CALCULATE:
+  INHERENT IMPACT: BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR RULE))
+  INHERENT LIKELIHOOD: BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD, FACTOR RULE))
+  INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD
+
+ASSESSMENT RESULT:
+  TICKET TYPE: Assessment
+  FIELD: ZRM-RiskAssessment
+  ROW TARGET: ZRM-RiskTargetCI
+  TARGET VALUE: CURRENT ASSET
+  ROW RISK STATEMENT: ZRM-RiskStatement
+  RISK STATEMENT VALUE: CURRENT RISK STATEMENT
+  SCORE FIELD: ZRM-InherentCalculatedRisk
+  SCORE VALUE: CALCULATE.INHERENT RISK
+
+# Resolve base GeneralCatalog values by their numeric names, never their IDs.
+# The score is calculated once per affected asset and RiskStatement. Repeated
+# failures of Controls guarding the same statement add evidence, not factors.
+# Multiple linked statements produce separate Risks and assessment rows.
+# An empty reference set, wrong class, unresolved reference or missing/invalid
+# base score is a calculation error, never a reason to choose another statement.
+# A factor of 0 or above 1 is neutralized to 1; only values greater than 0 and
+# below 1 reduce risk. Negative and nonnumeric factors are errors. A missing
+# optional asset reference or blank factor contributes 1, but a broken populated
+# reference is an error. Record raw and normalized inputs with the Framework version.
+# With base dimensions at most 5 and normalized factors at most 1, inherent
+# impact and likelihood stay at most 5, and inherent risk stays at most 25.
+# Application has no direct risk factor. This draft resolves four Application
+# profiles separately. Platform's own calculation remains deferred.
+# The score belongs to a row on the Assessment ticket, not to the MELT Risk.
+# Existing ZRM-InherentLikelihood/Impact are 1-5 GeneralCatalog selections and
+# cannot represent fractional factor-adjusted dimensions. The current form
+# recalculates ZRM-InherentCalculatedRisk from those selections, so framework
+# scoring needs a coordinated server/form change before it can write this row.
+# ZRM-RiskStatement is single-value per row, matching this design.
+# Residual risk and mitigation controls will be specified in a later version.

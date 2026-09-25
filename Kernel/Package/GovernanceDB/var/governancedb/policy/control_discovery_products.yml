@@ -1,0 +1,9 @@
+VERSION: 1
+SEARCH:
+  FOR: ITSMConfigItem
+  CLASS: Product
+  AS: Targets
+  LIMIT: 1000
+RETURN:
+  FROM: ALL Targets
+  AS: Collection<ITSMConfigItem.Product>

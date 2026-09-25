@@ -1,0 +1,34 @@
+VERSION: 1
+TARGET: ITSMConfigItem.Product
+TIME ZONE: Asia/Singapore
+CHECK:
+  ON EMPTY:
+    FIELD: ZTAM-EoServiceLife
+    RETURN: N/A
+    REASON: End of service life is not announced.
+  EXPECT: 'DATE(@THIS.ZTAM-EoServiceLife) IS ON OR AFTER DATE(TODAY + 1 YEAR)'
+ON FAIL:
+  DESCENDANTS:
+    FOR: ITSMConfigItem
+    CLASS: Product
+    PARENT FIELD: ZTAM-Parent
+    INCLUDE SELF: 1
+    MAX DEPTH: 64
+    LIMIT: 1000
+  AFFECTED:
+    - FOR: ITSMConfigItem
+      CLASS: Workload
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: NetworkNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: StorageNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']
+    - FOR: ITSMConfigItem
+      CLASS: PeripheralNode
+      LIMIT: 10000
+      REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']

@@ -2,6 +2,48 @@
 
 ## Standalone Risk Calculation Framework - Confirmed Design, Pending Implementation
 
+- Install `TESSERA-Base-0.0.53.opm` in the intended OTOBO environment and set
+  the applicable ControlObjective's administrator-owned `ZRM-FieldAssignment`
+  to the packaged `product_eosl_risk_assignment.yml`. Verify active
+  EventSeverity objects Critical, High, Medium and each RiskStatement's
+  `ZRM-RMF` before dispatching EOSL Controls. This activation is not automated
+  by package installation because the ControlObjective is administrator-owned.
+- Decide how to review or migrate historical per-asset EOSL Risks and when a
+  complete fresh scan may downgrade severity or remove recovered CI links.
+  The current grouped runtime preserves historical contribution and raises
+  severity only.
+
+- Implement the proposed Application MAX rollup in
+  `docs/examples/framework/application-risk-aggregation.yml` after defining
+  routing to one Assessment task for the current EOSL Application scenario and
+  complete asset rows there, complete per-Risk Control contribution discovery,
+  a stable scenario
+  key, and safe composite identity/reconciliation for Application-level MELT
+  Risks. Read `ZRM-InherentCalculatedRisk` from `ZRM-RiskAssessment` rows targeted
+  by `ZRM-RiskTargetCI`; write the Application result to a row on that same
+  Assessment ticket targeted by `ZRM-RiskTargetGO`. Reconcile the current form's catalog-product calculation
+  with fractional framework scores. Verify EOSL-only scope, complete child
+  enumeration, stale/missing score handling, idempotent reruns and provenance.
+  No new Dynamic Field is approved by the draft.
+
+- Review the 2026-09-25 inherent asset scoring YAML draft in
+  `docs/examples/framework/asset-inherent-risk-scoring.yml`. The script reads
+  the current ControlObjective's multi-value `ZRM-RiskStmt` and scores each
+  statement separately, using its own base impact and likelihood.
+  Confirm whether missing optional asset
+  factors should be neutral 1 and whether every factor multiplies independently.
+  Then define executable syntax and Framework/version attribution on the
+  existing Assessment ticket rows.
+- The draft now includes Application CriticalityProfile, DataClassificationProfile,
+  ExposureProfile and ServiceTier through their exported reference paths. Define
+  Platform's separate contribution later; Application has no direct factor fields.
+- Implement and verify the authored normalization rule: base impact/likelihood
+  1-5, factor 0 or above 1 treated as neutral 1, factors in (0,1] retained,
+  negative/nonnumeric values rejected. Preserve raw and normalized inputs;
+  inherent score must not exceed 25.
+- Residual scoring from mitigation Controls, scale bounds and rating thresholds
+  remain separate future decisions; the draft calculates inherent risk only.
+
 - Framework is a standalone reusable governance object, not an implicitly selected ancestor
   of Policy. IM8 is the user's Policy example; calculation frameworks may address infrastructure,
   applications, suppliers or other assessment subjects.
@@ -10,15 +52,19 @@
   must not be assumed to exist.
 - Framework defines required inputs, likelihood/impact scales, formula or matrix, rating
   thresholds and applicable object types. No multiplication formula is assumed universally.
-- Objects may attach applicable frameworks. Attachment declares applicability; PolicyEvaluation
-  explicitly selects the framework to execute and maps its inputs. Do not choose a framework
-  implicitly from Policy ancestry, reference ordering or the first matching attachment.
+- Objects may attach applicable frameworks. Attachment declares applicability.
+  For this EOSL design, RiskStatement's explicit Framework relation selects the
+  calculation; PolicyEvaluation supplies the execution context and inputs. Do
+  not choose a framework implicitly from Policy ancestry, reference ordering
+  or the first matching attachment.
 - Missing/ambiguous selected frameworks, incompatible object types and invalid inputs produce
   a calculation error rather than a guessed score. Business formulas remain authored rules.
-- Preserve one asset-level Risk identity while keeping separate assessment results by framework
-  and version, retaining input values, calculated results and contributing Control provenance.
-  Different frameworks must not overwrite each other's scores. Any overall Risk aggregation
-  requires an explicit authored rule; none is selected by this decision.
+- For the EOSL scenario, preserve one Application-and-RiskStatement Risk identity while
+  keeping asset assessment rows and separate results by framework and version,
+  retaining input values, calculated results and contributing Control provenance.
+  Different frameworks must not overwrite each other's scores. The new
+  Application-level MAX rule is scoped to one Framework and scenario; overall
+  aggregation across frameworks or unrelated scenarios remains undefined.
 - Before implementation, validate latest SOPM/OPM and exports and map this design to existing
   classes/fields. No new class names, Dynamic Field names or executable YAML syntax are approved
   by this conceptual decision. Define framework versioning and assessment storage next.

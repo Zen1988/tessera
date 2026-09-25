@@ -1,0 +1,74 @@
+# Intended destination: Framework.ZRM-RiskAggregationEngine.
+# Proposed content for Framework.ZRM-RiskAggregationEngine.
+# Design draft only: the current runtime does not execute this YAML.
+# On Control failure, a separate finding assignment creates/reuses one EOSL
+# MELT Risk per Application, RiskStatement and scenario. Many Controls may
+# contribute affected CIs to it; score each CI once in the Assessment ticket.
+VERSION: 1
+AGGREGATE: INHERENT RISK
+
+APPLICATION RISK:
+  FROM: CURRENT MELTObject.Risk
+  CLASS: MELTObject.Risk
+  APPLICATION FIELD: MELT-RelatedGO
+  AFFECTED ASSETS FIELD: MELT-RelatedCI
+  FRAMEWORK FIELD: MELT-RMF
+  SCENARIO FIELD: MELT-Reference
+  RISK STATEMENT FIELD: MELT-RiskStmt
+  VERIFY FRAMEWORK: MELT-RMF EQUALS MELT-RiskStmt.ZRM-RMF
+  REQUIRE: ONE APPLICATION, ONE RISK STATEMENT AND ALL CURRENT FAILED ASSETS
+
+APPLICATION:
+  FROM: APPLICATION RISK.MELT-RelatedGO
+  CLASS: GovernanceObject.Application
+  ON MISSING OR AMBIGUOUS: ERROR
+
+ASSETS:
+  FROM: APPLICATION RISK.MELT-RelatedCI
+  CLASSES: [Workload, NetworkNode, PeripheralNode, StorageNode]
+  VERIFY:
+    ZTAM-Application: APPLICATION
+  REQUIRE: COMPLETE CURRENT FAILURE SET
+
+ASSESSMENT TICKET:
+  FROM: CURRENT TICKET
+  TYPE: Assessment
+  FIELD: ZRM-RiskAssessment
+
+ASSET ASSESSMENT ROWS:
+  FROM: ASSESSMENT TICKET.ZRM-RiskAssessment
+  TARGET FIELD: ZRM-RiskTargetCI
+  TARGETS: ASSETS
+  REQUIRE TARGET CARDINALITY: ONE ASSET PER ROW
+  RISK STATEMENT FIELD: ZRM-RiskStatement
+  RISK STATEMENT: APPLICATION RISK.MELT-RiskStmt
+  SCORE FIELD: ZRM-InherentCalculatedRisk
+  SCORE RANGE: (0, 25]
+  REQUIRE: COMPLETE ROWS FOR ALL CURRENT EOSL AFFECTED ASSETS
+
+ROLLUP:
+  APPLICATION INHERENT RISK: MAX(ASSET ASSESSMENT ROWS.ZRM-InherentCalculatedRisk)
+  MAXIMUM SOURCE: ASSET ASSESSMENT ROW WITH MAXIMUM SCORE
+
+APPLICATION ASSESSMENT:
+  TICKET: ASSESSMENT TICKET
+  ACTION: ADD OR UPDATE ROW
+  FIELD: ZRM-RiskAssessment
+  ROW:
+    ZRM-RiskTargetGO: APPLICATION
+    ZRM-RiskStatement: APPLICATION RISK.MELT-RiskStmt
+    ZRM-InherentCalculatedRisk: ROLLUP.APPLICATION INHERENT RISK
+  REQUIRE TARGET CARDINALITY: ONE APPLICATION PER ROW
+
+RISK EVIDENCE:
+  MELT-RelatedTicket: ASSESSMENT TICKET
+
+# MAX selects one ticket assessment score for this RiskStatement. Many Controls
+# can contribute evidence, but their count does not multiply the score.
+# Application factors are not applied again. Keep the winning row and CI set.
+# The current EOSL assignment is per asset. Its scalar RETURN.IDENTITY and
+# existing-Risk reuse do not support a composite Application+statement+scenario identity
+# or union newly affected CIs into MELT-RelatedCI. Do not deploy this design
+# until failure assignment, reconciliation and Assessment routing are updated.
+# Preserve prior finding activity; current failure membership and Risk closure
+# after recovery require a separate lifecycle decision.

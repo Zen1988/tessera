@@ -1,6 +1,295 @@
 # TESSERA Project Status
 
+## 2026-09-25 Direct Policy Findings Across Target Types
+
+- `TESSERA-Base` 0.0.53 adds VERSION 1 `ON FAIL: { EMIT FINDING: THIS }`.
+  PolicyEvaluation can now report a failure on its bound ITSMConfigItem,
+  GovernanceObject, MELTObject or Ticket without requiring descendant or asset
+  traversal. The finding exposes `Target`, `TargetType` and `Source` for authored
+  FieldAssignment. Existing Product EOSL graph traversal remains available.
+- The Control is still the CI execution record, while `TARGET` identifies the
+  governed object. Tests cover direct pass/fail for all four target kinds and
+  verify that direct evaluation performs no asset search. Local package build
+  and runtime tests passed; live OTOBO deployment remains pending.
+
+
+## 2026-09-25 Configurable Group Members for Any Finding Shape
+
+- `TESSERA-Base` 0.0.52 removes the grouped interpreter's assumption that
+  every finding contains `Asset.ConfigItemID`. YAML now declares `GROUP BY`
+  `MEMBER FROM`, `MEMBERS AS`, and optional `INCLUDE MEMBERS`; the Product EOSL
+  program chooses affected asset IDs plus the source Product ID. The generic
+  activity body no longer assumes an Asset or source name exists.
+- A synthetic ContractEntitlement finding without an `Asset` member exercises
+  the same grouped operator with a different identity, Risk name and member
+  collection. The Product EOSL and discovery tests pass (127 assertions), and
+  closed-episode behavior remains
+  covered. This supersedes the 0.0.51 implementation details below.
+
+
+## 2026-09-25 Product-Specific Risk Episodes
+
+- `TESSERA-Base` 0.0.51 changes Product EOSL identity to scenario +
+  Application + RiskStatement + source Product. The source Product is also
+  included with affected assets in `MELT-RelatedCI`, and the Risk name ends
+  with the Product name. Distinct Products no longer share one Risk.
+- The YAML `LIFECYCLE` stanza declares the create/reuse governance status and
+  the MELT event field/value that means closed. A matching Active Risk is
+  reused. A Risk closed by either governance status or `MELT-EventStatus`
+  remains untouched; a subsequent failure creates a new Active Risk with the
+  same group reference. A later failure reuses that new episode.
+- Product EOSL and discovery tests pass (123 assertions), including Product
+  separation and both close paths. This
+  supersedes the previous Application + RiskStatement identity below.
+
+
+## 2026-09-25 Grouped Assignment Uses Existing ScriptEngine
+
+- TESSERA YAML is treated as the versioned governance programming language.
+  ScriptEngine interprets declarative operators against live data; reusable
+  Perl adapters provide storage, calendar math and external capabilities.
+  Grouped assignment now also supports programs without `FOR EACH` or
+  `SEVERITY`, confirming the operator is not tied to Product EOSL.
+- `TESSERA-Base` 0.0.50 removes the temporary `FindingRiskEngine` module.
+  `PolicyEngine` inherits `ScriptEngine.GroupedFieldAssignmentsEvaluate`,
+  which interprets `RETURN.GROUP FINDINGS` and returns fully validated plans.
+  `ControlRuntime` applies those plans to the authored destination class using
+  generic identity locking, create/reuse, UNION, MAX_PRIORITY and KEEP_FIRST
+  behavior. The EOSL fields, classes, scenario, dates, naming and severity
+  bands remain in the ControlObjective YAML, with no EOSL-specific Perl path.
+- The Product EOSL and discovery suites pass (114 assertions). The test that
+  changes the YAML grouping field, name and severity cutoff without changing
+  Perl still passes. Package source and runtime mirrors are synchronized in
+  `Kernel/Package/TESSERA-Base-0.0.50.opm`.
+- This supersedes the 0.0.49 section below. Installation and
+  administrator-owned ControlObjective field activation remain outstanding in
+  the target OTOBO environment.
+
+
+## 2026-09-25 Script-Driven Grouped Risk Assignment
+
+- `TESSERA-Base` 0.0.49 supersedes the 0.0.48 EOSL-specific grouped path.
+  `ControlRuntime` now passes the authored `RETURN.GROUP FINDINGS` mapping to
+  `FindingRiskEngine`. The YAML supplies the group path and class, iteration
+  path and class, reference lookups, identity, Risk name, destination Dynamic
+  Fields, merge modes, timezone, and ordered severity conditions/priorities.
+  Perl provides object lookup, condition evaluation, locked create/reuse,
+  field validation, union, priority comparison, and evidence recording.
+- The Product EOSL script is at
+  `var/governancedb/policy/product_eosl_risk_assignment.yml`. Tests change
+  the YAML-selected Application field, Risk name template, and severity cutoff
+  without changing Perl and verify the resulting Risk. Product EOSL and
+  discovery tests pass (111 assertions); package payloads and runtime mirrors
+  must remain synchronized.
+- Package installation plus setting the administrator-owned
+  ControlObjective `ZRM-FieldAssignment` to this YAML are required in the
+  intended OTOBO environment. No target environment has been supplied in
+  this workspace, so live deployment has not been performed.
+
+
+## 2026-09-25 Executable EOSL Application Risk Grouping
+
+- `TESSERA-Base` 0.0.48 now includes executable grouped EOSL failure
+  assignment in `var/governancedb/policy/product_eosl_risk_assignment.yml`.
+  Paste this YAML into the applicable ControlObjective's existing
+  `ZRM-FieldAssignment` field when activating it; the package does not overwrite
+  administrator-owned ControlObjective records.
+- On failed Product EOSL evaluation, `ControlRuntime` reads every
+  `ControlObjective.ZRM-RiskStmt`, resolves each RiskStatement's `ZRM-RMF`, and
+  groups affected CIs by their `ZTAM-Application`. It creates/reuses one Risk
+  per Application, RiskStatement and Product EOSL scenario. The Risk name is
+  `<Application>: <Annex> - <RiskStatement>`. It stores Application in
+  `MELT-RelatedGO`, RiskStatement in `MELT-RiskStmt`, Framework in `MELT-RMF`,
+  and a deduplicated union of affected CIs in `MELT-RelatedCI`.
+- The authored severity bands resolve active EventSeverity objects by exact
+  name. Expired/today is Critical, before six calendar months is High, and
+  the remaining failing window is Medium. Contributions can raise severity
+  but do not downgrade it. Each failing Control and asset creates activity
+  evidence; `MELT-Control` remains the first contributing Control.
+- The new identity uses `MELT-Reference` with scenario, Application ID and
+  RiskStatement ID. Existing legacy per-asset Risks are preserved, so an
+  upgraded environment may contain historical per-asset Risks alongside new
+  grouped Risks. No automatic legacy migration or recovery downgrade runs.
+- Product EOSL and discovery tests pass (107 assertions). Source/runtime
+  mirror and generated `Kernel/Package/TESSERA-Base-0.0.48.opm` are current.
+  This is packaged locally; installation in an OTOBO environment and updating
+  the administrator-owned ControlObjective field are still required for live
+  execution there.
+
+
+## 2026-09-25 Latest Export Confirms RMF and EOSL Severity Design
+
+- The new `Export/GovernanceObject_2026-09-26-01.yml` and
+  `Export/Export_DynamicFields_2026-09-25 06_43_28.yml` now define
+  `RiskStatement.ZRM-RMF` as a single reference to Framework, included in the
+  RiskStatement role. This supersedes the earlier missing-field finding.
+  Control failure resolves every linked RiskStatement, reads its `ZRM-RMF`,
+  and copies the resolved Framework to `MELT-RMF` on the Application-and-
+  RiskStatement Risk.
+- The EOSL finding draft now names the Risk
+  `<Application Name>: <RiskStatement Annex> - <RiskStatement Name>`, links
+  `MELT-RiskStmt`, unions each failing Product's affected CIs into multi-value
+  `MELT-RelatedCI`, and stores the Application in `MELT-RelatedGO`. One Risk can
+  collect evidence from many Controls and Products for the same statement.
+- The grouped EOSL assignment draft is located under
+  `docs/examples/controlobjective/application-eosl-risk-assignment.yml` because
+  its intended destination is `ControlObjective.ZRM-FieldAssignment`, not a
+  Framework field. It is still non-executable in the current runtime.
+- Resolve `MELT-EventSeverity` to an active GovernanceObject of class
+  `EventSeverity` by exact name: EOSL on/before today = Critical; after today
+  but before six calendar months = High; six months to strictly before one
+  year = Medium. Use Asia/Singapore evaluation date. Critical outranks High,
+  which outranks Medium, so a later Product cannot downgrade a Risk from a
+  partial evaluation. The screenshot confirms those named EventSeverity
+  objects exist in the shown environment; package/fresh-install availability
+  is not established by the image. Recovery-driven downgrade remains pending.
+- This is a dry-run design update only. The current 0.0.47 packaged EOSL
+  assignment still creates one Risk per asset, and its scalar identity/reuse
+  code cannot perform grouped CI union or composite Risk identity.
+
+
+## 2026-09-25 RiskStatement Framework Authority and Many Controls
+
+Its missing-RMF-export observation below was superseded by the newer export
+review at the top of this file; `ZRM-RMF` now exists on RiskStatement.
+
+- User confirmed one EOSL Risk per Application, RiskStatement and scenario.
+  The Risk links its statement through existing single-value `MELT-RiskStmt`,
+  its Framework through existing `MELT-RMF`, its Application through
+  `MELT-RelatedGO`, and all affected assets through multi-value
+  `MELT-RelatedCI`. Up to many Controls may guard and contribute findings to
+  the same RiskStatement; Control count is evidence, not a score multiplier.
+- RiskStatement is the authority for its Framework. Neither the current
+  RiskStatement nor ControlObjective export contains a dedicated Framework
+  reference, so a typed RiskStatement-to-Framework relation must be defined
+  and exported before implementation. Do not infer it from `ZRM-Policy` or
+  invent a field name. The assignment copies the resolved Framework to
+  `MELT-RMF` and the statement to `MELT-RiskStmt`.
+- Corrected both draft engines: score once per affected asset and RiskStatement
+  into an Assessment ticket row with `ZRM-RiskStatement`; MAX the rows for that
+  statement into an Application-targeted row on the same ticket. Multiple
+  RiskStatements have separate Risk events and rows. This supersedes the prior
+  MAX-of-base-impact and MAX-of-base-likelihood across different statements.
+
+
+## 2026-09-25 EOSL Risk Grouping Revised to Application
+
+The later RiskStatement Framework Authority decision above supersedes this
+section's one-Risk-per-Application and ControlObjective-selected-Framework
+assumptions. This section records the earlier design sequence.
+
+- User revised the EOSL failure model to one MELT Risk per Application and
+  scenario, containing every affected Workload, NetworkNode, PeripheralNode and
+  StorageNode in existing multi-value `MELT-RelatedCI`. `MELT-RelatedGO` points
+  to the Application. The Assessment ticket stores one score row per asset and
+  an Application-targeted MAX row. No second ticket or second Application Risk
+  is needed for aggregation.
+- Read-only runtime review confirms 0.0.47 still creates one Risk per asset:
+  packaged `product_eosl_risk_assignment.yml` uses scalar `MELT-RelatedCI` as
+  `RETURN.IDENTITY`; `_FindingRiskCreate` reuses by that one field and only
+  appends activity on reuse. It does not merge new values into `MELT-RelatedCI`.
+  `MELT-Control` is also single-value, so contribution activities must retain
+  multiple Control provenance. The working package/YAML remains unchanged.
+- Rewrote the proposed `application-risk-aggregation.yml` to read the grouped
+  Application Risk and the current Assessment ticket rows. Before deployment,
+  define safe Application+EOSL-scenario Risk identity, atomic CI-set union,
+  complete current-failure membership, Assessment routing and recovery behavior.
+- Added a separate proposed `application-eosl-risk-assignment.yml` for grouping
+  failed findings by `ZTAM-Application` and reconciling all affected CIs on one
+  Risk. It is not compatible with the current scalar FieldAssignment consumer.
+- Export review: `ControlObjective.ZRM-RiskStmt` is multi-value, while
+  `MELT-RiskStmt` is a single GovernanceObject reference; `MELT-RMF` is an
+  existing single Framework reference. Neither ControlObjective nor
+  RiskStatement exports a dedicated RMF field. Framework selection belongs to
+  the ControlObjective evaluation context (currently proposed as an explicit
+  selector in `ZRM-PolicyEvaluation`), then the assignment copies that selection
+  to `MELT-RMF`. The multi-statement Risk identity/linkage decision is pending;
+  no first-reference shortcut is allowed.
+
+
+## 2026-09-25 Application Risk Aggregation Framework Draft
+
+The initial per-asset-child-Risk proposal below is superseded by the Application
+grouping decision above; the current draft file now reads one grouped Risk.
+
+- Drafted `docs/examples/framework/application-risk-aggregation.yml` for
+  `Framework.ZRM-RiskAggregationEngine`. For the EOSL scenario, collect the
+  current scored asset Risks linked by `MELT-RelatedCI` to Workload, NetworkNode,
+  PeripheralNode or StorageNode objects whose `ZTAM-Application` points to the
+  Application. Application membership is an explicit reference, not a tree edge.
+- Select the maximum child inherent score, retain every contributing child Risk
+  and the maximum source, and create or reuse an Application-level MELT Risk.
+  Proposed identity uses existing `MELT-RelatedGO` (Application), `MELT-RMF`
+  (Framework) and `MELT-Reference` (stable scenario key); existing
+  `MELT-RelatedEvent` can reference child Risks. Empty source means no
+  Application Risk; incomplete/stale source fails rather than publishing a
+  misleading lower maximum. Do not reapply Application factors to the rollup.
+- This is a design draft, not executable YAML. Assessment ticket creation/linkage,
+  stable scenario identity, application Risk reconciliation and full runtime
+  support remain pending. The scoped MAX rollup is now authored; aggregation
+  across frameworks or unrelated scenarios remains undefined.
+- Corrected a false source in the first aggregation draft: `CHILD RISKS.INHERENT
+  SCORE` is not an exported MELT Risk field. `MELT-EventSeverity` is a
+  GovernanceObject reference, not a numeric score. User identified the existing
+  Assessment ticket as the correct score ledger. The exported ticket
+  `ZRM-RiskAssessment` Set has per-row `ZRM-RiskTargetCI`, `ZRM-RiskTargetGO`
+  and numeric-text `ZRM-InherentCalculatedRisk`. Both drafts now use those
+  existing fields: asset scoring writes an Assessment row; Application rollup
+  MAXes complete asset assessment rows and writes an Application-targeted row
+  on the same Assessment ticket. No second Assessment ticket is needed just for
+  rollup. MELT Risks remain risk records linked to the ticket.
+- Current EOSL assignment does not create or link Assessment tickets. The
+  current assessment form also overwrites `ZRM-InherentCalculatedRisk` from
+  `ZRM-InherentLikelihood` x `ZRM-InherentImpact`, which are 1-5 GeneralCatalog
+  selections unable to represent fractional adjusted dimensions. The scripted
+  score needs coordinated form/server behavior and ticket linkage. The current
+  single-value `MELT-Control` cannot enumerate all Controls contributing to a
+  reused asset Risk. These drafts do not work in the present runtime.
+
+
+## 2026-09-25 Inherent Asset Risk Scoring Framework Draft
+
+The later per-RiskStatement decision above supersedes this section's
+independent MAX of base values across statements.
+
+- Drafted example YAML for `Framework.ZRM-RiskScoringEngine` at
+  `docs/examples/framework/asset-inherent-risk-scoring.yml`. It applies to Workload,
+  NetworkNode, PeripheralNode and StorageNode. The user corrected the initial
+  hardcoded base values: linked RiskStatements supply exported `ZRM-BaseImpact`
+  and `ZRM-BaseLikelihood`; the Framework supplies only the
+  calculation. Environment and FunctionProfile contribute their exported
+  `ZRM-ImpactFactor` and `ZRM-LikelihoodFactor` multipliers. The Application
+  itself has no factor; this draft follows `ZTAM-Application` through its
+  CriticalityProfile, DataClassificationProfile, ExposureProfile and ServiceTier
+  references and applies each referenced object's exported factor fields.
+  Inherent risk is the product of the resulting impact and likelihood.
+- A Control guards against RiskStatements. The Framework script now explicitly
+  reads the current `ControlObjective.ZRM-RiskStmt` multi-value reference and
+  selects the maximum `ZRM-BaseImpact` and maximum `ZRM-BaseLikelihood`
+  independently. The two maxima may come from different statements; preserve
+  both identities as provenance. Base scores are GeneralCatalog values; resolve
+  their numeric names rather than multiplying catalog IDs. Rejected hardcoded
+  base scores and implicit first-reference selection.
+- Application CriticalityProfile, ExposureProfile, ServiceTier and
+  DataClassificationProfile now appear individually in the example, as the user
+  requested a comprehensive profile calculation. Platform's own calculation
+  remains deferred. Rejected a direct `ZTAM-Application.ZRM-ImpactFactor`/
+  `ZRM-LikelihoodFactor` lookup.
+- User set numeric bounds for this scoring draft: RiskStatement base impact and
+  likelihood must each be 1-5. Each factor is normalized to the 0-1 scale:
+  0 and values above 1 become neutral 1; values between 0 and 1 reduce the
+  relevant dimension. Missing factors are neutral 1; negative/nonnumeric
+  factors and invalid base scores fail. This keeps inherent risk at or below 25.
+- This is a proposed contract, not executable ScriptEngine syntax or an installed
+  Framework object. Residual risk, mitigation control effects, score bands and
+  runtime persistence remain pending. Rejected implicit Framework selection and
+  invented Dynamic Fields. See PROJECT_NEXT for implementation decisions.
+
+
 ## 2026-09-22 Standalone Framework Design Accepted
+
+The 2026-09-25 RiskStatement Framework Authority decision above supersedes the
+PolicyEvaluation-selected Framework assumption recorded in this older section.
 
 - User requested recording the standalone risk calculation Framework design centrally.
   Policy (IM8 example) expresses requirements; reusable Framework defines calculation rules;

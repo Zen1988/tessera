@@ -604,6 +604,37 @@
     <Setting Name="GovernanceObject::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1">
         <Description Translatable="1">Shows GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item><Item Key="Name">Activity Articles</Item><Item Key="Description">Every recorded activity</Item><Item Key="Action">AgentGovernanceObjectActivity</Item><Item Key="Link">Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item><Item Key="Target">PopUp</Item></Hash></Value>
     </Setting>
+    <Setting Name="GovernanceObject::EventModulePost###120-TESSERAControlDiscovery" Required="0" Valid="1">
+        <Description Translatable="1">Reconcile Controls from an active ControlObjective PolicyFilter after the complete object save.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::System::TESSERA::ControlDiscovery</Item>
+            <Item Key="Event">^(GovernanceObjectCreate|GovernanceObjectUpdate|GovernanceObjectDynamicFieldUpdate_ZRM-PolicyFilter)$</Item>
+            <Item Key="Transaction">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERAControlEvaluation" Required="0" Valid="1">
+        <Description Translatable="1">Evaluate due automatic Controls according to their ControlObjective cycle.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERAControlEvaluation</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item>
+            <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERAControlDiscovery" Required="0" Valid="1">
+        <Description Translatable="1">Discover new targets for active ControlObjectives every five minutes.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERAControlDiscovery</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::ControlDiscovery</Item>
+            <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
+    </Setting>
     <Setting Name="GovernanceObject::EventModulePost###110-TESSERAActivityArticles" Required="0" Valid="1">
         <Description Translatable="1">Records every GovernanceObject event as an immutable activity article.</Description><Navigation>Core::Event::GovernanceObject</Navigation><Value><Hash><Item Key="Module">Kernel::System::GovernanceObject::Event::ActivityRecorder</Item><Item Key="Event">(GovernanceObjectCreate|GovernanceObjectUpdate|VersionCreate|VersionUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField.*)</Item><Item Key="Transaction">0</Item></Hash></Value>
     </Setting>
