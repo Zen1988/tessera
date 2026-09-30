@@ -196,6 +196,42 @@ The ScriptEngine gets the logic from the GovernanceRole and actual values from t
 - `TESSERA::CMDB::READ` grants entitled customer frontend users read-only CMDB navigation and detail access. It does not grant customer portal modification or API access; changes proceed through ticket workflow.
 - Bootstrap creates every missing role from the authoritative GovernanceRole workbook, including its exported description, code, status, and script. Existing objects are left unchanged.
 
+## Framework Risk Master Ticket Assignments
+
+`Framework.ZRM-MasterTicket` uses the same VERSION 1 `RETURN.AS` and
+`RETURN.FIELD ASSIGNMENTS` grammar as other TESSERA field mappings. Its target
+is `Ticket.ServiceRequest`. The adapter provides `@RISK` (the originating
+`MELTObject.Risk`) and `@FRAMEWORK` (the selected Framework). It requires the
+authored `ZRM-OriginatedEvent` assignment to resolve to that Risk's ID and
+`ZTicket-StateBook` to resolve to the Framework's `ZRM-RiskMgtStateBook`.
+`Type`, `Service`, `CustomerUser`, and `Title` are also authored assignments.
+When the StateBook resolves roles through an Application, the Framework mapping
+assigns `ZTicket-Application` from the Risk's single `MELT-RelatedGO`
+Application. The adapter validates its class and writes it before the
+StateBook starts orchestration. An existing orchestrated SR cannot gain this
+governance snapshot retroactively.
+`ZRM-GOInstance` belongs to Control ConfigItems, not MELT Risks. The current
+export defines `MELT-RelatedGO` as single-valued. ScriptEngine supports
+class-filtered GovernanceObject references followed by a zero-based index,
+for example `@RISK.MELT-RelatedGO[Application][0]`. It checks each referenced
+object's class before indexing and fails if the selected index is absent or a
+reference cannot be resolved. The existing single-value expression remains valid.
+The example is `docs/examples/framework/risk-master-ticket.yml`.
+
+Assessment follows `ZTicket-Parent` to the parent ServiceRequest and reads
+that ticket's `ZRM-OriginatedEvent` to find the MELT Risk. A copied child
+origin must agree with the parent. Framework `ZRM-RiskScoringEngine` may select
+the Risk Statement with `@RISK.MELT-RiskStmt[RiskStatement][0]`; class filtering
+occurs before index selection. The legacy `CURRENT RISK.MELT-RiskStmt` source
+continues to require exactly one reference.
+
+The adapter creates one master SR per originating Risk and reuses it on later
+reconciliation. Risk changes dispatch it, and a five-minute reconciliation is
+configured to cover existing Risks when a Framework gains a workflow. Live
+reconciliation dispatch remains to be verified independently. A missing
+workflow or mapping leaves the Risk unrouted. Invalid or ambiguous mappings
+fail without choosing alternate objects.
+
 ## Ticket Field Collection Semantics
 
 `RETURN.TICKET FIELD COLLECTION` returns a typed collection, not a multivalue ticket field. RoleDirector reconciles it into separate tickets with scalar assignments:

@@ -1,0 +1,71 @@
+# Application Risk Management ZRM-RiskScoringEngine. Asset Risk Management
+# uses a separate Framework and retains the per-asset factor paths.
+# One Application context produces one Assessment row for each originating MELT Risk.
+VERSION: 1
+ASSESSMENT: INHERENT
+APPLIES TO:
+  - GovernanceObject.Application
+
+RISK STATEMENTS:
+  FROM: '@RISK.MELT-RiskStmt[RiskStatement][0]'
+  CLASS: GovernanceObject.RiskStatement
+  ON EMPTY: ERROR
+
+SCORING CONTEXT:
+  FROM: '@RISK.MELT-RelatedGO[Application][0]'
+  CLASS: GovernanceObject.Application
+
+BASE:
+  IMPACT:
+    FROM: CURRENT RISK STATEMENT.ZRM-BaseImpact
+  LIKELIHOOD:
+    FROM: CURRENT RISK STATEMENT.ZRM-BaseLikelihood
+  VALID RANGE: [1, 5]
+
+FACTOR RULE:
+  EFFECTIVE RANGE: (0, 1]
+  WHEN ZERO: 1
+  WHEN ABOVE ONE: 1
+  WHEN MISSING: 1
+  WHEN NEGATIVE OR NONNUMERIC: ERROR
+
+FACTORS:
+  - REFERENCE: ZTSMAppSystem-CriticalityProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTSMAppSystem-DataClassificationProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTSMAppSystem-ExposureProfile
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+  - REFERENCE: ZTSMAppSystem-ServiceTier
+    IMPACT: ZRM-ImpactFactor
+    LIKELIHOOD: ZRM-LikelihoodFactor
+
+CALCULATE:
+  INHERENT IMPACT: CEIL(BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR RULE)))
+  INHERENT LIKELIHOOD: CEIL(BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD, FACTOR RULE)))
+  INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD
+
+EVIDENCE:
+  FORMAT: |
+    {framework_name} (version {framework_version}) calculated inherent risk for {context}.
+    Referenced profile factors (raw -> normalized):
+    {factor_lines}
+    Likelihood: base {base_likelihood} x {likelihood_factor_chain} = {likelihood_adjusted}; rounded up to catalog value {framework_likelihood}.
+    Impact: base {base_impact} x {impact_factor_chain} = {impact_adjusted}; rounded up to catalog value {framework_impact}.
+    Framework inherent score: {framework_likelihood} x {framework_impact} = {framework_score}.
+    Submitted selection: {submitted_likelihood} x {submitted_impact} = {submitted_score}.
+
+ASSESSMENT RESULT:
+  TICKET TYPE: Assessment
+  FIELD: ZRM-RiskAssessment
+  ROW TARGET: ZRM-RiskTargetGO
+  TARGET VALUE: SCORING CONTEXT
+  RELATED ASSETS FIELD: ZRM-RiskTargetCI
+  RELATED ASSETS FROM: CURRENT RISK.MELT-RelatedCI
+  ROW RISK STATEMENT: ZRM-RiskStatement
+  RISK STATEMENT VALUE: CURRENT RISK STATEMENT
+  SCORE FIELD: ZRM-InherentCalculatedRisk
+  SCORE VALUE: CALCULATE.INHERENT RISK

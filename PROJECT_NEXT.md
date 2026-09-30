@@ -1,46 +1,83 @@
 # TESSERA Project Next Focus
 
-## Standalone Risk Calculation Framework - Confirmed Design, Pending Implementation
+## EOSL Product Control and Grouped Risk — Corrected 2026-09-28
 
-- Install `TESSERA-Base-0.0.53.opm` in the intended OTOBO environment and set
-  the applicable ControlObjective's administrator-owned `ZRM-FieldAssignment`
-  to the packaged `product_eosl_risk_assignment.yml`. Verify active
-  EventSeverity objects Critical, High, Medium and each RiskStatement's
-  `ZRM-RMF` before dispatching EOSL Controls. This activation is not automated
-  by package installation because the ControlObjective is administrator-owned.
+- Product is the Control target. The authored PolicyFilter selects Product
+  ConfigItems; discovery creates/reuses one Control per Product. The current
+  live and packaged filter does this. `ZRM-CIInstance` identifies that Product.
+  `ZRM-GOInstance`, `ZRM-TKInstance`, and `ZRM-MOInstance` retain their target
+  object meanings and are not grouping slots.
+- Evaluate each due Product Control against its EOSL date. Empty EOSL returns
+  N/A. On failure, the authored evaluation finds affected assets. Risk grouping
+  then uses scenario, RiskStatement and Application as the stable identity.
+  The Risk display name for this policy is like `IS-4: EOSL: IaaS Extension`.
+  A second failed Product in the same group reuses the Risk and unions related
+  ConfigItems. The Application is recorded in `MELT-RelatedGO`; the statement
+  is recorded in `MELT-RiskStmt`.
+- The old `MELT-Reference` included Product ID. The revised assignment removes
+  it, tests shared Risk reuse, and is now saved on live ControlObjective 767.
+  Package 0.0.56 is installed. Risk 21 was created for the ICA IaaS Extension
+  group at 15:50 SGT on 28 September and reused on the next day's evaluations.
+  Nine older asset-level Risks remain after the user deleted Risk 19. They have no grouped
+  reference, Application or RiskStatement fields, so review their lifecycle
+  and reconcile them with Risk 21 before treating the visible active Risk count
+  as the count of current grouped risks.
+- `MELT` 0.0.25 is installed. Normal Delete links now show a confirmation
+  page; dialog calls use `AJAX=1`. Risk 19 was deleted, and grouped Risk 21
+  remained present in the live SQL check.
+- `MELT-Control` is currently single-valued. Keep its first Control and record
+  every contributing Control in Risk activity evidence. Do not present it as a
+  complete list of failed Controls.
+
+## Risk Calculation Framework - Live validation after 0.0.67 build
+
+- 0.0.68 is being prepared to recalculate submitted inherent and residual scores
+  from selected 1-5 GeneralCatalog likelihood and impact values. Verify that
+  changing inherent impact from 3 to 4 updates the displayed and stored score
+  from 9 to 12. The Framework suggests dimension defaults; the submitted
+  catalog selections determine the stored product.
+- Framework 1597's live scoring YAML needs the `EVIDENCE.FORMAT` block from
+  `docs/examples/framework/application-inherent-risk-scoring.yml`. Verify a
+  newly submitted Assessment article lists Application Risk Management,
+  contributing profile factors, rounded catalog values, Framework suggested
+  score, and submitted score. Existing articles remain immutable.
+- 0.0.68 also prepares linked parent/sibling read access for members of an
+  execution ticket's support profile, without granting task action rights.
+  Confirm Abdul Malik can open the parent Assessment evidence and linked
+  tickets after installation, while unrelated tickets remain inaccessible.
+- TESSERA-Base 0.0.65 was installed by the user for the missing Assessment
+  field captions; the engineer confirms they are visible after refresh.
+  0.0.66 was installed by the user and the required `RiskAssessmentOutcome`
+  Dropdown and configured choices were confirmed. 0.0.67 is built to place
+  that selector below the rows and Remarks, before the action buttons.
+  Install and visually verify the new position before submitting Assessment 306.
+  Framework 1597 is updated to
+  `Application Risk Management` with the authored Application scoring YAML.
+  Framework 1599 is created as `Asset Risk Management`, preserving
+  the Workload/NetworkNode/PeripheralNode/StorageNode factor paths. Both YAML
+  programs round impact and likelihood up independently to a 1-5 catalog
+  selection; the selected dimensions multiply to the inherent score.
+- Assessment 306 showed one row, `3 x 3 = 9`, and no calculation text after
+  0.0.64; its captions were confirmed after 0.0.65. On eventual
+  submission, verify the generated Assessment article records the Framework
+  calculation and names. Repeated loads must not duplicate rows, and AdminLog
+  must have no new Assessment write failures.
+- Resolve the BlueBook child `CustomerID` propagation defect: Assessment 306
+  history shows a blank CustomerID even though its customer user is
+  `tessera@ica.gov.sg` and parent SR 305 has CustomerID `ICA`.
 - Decide how to review or migrate historical per-asset EOSL Risks and when a
   complete fresh scan may downgrade severity or remove recovered CI links.
   The current grouped runtime preserves historical contribution and raises
   severity only.
 
-- Implement the proposed Application MAX rollup in
-  `docs/examples/framework/application-risk-aggregation.yml` after defining
-  routing to one Assessment task for the current EOSL Application scenario and
-  complete asset rows there, complete per-Risk Control contribution discovery,
-  a stable scenario
-  key, and safe composite identity/reconciliation for Application-level MELT
-  Risks. Read `ZRM-InherentCalculatedRisk` from `ZRM-RiskAssessment` rows targeted
-  by `ZRM-RiskTargetCI`; write the Application result to a row on that same
-  Assessment ticket targeted by `ZRM-RiskTargetGO`. Reconcile the current form's catalog-product calculation
-  with fractional framework scores. Verify EOSL-only scope, complete child
-  enumeration, stale/missing score handling, idempotent reruns and provenance.
-  No new Dynamic Field is approved by the draft.
+- The older Application MAX rollup draft is superseded for EOSL. This scenario
+  scores once from Application context in its selected Framework, while linked
+  assets remain evidence on that one Assessment row. Do not activate the draft
+  aggregation YAML or infer that every Framework uses Application scope.
 
-- Review the 2026-09-25 inherent asset scoring YAML draft in
-  `docs/examples/framework/asset-inherent-risk-scoring.yml`. The script reads
-  the current ControlObjective's multi-value `ZRM-RiskStmt` and scores each
-  statement separately, using its own base impact and likelihood.
-  Confirm whether missing optional asset
-  factors should be neutral 1 and whether every factor multiplies independently.
-  Then define executable syntax and Framework/version attribution on the
-  existing Assessment ticket rows.
-- The draft now includes Application CriticalityProfile, DataClassificationProfile,
-  ExposureProfile and ServiceTier through their exported reference paths. Define
-  Platform's separate contribution later; Application has no direct factor fields.
-- Implement and verify the authored normalization rule: base impact/likelihood
-  1-5, factor 0 or above 1 treated as neutral 1, factors in (0,1] retained,
-  negative/nonnumeric values rejected. Preserve raw and normalized inputs;
-  inherent score must not exceed 25.
+- Record raw and normalized scoring inputs, Framework version, and contributing
+  Control provenance with the Assessment evidence. Define Platform's separate
+  contribution later; Application has no direct factor fields.
 - Residual scoring from mitigation Controls, scale bounds and rating thresholds
   remain separate future decisions; the draft calculates inherent risk only.
 
@@ -59,17 +96,15 @@
   or the first matching attachment.
 - Missing/ambiguous selected frameworks, incompatible object types and invalid inputs produce
   a calculation error rather than a guessed score. Business formulas remain authored rules.
-- For the EOSL scenario, preserve one Application-and-RiskStatement Risk identity while
-  keeping asset assessment rows and separate results by framework and version,
-  retaining input values, calculated results and contributing Control provenance.
+- For the EOSL scenario, preserve one Application-and-RiskStatement Risk identity
+  and one Application assessment row, retaining input values, calculated results
+  and contributing Control provenance.
   Different frameworks must not overwrite each other's scores. The new
-  Application-level MAX rule is scoped to one Framework and scenario; overall
+  Application scoring rule is scoped to its Framework and scenario; overall
   aggregation across frameworks or unrelated scenarios remains undefined.
-- Before implementation, validate latest SOPM/OPM and exports and map this design to existing
-  classes/fields. No new class names, Dynamic Field names or executable YAML syntax are approved
-  by this conceptual decision. Define framework versioning and assessment storage next.
-- Once implemented and verified, move completed details to PROJECT_STATUS and remove this
-  pending section in accordance with the continuity contract.
+- Define framework versioning and cross-Framework assessment storage. The
+  current 0.0.57 scorer supports the activated inherent YAML shape only.
+- Verify scheduled reconciliation independently of the successful Risk update hook, including one master SR per Risk on repeated dispatch.
 
 
 ## ControlObjective Evaluation - Deployment and Next Decisions

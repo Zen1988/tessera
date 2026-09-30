@@ -21,14 +21,14 @@ RETURN:
         AS: GovernanceObject.Framework
     IDENTITY:
       FIELD: MELT-Reference
-      TEMPLATE: '{SCENARIO.Value}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}:{SOURCE.ConfigItemID}'
+      TEMPLATE: '{SCENARIO.Value}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}'
     LIFECYCLE:
       CREATE STATUS: Active
       REUSE STATUS: Active
       EVENT FIELD: MELT-EventStatus
       CREATE EVENT VALUE: Active
       CLOSED EVENT VALUE: Closed
-    NAME: '{GROUP.Name}: {ITEM.ZRM-Annex} - {ITEM.Name} - {SOURCE.Name}'
+    NAME: '{ITEM.ZRM-Annex}: EOSL: {GROUP.Name}'
     FIELD ASSIGNMENTS:
       MELT-RelatedGO: '@GROUP.GovernanceObjectID'
       MELT-RiskStmt: '@ITEM.GovernanceObjectID'

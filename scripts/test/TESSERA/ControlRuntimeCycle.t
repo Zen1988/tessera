@@ -11,6 +11,13 @@ my $Now = 2_000_000_000;
 my $Due = $Runtime->ControlDue( Cycle => '1 year 1 time', LastRun => '', Now => $Now );
 ok( $Due->{Due}, 'a Control instance that never ran is due' );
 
+$Due = $Runtime->ControlDue( Cycle => 'hourly', LastRun => $Now - 3599, Now => $Now );
+ok( !$Due->{Due}, 'hourly Control waits for its full hour' );
+$Due = $Runtime->ControlDue( Cycle => 'hourly', LastRun => $Now - 3600, Now => $Now );
+ok( $Due->{Due}, 'hourly Control becomes due after one hour' );
+$Due = $Runtime->ControlDue( Cycle => '1 hour', LastRun => $Now - 3600, Now => $Now );
+ok( $Due->{Due}, 'numeric hourly Control cycle is supported' );
+
 $Due = $Runtime->ControlDue( Cycle => '1 year 1 time', LastRun => $Now - 31_556_952, Now => $Now );
 ok( $Due->{Due}, 'one run per year becomes due after one year' );
 
@@ -22,6 +29,21 @@ ok( $Due->{Due}, 'named quarterly cycle is supported' );
 
 $Due = $Runtime->ControlDue( Cycle => 'whenever convenient', LastRun => '', Now => $Now );
 is( $Due->{Status}, 'UNKNOWN', 'unsupported free text fails closed' );
+
+{
+    package ControlFieldAdapters;
+    sub Get { $_[0] }
+    sub DynamicFieldGet { my ( $Self, %P ) = @_; { Name => $P{Name}, ObjectType => 'ITSMConfigItem' } }
+    sub ConfigItemGet { my ( $Self, %P ) = @_; { ConfigItemID => $P{ConfigItemID}, VersionID => 4229 } }
+    sub ValueSet { my ( $Self, %P ) = @_; $Self->{WrittenObjectID} = $P{ObjectID}; 1 }
+}
+{
+    local $Kernel::OM = bless {}, 'ControlFieldAdapters';
+    ok( $Runtime->_ConfigItemFieldSet(
+        ConfigItemID => 4147, FieldName => 'ZRM-LastRun', Value => '2026-09-28 14:00:00', UserID => 1,
+    ), 'Control run timestamp is written' );
+    is( $Kernel::OM->{WrittenObjectID}, 4229, 'Control field write uses the VersionID read by ConfigItemGet' );
+}
 
 for my $Path (
     'Kernel/System/TESSERA/ControlRuntime.pm',

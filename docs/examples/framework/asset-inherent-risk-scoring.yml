@@ -1,6 +1,6 @@
 # Intended destination: Framework.ZRM-RiskScoringEngine.
-# Design draft only: the current runtime does not execute this YAML.
-# The current RiskStatement selects this Framework through exported ZRM-RMF.
+# Assessment follows ZTicket-Parent to the ServiceRequest, then its ZRM-OriginatedEvent.
+# Risk and RiskStatement must select this same Framework through MELT-RMF and ZRM-RMF.
 VERSION: 1
 ASSESSMENT: INHERENT
 APPLIES TO:
@@ -10,7 +10,7 @@ APPLIES TO:
   - ITSMConfigItem.StorageNode
 
 RISK STATEMENTS:
-  FROM: CURRENT CONTROL OBJECTIVE.ZRM-RiskStmt
+  FROM: '@RISK.MELT-RiskStmt[RiskStatement][0]'
   CLASS: GovernanceObject.RiskStatement
   ON EMPTY: ERROR
   FOR EACH: SCORE SEPARATELY
@@ -50,9 +50,19 @@ FACTORS:
     LIKELIHOOD: ZRM-LikelihoodFactor
 
 CALCULATE:
-  INHERENT IMPACT: BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR RULE))
-  INHERENT LIKELIHOOD: BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD, FACTOR RULE))
+  INHERENT IMPACT: CEIL(BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR RULE)))
+  INHERENT LIKELIHOOD: CEIL(BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD, FACTOR RULE)))
   INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD
+
+EVIDENCE:
+  FORMAT: |
+    {framework_name} (version {framework_version}) calculated inherent risk for {context}.
+    Referenced profile factors (raw -> normalized):
+    {factor_lines}
+    Likelihood: base {base_likelihood} x {likelihood_factor_chain} = {likelihood_adjusted}; rounded up to catalog value {framework_likelihood}.
+    Impact: base {base_impact} x {impact_factor_chain} = {impact_adjusted}; rounded up to catalog value {framework_impact}.
+    Framework inherent score: {framework_likelihood} x {framework_impact} = {framework_score}.
+    Submitted selection: {submitted_likelihood} x {submitted_impact} = {submitted_score}.
 
 ASSESSMENT RESULT:
   TICKET TYPE: Assessment
@@ -76,12 +86,11 @@ ASSESSMENT RESULT:
 # reference is an error. Record raw and normalized inputs with the Framework version.
 # With base dimensions at most 5 and normalized factors at most 1, inherent
 # impact and likelihood stay at most 5, and inherent risk stays at most 25.
-# Application has no direct risk factor. This draft resolves four Application
+# Application has no direct risk factor. This program resolves four Application
 # profiles separately. Platform's own calculation remains deferred.
 # The score belongs to a row on the Assessment ticket, not to the MELT Risk.
-# Existing ZRM-InherentLikelihood/Impact are 1-5 GeneralCatalog selections and
-# cannot represent fractional factor-adjusted dimensions. The current form
-# recalculates ZRM-InherentCalculatedRisk from those selections, so framework
-# scoring needs a coordinated server/form change before it can write this row.
+# Factor-adjusted dimensions are rounded up to the 1-5 GeneralCatalog values
+# stored in ZRM-InherentLikelihood and ZRM-InherentImpact. The score is their
+# integer product. The server recalculates all three values on submission.
 # ZRM-RiskStatement is single-value per row, matching this design.
 # Residual risk and mitigation controls will be specified in a later version.

@@ -2375,7 +2375,8 @@ sub _ZTSMRequestInfoHTML {
     }
 
     my $ParentArticleHTML = $Self->_ZTSMRequestParentArticlesHTML(
-        TicketID => $TicketID,
+        TicketID     => $TicketID,
+        AccessTicket => $Param{Ticket},
     );
     if ($ParentArticleHTML) {
         $HTML .= $ParentArticleHTML;
@@ -2390,7 +2391,20 @@ sub _ZTSMRequestParentArticlesHTML {
     my ( $Self, %Param ) = @_;
 
     my $TicketID = $Param{TicketID};
-    return '' if !$TicketID;
+    my $AccessTicket = $Param{AccessTicket};
+    return '' if !$TicketID || !IsHashRefWithData($AccessTicket) || !$AccessTicket->{TicketID};
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $Access = $TicketObject->TicketCustomerPermission(
+        Type => 'ro', TicketID => $AccessTicket->{TicketID}, UserID => $Self->{UserID},
+    );
+    $Access ||= $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
+        TicketID => $AccessTicket->{TicketID}, CustomerUserID => $Self->{UserID}, Type => 'ro',
+    );
+    return '' if !$Access;
+    if ( $AccessTicket->{TicketID} ne $TicketID ) {
+        my $ParentID = _ZTSMNormalizeValue( $AccessTicket->{'DynamicField_ZTicket-Parent'} );
+        return '' if !$ParentID || $ParentID ne $TicketID;
+    }
 
     my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
     my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -2459,19 +2473,17 @@ sub _ZTSMArticleContentForPanel {
         ArticleID => $ArticleID,
     );
     if ($HTMLBodyAttachmentID) {
-        my $Src = $LayoutObject->{Baselink}
-            . "Action=CustomerTicketArticleContent;TicketID=$TicketID;ArticleID=$ArticleID;";
-
-        if ( !$Kernel::OM->Get('Kernel::Config')->Get('SessionUseCookie') ) {
-            my $SessionName = $Self->{SessionName} || '';
-            my $SessionID   = $Self->{SessionID}   || '';
-            if ( $SessionName && $SessionID ) {
-                $Src .= "$SessionName=$SessionID;";
-            }
-        }
-
-        return '<iframe class="ZTSMParentArticleFrame" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" frameborder="0" src="'
-            . $LayoutObject->Ascii2Html( Text => $Src )
+        my $HTML = $LayoutObject->ArticlePreview(
+            TicketID => $TicketID,
+            ArticleID => $ArticleID,
+        );
+        return '' if !defined $HTML || $HTML eq '';
+        $HTML =~ s{&}{&amp;}g;
+        $HTML =~ s{"}{&quot;}g;
+        $HTML =~ s{<}{&lt;}g;
+        $HTML =~ s{>}{&gt;}g;
+        return '<iframe class="ZTSMParentArticleFrame" title="Parent ticket article" sandbox="" referrerpolicy="no-referrer" frameborder="0" srcdoc="'
+            . $HTML
             . '"></iframe>';
     }
 

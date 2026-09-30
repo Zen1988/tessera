@@ -17,6 +17,7 @@ our @ObjectDependencies = (
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::Log',
     'Kernel::System::TESSERA::PolicyEngine',
+    'Kernel::System::TESSERA::RiskMasterTicket',
     'Kernel::System::Ticket',
     'Kernel::System::YAML',
     'Kernel::System::PID',
@@ -118,12 +119,12 @@ sub ControlDue {
     return { Due => 0, Status => 'UNKNOWN', Reason => 'Control cycle is empty.' } if $Cycle eq '';
 
     my ( $Amount, $Unit, $Times );
-    if ( $Cycle =~ m{\A(\d+)\s*(DAY|WEEK|MONTH|YEAR)S?(?:\s+(\d+)\s+TIMES?)?\z}i ) {
+    if ( $Cycle =~ m{\A(\d+)\s*(HOUR|DAY|WEEK|MONTH|YEAR)S?(?:\s+(\d+)\s+TIMES?)?\z}i ) {
         ( $Amount, $Unit, $Times ) = ( $1, uc($2), $3 || 1 );
     }
-    elsif ( $Cycle =~ m{\A(DAILY|WEEKLY|MONTHLY|QUARTERLY|ANNUALLY|YEARLY)\z}i ) {
+    elsif ( $Cycle =~ m{\A(HOURLY|DAILY|WEEKLY|MONTHLY|QUARTERLY|ANNUALLY|YEARLY)\z}i ) {
         my %Named = (
-            DAILY => [ 1, 'DAY' ], WEEKLY => [ 1, 'WEEK' ], MONTHLY => [ 1, 'MONTH' ],
+            HOURLY => [ 1, 'HOUR' ], DAILY => [ 1, 'DAY' ], WEEKLY => [ 1, 'WEEK' ], MONTHLY => [ 1, 'MONTH' ],
             QUARTERLY => [ 3, 'MONTH' ], ANNUALLY => [ 1, 'YEAR' ], YEARLY => [ 1, 'YEAR' ],
         );
         ( $Amount, $Unit, $Times ) = ( @{ $Named{ uc $Cycle } }, 1 );
@@ -133,7 +134,7 @@ sub ControlDue {
     }
     return { Due => 0, Status => 'UNKNOWN', Reason => 'Control cycle frequency must be greater than zero.' } if !$Times;
 
-    my %Seconds = ( DAY => 86400, WEEK => 604800, MONTH => 2629746, YEAR => 31556952 );
+    my %Seconds = ( HOUR => 3600, DAY => 86400, WEEK => 604800, MONTH => 2629746, YEAR => 31556952 );
     my $Interval = int( $Amount * $Seconds{$Unit} / $Times );
     my $LastRunEpoch = _Epoch( $Param{LastRun} );
     return { Due => 1, Status => 'DUE', Reason => 'Control has never run.' } if !defined $LastRunEpoch;
@@ -403,6 +404,8 @@ sub _GroupedFindingRisksCreate {
                     }
                     elsif ( $Mode eq 'KEEP_FIRST' ) { next }
                     elsif ( $Mode eq 'REQUIRE_EQUAL' ) {
+                        $Old = $Old->[0] if ref $Old eq 'ARRAY' && @{$Old} == 1;
+                        $New = $New->[0] if ref $New eq 'ARRAY' && @{$New} == 1;
                         die "Existing Risk field $Field conflicts with assignment.\n"
                             if !defined $Old || ref $Old || ref $New || "$Old" ne "$New";
                     }
@@ -439,6 +442,11 @@ sub _GroupedFindingRisksCreate {
         my $Error = $@;
         $PID->PIDDelete( Name => $Lock );
         die $Error if $Error;
+        if ( $Kind eq 'MELTObject' && $Class eq 'Risk' ) {
+            $Kernel::OM->Get('Kernel::System::TESSERA::RiskMasterTicket')->Ensure(
+                RiskID => $ID, UserID => $Param{UserID},
+            );
+        }
         push @Results, { ObjectType => $Kind, Class => $Class, ObjectID => $ID };
     }
     return \@Results;
@@ -580,8 +588,12 @@ sub _ConfigItemFieldSet {
     my ( $Self, %Param ) = @_;
     my $Field = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Param{FieldName} );
     return if !$Field || ( $Field->{ObjectType} || '' ) ne 'ITSMConfigItem';
+    my $Control = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID => $Param{ConfigItemID}, Silent => 1,
+    );
+    return if ref $Control ne 'HASH' || !$Control->{VersionID};
     return $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
-        DynamicFieldConfig => $Field, ObjectID => $Param{ConfigItemID}, Value => $Param{Value}, UserID => $Param{UserID},
+        DynamicFieldConfig => $Field, ObjectID => $Control->{VersionID}, Value => $Param{Value}, UserID => $Param{UserID},
     );
 }
 

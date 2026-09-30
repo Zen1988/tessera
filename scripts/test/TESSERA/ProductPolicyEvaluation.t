@@ -42,7 +42,13 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
         splice @IDs, $P{Limit} if $P{Limit} && @IDs > $P{Limit};
         return @IDs;
     }
-    sub ConfigItemGet { my ( $Self, %P ) = @_; $Self->{Objects}{ $P{ConfigItemID} } }
+    sub ConfigItemGet {
+        my ( $Self, %P ) = @_;
+        return $Self->{Objects}{ $P{ConfigItemID} } if exists $Self->{Objects}{ $P{ConfigItemID} };
+        return { ConfigItemID => $P{ConfigItemID}, VersionID => $P{ConfigItemID} + 1000, Class => 'Control' }
+            if $P{ConfigItemID} == 90 || $P{ConfigItemID} == 91;
+        return;
+    }
     sub ItemList { my ( $Self, %P ) = @_; return $P{Class} =~ /::Class$/ ? {1=>'Risk'} : {2=>'Active'} }
     sub MELTObjectSearch {
         my ( $Self, %P ) = @_;
@@ -69,7 +75,12 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
         return $ID;
     }
     sub ActivityAdd { my ( $Self, %P ) = @_; push @{ $Self->{Activities} }, \%P; 1 }
-    sub ValueSet { my ( $Self, %P ) = @_; $Self->{Saved}{ $P{DynamicFieldConfig}{Name} } = $P{Value}; 1 }
+    sub ValueSet {
+        my ( $Self, %P ) = @_;
+        $Self->{Saved}{ $P{DynamicFieldConfig}{Name} } = $P{Value};
+        $Self->{SavedObjectID}{ $P{DynamicFieldConfig}{Name} } = $P{ObjectID};
+        return 1;
+    }
     sub Log { 1 }
 }
 { package PolicyClock; sub ToString { '2026-09-22 00:00:00' } }
@@ -89,8 +100,8 @@ sub Setup {
     my %Governance = (
         100 => {GovernanceObjectID=>100, Class=>'Application', Name=>'Alpha'},
         101 => {GovernanceObjectID=>101, Class=>'Application', Name=>'Beta'},
-        50 => {GovernanceObjectID=>50, Class=>'RiskStatement', Name=>'Unsupported Product', 'DynamicField_ZRM-Annex'=>'A-1', 'DynamicField_ZRM-RMF'=>60},
-        51 => {GovernanceObjectID=>51, Class=>'RiskStatement', Name=>'Outdated Support', 'DynamicField_ZRM-Annex'=>'A-2', 'DynamicField_ZRM-RMF'=>60},
+        50 => {GovernanceObjectID=>50, Class=>'RiskStatement', Name=>'Unsupported Product', 'DynamicField_ZRM-Annex'=>'A-1', 'DynamicField_ZRM-RMF'=>[60]},
+        51 => {GovernanceObjectID=>51, Class=>'RiskStatement', Name=>'Outdated Support', 'DynamicField_ZRM-Annex'=>'A-2', 'DynamicField_ZRM-RMF'=>[60]},
         60 => {GovernanceObjectID=>60, Class=>'Framework', Name=>'RMF'},
         70 => {GovernanceObjectID=>70, Class=>'EventSeverity', Name=>'Critical', ZTSMStatus=>'Active'},
         71 => {GovernanceObjectID=>71, Class=>'EventSeverity', Name=>'High', ZTSMStatus=>'Active'},
@@ -153,33 +164,34 @@ $R=$Runtime->_AutomaticEvaluate(%P);
 is($R->{Status},'Fail','Runtime executes actual finding pipeline');
 is(scalar keys %{$Kernel::OM->{Risks}},1,'One Risk per Application and RiskStatement');
 my ($Risk) = values %{$Kernel::OM->{Risks}};
-is($Risk->{Name},'Alpha: A-1 - Unsupported Product - Root','Risk name identifies Application, statement and Product');
+is($Risk->{Name},'A-1: EOSL: Alpha','Risk name identifies statement, scenario and Application');
 is_deeply($Risk->{'DynamicField_MELT-RelatedCI'},[1,10,11,12,13],'Risk links source Product and affected CIs');
 is($Risk->{'DynamicField_MELT-RMF'},60,'Framework follows RiskStatement');
 is($Risk->{'DynamicField_MELT-EventSeverity'},72,'Initial distant EOSL is Medium');
 is($Kernel::OM->{Saved}{'ZRM-Result'},'Fail','Control result saved');
 ok($Kernel::OM->{Saved}{'ZRM-LastRun'},'Successful evaluation stores cycle timestamp');
+is($Kernel::OM->{SavedObjectID}{'ZRM-LastRun'},1090,'Control LastRun is stored against its latest VersionID');
+$Risk->{'DynamicField_MELT-RMF'}=[60];
+$Risk->{'DynamicField_MELT-RelatedGO'}=[100];
+$Risk->{'DynamicField_MELT-RiskStmt'}=[50];
 $Runtime->_TargetEvaluate(%P);
-is(scalar keys %{$Kernel::OM->{Risks}},1,'Repeated scan reuses Application Risk');
+is(scalar keys %{$Kernel::OM->{Risks}},1,'Repeated scan reuses Application Risk with reference fields returned as arrays');
 $Kernel::OM->{Objects}{2}{'DynamicField_ZTAM-EoServiceLife'}='2025-01-01';
 $Kernel::OM->{Objects}{15}={ConfigItemID=>15,Class=>'Workload',Name=>'New Workload',
     'DynamicField_ZTAM-Model'=>2,'DynamicField_ZTAM-Application'=>100};
 $Control->{'DynamicField_ZRM-CIInstance'}=2;$Control->{ConfigItemID}=91;$P{ConfigItemID}=91;
 $Runtime->_TargetEvaluate(%P);
-is(scalar keys %{$Kernel::OM->{Risks}},2,'Second failing Product creates its own Risk');
-my ($ChildRisk)=grep { $_->{'DynamicField_MELT-Reference'} =~ /:2$/ } values %{$Kernel::OM->{Risks}};
-is_deeply($ChildRisk->{'DynamicField_MELT-RelatedCI'},[2,11,12,13,15],'Child Product Risk links source and affected CIs');
-is($ChildRisk->{'DynamicField_MELT-EventSeverity'},70,'Child Product EOSL sets Critical severity');
-is($Risk->{'DynamicField_MELT-EventSeverity'},72,'Root Product Risk retains its own severity');
+is(scalar keys %{$Kernel::OM->{Risks}},1,'Second failing Product reuses the Application and statement Risk');
+is_deeply($Risk->{'DynamicField_MELT-RelatedCI'},[1,2,10,11,12,13,15],'Shared Risk adds both Products and affected CIs');
+is($Risk->{'DynamicField_MELT-EventSeverity'},70,'Shared Risk retains highest severity across failed Products');
 ok((grep {($_->{Payload}{ControlID}||0)==91} @{$Kernel::OM->{Activities}}),'Second Product retains its own contribution evidence');
-is($Risk->{'DynamicField_MELT-Control'},90,'Root Risk keeps its Control');
-is($ChildRisk->{'DynamicField_MELT-Control'},91,'Child Risk records its Control');
+is($Risk->{'DynamicField_MELT-Control'},90,'Shared Risk keeps first Control in scalar field');
 $Kernel::OM->{Objects}{2}{'DynamicField_ZTAM-EoServiceLife'}='2035-01-01';
 my $Searches=$Kernel::OM->{Searches};
 $R=$Runtime->_TargetEvaluate(%P);
 is($R->{Status},'Pass','Own recovered Product passes');
 is($Kernel::OM->{Searches},$Searches,'Passing Control does not inspect other objects');
-is(scalar keys %{$Kernel::OM->{Risks}},2,'Recovery preserves both Product Risks');
+is(scalar keys %{$Kernel::OM->{Risks}},1,'Recovery preserves the shared Application Risk');
 my $Watcher=$Runtime->ProcessFailedControl(%P,Result=>'Fail');
 ok($Watcher->{Success} && !$Watcher->{RiskCreated},'Result watcher does not duplicate finding-owned Risk creation');
 
@@ -200,6 +212,18 @@ is_deeply([sort { $a <=> $b } @{$Beta[0]{'DynamicField_MELT-RelatedCI'}}],[1,13]
 
 Setup();
 $Objective->{'DynamicField_ZRM-RiskStmt'}=[50];
+$Kernel::OM->{Objects}{10}{'DynamicField_ZTAM-Application'}=[100,101];
+$Kernel::OM->{Objects}{11}{'DynamicField_ZTAM-Application'}=[100];
+$Kernel::OM->{Objects}{12}{'DynamicField_ZTAM-Application'}=[100];
+$Kernel::OM->{Objects}{13}{'DynamicField_ZTAM-Application'}=[100];
+$R=$Runtime->_AutomaticEvaluate(%P);
+is($R->{Status},'Fail','Array-valued Application references evaluate');
+is(scalar keys %{$Kernel::OM->{Risks}},2,'Multi-Application asset contributes to both Application Risks');
+my ($ArrayBeta)=grep { $_->{'DynamicField_MELT-RelatedGO'} == 101 } values %{$Kernel::OM->{Risks}};
+is_deeply($ArrayBeta->{'DynamicField_MELT-RelatedCI'},[1,10],'Second Application Risk contains the shared asset');
+
+Setup();
+$Objective->{'DynamicField_ZRM-RiskStmt'}=[50];
 $R=$Runtime->_AutomaticEvaluate(%P);
 my $FirstEpisode=$Kernel::OM->{Risks}{200};
 is($FirstEpisode->{'DynamicField_MELT-EventStatus'},'Active','New Risk episode starts Active');
@@ -208,7 +232,7 @@ $R=$Runtime->_AutomaticEvaluate(%P);
 is(scalar keys %{$Kernel::OM->{Risks}},2,'Closed event causes a new Risk episode');
 is($FirstEpisode->{'DynamicField_MELT-EventStatus'},'Closed','Prior episode remains closed');
 is($Kernel::OM->{Risks}{201}{'DynamicField_MELT-Reference'},
-   $FirstEpisode->{'DynamicField_MELT-Reference'},'New episode retains the same Product group identity');
+   $FirstEpisode->{'DynamicField_MELT-Reference'},'New episode retains the same Application and statement identity');
 $R=$Runtime->_AutomaticEvaluate(%P);
 is(scalar keys %{$Kernel::OM->{Risks}},2,'Subsequent failure reuses the new Active episode');
 $Kernel::OM->{Risks}{201}{ZTSMStatusID}=3;

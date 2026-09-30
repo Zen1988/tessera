@@ -799,10 +799,7 @@ sub Run {
     }
 
     if (
-        _IsIPCAgent(
-            CustomerUserID => $CustomerUserID,
-        )
-        && _CanViewStory(
+        _CanViewStory(
             Ticket         => \%Ticket,
             CustomerUserID => $CustomerUserID,
         )
@@ -812,7 +809,7 @@ sub Run {
             Priority => 'info',
             Message =>
                   'ZTSMUserIDCheck: '
-                . 'IPC story inheritance access granted '
+                . 'Linked ticket read access granted '
                 . "TicketID=$Param{TicketID} "
                 . "CustomerUserID=$CustomerUserID",
         );

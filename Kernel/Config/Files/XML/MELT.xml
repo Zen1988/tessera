@@ -972,7 +972,7 @@
                 <Item Key="Link">Action=AgentMELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]</Item>
                 <Item Key="Target">ConfirmDialog</Item>
                 <Item Key="ElementSelector">#Menu[% Data.MenuID | html %]</Item>
-                <Item Key="DialogContentQueryString">Action=AgentMELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]</Item>
+                <Item Key="DialogContentQueryString">Action=AgentMELTObjectDelete;AJAX=1;MELTObjectID=[% Data.MELTObjectID | html %]</Item>
                 <Item Key="ConfirmedActionQueryString">Action=AgentMELTObjectDelete;Subaction=MELTObjectDelete;MELTObjectID=[% Data.MELTObjectID | html %]</Item>
                 <Item Key="DialogTitle">[% Translate("Delete") | html %] [% Config("MELTObject::Hook") %] [% Data.Number | html %]</Item>
             </Hash>

@@ -36,7 +36,9 @@ sub Run {
     my ( $Self, %Param ) = @_;
 
     # get needed MELTObjectID
-    my $MELTObjectID = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => 'MELTObjectID' );
+    my $RequestObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $MELTObjectID = $RequestObject->GetParam( Param => 'MELTObjectID' );
+    my $AJAX = $RequestObject->GetParam( Param => 'AJAX' );
 
     # get layout object
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -130,8 +132,18 @@ sub Run {
         Data         => {
             %Param,
             %{$MELTObject},
+            FullPage => $AJAX ? 0 : 1,
         },
     );
+
+    # The delete link must also work when the confirmation JavaScript is
+    # unavailable, instead of displaying an AJAX JSON response as a page.
+    if ( !$AJAX ) {
+        return join '',
+            $LayoutObject->Header( Title => Translatable('Delete MELT Object') ),
+            $Output,
+            $LayoutObject->Footer();
+    }
 
     # build the returned data structure
     my %Data = (

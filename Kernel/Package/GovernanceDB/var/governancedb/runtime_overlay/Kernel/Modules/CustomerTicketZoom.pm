@@ -2375,7 +2375,8 @@ sub _ZTSMRequestInfoHTML {
     }
 
     my $ParentArticleHTML = $Self->_ZTSMRequestParentArticlesHTML(
-        TicketID => $TicketID,
+        TicketID     => $TicketID,
+        AccessTicket => $Param{Ticket},
     );
     if ($ParentArticleHTML) {
         $HTML .= $ParentArticleHTML;
@@ -2390,7 +2391,20 @@ sub _ZTSMRequestParentArticlesHTML {
     my ( $Self, %Param ) = @_;
 
     my $TicketID = $Param{TicketID};
-    return '' if !$TicketID;
+    my $AccessTicket = $Param{AccessTicket};
+    return '' if !$TicketID || !IsHashRefWithData($AccessTicket) || !$AccessTicket->{TicketID};
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $Access = $TicketObject->TicketCustomerPermission(
+        Type => 'ro', TicketID => $AccessTicket->{TicketID}, UserID => $Self->{UserID},
+    );
+    $Access ||= $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
+        TicketID => $AccessTicket->{TicketID}, CustomerUserID => $Self->{UserID}, Type => 'ro',
+    );
+    return '' if !$Access;
+    if ( $AccessTicket->{TicketID} ne $TicketID ) {
+        my $ParentID = _ZTSMNormalizeValue( $AccessTicket->{'DynamicField_ZTicket-Parent'} );
+        return '' if !$ParentID || $ParentID ne $TicketID;
+    }
 
     my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
     my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -2459,19 +2473,17 @@ sub _ZTSMArticleContentForPanel {
         ArticleID => $ArticleID,
     );
     if ($HTMLBodyAttachmentID) {
-        my $Src = $LayoutObject->{Baselink}
-            . "Action=CustomerTicketArticleContent;TicketID=$TicketID;ArticleID=$ArticleID;";
-
-        if ( !$Kernel::OM->Get('Kernel::Config')->Get('SessionUseCookie') ) {
-            my $SessionName = $Self->{SessionName} || '';
-            my $SessionID   = $Self->{SessionID}   || '';
-            if ( $SessionName && $SessionID ) {
-                $Src .= "$SessionName=$SessionID;";
-            }
-        }
-
-        return '<iframe class="ZTSMParentArticleFrame" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" frameborder="0" src="'
-            . $LayoutObject->Ascii2Html( Text => $Src )
+        my $HTML = $LayoutObject->ArticlePreview(
+            TicketID => $TicketID,
+            ArticleID => $ArticleID,
+        );
+        return '' if !defined $HTML || $HTML eq '';
+        $HTML =~ s{&}{&amp;}g;
+        $HTML =~ s{"}{&quot;}g;
+        $HTML =~ s{<}{&lt;}g;
+        $HTML =~ s{>}{&gt;}g;
+        return '<iframe class="ZTSMParentArticleFrame" title="Parent ticket article" sandbox="" referrerpolicy="no-referrer" frameborder="0" srcdoc="'
+            . $HTML
             . '"></iframe>';
     }
 
@@ -3498,13 +3510,28 @@ sub _ZTSMRiskTreatmentHTML {
     return '' if !IsHashRefWithData($Ticket);
 
     my $ParentTicketID = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
-    return '' if !$ParentTicketID;
+
+    my $OriginID = _ZTSMNormalizeValue( $Ticket->{'DynamicField_ZRM-OriginatedEvent'} );
+    if ( !$OriginID && $ParentTicketID ) {
+        my %Parent = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID => $ParentTicketID, DynamicFields => 1, UserID => 1, Silent => 1,
+        );
+        $OriginID = _ZTSMNormalizeValue( $Parent{'DynamicField_ZRM-OriginatedEvent'} );
+    }
+    my $Risk = $OriginID ? $Kernel::OM->Get('Kernel::System::MELTObject')->MELTObjectGet(
+        MELTObjectID => $OriginID, DynamicFields => 1, Silent => 1,
+    ) : undef;
+    my $RiskStatementID = IsHashRefWithData($Risk) && ( $Risk->{Class} || '' ) eq 'Risk'
+        ? _ZTSMNormalizeValue( $Risk->{'DynamicField_MELT-RiskStmt'} )
+        : undef;
+    return '<div class="MessageBox Error" role="alert">RiskTreatment needs a valid originating Risk link.</div>'
+        if !$OriginID || !$RiskStatementID;
 
     my @AssessmentTicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
         Result                              => 'ARRAY',
-        Limit                               => 100,
+        Limit                               => 1000,
         Types                               => ['Assessment'],
-        'DynamicField_ZTicket-Parent'       => { Equals => $ParentTicketID },
+        'DynamicField_ZRM-OriginatedEvent'  => { Equals => $OriginID },
         UserID                              => 1,
         Permission                          => 'ro',
     );
@@ -3516,25 +3543,36 @@ sub _ZTSMRiskTreatmentHTML {
 
     my @Plans;
     for my $AssessmentTicketID (@AssessmentTicketIDs) {
+        my %Assessment = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID => $AssessmentTicketID, DynamicFields => 1, UserID => 1, Silent => 1,
+        );
+        next if !%Assessment;
+        next if !$OriginID || ( _ZTSMNormalizeValue( $Assessment{'DynamicField_ZRM-OriginatedEvent'} ) || '' ) ne $OriginID;
         my $Rows = $BackendObject->ValueGet(
             DynamicFieldConfig => $FieldConfig,
             ObjectID           => $AssessmentTicketID,
         );
-        push @Plans, _ZTSMRiskPlanValues($Rows);
+        next if ref $Rows ne 'ARRAY';
+        for my $Row ( @{$Rows} ) {
+            next if ref $Row ne 'HASH';
+            next if !$RiskStatementID || ( _ZTSMNormalizeValue( $Row->{'ZRM-RiskStatement'} ) || '' ) ne $RiskStatementID;
+            push @Plans, _ZTSMRiskPlanValues( $Row->{'ZRM-RiskPlan'} );
+        }
     }
 
     my %Seen;
     @Plans = grep { defined $_ && $_ ne '' && !$Seen{$_}++ } @Plans;
     my $PlanText = @Plans
         ? join "\n\n", map { ( $_ + 1 ) . '. ' . $Plans[$_] } 0 .. $#Plans
-        : 'No approved risk plan was found on a related assessment ticket.';
+        : 'No risk plan was found on an Assessment linked to this Risk and Risk Statement.';
 
     my $SafePlan = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Ascii2Html( Text => $PlanText );
     $SafePlan =~ s{\r?\n}{<br />}g;
 
     return '<section class="ZTSMRiskTreatmentPlan" aria-labelledby="ZTSMRiskTreatmentPlanHeading">'
-        . '<h3 id="ZTSMRiskTreatmentPlanHeading">Approved Risk Treatment Plan</h3>'
+        . '<h3 id="ZTSMRiskTreatmentPlanHeading">Mapped Risk Treatment Plan</h3>'
         . '<p>' . $SafePlan . '</p>'
+        . '<label><input type="checkbox" name="RiskPlanAcknowledged" value="1" required="required" /> I have reviewed the mapped risk plan before closing this Risk.</label>'
         . '</section>';
 }
 

@@ -232,4 +232,47 @@ my $WrongTarget = $Engine->FieldAssignmentsEvaluate(
 );
 is( $WrongTarget->{Status}, 'UNKNOWN', 'field-assignment target mismatch fails closed' );
 
+my $MasterTicketScript = YAML::XS::LoadFile('docs/examples/framework/risk-master-ticket.yml');
+my $MasterTicketAssignments = $Engine->FieldAssignmentsEvaluate(
+    Script => $MasterTicketScript, ObjectType => 'Ticket', Class => 'ServiceRequest',
+    Context => {
+        RISK => { MELTObjectID => 21, Name => 'EOSL: ICA IaaS Extension', 'DynamicField_MELT-RelatedGO' => [1493] },
+        FRAMEWORK => { 'DynamicField_ZRM-RiskMgtStateBook' => [165] },
+    },
+);
+ok( $MasterTicketAssignments->{Success}, 'Framework master ticket YAML uses ScriptEngine assignments' );
+is( $MasterTicketAssignments->{Value}->{'ZRM-OriginatedEvent'}, 21, 'source MELT Risk maps into SR' );
+is( $MasterTicketAssignments->{Value}->{'ZTicket-Application'}, 1493, 'Risk Application maps into SR before orchestration' );
+is( $MasterTicketAssignments->{Value}->{'ZTicket-StateBook'}, 165, 'Framework workflow maps into SR' );
+is( $MasterTicketAssignments->{Value}->{Service}, 'Risk::Management', 'Risk service is an authored assignment' );
+
+{
+    package RiskReferenceSelectorTestOM;
+    sub new { return bless {}, shift }
+    sub Get { return $_[0] }
+    sub GovernanceObjectGet {
+        my ( $Self, %Param ) = @_;
+        my %Class = ( 630 => 'RiskStatement', 631 => 'Application', 632 => 'RiskStatement' );
+        return { Class => $Class{ $Param{GovernanceObjectID} } }
+            if $Class{ $Param{GovernanceObjectID} };
+        return;
+    }
+}
+{
+    local $Kernel::OM = RiskReferenceSelectorTestOM->new();
+    my $Context = { RISK => { 'DynamicField_MELT-RiskStmt' => [630, 631, 632] } };
+    my $Selected = $Engine->ValueEvaluate(
+        Expression => '@RISK.MELT-RiskStmt[RiskStatement][1]', Context => $Context,
+    );
+    is( $Selected->{Value}, 632, 'class filter runs before zero-based index selection' );
+    my $OutOfRange = $Engine->ValueEvaluate(
+        Expression => '@RISK.MELT-RiskStmt[RiskStatement][2]', Context => $Context,
+    );
+    ok( !$OutOfRange->{Known}, 'out-of-range typed reference fails closed' );
+    my $Malformed = $Engine->ValueEvaluate(
+        Expression => '@RISK.MELT-RiskStmt[RiskStatement][0]garbage', Context => $Context,
+    );
+    ok( !$Malformed->{Known}, 'trailing path text cannot be silently ignored' );
+}
+
 done_testing;

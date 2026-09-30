@@ -104,7 +104,7 @@ sub Run {
                         class            => $Row->{Class},
                         number           => $Row->{Number},
                         name             => $Row->{Name},
-                        version          => $Row->{Version} || '1',
+                        version          => $Row->{Version},
                         deployment_state => $Row->{DeploymentState},
                         incident_state   => $Row->{IncidentState},
                         description      => $Row->{Description} // '',
@@ -307,6 +307,7 @@ sub _ClearFields {
     );
     my @Clear;
     for my $Field ( sort keys %Existing ) {
+        next if $Field eq 'Version' || $Field eq 'ZTAM-AssetTag';
         next if $Self->_IsEmpty( $Existing{$Field} );
         next if !$Self->_IsEmpty( $Param{Incoming}->{$Field} );
         push @Clear, $Field;

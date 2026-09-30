@@ -91,14 +91,25 @@ sub Import {
     return { Success => 0, Message => 'No active definition exists for this class.' }
         if !IsHashRefWithData($Definition);
 
+    my $Number = $Document->{number} // '';
+    my $ConfigItemID = $Number ? $ConfigItemObject->ConfigItemLookup( ConfigItemNumber => $Number ) : 0;
+    my $Existing = $ConfigItemID ? $ConfigItemObject->ConfigItemGet(
+        ConfigItemID => $ConfigItemID,
+        DynamicFields => 1,
+    ) : {};
+    return { Success => 0, Message => 'Existing ConfigItem could not be read for merge.' }
+        if $ConfigItemID && !IsHashRefWithData($Existing);
+    my $Version = $Document->{version};
+    $Version = $ConfigItemID ? $Existing->{VersionString} : '1'
+        if !defined $Version || $Version !~ m{\S};
+
     my %ObjectData = (
         ClassID       => $ClassID,
         Name          => $Document->{name} // '',
-        VersionString => $Document->{version} // '1',
+        VersionString => $Version,
         Description   => $Document->{description} // '',
         UserID        => $Param{UserID},
     );
-    my $Number = $Document->{number} // '';
     $ObjectData{Number} = $Number if IsStringWithData($Number);
 
     for my $StateSpec (
@@ -127,8 +138,15 @@ sub Import {
     }
 
     my $UsesAssetTag = IsHashRefWithData( $Definition->{DynamicFieldRef}->{'ZTAM-AssetTag'} );
+    # A blank import cell merges with the current identity instead of replacing it.
+    if ( $UsesAssetTag && $ConfigItemID
+        && ( !defined $ObjectData{'DynamicField_ZTAM-AssetTag'}
+            || $ObjectData{'DynamicField_ZTAM-AssetTag'} !~ m{\S} ) )
+    {
+        $ObjectData{'DynamicField_ZTAM-AssetTag'} = $Existing->{'DynamicField_ZTAM-AssetTag'};
+    }
     my $VirtualAssetCode = '';
-    if ( $UsesAssetTag && !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
+    if ( $UsesAssetTag && ( $ObjectData{'DynamicField_ZTAM-AssetTag'} // '' ) !~ m{\S} ) {
         my $ApplicationID = $ObjectData{'DynamicField_ZTAM-Application'};
         $ApplicationID = $ApplicationID->[0] if ref $ApplicationID eq 'ARRAY';
         my $Application = $ApplicationID
@@ -137,12 +155,11 @@ sub Import {
                 DynamicFields      => 1,
             )
             : {};
-        $VirtualAssetCode = IsHashRefWithData($Application) ? $Application->{'DynamicField_ZTSM-Code'} : '';
-        return { Success => 0, Message => 'ZTAM-AssetTag is empty and the Application ZTSM-Code cannot be resolved.' }
-            if !IsStringWithData($VirtualAssetCode);
+        return { Success => 0, Message => 'ZTAM-AssetTag is empty and the Application cannot be resolved.' }
+            if !IsHashRefWithData($Application);
+        $VirtualAssetCode = $Application->{'DynamicField_ZTSM-Code'} // '';
     }
 
-    my $ConfigItemID = $Number ? $ConfigItemObject->ConfigItemLookup( ConfigItemNumber => $Number ) : 0;
     my $Success;
     if ($ConfigItemID) {
         $Success = $ConfigItemObject->ConfigItemUpdate(
@@ -157,9 +174,11 @@ sub Import {
 
     # Virtual assets have no physical tag. Generate a stable, readable tag only
     # after the ConfigItem has an ID; the ConfigItemID is the monotonic running ID.
-    if ( $Success && $UsesAssetTag && !$ObjectData{'DynamicField_ZTAM-AssetTag'} ) {
+    if ( $Success && $UsesAssetTag && ( $ObjectData{'DynamicField_ZTAM-AssetTag'} // '' ) !~ m{\S} ) {
         my $Pattern = $Kernel::OM->Get('Kernel::Config')->Get('TESSERA::CMDB::VirtualAssetTag###Pattern')
             || '<ZTSM-Code>-VT-<running id>';
+        # An Application code is optional; a resolved Application is still required.
+        $Pattern = 'tessera-virtualtag-<running id>' if $VirtualAssetCode !~ m{\S};
         $Pattern =~ s{<ZTSM-Code>}{$VirtualAssetCode}g;
         $Pattern =~ s{<running id>}{$ConfigItemID}g;
         $Success = $ConfigItemObject->ConfigItemUpdate(

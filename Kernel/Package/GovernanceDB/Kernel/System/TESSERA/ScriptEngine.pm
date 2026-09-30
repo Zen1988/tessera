@@ -1075,16 +1075,19 @@ sub GroupedFieldAssignmentsEvaluate {
     for my $Finding ( @{ $Param{Evaluation}{Findings} || [] } ) {
         my %Context = ( %Base, FINDING => $Finding );
         my $Origin = _GroupedPath( \%Context, $GroupRule->{FROM} );
-        my $GroupID = _GroupedField( $Origin, $GroupRule->{FIELD} );
+        my $GroupValue = _GroupedField( $Origin, $GroupRule->{FIELD} );
+        my @GroupIDs = ref $GroupValue eq 'ARRAY' ? @{$GroupValue} : ($GroupValue);
         die "Finding group reference is missing or ambiguous.\n"
-            if !defined $GroupID || ref $GroupID || $GroupID !~ /\A\d+\z/ || !$GroupID;
+            if !@GroupIDs || grep { !defined $_ || ref $_ || $_ !~ /\A\d+\z/ || !$_ } @GroupIDs;
+        my %SeenGroup;
+        @GroupIDs = grep { !$SeenGroup{$_}++ } @GroupIDs;
         if ( $GroupRule->{'MEMBER FROM'} ) {
             my $MemberID = _GroupedPath( \%Context, $GroupRule->{'MEMBER FROM'} );
             die "Finding member ID is missing or ambiguous.\n"
                 if !defined $MemberID || ref $MemberID || $MemberID !~ /\A\d+\z/ || !$MemberID;
-            $Groups{$GroupID}{MemberIDs}{$MemberID} = 1;
+            $Groups{$_}{MemberIDs}{$MemberID} = 1 for @GroupIDs;
         }
-        push @{ $Groups{$GroupID}{Findings} }, $Finding;
+        push @{ $Groups{$_}{Findings} }, $Finding for @GroupIDs;
     }
     if ( $GroupRule->{'INCLUDE MEMBERS'} ) {
         die "GROUP BY INCLUDE MEMBERS must be a list of paths.\n"
@@ -1213,6 +1216,7 @@ sub _GroupedResolve {
     my ( $GO, $ID, $Specification, $UserID ) = @_;
     my ( $Kind, $Class ) = _GroupedClass( $Specification );
     die "Grouped reference must target GovernanceObject.\n" if $Kind ne 'GovernanceObject';
+    $ID = $ID->[0] if ref $ID eq 'ARRAY' && @{$ID} == 1;
     die "Grouped reference is missing or ambiguous.\n" if !defined $ID || ref $ID || $ID !~ /\A\d+\z/ || !$ID;
     my $Object = $GO->GovernanceObjectGet( GovernanceObjectID => $ID, DynamicFields => 1, UserID => $UserID );
     die "Grouped reference does not match $Specification.\n"
@@ -1488,18 +1492,38 @@ sub _Value {
             if ref $Object ne 'HASH';
 
         my $Value = $Object;
-        my @Segments = $Path =~ m{\.([A-Za-z][A-Za-z0-9_-]*)(?:\[(\d+)\])?}g;
-        # The regex capture list is flattened into field/index pairs.
-        while (@Segments) {
-            my $Field = shift @Segments;
-            my $Index = shift @Segments;
+        while ( length $Path ) {
+            return { Known => 0, Reason => "Invalid field path $Expression." }
+                if $Path !~ s{\A\.([A-Za-z][A-Za-z0-9_-]*)}{};
+            my $Field = $1;
             return { Known => 0, Reason => "Field path $Expression cannot traverse a non-object value." }
                 if ref $Value ne 'HASH';
             my $Key = exists $Value->{$Field} ? $Field : 'DynamicField_' . $Field;
             return { Known => 0, Reason => "Field $Expression is unavailable." }
                 if !exists $Value->{$Key};
             $Value = $Value->{$Key};
-            if ( defined $Index && $Index ne '' ) {
+            if ( $Path =~ s{\A\[([A-Za-z][A-Za-z0-9_-]*)\]}{} ) {
+                my $Class = $1;
+                $Value = [$Value] if defined $Value && !ref $Value;
+                return { Known => 0, Reason => "Field $Expression is not a reference collection." }
+                    if ref $Value ne 'ARRAY';
+                my @Matching;
+                for my $ID ( @{$Value} ) {
+                    return { Known => 0, Reason => "Field $Expression contains an invalid Governance Object reference." }
+                        if !defined $ID || ref $ID || $ID !~ m{\A\d+\z};
+                    my $Reference = eval {
+                        $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+                            GovernanceObjectID => $ID, DynamicFields => 1, Silent => 1,
+                        );
+                    };
+                    return { Known => 0, Reason => "Field $Expression contains an unresolved Governance Object reference." }
+                        if $@ || ref $Reference ne 'HASH' || !%{$Reference};
+                    push @Matching, $ID if ( $Reference->{Class} || '' ) eq $Class;
+                }
+                $Value = \@Matching;
+            }
+            if ( $Path =~ s{\A\[(\d+)\]}{} ) {
+                my $Index = $1;
                 return { Known => 0, Reason => "Field $Expression is not a row collection." }
                     if ref $Value ne 'ARRAY';
                 return { Known => 0, Reason => "Row $Index in $Expression is unavailable." }

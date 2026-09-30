@@ -1,5 +1,234 @@
 # TESSERA Project Status
 
+## 2026-09-30 Assessment outcome placement — 0.0.67 prepared
+
+- The user installed 0.0.66 and confirmed the required Assessment Outcome
+  Dropdown and choices appear. The supplied screenshot shows it above Risk
+  Row 1. The user requested choosing the overall outcome after completing
+  the assessment.
+- Moved outcome rendering out of the row workspace and into the custom
+  Assessment template after Remarks, immediately before the action buttons.
+  The server still validates and records the configured outcome. All 26
+  outcome/placement tests, 15 scoring tests, and Perl syntax check pass.
+  Built 0.0.67 with 288 byte-matching payloads; only the Assessment action
+  module and template changed from 0.0.66. Installation and live placement
+  verification remain pending.
+
+## 2026-09-30 Risk Assessment outcome selector — 0.0.66 prepared
+
+- An engineer's Assessment submit returned “Please select a valid risk
+  assessment outcome.” The custom form had no outcome selector. The exported
+  Ticket Dynamic Field `RiskAssessmentOutcome` is an active Dropdown with five
+  authored values, and the custom form already contained a selector renderer.
+  Its option loader received no explicit `Type`, fell through to the
+  GeneralCatalog path, returned no options, and suppressed the entire field;
+  server validation failed for the same reason.
+- The option loader now derives Dropdown type from the installed Dynamic Field
+  config when no type is passed. The custom form renders a visible required
+  outcome caption and selector; the submit handler validates and persists the
+  selected configured value. Added runtime tests for rendering, configured
+  selection, and invalid-value rejection. All 23 outcome tests, 15 scoring
+  tests, and Perl syntax check pass. Built TESSERA-Base 0.0.66 with 288
+  byte-matching payloads; relative to 0.0.65, only the Assessment action module
+  and template changed. Live installation and submit verification are pending.
+
+## 2026-09-30 Assessment captions — 0.0.65 prepared
+
+- Engineer screenshot after 0.0.64 confirms the calculation paragraph is gone,
+  one Application row remains, and `3 x 3 = 9` is shown. The field captions
+  are still absent. Traced the special Assessment path from
+  `CustomerTicketZoom.tt` lazy action through `RiskAssessmentInline`,
+  `_RiskAssessmentWorkspaceHTML`, and `_RiskAssessmentRowHTML`; the row builder
+  emitted plain `<label>` elements, and the inline loader does not rewrite them.
+- Replaced row field labels with visible caption spans and named field groups
+  in the custom Assessment row builder. The package template now styles those
+  captions directly, including in the score equations. `0.0.65` contains only
+  the Assessment action module and template payload changes from `0.0.64`.
+  All 288 package payloads match source; the 21 Assessment merge/render tests,
+  15 scoring/article tests, and Perl syntax check pass. The user reports
+  installing 0.0.65. The engineer refreshed Assessment 306 and confirmed the
+  field captions are now visible. The Codex OTOBO browser has a separate
+  expired login session, so this live visual check is user-reported. Article
+  evidence remains to be checked after the Assessment is submitted.
+
+## 2026-09-30 Assessment form labels and calculation evidence — 0.0.64 prepared
+
+- Live engineer Assessment 306 after 0.0.63 shows one Application row and
+  `3 x 3 = 9`, confirming the rounded catalog dimensions and grouping. The
+  Framework calculation paragraph rendered inside the editable form with a
+  garbled multiplication sign and displaced the action/plan grid. The field
+  labels were also invisible, making `Risk Action` hard to locate, although
+  the user later found its control.
+- Removed the calculation paragraph from the form. On submission, the
+  generated Assessment evidence article now records Framework ID/version,
+  base dimensions, factor products, rounded dimensions, and integer score.
+  The article uses ASCII `x` to avoid the observed encoding error. The form's
+  field-label CSS explicitly restores visible labels and normal font size.
+  `ZRM-RiskDetail` remains engineer-authored narrative.
+- Built `TESSERA-Base-0.0.64.opm` with 288 byte-matching payloads. Compared
+  with 0.0.63, only the Assessment action module and workspace template changed.
+  Perl syntax passes; focused scoring/article tests pass 15/15 and merge tests
+  pass 20/20. OTOBO Package Manager confirms 0.0.64 installed. Engineer form
+  label validation and post-submission article validation remain pending.
+
+## 2026-09-30 Application and Asset Risk Framework split — TESSERA-Base 0.0.63
+
+- Engineer Assessment 306 populated after 0.0.62, but showed ten rows for one
+  Application-level MELT Risk and a fractional score `5.76` beside catalog
+  dimensions `3 x 3`. The user confirmed that each Framework must first calculate
+  impact and likelihood separately, round each up to a selectable 1-5 catalog
+  value, then multiply those selected dimensions for the inherent score.
+- Added an authored `SCORING CONTEXT` selector to the Version 1 scoring YAML.
+  Application scope resolves the Risk's related Application, applies its four
+  governance-profile factors once, and produces one Assessment row targeted by
+  `ZRM-RiskTargetGO`; all related CIs remain evidence in `ZRM-RiskTargetCI`.
+  Frameworks without `SCORING CONTEXT` retain per-asset scoring. The runtime
+  validates the supported CEIL expressions and resolves rounded dimension
+  values to GeneralCatalog ItemIDs before writing `ZRM-RiskAssessment`.
+- The Application merge collapses prior same-statement asset rows while
+  preserving compatible authored plans and rejects conflicting authored data.
+  Source Risk and RiskStatement Framework links are checked before scoring.
+  No new Dynamic Fields, bootstrap objects, or hardcoded EOSL policy route were
+  introduced. The older Application MAX aggregation draft was rejected for
+  this EOSL scenario; Application factors are calculated directly once.
+- `TESSERA-Base-0.0.63.opm` built with 288 payloads. Its runtime overlay bytes
+  match package source. Focused scorer tests pass 12/12 and template/origin
+  merge tests pass 20/20; `git diff --check` found no whitespace errors.
+  OTOBO Package Manager confirms 0.0.63 installed.
+- Live Framework 1597 was renamed `Application Risk Management` with the
+  Application scoring YAML, version `2026.09.30`; Risk 21 and RiskStatement 630
+  remain linked to that ID. Its nonexecuted MAX draft was marked superseded.
+  Live Framework 1599 was created by duplicating the prior asset framework as
+  `Asset Risk Management`, keeping its Workload, NetworkNode, PeripheralNode,
+  and StorageNode factor paths with the rounded dimension formula. Engineer
+  Assessment 306 must still be refreshed to verify one row and the live score.
+
+## 2026-09-29 EOSL Repeat Run and MELT Delete Repair
+
+- Live Package Manager confirms `TESSERA-Base` 0.0.56 installed. Discovery and
+  evaluation scheduler jobs both completed successfully at 03:15 UTC on
+  29 September. Product Control 4600 has `ZRM-LastRun` 02:50:05 UTC and
+  `ZRM-Result` Fail. The MELT Risk list had exactly IDs 11-21: the repeated
+  evaluation reused grouped Risk 21 without creating another Risk. Risk 21
+  retains `MELT-Reference` `Product EOSL compliance:1493:630`, Application
+  1493, RiskStatement 630, RMF 1597, Product 574 and Workloads 2135-2144.
+- The old MELT delete action always returned AJAX JSON, so opening its normal
+  Delete link showed raw JSON. `MELT` 0.0.25 now serves a full confirmation
+  page with Delete and Cancel for normal navigation, while `AJAX=1` keeps
+  dialog JSON. The package changes only its delete module, confirmation
+  template and menu configuration. Perl syntax and package payload comparison
+  passed. Live Package Manager confirms 0.0.25 installed, and the Risk 19
+  delete URL rendered the confirmation page.
+- At the user's attempted delete target, superseded Risk 19 was deleted through
+  that confirmation page. A live SQL read showed Risk 19 absent and grouped
+  Risk 21 present. The other nine old per-asset Risks (11-18 and 20) remain
+  active for separate lifecycle review; they were not deleted.
+
+## 2026-09-28 Control Cycle and Grouped EOSL Risk Repair
+
+- Live objective 767 `ZRM-FieldAssignment` now uses
+  `Product EOSL compliance:<ApplicationID>:<RiskStatementID>` as
+  `MELT-Reference` and names its Risk from the statement Annex, EOSL scenario,
+  and Application. `TESSERA-Base` 0.0.55 was installed at about 15:49 SGT.
+  Its generic grouped resolver accepts a one-element GovernanceObject reference
+  array. The 15:50 scheduler evaluation succeeded and created Risk 21,
+  `IS-9: EOSL: ICA IaaS Extension`, with `MELT-RelatedGO` 1493,
+  `MELT-RiskStmt` 630, `MELT-RMF` 1597, Product 574 and ten affected CIs in
+  `MELT-RelatedCI`. Control 4600 recorded Fail and LastRun 15:50:01 SGT.
+  The old ten asset-level Risks remain separate historical active records.
+  Control 4600 LastRun was cleared through its edit UI at 15:51:42 SGT for
+  an idempotent reuse check on the next scheduler dispatch.
+- The forced 15:55 reuse pass found Risk 21 but failed because OTOBO returns
+  existing single-valued GovernanceObject reference Dynamic Fields as
+  one-element arrays; `REQUIRE_EQUAL` compared them to scalar assignment IDs
+  and reported `Existing Risk field MELT-RMF conflicts with assignment`.
+  Package 0.0.56 normalizes exactly one array element for equality and remains
+  strict for zero/multiple values. The local Product policy suite passes 104
+  assertions with array-shaped existing Risk references. Package Manager shows
+  0.0.56 installed; Control 4600 is still due for the next pass.
+- Live catalog check: 906 Product CIs exist, 19 have an EOSL date, and 10 dates
+  fall before 28 September 2027. This is separate from the user's Workload
+  question. For Dell VxRail E560F Product 574, exactly ten current Workload CIs
+  reference it through `ZTAM-Model` (2135-2144), and no child Product has
+  `ZTAM-Parent` 574. The Risk's `MELT-RelatedCI` includes these ten Workloads
+  plus the source Product. A scan of all current CI reference Dynamic Field
+  rows found no other CI target references to Product 574, apart from its
+  Control. The current Workload catalog has 1986 CIs with `ZTAM-Model`.
+- User clarified the final identity: the EOSL PolicyFilter selects Products,
+  and discovery creates one Control per Product. Risk identity is the authored
+  failure scenario, RiskStatement, and Application; multiple failed Product
+  Controls may contribute to the same Risk. The earlier proposal for grouped
+  Control discovery was incorrect and has been removed from PROJECT_NEXT.md.
+  The local Risk assignment omits Product ID from `MELT-Reference` and
+  names Risks from the statement Annex, EOSL scenario and Application. The
+  revised assignment is saved on live objective 767; it created Risk 21.
+- Review of live objective 767 on 28 September: its PolicyFilter returns
+  `Collection<ITSMConfigItem.Product>` with `LIMIT: 1000`; its PolicyEvaluation
+  targets `ITSMConfigItem.Product`, returns N/A for empty EOSL, and evaluates
+  the one-year boundary before traversing affected assets. The local
+  ControlDiscovery suite passes 45 assertions and ProductPolicyEvaluation
+  passes 104, including reuse of one Risk across two failed Products.
+  `LIMIT: 1000` currently covers 906 Products but will fail closed when the
+  Product count exceeds 1000, so capacity needs review.
+- The ten live Risks created on 22 September (MELT IDs 11-20) are older
+  asset-level records: their current versions have `MELT-Control` 4600,
+  one `MELT-RelatedCI` each, and `MELT-Source` Product EOSL compliance, but
+  no `MELT-Reference`, `MELT-RelatedGO`, or `MELT-RiskStmt`. They cannot be
+  safely matched to the new grouped identity by `MELT-Reference` alone.
+- Discovery audit at 14:44 SGT: `scheduler_recurrent_task` records
+  `TESSERAControlDiscovery` at 14:40:00 SGT with `last_worker_status=1` and
+  completion at 14:40:18. The installed objective 767 PolicyFilter selects
+  `ITSMConfigItem.Product`. Live database has 906 Product CIs and 906 Controls
+  linked to objective 767, with no Product lacking a matching Control target.
+  The newest Product was created 15 September; the newest matching Control
+  was created 22 September. Therefore discovery did run, but had no new Product
+  Control to create. The grouped Application YAML affects Risk assignment
+  after Product Control evaluation; it does not change Control discovery to
+  one Control per Application.
+- Live follow-up at 14:35 SGT: Package Manager shows `TESSERA-Base` 0.0.54
+  installed. Control 4147 (PowerEdge R6415, empty EOSL) recorded `N/A` at
+  14:30:21 SGT, with LastRun correctly written to its latest VersionID at
+  14:30:17. This confirms the scheduler and fixed field-write path operate.
+  The ten EOSL-dated Product Controls still showed LastRun 14:00:15 SGT and
+  had no new PolicyEvaluation activity; hourly makes them due after 15:00:15,
+  so the next five-minute dispatch is expected around 15:05 SGT. Grouped Risk
+  creation is still pending live verification after that dispatch.
+- Live ControlObjective 767 has the packaged Product EOSL evaluation and grouped
+  Application Risk assignment, with Control Cycle set to `hourly` for testing.
+  Keep that administrator-selected test cycle until the live result is verified.
+- Read-only live SQL inspection showed the five-minute scheduler was active on
+  22, 25 and 28 September. Only Control 4600 (Dell VxRail E560F) recorded a
+  failing evaluation, on 22 September, creating ten older asset-level Risks.
+  Ten Products had an EOSL date within one year on 28 September and each had a
+  Control under objective 767; the other nine had no PolicyEvaluation activity.
+  The ten Risks therefore do not represent the full eligible Product set.
+- The 0.0.53 runtime rejected `hourly` as an unsupported cycle. The 0.0.54
+  source accepts `hourly` and numeric hour intervals. A Control with empty
+  `ZRM-LastRun` is due on the next scheduler dispatch; successful evaluation
+  writes LastRun and later dispatches honor the cycle.
+- OTOBO ConfigItem Dynamic Fields use the latest ConfigItem VersionID. The
+  runtime had written `ZRM-Result` and `ZRM-LastRun` using ConfigItemID, causing
+  stale or invisible values. The 0.0.54 runtime resolves VersionID before
+  writes. Live Control 4147 has a LastRun row under ConfigItemID 4147 but none
+  under its latest VersionID 4229, matching the visible repeated evaluations.
+  ConfigItemIDs also collide with other Controls' VersionIDs (for example,
+  4223 has VersionID 4305, which is another Control's ConfigItemID), so wrong
+  writes can falsely mark a different Control as recently run. This explains
+  why a populated LastRun alone is not evidence of that Control's evaluation.
+- Live Workload 2135 links Application `ICA IaaS Extension` (GO 1493). Its
+  Application field appears as an array in evaluation data. The grouped YAML
+  interpreter previously rejected arrays; it now creates a group for each
+  valid Application ID, deduplicates repeated IDs, and keeps shared assets in
+  each applicable group. Empty or invalid references still fail closed.
+- Local Control cycle and Product policy suites pass (18 and 106 assertions),
+  including VersionID storage and multi-Application grouping. The generated
+  0.0.54 OPM was built from authoritative 0.0.53 OPM content; only the two
+  runtime module payloads changed, so unrelated working-tree edits are absent.
+  Install it in live OTOBO, then verify
+  LastRun, PolicyEvaluation activity and grouped `ICA IaaS Extension` Risk
+  creation for Control 4600 and the other nine eligible Product Controls.
+  The exact live failure reason after the older ten Risks remains unconfirmed.
+
 ## 2026-09-25 Direct Policy Findings Across Target Types
 
 - `TESSERA-Base` 0.0.53 adds VERSION 1 `ON FAIL: { EMIT FINDING: THIS }`.
@@ -14809,3 +15038,60 @@ PurpleBook completion must not:
 - User confirmed dynamic resolution works in the live test using a new field mapped to Platform and the PLATFORM::NETWORK GovernanceRole, beyond the original RoleDirector mapping used previously.
 - This validates the tested governance-driven Platform role resolution path after the StateBook import investigation. Preserve dynamic governance resolution; do not introduce field-specific or role-specific routing in RoleDirector.
 - This confirmation covers the reported resolution scenario only. Full workflow completion and the previously reported BlueBook catalog import errors have not been separately confirmed resolved.
+
+## 2026-09-29 Assessment Origin Risk Scoring and Treatment — TESSERA-Base 0.0.58
+
+- Installed 0.0.58 in live OTOBO. It adds reference field/class validation and copies the mapped Assessment plan into the RiskTreatment ticket's existing `ZRM-RiskPlan` field. The 0.0.58 OPM has 286 files and differs from 0.0.57 in only the Assessment action module payload; the generated OPM matches package sources.
+- Assessment now resolves Ticket `ZRM-OriginatedEvent` to a MELT Risk, reads its `MELT-RiskStmt`, verifies that Risk and RiskStatement select the same Framework, and adds missing `ZRM-RiskAssessment` rows without replacing existing plans or decisions. Existing statement-only rows are adapted to the first affected CI; subsequent affected CIs receive separate rows.
+- Activated Framework 1597's `ZRM-RiskScoringEngine` using `CURRENT RISK.MELT-RiskStmt`. The Version 1 inherent scorer reads base 1–5 GeneralCatalog names and the YAML factor paths for each matching Risk `MELT-RelatedCI`. It treats missing, zero, and above-one factors as neutral, rejects broken references and invalid factors, and stores each adjusted score in `ZRM-InherentCalculatedRisk`. The catalog likelihood and impact fields retain the RiskStatement's base values. The Assessment form displays the Framework score, and server submission recalculates and enforces the source Risk's CI scores.
+- BlueBook children inherit the parent's `ZRM-OriginatedEvent` link. RiskTreatment shows plans only from Assessment tickets linked to that Risk and RiskStatement, requires acknowledgement, and records the mapped plan in treatment evidence. Completed outcomes close `MELT-EventStatus` and link the treatment ticket to the MELT Risk; Partially Treated and Unsuccessful leave the Risk open.
+- Local validation: the changed Perl modules passed syntax checks with unavailable OTOBO imports excluded; `RiskAssessmentOriginScoring.t` passed five behavior checks for applicable assets, fractional factors, missing factors, invalid factors, and wrong-class references. Framework zoom confirms the saved Risk-origin YAML.
+- Live SQL found no ticket with `ZRM-OriginatedEvent` populated, so the actual Assessment row creation and RiskTreatment closure paths have not yet been exercised on a live linked ticket. Framework 1597 has empty `ZRM-RiskMgtStateBook` and `ZRM-MasterTicket`, so new Risks do not yet create Assessment tickets automatically; this is the current expected RMF configuration state. The Application aggregation YAML remains a draft and is not executed by 0.0.58.
+- Architectural decision: Risk creation and workflow routing remain governed by configured Framework/StateBook data. Assessment calculation begins only when an Assessment ticket has the originating Risk link. No new Dynamic Field names were introduced.
+- Confirmed the combined Assessment rule: when a BlueBook chapter supplies `ZTemplate-RiskAssessment` and `ZRM-OriginatedEvent` identifies a Risk, retain all template rows and add the Risk's statement for affected assets. A template row already using that statement is reused, preserving its plan and other authored values while adding the target and Framework score. `RiskAssessmentTemplateOriginMerge.t` covers both cases with eight passing assertions. Live confirmation still awaits configured RMF routing and a linked Assessment ticket.
+
+## 2026-09-29 Framework Risk Master Ticket Mapping — TESSERA-Base 0.0.59 prepared
+
+- Framework 1597 now selects StateBook `ICA::Risk Management`. Its live `ZRM-MasterTicket` contains VERSION 1 ScriptEngine `RETURN.FIELD ASSIGNMENTS` targeting `Ticket.ServiceRequest`: Type `ServiceRequest`, Service `Risk`, CustomerUser `tessera@ica.gov.sg`, Title from the Risk name, `ZRM-OriginatedEvent` from Risk ID, and `ZTicket-StateBook` from the Framework workflow. The mapping was saved and read back in OTOBO. The user confirmed the account details and explicitly approved creation; the dedicated ICA customer user exists in OTOBO without an interactive password.
+- Rejected the initial separate, fixed `MASTER TICKET` YAML parser in response to the user's architecture correction. The packaged adapter uses `TESSERA::ScriptEngine->FieldAssignmentsEvaluate`, validates the typed SR target and source identity, resolves the configured service and requester, creates/reuses one parent SR per Risk, and preserves the originating Risk and StateBook links. An event handles changed Risks; a five-minute reconciliation scans existing Framework-linked Risks so a newly configured workflow can backfill them. No new Dynamic Fields were introduced.
+- Local verification: `RiskMasterTicketMapping.t` 13 checks, `ScriptEngine.t` 36 checks, and `ControlRuntimeCycle.t` 18 checks passed; module syntax and SysConfig/SOPM XML parsed. Built `Kernel/Package/TESSERA-Base-0.0.59.opm` with 288 byte-matching payloads, SHA256 `10C9D30626AA395E4C67553ACDE336766C777D01F48836E4E552DA67B52F64C4`.
+- Live package manager still reports TESSERA-Base 0.0.58. The in-app browser package file selector did not produce a file chooser after multiple documented UI attempts, so 0.0.59 has not been installed. The live Framework YAML is therefore configuration only; no master SR or Assessment routing from this feature has been verified. Once installed, verify scheduler registration, Risk 21 reconciliation, exactly one SR with `ZRM-OriginatedEvent`, then BlueBook Assessment creation. Do not claim the workflow has run until those checks pass.
+
+## 2026-09-29 Live 0.0.59 verification and 0.0.60 follow-up
+
+- User installed TESSERA-Base 0.0.59; OTOBO Package Manager confirms its installed version. Framework 1597 still selects StateBook 1598 and holds the original master-ticket mapping. Risk 21 has Framework 1597 and Application 1493. Its YAML export confirms `MELT-RMF: [1597]` and `MELT-RelatedGO: [1493]`.
+- At 13:40 and 13:45 SGT, no Risk 21 master ServiceRequest appeared in a title search and no `RiskMasterTicket` error appeared in AdminLog. SysConfig shows the reconciliation cron setting enabled at `*/5 * * * *`. The task's actual execution remains unproven; do not infer success from the enabled setting. OTOBO has repeated older `SchedulerGenericAgentTaskManager: ScheduleDays is invalid!` errors unrelated to the new cron setting.
+- Saving Risk 21 with unchanged values at 13:46:39 SGT ran the MELT update hook. It created parent ServiceRequest 301 (`ICAT-TI-20260000018`) with service Risk, requester `tessera@ica.gov.sg`, StateBook `ICA::Risk Management`, and a source Risk 21 title; the successful creation article follows the code's source-field write. StateBook/BlueBook orchestration created Assessment child 302 (`ICAT-TI-20260000019`). This verifies the event path and ticket creation, not the scheduled backfill path.
+- Child 302 is pending. AdminLog at 13:46:40 reports `APPLICATION::SUPPORT` resolution failed because `THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile` is unavailable. Parent 301 did not map the Risk's Application. Child 302 also displays a blank Customer ID although it inherited the customer user. The prior assumption that the original mapping was enough to run the Assessment is rejected.
+- Local 0.0.60 follow-up adds optional authored `ZTicket-Application` assignment, validates a single Application, writes it before `ZTicket-StateBook`, propagates CustomerID to BlueBook children, and scans all Risk objects during reconciliation before checking each object's Framework. The example YAML now maps `@RISK.MELT-RelatedGO`. Existing orchestrated parent 301 and child 302 are preserved; their governance snapshots are not silently changed or repeatedly errored by reconciliation. Local `RiskMasterTicketMapping.t` passes 17 checks and `ScriptEngine.t` passes 37 checks. The local 0.0.60 OPM has 288 byte-identical payloads and SHA256 `0A59EB64D1D301B3660A43F802993885B751A68371B524296A2ED0905A70623F`. Live installation and mapping update remain pending because the in-app browser file input again failed to present a file chooser.
+
+## 2026-09-30 Risk master Application routing live verification
+
+- OTOBO Package Manager confirmed TESSERA-Base 0.0.60 installed. Framework 1597 `ZRM-MasterTicket` was updated and read back with `ZTicket-Application: '@RISK.MELT-RelatedGO'` before its `ZTicket-StateBook` assignment. Live service is `Risk::Management` (ServiceID 344); the local example and ScriptEngine test were aligned to this authored value. Exported `MELT-RelatedGO` is a single GovernanceObject field on MELT Risk, whereas `ZRM-GOInstance` is a Control ConfigItem field. No class-filter or row-index syntax is needed for this Risk; the 0.0.60 adapter checks that the resolved governance object is exactly one Application.
+- At the user's explicit approval, the old test Assessment 302 and master SR 301 were permanently deleted through a one-time Generic Agent job, with each run preview listing exactly one matching ticket number. Both old TicketZoom pages then reported the ticket absent. The temporary Generic Agent job was removed after use; no existing TESSERA job was changed.
+- An unchanged save of Risk 21 retriggered the event path and created master SR 303 (`ICAT-TI-20260000020`) and Assessment 304 (`ICAT-TI-20260000021`) at 10:15 SGT. Master 303 has service `Risk::Management`, requester `tessera@ica.gov.sg`, StateBook `ICA::Risk Management`, and BlueBook `ICA::Risk::Assessment`. Assessment 304 recorded `ZTSM Governance Profile Resolved`: `APPLICATION::SUPPORT` resolved to SupportProfile 1058 `ICA::ATFM::CLOUD`. This live result verifies the Application routing fix; scheduled reconciliation dispatch remains independently unproven.
+- Local tests after aligning the example: `ScriptEngine.t` 37/37 and `RiskMasterTicketMapping.t` 17/17 pass. The installed 0.0.60 OPM itself was not rebuilt or reinstalled after this live configuration edit.
+
+## 2026-09-30 Assessment parent origin and typed reference selector — TESSERA-Base 0.0.61 prepared
+
+- Customer Assessment 304 displayed an empty Risk row after 0.0.60 even though parent SR 303 and Risk 21 were created and APPLICATION::SUPPORT routing succeeded. Live Risk 21 YAML confirms `MELT-RiskStmt: [630]`, Framework 1597, and related assets. The form showed no scoring-error banner, indicating the origin lookup returned before scoring; the precise child Dynamic Field storage was not directly inspected.
+- Assessment now always follows `ZTicket-Parent` to the parent ServiceRequest and reads that ticket's `ZRM-OriginatedEvent`; a copied child origin is accepted only if it matches. It merges the source Risk Statement into template rows, preserving existing authored plans. No existing governance snapshot is rewritten.
+- ScriptEngine now parses the entire reference path and supports class filtering before zero-based index selection, e.g. `@RISK.MELT-RiskStmt[RiskStatement][0]`. Missing references, invalid suffixes and out-of-range selections fail closed. Framework `ZRM-RiskScoringEngine` accepts this expression while retaining the single-reference legacy source. The example Framework YAML uses the typed expression; the live Framework has not yet been updated because 0.0.60 cannot execute it.
+- Built `Kernel/Package/TESSERA-Base-0.0.61.opm` with 288 payloads, SHA256 `C7994F7CEDBCDEE61AB4F80F171E1724568F2CBC6D4A7F85187A768530DCB450`. Focused tests pass (72 assertions); a second focused run passes 109 assertions. The broad suite has unrelated existing `ProductPolicyEvaluation.t` adapter failures; its stale 0.0.47 version assertion was corrected separately.
+- OTOBO Package Manager confirms 0.0.61 installed. Framework 1597 `ZRM-RiskScoringEngine` was saved and read back with `FROM: '@RISK.MELT-RiskStmt[RiskStatement][0]'`.
+- At the user's explicit approval, Assessment 304 (`ICAT-TI-20260000021`) and parent SR 303 (`ICAT-TI-20260000020`) were permanently deleted using a one-time Generic Agent job. Each job preview matched exactly one ticket; both old Zoom pages then reported the tickets absent. The temporary job was deleted. Risk 21's original `MELT-Source` value `Product EOSL compliance` is restored after a temporary update to emit the recreation event.
+- New parent SR 305 (`ICAT-TI-20260000022`) and Assessment 306 (`ICAT-TI-20260000023`) were created. Parent 305 shows `Risk::Management`, ICA requester, StateBook `ICA::Risk Management`, and BlueBook `ICA::Risk::Assessment`; its orchestration article identifies child 306. Ticket history confirms parent `ZRM-OriginatedEvent` points to Risk 21 and child `ZTicket-Parent` points to SR 305. Child 306 records successful `APPLICATION::SUPPORT` resolution to SupportProfile 1058 `ICA::ATFM::CLOUD`. Child history still shows `CustomerID=` blank despite `CustomerUser=tessera@ica.gov.sg`; this remains a separate propagation defect. Customer Assessment row hydration and scoring still require a signed-in customer portal check; agent Zoom alone does not establish them.
+- New tickets were created at 11:05:11 SGT, before the deliberate Risk Source update at 11:07. The unchanged save emitted no MELT update event, so this recreation verifies the five-minute reconciliation path actually dispatched. The later temporary Source update was unnecessary for creation and was reverted.
+
+## 2026-09-30 Assessment catalog storage repair — TESSERA-Base 0.0.62 prepared
+
+- Engineer view of Assessment 306 still showed an empty Risk row. At 11:14:18 SGT, live AdminLog recorded `Invalid Integer 'Governance'`, then failed writes to `ZRM-ImpactCategory` and `ZRM-RiskAssessment`. Parent origin resolution and Risk Statement selection reached hydration; the row failed when its GeneralCatalog defaults mixed numeric ItemIDs with display names.
+- Both the origin hydration path and manual Risk Statement defaults now pass only numeric catalog IDs to Set storage and form selection. Display and article code continues to resolve those IDs to GeneralCatalog names. Invalid nonnumeric source values fail closed. Existing Assessment 306 needs a fresh form load after installation to retry hydration; no ticket recreation is required.
+- Added a regression guard that rejects nonnumeric catalog values in merged Assessment rows. Focused tests pass: template origin merge 14 assertions, scorer 5, ScriptEngine 40. Built `Kernel/Package/TESSERA-Base-0.0.62.opm` with 288 payloads, SHA256 `8AD7B071E2452453DEC4A430FA4C5EA5805E59337259448D4429D2B5F142089B`. Compared with 0.0.61, the only payload change is the Assessment action module. User approved live installation; OTOBO Package Manager now shows 0.0.62 installed. Engineer form hydration and row persistence still need verification.
+- Assessment 306's blank CustomerID remains a separate issue; the current packaged BlueBook runtime already passes parent CustomerID to `TicketCreate`, so the cause is not yet established and was not changed in this patch.
+## 2026-09-30 Assessment evidence, score recomputation, and linked read access — TESSERA-Base 0.0.68 prepared
+
+- Assessment submission no longer restores the Framework's suggested dimensions after an engineer changes a catalog selection. It validates the selected 1–5 GeneralCatalog likelihood and impact IDs and computes inherent and residual risk products on the server. The custom form updates the inherent product from the current selections, so 3 × 4 displays and stores 12.
+- Framework scoring now retains each Application/asset reference path, referenced object, raw factor, normalized factor, base dimensions, adjusted dimensions, rounded catalog dimensions, and suggested score. Its optional authored `EVIDENCE.FORMAT` YAML controls the calculation narrative included in the generated Assessment article. The example YAML for Application and Asset Risk Management contains the format; the live Framework 1597 still needs that block saved before the next submission. Existing submitted articles are immutable.
+- Customer ticket read permission now extends from a directly assigned execution ticket to the exact linked parent and sibling tickets for all support profile participants. Task-action permission remains tied to the direct ticket assignment. The parent article panel renders customer-visible HTML articles as sandboxed `srcdoc` after checking the current ticket's read permission and exact parent link, avoiding the separate parent article URL that showed approvers `No Permission`.
+- Focused regression tests cover score recomputation, evidence formatting, linked read versus task action, unrelated ticket denial, and parent article rendering. Built `Kernel/Package/TESSERA-Base-0.0.68.opm` with 288 byte-matching payloads, SHA256 `6884563D35C672C71E8326CA45AA2B2A089A25B86D17941B1862B86DD5443B67`. Live package installation and verification remain pending.
