@@ -1,0 +1,82 @@
+---
+class: Framework
+description: |-
+  Application risk management framework. Scores once per MELT Risk from the
+  related Application and its governance profiles. Linked ConfigItems remain
+  evidence on the Assessment row.
+fields:
+  RiskMatrix:
+  - ZRM-EndScore: '4'
+    ZRM-RiskSeverity:
+    - 'EventSeverity: Very Low'
+    ZRM-StartScore: '1'
+  - ZRM-EndScore: '9'
+    ZRM-RiskSeverity:
+    - 'EventSeverity: Low'
+    ZRM-StartScore: '5'
+  - ZRM-EndScore: '14'
+    ZRM-RiskSeverity:
+    - 'EventSeverity: Medium'
+    ZRM-StartScore: '10'
+  - ZRM-EndScore: '19'
+    ZRM-RiskSeverity:
+    - 'EventSeverity: High'
+    ZRM-StartScore: '15'
+  - ZRM-EndScore: '25'
+    ZRM-RiskSeverity:
+    - 'EventSeverity: Critical'
+    ZRM-StartScore: '20'
+  ZRM-Annex: APRM
+  ZRM-MasterTicket: "# ScriptEngine field assignments for the risk master ServiceRequest.\r\nVERSION:
+    1\r\nRETURN:\r\n  AS: Ticket.ServiceRequest\r\n  FIELD ASSIGNMENTS:\r\n    Type:
+    '\"ServiceRequest\"'\r\n    Service: '\"Risk::Management\"'\r\n    CustomerUser:
+    '\"tessera@ica.gov.sg\"'\r\n    Title: '@RISK.Name'\r\n    ZRM-OriginatedEvent:
+    '@RISK.MELTObjectID'\r\n    ZTicket-Application: '@RISK.MELT-RelatedGO'\r\n    ZTicket-StateBook:
+    '@FRAMEWORK.ZRM-RiskMgtStateBook'"
+  ZRM-PolicyOwner:
+  - 'Organization: ICA::HTX'
+  ZRM-PolicyType: IT
+  ZRM-PublishedDate: 2026-09-25 01:08:00
+  ZRM-ReviewCycle: yearly
+  ZRM-RiskAggregationEngine: "# Superseded design draft. Application risks are scored
+    once from the Application context by ZRM-RiskScoringEngine.\r\n# No aggregation
+    program is executed for this Framework."
+  ZRM-RiskMgtStateBook:
+  - 'StateBook: ICA::Risk Management'
+  ZRM-RiskScoringEngine: "# Application Risk Management scoring engine.\r\n# One Application
+    context produces one Assessment row for each originating MELT Risk.\r\nVERSION:
+    1\r\nASSESSMENT: INHERENT\r\nAPPLIES TO:\r\n  - GovernanceObject.Application\r\n\r\nRISK
+    STATEMENTS:\r\n  FROM: '@RISK.MELT-RiskStmt[RiskStatement][0]'\r\n  CLASS: GovernanceObject.RiskStatement\r\n
+    \ ON EMPTY: ERROR\r\n\r\nSCORING CONTEXT:\r\n  FROM: '@RISK.MELT-RelatedGO[Application][0]'\r\n
+    \ CLASS: GovernanceObject.Application\r\n\r\nBASE:\r\n  IMPACT:\r\n    FROM: CURRENT
+    RISK STATEMENT.ZRM-BaseImpact\r\n  LIKELIHOOD:\r\n    FROM: CURRENT RISK STATEMENT.ZRM-BaseLikelihood\r\n
+    \ VALID RANGE: [1, 5]\r\n\r\nFACTOR RULE:\r\n  EFFECTIVE RANGE: (0, 1]\r\n  WHEN
+    ZERO: 1\r\n  WHEN ABOVE ONE: 1\r\n  WHEN MISSING: 1\r\n  WHEN NEGATIVE OR NONNUMERIC:
+    ERROR\r\n\r\nFACTORS:\r\n  - REFERENCE: ZTSMAppSystem-CriticalityProfile\r\n    IMPACT:
+    ZRM-ImpactFactor\r\n    LIKELIHOOD: ZRM-LikelihoodFactor\r\n  - REFERENCE: ZTSMAppSystem-DataClassificationProfile\r\n
+    \   IMPACT: ZRM-ImpactFactor\r\n    LIKELIHOOD: ZRM-LikelihoodFactor\r\n  - REFERENCE:
+    ZTSMAppSystem-ExposureProfile\r\n    IMPACT: ZRM-ImpactFactor\r\n    LIKELIHOOD:
+    ZRM-LikelihoodFactor\r\n  - REFERENCE: ZTSMAppSystem-ServiceTier\r\n    IMPACT:
+    ZRM-ImpactFactor\r\n    LIKELIHOOD: ZRM-LikelihoodFactor\r\n\r\nCALCULATE:\r\n
+    \ INHERENT IMPACT: CEIL(BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR
+    RULE)))\r\n  INHERENT LIKELIHOOD: CEIL(BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD,
+    FACTOR RULE)))\r\n  INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD\r\n\r\nEVIDENCE:\r\n
+    \ FORMAT: |\r\n    {framework_name} (version {framework_version}) calculated inherent
+    risk for {context}.\r\n    Referenced profile factors (raw -> normalized):\r\n
+    \   {factor_lines}\r\n    Likelihood: base {base_likelihood} x {likelihood_factor_chain}
+    = {likelihood_adjusted}; rounded up to catalog value {framework_likelihood}.\r\n
+    \   Impact: base {base_impact} x {impact_factor_chain} = {impact_adjusted}; rounded
+    up to catalog value {framework_impact}.\r\n    Framework inherent score: {framework_likelihood}
+    x {framework_impact} = {framework_score}.\r\n    Submitted selection: {submitted_likelihood}
+    x {submitted_impact} = {submitted_score}.\r\n\r\nASSESSMENT RESULT:\r\n  TICKET
+    TYPE: Assessment\r\n  FIELD: ZRM-RiskAssessment\r\n  ROW TARGET: ZRM-RiskTargetGO\r\n
+    \ TARGET VALUE: SCORING CONTEXT\r\n  RELATED ASSETS FIELD: ZRM-RiskTargetCI\r\n
+    \ RELATED ASSETS FROM: CURRENT RISK.MELT-RelatedCI\r\n  ROW RISK STATEMENT: ZRM-RiskStatement\r\n
+    \ RISK STATEMENT VALUE: CURRENT RISK STATEMENT\r\n  SCORE FIELD: ZRM-InherentCalculatedRisk\r\n
+    \ SCORE VALUE: CALCULATE.INHERENT RISK"
+  ZRM-Version: 2026.09.30
+name: Application Risk Management
+number: GO-FRAMEWOR-00000001
+object_type: GovernanceObject
+version: '2'
+ztsm_status: Active

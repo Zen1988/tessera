@@ -29,28 +29,28 @@
   every contributing Control in Risk activity evidence. Do not present it as a
   complete list of failed Controls.
 
-## Risk Calculation Framework - Live validation after 0.0.67 build
+## Risk Calculation Framework - Friday live validation after 0.0.68 installation
 
-- 0.0.68 is being prepared to recalculate submitted inherent and residual scores
+- 0.0.68 is installed and recalculates submitted inherent and residual scores
   from selected 1-5 GeneralCatalog likelihood and impact values. Verify that
   changing inherent impact from 3 to 4 updates the displayed and stored score
   from 9 to 12. The Framework suggests dimension defaults; the submitted
   catalog selections determine the stored product.
-- Framework 1597's live scoring YAML needs the `EVIDENCE.FORMAT` block from
-  `docs/examples/framework/application-inherent-risk-scoring.yml`. Verify a
+- Framework 1597 and 1599 both have live `EVIDENCE.FORMAT` YAML, and their full
+  Governance as Code exports are in `docs/examples/framework/`. Verify a
   newly submitted Assessment article lists Application Risk Management,
   contributing profile factors, rounded catalog values, Framework suggested
   score, and submitted score. Existing articles remain immutable.
-- 0.0.68 also prepares linked parent/sibling read access for members of an
-  execution ticket's support profile, without granting task action rights.
-  Confirm Abdul Malik can open the parent Assessment evidence and linked
-  tickets after installation, while unrelated tickets remain inaccessible.
+- 0.0.68 grants linked parent/sibling read access for members of an execution
+  ticket's support profile, without granting task action rights. Confirm Abdul
+  Malik can open the parent Assessment evidence and linked tickets, while
+  unrelated tickets remain inaccessible.
 - TESSERA-Base 0.0.65 was installed by the user for the missing Assessment
   field captions; the engineer confirms they are visible after refresh.
   0.0.66 was installed by the user and the required `RiskAssessmentOutcome`
-  Dropdown and configured choices were confirmed. 0.0.67 is built to place
-  that selector below the rows and Remarks, before the action buttons.
-  Install and visually verify the new position before submitting Assessment 306.
+  Dropdown and configured choices were confirmed. 0.0.67 placed that selector
+  below the rows and Remarks, before the action buttons; verify its live
+  position before submitting Assessment 306.
   Framework 1597 is updated to
   `Application Risk Management` with the authored Application scoring YAML.
   Framework 1599 is created as `Asset Risk Management`, preserving

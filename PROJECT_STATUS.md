@@ -1,5 +1,26 @@
 # TESSERA Project Status
 
+## 2026-09-30 TESSERA-Base 0.0.68 deployed and Framework exports backed up
+
+- OTOBO Package Manager confirms `TESSERA-Base 0.0.68` installed. This build
+  recalculates submitted Assessment scores from selected catalog likelihood and
+  impact, records Framework calculation evidence in the submitted article, and
+  permits linked-ticket read access for support profile participants without
+  granting task actions. Focused tests passed: scoring 19, outcome 26, template
+  merge 21, linked-ticket read 4, and parent article panel 4. Perl syntax and
+  package payload checks passed.
+- Live Framework 1597 (Application Risk Management) and Framework 1599 (Asset
+  Risk Management) both have authored `EVIDENCE.FORMAT` YAML saved. The Asset
+  program's explanatory comments were shortened to fit the 3,800-character
+  field limit; its executable rules were retained. Both full Governance as Code
+  YAML exports are in `docs/examples/framework/`. Their local text length and
+  hash match the live editor exports, and both embedded scoring programs parse.
+- Live behavioral checks remain for Friday: change Assessment likelihood or
+  impact and confirm the product updates, submit a new Assessment to inspect
+  its immutable article, then confirm the approver can read linked ticket
+  evidence but cannot perform another assignee's task. Existing articles do
+  not retroactively gain calculation narratives.
+
 ## 2026-09-30 Assessment outcome placement — 0.0.67 prepared
 
 - The user installed 0.0.66 and confirmed the required Assessment Outcome
