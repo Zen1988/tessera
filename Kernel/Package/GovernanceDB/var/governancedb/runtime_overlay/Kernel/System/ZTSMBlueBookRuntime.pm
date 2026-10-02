@@ -1389,6 +1389,10 @@ sub LevelSpawn {
             ArticleParam   => $Param{ArticleParam},
             UserID         => $Param{UserID} || 1,
         );
+
+        RiskAssessmentAutomationEvidenceEnsure( TicketID => $NewTicketID )
+            if $ChildType eq 'Assessment'
+            && _NormalizeValue( $ParentTicket->{'DynamicField_ZRM-OriginatedEvent'} );
     }
 
     if ( !$Param{PreserveParentBlueLevel} ) {
@@ -1401,6 +1405,27 @@ sub LevelSpawn {
     }
 
     return @CreatedTicketIDs ? @CreatedTicketIDs : @ExistingTicketIDs;
+}
+
+sub RiskAssessmentAutomationEvidenceEnsure {
+    my (%Param) = @_;
+    return 1 if !$Param{TicketID};
+    my $Success = eval {
+        require Kernel::Modules::CustomerTicketZTSMAction;
+        my $Assessment = Kernel::Modules::CustomerTicketZTSMAction->new();
+        $Assessment->RiskAssessmentAutomationEvidenceEnsure(
+            TicketID => $Param{TicketID},
+        );
+    };
+    if ( !$Success || $@ ) {
+        _RuntimeLog(
+            Priority => 'error',
+            Message => "Framework automatic Assessment evidence failed for ticket $Param{TicketID}: "
+                . ( $@ || 'unknown error' ),
+        );
+        return;
+    }
+    return 1;
 }
 
 sub ChildTemplateApply {

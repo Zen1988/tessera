@@ -16,10 +16,30 @@ $Source =~ s{^use Kernel::[^;]+;\r?\n}{}mg;
 my $Loaded = eval $Source;
 die $@ if $@;
 
+my $RuntimeOverlayFile = File::Spec->catfile(
+    $Root, qw(Kernel Package GovernanceDB var governancedb runtime_overlay Kernel System ZTSMBlueBookRuntime.pm)
+);
+open my $RuntimeOverlayFH, '<', $RuntimeOverlayFile
+    or die "Cannot read $RuntimeOverlayFile: $!";
+my $RuntimeOverlay = do { local $/; <$RuntimeOverlayFH> };
+close $RuntimeOverlayFH;
+like(
+    $RuntimeOverlay,
+    qr/sub RiskAssessmentAutomationEvidenceEnsure\s*\{/,
+    'packaged runtime overlay exports the evidence bridge used by risk reconciliation',
+);
+like(
+    $RuntimeOverlay,
+    qr/RiskAssessmentAutomationEvidenceEnsure\(\s*TicketID => \$NewTicketID\s*\).*?\$ChildType eq 'Assessment'/s,
+    'new originating-Risk Assessments receive the Framework evidence bridge',
+);
+
 {
     no strict 'refs';
     *{'Kernel::System::TESSERA::RiskMasterTicket::ZTSMArticleCreate'} = sub { return 1 };
+    *{'Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure'} = sub { return 1 };
 }
+$INC{'Kernel/System/ZTSMBlueBookRuntime.pm'} = __FILE__;
 
 our $Framework = {
     Class => 'Framework', Name => 'Infrastructure Risk Framework',

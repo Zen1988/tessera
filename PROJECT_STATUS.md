@@ -1,5 +1,36 @@
 # TESSERA Project Status
 
+## 2026-10-02 Live 0.0.70 evidence reconciliation defect — 0.0.71 prepared
+
+- OTOBO confirms TESSERA-Base 0.0.70 installed. Risk master reconciliation is
+  dispatching, but AdminLog at 17:30 SGT reports `Undefined subroutine
+  &Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure`
+  from `RiskMasterTicket.pm`. The Assessment 312 score fields were populated,
+  but it has only the governance-profile and ownership articles; parent 311
+  has six orchestration articles and no Framework calculation evidence.
+- Root cause: 0.0.70's `RiskMasterTicket.pm` invokes the evidence bridge and
+  the canonical BlueBook runtime contains the bridge and spawn hook, but the
+  authoritative SOPM payload is
+  `var/governancedb/runtime_overlay/Kernel/System/ZTSMBlueBookRuntime.pm`.
+  That packaged overlay omitted both changes. The 0.0.70 OPM correctly
+  embedded the stale overlay that SOPM named; comparing only generated OPM
+  payloads to their listed SOPM paths did not catch the divergence from the
+  canonical runtime source.
+- Added the evidence spawn hook and bridge to the packaged runtime overlay,
+  with regression checks against the overlay file. Incremented SOPM to
+  TESSERA-Base 0.0.71 and rebuilt `Kernel/Package/TESSERA-Base-0.0.71.opm`.
+  All 288 OPM payloads match the SOPM files, including the now-present bridge;
+  its SHA256 is
+  `29DE9C362B6B61D5403F0D2164F7DF4C6AE0C0E7DE9313A03F0291B2F845CB6E`.
+  Focused risk scoring, outcome, origin merge, and risk master mapping tests
+  pass (98 assertions). After commit, install 0.0.71 and verify the
+  Framework-authored article separately on existing Assessment 312 and parent
+  SR 311 before submission.
+- Scheduler is active (it attempted RiskMasterTicket repeatedly); unrelated
+  recurring `ScheduleDays is invalid!` messages continue. The user-requested
+  GitHub commit `5b7c7ec` contains 0.0.70 and Framework YAML, but does not yet
+  contain this live-discovered packaging correction.
+
 ## 2026-10-02 Framework-authored pre-assessment evidence — 0.0.70 prepared
 
 - The user clarified that the Framework owner must control the automatic
