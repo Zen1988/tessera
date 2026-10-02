@@ -22,6 +22,10 @@ die $@ if $@;
         my ($Value) = @_;
         return ref $Value eq 'HASH' && scalar keys %{$Value};
     };
+    *{'Kernel::Modules::CustomerTicketZTSMAction::IsArrayRefWithData'} = sub {
+        my ($Value) = @_;
+        return ref $Value eq 'ARRAY' && scalar @{$Value};
+    };
 }
 
 {
@@ -104,7 +108,7 @@ our $Engine = {
 
 our %GO = (
     1597 => { Class => 'Framework', Name => 'Application Risk Management', 'DynamicField_ZRM-RiskScoringEngine' => 'test YAML' },
-    201 => { Class => 'Environment', ClassID => 380, 'DynamicField_ZRM-ImpactFactor' => '0.8',
+    201 => { Class => 'Environment', Name => 'Criticality profile', ClassID => 380, 'DynamicField_ZRM-ImpactFactor' => '0.8',
         'DynamicField_ZRM-LikelihoodFactor' => '0.5' },
     500 => { Class => 'Application', 'DynamicField_ZTSMAppSystem-CriticalityProfile' => [201] },
 );
@@ -187,6 +191,61 @@ $Action->_RiskAssessmentRowScoresApply( Rows => [$AdjustedRow] );
 is( $AdjustedRow->{'ZRM-InherentCalculatedRisk'}, '12', 'server derives 3 x 4 instead of accepting the stale Framework score' );
 $Evidence = $Action->_RiskAssessmentFrameworkEvidenceHTML( Row => $AdjustedRow );
 like( $Evidence, qr/Application Risk Management: likelihood 3 x 0\.5 = 2; impact 3; score 6; selected 3 x 4 = 12/, 'Framework YAML formats the suggested and submitted calculation' );
+$Engine->{EVIDENCE} = {
+    'FACTOR FORMAT' => '{object}: likelihood {raw_likelihood} -> {normalized_likelihood}; impact {raw_impact} -> {normalized_impact}',
+    ARTICLE => {
+        SUBJECT => 'Scoring proof: {framework_name} for {context}',
+        TITLE => 'Reproduce this risk score',
+        FORMAT => join( "\n",
+            'Rule: {factor_rule}',
+            'Factor: {factor_lines}',
+            'Likelihood = ceil({base_likelihood} x {likelihood_factor_chain}) = ceil({likelihood_adjusted}) = {framework_likelihood}.',
+            'Impact = ceil({base_impact} x {impact_factor_chain}) = ceil({impact_adjusted}) = {framework_impact}.',
+            'Framework = {framework_likelihood} x {framework_impact} = {framework_score}.',
+            'Submitted = {submitted_likelihood} x {submitted_impact} = {submitted_score}.',
+        ),
+    },
+};
+$Rows = $Action->_RiskAssessmentOriginScoresEvaluate( Risk => $Risk, Statement => $Statement );
+my $Proof = $Action->_RiskAssessmentFrameworkEvidenceArticle( Row => $AdjustedRow );
+is( $Proof->{Subject}, 'Scoring proof: Application Risk Management for Application 500',
+    'Framework YAML authors the separate article subject' );
+like( $Proof->{Body}, qr/Reproduce this risk score.*Rule: zero -&gt; 1/s,
+    'Framework YAML authors the article title and normalization rule' );
+like( $Proof->{Body}, qr/Criticality profile: likelihood 0\.5 -&gt; 0\.5/s,
+    'Framework YAML authors the per-factor line' );
+like( $Proof->{Body}, qr/Likelihood = ceil\(3 x 0\.5\) = ceil\(1\.5\) = 2\./,
+    'article exposes reproducible multiplication and rounding' );
+like( $Proof->{Body}, qr/Submitted = 3 x 4 = 12\./,
+    'article distinguishes the assessor selection from the Framework suggestion' );
+eval { Kernel::Modules::CustomerTicketZTSMAction::_RiskAssessmentEvidenceConfigValidate( { ARTICLE => {
+    SUBJECT => '{unknown}', FORMAT => 'body',
+} } ) };
+like( $@, qr/unknown placeholder/, 'unknown authored article placeholders fail closed' );
+{
+    no warnings 'redefine';
+    my @Created;
+    local *Kernel::Modules::CustomerTicketZTSMAction::_RiskAssessmentArticleBody = sub { return '<p>matrix</p>' };
+    local *Kernel::Modules::CustomerTicketZTSMAction::_RiskAssessmentSummaryArticleBody = sub { return '<p>summary</p>' };
+    local *Kernel::Modules::CustomerTicketZTSMAction::_RuntimeArticleCreate = sub {
+        my ( $Self, %Param ) = @_;
+        push @Created, { %Param };
+        return 1;
+    };
+    local *Kernel::Modules::CustomerTicketZTSMAction::_RuntimeParentSubmissionArticleCreate = sub {
+        my ( $Self, %Param ) = @_;
+        push @Created, { %Param, Parent => 1 };
+        return 1;
+    };
+    $Action->_RiskAssessmentArticlesCreate(
+        TicketID => 309, Ticket => { 'DynamicField_ZTicket-Parent' => [308] },
+        Rows => [$AdjustedRow], Config => { Article => 1 }, CustomerPanelUserID => 1,
+    );
+    is( scalar @Created, 6, 'matrix, Framework proof, and summary each write to child and parent' );
+    is( $Created[2]->{Subject}, $Proof->{Subject}, 'child proof uses the Framework-authored subject' );
+    is( $Created[3]->{Subject}, $Proof->{Subject}, 'parent proof uses the same authored subject' );
+    ok( $Created[3]->{PreserveSubject}, 'parent proof preserves the authored subject' );
+}
 eval { $Action->_RiskAssessmentRowScoresApply( Rows => [ { %{$AdjustedRow}, 'ZRM-InherentImpact' => [9999] } ] ) };
 like( $@, qr/not a valid 1-5 catalog selection/, 'server rejects an invalid catalog dimension' );
 is( $Action->_RiskAssessmentFrameworkEvidenceHTML(

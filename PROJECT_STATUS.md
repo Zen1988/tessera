@@ -1,5 +1,29 @@
 # TESSERA Project Status
 
+## 2026-10-02 Framework-authored standalone calculation article — 0.0.69 prepared
+
+- The user clarified that reviewers must be able to reproduce each dimension
+  from Framework inputs and that the Framework owner must author the article
+  text. The existing 0.0.68 `EVIDENCE.FORMAT` appended a calculation paragraph
+  below the matrix; its subject, heading, and per-factor wording were fixed.
+- Added optional `EVIDENCE.FACTOR FORMAT` and `EVIDENCE.ARTICLE` with authored
+  `SUBJECT`, `TITLE`, and `FORMAT`. The runtime supplies the raw and normalized
+  factor values, factor rule, full multiplication chains, adjusted decimals,
+  rounded catalog dimensions, Framework suggestion, and submitted selection.
+  When `ARTICLE` is present, it creates a distinct HTML evidence article on
+  both the Assessment child and parent ServiceRequest, preserving the authored
+  subject; the matrix article remains separate. Existing `EVIDENCE.FORMAT`
+  continues to render inline for Frameworks that have not opted in.
+- Invalid placeholders fail validation. Submission fails before writing
+  Assessment fields if configured proof cannot be prepared for its originating
+  Risk row. Updated the Application and Asset Framework scoring YAML examples.
+  Existing article snapshots, including Assessment 309, are not rewritten.
+- Built `Kernel/Package/TESSERA-Base-0.0.69.opm` (288 payloads, SHA256
+  `734DBDFD772519FAEE52DFBC6CF771CDF000EF69E29C6FD8B902BBA42F73658D`).
+  Focused scoring tests 29, outcome tests 26, template merge tests 21, and
+  Perl syntax check pass. Live installation, Framework YAML updates, and a new
+  Assessment submission remain pending.
+
 ## 2026-10-02 Assessment 309 scoring evidence verified live
 
 - Eugene Low submitted Assessment 309 (`ICAT-TI-20260000026`) at 14:28 SGT.

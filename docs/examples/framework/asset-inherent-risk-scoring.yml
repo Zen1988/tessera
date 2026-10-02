@@ -1,6 +1,3 @@
-# Intended destination: Framework.ZRM-RiskScoringEngine.
-# Assessment follows ZTicket-Parent to the ServiceRequest, then its ZRM-OriginatedEvent.
-# Risk and RiskStatement must select this same Framework through MELT-RMF and ZRM-RMF.
 VERSION: 1
 ASSESSMENT: INHERENT
 APPLIES TO:
@@ -55,14 +52,19 @@ CALCULATE:
   INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD
 
 EVIDENCE:
-  FORMAT: |
-    {framework_name} (version {framework_version}) calculated inherent risk for {context}.
-    Referenced profile factors (raw -> normalized):
-    {factor_lines}
-    Likelihood: base {base_likelihood} x {likelihood_factor_chain} = {likelihood_adjusted}; rounded up to catalog value {framework_likelihood}.
-    Impact: base {base_impact} x {impact_factor_chain} = {impact_adjusted}; rounded up to catalog value {framework_impact}.
-    Framework inherent score: {framework_likelihood} x {framework_impact} = {framework_score}.
-    Submitted selection: {submitted_likelihood} x {submitted_impact} = {submitted_score}.
+  FACTOR FORMAT: '{reference} ({object}): impact raw {raw_impact} -> effective {normalized_impact}; likelihood raw {raw_likelihood} -> effective {normalized_likelihood}'
+  ARTICLE:
+    SUBJECT: 'Risk score: {framework_name} / {context}'
+    TITLE: 'Framework calculation log'
+    FORMAT: |
+      {framework_name} version {framework_version} scored {context}.
+      Factor rule: {factor_rule}.
+      Referenced profiles (raw -> effective):
+      {factor_lines}
+      Likelihood = ceil({base_likelihood} x {likelihood_factor_chain}) = ceil({likelihood_adjusted}) = {framework_likelihood}.
+      Impact = ceil({base_impact} x {impact_factor_chain}) = ceil({impact_adjusted}) = {framework_impact}.
+      Framework suggestion = {framework_likelihood} x {framework_impact} = {framework_score}.
+      Assessor selection = {submitted_likelihood} x {submitted_impact} = {submitted_score}.
 
 ASSESSMENT RESULT:
   TICKET TYPE: Assessment
@@ -73,24 +75,3 @@ ASSESSMENT RESULT:
   RISK STATEMENT VALUE: CURRENT RISK STATEMENT
   SCORE FIELD: ZRM-InherentCalculatedRisk
   SCORE VALUE: CALCULATE.INHERENT RISK
-
-# Resolve base GeneralCatalog values by their numeric names, never their IDs.
-# The score is calculated once per affected asset and RiskStatement. Repeated
-# failures of Controls guarding the same statement add evidence, not factors.
-# Multiple linked statements produce separate Risks and assessment rows.
-# An empty reference set, wrong class, unresolved reference or missing/invalid
-# base score is a calculation error, never a reason to choose another statement.
-# A factor of 0 or above 1 is neutralized to 1; only values greater than 0 and
-# below 1 reduce risk. Negative and nonnumeric factors are errors. A missing
-# optional asset reference or blank factor contributes 1, but a broken populated
-# reference is an error. Record raw and normalized inputs with the Framework version.
-# With base dimensions at most 5 and normalized factors at most 1, inherent
-# impact and likelihood stay at most 5, and inherent risk stays at most 25.
-# Application has no direct risk factor. This program resolves four Application
-# profiles separately. Platform's own calculation remains deferred.
-# The score belongs to a row on the Assessment ticket, not to the MELT Risk.
-# Factor-adjusted dimensions are rounded up to the 1-5 GeneralCatalog values
-# stored in ZRM-InherentLikelihood and ZRM-InherentImpact. The score is their
-# integer product. The server recalculates all three values on submission.
-# ZRM-RiskStatement is single-value per row, matching this design.
-# Residual risk and mitigation controls will be specified in a later version.

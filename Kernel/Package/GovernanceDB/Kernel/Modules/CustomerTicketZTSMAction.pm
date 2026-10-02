@@ -1250,6 +1250,19 @@ sub Run {
             );
         }
 
+        if ( IsHashRefWithData( ( $Self->{RiskAssessmentEvidenceConfig} || {} )->{ARTICLE} ) ) {
+            for my $Row ( @{$Rows} ) {
+                next if !IsHashRefWithData($Row);
+                next if ( _NormalizeValue( $Row->{'ZRM-RiskStatement'} ) || '' )
+                    ne ( $Self->{RiskAssessmentSourceStatementID} || '' );
+                if ( !IsHashRefWithData( $Self->_RiskAssessmentFrameworkEvidenceArticle( Row => $Row ) ) ) {
+                    return $LayoutObject->CustomerErrorScreen(
+                        Message => 'The Framework calculation evidence could not be prepared. Please refresh the Assessment before submitting.',
+                    );
+                }
+            }
+        }
+
         my $RiskAssessmentSet = $Self->_TicketDynamicFieldSet(
             FieldName => 'ZRM-RiskAssessment',
             TicketID  => $TicketID,
@@ -4514,10 +4527,11 @@ sub _RuntimeParentSubmissionArticleCreate {
     my $Config      = $Param{Config} || {};
     my $ContentType = $Config->{ContentType} || 'text/plain; charset=utf-8';
     my $Body        = $Param{Body} || '';
-    my $Subject     = $Self->_RuntimeParentSubmissionSubject(
-        %Param,
-        ContentType => $ContentType,
-    );
+    my $Subject     = $Param{PreserveSubject} ? ( $Param{Subject} || '' )
+        : $Self->_RuntimeParentSubmissionSubject(
+            %Param,
+            ContentType => $ContentType,
+        );
 
     return $Self->_RuntimeArticleCreate(
         %Param,
@@ -6052,6 +6066,7 @@ sub _RiskAssessmentOriginScoresEvaluate {
     $Self->{RiskAssessmentFrameworkName} = $Framework->{Name} || $Framework->{Number} || "Framework $FrameworkID";
     $Self->{RiskAssessmentFrameworkVersion} = _NormalizeValue( $Framework->{'DynamicField_ZRM-Version'} ) || '';
     $Self->{RiskAssessmentEvidenceConfig} = $Engine->{EVIDENCE};
+    $Self->{RiskAssessmentFactorRule} = $Engine->{'FACTOR RULE'};
     _RiskAssessmentEvidenceConfigValidate( $Engine->{EVIDENCE} );
     die "Unsupported Framework calculation.\n"
         if ( $Engine->{CALCULATE}->{'INHERENT IMPACT'} || '' ) ne 'CEIL(BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR RULE)))'
@@ -6789,6 +6804,26 @@ sub _RiskAssessmentArticlesCreate {
             Config              => $ArticleConfig,
             CustomerPanelUserID => $Param{CustomerPanelUserID},
         );
+
+        my $Evidence = $Self->_RiskAssessmentFrameworkEvidenceArticle( Row => $Row );
+        if ( IsHashRefWithData($Evidence) ) {
+            $Self->_RuntimeArticleCreate(
+                TicketID            => $Param{TicketID},
+                Body                => $Evidence->{Body},
+                Subject             => $Evidence->{Subject},
+                Config              => $ArticleConfig,
+                CustomerPanelUserID => $Param{CustomerPanelUserID},
+            );
+            $Self->_RuntimeParentSubmissionArticleCreate(
+                Ticket              => $Param{Ticket},
+                RuntimeAction       => 'Assess',
+                Body                => $Evidence->{Body},
+                Subject             => $Evidence->{Subject},
+                PreserveSubject     => 1,
+                Config              => $ArticleConfig,
+                CustomerPanelUserID => $Param{CustomerPanelUserID},
+            );
+        }
     }
 
     my $SummaryBody = $Self->_RiskAssessmentSummaryArticleBody(%Param);
@@ -6895,22 +6930,70 @@ sub _RiskAssessmentArticleBody {
         . _RiskAssessmentArticleCell( 'RiskTarget - GO', $Value{'ZRM-RiskTargetGO'}, 6 )
         . '</tr>'
         . '</table>'
-        . $Self->_RiskAssessmentFrameworkEvidenceHTML( Row => $Row )
+        . ( IsHashRefWithData( ( $Self->{RiskAssessmentEvidenceConfig} || {} )->{ARTICLE} )
+            ? '' : $Self->_RiskAssessmentFrameworkEvidenceHTML( Row => $Row ) )
         . '</div>';
+}
+
+sub _RiskAssessmentFrameworkEvidenceArticle {
+    my ( $Self, %Param ) = @_;
+
+    my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
+    return if !IsHashRefWithData( $Config->{ARTICLE} );
+    my $Body = $Self->_RiskAssessmentFrameworkEvidenceHTML( Row => $Param{Row} );
+    return if !$Body;
+    my $Subject = $Self->_RiskAssessmentEvidenceText(
+        Row    => $Param{Row},
+        Format => $Config->{ARTICLE}->{SUBJECT},
+    );
+    $Subject =~ s{[\r\n]+}{ }g;
+    $Subject =~ s{\A\s+|\s+\z}{}g;
+    return if !$Subject;
+    return { Subject => $Subject, Body => $Body };
 }
 
 sub _RiskAssessmentFrameworkEvidenceHTML {
     my ( $Self, %Param ) = @_;
 
+    my $Value = $Self->_RiskAssessmentEvidenceValues( Row => $Param{Row} );
+    return '' if !IsHashRefWithData($Value);
+    my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
+    my $Article = $Config->{ARTICLE} || {};
+    my $Format = $Article->{FORMAT} || $Config->{FORMAT} || join "\n",
+        '{framework_name} version {framework_version} calculated the inherent risk for {context}.',
+        'Factors: {factor_lines}',
+        'Likelihood: {base_likelihood} x {likelihood_factor_product} = {likelihood_adjusted}; rounded up to {framework_likelihood}.',
+        'Impact: {base_impact} x {impact_factor_product} = {impact_adjusted}; rounded up to {framework_impact}.',
+        'Framework inherent score: {framework_likelihood} x {framework_impact} = {framework_score}.',
+        'Submitted selection: {submitted_likelihood} x {submitted_impact} = {submitted_score}.';
+    my $Title = $Article->{TITLE} || 'Framework calculation evidence';
+    my $HTML = _HTML( _RiskAssessmentEvidenceFormat( Format => $Format, Values => $Value ) );
+    $HTML =~ s{\r?\n}{<br />}g;
+    return '<p><strong>' . _HTML($Title) . '</strong><br />' . $HTML . '</p>';
+}
+
+sub _RiskAssessmentEvidenceText {
+    my ( $Self, %Param ) = @_;
+    my $Value = $Self->_RiskAssessmentEvidenceValues( Row => $Param{Row} );
+    return '' if !IsHashRefWithData($Value);
+    return _RiskAssessmentEvidenceFormat( Format => $Param{Format}, Values => $Value );
+}
+
+sub _RiskAssessmentEvidenceValues {
+    my ( $Self, %Param ) = @_;
+
     my $Row = $Param{Row};
-    return '' if !IsHashRefWithData($Row);
-    return '' if ( _NormalizeValue( $Row->{'ZRM-RiskStatement'} ) || '' )
+    return if !IsHashRefWithData($Row);
+    return if ( _NormalizeValue( $Row->{'ZRM-RiskStatement'} ) || '' )
         ne ( $Self->{RiskAssessmentSourceStatementID} || '' );
     my $ScoreKey = _RiskAssessmentScoreKey($Row);
     my $Breakdown = $ScoreKey && $Self->{RiskAssessmentFrameworkBreakdown}
         ? $Self->{RiskAssessmentFrameworkBreakdown}->{$ScoreKey} : undef;
-    return '' if !IsHashRefWithData($Breakdown);
+    return if !IsHashRefWithData($Breakdown);
 
+    my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
+    my $FactorFormat = $Config->{'FACTOR FORMAT'} ||
+        '{reference} ({object}): impact {raw_impact} -> {normalized_impact}; likelihood {raw_likelihood} -> {normalized_likelihood}';
     my @FactorLines;
     my ( @ImpactChain, @LikelihoodChain );
     for my $Factor ( @{ $Breakdown->{FactorEvidence} || [] } ) {
@@ -6919,14 +7002,19 @@ sub _RiskAssessmentFrameworkEvidenceHTML {
         my $Likelihood = _RiskAssessmentScoreFormat( $Factor->{Likelihood} );
         push @ImpactChain, $Impact;
         push @LikelihoodChain, $Likelihood;
-        push @FactorLines, ( $Factor->{Reference} || '' ) . ' (' . ( $Factor->{Object} || '' ) . '): impact '
-            . ( defined $Factor->{RawImpact} && $Factor->{RawImpact} ne '' ? $Factor->{RawImpact} : 'missing' )
-            . " -> $Impact; likelihood "
-            . ( defined $Factor->{RawLikelihood} && $Factor->{RawLikelihood} ne '' ? $Factor->{RawLikelihood} : 'missing' )
-            . " -> $Likelihood";
+        my %FactorValue = (
+            reference => $Factor->{Reference} || '',
+            object => $Factor->{Object} || '',
+            raw_impact => defined $Factor->{RawImpact} && $Factor->{RawImpact} ne '' ? $Factor->{RawImpact} : 'missing',
+            normalized_impact => $Impact,
+            raw_likelihood => defined $Factor->{RawLikelihood} && $Factor->{RawLikelihood} ne '' ? $Factor->{RawLikelihood} : 'missing',
+            normalized_likelihood => $Likelihood,
+        );
+        push @FactorLines, _RiskAssessmentEvidenceFormat( Format => $FactorFormat, Values => \%FactorValue );
     }
     my $SubmittedLikelihood = _RiskAssessmentCatalogNumber( $Row->{'ZRM-InherentLikelihood'} );
     my $SubmittedImpact = _RiskAssessmentCatalogNumber( $Row->{'ZRM-InherentImpact'} );
+    my $Rule = $Self->{RiskAssessmentFactorRule} || {};
     my %Value = (
         framework_name => $Self->{RiskAssessmentFrameworkName} || 'Framework ' . ( $Self->{RiskAssessmentFrameworkID} || '' ),
         framework_version => $Self->{RiskAssessmentFrameworkVersion} || 'unspecified',
@@ -6946,19 +7034,20 @@ sub _RiskAssessmentFrameworkEvidenceHTML {
         submitted_impact => defined $SubmittedImpact ? $SubmittedImpact : '',
         submitted_likelihood => defined $SubmittedLikelihood ? $SubmittedLikelihood : '',
         submitted_score => $Row->{'ZRM-InherentCalculatedRisk'} || '',
+        factor_rule => 'zero -> ' . ( $Rule->{'WHEN ZERO'} // 1 )
+            . '; above one -> ' . ( $Rule->{'WHEN ABOVE ONE'} // 1 )
+            . '; missing -> ' . ( $Rule->{'WHEN MISSING'} // 1 )
+            . '; negative or nonnumeric -> error',
     );
-    my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
-    my $Format = $Config->{FORMAT} || join "\n",
-        '{framework_name} version {framework_version} calculated the inherent risk for {context}.',
-        'Factors: {factor_lines}',
-        'Likelihood: {base_likelihood} x {likelihood_factor_product} = {likelihood_adjusted}; rounded up to {framework_likelihood}.',
-        'Impact: {base_impact} x {impact_factor_product} = {impact_adjusted}; rounded up to {framework_impact}.',
-        'Framework inherent score: {framework_likelihood} x {framework_impact} = {framework_score}.',
-        'Submitted selection: {submitted_likelihood} x {submitted_impact} = {submitted_score}.';
-    $Format =~ s{\{([a-z_]+)\}}{defined $Value{$1} ? $Value{$1} : ''}ge;
-    my $HTML = _HTML($Format);
-    $HTML =~ s{\r?\n}{<br />}g;
-    return '<p><strong>Framework calculation evidence</strong><br />' . $HTML . '</p>';
+    return \%Value;
+}
+
+sub _RiskAssessmentEvidenceFormat {
+    my (%Param) = @_;
+    my $Format = $Param{Format} || '';
+    my $Value = $Param{Values} || {};
+    $Format =~ s{\{([a-z_]+)\}}{defined $Value->{$1} ? $Value->{$1} : ''}ge;
+    return $Format;
 }
 
 sub _RiskAssessmentEvidenceConfigValidate {
@@ -6969,12 +7058,37 @@ sub _RiskAssessmentEvidenceConfigValidate {
         framework_name framework_version context factor_lines impact_factor_chain likelihood_factor_chain
         base_impact base_likelihood impact_factor_product likelihood_factor_product impact_adjusted likelihood_adjusted
         framework_impact framework_likelihood framework_score submitted_impact submitted_likelihood submitted_score
+        factor_rule
     );
-    die "Framework EVIDENCE FORMAT must be text up to 4000 characters.\n"
-        if ref $Config->{FORMAT} || ( defined $Config->{FORMAT} && length( $Config->{FORMAT} ) > 4000 );
-    my $Format = $Config->{FORMAT} || '';
-    while ( $Format =~ m{\{([^{}]+)\}}g ) {
-        die "Framework EVIDENCE uses an unknown placeholder '$1'.\n" if !$Allowed{$1};
+    my %FactorAllowed = map { $_ => 1 } qw(
+        reference object raw_impact normalized_impact raw_likelihood normalized_likelihood
+    );
+    my $Article = $Config->{ARTICLE};
+    die "Framework EVIDENCE ARTICLE must be a YAML mapping.\n"
+        if defined $Article && ref $Article ne 'HASH';
+    if ($Article) {
+        my %ArticleAllowed = map { $_ => 1 } qw(SUBJECT TITLE FORMAT);
+        for my $Key ( keys %{$Article} ) {
+            die "Unsupported Framework EVIDENCE ARTICLE key '$Key'.\n" if !$ArticleAllowed{$Key};
+        }
+        die "Framework EVIDENCE ARTICLE requires SUBJECT and FORMAT.\n"
+            if !$Article->{SUBJECT} || !$Article->{FORMAT};
+    }
+    for my $Entry (
+        [ 'FORMAT', $Config->{FORMAT}, 4000, \%Allowed ],
+        [ 'FACTOR FORMAT', $Config->{'FACTOR FORMAT'}, 500, \%FactorAllowed ],
+        [ 'ARTICLE SUBJECT', $Article ? $Article->{SUBJECT} : undef, 200, \%Allowed ],
+        [ 'ARTICLE TITLE', $Article ? $Article->{TITLE} : undef, 200, {} ],
+        [ 'ARTICLE FORMAT', $Article ? $Article->{FORMAT} : undef, 4000, \%Allowed ],
+    ) {
+        my ( $Label, $Format, $Limit, $Placeholders ) = @{$Entry};
+        die "Framework EVIDENCE $Label must be text up to $Limit characters.\n"
+            if ref $Format || ( defined $Format && length($Format) > $Limit );
+        next if !defined $Format;
+        while ( $Format =~ m{\{([^{}]+)\}}g ) {
+            die "Framework EVIDENCE $Label uses an unknown placeholder '$1'.\n"
+                if !$Placeholders->{$1};
+        }
     }
     return 1;
 }
