@@ -1,5 +1,39 @@
 # TESSERA Project Status
 
+## 2026-10-02 Framework-authored pre-assessment evidence — 0.0.70 prepared
+
+- The user clarified that the Framework owner must control the automatic
+  calculation evidence in YAML. Added `EVIDENCE.AUTOMATION ARTICLE` separate
+  from the post-assessment `EVIDENCE.ARTICLE`; both subject, title and body are
+  placeholders/configuration from the selected Framework. Runtime code only
+  evaluates placeholders and writes the article; it does not author a fixed
+  calculation narrative.
+- BlueBook child-ticket orchestration writes the calculation article when an
+  Assessment is created. Risk master reconciliation also backfills an existing
+  Assessment, so Assessment 312 can be evidenced after package installation.
+  The write is idempotent by configured subject and creates one article on the
+  Assessment and one on its parent ServiceRequest. The result matrix and later
+  assessor submission article remain separate.
+- Article YAML now includes Risk Statement base likelihood/impact, referenced
+  factor values raw and normalized, both factor multiplication chains, the
+  adjusted decimals, ceiling to the GeneralCatalog dimension, and the initial
+  inherent product. This makes a result such as `ceil(3 × 0.8) = ceil(2.4) = 3`
+  reproducible. Application Framework 1597 retains its full readable format;
+  Asset Framework 1599 uses a compact format that fits the Dynamic Field's
+  3,800-character limit. Both live Framework editor saves were verified.
+- Synchronized the standalone Framework YAML examples and GovernanceObject
+  exports. Built `Kernel/Package/TESSERA-Base-0.0.70.opm` with 288 payloads;
+  every Base64 payload matches the SOPM source. Scoring/evidence tests (32),
+  outcome tests (26), and origin template merge tests (21) pass. The BlueBook
+  runtime and RiskMasterTicket Perl syntax checks pass. The CustomerTicket
+  module loads and executes in the scoring test harness; direct `perl -c`
+  requires OTOBO core modules not present in this development shell.
+- OTOBO still has 0.0.69 installed. Risk 21's pending parent ServiceRequest
+  311 and Assessment 312 have not yet been confirmed to contain the new
+  pre-assessment articles. Install 0.0.70, allow reconciliation to backfill,
+  then verify the separate articles on both tickets before engineer
+  submission. Do not submit Assessment 312 as part of that verification.
+
 ## 2026-10-02 Risk 21 reset for 0.0.69 calculation article test
 
 - OTOBO Package Manager confirmed TESSERA-Base 0.0.69 installed.

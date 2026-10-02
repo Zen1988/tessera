@@ -29,71 +29,34 @@
   every contributing Control in Risk activity evidence. Do not present it as a
   complete list of failed Controls.
 
-## Risk Calculation Framework - remaining live validation after 0.0.69 installation
+## Risk Calculation Framework - deployment and live verification
 
-- Submit fresh Assessment 312 under parent ServiceRequest 311. Confirm it
-  creates a distinct Framework-authored calculation article on child and
-  parent, with the configured subject and complete raw-factor-to-rounded-score
-  chain. The older submitted Assessment 309 was deleted for the reset.
-- 0.0.68 is installed and recalculates submitted inherent and residual scores
-  from selected 1-5 GeneralCatalog likelihood and impact values. Assessment
-  309's submitted article confirms the stored 3 x 4 = 12 result. The Framework
-  suggests dimension defaults; the submitted catalog selections determine the
-  stored product. Confirm the pre-submit display also updates when a selection
-  changes.
-- Framework 1597 and 1599 both have live `EVIDENCE.FORMAT` YAML, and their full
-  Governance as Code exports are in `docs/examples/framework/`. Assessment 309
-  and its parent ServiceRequest 308 both contain the YAML-formatted Application
-  Risk Management calculation evidence. Existing articles remain immutable.
-- 0.0.68 grants linked parent/sibling read access for members of an execution
-  ticket's support profile, without granting task action rights. Confirm Abdul
-  Malik can open the parent Assessment evidence and linked tickets, while
-  unrelated tickets remain inaccessible.
-- Repeated Assessment loads must not duplicate rows, and AdminLog must have no
-  new Assessment write failures.
-- Resolve the BlueBook child `CustomerID` propagation defect: Assessment 309's
-  agent view shows a blank CustomerID even though its customer user is
-  `tessera@ica.gov.sg` and parent SR 308 has CustomerID `ICA`.
-- Decide how to review or migrate historical per-asset EOSL Risks and when a
-  complete fresh scan may downgrade severity or remove recovered CI links.
-  The current grouped runtime preserves historical contribution and raises
-  severity only.
-
-- The older Application MAX rollup draft is superseded for EOSL. This scenario
-  scores once from Application context in its selected Framework, while linked
-  assets remain evidence on that one Assessment row. Do not activate the draft
-  aggregation YAML or infer that every Framework uses Application scope.
-
-- Record raw and normalized scoring inputs, Framework version, and contributing
-  Control provenance with the Assessment evidence. Define Platform's separate
-  contribution later; Application has no direct factor fields.
-- Residual scoring from mitigation Controls, scale bounds and rating thresholds
-  remain separate future decisions; the draft calculates inherent risk only.
-
-- Framework is a standalone reusable governance object, not an implicitly selected ancestor
-  of Policy. IM8 is the user's Policy example; calculation frameworks may address infrastructure,
-  applications, suppliers or other assessment subjects.
-- Policy defines requirements. ControlObjective references applicable Policies. The current
-  ZRM-Policy reference is multi-value; Policy-to-Framework linkage has not been verified and
-  must not be assumed to exist.
-- Framework defines required inputs, likelihood/impact scales, formula or matrix, rating
-  thresholds and applicable object types. No multiplication formula is assumed universally.
-- Objects may attach applicable frameworks. Attachment declares applicability.
-  For this EOSL design, RiskStatement's explicit Framework relation selects the
-  calculation; PolicyEvaluation supplies the execution context and inputs. Do
-  not choose a framework implicitly from Policy ancestry, reference ordering
-  or the first matching attachment.
-- Missing/ambiguous selected frameworks, incompatible object types and invalid inputs produce
-  a calculation error rather than a guessed score. Business formulas remain authored rules.
-- For the EOSL scenario, preserve one Application-and-RiskStatement Risk identity
-  and one Application assessment row, retaining input values, calculated results
-  and contributing Control provenance.
-  Different frameworks must not overwrite each other's scores. The new
-  Application scoring rule is scoped to its Framework and scenario; overall
-  aggregation across frameworks or unrelated scenarios remains undefined.
-- Define framework versioning and cross-Framework assessment storage. The
-  current 0.0.57 scorer supports the activated inherent YAML shape only.
-- Verify scheduled reconciliation independently of the successful Risk update hook, including one master SR per Risk on repeated dispatch.
+- 0.0.70 is built locally; OTOBO still has 0.0.69 installed. Obtain action-time
+  approval before uploading/installing the package.
+- After installation, allow scheduled Risk master reconciliation to backfill
+  Assessment 312. Verify the YAML-authored automatic calculation article on
+  Assessment 312 and parent ServiceRequest 311 before the engineer submits.
+  Confirm base dimensions, raw/effective factors, factor chains, adjusted
+  decimals, ceiling results, and Framework score are readable and separate from
+  the later assessment matrix/article.
+- Framework 1597 (Application Risk Management) scores once from the Application
+  context. Framework 1599 (Asset Risk Management) scores per applicable asset.
+  Both article templates are authored in their Framework's
+  `EVIDENCE.AUTOMATION ARTICLE` YAML. Keep the standalone scoring YAML and
+  GovernanceObject exports in `docs/examples/framework/` synchronized with the
+  live objects.
+- Confirm linked-ticket read access for Abdul Malik and other support-profile
+  participants while verifying they cannot perform another assignee's task.
+  Also check child ServiceRequest `CustomerID` propagation and AdminLog after
+  reconciliation.
+- Future methodology decisions: define Platform's separate factor
+  contribution, residual scoring from mitigation Controls and rating
+  thresholds, and how to migrate historical per-asset EOSL Risks or remove
+  recovered ConfigItems. Existing grouped runtime preserves historical
+  contribution and raises severity only.
+- Framework applicability and scoring formulas remain authored governance
+  rules. Do not infer a Framework from Policy ancestry or use the superseded
+  Application MAX aggregation draft.
 
 
 ## ControlObjective Evaluation - Deployment and Next Decisions

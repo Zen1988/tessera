@@ -54,6 +54,10 @@ CALCULATE:
 EVIDENCE:
   FORMAT: 'Legacy calculation: {framework_name} for {context}; {framework_likelihood} x {framework_impact} = {framework_score}.'
   FACTOR FORMAT: '{reference} ({object}): impact raw {raw_impact} -> effective {normalized_impact}; likelihood raw {raw_likelihood} -> effective {normalized_likelihood}'
+  AUTOMATION ARTICLE:
+    SUBJECT: 'Framework calculation: {framework_name} / {context}'
+    TITLE: 'Framework automatic calculation completed'
+    FORMAT: 'Framework {framework_name} v{framework_version}; base L{base_likelihood}, I{base_impact}; factors {factor_lines}; L=ceil({base_likelihood}x{likelihood_factor_chain})=ceil({likelihood_adjusted})={framework_likelihood}; I=ceil({base_impact}x{impact_factor_chain})=ceil({impact_adjusted})={framework_impact}; inherent score {framework_likelihood}x{framework_impact}={framework_score}.'
   ARTICLE:
     SUBJECT: 'Risk score: {framework_name} / {context}'
     TITLE: 'Framework calculation log'

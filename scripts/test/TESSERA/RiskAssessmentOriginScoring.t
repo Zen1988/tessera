@@ -193,6 +193,11 @@ $Evidence = $Action->_RiskAssessmentFrameworkEvidenceHTML( Row => $AdjustedRow )
 like( $Evidence, qr/Application Risk Management: likelihood 3 x 0\.5 = 2; impact 3; score 6; selected 3 x 4 = 12/, 'Framework YAML formats the suggested and submitted calculation' );
 $Engine->{EVIDENCE} = {
     'FACTOR FORMAT' => '{object}: likelihood {raw_likelihood} -> {normalized_likelihood}; impact {raw_impact} -> {normalized_impact}',
+    'AUTOMATION ARTICLE' => {
+        SUBJECT => 'Initial score: {framework_name} for {context}',
+        TITLE => 'Framework automatic calculation completed',
+        FORMAT => 'Initial likelihood {base_likelihood} x {likelihood_factor_chain} -> {framework_likelihood}; impact {base_impact} x {impact_factor_chain} -> {framework_impact}; score {framework_score}.',
+    },
     ARTICLE => {
         SUBJECT => 'Scoring proof: {framework_name} for {context}',
         TITLE => 'Reproduce this risk score',
@@ -208,6 +213,15 @@ $Engine->{EVIDENCE} = {
 };
 $Rows = $Action->_RiskAssessmentOriginScoresEvaluate( Risk => $Risk, Statement => $Statement );
 my $Proof = $Action->_RiskAssessmentFrameworkEvidenceArticle( Row => $AdjustedRow );
+my $AutomationProof = $Action->_RiskAssessmentFrameworkEvidenceArticle(
+    Row => { %{ $Rows->[0] }, 'ZRM-RiskStatement' => [630] }, Automation => 1,
+);
+is( $AutomationProof->{Subject}, 'Initial score: Application Risk Management for Application 500',
+    'Framework authors the pre-assessment automation subject' );
+like( $AutomationProof->{Body}, qr/Initial likelihood 3 x 0\.5 -&gt; 2; impact 3 x 0\.8 -&gt; 3; score 6\./,
+    'automation article records factor chains before assessor submission' );
+unlike( $AutomationProof->{Body}, qr/Submitted|Assessor selection/,
+    'automation article does not claim an assessor has submitted a score' );
 is( $Proof->{Subject}, 'Scoring proof: Application Risk Management for Application 500',
     'Framework YAML authors the separate article subject' );
 like( $Proof->{Body}, qr/Reproduce this risk score.*Rule: zero -&gt; 1/s,

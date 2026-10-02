@@ -141,6 +141,15 @@ sub _EnsureLocked {
             ApplicationID => $ApplicationID,
             ServiceID => $ServiceID,
         );
+        my @Assessments = $TicketObject->TicketSearch(
+            Result => 'ARRAY', Limit => 100, Types => ['Assessment'],
+            'DynamicField_ZTicket-Parent' => { Equals => $Existing[0] },
+            UserID => 1, Permission => 'ro',
+        );
+        require Kernel::System::ZTSMBlueBookRuntime;
+        Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure(
+            TicketID => $_,
+        ) for @Assessments;
         return 1;
     }
 

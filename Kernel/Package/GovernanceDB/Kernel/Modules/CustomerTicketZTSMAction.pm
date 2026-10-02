@@ -11,7 +11,7 @@ use warnings;
 use Scalar::Util qw(looks_like_number);
 use POSIX qw(ceil);
 
-use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand);
+use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand ZTSMArticleCreate);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMServiceLibrarian ();
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMStateBookReader ();
@@ -5770,6 +5770,58 @@ sub _RiskAssessmentTemplateHydrateIfEmpty {
     return $Self->_RiskAssessmentOriginMerge( Ticket => $Ticket );
 }
 
+# Called by BlueBook orchestration and by reconciliation for a previously
+# created Assessment. The article is an immutable snapshot of the Framework's
+# initial suggestion; later assessor decisions have their own articles.
+sub RiskAssessmentAutomationEvidenceEnsure {
+    my ( $Self, %Param ) = @_;
+    my $TicketID = $Param{TicketID} || return;
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID => $TicketID, DynamicFields => 1, UserID => 1, Silent => 1,
+    );
+    return 1 if !%Ticket || ( $Ticket{Type} || '' ) ne 'Assessment';
+    return 1 if ( $Ticket{StateType} || '' ) eq 'closed';
+    my $ParentID = _RiskAssessmentSingleID( $Ticket{'DynamicField_ZTicket-Parent'} ) || return 1;
+
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+
+    $Self->_RiskAssessmentTemplateHydrateIfEmpty( Ticket => \%Ticket );
+    die "Framework automatic Assessment scoring failed: $Self->{RiskAssessmentScoringError}\n"
+        if $Self->{RiskAssessmentScoringError};
+    my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
+    return 1 if !IsHashRefWithData( $Config->{'AUTOMATION ARTICLE'} );
+    my $Rows = $Self->_RiskAssessmentRowsGet( TicketID => $TicketID );
+    die "Framework automatic Assessment has no Risk row.\n" if !IsArrayRefWithData($Rows);
+
+    for my $Row ( @{$Rows} ) {
+        next if !IsHashRefWithData($Row);
+        next if ( _NormalizeValue( $Row->{'ZRM-RiskStatement'} ) || '' )
+            ne ( $Self->{RiskAssessmentSourceStatementID} || '' );
+        my $Evidence = $Self->_RiskAssessmentFrameworkEvidenceArticle(
+            Row => $Row, Automation => 1,
+        );
+        die "Framework automatic calculation evidence could not be prepared.\n"
+            if !IsHashRefWithData($Evidence);
+        my $Subject = $Evidence->{Subject};
+        for my $TargetID ( $TicketID, $ParentID ) {
+            my @Articles = $ArticleObject->ArticleList( TicketID => $TargetID );
+            my @Subjects = map {
+                my %Article = $ArticleObject->BackendForArticle( %{$_} )->ArticleGet( %{$_} );
+                $Article{Subject} || '';
+            } @Articles;
+            next if grep { $_ eq $Subject } @Subjects;
+            die "Framework automatic calculation article could not be created for ticket $TargetID.\n"
+                if !ZTSMArticleCreate(
+                    TicketID => $TargetID, UserID => 1,
+                    Subject => $Subject, Body => $Evidence->{Body},
+                    ContentType => 'text/html; charset=utf-8',
+                    HistoryComment => 'TESSERA: Framework automatic calculation',
+                );
+        }
+    }
+    return 1;
+}
+
 sub _RiskAssessmentOriginMerge {
     my ( $Self, %Param ) = @_;
 
@@ -6939,12 +6991,13 @@ sub _RiskAssessmentFrameworkEvidenceArticle {
     my ( $Self, %Param ) = @_;
 
     my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
-    return if !IsHashRefWithData( $Config->{ARTICLE} );
-    my $Body = $Self->_RiskAssessmentFrameworkEvidenceHTML( Row => $Param{Row} );
+    my $Article = $Param{Automation} ? $Config->{'AUTOMATION ARTICLE'} : $Config->{ARTICLE};
+    return if !IsHashRefWithData($Article);
+    my $Body = $Self->_RiskAssessmentFrameworkEvidenceHTML( Row => $Param{Row}, Automation => $Param{Automation} );
     return if !$Body;
     my $Subject = $Self->_RiskAssessmentEvidenceText(
         Row    => $Param{Row},
-        Format => $Config->{ARTICLE}->{SUBJECT},
+        Format => $Article->{SUBJECT},
     );
     $Subject =~ s{[\r\n]+}{ }g;
     $Subject =~ s{\A\s+|\s+\z}{}g;
@@ -6958,7 +7011,7 @@ sub _RiskAssessmentFrameworkEvidenceHTML {
     my $Value = $Self->_RiskAssessmentEvidenceValues( Row => $Param{Row} );
     return '' if !IsHashRefWithData($Value);
     my $Config = $Self->{RiskAssessmentEvidenceConfig} || {};
-    my $Article = $Config->{ARTICLE} || {};
+    my $Article = ( $Param{Automation} ? $Config->{'AUTOMATION ARTICLE'} : $Config->{ARTICLE} ) || {};
     my $Format = $Article->{FORMAT} || $Config->{FORMAT} || join "\n",
         '{framework_name} version {framework_version} calculated the inherent risk for {context}.',
         'Factors: {factor_lines}',
@@ -7064,6 +7117,7 @@ sub _RiskAssessmentEvidenceConfigValidate {
         reference object raw_impact normalized_impact raw_likelihood normalized_likelihood
     );
     my $Article = $Config->{ARTICLE};
+    my $AutomationArticle = $Config->{'AUTOMATION ARTICLE'};
     die "Framework EVIDENCE ARTICLE must be a YAML mapping.\n"
         if defined $Article && ref $Article ne 'HASH';
     if ($Article) {
@@ -7074,12 +7128,25 @@ sub _RiskAssessmentEvidenceConfigValidate {
         die "Framework EVIDENCE ARTICLE requires SUBJECT and FORMAT.\n"
             if !$Article->{SUBJECT} || !$Article->{FORMAT};
     }
+    die "Framework EVIDENCE AUTOMATION ARTICLE must be a YAML mapping.\n"
+        if defined $AutomationArticle && ref $AutomationArticle ne 'HASH';
+    if ($AutomationArticle) {
+        my %ArticleAllowed = map { $_ => 1 } qw(SUBJECT TITLE FORMAT);
+        for my $Key ( keys %{$AutomationArticle} ) {
+            die "Unsupported Framework EVIDENCE AUTOMATION ARTICLE key '$Key'.\n" if !$ArticleAllowed{$Key};
+        }
+        die "Framework EVIDENCE AUTOMATION ARTICLE requires SUBJECT and FORMAT.\n"
+            if !$AutomationArticle->{SUBJECT} || !$AutomationArticle->{FORMAT};
+    }
     for my $Entry (
         [ 'FORMAT', $Config->{FORMAT}, 4000, \%Allowed ],
         [ 'FACTOR FORMAT', $Config->{'FACTOR FORMAT'}, 500, \%FactorAllowed ],
         [ 'ARTICLE SUBJECT', $Article ? $Article->{SUBJECT} : undef, 200, \%Allowed ],
         [ 'ARTICLE TITLE', $Article ? $Article->{TITLE} : undef, 200, {} ],
         [ 'ARTICLE FORMAT', $Article ? $Article->{FORMAT} : undef, 4000, \%Allowed ],
+        [ 'AUTOMATION ARTICLE SUBJECT', $AutomationArticle ? $AutomationArticle->{SUBJECT} : undef, 200, \%Allowed ],
+        [ 'AUTOMATION ARTICLE TITLE', $AutomationArticle ? $AutomationArticle->{TITLE} : undef, 200, {} ],
+        [ 'AUTOMATION ARTICLE FORMAT', $AutomationArticle ? $AutomationArticle->{FORMAT} : undef, 4000, \%Allowed ],
     ) {
         my ( $Label, $Format, $Limit, $Placeholders ) = @{$Entry};
         die "Framework EVIDENCE $Label must be text up to $Limit characters.\n"
