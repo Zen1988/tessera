@@ -29,14 +29,12 @@
   every contributing Control in Risk activity evidence. Do not present it as a
   complete list of failed Controls.
 
-## Risk Calculation Framework - remaining live validation after 0.0.68 installation
+## Risk Calculation Framework - remaining live validation after 0.0.69 installation
 
-- Install TESSERA-Base 0.0.69. Live Frameworks 1597 and 1599 already contain
-  the owner-authored `EVIDENCE.ARTICLE` YAML, and both GovernanceObject exports
-  under `docs/examples/framework/` are updated. A new Assessment should produce a
-  distinct calculation article on child and parent, with the Framework-authored
-  subject and the complete raw-factor-to-rounded-score chain. Assessment 309's
-  immutable 0.0.68 evidence remains as submitted.
+- Submit fresh Assessment 312 under parent ServiceRequest 311. Confirm it
+  creates a distinct Framework-authored calculation article on child and
+  parent, with the configured subject and complete raw-factor-to-rounded-score
+  chain. The older submitted Assessment 309 was deleted for the reset.
 - 0.0.68 is installed and recalculates submitted inherent and residual scores
   from selected 1-5 GeneralCatalog likelihood and impact values. Assessment
   309's submitted article confirms the stored 3 x 4 = 12 result. The Framework

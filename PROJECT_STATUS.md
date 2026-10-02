@@ -1,5 +1,22 @@
 # TESSERA Project Status
 
+## 2026-10-02 Risk 21 reset for 0.0.69 calculation article test
+
+- OTOBO Package Manager confirmed TESSERA-Base 0.0.69 installed.
+- With the user's explicit approval, permanently deleted Risk 21's prior
+  workflow child first: Approval 310 (`ICAT-TI-20260000027`), submitted
+  Assessment 309 (`ICAT-TI-20260000026`), and parent ServiceRequest 308
+  (`ICAT-TI-20260000025`). Each Generic Agent preview matched exactly one
+  intended ticket before deletion. Removed the temporary deletion job.
+- Saved Risk 21 without changing its governance fields. Reconciliation created
+  parent ServiceRequest 311 (`ICAT-TI-20260000028`) and Assessment 312
+  (`ICAT-TI-20260000029`) at 16:40 SGT. Parent 311 shows service
+  `Risk::Management`, StateBook `ICA::Risk Management`, BlueBook
+  `ICA::Risk::Assessment`, and state `assess`. Risk 21 remains active.
+- The fresh Assessment is ready for an engineer submission. Verify that the
+  Framework-authored calculation article appears separately on Assessment 312
+  and parent 311 after submission. This has not yet been demonstrated live.
+
 ## 2026-10-02 Framework-authored standalone calculation article — 0.0.69 prepared
 
 - The user clarified that reviewers must be able to reproduce each dimension
