@@ -31,9 +31,9 @@
 
 ## Risk Calculation Framework - remaining live validation after 0.0.68 installation
 
-- Install TESSERA-Base 0.0.69, update live Frameworks 1597 and 1599 to the
-  owner-authored `EVIDENCE.ARTICLE` YAML, and re-export both Governance Objects
-  to `docs/examples/framework/`. A new Assessment submission should produce a
+- Install TESSERA-Base 0.0.69. Live Frameworks 1597 and 1599 already contain
+  the owner-authored `EVIDENCE.ARTICLE` YAML, and both GovernanceObject exports
+  under `docs/examples/framework/` are updated. A new Assessment should produce a
   distinct calculation article on child and parent, with the Framework-authored
   subject and the complete raw-factor-to-rounded-score chain. Assessment 309's
   immutable 0.0.68 evidence remains as submitted.

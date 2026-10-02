@@ -21,8 +21,10 @@
 - Built `Kernel/Package/TESSERA-Base-0.0.69.opm` (288 payloads, SHA256
   `734DBDFD772519FAEE52DFBC6CF771CDF000EF69E29C6FD8B902BBA42F73658D`).
   Focused scoring tests 29, outcome tests 26, template merge tests 21, and
-  Perl syntax check pass. Live installation, Framework YAML updates, and a new
-  Assessment submission remain pending.
+  Perl syntax check pass. Saved `EVIDENCE.ARTICLE` on live Application Framework
+  1597 and Asset Framework 1599; both GovernanceObject YAML exports in
+  `docs/examples/framework/` now include the article template. Live package
+  installation and a new Assessment submission remain pending.
 
 ## 2026-10-02 Assessment 309 scoring evidence verified live
 
