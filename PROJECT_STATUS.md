@@ -1,5 +1,24 @@
 # TESSERA Project Status
 
+## 2026-10-02 Risk 21 workflow reset for 0.0.68 live testing
+
+- With the user's explicit approval, permanently deleted the prior Risk 21
+  workflow in child-first order: Approval 307 (`ICAT-TI-20260000024`),
+  submitted Assessment 306 (`ICAT-TI-20260000023`), then parent ServiceRequest
+  305 (`ICAT-TI-20260000022`). A temporary Generic Agent deletion job was
+  restricted to each exact ticket number; OTOBO preview showed exactly one
+  matching ticket before each run. The temporary job was then removed.
+- The scheduled `TESSERARiskMasterTicket` reconciliation created a fresh parent
+  ServiceRequest 308 (`ICAT-TI-20260000025`) and child Assessment 309
+  (`ICAT-TI-20260000026`) at 11:45 SGT. Parent 308 shows StateBook
+  `ICA::Risk Management`, BlueBook `ICA::Risk::Assessment`, and state `assess`.
+  Child 309 is in state `pending`. Risk 21 itself was retained.
+- Next live checks: open the new engineer Assessment, change one catalog impact
+  from 3 to 4 and verify 3 × 4 = 12 before submission; submit with an outcome
+  and confirm the Framework calculation appears in the article; verify the
+  approver can read linked ticket evidence without executing another owner's
+  task. No claim is made yet that these post-0.0.68 interactions passed.
+
 ## 2026-09-30 TESSERA-Base 0.0.68 deployed and Framework exports backed up
 
 - OTOBO Package Manager confirms `TESSERA-Base 0.0.68` installed. This build
