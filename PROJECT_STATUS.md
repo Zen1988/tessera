@@ -1,5 +1,21 @@
 # TESSERA Project Status
 
+## 2026-10-02 Assessment 309 scoring evidence verified live
+
+- Eugene Low submitted Assessment 309 (`ICAT-TI-20260000026`) at 14:28 SGT.
+  The agent ticket is `closed successful`. Its article #3, `Risk assessment
+  result 1` (ArticleID 1629), contains the Framework calculation evidence
+  below the risk matrix. The same evidence appears on parent ServiceRequest
+  308 in the detailed `Risk: B Continuity, G Risk Detail` article (ArticleID
+  1630). The separate parent category-summary article does not contain it.
+- The evidence names `Application Risk Management` version `2026.09.30`, ICA
+  IaaS Extension, the four contributing profiles and raw/normalized factors.
+  Base likelihood 3 and impact 3 each multiply to 2.4, then round up to
+  catalog value 3; the Framework suggested score is 3 × 3 = 9. Eugene's
+  submitted selection is 3 × 4 = 12. This confirms the stored post-submit
+  calculation and YAML-formatted evidence. Pre-submit display behavior and
+  linked-ticket approver read access still need live verification.
+
 ## 2026-10-02 Risk 21 workflow reset for 0.0.68 live testing
 
 - With the user's explicit approval, permanently deleted the prior Risk 21

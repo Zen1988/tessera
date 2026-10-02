@@ -29,42 +29,27 @@
   every contributing Control in Risk activity evidence. Do not present it as a
   complete list of failed Controls.
 
-## Risk Calculation Framework - Friday live validation after 0.0.68 installation
+## Risk Calculation Framework - remaining live validation after 0.0.68 installation
 
 - 0.0.68 is installed and recalculates submitted inherent and residual scores
-  from selected 1-5 GeneralCatalog likelihood and impact values. Verify that
-  changing inherent impact from 3 to 4 updates the displayed and stored score
-  from 9 to 12. The Framework suggests dimension defaults; the submitted
-  catalog selections determine the stored product.
+  from selected 1-5 GeneralCatalog likelihood and impact values. Assessment
+  309's submitted article confirms the stored 3 x 4 = 12 result. The Framework
+  suggests dimension defaults; the submitted catalog selections determine the
+  stored product. Confirm the pre-submit display also updates when a selection
+  changes.
 - Framework 1597 and 1599 both have live `EVIDENCE.FORMAT` YAML, and their full
-  Governance as Code exports are in `docs/examples/framework/`. Verify a
-  newly submitted Assessment article lists Application Risk Management,
-  contributing profile factors, rounded catalog values, Framework suggested
-  score, and submitted score. Existing articles remain immutable.
+  Governance as Code exports are in `docs/examples/framework/`. Assessment 309
+  and its parent ServiceRequest 308 both contain the YAML-formatted Application
+  Risk Management calculation evidence. Existing articles remain immutable.
 - 0.0.68 grants linked parent/sibling read access for members of an execution
   ticket's support profile, without granting task action rights. Confirm Abdul
   Malik can open the parent Assessment evidence and linked tickets, while
   unrelated tickets remain inaccessible.
-- TESSERA-Base 0.0.65 was installed by the user for the missing Assessment
-  field captions; the engineer confirms they are visible after refresh.
-  0.0.66 was installed by the user and the required `RiskAssessmentOutcome`
-  Dropdown and configured choices were confirmed. 0.0.67 placed that selector
-  below the rows and Remarks, before the action buttons; verify its live
-  position before submitting Assessment 306.
-  Framework 1597 is updated to
-  `Application Risk Management` with the authored Application scoring YAML.
-  Framework 1599 is created as `Asset Risk Management`, preserving
-  the Workload/NetworkNode/PeripheralNode/StorageNode factor paths. Both YAML
-  programs round impact and likelihood up independently to a 1-5 catalog
-  selection; the selected dimensions multiply to the inherent score.
-- Assessment 306 showed one row, `3 x 3 = 9`, and no calculation text after
-  0.0.64; its captions were confirmed after 0.0.65. On eventual
-  submission, verify the generated Assessment article records the Framework
-  calculation and names. Repeated loads must not duplicate rows, and AdminLog
-  must have no new Assessment write failures.
-- Resolve the BlueBook child `CustomerID` propagation defect: Assessment 306
-  history shows a blank CustomerID even though its customer user is
-  `tessera@ica.gov.sg` and parent SR 305 has CustomerID `ICA`.
+- Repeated Assessment loads must not duplicate rows, and AdminLog must have no
+  new Assessment write failures.
+- Resolve the BlueBook child `CustomerID` propagation defect: Assessment 309's
+  agent view shows a blank CustomerID even though its customer user is
+  `tessera@ica.gov.sg` and parent SR 308 has CustomerID `ICA`.
 - Decide how to review or migrate historical per-asset EOSL Risks and when a
   complete fresh scan may downgrade severity or remove recovered CI links.
   The current grouped runtime preserves historical contribution and raises
