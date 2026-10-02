@@ -61,17 +61,18 @@ fields:
     \ INHERENT IMPACT: CEIL(BASE.IMPACT * PRODUCT(NORMALIZE(FACTORS.IMPACT, FACTOR
     RULE)))\r\n  INHERENT LIKELIHOOD: CEIL(BASE.LIKELIHOOD * PRODUCT(NORMALIZE(FACTORS.LIKELIHOOD,
     FACTOR RULE)))\r\n  INHERENT RISK: INHERENT IMPACT * INHERENT LIKELIHOOD\r\n\r\nEVIDENCE:\r\n
-    \ FACTOR FORMAT: '{reference} ({object}): impact raw {raw_impact} -> effective
-    {normalized_impact}; likelihood raw {raw_likelihood} -> effective {normalized_likelihood}'\r\n
-    \ ARTICLE:\r\n    SUBJECT: 'Risk score: {framework_name} / {context}'\r\n    TITLE:
-    'Framework calculation log'\r\n    FORMAT: |\r\n      {framework_name} version
-    {framework_version} scored {context}.\r\n      Factor rule: {factor_rule}.\r\n
-    \     Referenced profiles (raw -> effective):\r\n      {factor_lines}\r\n      Likelihood
-    = ceil({base_likelihood} x {likelihood_factor_chain}) = ceil({likelihood_adjusted})
-    = {framework_likelihood}.\r\n      Impact = ceil({base_impact} x {impact_factor_chain})
-    = ceil({impact_adjusted}) = {framework_impact}.\r\n      Framework suggestion
-    = {framework_likelihood} x {framework_impact} = {framework_score}.\r\n      Assessor
-    selection = {submitted_likelihood} x {submitted_impact} = {submitted_score}.\r\n\r\nASSESSMENT
+    \ FORMAT: 'Legacy calculation: {framework_name} for {context}; {framework_likelihood}
+    x {framework_impact} = {framework_score}.'\r\n  FACTOR FORMAT: '{reference} ({object}):
+    impact raw {raw_impact} -> effective {normalized_impact}; likelihood raw {raw_likelihood}
+    -> effective {normalized_likelihood}'\r\n  ARTICLE:\r\n    SUBJECT: 'Risk score:
+    {framework_name} / {context}'\r\n    TITLE: 'Framework calculation log'\r\n    FORMAT:
+    |\r\n      {framework_name} version {framework_version} scored {context}.\r\n
+    \     Factor rule: {factor_rule}.\r\n      Referenced profiles (raw -> effective):\r\n
+    \     {factor_lines}\r\n      Likelihood = ceil({base_likelihood} x {likelihood_factor_chain})
+    = ceil({likelihood_adjusted}) = {framework_likelihood}.\r\n      Impact = ceil({base_impact}
+    x {impact_factor_chain}) = ceil({impact_adjusted}) = {framework_impact}.\r\n      Framework
+    suggestion = {framework_likelihood} x {framework_impact} = {framework_score}.\r\n
+    \     Assessor selection = {submitted_likelihood} x {submitted_impact} = {submitted_score}.\r\n\r\nASSESSMENT
     RESULT:\r\n  TICKET TYPE: Assessment\r\n  FIELD: ZRM-RiskAssessment\r\n  ROW TARGET:
     ZRM-RiskTargetGO\r\n  TARGET VALUE: SCORING CONTEXT\r\n  RELATED ASSETS FIELD:
     ZRM-RiskTargetCI\r\n  RELATED ASSETS FROM: CURRENT RISK.MELT-RelatedCI\r\n  ROW

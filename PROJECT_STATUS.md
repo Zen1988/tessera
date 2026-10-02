@@ -12,8 +12,9 @@
   rounded catalog dimensions, Framework suggestion, and submitted selection.
   When `ARTICLE` is present, it creates a distinct HTML evidence article on
   both the Assessment child and parent ServiceRequest, preserving the authored
-  subject; the matrix article remains separate. Existing `EVIDENCE.FORMAT`
-  continues to render inline for Frameworks that have not opted in.
+  subject; the matrix article remains separate. Both live Framework YAMLs
+  retain a short `EVIDENCE.FORMAT` fallback so 0.0.68 still writes an inline
+  calculation if an Assessment is submitted before the 0.0.69 upgrade.
 - Invalid placeholders fail validation. Submission fails before writing
   Assessment fields if configured proof cannot be prepared for its originating
   Risk row. Updated the Application and Asset Framework scoring YAML examples.
