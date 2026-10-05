@@ -1204,16 +1204,6 @@ sub Run {
             );
         }
 
-        my $OutcomeGate = $Self->_RiskAssessmentOutcomeAdvanceValidate(
-            Outcome => $RiskAssessmentOutcome,
-            Rows    => $Rows,
-        );
-        if ( !$OutcomeGate->{Success} ) {
-            return $LayoutObject->CustomerErrorScreen(
-                Message => $OutcomeGate->{Message},
-            );
-        }
-
         $Self->_RiskAssessmentTemplateHydrateIfEmpty( Ticket => \%Ticket );
         if ( $Self->{RiskAssessmentScoringError} ) {
             return $LayoutObject->CustomerErrorScreen(
@@ -1251,12 +1241,6 @@ sub Run {
             $Self->_ZTSMActionLog( Message => 'Assessment score validation failed: ' . $@ );
             return $LayoutObject->CustomerErrorScreen(
                 Message => 'Please select valid likelihood and impact values from the assessment catalogs.',
-            );
-        }
-
-        if ( !$Self->_RiskAssessmentRowsValidate( Rows => $Rows ) ) {
-            return $LayoutObject->CustomerErrorScreen(
-                Message => 'Please enter a risk plan when residual risk is lower than inherent risk.',
             );
         }
 
@@ -1327,6 +1311,22 @@ sub Run {
         $ActionConfig->{RiskAssessmentRows} = $Rows;
         $ActionConfig->{RiskAssessmentOutcome} = $RiskAssessmentOutcome;
         $ActionConfig->{Subject} ||= 'Risk assessment submitted: ' . $RiskAssessmentOutcome;
+        my $CompletionWeightage = $Self->_RiskAssessmentCompletionWeightage(
+            Outcome => $RiskAssessmentOutcome,
+            Rows    => $Rows,
+        );
+        if ( defined $CompletionWeightage && $CompletionWeightage == 0 ) {
+            if ( !$Self->_TicketDynamicFieldSet(
+                FieldName => 'ZTicket-OwnerWeightage',
+                TicketID  => $TicketID,
+                Value     => 0,
+                UserID    => $CustomerPanelUserID,
+            ) ) {
+                return $LayoutObject->CustomerErrorScreen(
+                    Message => 'Could not record the incomplete risk assessment weightage.',
+                );
+            }
+        }
     }
 
     if ( $Ticket{Type} eq 'Diagnosis' && $RuntimeAction eq 'Diagnose' ) {
@@ -1519,11 +1519,20 @@ sub Run {
             ],
         );
         $ActionConfig->{ContentType} = 'text/html; charset=utf-8';
-        my %CompletedOutcome = map { $_ => 1 } (
-            'Accepted', 'Avoided', 'Cancelled / No Longer Applicable',
-            'Mitigated', 'Remediated', 'Transferred',
-        );
-        $ActionConfig->{MELTRiskToClose} = $Risk if $CompletedOutcome{$Outcome};
+        my $TreatmentSucceeded = $Self->_RiskTreatmentOutcomeSuccessful( Outcome => $Outcome );
+        $ActionConfig->{MELTRiskToClose} = $Risk if $TreatmentSucceeded;
+        if ( !$TreatmentSucceeded ) {
+            $ActionConfig->{State} = 'closed unsuccessful';
+            $ActionConfig->{SkipChapterDirector} = 1;
+            $ActionConfig->{RiskManagementFailureRestart} = {
+                Ticket              => \%Ticket,
+                TicketObject        => $TicketObject,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Config              => $Config,
+                Reason              => "Risk Treatment outcome '$Outcome' failed",
+                RiskID              => $Risk->{MELTObjectID},
+            };
+        }
     }
 
     if ( $Ticket{Type} eq 'Confirmation' && $RuntimeAction eq 'Confirm' ) {
@@ -1681,12 +1690,42 @@ sub Run {
         }
     }
 
+    if ( $ActionConfig->{RiskManagementFailureRestart} ) {
+        my %RestartResult = $Self->_RiskManagementFailureRestart(
+            %{ $ActionConfig->{RiskManagementFailureRestart} },
+        );
+        if ( !$RestartResult{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $RestartResult{Message} || 'The treatment ticket was closed, but the next Risk Management cycle could not be created.',
+            );
+        }
+    }
+
     if ( !$ActionConfig->{SkipChapterDirector} ) {
         $Self->_ChapterDirectorRun(
             TicketID             => $TicketID,
             TicketObject         => $TicketObject,
             CustomerPanelUserID  => $CustomerPanelUserID,
         );
+    }
+
+    if ( $Ticket{Type} eq 'Approval' && $RuntimeAction eq 'Reject' ) {
+        my $Risk = $Self->_RiskTreatmentOriginRisk( Ticket => \%Ticket );
+        if ( IsHashRefWithData($Risk) ) {
+            my %RestartResult = $Self->_RiskManagementFailureRestart(
+                Ticket              => \%Ticket,
+                TicketObject        => $TicketObject,
+                CustomerPanelUserID => $CustomerPanelUserID,
+                Config              => $Config,
+                Reason              => 'Risk Management approval was rejected',
+                RiskID              => $Risk->{MELTObjectID},
+            );
+            if ( !$RestartResult{Success} ) {
+                return $LayoutObject->CustomerErrorScreen(
+                    Message => $RestartResult{Message} || 'Approval was rejected, but the next Risk Management cycle could not be created.',
+                );
+            }
+        }
     }
 
     return $LayoutObject->Redirect(
@@ -1734,6 +1773,57 @@ sub _RiskTreatmentOriginRisk {
     );
     return if !IsHashRefWithData($Risk) || ( $Risk->{Class} || '' ) ne 'Risk';
     return $Risk;
+}
+
+sub _RiskManagementFailureRestart {
+    my ( $Self, %Param ) = @_;
+
+    my $Ticket = $Param{Ticket};
+    return ( Success => 0, Message => 'Risk treatment ticket context is unavailable.' )
+        if !IsHashRefWithData($Ticket);
+
+    my $ParentTicketID = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    return ( Success => 0, Message => 'Risk treatment ticket has no Risk Management parent.' )
+        if !$ParentTicketID;
+
+    my $TicketObject = $Param{TicketObject} || $Kernel::OM->Get('Kernel::System::Ticket');
+    my $UserID = $Param{CustomerPanelUserID} || 1;
+    my %ParentTicket = $TicketObject->TicketGet(
+        TicketID => $ParentTicketID, DynamicFields => 1, UserID => $UserID, Silent => 1,
+    );
+    return ( Success => 0, Message => 'Risk Management parent could not be loaded.' )
+        if !IsHashRefWithData( \%ParentTicket );
+
+    return ( Success => 0, Message => 'Could not close the failed Risk Management parent ticket.' )
+        if !$TicketObject->TicketStateSet(
+            State => 'closed unsuccessful', TicketID => $ParentTicketID, UserID => $UserID,
+        );
+
+    $Self->_RuntimeArticleCreate(
+        TicketID => $ParentTicketID, RuntimeAction => 'Treat', Label => 'risk management cycle failed',
+        Subject => 'Risk Management cycle unsuccessful; restart required',
+        Body => ($Param{Reason} || 'The workflow did not complete successfully.')
+            . " and did not close the originating Risk. This Risk Management ServiceRequest is closed unsuccessful. A new ServiceRequest cycle will be created for the still-open Risk.",
+        Config => $Param{Config}, CustomerPanelUserID => $UserID,
+    );
+
+    my $Ensured = $Kernel::OM->Get('Kernel::System::TESSERA::RiskMasterTicket')->Ensure(
+        RiskID => $Param{RiskID}, UserID => $UserID,
+        RestartReason => $Param{Reason} || 'Risk Management cycle failed',
+        PreviousTicketID => $ParentTicketID,
+    );
+    return ( Success => 0, Message => 'Failed to create the next Risk Management ServiceRequest.' )
+        if !$Ensured;
+
+    return ( Success => 1 );
+}
+
+sub _RiskTreatmentOutcomeSuccessful {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} ) || '';
+    return 1 if $Outcome eq 'Mitigated' || $Outcome eq 'Remediated';
+    return;
 }
 
 sub _RiskTreatmentMappedPlanText {
@@ -7308,55 +7398,28 @@ sub _RiskAssessmentRowScoresApply {
     return 1;
 }
 
-sub _RiskAssessmentRowsValidate {
+sub _RiskAssessmentCompletionWeightage {
     my ( $Self, %Param ) = @_;
 
+    my $Outcome = _NormalizeValue( $Param{Outcome} ) || '';
+    return 0 if $Outcome eq 'At Risk - No Mitigation';
+
     ROW:
-    for my $Row ( @{ $Param{Rows} || [] } ) {
+    for my $Row ( @{ ref $Param{Rows} eq 'ARRAY' ? $Param{Rows} : [] } ) {
         next ROW if !IsHashRefWithData($Row);
+        my $RiskPlan = _NormalizeValue( $Row->{'ZRM-RiskPlan'} );
+        my $HasPlan = defined $RiskPlan && $RiskPlan !~ m{\A\s*\z};
+        return 0 if $Outcome eq 'At Risk - Mitigation Planned' && !$HasPlan;
 
         my $InherentRisk = _NormalizeValue( $Row->{'ZRM-InherentCalculatedRisk'} );
         my $ResidualRisk = _NormalizeValue( $Row->{'ZRM-ResidualCalculatedRisk'} );
         next ROW if !defined $InherentRisk || $InherentRisk eq '';
         next ROW if !defined $ResidualRisk || $ResidualRisk eq '';
-
-        next ROW if _RiskAssessmentRiskRank($ResidualRisk) >= _RiskAssessmentRiskRank($InherentRisk);
-
-        my $RiskPlan = _NormalizeValue( $Row->{'ZRM-RiskPlan'} );
-        return if !defined $RiskPlan || $RiskPlan eq '';
+        return 0 if !$HasPlan
+            && _RiskAssessmentRiskRank($ResidualRisk) < _RiskAssessmentRiskRank($InherentRisk);
     }
 
     return 1;
-}
-
-sub _RiskAssessmentOutcomeAdvanceValidate {
-    my ( $Self, %Param ) = @_;
-
-    my $Outcome = _NormalizeValue( $Param{Outcome} ) || '';
-    my %ApprovalEligible = map { $_ => 1 } (
-        'At Risk - Mitigation Control in Place',
-        'At Risk - Mitigation Planned',
-        'Not Applicable',
-    );
-
-    return {
-        Success => 0,
-        Message => 'This Assessment outcome cannot advance to approval. Select At Risk - Mitigation Control in Place, At Risk - Mitigation Planned, or Not Applicable.',
-    } if !$ApprovalEligible{$Outcome};
-
-    if ( $Outcome eq 'At Risk - Mitigation Planned' ) {
-        my $Rows = $Param{Rows};
-        for my $Row ( @{ ref $Rows eq 'ARRAY' ? $Rows : [] } ) {
-            next if ref $Row ne 'HASH';
-            my $RiskPlan = _NormalizeValue( $Row->{'ZRM-RiskPlan'} );
-            return {
-                Success => 0,
-                Message => 'At Risk - Mitigation Planned requires a Risk Plan for every assessed risk before it can advance to approval.',
-            } if !defined $RiskPlan || $RiskPlan =~ m{\A\s*\z};
-        }
-    }
-
-    return { Success => 1 };
 }
 
 sub _RiskStatementDefaultsJSON {

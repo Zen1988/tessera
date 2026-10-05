@@ -64,6 +64,7 @@ sub _EnsureLocked {
         MELTObjectID => $RiskID, DynamicFields => 1, Silent => 1,
     );
     return 1 if ref $Risk ne 'HASH' || ( $Risk->{Class} || '' ) ne 'Risk';
+    return 1 if ( _Scalar( $Risk->{'DynamicField_MELT-EventStatus'} ) || '' ) eq 'Closed';
     my $FrameworkID = _SingleID( $Risk->{'DynamicField_MELT-RMF'} );
     return 1 if !$FrameworkID;
     my $Framework = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
@@ -133,24 +134,32 @@ sub _EnsureLocked {
         'DynamicField_ZRM-OriginatedEvent' => { Equals => $RiskID },
         UserID => 1, Permission => 'ro',
     );
-    die "Risk has multiple master ServiceRequests.\n" if @Existing > 1;
+    @Existing = sort { $a <=> $b } @Existing;
     if (@Existing) {
-        die "Existing master ServiceRequest has incompatible routing.\n"
-            if !$Self->_FieldsEnsure(
-            TicketID => $Existing[0], RiskID => $RiskID, StateBookID => $StateBookID,
-            ApplicationID => $ApplicationID,
-            ServiceID => $ServiceID,
+        my $LatestTicketID = $Existing[-1];
+        my %LatestTicket = $TicketObject->TicketGet(
+            TicketID => $LatestTicketID, DynamicFields => 1, UserID => 1, Silent => 1,
         );
-        my @Assessments = $TicketObject->TicketSearch(
-            Result => 'ARRAY', Limit => 100, Types => ['Assessment'],
-            'DynamicField_ZTicket-Parent' => { Equals => $Existing[0] },
-            UserID => 1, Permission => 'ro',
-        );
-        require Kernel::System::ZTSMBlueBookRuntime;
-        Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure(
-            TicketID => $_,
-        ) for @Assessments;
-        return 1;
+        my $LatestState = lc( $LatestTicket{State} || '' );
+        my $Restart = $LatestState =~ m{\Aclosed (?:unsuccessful|rejected)\z} ? 1 : 0;
+        if ( !$Restart ) {
+            die "Existing master ServiceRequest has incompatible routing.\n"
+                if !$Self->_FieldsEnsure(
+                TicketID => $LatestTicketID, RiskID => $RiskID, StateBookID => $StateBookID,
+                ApplicationID => $ApplicationID,
+                ServiceID => $ServiceID,
+            );
+            my @Assessments = $TicketObject->TicketSearch(
+                Result => 'ARRAY', Limit => 100, Types => ['Assessment'],
+                'DynamicField_ZTicket-Parent' => { Equals => $LatestTicketID },
+                UserID => 1, Permission => 'ro',
+            );
+            require Kernel::System::ZTSMBlueBookRuntime;
+            Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure(
+                TicketID => $_,
+            ) for @Assessments;
+            return 1;
+        }
     }
 
     my $Title = $TicketMap->{Title} || $Risk->{Name} || 'Risk management';
@@ -170,12 +179,24 @@ sub _EnsureLocked {
             ApplicationID => $ApplicationID,
             ServiceID => $ServiceID,
         );
+    my $RestartReason = $Param{RestartReason}
+        || ( @Existing ? 'The previous Risk Management cycle closed unsuccessful.' : '' );
+    my $PreviousTicketID = $Param{PreviousTicketID} || ( @Existing ? $Existing[-1] : '' );
+    my $Subject = $RestartReason
+        ? 'DO-NOT-REPLY: Risk management cycle restarted.'
+        : 'DO-NOT-REPLY: Risk management initiated.';
+    my $Body = 'Originating MELT Risk: ' . ( $Risk->{Number} || $RiskID )
+        . "\nFramework: " . ( $Framework->{Name} || $FrameworkID );
+    if ($RestartReason) {
+        $Body .= "\n\nRestart reason: $RestartReason"
+            . "\nPrevious ServiceRequest: $PreviousTicketID";
+    }
     ZTSMArticleCreate(
         TicketID => $TicketID, UserID => 1,
-        Subject => 'DO-NOT-REPLY: Risk management initiated.',
-        Body => 'Originating MELT Risk: ' . ( $Risk->{Number} || $RiskID )
-            . "\nFramework: " . ( $Framework->{Name} || $FrameworkID ),
-        HistoryComment => 'TESSERA: Risk master ticket created',
+        Subject => $Subject, Body => $Body,
+        HistoryComment => $RestartReason
+            ? 'TESSERA: Risk master ticket cycle restarted'
+            : 'TESSERA: Risk master ticket created',
     );
     return 1;
 }

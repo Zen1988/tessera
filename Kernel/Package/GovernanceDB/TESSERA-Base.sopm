@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.73</Version>
+    <Version>0.0.74</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>

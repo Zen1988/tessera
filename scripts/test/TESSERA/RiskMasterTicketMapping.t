@@ -36,7 +36,7 @@ like(
 
 {
     no strict 'refs';
-    *{'Kernel::System::TESSERA::RiskMasterTicket::ZTSMArticleCreate'} = sub { return 1 };
+    *{'Kernel::System::TESSERA::RiskMasterTicket::ZTSMArticleCreate'} = sub { push @main::Articles, { @_ }; return 1 };
     *{'Kernel::System::ZTSMBlueBookRuntime::RiskAssessmentAutomationEvidenceEnsure'} = sub { return 1 };
 }
 $INC{'Kernel/System/ZTSMBlueBookRuntime.pm'} = __FILE__;
@@ -54,6 +54,8 @@ our $Mapping = {
 our %Tickets;
 our $CreateCount = 0;
 our @FieldSetOrder;
+our @Articles;
+our $RiskStatus = 'Active';
 
 {
     package RiskMasterTestOM;
@@ -65,6 +67,7 @@ our @FieldSetOrder;
         return {
             MELTObjectID => 21, Class => 'Risk', Name => 'EOSL: ICA IaaS Extension',
             Number => 'GO-RISK-00000021', 'DynamicField_MELT-RMF' => [1597],
+            'DynamicField_MELT-EventStatus' => $main::RiskStatus,
         };
     }
     sub MELTObjectSearch {
@@ -93,9 +96,15 @@ our @FieldSetOrder;
         return ( UserLogin => 'tessera@ica.gov.sg', UserCustomerID => 'ICA' );
     }
     sub TicketSearch {
-        return grep {
+        my ( $Self, %Param ) = @_;
+        my @IDs = grep {
             ( $main::Tickets{$_}{'DynamicField_ZRM-OriginatedEvent'} || '' ) == 21
         } keys %main::Tickets;
+        if ( $Param{Types} ) {
+            my %Types = map { $_ => 1 } @{ $Param{Types} };
+            @IDs = grep { $Types{ $main::Tickets{$_}{Type} || '' } } @IDs;
+        }
+        return @IDs;
     }
     sub TicketCreate {
         my ( $Self, %Param ) = @_;
@@ -147,5 +156,19 @@ ok( $Runtime->Ensure( RiskID => 21 ), 'repeated dispatch succeeds' );
 is( $CreateCount, 1, 'repeated dispatch does not create another SR' );
 ok( $Runtime->Run(), 'scheduled reconciliation scans existing Risks' );
 is( $CreateCount, 1, 'scheduled reconciliation reuses the master SR' );
+$Tickets{201}{State} = 'closed unsuccessful';
+ok( $Runtime->Ensure( RiskID => 21 ), 'an unsuccessful closed cycle starts a new master SR' );
+is( $CreateCount, 2, 'a failed cycle creates exactly one replacement SR' );
+is( $Tickets{201}{State}, 'closed unsuccessful', 'the failed ServiceRequest remains as history' );
+is( $Tickets{202}{'DynamicField_ZRM-OriginatedEvent'}, 21, 'the new ServiceRequest maps to the same Risk' );
+like( $Articles[-1]{Body}, qr/Previous ServiceRequest: 201/, 'restart evidence points to the prior cycle' );
+ok( $Runtime->Ensure( RiskID => 21 ), 'reconciliation reuses the active replacement cycle' );
+is( $CreateCount, 2, 'scheduled retry does not duplicate a replacement SR' );
+$Tickets{202}{State} = 'closed rejected';
+ok( $Runtime->Ensure( RiskID => 21 ), 'a rejected Approval cycle starts another mapped master SR' );
+is( $CreateCount, 3, 'a rejected cycle creates one replacement SR' );
+$RiskStatus = 'Closed';
+ok( $Runtime->Ensure( RiskID => 21 ), 'closed Risk is not restarted' );
+is( $CreateCount, 3, 'a successfully treated Risk does not create another SR' );
 
 done_testing();
