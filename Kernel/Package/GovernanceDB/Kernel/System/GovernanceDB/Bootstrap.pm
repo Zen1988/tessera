@@ -1070,6 +1070,7 @@ sub _TicketTypesEnsure {
         Incident
         Incident::Major
         Problem
+        RiskTreatment
         ServiceRequest
         Task
         Unclassified

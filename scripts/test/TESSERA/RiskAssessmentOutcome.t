@@ -34,9 +34,11 @@ for my $Outcome (
 }
 
 like( $Bootstrap, qr/Name\s*=>\s*'RiskAssessmentOutcome'/, 'bootstrap creates the exact exported field name' );
+like( $Bootstrap, qr/^\s*RiskTreatment\s*$/m, 'bootstrap creates the RiskTreatment ticket type' );
 like( $Action, qr/GetParam\(\s*Param\s*=>\s*'RiskAssessmentOutcome'/, 'submission reads the assessment outcome' );
 like( $Action, qr/FieldName\s*=>\s*'RiskAssessmentOutcome'/, 'submission persists the assessment outcome' );
 like( $Action, qr/sub _RiskAssessmentOutcomeValid/, 'submission validates against the installed field configuration' );
+like( $Action, qr/sub _RiskAssessmentOutcomeAdvanceValidate/, 'Assessment checks outcome eligibility before completing' );
 like( $Action, qr/Risk Assessment Outcome:<\/strong>/, 'summary article records the explicit outcome' );
 like( $Action, qr/required="required"/, 'assessment UI requires an outcome' );
 like( $Template, qr/\.ZTSMRiskAssessmentOutcome/, 'assessment template owns outcome layout styling' );
@@ -75,6 +77,38 @@ like( $OutcomeHTML, qr{<span class="ZTSMRiskAssessmentOutcomeCaption" id="RiskAs
 like( $OutcomeHTML, qr{<option value="Risk Accepted">Risk Accepted</option>}, 'selector includes exported Dropdown choices' );
 ok( $RuntimeAction->_RiskAssessmentOutcomeValid( Outcome => 'Risk Accepted' ), 'submission accepts a configured outcome' );
 ok( !$RuntimeAction->_RiskAssessmentOutcomeValid( Outcome => 'Unknown outcome' ), 'submission rejects an unconfigured outcome' );
+for my $Outcome (
+    'At Risk - Mitigation Control in Place',
+    'At Risk - Mitigation Planned',
+    'Not Applicable',
+    )
+{
+    my $Gate = $RuntimeAction->_RiskAssessmentOutcomeAdvanceValidate(
+        Outcome => $Outcome,
+        Rows    => [ { 'ZRM-RiskPlan' => 'Documented plan' } ],
+    );
+    ok( $Gate->{Success}, "$Outcome can advance to approval" );
+}
+for my $Outcome ( 'At Risk - No Mitigation', 'Risk Accepted' ) {
+    my $Gate = $RuntimeAction->_RiskAssessmentOutcomeAdvanceValidate(
+        Outcome => $Outcome,
+        Rows    => [ { 'ZRM-RiskPlan' => 'Documented plan' } ],
+    );
+    ok( !$Gate->{Success}, "$Outcome cannot advance to approval" );
+}
+my $PlanGate = $RuntimeAction->_RiskAssessmentOutcomeAdvanceValidate(
+    Outcome => 'At Risk - Mitigation Planned',
+    Rows    => [ { 'ZRM-RiskPlan' => '' } ],
+);
+ok( !$PlanGate->{Success}, 'planned mitigation without a plan cannot advance' );
+my $MultiPlanGate = $RuntimeAction->_RiskAssessmentOutcomeAdvanceValidate(
+    Outcome => 'At Risk - Mitigation Planned',
+    Rows    => [
+        { 'ZRM-RiskPlan' => 'Plan for first risk' },
+        { 'ZRM-RiskPlan' => '   ' },
+    ],
+);
+ok( !$MultiPlanGate->{Success}, 'planned outcome requires plans for every assessed risk row' );
 my %WorkspaceData = $RuntimeAction->_RiskAssessmentWorkspaceData(
     TicketID => 306,
     Ticket   => { TicketNumber => 'ICAT-TI-20260000023' },

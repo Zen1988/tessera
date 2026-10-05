@@ -905,6 +905,10 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
+    name: RiskTreatment
+    preferences: {}
+    valid: valid
+  - comment: ''
     name: ServiceRequest
     preferences: {}
     valid: valid

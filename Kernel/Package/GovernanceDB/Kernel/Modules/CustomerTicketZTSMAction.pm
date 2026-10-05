@@ -1204,6 +1204,16 @@ sub Run {
             );
         }
 
+        my $OutcomeGate = $Self->_RiskAssessmentOutcomeAdvanceValidate(
+            Outcome => $RiskAssessmentOutcome,
+            Rows    => $Rows,
+        );
+        if ( !$OutcomeGate->{Success} ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => $OutcomeGate->{Message},
+            );
+        }
+
         $Self->_RiskAssessmentTemplateHydrateIfEmpty( Ticket => \%Ticket );
         if ( $Self->{RiskAssessmentScoringError} ) {
             return $LayoutObject->CustomerErrorScreen(
@@ -7317,6 +7327,36 @@ sub _RiskAssessmentRowsValidate {
     }
 
     return 1;
+}
+
+sub _RiskAssessmentOutcomeAdvanceValidate {
+    my ( $Self, %Param ) = @_;
+
+    my $Outcome = _NormalizeValue( $Param{Outcome} ) || '';
+    my %ApprovalEligible = map { $_ => 1 } (
+        'At Risk - Mitigation Control in Place',
+        'At Risk - Mitigation Planned',
+        'Not Applicable',
+    );
+
+    return {
+        Success => 0,
+        Message => 'This Assessment outcome cannot advance to approval. Select At Risk - Mitigation Control in Place, At Risk - Mitigation Planned, or Not Applicable.',
+    } if !$ApprovalEligible{$Outcome};
+
+    if ( $Outcome eq 'At Risk - Mitigation Planned' ) {
+        my $Rows = $Param{Rows};
+        for my $Row ( @{ ref $Rows eq 'ARRAY' ? $Rows : [] } ) {
+            next if ref $Row ne 'HASH';
+            my $RiskPlan = _NormalizeValue( $Row->{'ZRM-RiskPlan'} );
+            return {
+                Success => 0,
+                Message => 'At Risk - Mitigation Planned requires a Risk Plan for every assessed risk before it can advance to approval.',
+            } if !defined $RiskPlan || $RiskPlan =~ m{\A\s*\z};
+        }
+    }
+
+    return { Success => 1 };
 }
 
 sub _RiskStatementDefaultsJSON {

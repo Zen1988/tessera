@@ -1,5 +1,48 @@
 # TESSERA Project Status
 
+## 2026-10-05 Risk Assessment outcome gate and treatment ticket type — 0.0.73 prepared
+
+- The user clarified that only `At Risk - Mitigation Control in Place`,
+  `At Risk - Mitigation Planned`, and `Not Applicable` may advance from
+  Assessment to Approval. A planned outcome requires a non-empty Risk Plan for
+  every assessed row. Other outcomes and planned-without-plan must leave the
+  Assessment open for correction instead of triggering the next chapter.
+- Live `ICA::Risk Management` StateBook 1598 records `assess -> approve ->
+  remediate`; its stage order is intentionally unconditional. The Assessment
+  submission handler now validates the outcome before writing/closing the
+  ticket, so only eligible submissions can trigger this sequence. This keeps
+  outcome policy at the Assessment boundary and preserves the StateBook order.
+- OTOBO confirms TESSERA-Base 0.0.72 installed. Live BlueBook 1532
+  (`ICA::Risk::Remediation`) was mapped to Ticket Type `RiskTreatment`; its
+  prior value was incorrectly `Approval`. `RiskTreatment` already existed as
+  an OTOBO ticket Type, but its matching `ZTSM::Type` General Catalog entry was
+  absent. Added that item live as item 657 so BlueBook can resolve the type.
+- Added the missing `RiskTreatment` item to the create-only default catalog seed
+  and regression test, then bumped the package to 0.0.73. Built an OPM with 288
+  byte-exact payloads; Catalog bootstrap and outcome tests pass (71
+  assertions), and `git diff --check` is clean. 0.0.73 is not installed yet.
+- The user ran `bin/otobo.Daemon.pl start` and OTOBO replied `Daemon already
+  running!`. AdminLog also shows live daemon log entries, confirming the
+  process is active despite the stale Package Manager banner. The actual
+  ControlObjective jobs are `TESSERAControlEvaluation` and
+  `TESSERAControlDiscovery`, both registered in GovernanceDB.xml with
+  `*/5 * * * *` schedules. AdminLog has no matching task-specific entries, so
+  daemon activity alone does not yet prove either job evaluated the target
+  ControlObjective or explain why no Risk appeared.
+- The similarly named GenericAgent job
+  `TESSERA-CONTROL-OBJECTIVE-POLICY-EVALUATOR` is a separate per-ticket
+  policy logger, not the ControlObjective scheduler. Its schedule was restored
+  to blank after a preview matched 304 unrelated tickets; no job run was
+  executed. The GenericAgent edit page confirms it will not run automatically.
+  AdminLog continues to report `ScheduleDays is invalid!` from
+  `SchedulerGenericAgentTaskManager` every ~20 seconds. This is a separate
+  scheduler error; determine which GenericAgent profile still has invalid
+  schedule data before using that manager. Do not use the broad job as a
+  substitute for the ControlObjective cron task.
+- Outcome gate, Framework scoring, origin merge, and Risk master mapping tests
+  pass (107 assertions). Current tickets were preserved; no clean end-to-end
+  outcome submission has been performed after 0.0.72.
+
 ## 2026-10-02 Live 0.0.70 evidence reconciliation defect — 0.0.71 prepared
 
 - OTOBO confirms TESSERA-Base 0.0.70 installed. Risk master reconciliation is

@@ -95,6 +95,8 @@ for my $NewRole ( 'EventSeverity', 'Policy', 'ZTSM Code' ) {
     ok( $CatalogClass{'ZTSM::GovernanceObject::Role'}{$NewRole},
         "supporting GovernanceObject role $NewRole is seeded when missing" );
 }
+ok( $CatalogClass{'ZTSM::Type'}{RiskTreatment},
+    'RiskTreatment is seeded in the BlueBook Ticket Type catalog' );
 for my $Deprecated (
     [ 'ZTSM::GovernanceObject::Class', 'Control' ],
     [ 'ZTSM::GovernanceObject::Class', 'ControlRecommendation' ],
