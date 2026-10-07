@@ -116,6 +116,25 @@ sub Run {
         );
     }
 
+    if ($Subaction eq 'RiskAssessmentScales') {
+        return $LayoutObject->CustomerNoPermission(WithHeader=>'yes') if ($Ticket{Type}||'') ne 'Assessment';
+        my $Scales=$Self->_RiskAssessmentScalesGet(FrameworkID=>$ParamObject->GetParam(Param=>'FrameworkID'));
+        return $LayoutObject->Attachment(ContentType=>'application/json',Type=>'inline',NoCache=>1,
+            Content=>$LayoutObject->JSONEncode(Data=>{Success=>1,Scales=>$Scales}));
+    }
+
+    if ($Subaction eq 'RiskScoreLevels') {
+        return $LayoutObject->CustomerNoPermission(WithHeader=>'yes') if ($Ticket{Type}||'') ne 'Assessment';
+        my $FrameworkID=$ParamObject->GetParam(Param=>'FrameworkID')||'';
+        my %Levels;
+        for my $Kind (qw(Inherent Residual)) {
+            my $Score=$ParamObject->GetParam(Param=>$Kind.'Score')||'';
+            $Levels{$Kind}=_RiskAssessmentRiskLevel($Score,{'ZRM-Framework'=>[$FrameworkID]});
+        }
+        return $LayoutObject->Attachment(ContentType=>'application/json',Type=>'inline',NoCache=>1,
+            Content=>$LayoutObject->JSONEncode(Data=>{Success=>1,Levels=>\%Levels}));
+    }
+
     if ( $Subaction eq 'ZTSMCustomerUserSearch' ) {
         return $Self->_CustomerUserSearchJSON(
             LayoutObject => $LayoutObject,
@@ -1121,6 +1140,17 @@ sub Run {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
+    if ( $RuntimeAction eq 'Reject' ) {
+        if ( !$Self->_TicketDynamicFieldSet(
+            FieldName => 'ZTicket-Outcome', TicketID => $TicketID,
+            Value => '-1', UserID => $CustomerPanelUserID,
+        ) ) {
+            return $LayoutObject->CustomerErrorScreen(
+                Message => 'Could not record rejection outcome.',
+            );
+        }
+    }
+
     if ($IPCApprovalOverride) {
         $ActionConfig->{Label} = ( $ActionConfig->{Label} || $RuntimeAction ) . ' Override';
         $ActionConfig->{Subject} ||= '[VVIP Override] Governance override action performed on behalf';
@@ -1204,6 +1234,14 @@ sub Run {
             );
         }
 
+        my $RequiredError = $Self->_RiskAssessmentRequiredFieldsValidate( Rows => $Rows );
+        if ($RequiredError) {
+            return $LayoutObject->CustomerErrorScreen( Message => $RequiredError );
+        }
+
+        my $ScaleError=$Self->_RiskAssessmentScalesValidate(Rows=>$Rows);
+        return $LayoutObject->CustomerErrorScreen(Message=>$ScaleError) if $ScaleError;
+
         $Self->_RiskAssessmentTemplateHydrateIfEmpty( Ticket => \%Ticket );
         if ( $Self->{RiskAssessmentScoringError} ) {
             return $LayoutObject->CustomerErrorScreen(
@@ -1258,7 +1296,7 @@ sub Run {
         }
 
         my $RiskAssessmentSet = $Self->_TicketDynamicFieldSet(
-            FieldName => 'ZRM-RiskAssessment',
+            FieldName => 'RiskAssessment',
             TicketID  => $TicketID,
             Value     => $Rows,
             UserID    => $CustomerPanelUserID,
@@ -1462,11 +1500,6 @@ sub Run {
     }
 
     if ( $Ticket{Type} eq 'RiskTreatment' && $RuntimeAction eq 'Treat' ) {
-        if ( ( $ParamObject->GetParam( Param => 'RiskPlanAcknowledged' ) || '' ) ne '1' ) {
-            return $LayoutObject->CustomerErrorScreen(
-                Message => 'Review and acknowledge the mapped risk plan before submitting treatment.',
-            );
-        }
         my $Risk = $Self->_RiskTreatmentOriginRisk( Ticket => \%Ticket );
         if ( !IsHashRefWithData($Risk) ) {
             return $LayoutObject->CustomerErrorScreen(
@@ -1490,7 +1523,7 @@ sub Run {
             UserID   => $CustomerPanelUserID,
         ) ) {
             return $LayoutObject->CustomerErrorScreen(
-                Message => 'Please complete the treatment ticket, work details, and outcome.',
+                Message => $Self->{RuntimeFieldError} || 'Could not save treatment fields. Please check the server log.',
             );
         }
 
@@ -1835,9 +1868,12 @@ sub _RiskTreatmentMappedPlanText {
     my $StatementID = _NormalizeValue( $Risk->{'DynamicField_MELT-RiskStmt'} );
     return if !$RiskID || !$StatementID;
 
+    my $ParentID = _NormalizeValue( $Param{Ticket}->{'DynamicField_ZTicket-Parent'} );
+    return if !$ParentID;
+
     my @AssessmentIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
         Result => 'ARRAY', Limit => 1000, Types => ['Assessment'],
-        'DynamicField_ZRM-OriginatedEvent' => { Equals => $RiskID },
+        'DynamicField_ZTicket-Parent' => { Equals => $ParentID },
         UserID => 1, Permission => 'ro',
     );
     my @Plans;
@@ -1846,7 +1882,8 @@ sub _RiskTreatmentMappedPlanText {
         my %Assessment = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
             TicketID => $AssessmentID, DynamicFields => 1, UserID => 1, Silent => 1,
         );
-        next if !%Assessment || ( _NormalizeValue( $Assessment{'DynamicField_ZRM-OriginatedEvent'} ) || '' ) ne $RiskID;
+        next if !%Assessment || ( _NormalizeValue( $Assessment{'DynamicField_ZTicket-Parent'} ) || '' ) ne $ParentID;
+        next if ( $Assessment{State} || '' ) ne 'closed successful';
         my $Rows = $Self->_RiskAssessmentRowsGet( TicketID => $AssessmentID );
         next if ref $Rows ne 'ARRAY';
         for my $Row ( @{$Rows} ) {
@@ -3883,6 +3920,10 @@ sub _TicketDynamicFieldSet {
         Name => $Param{FieldName},
     );
 
+    if ( !IsHashRefWithData($DynamicFieldConfig) && $Param{FieldName} eq 'RiskAssessment' ) {
+        $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' );
+    }
+
     if ( !IsHashRefWithData($DynamicFieldConfig) ) {
         $Self->_ZTSMActionLog( Message => "Dynamic field set failed: '$Param{FieldName}' does not exist." );
         return;
@@ -4786,6 +4827,7 @@ sub _RiskAssessmentColumns {
         { Field => 'ZRM-ImpactCategory',          Label => 'Category',                             Type => 'GeneralCatalog' },
         { Field => 'ZRM-RiskCategory',            Label => 'Risk Category',                        Type => 'GeneralCatalog' },
         { Field => 'ZRM-RiskStatement',           Label => 'Risk Statement',                       Type => 'GovernanceObject' },
+        { Field => 'ZRM-Framework',               Label => 'Risk Framework',                       Type => 'GovernanceObject' },
         { Field => 'ZRM-RiskDetail',              Label => 'Risk Detail',                          Type => 'TextArea' },
         { Field => 'ZRM-InherentLikelihood',      Label => 'Inherent Likelihood',                  Type => 'GeneralCatalog' },
         { Field => 'ZRM-InherentImpact',          Label => 'Inherent Impact',                      Type => 'GeneralCatalog' },
@@ -5673,10 +5715,10 @@ sub _DiagnosisArticleRow {
 
     return ''
         . '<div style="display:block;border:1px solid #d9deea;margin-top:-1px;clear:both;overflow:hidden;">'
-        . '<div style="float:left;width:180px;box-sizing:border-box;padding:8px;background:#eef2f7;font-weight:bold;white-space:nowrap;">'
+        . '<div style="float:left;width:180px;box-sizing:border-box;padding:8px;background:#eef2f7;font-weight:bold;white-space:normal;overflow-wrap:anywhere;">'
         . _HTML($Label)
         . '</div>'
-        . '<div style="margin-left:180px;box-sizing:border-box;padding:8px;min-height:34px;border-left:1px solid #d9deea;">'
+        . '<div style="margin-left:180px;box-sizing:border-box;padding:8px;min-height:34px;border-left:1px solid #d9deea;white-space:normal;overflow-wrap:anywhere;">'
         . ( defined $Value ? $Value : '' )
         . '</div>'
         . '</div>';
@@ -5725,6 +5767,10 @@ sub _RiskAssessmentWorkspaceData {
 sub _RiskAssessmentWorkspaceHTML {
     my ( $Self, %Param ) = @_;
 
+    $Self->{RiskAssessmentMappedFrameworkID} ||= _RiskAssessmentSingleID(
+        $Param{Ticket}->{'DynamicField_ZRM-Framework'},
+    );
+
     $Self->_RiskAssessmentTemplateHydrateIfEmpty(
         Ticket => $Param{Ticket},
     );
@@ -5744,6 +5790,8 @@ sub _RiskAssessmentWorkspaceHTML {
         Fields => [ map { $_->{Field} } ( @Columns, @Targets ) ],
     );
 
+    my $Required = $Self->_RiskAssessmentMandatoryFieldsGet() || {};
+
     my $HTML = '';
     if ( $Self->{RiskAssessmentScoringError} ) {
         $HTML = '<div class="MessageBox Error" role="alert">The originating Risk Framework could not calculate the inherent score. Ask the risk owner to check its scoring program and referenced assets.</div>' . $HTML;
@@ -5758,6 +5806,7 @@ sub _RiskAssessmentWorkspaceHTML {
             Columns => \@Columns,
             Targets => \@Targets,
             Configs => $Configs,
+            Required => $Required,
         );
     }
 
@@ -5769,6 +5818,7 @@ sub _RiskAssessmentWorkspaceHTML {
         Columns  => \@Columns,
         Targets  => \@Targets,
         Configs   => $Configs,
+        Required => $Required,
         Template => 1,
         )
         . '</template>';
@@ -5971,6 +6021,7 @@ sub _RiskAssessmentOriginMerge {
 
     my $Rows = $Self->_RiskAssessmentRowsGet( TicketID => $Ticket->{TicketID} );
     $Rows = [] if ref $Rows ne 'ARRAY';
+    $Self->{RiskAssessmentMappedFrameworkID} = _RiskAssessmentSingleID($Ticket->{'DynamicField_ZRM-Framework'}) || _RiskAssessmentSingleID($Parent{'DynamicField_ZRM-Framework'});
 
     my $Scored = $Self->_RiskAssessmentOriginScores(
         Risk      => $Risk,
@@ -6005,6 +6056,10 @@ sub _RiskAssessmentOriginMerge {
         for my $Existing (@Merged) {
             next if ref $Existing ne 'HASH';
             next if ( _NormalizeValue( $Existing->{'ZRM-RiskStatement'} ) || '' ) ne $StatementID;
+            if (!_NormalizeValue($Existing->{'ZRM-Framework'}) && $Target->{'ZRM-Framework'}) {
+                $Existing->{'ZRM-Framework'} = $Target->{'ZRM-Framework'};
+                $Changed = 1;
+            }
             my $ExistingCI = _NormalizeValue( $Existing->{'ZRM-RiskTargetCI'} ) || '';
             if ( $TargetCI && !$ExistingCI ) {
                 $Existing->{'ZRM-RiskTargetCI'} = [ $TargetCI ];
@@ -6039,7 +6094,7 @@ sub _RiskAssessmentOriginMerge {
 
     return 1 if !$Changed;
     return $Self->_TicketDynamicFieldSet(
-        FieldName => 'ZRM-RiskAssessment',
+        FieldName => 'RiskAssessment',
         TicketID  => $Ticket->{TicketID},
         Value     => \@Merged,
         UserID    => 1,
@@ -6077,6 +6132,8 @@ sub _RiskAssessmentApplicationOriginMerge {
             $Merged{$Field} = $Old->{$Field} if !defined $Current || $Current eq '';
         }
     }
+    $Merged{'ZRM-Framework'} = $Param{Score}->{'ZRM-Framework'}
+        if !_NormalizeValue($Merged{'ZRM-Framework'}) && $Param{Score}->{'ZRM-Framework'};
     $Merged{'ZRM-RiskTargetGO'} = $Param{Score}->{'ZRM-RiskTargetGO'};
     $Merged{'ZRM-RiskTargetCI'} = $Param{Score}->{'ZRM-RiskTargetCI'};
     $Merged{'ZRM-InherentCalculatedRisk'} = $Param{Score}->{'ZRM-InherentCalculatedRisk'};
@@ -6096,7 +6153,7 @@ sub _RiskAssessmentApplicationOriginMerge {
     push @NewRows, \%Merged if !$Inserted;
     return 1 if @Matching == 1 && _RiskAssessmentRowsEqual( $Matching[0], \%Merged );
     return $Self->_TicketDynamicFieldSet(
-        FieldName => 'ZRM-RiskAssessment', TicketID => $Param{TicketID},
+        FieldName => 'RiskAssessment', TicketID => $Param{TicketID},
         Value => \@NewRows, UserID => 1,
     );
 }
@@ -6151,6 +6208,11 @@ sub _RiskAssessmentStatementDefaults {
     my $Statement = $Param{Statement};
     my $Row = $Param{Row};
     return if !IsHashRefWithData($Statement) || ref $Row ne 'HASH';
+    if (!_NormalizeValue($Row->{'ZRM-Framework'})) {
+        my $ID = $Self->{RiskAssessmentMappedFrameworkID}
+            || $Self->_RiskAssessmentFrameworkResolve(RiskStatementID => $Statement->{GovernanceObjectID});
+        $Row->{'ZRM-Framework'} = [$ID] if $ID;
+    }
     my @Defaults = (
         [ 'ZRM-ImpactCategoryGO', 'ZRM-ImpactCategory',     1 ],
         [ 'ZRM-RiskCategoryGO',   'ZRM-RiskCategory',       1 ],
@@ -6232,7 +6294,7 @@ sub _RiskAssessmentOriginScoresEvaluate {
     my $ApplicationMode = ref $Engine->{'SCORING CONTEXT'} eq 'HASH';
     die "Unsupported Framework Assessment result mapping.\n"
         if ( $Engine->{'ASSESSMENT RESULT'}->{'TICKET TYPE'} || '' ) ne 'Assessment'
-        || ( $Engine->{'ASSESSMENT RESULT'}->{FIELD} || '' ) ne 'ZRM-RiskAssessment'
+        || ( $Engine->{'ASSESSMENT RESULT'}->{FIELD} || '' ) !~ m{\A(?:RiskAssessment|ZRM-RiskAssessment)\z}
         || ( $Engine->{'ASSESSMENT RESULT'}->{'ROW TARGET'} || '' ) ne ( $ApplicationMode ? 'ZRM-RiskTargetGO' : 'ZRM-RiskTargetCI' )
         || ( $Engine->{'ASSESSMENT RESULT'}->{'ROW RISK STATEMENT'} || '' ) ne 'ZRM-RiskStatement'
         || ( $Engine->{'ASSESSMENT RESULT'}->{'SCORE FIELD'} || '' ) ne 'ZRM-InherentCalculatedRisk';
@@ -6252,6 +6314,7 @@ sub _RiskAssessmentOriginScoresEvaluate {
         return $Self->_RiskAssessmentApplicationScore(
             Risk           => $Risk,
             Engine         => $Engine,
+            Statement      => $Statement,
             BaseImpact     => $BaseImpact,
             BaseLikelihood => $BaseLikelihood,
         );
@@ -6308,7 +6371,36 @@ sub _RiskAssessmentOriginScoresEvaluate {
         };
     }
     die "Risk has no related ConfigItems matching the Framework asset classes.\n" if !@Scores;
+    $Self->_RiskAssessmentFrameworkMappingApply(
+        Rows => \@Scores, Engine => $Engine, Risk => $Risk, Statement => $Statement, Framework => $Framework,
+    );
     return \@Scores;
+}
+
+sub _RiskAssessmentFrameworkMappingApply {
+    my ($Self, %Param) = @_;
+    my $Assignments = $Param{Engine}->{'ASSESSMENT RESULT'}->{'FIELD ASSIGNMENTS'};
+    return 1 if !defined $Assignments;
+    die "Assessment result FIELD ASSIGNMENTS must be a mapping.\n" if ref $Assignments ne 'HASH';
+    die "Assessment result mapping supports ZRM-Framework only.\n"
+        if grep { $_ ne 'ZRM-Framework' } keys %{$Assignments};
+    return 1 if !exists $Assignments->{'ZRM-Framework'};
+    my $Expression = $Assignments->{'ZRM-Framework'};
+    die "Assessment Framework mapping must be a scalar expression.\n" if ref $Expression;
+    my $Result = $Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine')->ValueEvaluate(
+        Expression => $Expression,
+        Context => { RISK => $Param{Risk}, STATEMENT => $Param{Statement}, FRAMEWORK => $Param{Framework} },
+    );
+    die "Assessment Framework mapping could not be resolved.\n" if !$Result->{Known};
+    my $ID = _RiskAssessmentSingleID($Result->{Value});
+    die "Assessment Framework mapping must resolve one Framework ID.\n" if !$ID;
+    my $Object = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID => $ID, DynamicFields => 1, Silent => 1,
+    );
+    die "Assessment Framework mapping does not reference a Framework.\n"
+        if !IsHashRefWithData($Object) || ($Object->{Class} || '') ne 'Framework';
+    $_->{'ZRM-Framework'} = [$ID] for @{$Param{Rows} || []};
+    return 1;
 }
 
 sub _RiskAssessmentApplicationScore {
@@ -6379,6 +6471,12 @@ sub _RiskAssessmentApplicationScore {
         FactorEvidence => \@FactorEvidence,
         Context => $Application->{Name} || $Application->{Number} || "Application $ApplicationID",
     };
+    $Self->_RiskAssessmentFrameworkMappingApply(
+        Rows => [$Row], Engine => $Engine, Risk => $Param{Risk}, Statement => $Param{Statement},
+        Framework => $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $Self->{RiskAssessmentFrameworkID}, DynamicFields => 1, Silent => 1,
+        ),
+    );
     return [$Row];
 }
 
@@ -6493,11 +6591,47 @@ sub _RiskAssessmentFactorNumber {
     return 0 + $Value;
 }
 
+sub _RiskAssessmentFrameworkResolve {
+    my ($Self,%Param)=@_;
+    my $Objects=$Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my $ID;
+    if ($Param{RiskStatementID}) {
+        my $Statement=$Objects->GovernanceObjectGet(GovernanceObjectID=>$Param{RiskStatementID},DynamicFields=>1,Silent=>1);
+        if (IsHashRefWithData($Statement) && ($Statement->{Class}||'') eq 'RiskStatement') {
+            my @References = grep { defined $_ && $_ ne '' } _RiskAssessmentFlattenValues($Statement->{'DynamicField_ZRM-RMF'});
+            return if @References > 1;
+            $ID = _RiskAssessmentSingleID($Statement->{'DynamicField_ZRM-RMF'});
+            return if @References && !$ID;
+        }
+        else { return; }
+    }
+    if (!$ID) {
+        my $Name=$Kernel::OM->Get('Kernel::Config')->Get('TESSERA::RiskAssessment::DefaultFramework')||'';
+        return if !$Name;
+        my @IDs=$Objects->GovernanceObjectSearch(Name=>$Name,Silent=>1);
+        my @Matches;
+        for my $Candidate (@IDs) {
+            my $Object=$Objects->GovernanceObjectGet(GovernanceObjectID=>$Candidate,DynamicFields=>1,Silent=>1);
+            push @Matches,$Candidate if IsHashRefWithData($Object) && ($Object->{Class}||'') eq 'Framework' && ($Object->{Name}||'') eq $Name;
+        }
+        return if @Matches != 1;
+        $ID=$Matches[0];
+    }
+    my $Framework=$Objects->GovernanceObjectGet(GovernanceObjectID=>$ID,DynamicFields=>1,Silent=>1);
+    return if !IsHashRefWithData($Framework) || ($Framework->{Class}||'') ne 'Framework';
+    return $ID;
+}
+
 sub _RiskAssessmentRowHTML {
     my ( $Self, %Param ) = @_;
 
     my $Index = $Param{Index};
-    my $Row   = $Param{Row} || {};
+    my $Row = { %{ $Param{Row} || {} } };
+    if (!_NormalizeValue($Row->{'ZRM-Framework'})) {
+        my $Framework=$Self->{RiskAssessmentMappedFrameworkID}
+            || $Self->_RiskAssessmentFrameworkResolve(RiskStatementID=>(_NormalizeValue($Row->{'ZRM-RiskStatement'}) || ''));
+        $Row->{'ZRM-Framework'}=[$Framework] if $Framework;
+    }
     my %Column = map { $_->{Field} => $_ } @{ $Param{Columns} || [] };
     my %Target = map { $_->{Field} => $_ } @{ $Param{Targets} || [] };
 
@@ -6508,17 +6642,21 @@ sub _RiskAssessmentRowHTML {
         return '' if $Field eq 'ZRM-RiskOwner' && !IsHashRefWithData( $Param{Configs}->{$Field} );
         return '' if $Definition->{Type} ne 'Text' && $Definition->{Type} ne 'TextArea' && !IsHashRefWithData( $Param{Configs}->{$Field} );
 
+        my $Mandatory = $Param{Required}->{$Field} ? 1 : 0;
         my $CaptionID = 'RA_' . $Index . '_' . $Field . '_Caption';
         return '<div class="ZTSMRiskAssessmentField ZTSMRiskAssessmentField_' . _HTML($Field)
-            . '" role="group" aria-labelledby="' . _HTML($CaptionID) . '">'
+            . '" data-field-name="' . _HTML('RA_' . $Index . '_' . $Field)
+            . '" data-required="' . $Mandatory . '" role="group" aria-labelledby="' . _HTML($CaptionID) . '">'
             . '<span class="ZTSMRiskAssessmentCaption" id="' . _HTML($CaptionID) . '">'
-            . _HTML( $Definition->{Label} || $Field ) . '</span>'
+            . _HTML( $Definition->{Label} || $Field )
+            . ( $Mandatory ? ' <span class="Marker" aria-hidden="true">*</span>' : '' ) . '</span>'
             . $Self->_RiskAssessmentInputHTML(
             Field  => $Field,
             Type   => $Definition->{Type},
             Index  => $Index,
             Value  => $Row->{$Field},
             Config => $Param{Configs}->{$Field},
+            Mandatory => $Mandatory,
             )
             . '</div>';
     };
@@ -6533,6 +6671,7 @@ sub _RiskAssessmentRowHTML {
     $HTML .= '<div class="ZTSMRiskAssessmentRowBody ZTSMRiskAssessmentRowLayout">';
     $HTML .= '<div class="ZTSMRiskAssessmentBand ZTSMRiskAssessmentBandStatement">'
         . $FieldHTML->('ZRM-RiskStatement')
+        . $FieldHTML->('ZRM-Framework')
         . '</div>';
     $HTML .= '<div class="ZTSMRiskAssessmentStack ZTSMRiskAssessmentStackMeta">'
         . $FieldHTML->('ZRM-ImpactCategory')
@@ -6595,7 +6734,7 @@ sub _RiskAssessmentInputHTML {
             Value              => $Value,
             LayoutObject       => $Kernel::OM->Get('Kernel::Output::HTML::Layout'),
             ParamObject        => $Kernel::OM->Get('Kernel::System::Web::Request'),
-            Mandatory          => 0,
+            Mandatory          => $Param{Mandatory} ? 1 : 0,
             CustomerInterface  => 1,
             Object             => {},
         );
@@ -6620,12 +6759,13 @@ sub _RiskAssessmentInputHTML {
     my $Name       = 'RA_' . $Index . '_' . $Field;
     my $EditValue  = $Self->_RiskAssessmentEditValue(%Param);
     my $FieldClass = $Param{Type} eq 'TextArea' ? 'ZTSMRiskAssessmentTextarea' : 'ZTSMRiskAssessmentInput';
+    my $RequiredAttribute = $Param{Mandatory} ? ' required="required" aria-required="true"' : '';
 
     if ( $Param{Type} eq 'TextArea' ) {
-        return '<textarea class="' . $FieldClass . '" name="' . _HTML($Name) . '" rows="3">' . _HTML($EditValue) . '</textarea>';
+        return '<textarea class="' . $FieldClass . '" name="' . _HTML($Name) . '" rows="3"' . $RequiredAttribute . '>' . _HTML($EditValue) . '</textarea>';
     }
 
-    return '<input type="text" class="' . $FieldClass . '" name="' . _HTML($Name) . '" value="' . _HTML($EditValue) . '"/>';
+    return '<input type="text" class="' . $FieldClass . '" name="' . _HTML($Name) . '" value="' . _HTML($EditValue) . '"' . $RequiredAttribute . '/>';
 }
 
 sub _RiskAssessmentSelectInputHTML {
@@ -6641,6 +6781,7 @@ sub _RiskAssessmentSelectInputHTML {
     my $Multiple = $Param{Config}->{Config}->{Multiselect} || $Param{Config}->{Config}->{MultiValue};
 
     my $HTML = '<select class="ZTSMRiskAssessmentSelect" name="' . _HTML($Name) . '"';
+    $HTML .= ' required="required" aria-required="true"' if $Param{Mandatory};
     $HTML .= ' multiple="multiple" size="3"' if $Multiple;
     $HTML .= '>';
     $HTML .= '<option value=""></option>' if !$Multiple;
@@ -6712,11 +6853,13 @@ sub _RiskAssessmentReferenceInputHTML {
         Value => $Param{Value},
     );
 
-    my $ReadOnly = $Field eq 'ZRM-RiskTargetCI' && @Values > 1 ? ' readonly="readonly"' : '';
+    my $ReadOnly = ' readonly="readonly"';
 
-    return '<input type="hidden" id="' . _HTML($ID) . '" name="' . _HTML($Name) . '" value="' . _HTML( $Value // '' ) . '" />'
+    return '<div class="ZTSMRiskAssessmentReferenceControl">'
+        . '<input type="hidden" id="' . _HTML($ID) . '" name="' . _HTML($Name) . '" value="' . _HTML( $Value // '' ) . '" />'
         . '<input type="text" class="DynamicFieldReference DynamicFieldText W100pc" id="Autocomplete_' . _HTML($ID) . '" name="Autocomplete_' . _HTML($ID)
-        . '" title="' . _HTML($Label) . '" value="' . _HTML($VisibleValue) . '"' . $ReadOnly . ' data-dynamic-field="' . _HTML($Field) . '" />';
+        . '" title="' . _HTML($Label) . '" value="' . _HTML($VisibleValue) . '"' . $ReadOnly . ' data-dynamic-field="' . _HTML($Field) . '" />'
+        . '</div>';
 }
 
 sub _RiskAssessmentFieldConfigs {
@@ -6766,6 +6909,44 @@ sub _RiskAssessmentNormalizeClass {
     return $Class;
 }
 
+sub _RiskAssessmentScalesGet {
+    my ($Self,%Param)=@_;
+    my $ID=$Param{FrameworkID};
+    return {} if !defined $ID || $ID !~ m{\A[1-9][0-9]*\z};
+    my $Object=$Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID=>$ID,DynamicFields=>1,Silent=>1);
+    return {} if !IsHashRefWithData($Object) || ($Object->{Class}||'') ne 'Framework';
+    my %Scales;
+    for my $Kind (qw(Likelihood Impact)) {
+        my @Values=_RiskAssessmentFlattenValues($Object->{'DynamicField_ZRM-'.$Kind.'Scale'});
+        return {} if @Values != 1 || $Values[0] !~ m{\A[1-9][0-9]*\z};
+        $Scales{$Kind}=0+$Values[0];
+    }
+    return \%Scales;
+}
+
+sub _RiskAssessmentScalesValidate {
+    my ($Self,%Param)=@_;
+    my $Index=0;
+    for my $Row (@{$Param{Rows}||[]}) {
+        ++$Index;
+        my $Scales=$Self->_RiskAssessmentScalesGet(FrameworkID=>_RiskAssessmentSingleID($Row->{'ZRM-Framework'}));
+        return "Risk row $Index: select a Framework with valid likelihood and impact scales." if !keys %{$Scales};
+        for my $Kind (qw(Likelihood Impact)) {
+            for my $Phase (qw(Inherent Residual)) {
+                my $Field='ZRM-'.$Phase.$Kind;
+                my @IDs=_RiskAssessmentFlattenValues($Row->{$Field});
+                next if !@IDs || (@IDs==1 && $IDs[0] eq '');
+                my $Options=$Self->_RiskAssessmentOptions(Field=>$Field,Type=>'GeneralCatalog');
+                return "Risk row $Index: $Phase $Kind must be between 1 and $Scales->{$Kind}."
+                    if @IDs!=1 || !exists $Options->{$IDs[0]} || $Options->{$IDs[0]} !~ m{\A[1-9][0-9]*\z}
+                    || $Options->{$IDs[0]} > $Scales->{$Kind};
+            }
+        }
+    }
+    return;
+}
+
 sub _RiskAssessmentOptions {
     my ( $Self, %Param ) = @_;
 
@@ -6809,8 +6990,11 @@ sub _RiskAssessmentRowsGet {
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
     my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
-        Name => 'ZRM-RiskAssessment',
+        Name => 'RiskAssessment',
     );
+
+    $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' )
+        if !IsHashRefWithData($DynamicFieldConfig);
 
     return if !IsHashRefWithData($DynamicFieldConfig);
 
@@ -6818,6 +7002,55 @@ sub _RiskAssessmentRowsGet {
         DynamicFieldConfig => $DynamicFieldConfig,
         ObjectID           => $Param{TicketID},
     );
+}
+
+sub _RiskAssessmentMandatoryFieldsGet {
+    my ( $Self, %Param ) = @_;
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $Config = $DynamicFieldObject->DynamicFieldGet( Name => 'RiskAssessment' );
+    $Config = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' )
+        if !IsHashRefWithData($Config);
+    return
+        if !IsHashRefWithData($Config) || ref $Config->{Config}->{Include} ne 'ARRAY';
+
+    my %Required;
+    my $Collect;
+    $Collect = sub {
+        my ($Include) = @_;
+        for my $Item ( @{$Include} ) {
+            next if ref $Item ne 'HASH';
+            if ( $Item->{DF} && $Item->{Mandatory} ) {
+                $Required{ $Item->{DF} } = 1;
+            }
+            if ( ref $Item->{Grid} eq 'HASH' && ref $Item->{Grid}->{Rows} eq 'ARRAY' ) {
+                for my $GridRow ( @{ $Item->{Grid}->{Rows} } ) {
+                    $Collect->($GridRow) if ref $GridRow eq 'ARRAY';
+                }
+            }
+        }
+    };
+    $Collect->( $Config->{Config}->{Include} );
+    undef $Collect;
+    return \%Required;
+}
+
+sub _RiskAssessmentRequiredFieldsValidate {
+    my ( $Self, %Param ) = @_;
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $Required = $Self->_RiskAssessmentMandatoryFieldsGet();
+    return 'The Risk Assessment Set configuration is unavailable.' if !defined $Required;
+    for my $Index ( 0 .. $#{ $Param{Rows} || [] } ) {
+        my $Row = $Param{Rows}->[$Index];
+        for my $Field ( sort keys %{$Required} ) {
+            my @Values = grep { defined $_ && /\S/ }
+                _RiskAssessmentFlattenValues( ref $Row eq 'HASH' ? $Row->{$Field} : undef );
+            next if @Values;
+            my $FieldConfig = $DynamicFieldObject->DynamicFieldGet( Name => $Field );
+            my $Label = $FieldConfig->{Label} || $Field;
+            return 'Risk row ' . ( $Index + 1 ) . ': please fill in ' . $Label . '.';
+        }
+    }
+    return;
 }
 
 sub _RiskAssessmentRowsFromParam {
@@ -7022,8 +7255,8 @@ sub _RiskAssessmentArticleBody {
         );
     }
 
-    my $InherentLevel = _RiskAssessmentRiskLevel( $Value{'ZRM-InherentCalculatedRisk'} );
-    my $ResidualLevel = _RiskAssessmentRiskLevel( $Value{'ZRM-ResidualCalculatedRisk'} );
+    my $InherentLevel = _RiskAssessmentRiskLevel( $Value{'ZRM-InherentCalculatedRisk'}, $Row );
+    my $ResidualLevel = _RiskAssessmentRiskLevel( $Value{'ZRM-ResidualCalculatedRisk'}, $Row );
 
     return ''
         . '<div style="font-family:Arial,Helvetica,sans-serif;color:#0b1340;">'
@@ -7037,6 +7270,7 @@ sub _RiskAssessmentArticleBody {
         . '</colgroup>'
         . '<tr>'
         . _RiskAssessmentArticleCell( 'Risk Statement', $Value{'ZRM-RiskStatement'}, 12, 'text-align:center;font-size:18px;' )
+        . _RiskAssessmentArticleCell( 'Risk Framework', $Value{'ZRM-Framework'}, 12 )
         . '</tr>'
         . _RiskAssessmentArticleGap()
         . '<tr>'
@@ -7279,7 +7513,7 @@ sub _RiskAssessmentSummaryArticleBody {
         . '</tr>';
 
     for my $Item (@Summary) {
-        my $Level = _RiskAssessmentRiskLevel( $Item->{Risk} );
+        my $Level = _RiskAssessmentRiskLevel( $Item->{Risk}, $Item->{Row} );
         $Body .= '<tr>'
             . '<td style="border:1px solid #d9deea;padding:8px;">' . _HTML( $Item->{Label} ) . '</td>'
             . '<td style="border:1px solid #d9deea;padding:8px;">'
@@ -7371,6 +7605,15 @@ sub _RiskAssessmentRowScoresApply {
 
     for my $Row ( @{ $Param{Rows} || [] } ) {
         next if ref $Row ne 'HASH';
+        if (_NormalizeValue($Row->{'ZRM-Framework'})) {
+            my $ID = _RiskAssessmentSingleID($Row->{'ZRM-Framework'});
+            die "Assessment Framework must have one value.\n" if !$ID;
+            my $Object = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+                GovernanceObjectID => $ID, DynamicFields => 0, Silent => 1,
+            );
+            die "Assessment Framework is unavailable.\n"
+                if !IsHashRefWithData($Object) || ($Object->{Class} || '') ne 'Framework';
+        }
         for my $Pair (
             [ qw(ZRM-InherentLikelihood ZRM-InherentImpact ZRM-InherentCalculatedRisk) ],
             [ qw(ZRM-ResidualLikelihood ZRM-ResidualImpact ZRM-ResidualCalculatedRisk) ],
@@ -7386,8 +7629,8 @@ sub _RiskAssessmentRowScoresApply {
                     next;
                 }
                 my $Number = $Catalog{$Field}->{ $ID[0] };
-                die "Assessment dimension '$Field' is not a valid 1-5 catalog selection.\n"
-                    if !defined $Number || $Number !~ m{\A[1-5]\z};
+                die "Assessment dimension '$Field' is not a valid positive-integer catalog selection.\n"
+                    if !defined $Number || $Number !~ m{\A[1-9][0-9]*\z};
                 push @Number, 0 + $Number;
             }
             $Row->{$ScoreField} = defined $Number[0] && defined $Number[1]
@@ -7480,6 +7723,13 @@ sub _RiskStatementDefaultsJSON {
             $Data{Success} = 1;
         }
     }
+
+    my $FrameworkID = $Self->_RiskAssessmentFrameworkResolve(RiskStatementID=>$RiskStatementID) || '';
+    $Data{Fields}->{'ZRM-Framework'} = $FrameworkID;
+    $Data{FrameworkLabel} = $FrameworkID ? $Self->_RiskAssessmentDisplayValue(
+        Field => 'ZRM-Framework', Type => 'GovernanceObject', Value => [$FrameworkID],
+    ) : '';
+    $Data{Success}=1;
 
     my $JSON = $LayoutObject->JSONEncode( Data => \%Data );
 
@@ -7685,6 +7935,17 @@ sub _RiskAssessmentCategorySummary {
 
     for my $Category (@Category) {
         $Category->{Risk} = $RiskByField->{ $Category->{Field} };
+        my %Frameworks;
+        for my $Row (@{$Param{Rows} || []}) {
+            next if ref $Row ne 'HASH';
+            next if (_NormalizeValue($Row->{'ZRM-ResidualCalculatedRisk'}) || '') ne ($Category->{Risk} || '');
+            my @IDs=_RiskAssessmentFlattenValues($Row->{'ZRM-ImpactCategory'});
+            next if !grep { ($Self->_RiskAssessmentCategoryFieldName(CategoryID=>$_) || '') eq $Category->{Field} } @IDs;
+            my $ID=_RiskAssessmentSingleID($Row->{'ZRM-Framework'});
+            $Frameworks{$ID || 'unmapped'}=1;
+        }
+        my @IDs=keys %Frameworks;
+        $Category->{Row}={'ZRM-Framework'=>[$IDs[0]]} if @IDs==1 && $IDs[0] ne 'unmapped';
     }
 
     return @Category;
@@ -7808,48 +8069,16 @@ sub _RiskAssessmentRiskRank {
 }
 
 sub _RiskAssessmentRiskLevel {
-    my ($Risk) = @_;
-
+    my ($Risk,$Row) = @_;
     my $Score = _RiskAssessmentRiskRank($Risk);
-    return {
-        Score     => '',
-        Label     => 'N/A',
-        Summary   => 'N/A',
-        Color     => '#8a8ea8',
-        TextColor => '#ffffff',
-    } if !$Score;
-
-    return {
-        Score     => $Score,
-        Label     => 'Low',
-        Summary   => "$Score - Low",
-        Color     => '#2f855a',
-        TextColor => '#ffffff',
-    } if $Score <= 5;
-
-    return {
-        Score     => $Score,
-        Label     => 'Medium',
-        Summary   => "$Score - Medium",
-        Color     => '#d6b500',
-        TextColor => '#161616',
-    } if $Score <= 9;
-
-    return {
-        Score     => $Score,
-        Label     => 'High',
-        Summary   => "$Score - High",
-        Color     => '#f59e0b',
-        TextColor => '#161616',
-    } if $Score <= 16;
-
-    return {
-        Score     => $Score,
-        Label     => 'Critical',
-        Summary   => "$Score - Critical",
-        Color     => '#991b1b',
-        TextColor => '#ffffff',
-    };
+    my $Decoration = {};
+    if (ref $Row eq 'HASH' && $Score) {
+        require Kernel::System::TESSERA::RiskRegister;
+        $Decoration = Kernel::System::TESSERA::RiskRegister->new()->ScoreDecoration(Row=>$Row,Score=>$Score);
+    }
+    my $Label=$Decoration->{Label} || ($Score ? 'Unmapped' : 'N/A');
+    return {Score=>$Score||'',Label=>$Label,Summary=>$Score ? "$Score - $Label" : 'N/A',
+        Color=>$Decoration->{Color}||'#8a8ea8',TextColor=>$Decoration->{Foreground}||'#ffffff'};
 }
 
 sub _RiskAssessmentDisplayValue {
@@ -7932,6 +8161,10 @@ sub _AssessmentRiskFieldsSet {
     my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     my $LayoutObject              = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
     my $ParamObject               = $Kernel::OM->Get('Kernel::System::Web::Request');
+    $Kernel::OM->Get('Kernel::System::Web::FormCache')->PrepareFormID(
+        ParamObject => $ParamObject, LayoutObject => $LayoutObject,
+    );
+    delete $Self->{RuntimeFieldError};
 
     FIELD:
     for my $FieldName ( @{ $Param{Fields} } ) {
@@ -7949,7 +8182,11 @@ sub _AssessmentRiskFieldsSet {
         );
 
         return if !IsHashRefWithData($ValidationResult);
-        return if $ValidationResult->{ServerError};
+        if ( $ValidationResult->{ServerError} ) {
+            $Self->{RuntimeFieldError} = 'Please check ' . ( $DynamicFieldConfig->{Label} || $FieldName )
+                . ': ' . ( $ValidationResult->{ErrorMessage} || 'a valid value is required.' );
+            return;
+        }
 
         my $Value = $DynamicFieldBackendObject->EditFieldValueGet(
             DynamicFieldConfig => $DynamicFieldConfig,
@@ -8027,6 +8264,8 @@ sub _ActionConfig {
     my %AllowedTypes = map { $_ => 1 } @{ $ActionConfig->{Types} || [] };
     return if !$AllowedTypes{ $Param{Type} };
     return if !$ActionConfig->{State};
+
+    return { %{$ActionConfig}, State => 'closed rejected' } if $Param{Action} eq 'Reject';
 
     return $ActionConfig;
 }

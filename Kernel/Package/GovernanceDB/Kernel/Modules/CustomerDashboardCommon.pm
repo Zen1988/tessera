@@ -41,6 +41,23 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
+    if (($Self->{Subaction} || '') eq 'SetSessionMood') {
+        my $Layout=$Kernel::OM->Get('Kernel::Output::HTML::Layout');
+        $Layout->ChallengeTokenCheck(Type=>'Customer');
+        my $Request=$Kernel::OM->Get('Kernel::System::Web::Request');
+        my $D=$Request->RequestMethod() eq 'POST' ? $Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->Select(
+            SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin},
+            Mood=>$Request->GetParam(Param=>'Mood'),
+        ) : undef;
+        if ($D) {
+            $Layout->SetCookie(Key=>'TESSERAGreeting',HTTPOnly=>1,SameSite=>'lax',
+                Value=>$Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->CompletionToken(
+                    SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin}));
+        }
+        return $Layout->Attachment(ContentType=>'application/json',Type=>'inline',NoCache=>1,
+            Content=>$Kernel::OM->Get('Kernel::System::JSON')->Encode(Data=>{Success=>$D?1:0,Message=>$D?$D->{Message}:''}));
+    }
+
     # get needed objects
     my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
@@ -211,6 +228,8 @@ sub Run {
             SubText     => $HeaderText->{SubText},
             AccessKey   => $NewTicketAccessKey,
             TileHTML    => $TileHTML,
+            Greeting => $Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->Read(SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin}),
+            GreetingToken => $LayoutObject->{UserChallengeToken},
         },
     );
     $Output .= $LayoutObject->CustomerNavigationBar();

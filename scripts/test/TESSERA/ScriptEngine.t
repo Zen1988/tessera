@@ -237,13 +237,14 @@ my $MasterTicketAssignments = $Engine->FieldAssignmentsEvaluate(
     Script => $MasterTicketScript, ObjectType => 'Ticket', Class => 'ServiceRequest',
     Context => {
         RISK => { MELTObjectID => 21, Name => 'EOSL: ICA IaaS Extension', 'DynamicField_MELT-RelatedGO' => [1493] },
-        FRAMEWORK => { 'DynamicField_ZRM-RiskMgtStateBook' => [165] },
+        FRAMEWORK => { GovernanceObjectID => 1597, 'DynamicField_ZRM-RiskMgtStateBook' => [165] },
     },
 );
 ok( $MasterTicketAssignments->{Success}, 'Framework master ticket YAML uses ScriptEngine assignments' );
 is( $MasterTicketAssignments->{Value}->{'ZRM-OriginatedEvent'}, 21, 'source MELT Risk maps into SR' );
 is( $MasterTicketAssignments->{Value}->{'ZTicket-Application'}, 1493, 'Risk Application maps into SR before orchestration' );
 is( $MasterTicketAssignments->{Value}->{'ZTicket-StateBook'}, 165, 'Framework workflow maps into SR' );
+is( $MasterTicketAssignments->{Value}->{'ZRM-Framework'}, 1597, 'Framework reference is an explicit master ticket YAML assignment' );
 is( $MasterTicketAssignments->{Value}->{Service}, 'Risk::Management', 'Risk service is an authored assignment' );
 
 {

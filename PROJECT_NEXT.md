@@ -1,5 +1,214 @@
 # TESSERA Project Next Focus
 
+## Current accepted baseline — 0.0.129
+
+- User confirms129 works and accepts the accumulated functional baseline. Approval recovery0052 is implemented and accepted; completed design, source and validation are recorded in PROJECT_STATUS.md. Continue from latest129 SOPM/OPM, not earlier repair assumptions.
+- Remaining targeted checks: future fresh-cycle approval capture persists master outcome/date/marker, idempotent fresh/upgrade/reinstallation, and final OTOBO11.1 compatibility when stable. Prior detailed live checklists below are historical/unverified specifics and must not override this accepted baseline.
+
+
+## Approval gate and session greeting — 0.0.128 live acceptance
+
+- Install128 and hard refresh. Pending risk parent must be absent from Risk list, all dashboard counts/charts/matrices and export even after Assessment submits. Complete the required final Book-governed approval normally; its master decision marker/outcome/date should make submitted rows eligible. Do not backfill approvals or alter immutable history to force display. Approved missing/expired dates retain Review required behavior.
+- Fresh login: choose emoji, see message for4 seconds, then card disappears. Immediately navigate elsewhere and return: no prompt. Refresh/another tab same login: no prompt; logout/new login: prompt again. Browser receives HttpOnly temporary dismissal cookie with no mood/message content. Verify desktop/mobile card edges align with dashboard boxes; native tiles and other controls remain usable. Newly discovered uses Assessment native Created.
+
+
+## Profile preference layout — 0.0.126
+
+- Install126/hard refresh. Check Current photo label above preview, Upload photo label above file picker, visible small removal checkbox with single label, laptop/mobile wrapping and working upload/removal. Other preferences retain native layout.
+
+
+## Avatar action pointer path — 0.0.125
+
+- Install125/hard refresh. Hover avatar, cross gap to gear then Logout; controls must remain clickable until pointer leaves whole row. Confirm hidden controls do not block page and keyboard focus/touch still works.
+
+## Photo registration — 0.0.124 deployment
+
+- Install124 to repair missing NavBarName in123 registration; deploy photo settings if pending and hard refresh. Verify profile preferences/upload/remove and stable sidebar controls. Includes123 owner mapping; existing Framework YAML still needs explicit assignment. No unrelated access settings overwritten.
+
+## Ownership and profile deployment — 0.0.123
+
+- Install123/hard refresh. Confirm Preferences/Profile photo upload/remove, stable avatar and gear right/logout next right on hover/focus/touch. GD required. Verify unrelated preferences preserved.
+- Add `ZTicket-OwnerGroup: '"APPLICATION::DEFAULT"'` under RETURN/FIELD ASSIGNMENTS in applicable Framework ZRM-MasterTicket; full example docs/examples/framework/risk-master-ticket.yml. Fresh Risk SR stores Application default RoleMap SupportProfile before orchestration and retains it during assessment/remediation. Missing/ambiguous resolution prevents creation. Existing0050 unchanged; no snapshot backfill.
+
+
+## Ticket dashboard date/type — 0.0.122 deployment
+
+- Install122, hard refresh. Verify all five drilldowns show Ticket type before Ticket number, populated UTC creation dates, oldest-first rows and corrected seven-day count including held tickets. No ticket data changes required.
+
+## Customer profile photo — 0.0.121 deployment
+
+- Install121 (declares GD2.0 server resize dependency), hard refresh. In Preferences/Profile photo upload JPEG/PNG and verify128px square preview/navigation photo across refresh; remove returns initials. Check gear right of avatar on hover/keyboard focus, stable picture, touch layout and logout access. Verify another customer continues to see only own photo. No live account writes made by agent.121 includes120 clickable metrics and rolling closure window.
+
+
+## Ticket metric drilldowns — 0.0.120 deployment
+
+- Install120 and hard refresh Tickets. Click each of the five cards and check matching count/list, oldest creation date first, OwnerGroup names and source links. Closed window label should show prior calendar-month day through today UTC; verify a long-existing ticket closed recently is included and an earlier closure excluded. Failed remains all-time closed unsuccessful. Retains119 right-header toggles and118 searches. No workflow action required.
+
+
+## Overview consistency and Ticket dashboard — 0.0.119 deployment
+
+- Install119, hard refresh Tickets/Assets/Risk. Verify header New Ticket then Export Tickets, single export action, List/Dashboard toggle immediately to the right of blue Export and Dashboard default. Search should appear only in List: existing ticket fulltext, Asset name/number/tag/type and Risk configured display values. Verify list filter/pagination/export retain context.
+- Check five Ticket cards against permitted All tickets: nonclosed including hold, unclosed at least7 days, all closed, only closed unsuccessful, directly IPC-delegated tickets. Click seven-day count and verify oldest-first creation date, readable OwnerGroup and links. Verify wide/narrow layouts and empty result lists. No workflow action needed for inspection.119 includes118/117 matrix compaction and earlier paired dashboard changes.
+
+
+## Dashboard — 0.0.117 deployment
+
+- Install117 and hard refresh. Check compact matrices show every impact column side by side at laptop width, labels wrap, and nonzero cells still expand links. Assets/CMDB and Risk Register default Dashboard; Export stays top-right. Verify paired Inherent/Residual Category and Risk Category charts and Framework-coloured matrices; selecting a category updates both, each cell opens its Assessment links. Summary counts are shared once. Check narrow-screen stacking, long labels, empty scope and configured Excel export. Includes115/116 dashboard changes; no separate earlier installation needed.
+- Scope and limits recorded in Status: visible governed Assessment rows across Current/Review, New by Assessment created date, current Framework definitions, unavailable Framework/scales cannot generate matrix. Live visual acceptance pending.
+
+
+## Assessment encoding — 0.0.114 deployment
+
+- Install114 (includes113), refresh Assessment0047 Ticket330. Confirm custom rows render and Framework scales load. Assessment template malformed UTF-8 repaired; restart cycle confirmed by user screenshot. No submission required for view verification.
+
+
+## Evidence wrapping — 0.0.113 deployment
+
+-112 submission now confirmed by user screenshot.113 fixes wrapping for future execution/diagnosis articles; existing immutable article HTML is not rewritten. Verify new snapshot long labels wrap without overlapping values at laptop/narrow width. Downstream Unsuccessful lifecycle behavior remains independent live verification.
+
+
+## Actual runtime form — 0.0.112 deployment
+
+- Install112; agent reproduced111 failure and confirmed actual runtime form lacked FormID. After refresh/reopen, inspect populated FormID in named ZTSMRuntimeActionTreat form, search/reselect reference and retry user-authorized treatment. Live112 success not yet verified. No reference validation relaxation.
+
+
+## Runtime reference validation — 0.0.111 deployment
+
+- Install111, Ctrl+Shift+R, reopen treatment and reselect reference through search so cached allowed IDs bind to populated FormID. Retry intended treatment. Existing110 field-specific errors retained. Live end-to-end validation still pending.
+
+
+## Treatment submission — 0.0.110 deployment
+
+- Install110, refresh and reopen form to obtain proper FormID, reselect Treatment Ticket via search, fill work/outcome, then retry intended submission. If rejected, field-specific error should identify validation cause. No permission/reference validation relaxed. Live retry pending.
+
+
+## Remediation plan guidance — 0.0.109 deployment
+
+- Install109 directly (108 is superseded), Ctrl+Shift+R, reopen treatment. Plan remains visible with no checkbox and no acknowledgement error on submission; existing required treatment fields still enforced.27 implementation checks recorded in Status.
+
+
+## Risk-plan acknowledgement — 0.0.108 deployment
+
+- Install108, Ctrl+Shift+R and reopen treatment form. Checkbox I have reviewed the mapped risk treatment plan above must appear beneath mapped plan and respond to label click/Space. Unchecked submission should remain in form with required validation; checked allows normal validation. Avoid submitting test workflow merely for visual inspection. Existing server requirement remains enforced.
+
+
+## Runtime dropdown alignment — 0.0.107 deployment
+
+- Install107 and Ctrl+Shift+R. Check Outcome selected text stays inside its inner control before/after hover, focus, change and clear; reopen dropdown and verify options still usable. Verify Remarks label and narrower layout. CSS-only patch; no submission required.
+
+
+## Runtime hover and Result — 0.0.106 deployment
+
+- Install106, Ctrl+Shift+R, reopen0045. Verify hover/focus on Risk Treatment Ticket keeps its label on border, Result shows plain Step/Result, and tall empty wrapper is gone. Plan already confirmed visible with105. Live visual checks pending; no submission required.
+
+
+## Remediation follow-up — 0.0.105 deployment
+
+- Install105 and Ctrl+Shift+R; reopen0045. Confirm Assessment0043 plan test is displayed, Result default has plain Step/Result, and labels/textarea align.104 follow-up supersedes the104 acceptance steps. No submission needed to inspect. Current lookup collects matching successful assessments under the same parent; future iteration selection should be coordinated with execution role evidence policy if remediation retries accumulate assessments.
+
+
+## Remediation rendering — 0.0.104 deployment
+
+- Install104, Ctrl+Shift+R and reopen0045 treatment action. Verify matching Assessment plan text appears, Result default shows Step/Result without HTML tags, and labels/textarea align on laptop and narrower screens. No submission needed for visual check. If plan remains missing, inspect persisted Assessment origin/statement/row values; only the confirmed scalar extraction defect was corrected.
+
+
+## Universal role lookup — 0.0.103 deployment
+
+- Install103. Existing managed TESSERA-ACTIVITY-ROLELOOKUP loses its old type allowlist; runtime excludes master types using ZTSM::RequestType. Rerun the role lookup job once for existing pending0045 and verify OwnerGroup resolves via TICKET::ASSESSOR YAML from closed Assessment0043 to ICA::ATFM::CLOUD. Fresh execution types should require no job filter edit; catalog master types remain excluded, closed/held evidence untouched. No live install/assignment change performed.
+
+## Framework scales — 0.0.102 deployment
+
+- Install102 and Ctrl+Shift+R. Set Framework ZRM-LikelihoodScale/ZRM-ImpactScale to positive integer maxima, and ensure catalog classes contain valid numeric names1 through intended maximum. Verify3×5 then10×10 choices on both inherent/residual fields, preserved valid selection, out-of-range reselection, calculated products and authored matrix badges. Missing/invalid Framework scales must block submission. No package install or live Framework/catalog updates performed by agent.
+- Scale implementation complete; remaining Framework design is immutable version/config evidence and selected-Framework origin scoring. Historical101 scale design entry below is superseded by102.
+
+## Assessment classification — 0.0.101 deployment and Framework scales
+
+- Install101 and Ctrl+Shift+R. Verify dropdown score changes and Framework overrides update inherent/residual labels/colours; authored9 Low agrees with Register. Test missing rules neutral and new article labels. Implementation checks recorded in PROJECT_STATUS.
+- Design Framework-specific allowed likelihood/impact scales (user proposes3×3/5×5), render choices from explicit scale metadata and validate submissions server-side. Do not infer scales from severity score bands or invent Dynamic Fields before export/schema agreement. Current101 does not restrict dropdown values.
+
+## Risk Register Framework colours — 0.0.100 deployment
+
+- Install100 and Ctrl+Shift+R. For submitted eligible Assessment rows, verify inherent/residual score badges use selected ZRM-Framework RiskMatrix and severity colours/names. Unmapped/missing rules remain neutral. Excel values stay unchanged. Implementation42 assertions in PROJECT_STATUS. User confirms99 replacement ticket exists.
+- Remaining design: immutable submission-time Framework matrix/version snapshot and selected-Framework calculation. Current display uses current matrix explicitly; no historical score rewriting.
+
+## Cancelled Risk Management restart — 0.0.99 deployment
+
+- Install99. With TESSERARiskMasterTicket scheduler enabled and daemon running, next five-minute reconciliation should replace cancelled master0037 for still-active Risk21. Verify one new master and Assessment, previous-cycle link and retained0037/0041 cancellation history. Repeated scheduler delivery must reuse the fresh active master. No live restart or install was performed by the agent.
+
+## Assessment Framework selection — 0.0.98 deployment
+
+- Install98 and Ctrl+Shift+R. Set TESSERA::RiskAssessment::DefaultFramework to exact existing Asset Risk Management. Retain administrator Set Include mandatory rules. Apply optional ZRM-Framework mapping to Framework ZRM-MasterTicket using docs/risk-assessment-framework.md; no live YAML was modified. Start a fresh case and verify default, statement/clear fallback, manual override/reopen, mapped Framework inheritance, mandatory block and article name.
+- Old test master0037 and active treatment0041 are cancelled; completed assessment/approval history retained. User will redo assessment. Do not delete or silently rewrite evidence.
+- Pending enhancement: execute selected per-row Framework scoring/matrix/colour rules and capture immutable Framework version/config evidence. Current98 adds selection/persistence/mapping only; do not claim that selecting a different Framework changes calculations or colours. Trace latest Framework exports and authored rule schema before implementation.
+
+## Risk Register configuration recovery — 0.0.97 deployment
+
+- Install97. Open TESSERA::RiskRegister::Columns; restore default if96 invalid empty-row override persists, save and deploy. Expect native YAML editor with13 initial mappings. Verify deployment and report/export;21 checks recorded in PROJECT_STATUS.
+
+## Configurable Risk Register — 0.0.96 deployment
+
+- Install96 and Ctrl+Shift+R. Verify assessment risk rows and child links, mapped scores/action/plan, master governance context, Excel selected-view export and non-IPC visibility. Configure TESSERA::RiskRegister::Columns using docs/risk-register-sysconfig.md; no inferred org mapping or residual exposure conversion. Implementation and97 assertions recorded in PROJECT_STATUS.
+
+## Remarks label — 0.0.95 deployment
+
+- Install95 and Ctrl+Shift+R; verify shared Approval Remarks label aligns near the left border on laptop/narrow view. Includes94 replay guard; fresh assessment progression test remains pending.
+
+## Chapter completion replay — 0.0.94 deployment
+
+- Install0.0.94. Use a fresh assessment to verify completion creates Approval and waits, without spawning treatment early. Repeat delivery must not advance an already-changed Book/level/iteration. Implementation and50 checks recorded in PROJECT_STATUS. Existing master320/Treatment324 need controlled recovery before reusing that case; no automatic data repair is included. Verify authored Book behavior for RiskAccepted after final approval separately.
+
+## Risk Register — 0.0.93 UI deployment
+
+- Install0.0.93 and Ctrl+Shift+R. First verify header, tabs and card align in native portal content area, clear fixed sidebar and work on laptop/mobile. Functional tests can follow separately. Refresh customer portal. Verify new Risk Register button, Current / Review required tabs, master-only inclusion, closed accepted current records, exact365-day expiry and missing-date review. Confirm requester/governed participant visibility and denied queue/company-only accounts. Implementation, date assumptions and121-test evidence recorded in PROJECT_STATUS.
+- Test final governed Approval completion writes master RiskAssessmentOutcome plus existing ITSMDecisionDate; replay must preserve date, renewed approval establishes a new date. Legacy missing master decisions remain Review required, without implicit child recommendation backfill. Annual reviews use existing governed ticket interaction; no automatic renewal or reassessment launch.
+
+## EOSL name mapping activation
+
+- Apply docs/examples/controlobjective/product-eosl-risk-name-update.yml to EOSL ControlObjective ZRM-FieldAssignment; next failing evaluation should include the source Product name. Shared Risk identity is preserved, so the name represents the latest evaluated Product. Implementation and108-test validation recorded in PROJECT_STATUS; live activation pending.
+
+## Asset dashboard — 0.0.91 deployment
+
+- Install0.0.91 and refresh Your Assets. Verify List/Dashboard beside Export, distribution counts/percentages by displayed Asset Type, and unique assets tagged in accessible active Risk Management tickets. Both views must follow current filters and entitlement; closed tickets must not contribute. Implementation/tests recorded in PROJECT_STATUS; live dashboard visual acceptance pending.
+- User confirms0.0.90 Name/header alignment. Grouped Excel implementation remains unchanged; download acceptance is still pending.
+
+## Multiple asset entitlements — 0.0.88 deployment
+
+- Install0.0.88 and verify Zen sees iaas-ext-aci-node1 through its ATFM Management entitlement despite the additional Network Management entitlement. Check detail and list agree, and unrelated assets remain excluded. Implementation in PROJECT_STATUS; Workload ldcphiaasesx204 is user-confirmed visible after complete-candidate fix.
+
+## Customer navigation — 0.0.87 deployment
+
+- Install0.0.87 and refresh customer portal. Company Tickets should be absent while personal Tickets and entitled Assets remain available. Implementation recorded in PROJECT_STATUS; package includes complete asset lookup0.0.86.
+
+## Complete customer asset list — 0.0.86 deployment
+
+- Implementation and live entitlement trace recorded in PROJECT_STATUS. Install0.0.86 and verify Zen sees ldcphiaasesx204 through the matching PMT entitlement/read assignment. Check counts, pagination and export include all authorized matches beyond1000; denied assets remain excluded. Candidate completeness is implemented without raising permission scope; large-CMDB performance optimization remains future work.
+
+## Assessment reference picker — 0.0.85 deployment
+
+- Implementation is recorded in PROJECT_STATUS. Install 0.0.85 (includes input-relative button alignment), refresh browser assets and verify Risk Statement uses the existing search-button modal, display text is read-only, Apply updates defaults and required validation uses selected IDs. Repeat for added rows and target references.
+
+## Assets navigation — 0.0.83 deployment
+
+- Customer dashboard response is user-confirmed restored after the 0.0.83 correction was supplied; details are in PROJECT_STATUS. Remaining check: Assets is hidden without a matching CMDB read assignment and visible for authorized customers; direct URLs retain backend entitlement enforcement.
+
+## Acknowledgment checkbox UI — 0.0.81 deployment
+
+- Delegation GUI fix is user-confirmed; implementation and acceptance are recorded in PROJECT_STATUS. Shared override/recovery controls and detailed keyboard/unchecked-submit coverage remain unconfirmed. No live action submitted by the agent.
+
+## Namespace editor compatibility review — 2026-10-06
+
+- Set/Group namespace lookup and absent-input preservation are implemented in 0.0.77; details are in PROJECT_STATUS. Namespace ZRM / Name RiskAssessment is restored live. Install 0.0.80 to correct the empty-hash lookup fallback, then verify existing Assessment values load.
+- Review legacy GeneralCatalog, Queue, SLA, Type and MasterSlave editors for the same issue; determine installed ownership before changes. Preserve field IDs, Include rules, values and explicit administrator choices. No automatic bulk renaming.
+
+## RiskAssessment 0.0.80 deployment
+
+- Runtime now prefers unprefixed `RiskAssessment` with legacy lookup compatibility; implementation details are recorded in PROJECT_STATUS. Install 0.0.80 (includes prior fixes) and verify existing Assessment 321 loads its stored values without recreation. Missing-name detection now matches OTOBO empty-hash behavior.
+
+## Earlier Apache exception
+
+- Required-field behavior is user-tested and reported working; implementation and acceptance are recorded in PROJECT_STATUS.
+- The earlier Apache 500 still has no matching server exception available. Investigate if it recurs; do not claim its root cause was confirmed.
+
 ## EOSL Product Control and Grouped Risk — Corrected 2026-09-28
 
 - Product is the Control target. The authored PolicyFilter selects Product

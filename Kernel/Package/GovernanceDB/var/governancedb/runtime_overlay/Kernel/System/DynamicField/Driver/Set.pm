@@ -609,6 +609,7 @@ sub EditFieldValueValidate {
             $Result->{ $DynamicFieldConfig->{Name} } = $BackendObject->EditFieldValueValidate(
                 %Param,
                 DynamicFieldConfig => $DynamicFieldConfig,
+                Mandatory          => $DynamicFieldConfig->{Mandatory} ? 1 : 0,
             );
         }
     }
@@ -629,6 +630,23 @@ sub EditFieldValueValidate {
         };
     }
 
+    my $FindError;
+    $FindError = sub {
+        my ($Validation) = @_;
+        return if ref $Validation ne 'HASH';
+        return $Validation if $Validation->{ServerError};
+        for my $Key ( sort keys %{$Validation} ) {
+            my $Error = $FindError->( $Validation->{$Key} );
+            return $Error if $Error;
+        }
+        return;
+    };
+    my $Error = $FindError->($Result);
+    undef $FindError;
+    if ($Error) {
+        $Result->{ServerError} = 1;
+        $Result->{ErrorMessage} = $Error->{ErrorMessage} || 'Please complete the required fields.';
+    }
     return $Result || {
         ServerError  => undef,
         ErrorMessage => undef,

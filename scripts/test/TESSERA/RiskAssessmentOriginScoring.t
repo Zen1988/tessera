@@ -261,9 +261,13 @@ like( $@, qr/unknown placeholder/, 'unknown authored article placeholders fail c
     ok( $Created[3]->{PreserveSubject}, 'parent proof preserves the authored subject' );
 }
 eval { $Action->_RiskAssessmentRowScoresApply( Rows => [ { %{$AdjustedRow}, 'ZRM-InherentImpact' => [9999] } ] ) };
-like( $@, qr/not a valid 1-5 catalog selection/, 'server rejects an invalid catalog dimension' );
+like( $@, qr/not a valid positive-integer catalog selection/, 'server rejects an invalid catalog dimension' );
 is( $Action->_RiskAssessmentFrameworkEvidenceHTML(
         Row => { 'ZRM-RiskStatement' => [999], 'ZRM-RiskTargetGO' => [500] },
     ), '', 'unrelated template rows do not receive originating Framework evidence' );
+
+$Engine->{'ASSESSMENT RESULT'}->{FIELD} = 'RiskAssessment';
+$Rows = $Action->_RiskAssessmentOriginScoresEvaluate( Risk => $Risk, Statement => $Statement );
+ok( ref $Rows eq 'ARRAY' && @{$Rows}, 'Framework accepts unprefixed RiskAssessment result mapping' );
 
 done_testing();

@@ -21,6 +21,7 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
     sub Load { my ( $Self, %P ) = @_; YAML::XS::Load($P{Data}) }
     sub PIDCreate { !$_[0]{Busy} }
     sub PIDDelete { 1 }
+    sub Ensure { 1 } # RiskMasterTicket is outside this policy adapter test.
     sub DynamicFieldGet {
         my ( $Self, %P ) = @_;
         my $Name = $P{Name};
@@ -364,4 +365,19 @@ for my $TargetType (qw(ITSMConfigItem.Workload GovernanceObject.Application MELT
     is($Result->{Status}, 'Pass', "$TargetType can pass its own policy");
     is(scalar @{$Result->{Findings}}, 0, "$TargetType pass emits no finding");
 }
+# Administrator-owned field update: product name changes presentation only.
+$Root=Setup();
+my $NameUpdateText=Slurp('docs/examples/controlobjective/product-eosl-risk-name-update.yml');
+my $NameUpdate=YAML::XS::Load($NameUpdateText);
+is($NameUpdate->{RETURN}{'GROUP FINDINGS'}{IDENTITY}{TEMPLATE}, YAML::XS::Load($RiskText)->{RETURN}{'GROUP FINDINGS'}{IDENTITY}{TEMPLATE}, 'Product name update preserves shared Risk identity');
+$Objective->{'DynamicField_ZRM-FieldAssignment'}=$NameUpdateText;
+$Control->{'DynamicField_ZRM-CIInstance'}=1; $Control->{ConfigItemID}=90; $P{ConfigItemID}=90;
+$Runtime->_AutomaticEvaluate(%P);
+my ($NamedRisk)=values %{$Kernel::OM->{Risks}};
+is($NamedRisk->{Name}, 'A-1: EOSL: Alpha - Root', 'Updated YAML resolves actual source Product name');
+$Kernel::OM->{Objects}{1}{Name}='Renamed Product';
+$Runtime->_TargetEvaluate(%P);
+is(scalar keys %{$Kernel::OM->{Risks}},1,'Name update reuses existing Risk');
+is($NamedRisk->{Name}, 'A-1: EOSL: Alpha - Renamed Product', 'Re-evaluation updates existing Risk name');
+
 done_testing();

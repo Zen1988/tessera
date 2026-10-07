@@ -153,6 +153,49 @@ sub Build {
     return $Content;
 }
 
+# Read-only customer export: one sheet per represented class, with text cells
+# preserving identifiers and literal values (including leading '=' characters).
+sub ExportSheets {
+    my ( $Self, %Param ) = @_;
+    my $Content = '';
+    open my $FH, '>:raw', \$Content or die "Cannot open in-memory workbook: $!";
+    my $Workbook = Excel::Writer::XLSX->new($FH);
+    my $Header = $Workbook->add_format( bold => 1, bg_color => '#E7E6E6', text_wrap => 1 );
+    my %Names;
+    my @Sheets = @{ $Param{Sheets} || [] };
+    @Sheets = ( { Name => 'Assets', Head => [ 'Number', 'Name', 'Class', 'State' ], Data => [] } ) if !@Sheets;
+    for my $Data (@Sheets) {
+        my $Name = $Data->{Name} || 'Assets';
+        $Name =~ s{[\[\]:*?/\\]}{_}g;
+        $Name =~ s{\A'+|'+\z}{}g;
+        $Name = substr( $Name || 'Assets', 0, 31 );
+        my $Base = $Name;
+        my $Suffix = 1;
+        while ( $Names{ lc $Name }++ ) {
+            my $Tail = '_' . ++$Suffix;
+            $Name = substr( $Base, 0, 31 - length $Tail ) . $Tail;
+        }
+        my $Sheet = $Workbook->add_worksheet($Name);
+        my $Head = $Data->{Head} || [];
+        $Sheet->freeze_panes( 1, 0 );
+        $Sheet->set_column( 0, $#$Head, 24 ) if @{$Head};
+        for my $Column ( 0 .. $#$Head ) {
+            $Sheet->write_string( 0, $Column, $Head->[$Column], $Header );
+        }
+        my $RowIndex = 1;
+        for my $Row ( @{ $Data->{Data} || [] } ) {
+            for my $Column ( 0 .. $#$Head ) {
+                $Sheet->write_string( $RowIndex, $Column, defined $Row->[$Column] ? "$Row->[$Column]" : '' );
+            }
+            $RowIndex++;
+        }
+        $Sheet->autofilter( 0, 0, $RowIndex - 1, $#$Head ) if @{$Head};
+    }
+    $Workbook->close();
+    close $FH;
+    return $Content;
+}
+
 sub _ColumnName {
     my ($Number) = @_;
     my $Name = '';

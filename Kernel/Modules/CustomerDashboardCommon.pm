@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,7 @@
 # --
 
 package Kernel::Modules::CustomerDashboardCommon;
+## nofilter(TidyAll::Plugin::OTOBO::Perl::DBObject)
 
 use strict;
 use warnings;
@@ -39,6 +40,23 @@ sub new {
 
 sub Run {
     my ( $Self, %Param ) = @_;
+
+    if (($Self->{Subaction} || '') eq 'SetSessionMood') {
+        my $Layout=$Kernel::OM->Get('Kernel::Output::HTML::Layout');
+        $Layout->ChallengeTokenCheck(Type=>'Customer');
+        my $Request=$Kernel::OM->Get('Kernel::System::Web::Request');
+        my $D=$Request->RequestMethod() eq 'POST' ? $Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->Select(
+            SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin},
+            Mood=>$Request->GetParam(Param=>'Mood'),
+        ) : undef;
+        if ($D) {
+            $Layout->SetCookie(Key=>'TESSERAGreeting',HTTPOnly=>1,SameSite=>'lax',
+                Value=>$Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->CompletionToken(
+                    SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin}));
+        }
+        return $Layout->Attachment(ContentType=>'application/json',Type=>'inline',NoCache=>1,
+            Content=>$Kernel::OM->Get('Kernel::System::JSON')->Encode(Data=>{Success=>$D?1:0,Message=>$D?$D->{Message}:''}));
+    }
 
     # get needed objects
     my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
@@ -90,7 +108,7 @@ sub Run {
         if ( !$UsedTiles->{$Tile}{Module} ) {
             if ( !$UsedTiles->{$Tile}{Template} ) {
                 my $Message = $LayoutObject->{LanguageObject}->Translate(
-                    'Registration for tile %s of customer dashboard is invalid! Either Module or Template needed.',
+                    'Registration for tile %s of CustomerDashboard is invalid! Either Module or Template needed.',
                     $Tile,
                 );
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -107,6 +125,16 @@ sub Run {
         # set the backend file
         my $BackendModule = $UsedTiles->{$Tile}{Module};
 
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'ZTSM CustomerDashboardCommon tile enter: Tile='
+                . $Tile
+                . ' Module='
+                . ( $BackendModule || '<undef>' )
+                . ' UserID='
+                . ( $Self->{UserID} || '<undef>' ),
+        );
+
         # check if backend field exists
         if ( !$MainObject->Require($BackendModule) ) {
             my $Message = $LayoutObject->{LanguageObject}->Translate(
@@ -120,6 +148,20 @@ sub Run {
 
             return $LayoutObject->ErrorScreen( Message => $Message );
         }
+
+        my $BackendModulePath = $BackendModule;
+        $BackendModulePath =~ s{::}{/}g;
+        $BackendModulePath .= '.pm';
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'ZTSM CustomerDashboardCommon tile module loaded: Tile='
+                . $Tile
+                . ' Module='
+                . $BackendModule
+                . ' INC='
+                . ( $INC{$BackendModulePath} || '<not-in-inc>' ),
+        );
 
         # create a backend object
         my $BackendObject = $BackendModule->new();
@@ -137,12 +179,26 @@ sub Run {
 
         my $TileID = sprintf '%02d', $UsedTiles->{$Tile}{Order};    # assuming Order being less than 100
 
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'ZTSM CustomerDashboardCommon tile run before: Tile='
+                . $Tile
+                . ' Object='
+                . ( ref $BackendObject || '<undef>' ),
+        );
+
         # get the HTML
         $TileHTML .= $BackendObject->Run(
             TileID   => $TileID,
             Template => $UsedTiles->{$Tile}{Template} || '',
             Config   => $Config,
             UserID   => $Self->{UserID},
+        );
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'ZTSM CustomerDashboardCommon tile run after: Tile='
+                . $Tile,
         );
     }
 
@@ -172,6 +228,8 @@ sub Run {
             SubText     => $HeaderText->{SubText},
             AccessKey   => $NewTicketAccessKey,
             TileHTML    => $TileHTML,
+            Greeting => $Kernel::OM->Get('Kernel::System::TESSERA::SessionGreeting')->Read(SessionID=>$Self->{SessionID},UserLogin=>$Self->{UserLogin}),
+            GreetingToken => $LayoutObject->{UserChallengeToken},
         },
     );
     $Output .= $LayoutObject->CustomerNavigationBar();

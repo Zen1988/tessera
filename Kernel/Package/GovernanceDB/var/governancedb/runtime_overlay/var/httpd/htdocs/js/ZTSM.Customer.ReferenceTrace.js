@@ -79,7 +79,7 @@
             Label = document.querySelector('label[for="DynamicField_' + Name + '"]');
         }
 
-        return String((Label && Label.textContent) || Name || 'reference')
+        return String((Label && Label.textContent) || (Element && Element.title) || Name || 'reference')
             .replace(/\s*\*\s*$/, '')
             .trim();
     }
@@ -109,7 +109,7 @@
         }
 
         HiddenID = (Element.id || '').replace(/^Autocomplete_/, '');
-        Scope = Element.closest ? Element.closest('.FieldCell, .Field, .Row_DynamicField') : null;
+        Scope = Element.closest ? Element.closest('.ZTSMRiskAssessmentField, .FieldCell, .Field, .Row_DynamicField') : null;
 
         if (Scope && Scope.querySelector) {
             Hidden = Scope.querySelector('input[type="hidden"][id="' + HiddenID.replace(/"/g, '\\"') + '"]');
@@ -134,7 +134,7 @@
         }
 
         if (Element && Element.closest) {
-            Label = Element.closest('.FieldCell, .Field, .Row_DynamicField');
+            Label = Element.closest('.ZTSMRiskAssessmentField, .FieldCell, .Field, .Row_DynamicField');
             if (Label && Label.querySelector) {
                 return Label.querySelector('label');
             }
@@ -145,7 +145,7 @@
 
     function LabelStateRefresh(Element, Hidden) {
         var Label = LabelForField(Element, Hidden),
-            Scope = Element && Element.closest ? Element.closest('.ZTSMReferencePickerCell, .FieldCell, .Field, .Row_DynamicField') : null,
+            Scope = Element && Element.closest ? Element.closest('.ZTSMReferencePickerCell, .ZTSMRiskAssessmentField, .FieldCell, .Field, .Row_DynamicField') : null,
             HasValue = !!(
                 (Element && String(Element.value || '').trim())
                 || (Hidden && String(Hidden.value || '').trim())
@@ -215,7 +215,7 @@
     }
 
     function FieldValueSettle(Element, Hidden) {
-        var Scope = Element && Element.closest ? Element.closest('.FieldCell, .Field, .Row_DynamicField') : null;
+        var Scope = Element && Element.closest ? Element.closest('.ZTSMRiskAssessmentField, .FieldCell, .Field, .Row_DynamicField') : null;
 
         LabelStateRefresh(Element, Hidden);
 
@@ -669,7 +669,7 @@
                 return;
             }
 
-            Cell = Element.closest ? (Element.closest('.FieldCell') || Element.closest('.Field') || Element.parentNode) : Element.parentNode;
+            Cell = Element.closest ? (Element.closest('.ZTSMRiskAssessmentReferenceControl') || Element.closest('.ZTSMRiskAssessmentField') || Element.closest('.FieldCell') || Element.closest('.Field') || Element.parentNode) : Element.parentNode;
             if (!Cell) {
                 return;
             }

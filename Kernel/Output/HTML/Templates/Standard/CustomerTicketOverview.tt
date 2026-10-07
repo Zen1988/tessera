@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -14,13 +14,59 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 # --
 
-<div id='oooContent'>
+<style>
+@media only screen and (min-width: 768px) {
+    #oooContent #oooHeader {
+        grid-template-columns: 1fr auto auto auto;
+        column-gap: 16px;
+    }
+}
+
+.ZTSMTicketReportDownload > button {
+    background: #ffffff;
+    color: #00023c;
+    color: var(--colTextDark);
+    border: 1px solid #e5e5eb;
+    border-radius: 30px;
+    box-shadow: none;
+    min-width: 178px;
+}
+
+.ZTSMTicketReportDownload i {
+    padding-right: 8px;
+}
+
+.ZTSMTicketReportDownloadInline {
+    margin-left: auto;
+}
+
+@media only screen and (max-width: 767px) {
+    .ZTSMTicketReportDownload span {
+        display: none;
+    }
+
+    #ZTSMTicketReportDownload > button {
+        position: fixed;
+        bottom: 92px;
+        right: 16px;
+        width: 48px;
+        min-width: 48px;
+        z-index: 600;
+        box-shadow: 0 12px 16px 0 rgba(0, 27, 255, 0.12);
+    }
+
+    .ZTSMTicketReportDownload i {
+        padding-right: 0;
+    }
+}
+</style>
+<div id='oooContent' class="ZTSMTicketOverview">
     <div id='oooHeader'>
         <h1>[% Translate("Your Tickets") | html %]</h1>
-        <div id="oooSearchBox">
+        [% IF Data.Display == 'List' %]<div id="oooSearchBox">
             <form action="[% Env("CGIHandle") %]" method="post" name="compose">
                 <input type="hidden" name="Action" value="CustomerTicketOverview"/>
-                <input type="hidden" name="Subaction" value="Search"/>
+                <input type="hidden" name="Subaction" value="Search"/><input type="hidden" name="Display" value="List"/>
 
                 <h3 class='ooog'>
                     <i class="ooofo ooofo-search"></i><input type="text" name="Fulltext" id="oooSearch" title="[% Translate('Ticket Search') | html %]"/>
@@ -28,17 +74,32 @@
                 </h3>
             </form>
         </div>
+        [% END %]
         <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerTicketMessage" title="[% Translate("New Ticket") | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]"><button><i class="ooofo ooofo-add"></i><span> [% Translate("New Ticket") | html %]</span></button></a>
-    </div>
+
+        <a id='ZTSMTicketReportDownload' class="ZTSMTicketReportDownload" href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Export Tickets") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Export Tickets") | html %]</span></button></a>
+        <nav class="ZTSMPortalViewToggle" aria-label="Ticket view"><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=List" [% IF Data.Display == 'List' %]aria-current="page"[% END %]>List</a><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Dashboard" [% IF Data.Display == 'Dashboard' %]aria-current="page"[% END %]>Dashboard</a></nav>    </div>
     <div id='oooMainBox'>
+        
+        [% IF Data.Display == 'Dashboard' %]
+        <section class="ZTSMTicketMetrics" aria-label="Ticket counts">
+        [% FOREACH Card IN Data.Dashboard.Cards %]<a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Dashboard;DashboardFilter=[% Card.Key | uri %]#TicketDashboardDetails">[% Card.Title | html %]<strong>[% Card.Count | html %]</strong>[% IF Card.Note %]<small>[% Card.Note | html %]</small>[% END %]</a>[% END %]
+        </section>
+        [% IF Data.Dashboard.Selected.Title %]<section id="TicketDashboardDetails" class="ZTSMTicketAged"><h2>[% Data.Dashboard.Selected.Title | html %]</h2><p>[% Data.Dashboard.Selected.Note | html %] Oldest creation date first. Dates in UTC.</p>
+        <table><thead><tr><th scope="col">Ticket type</th><th scope="col">Ticket number</th><th scope="col">Title</th><th scope="col">Owner group</th><th scope="col">State</th><th scope="col">Creation date</th></tr></thead><tbody>
+        [% FOREACH Ticket IN Data.Dashboard.Selected.Rows %]<tr><td>[% Ticket.Type | html %]</td><td><a href="[% Env('Baselink') %]Action=CustomerTicketZoom;TicketID=[% Ticket.TicketID | uri %]">[% Ticket.TicketNumber | html %]</a></td><td>[% Ticket.Title | html %]</td><td>[% Ticket.OwnerGroup | html %]</td><td>[% Ticket.State | html %]</td><td>[% Ticket.Created | html %]</td></tr>[% END %]</tbody></table>
+        [% IF !Data.Dashboard.Selected.Rows.size %]<p>No matching tickets.</p>[% END %]</section>[% END %]
+        [% ELSE %]
+
         <div id='oooTicketListHeader'>
-[% IF (Env("Subaction") == 'Search') && (Data.Fulltext != '') %]
+
+[% IF Env("Subaction") == 'Search' %]
             <p class="ooo12 oool Selected">
                 [% Translate("Search") | html %]:  "[% Data.Fulltext | html %]"
             </p>
 [% END %]
 [% RenderBlockStart("FilterHeader") %]
-            <a class="[% Data.ClassA | html %] ooo12g oool" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=[% Env("Subaction") %];Filter=[% Data.Filter | uri %];SortBy=[% Data.SortBy | uri %];OrderBy=[% Data.OrderBy | uri %][% Data.CustomerIDs %];Fulltext=[% Data.Fulltext | uri %]">
+            <a class="[% Data.ClassA | html %] ooo12g oool" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=[% Env("Subaction") %];Display=List;Filter=[% Data.Filter | uri %];SortBy=[% Data.SortBy | uri %];OrderBy=[% Data.OrderBy | uri %][% Data.CustomerIDs %];Fulltext=[% Data.Fulltext | uri %]">
                 [% Translate(Data.Name) | html %] ([% Data.Count | html %])
             </a>
 [% RenderBlockEnd("FilterHeader") %]
@@ -54,5 +115,12 @@
 #            <p class="ooo12g ooor">[% Translate("Page") | html %]</p>
         </div>
         [% Data.TicketListHTML %]
+        [% END %]
     </div>
 </div>
+
+<style>
+.ZTSMTicketOverview #oooHeader{display:flex;align-items:center;gap:20px;flex-wrap:wrap}.ZTSMTicketOverview #oooHeader h1{flex:1;margin:0}.ZTSMTicketOverview #oooHeader>a{position:static;margin:0}.ZTSMTicketOverview #ZTSMTicketReportDownload{order:4}.ZTSMTicketOverview #oooHeaderButton{order:3}.ZTSMTicketOverview #ZTSMTicketReportDownload button{position:static;min-width:0;background:#1428ff;color:white;box-shadow:none}.ZTSMPortalViewToggle{display:inline-flex;border:1px solid #cbd0e4;border-radius:24px;overflow:hidden;margin-bottom:24px}.ZTSMPortalViewToggle a{padding:12px 20px;background:white;color:#000539}.ZTSMPortalViewToggle a[aria-current=page]{background:#000539;color:white}.ZTSMTicketMetrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:24px}.ZTSMTicketMetrics>div,.ZTSMTicketMetrics>a,.ZTSMTicketAged{background:white;border:1px solid #e4e6ef;border-radius:16px;padding:24px;color:#000539;min-width:0}.ZTSMTicketMetrics strong{display:block;font-size:32px;margin-top:12px}.ZTSMTicketMetrics small{display:block}.ZTSMTicketAged{overflow-x:auto}.ZTSMTicketAged table{width:100%;border-collapse:collapse}.ZTSMTicketAged th,.ZTSMTicketAged td{padding:12px;text-align:left;border-bottom:1px solid #e4e6ef;overflow-wrap:anywhere}.ZTSMTicketOverview a:focus-visible{outline:3px solid #7c89ff;outline-offset:3px}@media(max-width:1100px){.ZTSMTicketMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:767px){.ZTSMTicketMetrics{grid-template-columns:1fr}.ZTSMTicketOverview #oooHeader h1{flex-basis:100%}.ZTSMTicketOverview #ZTSMTicketReportDownload span{display:inline}.ZTSMTicketOverview #ZTSMTicketReportDownload button{width:auto;z-index:auto}}
+</style>
+
+<style>.ZTSMTicketOverview #oooHeader>.ZTSMPortalViewToggle{order:5;margin:0;flex-shrink:0}</style>

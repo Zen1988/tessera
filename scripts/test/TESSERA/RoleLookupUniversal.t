@@ -1,0 +1,23 @@
+use strict;use warnings;use Test::More;
+open my $FH,'<','Kernel/Package/GovernanceDB/Kernel/System/GovernanceDB/Bootstrap.pm' or die $!;
+my $Source=do{local $/;<$FH>};my($Helper)=$Source=~/(sub _RoleLookupUniversalTypesEnsure \{.*?)(?=sub _GenericAgentSearchArraysSanitize)/s;die 'helper missing' if !$Helper;
+eval 'package BootstrapTest;'.$Helper;die $@ if $@;
+our(@Inserts,$CacheCount);
+{package RoleSeedOM;sub Get{$_[0]}sub TypeLookup{19}sub Do{my($S,%P)=@_;push @main::Inserts,[map{$$_}@{$P{Bind}}];1}sub CleanUp{$main::CacheCount++}}
+local $Kernel::OM=bless{},'RoleSeedOM';my $B=bless{},'BootstrapTest';
+my $Job={NewModule=>'Kernel::System::GenericAgent::ZTSMRoleDirector',Types=>['Assessment','Approval'],TypeIDs=>[10,11],Valid=>0,States=>['pending'],EventValues=>['TicketCreate']};
+ok($B->_RoleLookupUniversalTypesEnsure(Name=>'TESSERA-ACTIVITY-ROLELOOKUP',Job=>$Job),'managed job upgraded');
+ok(!exists $Job->{TypeIDs},'numeric type allowlist removed');
+ok(!exists $Job->{Types},'name type allowlist removed');
+is($Job->{Valid},0,'disabled administrator job remains disabled');
+is_deeply($Job->{States},['pending'],'state filter preserved');
+is_deeply($Job->{EventValues},['TicketCreate'],'events preserved');
+is(scalar @Inserts,2,'only two legacy type filter keys removed');
+$B->_RoleLookupUniversalTypesEnsure(Name=>'TESSERA-ACTIVITY-ROLELOOKUP',Job=>$Job);is(scalar @Inserts,2,'reinstall does not duplicate');
+$B->_RoleLookupUniversalTypesEnsure(Name=>'Other',Job=>{%{$Job},TypeIDs=>[10]});is(scalar @Inserts,2,'other jobs unchanged');
+$B->_RoleLookupUniversalTypesEnsure(Name=>'TESSERA-ACTIVITY-ROLELOOKUP',Job=>{NewModule=>'Custom',TypeIDs=>[10]});is(scalar @Inserts,2,'custom module unchanged');
+$B->_RoleLookupUniversalTypesEnsure(Name=>'TESSERA-ACTIVITY-ROLELOOKUP',Job=>{NewModule=>$Job->{NewModule}});is(scalar @Inserts,2,'unrestricted job stays unrestricted');
+open my $Seed,'<','Kernel/Package/GovernanceDB/var/governancedb/runtime_seed/generic_agents.yml' or die $!;
+my $YAML=do{local $/;<$Seed>};my($RoleJob)=$YAML=~/TESSERA-ACTIVITY-ROLELOOKUP:(.*?)(?=  TESSERA-PURPLEBOOK-READER:)/s;
+unlike($RoleJob,qr/^    Types:/m,'fresh job has no type allowlist');
+done_testing();

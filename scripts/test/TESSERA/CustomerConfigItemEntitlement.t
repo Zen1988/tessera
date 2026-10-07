@@ -102,7 +102,7 @@ close $CustomerListFH;
 like( $CustomerListContent, qr{Subaction\}\s+eq\s+'Export'}, 'customer asset export has an explicit read-only subaction' );
 like( $CustomerListContent, qr{ConfigItemIDs\s*=>\s*\\\@OriginalViewableConfigItems}, 'asset export uses the filtered entitled ConfigItem set' );
 like( $CustomerListContent, qr{FieldType.*?'Set'.*?DynamicFieldGroup.*?JSONObject->Encode}s, 'structured asset fields are exported as JSON cells' );
-like( $CustomerListContent, qr{for my \$ColumnName \(qw\(Name ZTSMAssetTag}, 'asset Name and generated columns use the text-filter path' );
+like( $CustomerListContent, qr{for my \$ColumnName \(qw\(Name ZTSMAssetType ZTSMAssetTag}, 'asset Name and generated columns use the text-filter path' );
 like( $CustomerListContent, qr{index\( lc \$Value, lc \$Filters->\{\$Column\} \) < 0}, 'asset text filtering is case-insensitive substring matching' );
 like( $BootstrapContent, qr{ZTSM\.Customer\.AssetFilters\.js}, 'bootstrap deploys the customer asset text-filter JavaScript on upgrades' );
 

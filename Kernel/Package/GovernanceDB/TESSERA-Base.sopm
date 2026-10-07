@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.74</Version>
+    <Version>0.0.129</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -15,7 +15,19 @@
         This package owns the TESSERA base runtime and GovernanceDB tables and settings. Existing ITSM ConfigItem tables are not touched.
     </IntroUninstall>
 
+    <ModuleRequired Version="2.0">GD</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/SessionGreeting.pm" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Profile.css" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/CustomerProfilePhoto.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Preferences/TESSERACustomerPhoto.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerProfilePhoto.pm" Permission="660"/>
+
+        <File Location="var/httpd/htdocs/common/img/TESSERA/risk_register.svg" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/RiskRegister.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/RiskGovernanceDecision.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerRiskRegister.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerRiskRegister.tt" Permission="660"/>
         <File Location="Kernel/Config/Files/XML/GovernanceDB.xml" Permission="660"/>
         <File Location="Kernel/Config/Files/XML/ZTSMExternalAPI.xml" Permission="660"/>
         <File Location="Kernel/GenericInterface/Operation/TESSERA/Common.pm" Permission="660"/>
@@ -201,6 +213,7 @@
         <File Location="Kernel/Output/HTML/ITSMConfigItem/ZTSMCustomerOverviewSmall.pm" Permission="660"/>
         <File Location="Kernel/Output/HTML/ITSMConfigItem/ZTSMOverviewSmall.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerITSMConfigItem.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/ZTSMCustomerITSMConfigItemOverviewSmall.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerITSMConfigItemSearch.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Config/Files/XML/ITSMConfigItem.xml" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Customer/default/img/ztsm_assets.svg" Permission="644"/>
@@ -227,6 +240,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketList.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketMessage.tt" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketOverview.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketOverview.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMDiagnosis.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketZTSMRiskAssessment.tt" Permission="660"/>

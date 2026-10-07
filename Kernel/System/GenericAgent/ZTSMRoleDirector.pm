@@ -35,6 +35,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::CustomerUser',
+    'Kernel::System::TESSERA::GovernanceRoleResolver',
 );
 
 # ------------------------------------------------------------ #
@@ -845,7 +846,7 @@ sub _DiagnosisFanoutExists {
         UserID => $Param{UserID} || 1,
     );
 
-    for my $FieldName (qw(ZTicket-Parent ZIN-Iteration ZTicket-BlueBook ZTicket-Chapter)) {
+    for my $FieldName (qw(ZTicket-Parent ZIN-Iteration ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
         my $Value = _NormalizeValue( $Ticket->{"DynamicField_$FieldName"} );
         next if !defined $Value || $Value eq '';
 
@@ -909,15 +910,17 @@ sub _DiagnosisFanoutTicketCreate {
 
     my $Ticket = $Param{Ticket};
     return if !$Ticket || ref $Ticket ne 'HASH';
-    return if !$Param{OwnerGroup};
+    my $AssignmentField = $Param{AssignmentField} || 'ZTicket-OwnerGroup';
+    my $AssignmentValue = defined $Param{AssignmentValue} ? $Param{AssignmentValue} : $Param{OwnerGroup};
+    return if !defined $AssignmentValue || $AssignmentValue eq '';
 
     my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
 
-    if ( _DiagnosisFanoutExists(%Param) ) {
+    if ( $AssignmentField eq 'ZTicket-OwnerGroup' && _DiagnosisFanoutExists( %Param, OwnerGroup => $AssignmentValue ) ) {
         $LogObject->Log(
             Priority => 'notice',
             Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket already exists '
-                . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$Param{OwnerGroup}",
+                . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$AssignmentValue",
         );
         return 1;
     }
@@ -944,7 +947,7 @@ sub _DiagnosisFanoutTicketCreate {
         $LogObject->Log(
             Priority => 'error',
             Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out TicketCreate failed '
-                . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$Param{OwnerGroup}",
+                . "SourceTicketID=$Ticket->{TicketID} Assignment=$AssignmentValue",
         );
         return;
     }
@@ -957,18 +960,124 @@ sub _DiagnosisFanoutTicketCreate {
 
     _UpdateTicketField(
         TicketID => $NewTicketID,
-        FieldName => 'ZTicket-OwnerGroup',
-        Value     => $Param{OwnerGroup},
+        FieldName => $AssignmentField,
+        Value     => $AssignmentValue,
     );
 
     $LogObject->Log(
         Priority => 'notice',
         Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket created '
             . "SourceTicketID=$Ticket->{TicketID} NewTicketID=$NewTicketID "
-            . "OwnerGroup=$Param{OwnerGroup}",
+            . "AssignmentField=$AssignmentField AssignmentValue=$AssignmentValue",
     );
 
     return $NewTicketID;
+}
+
+sub _AssignmentCollectionTicketsGet {
+    my (%Param) = @_;
+    my $Ticket = $Param{Ticket};
+    return () if ref $Ticket ne 'HASH';
+    my $Parent  = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $Chapter = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    return ($Ticket) if !defined $Parent || $Parent eq '' || !defined $Chapter || $Chapter eq '';
+
+    my %Search = ( Result => 'ARRAY', Types => [ $Ticket->{Type} ], UserID => $Param{UserID} || 1 );
+    for my $FieldName (qw(ZTicket-Parent ZTicket-BlueBook ZTicket-BlueLevel ZTicket-Chapter)) {
+        my $Value = _NormalizeValue( $Ticket->{"DynamicField_$FieldName"} );
+        $Search{"DynamicField_$FieldName"} = { Equals => $Value } if defined $Value && $Value ne '';
+    }
+    my @IDs = sort { $a <=> $b } $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(%Search);
+    my $Iteration = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} );
+    my @Tickets;
+    for my $ID (@IDs) {
+        my %Found = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+            TicketID => $ID, DynamicFields => 1, UserID => $Param{UserID} || 1, Silent => 1,
+        );
+        next if !%Found;
+        my $FoundIteration = _NormalizeValue( $Found{'DynamicField_ZIN-Iteration'} );
+        next if ( defined $Iteration && $Iteration ne '' )
+            ? !defined $FoundIteration || $FoundIteration ne $Iteration
+            : defined $FoundIteration && $FoundIteration ne '';
+        push @Tickets, \%Found;
+    }
+    return @Tickets;
+}
+
+sub _AssignmentCollectionNeutralClose {
+    my (%Param) = @_;
+    my $Ticket = $Param{Ticket};
+    return 1 if ref $Ticket ne 'HASH' || ( $Ticket->{StateType} || '' ) eq 'closed';
+    my $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
+        TicketID => $Ticket->{TicketID}, State => 'closed no action', UserID => $Param{UserID} || 1,
+    );
+    return if !$Success;
+    ZTSMArticleCreate(
+        TicketID => $Ticket->{TicketID}, Subject => 'Dynamic assignment completed with no action',
+        Body => "** Note: This is a system-generated orchestration update message.\n\n"
+            . ( $Param{Reason} || 'No remaining assignment target was found for this execution ticket.' )
+            . "\n\nGovernance Role:\n" . ( $Param{Role} || 'N/A' )
+            . "\n\nNo lifecycle transition was initiated by assignment reconciliation.",
+        HistoryComment => 'ZTSM: dynamic assignment closed surplus execution ticket with no action',
+        UserID => $Param{UserID} || 1,
+    );
+    return 1;
+}
+
+sub _AssignmentCollectionReconcile {
+    my (%Param) = @_;
+    my $Ticket = $Param{Ticket};
+    return if ref $Ticket ne 'HASH' || !$Param{FieldName};
+    my @Targets;
+    my %TargetSeen;
+    for my $Target ( @{ $Param{Targets} || [] } ) {
+        $Target = _NormalizeValue($Target);
+        next if !defined $Target || $Target eq '' || $TargetSeen{$Target}++;
+        push @Targets, $Target;
+    }
+    my $Parent  = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Parent'} );
+    my $Chapter = _NormalizeValue( $Ticket->{'DynamicField_ZTicket-Chapter'} );
+    if ( @Targets > 1 && ( !defined $Parent || $Parent eq '' || !defined $Chapter || $Chapter eq '' ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "ZTSMRoleDirector: collection fan-out requires ZTicket-Parent and ZTicket-Chapter TicketID=$Ticket->{TicketID}",
+        );
+        return;
+    }
+    my %Wanted = map { $_ => 1 } @Targets;
+    my %Satisfied;
+    my @Available;
+    my @Tickets = _AssignmentCollectionTicketsGet(%Param);
+    for my $Candidate (@Tickets) {
+        my $Assigned = _NormalizeValue( $Candidate->{ 'DynamicField_' . $Param{FieldName} } );
+        if ( defined $Assigned && $Assigned ne '' && $Wanted{$Assigned} && !$Satisfied{$Assigned} ) {
+            $Satisfied{$Assigned} = 1;
+            next;
+        }
+        next if ( $Candidate->{StateType} || '' ) eq 'closed';
+        push @Available, $Candidate;
+    }
+    TARGET:
+    for my $Target (@Targets) {
+        next TARGET if $Satisfied{$Target};
+        if (@Available) {
+            my $Candidate = shift @Available;
+            _UpdateTicketField( TicketID => $Candidate->{TicketID}, FieldName => $Param{FieldName}, Value => $Target );
+            $Satisfied{$Target} = 1;
+            next TARGET;
+        }
+        my $NewTicketID = _DiagnosisFanoutTicketCreate(
+            Ticket => $Ticket, AssignmentField => $Param{FieldName}, AssignmentValue => $Target, UserID => $Param{UserID} || 1,
+        );
+        $Satisfied{$Target} = 1 if $NewTicketID;
+    }
+    my $Reason = @Targets
+        ? 'No remaining assignment target was found for this surplus execution ticket.'
+        : 'The GovernanceRole resolver returned no eligible assignment targets.';
+    for my $Candidate (@Available) {
+        _AssignmentCollectionNeutralClose( Ticket => $Candidate, Reason => $Reason, Role => $Param{Role}, UserID => $Param{UserID} || 1 );
+    }
+    return 1;
 }
 
 
@@ -1007,6 +1116,8 @@ sub Run {
     );
 	
 	return 0 if !%Ticket;
+
+    return 1 if !$Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->ExecutionTicketEligible(Ticket=>\%Ticket);
 
     if ( _TicketOnHold( \%Ticket ) ) {
         $LogObject->Log(
@@ -1101,7 +1212,7 @@ sub Run {
         if $ExistingOwnerGroup
         && _IsSupportProfile( GovernanceObjectID => $ExistingOwnerGroup, UserID => 1 )
         && !_IsRequesterDefaultProfile($Profile)
-        && !( $DynamicGovernanceRole && _ProfileKey($ProfileDisplay) eq 'DIAGNOSE' );
+        && !$DynamicGovernanceRole;
 
     # -------------------------------------------------------- #
     # REQUESTER DEFAULT
@@ -1111,7 +1222,86 @@ sub Run {
     my $RequesterOwnerUserID;
     my $AffectedUserOwnerUserID;
 
+    my $ScriptResolutionHandled;
     if ($DynamicGovernanceRole) {
+        my $ScriptResult = $Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->Resolve(
+            GovernanceRole => $DynamicGovernanceRole,
+            Ticket         => \%Ticket,
+            UserID         => 1,
+        );
+        if ( ( $ScriptResult->{Status} || '' ) eq 'RETURNED' ) {
+            $ResolutionCandidate = $ScriptResult->{Value};
+            if ( ( $ScriptResult->{ValueType} || '' ) eq 'GovernanceObject.SupportProfile' ) {
+                $ResolvedSupportProfile = $ScriptResult->{Value};
+            }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'CustomerUser' ) {
+                $RequesterOwnerUserID = $ScriptResult->{Value};
+            }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'Collection<SupportAssignment>' ) {
+                my $Assignments = $ScriptResult->{Value};
+                if ( ref $Assignments ne 'ARRAY' || !@{$Assignments} ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: empty SupportAssignment collection TicketID=$TicketID" );
+                    return 1;
+                }
+                my @SupportProfiles;
+                my @CustomerUsers;
+                my %Seen;
+                for my $Assignment ( @{$Assignments} ) {
+                    next if ref $Assignment ne 'HASH' || !$Assignment->{Type} || !defined $Assignment->{Value};
+                    next if $Seen{"$Assignment->{Type}\0$Assignment->{Value}"}++;
+                    push @SupportProfiles, $Assignment->{Value} if $Assignment->{Type} eq 'GovernanceObject.SupportProfile';
+                    push @CustomerUsers,   $Assignment->{Value} if $Assignment->{Type} eq 'CustomerUser';
+                }
+                if (@SupportProfiles) {
+                    $ResolvedSupportProfile = shift @SupportProfiles;
+                    push @DiagnosisFanoutOwnerGroups, @SupportProfiles;
+                }
+                elsif ( @CustomerUsers == 1 ) {
+                    $RequesterOwnerUserID = $CustomerUsers[0];
+                }
+                else {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: SupportAssignment collection has no unambiguous target TicketID=$TicketID" );
+                    return 1;
+                }
+            }
+            elsif (
+                ( $ScriptResult->{ValueType} || '' ) eq 'Collection<GovernanceObject.SupportProfile>'
+                || ( $ScriptResult->{ValueType} || '' ) eq 'Collection<CustomerUser>'
+                )
+            {
+                my $Targets = $ScriptResult->{Value};
+                if ( ref $Targets ne 'ARRAY' ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
+                    return 1;
+                }
+                my $FieldName = $ScriptResult->{ValueType} eq 'Collection<CustomerUser>' ? 'ZTicket-Owner' : 'ZTicket-OwnerGroup';
+                _AssignmentCollectionReconcile(
+                    Ticket => \%Ticket, Targets => $Targets, FieldName => $FieldName,
+                    Role => $ProfileDisplay, UserID => 1,
+                );
+                return 1;
+            }
+            else {
+                $LogObject->Log(
+                    Priority => 'error',
+                    Message  => 'ZTSMRoleDirector: GovernanceRole script returned unsupported type '
+                        . ( $ScriptResult->{ValueType} || 'N/A' ) . " TicketID=$TicketID",
+                );
+                return 1;
+            }
+            $ScriptResolutionHandled = 1;
+        }
+        elsif ( ( $ScriptResult->{Status} || '' ) ne 'NO_SCRIPT' ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => 'ZTSMRoleDirector: GovernanceRole script resolution failed '
+                    . ( $ScriptResult->{Error} || 'UNKNOWN' ) . " TicketID=$TicketID",
+            );
+            return 1;
+        }
+    }
+
+    if ( $DynamicGovernanceRole && !$ScriptResolutionHandled ) {
         if ( _ProfileKey($ProfileDisplay) eq 'DIAGNOSE' ) {
             my @OwnerGroups = _DiagnosisOwnerGroupsResolve(
                 Ticket => \%Ticket,

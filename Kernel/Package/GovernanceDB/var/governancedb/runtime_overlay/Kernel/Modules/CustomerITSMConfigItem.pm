@@ -131,7 +131,7 @@ sub Run {
         $GetColumnFilter{$ColumnName} = $FilterValue;
     }
 
-    for my $ColumnName (qw(Name ZTSMAssetTag ZTSMProductModel ZTSMApplication ZTSMEnvironment ZTSMLocation ZTSMDomain ZTSMFunctionProfile)) {
+    for my $ColumnName (qw(Name ZTSMAssetType ZTSMAssetTag ZTSMProductModel ZTSMApplication ZTSMEnvironment ZTSMLocation ZTSMDomain ZTSMFunctionProfile)) {
         my $FilterValue = $ParamObject->GetParam( Param => 'ColumnFilter' . $ColumnName ) || '';
         if ( $FilterValue eq '' ) {
             $FilterValue = $StoredFilters->{ $ColumnName . 'IDs' }->[0] || '';
@@ -318,7 +318,6 @@ sub Run {
                 %DFSearchParams,
                 %PermissionConditionSearchParams,
                 %Sort,
-                Limit => $Self->{SearchLimit} // '1000',
             );
 
             # apply filter restrictions to search for
@@ -355,7 +354,7 @@ sub Run {
 
             my $Count = 0;
             if ( @ViewableClassIDs && @ViewableDeplStateIDs ) {
-                my @CountConfigItemIDs = $ConfigItemObject->ConfigItemSearch(
+                my @CountConfigItemIDs = $Self->_ZTSMConfigItemSearchAll(
                     %FilterSearch,
                     %ColumnFilter,
                     Result => 'ARRAY',
@@ -399,6 +398,9 @@ sub Run {
         );
     }
 
+    my $AssetSearch=$ParamObject->GetParam(Param=>'AssetSearch')||'';
+    my $IsDashboard = ( $ParamObject->GetParam( Param => 'AssetView' ) || '' ) ne 'List';
+
     # show header filter
     for my $Key ( sort keys %Filters ) {
 
@@ -407,6 +409,7 @@ sub Run {
             Data => {
                 %Param,
                 %{ $Filters{$Key} },
+                AssetView => $IsDashboard ? 'Dashboard' : 'List',
                 Filter => $Key,
                 ClassA => $Key eq $Filter ? 'Selected' : '',
             },
@@ -419,6 +422,7 @@ sub Run {
             Name => 'FilterDelete',
             Data => {
                 Filter => $Filter,
+                AssetView => $IsDashboard ? 'Dashboard' : 'List',
             },
         );
     }
@@ -450,9 +454,6 @@ sub Run {
     my $PageShown               = $Self->{$PageShownPreferencesKey} || 10;
     my %PageNav;
 
-    # do shown config item lookup
-    my $Limit = 1_000;
-
     my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';
     my $HeaderColumn   = $ElementChanged;
     $HeaderColumn =~ s{\A ColumnFilter }{}msxg;
@@ -474,7 +475,7 @@ sub Run {
             . '=' . $LayoutObject->LinkEncode( $GetColumnFilter{$ColumnName} );
     }
 
-    my $LinkPage = 'Filter='
+    my $LinkPage = 'AssetSearch=' . $LayoutObject->LinkEncode($AssetSearch) . ';Filter='
         . $LayoutObject->Ascii2Html( Text => $Filter )
         . ';View=' . $LayoutObject->Ascii2Html( Text => $View )
         . ';SortBy=' . $LayoutObject->Ascii2Html( Text => $SortBy )
@@ -514,10 +515,9 @@ sub Run {
             )
             )
         {
-            @OriginalViewableConfigItems = $ConfigItemObject->ConfigItemSearch(
+            @OriginalViewableConfigItems = $Self->_ZTSMConfigItemSearchAll(
                 %{ $Filters{$Filter}->{Search} },
                 %ColumnFilter,
-                Limit  => $Limit,
                 Result => 'ARRAY',
             );
             @OriginalViewableConfigItems = @{
@@ -531,10 +531,11 @@ sub Run {
                 )
             };
 
+            @OriginalViewableConfigItems=$Self->_ZTSMAssetTextSearch(IDs=>\@OriginalViewableConfigItems,Query=>$IsDashboard?'':$AssetSearch);
             my $StartHit = $ParamObject->GetParam( Param => 'StartHit' ) || 1;
 
             %PageNav = $LayoutObject->PageNavBar(
-                Limit     => 10000,
+                Limit     => scalar(@OriginalViewableConfigItems) || 1,
                 StartHit  => $StartHit,
                 PageShown => $PageShown,
                 AllHits   => scalar @OriginalViewableConfigItems,
@@ -615,7 +616,7 @@ sub Run {
     for my $FilterColumn ( sort keys %Filters ) {
         my $Count = 0;
         if (@ViewableDeplStateIDs) {
-            my @CountConfigItemIDs = $ConfigItemObject->ConfigItemSearch(
+            my @CountConfigItemIDs = $Self->_ZTSMConfigItemSearchAll(
                 %{ $Filters{$FilterColumn}->{Search} },
                 %ColumnFilter,
                 Result => 'ARRAY',
@@ -632,6 +633,7 @@ sub Run {
             };
         }
 
+        $Count=scalar @OriginalViewableConfigItems if $FilterColumn eq $Filter && !$IsDashboard && $AssetSearch ne '';
         if ( $FilterColumn eq $Filter ) {
             $CountTotal = $Count;
         }
@@ -674,11 +676,20 @@ sub Run {
         );
     }
 
+    my $Dashboard = $IsDashboard ? $Self->_ZTSMAssetDashboard(
+        ConfigItemIDs => \@OriginalViewableConfigItems,
+    ) : {};
+
     $Output .= $LayoutObject->Output(
         TemplateFile => 'CustomerITSMConfigItem',
         Data         => {
             ITSMConfigItemListHTML => $ConfigItemListHTML,
-            ExportLink             => 'Action=CustomerITSMConfigItem;Subaction=Export;' . $LinkPage,
+            IsDashboard           => $IsDashboard,
+            AssetSearch           => $AssetSearch,
+            Dashboard             => $Dashboard,
+            ListLink              => 'Action=CustomerITSMConfigItem;AssetView=List;' . $LinkPage,
+            DashboardLink         => 'Action=CustomerITSMConfigItem;AssetView=Dashboard;' . $LinkPage,
+            ExportLink             => 'Action=CustomerITSMConfigItem;Subaction=Export;AssetView=' . ($IsDashboard?'Dashboard':'List') . ';' . $LinkPage,
             %PageNav,
         },
     );
@@ -692,6 +703,125 @@ sub Run {
     return $Output;
 }
 
+# Retrieve every candidate before entitlement and virtual filters. A fixed
+# pre-filter limit can discard all of a customer's assets in a larger CMDB.
+# COUNT is an aggregate query; its row limit does not cap the matching count.
+sub _ZTSMConfigItemSearchAll {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $Count = $ConfigItemObject->ConfigItemSearch(
+        %Param,
+        Result   => 'COUNT',
+        Limit    => 1,
+        CacheTTL => 0,
+    );
+    return if !defined $Count || $Count !~ m{\A\d+\z} || !$Count;
+
+    return $ConfigItemObject->ConfigItemSearch(
+        %Param,
+        Result   => 'ARRAY',
+        Limit    => $Count,
+        CacheTTL => 0,
+    );
+}
+
+sub _ZTSMAssetTextSearch {
+    my ($Self,%P)=@_;
+    my $Query=lc($P{Query}||'');
+    return @{$P{IDs}||[]} if $Query eq '';
+    my $CI=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    return grep {
+        my $Item=$CI->ConfigItemGet(ConfigItemID=>$_,DynamicFields=>1);
+        my @Text=$Item ? ($Item->{Name}||'',$Item->{Number}||'') : ();
+        if ($Item) {push @Text,map {$Self->_ZTSMVirtualValueGet(ConfigItem=>$Item,Candidates=>[$_])} ('Asset Tag','WorkloadType','NetworkNodeType','FacilityEquipmentType','PeripheralNodeType');}
+        index(lc(join(' ',@Text)),$Query)>=0;
+    } @{$P{IDs}||[]};
+}
+
+sub _ZTSMAssetDashboard {
+    my ( $Self, %Param ) = @_;
+    my $CI = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my %Assets;
+    my %Types;
+    for my $ID ( @{ $Param{ConfigItemIDs} || [] } ) {
+        next if $Assets{$ID};
+        my $Item = $CI->ConfigItemGet( ConfigItemID => $ID, DynamicFields => 1 );
+        next if !IsHashRefWithData($Item);
+        my $Type = $Self->_ZTSMVirtualValueGet(
+            ConfigItem => $Item,
+            Candidates => [ 'ZTAM-WorkloadType', 'ZTAM-NetworkNodeType', 'ZTAM-FacilityEquipmentType', 'ZTAM-PeripheralNodeType' ],
+        ) || 'Unspecified';
+        $Assets{$ID} = { ID => $ID, Name => $Item->{Name} || '', Type => $Type };
+        $Types{$Type}++;
+    }
+    my $Total = scalar keys %Assets;
+    my @Distribution = map {
+        { Type => $_, Count => $Types{$_}, Percent => $Total ? sprintf('%.1f', 100 * $Types{$_} / $Total) : 0 }
+    } sort { $Types{$b} <=> $Types{$a} || lc($a) cmp lc($b) } keys %Types;
+    return { Total => 0, RiskCount => 0, Distribution => [], RiskAssets => [] } if !$Total;
+
+    my $Ticket = $Kernel::OM->Get('Kernel::System::Ticket');
+    my %Search = ( StateType => 'Open', UserID => 1 );
+    my $Count = $Ticket->TicketSearch( %Search, Result => 'COUNT', Limit => 1 );
+    my @TicketIDs = defined $Count && $Count =~ m{\A\d+\z} && $Count
+        ? $Ticket->TicketSearch( %Search, Result => 'ARRAY', Limit => $Count ) : ();
+    my $DF = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $Set = $DF->DynamicFieldGet( Name => 'RiskAssessment' );
+    $Set = $DF->DynamicFieldGet( Name => 'ZRM-RiskAssessment' ) if !IsHashRefWithData($Set);
+    my %RiskAssets;
+    for my $TicketID (@TicketIDs) {
+        next if !$Ticket->TicketCustomerPermission( Type => 'ro', TicketID => $TicketID, UserID => $Self->{UserID} );
+        my %Data = $Ticket->TicketGet( TicketID => $TicketID, DynamicFields => 1, UserID => 1 );
+        next if !%Data || ( $Data{StateType} || '' ) eq 'closed';
+        my @Targets = $Self->_ZTSMAssetReferenceValues( $Data{'DynamicField_ZRM-RiskTargetCI'} );
+        if ( IsHashRefWithData($Set) ) {
+            my $Rows = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueGet(
+                DynamicFieldConfig => $Set, ObjectID => $TicketID,
+            );
+            push @Targets, $Self->_ZTSMAssetRowTargets($Rows);
+        }
+        for my $RiskID ( $Self->_ZTSMAssetReferenceValues( $Data{'DynamicField_ZRM-OriginatedEvent'} ) ) {
+            next if $RiskID !~ m{\A\d+\z};
+            my $Risk = $Kernel::OM->Get('Kernel::System::MELTObject')->MELTObjectGet(
+                MELTObjectID => $RiskID, DynamicFields => 1, Silent => 1,
+            );
+            next if !IsHashRefWithData($Risk) || ( $Risk->{Class} || '' ) ne 'Risk';
+            push @Targets, $Self->_ZTSMAssetReferenceValues( $Risk->{'DynamicField_MELT-RelatedCI'} );
+        }
+        for my $ID (@Targets) {
+            next if !defined $ID || $ID !~ m{\A\d+\z};
+            # ConfigItem reference fields use object IDs; never reinterpret an
+            # unmatched ID as a version and accidentally tag another asset.
+            $RiskAssets{$ID} = $Assets{$ID} if $Assets{$ID};
+        }
+    }
+    return {
+        Total => $Total, Distribution => \@Distribution,
+        RiskCount => scalar keys %RiskAssets,
+        RiskAssets => [ map { $RiskAssets{$_} } sort { lc($Assets{$a}{Name}) cmp lc($Assets{$b}{Name}) || $a <=> $b } keys %RiskAssets ],
+    };
+}
+
+sub _ZTSMAssetReferenceValues {
+    my ( $Self, $Value ) = @_;
+    return if !defined $Value;
+    return map { $Self->_ZTSMAssetReferenceValues($_) } @{$Value} if ref $Value eq 'ARRAY';
+    return if ref $Value;
+    return $Value;
+}
+
+sub _ZTSMAssetRowTargets {
+    my ( $Self, $Rows ) = @_;
+    return map { $Self->_ZTSMAssetRowTargets($_) } @{$Rows} if ref $Rows eq 'ARRAY';
+    return if ref $Rows ne 'HASH';
+    my @Targets = $Self->_ZTSMAssetReferenceValues( $Rows->{'ZRM-RiskTargetCI'} );
+    for my $Value ( values %{$Rows} ) {
+        push @Targets, $Self->_ZTSMAssetRowTargets($Value) if ref $Value;
+    }
+    return @Targets;
+}
+
 sub _ZTSMAssetExport {
     my ( $Self, %Param ) = @_;
 
@@ -701,7 +831,7 @@ sub _ZTSMAssetExport {
     my $JSONObject       = $Kernel::OM->Get('Kernel::System::JSON');
 
     my @Items;
-    my %FieldNames;
+    my %ClassFieldNames;
     for my $ConfigItemID ( @{ $Param{ConfigItemIDs} || [] } ) {
         my $ConfigItem = $ConfigItemObject->ConfigItemGet(
             ConfigItemID => $ConfigItemID,
@@ -717,17 +847,22 @@ sub _ZTSMAssetExport {
             for my $FieldConfig ( values $Definition->{DynamicFieldRef}->%* ) {
                 next if !IsHashRefWithData($FieldConfig) || !$FieldConfig->{Name};
                 $Fields{ $FieldConfig->{Name} } = $FieldConfig;
-                $FieldNames{ $FieldConfig->{Name} } = 1;
+                $ClassFieldNames{ $ConfigItem->{Class} || 'Assets' }{ $FieldConfig->{Name} } = 1;
             }
         }
         push @Items, { ConfigItem => $ConfigItem, Fields => \%Fields };
     }
 
-    my @DynamicFieldNames = sort { lc $a cmp lc $b } keys %FieldNames;
-    my @Head = ( 'Number', 'Name', 'Class', 'State', @DynamicFieldNames );
-    my @Rows;
+    my %Sheets;
     for my $Item (@Items) {
         my $ConfigItem = $Item->{ConfigItem};
+        my $Class = $ConfigItem->{Class} || 'Assets';
+        my @DynamicFieldNames = sort { lc $a cmp lc $b } keys %{ $ClassFieldNames{$Class} || {} };
+        $Sheets{$Class} ||= {
+            Name => $Class,
+            Head => [ 'Number', 'Name', 'Class', 'State', @DynamicFieldNames ],
+            Data => [],
+        };
         my @Values;
         for my $FieldName (@DynamicFieldNames) {
             my $FieldConfig = $Item->{Fields}{$FieldName};
@@ -767,7 +902,7 @@ sub _ZTSMAssetExport {
             push @Values, $Text;
         }
 
-        push @Rows, [
+        push @{ $Sheets{$Class}{Data} }, [
             $ConfigItem->{Number}       || '',
             $ConfigItem->{Name}         || '',
             $ConfigItem->{Class}        || '',
@@ -776,10 +911,8 @@ sub _ZTSMAssetExport {
         ];
     }
 
-    my $Excel = $Kernel::OM->Get('Kernel::System::CSV')->Array2CSV(
-        Head   => \@Head,
-        Data   => \@Rows,
-        Format => 'Excel',
+    my $Excel = $Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->ExportSheets(
+        Sheets => [ map { $Sheets{$_} } sort keys %Sheets ],
     );
     my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
     my $Filename = 'asset_export_' . $DateTimeObject->Format( Format => '%Y-%m-%d_%H-%M' ) . '.xlsx';
@@ -799,6 +932,7 @@ sub _ZTSMVirtualFilterApply {
     return $IDs if !%{$Filters};
 
     my %Candidates = (
+        ZTSMAssetType    => [ 'ZTAM-WorkloadType', 'ZTAM-NetworkNodeType', 'ZTAM-FacilityEquipmentType', 'ZTAM-PeripheralNodeType' ],
         ZTSMAssetTag     => [ 'AssetTag', 'Asset Tag' ],
         ZTSMProductModel => [ 'ProductModel', 'Product' ],
         ZTSMApplication  => [ 'Application', 'ApplicationSystem', 'Application System' ],

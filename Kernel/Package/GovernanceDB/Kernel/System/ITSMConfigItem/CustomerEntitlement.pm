@@ -123,20 +123,25 @@ sub _ConfigItemAccessCheck {
     my @EntitlementIDs = $Self->_ScalarValues(
         $ConfigItem->{'DynamicField_ZTAM-ContractEntitlement'}
     );
-    return $Self->_Denied(%Param) if @EntitlementIDs != 1;
+    return $Self->_Denied(%Param) if !@EntitlementIDs;
 
-    my $Entitlement = $Self->_ConfigItemReferenceGet(
-        Value => $EntitlementIDs[0],
-        Class => 'ContractEntitlement',
-    );
-    return $Self->_Denied(%Param) if !$Entitlement;
+    # Multiple explicit entitlements are independent coverage grants. Each
+    # reference must resolve unambiguously and match the customer's assignment.
+    for my $EntitlementID (@EntitlementIDs) {
+        my $Entitlement = $Self->_ConfigItemReferenceGet(
+            Value => $EntitlementID,
+            Class => 'ContractEntitlement',
+        );
+        next if !$Entitlement;
 
-    return $Self->ContractEntitlementAccessCheck(
-        CustomerUserID       => $Param{CustomerUserID},
-        ContractEntitlementID => $Entitlement->{ConfigItemID},
-        RequireRole          => $Param{RequireRole} || ( $Param{RequireCMDBReadRole} ? 'TESSERA::CMDB::READ' : undef ),
-        LogNo                => $Param{LogNo},
-    );
+        return 1 if $Self->ContractEntitlementAccessCheck(
+            CustomerUserID        => $Param{CustomerUserID},
+            ContractEntitlementID => $Entitlement->{ConfigItemID},
+            RequireRole           => $Param{RequireRole} || ( $Param{RequireCMDBReadRole} ? 'TESSERA::CMDB::READ' : undef ),
+            LogNo                 => 1,
+        );
+    }
+    return $Self->_Denied(%Param);
 }
 
 sub _AssignmentsGet {

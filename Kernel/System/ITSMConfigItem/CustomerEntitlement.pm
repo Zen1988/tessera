@@ -15,17 +15,58 @@ sub new {
     return bless {}, $Type;
 }
 
-sub CustomerHasAssetRole {
+sub CustomerHasCMDBReadRole {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{CustomerUserID};
 
     my $Assignments = $Self->_AssignmentsGet(
         CustomerUserID => $Param{CustomerUserID},
-        RequireRole    => 'ASSET',
+        RequireRole    => 'TESSERA::CMDB::READ',
     );
 
     return @{$Assignments} ? 1 : undef;
+}
+
+sub CustomerHasRole {
+    my ( $Self, %Param ) = @_;
+    return if !$Param{CustomerUserID} || !$Param{Role};
+    my $Assignments = $Self->_AssignmentsGet(
+        CustomerUserID => $Param{CustomerUserID},
+        RequireRole    => $Param{Role},
+    );
+    return @{$Assignments} ? 1 : undef;
+}
+
+sub ContractEntitlementAccessCheck {
+    my ( $Self, %Param ) = @_;
+    return if !$Param{CustomerUserID} || !$Param{ContractEntitlementID};
+
+    my $Entitlement = $Self->_ConfigItemReferenceGet(
+        Value => $Param{ContractEntitlementID},
+        Class => 'ContractEntitlement',
+    );
+    return $Self->_Denied(%Param) if !$Entitlement;
+
+    my @EntitledProfiles = $Self->_ReferenceObjects(
+        Value => $Entitlement->{'DynamicField_Contract-SupportProfie'},
+        Class => 'SupportProfile',
+    );
+    return $Self->_Denied(%Param) if !@EntitledProfiles;
+    my %EntitledProfileID = map { $_->{GovernanceObjectID} => 1 } @EntitledProfiles;
+
+    my $Assignments = $Self->_AssignmentsGet(
+        CustomerUserID => $Param{CustomerUserID},
+        RequireRole    => $Param{RequireRole},
+    );
+    for my $Assignment ( @{$Assignments} ) {
+        my @AssignedProfiles = $Self->_ReferenceObjects(
+            Value => $Assignment->{'DynamicField_ZTSMSupportAssignment-SupportProfile'},
+            Class => 'SupportProfile',
+        );
+        return 1 if grep { $EntitledProfileID{ $_->{GovernanceObjectID} } } @AssignedProfiles;
+    }
+    return $Self->_Denied(%Param);
 }
 
 sub ConfigItemDiscoveryCheck {
@@ -33,7 +74,7 @@ sub ConfigItemDiscoveryCheck {
 
     return $Self->_ConfigItemAccessCheck(
         %Param,
-        RequireAssetRole => 0,
+        RequireCMDBReadRole => 0,
     );
 }
 
@@ -42,7 +83,7 @@ sub ConfigItemDetailAccessCheck {
 
     return $Self->_ConfigItemAccessCheck(
         %Param,
-        RequireAssetRole => 1,
+        RequireCMDBReadRole => 1,
     );
 }
 
@@ -58,7 +99,7 @@ sub ConfigItemIDsFilter {
         next if !$Self->_ConfigItemAccessCheck(
             CustomerUserID  => $Param{CustomerUserID},
             ConfigItemID    => $ConfigItemID,
-            RequireAssetRole => $Param{RequireAssetRole} ? 1 : 0,
+            RequireCMDBReadRole => $Param{RequireCMDBReadRole} ? 1 : 0,
             LogNo           => 1,
         );
         push @Allowed, $ConfigItemID;
@@ -82,19 +123,25 @@ sub _ConfigItemAccessCheck {
     my @EntitlementIDs = $Self->_ScalarValues(
         $ConfigItem->{'DynamicField_ZTAM-ContractEntitlement'}
     );
-    return $Self->_Denied(%Param) if @EntitlementIDs != 1;
+    return $Self->_Denied(%Param) if !@EntitlementIDs;
 
-    my $Entitlement = $Self->_ConfigItemReferenceGet(
-        Value => $EntitlementIDs[0],
-        Class => 'ContractEntitlement',
-    );
-    return $Self->_Denied(%Param) if !$Entitlement;
+    # Multiple explicit entitlements are independent coverage grants. Each
+    # reference must resolve unambiguously and match the customer's assignment.
+    for my $EntitlementID (@EntitlementIDs) {
+        my $Entitlement = $Self->_ConfigItemReferenceGet(
+            Value => $EntitlementID,
+            Class => 'ContractEntitlement',
+        );
+        next if !$Entitlement;
 
-    my $Assignments = $Self->_AssignmentsGet(
-        CustomerUserID => $Param{CustomerUserID},
-        RequireRole    => $Param{RequireAssetRole} ? 'ASSET' : undef,
-    );
-    return @{$Assignments} ? 1 : $Self->_Denied(%Param);
+        return 1 if $Self->ContractEntitlementAccessCheck(
+            CustomerUserID        => $Param{CustomerUserID},
+            ContractEntitlementID => $Entitlement->{ConfigItemID},
+            RequireRole           => $Param{RequireRole} || ( $Param{RequireCMDBReadRole} ? 'TESSERA::CMDB::READ' : undef ),
+            LogNo                 => 1,
+        );
+    }
+    return $Self->_Denied(%Param);
 }
 
 sub _AssignmentsGet {
@@ -271,7 +318,7 @@ sub _Denied {
             Message  => 'TESSERA customer ConfigItem access denied: CustomerUserID='
                 . ( $Param{CustomerUserID} || '<missing>' )
                 . ' ConfigItemID=' . ( $Param{ConfigItemID} || '<missing>' )
-                . ' RequireAssetRole=' . ( $Param{RequireAssetRole} ? 1 : 0 ),
+                . ' RequireCMDBReadRole=' . ( $Param{RequireCMDBReadRole} ? 1 : 0 ),
         );
     }
     return;

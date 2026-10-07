@@ -432,31 +432,15 @@ sub _ZTSMStandardTicketIDsFilter {
     return @TicketIDs;
 }
 
-sub _ZTSMExportActionHTML {
-    my (%Param) = @_;
-
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $ExportLink   = $Param{ExportLink} || '';
-
-    return if !$ExportLink;
-
-    my $Href = $LayoutObject->{Baselink} . $ExportLink;
-    $Href = $LayoutObject->Ascii2Html( Text => $Href );
-
-    return ''
-        . '<style>'
-        . '.ZTSMExportActionBar{max-width:1608px;margin:0 auto 18px auto;padding:0 52px;display:flex;justify-content:flex-end;box-sizing:border-box;}'
-        . '.ZTSMExportActionButton{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 24px;border-radius:24px;background:#ffffff;color:#00023c;border:1px solid #dfe3f0;box-shadow:0 8px 18px rgba(0,0,0,.08);font-weight:600;text-decoration:none;}'
-        . '.ZTSMExportActionButton:hover,.ZTSMExportActionButton:focus{background:#f7f8ff;color:#001bff;text-decoration:none;}'
-        . '.ZTSMExportActionButton i{font-size:14px;}'
-        . '@media only screen and (max-width:767px){.ZTSMExportActionBar{padding:0 18px;margin-bottom:12px}.ZTSMExportActionButton{width:100%;justify-content:center;}}'
-        . '</style>'
-        . '<div class="ZTSMExportActionBar">'
-        . '<a id="ZTSMExportActionBarDownload" class="ZTSMExportActionButton" href="' . $Href . '" title="Download Report">'
-        . '<i class="fa fa-download" aria-hidden="true"></i><span>Download Report</span>'
-        . '</a>'
-        . '</div>';
+# Avoid a fixed candidate cap before permission filtering and dashboard aggregation.
+sub _ZTSMOverviewSearchAll {
+    my ($Ticket,%P)=@_;
+    my $Count=$Ticket->TicketSearch(%P,Result=>'COUNT',Limit=>1);
+    return if !defined $Count || $Count !~ /^\d+$/ || !$Count;
+    return $Ticket->TicketSearch(%P,Result=>'ARRAY',Limit=>$Count);
 }
+
+sub _ZTSMExportActionHTML { return ''; }
 
 sub _ZTSMWorkableTicketIDs {
     my (%Param) = @_;
@@ -485,7 +469,7 @@ sub _ZTSMWorkableTicketIDs {
     }
 
     if ( _ZTSMIsIPCAgent( CustomerUserID => $Param{CustomerUserID} ) ) {
-        my @TicketIDs = $TicketObject->TicketSearch(%SearchBase);
+        my @TicketIDs = _ZTSMOverviewSearchAll($TicketObject,%SearchBase);
 
         return _ZTSMPermissionFilter(
             CustomerUserID => $Param{CustomerUserID},
@@ -497,7 +481,7 @@ sub _ZTSMWorkableTicketIDs {
     for my $SupportProfile ( _ZTSMSupportProfileList( CustomerUserID => $Param{CustomerUserID} ) ) {
         next PROFILE if !$SupportProfile;
 
-        my @ProfileTicketIDs = $TicketObject->TicketSearch(
+        my @ProfileTicketIDs = _ZTSMOverviewSearchAll($TicketObject,
             %SearchBase,
             'DynamicField_ZTicket-OwnerGroup' => {
                 Equals => $SupportProfile,
@@ -514,7 +498,7 @@ sub _ZTSMWorkableTicketIDs {
     for my $CustomerUserID ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
         next if !$CustomerUserID;
 
-        my @OwnerTicketIDs = $TicketObject->TicketSearch(
+        my @OwnerTicketIDs = _ZTSMOverviewSearchAll($TicketObject,
             %SearchBase,
             'DynamicField_ZTicket-Owner' => {
                 Equals => $CustomerUserID,
@@ -532,7 +516,7 @@ sub _ZTSMWorkableTicketIDs {
         for my $CustomerUserLogin ( _ZTSMCustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserLogin} ) ) {
             next if !$CustomerUserLogin;
 
-            my @OwnerTicketIDs = $TicketObject->TicketSearch(
+            my @OwnerTicketIDs = _ZTSMOverviewSearchAll($TicketObject,
                 %SearchBase,
                 'DynamicField_ZTicket-Owner' => {
                     Equals => $CustomerUserLogin,
@@ -1193,6 +1177,7 @@ sub Run {
     my $SortBy         = $ParamObject->GetParam( Param => 'SortBy' )  || 'Age';
     my $OrderByCurrent = $ParamObject->GetParam( Param => 'OrderBy' ) || 'Down';
     my $Fulltext       = $ParamObject->GetParam( Param => 'Fulltext' );
+    my $Display = ($ParamObject->GetParam(Param=>'Display')||'') eq 'List' || $Self->{Subaction} eq 'Search' ? 'List' : 'Dashboard';
 
     # filter definition
     my %Filters = (
@@ -1413,7 +1398,7 @@ sub Run {
     for my $Filter ( sort keys %{ $Filters{ $Self->{Subaction} } } ) {
         $Counter++;
 
-        my @StandardTicketIDs = $TicketObject->TicketSearch(
+        my @StandardTicketIDs = _ZTSMOverviewSearchAll($TicketObject,
             %{ $Filters{ $Self->{Subaction} }->{$Filter}->{Search} },
             %SearchInArchive,
             Result => 'ARRAY',
@@ -1463,6 +1448,7 @@ sub Run {
     }
 
     if ( ( $ParamObject->GetParam( Param => 'ExportTickets' ) || '' ) eq 'Excel' ) {
+        if ($Display eq 'Dashboard') {my %Seen;@CurrentViewableTickets=grep {!$Seen{$_}++} (@{$StandardFilterTicketIDs{All}||[]},@{$ZTSMFilterTicketIDs{All}||[]});}
         return $Self->_ZTSMTicketReportExport(
             TicketIDs => \@CurrentViewableTickets,
             Filter    => $FilterCurrent,
@@ -1474,7 +1460,7 @@ sub Run {
         . ';Filter=' . $LayoutObject->LinkEncode($FilterCurrent)
         . ';SortBy=' . $LayoutObject->LinkEncode($SortBy)
         . ';OrderBy=' . $LayoutObject->LinkEncode($OrderByCurrent)
-        . ';ExportTickets=Excel';
+        . ';Display=' . $Display . ';ExportTickets=Excel';
 
     if ( defined $Fulltext ) {
         $ExportLink .= ';Fulltext=' . $LayoutObject->LinkEncode($Fulltext);
@@ -1508,7 +1494,7 @@ sub Run {
         if ( $AllTickets > $PageShown ) {
 
             # create pagination
-            my $Link = 'SortBy=' . $LayoutObject->Ascii2Html( Text => $SortBy )
+            my $Link = 'Display=List;SortBy=' . $LayoutObject->Ascii2Html( Text => $SortBy )
                 . ';OrderBy=' . $LayoutObject->Ascii2Html( Text => $OrderByCurrent )
                 . ';Filter=' . $LayoutObject->Ascii2Html( Text => $FilterCurrent )
                 . ';Subaction=' . $LayoutObject->Ascii2Html( Text => $Self->{Subaction} )
@@ -1527,7 +1513,7 @@ sub Run {
             }
 
             %PageNav = $LayoutObject->PageNavBar(
-                Limit     => 10000,
+                Limit     => $AllTickets || 1,
                 StartHit  => $StartHit,
                 PageShown => $PageShown,
                 AllHits   => $AllTickets,
@@ -1772,9 +1758,9 @@ sub Run {
 
     }
 
-    $TicketListHTML = _ZTSMExportActionHTML(
-        ExportLink => $ExportLink,
-    ) . ( $TicketListHTML || '' );
+    my %DashboardSeen;
+    my @DashboardIDs = grep {!$DashboardSeen{$_}++} (@{$StandardFilterTicketIDs{All}||[]},@{$ZTSMFilterTicketIDs{All}||[]});
+    my $Dashboard = $Display eq 'Dashboard' ? $Self->_ZTSMDashboard(TicketIDs=>\@DashboardIDs,Selection=>$ParamObject->GetParam(Param=>'DashboardFilter')) : {};
 
     # create & return output
     my $Title = $Self->{Subaction};
@@ -1813,6 +1799,9 @@ sub Run {
             TicketListHTML => $TicketListHTML,
             Fulltext       => $ParamObject->GetParam( Param => 'Fulltext' ),
             ExportLink     => $ExportLink,
+            Display        => $Display,
+            Dashboard      => $Dashboard,
+            DashboardFilter => $ParamObject->GetParam(Param=>'DashboardFilter')||'',
         },
     );
 
@@ -1823,6 +1812,57 @@ sub Run {
     $Output .= $LayoutObject->CustomerFooter();
 
     return $Output;
+}
+
+# Aggregation starts only after the existing requester/operational permission filters.
+sub _ZTSMDashboard {
+    my ($Self,%P)=@_;
+    require DateTime;
+    my $Ticket=$Kernel::OM->Get('Kernel::System::Ticket');
+    my $Article=$Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $Now=defined $P{Now}?$P{Now}:time;
+    my $Today=DateTime->from_epoch(epoch=>$Now,time_zone=>'UTC');
+    my $Since=$Today->clone->subtract(months=>1,end_of_month=>'limit')->truncate(to=>'day');
+    my %Seen;my @IDs=grep {!$Seen{$_}++} @{$P{TicketIDs}||[]};
+    # Native last-closure history search, constrained to already permitted IDs.
+    my %RecentClosed=map {$_=>1} @IDs ? _ZTSMOverviewSearchAll($Ticket,
+        TicketID=>\@IDs,UserID=>1,StateType=>'Closed',
+        TicketLastCloseTimeNewerDate=>$Since->strftime('%Y-%m-%d %H:%M:%S'),
+        TicketLastCloseTimeOlderDate=>$Today->strftime('%Y-%m-%d %H:%M:%S')) : ();
+    my %Lists=map {$_=>[]} qw(Outstanding Aged Closed Failed Delegated);
+    for my $ID (@IDs) {
+        my %T=$Ticket->TicketGet(TicketID=>$ID,DynamicFields=>1);
+        next if !$T{TicketID};
+        my $Group=_ZTSMNormalizeValue($T{'DynamicField_ZTicket-OwnerGroup'})||'';
+        $Group=_ZTSMExportGovernanceObjectDisplayName(Value=>$Group) if $Group;
+        $Group =~ s/^\d+ - //;
+        my $Row={TicketID=>$ID,TicketNumber=>$T{TicketNumber},Title=>$T{Title},Type=>$T{Type}||'',OwnerGroup=>$Group,State=>$T{State},Created=>$T{Created}||$T{CreateTime}||''};
+        my $Closed=($T{StateType}||'') eq 'closed';
+        push @{$Lists{Outstanding}},$Row if !$Closed;
+        push @{$Lists{Closed}},$Row if $Closed && $RecentClosed{$ID};
+        push @{$Lists{Failed}},$Row if $Closed && ($T{State}||'') eq 'closed unsuccessful';
+        if (!$Closed && $Row->{Created} =~ /^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/) {
+            require Time::Local;
+            my $Created=eval {Time::Local::timegm($6,$5,$4,$3,$2-1,$1)};
+            push @{$Lists{Aged}},$Row if defined $Created && $Created <= $Now-7*86400;
+        }
+        for my $Meta ($Article->ArticleList(TicketID=>$ID,IsVisibleForCustomer=>1)) {
+            my %A=$Article->BackendForArticle(%{$Meta})->ArticleGet(TicketID=>$ID,ArticleID=>$Meta->{ArticleID});
+            if (($A{Subject}||'') eq '[VVIP Delegate] Delegation override' && ($A{Body}||'') =~ /TESSERA VVIP DELEGATE OVERRIDE/) {push @{$Lists{Delegated}},$Row;last;}
+        }
+    }
+    my %Titles=(Outstanding=>'Outstanding tickets',Aged=>'Unclosed for 7 days',Closed=>'Closed tickets',Failed=>'Failed tickets',Delegated=>'Delegated by IPC');
+    my %Notes=(Closed=>'Closed from '.$Since->strftime('%Y-%m-%d').' to '.$Today->strftime('%Y-%m-%d').' (UTC)',Failed=>'Closed unsuccessful, all time');
+    my %Result;my @Cards;
+    for my $Key (qw(Outstanding Aged Closed Failed Delegated)) {
+        @{$Lists{$Key}}=sort {$a->{Created} cmp $b->{Created} || $a->{TicketID}<=>$b->{TicketID}} @{$Lists{$Key}};
+        $Result{$Key}=scalar @{$Lists{$Key}};
+        push @Cards,{Key=>$Key,Title=>$Titles{$Key},Note=>$Notes{$Key}||'',Count=>$Result{$Key}};
+    }
+    my $Selected=$P{Selection}||'';
+    $Result{Selected}=exists $Lists{$Selected}?{Title=>$Titles{$Selected},Note=>$Notes{$Selected}||'',Rows=>$Lists{$Selected}}:{};
+    $Result{Cards}=\@Cards;$Result{AgedRows}=$Lists{Aged};
+    return \%Result;
 }
 
 # ShowTicket

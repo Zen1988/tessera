@@ -39,6 +39,7 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::CustomerUser',
+    'Kernel::System::TESSERA::GovernanceRoleResolver',
 );
 
 # ------------------------------------------------------------ #
@@ -700,6 +701,8 @@ sub Run {
 
     return if !$TicketID;
 
+    return 1 if !$Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->ExecutionTicketEligible(Ticket=>$Ticket);
+
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
@@ -773,7 +776,100 @@ sub Run {
     my $RequesterOwnerUserID;
     my $AffectedUserOwnerUserID;
 
+    my $ScriptResolutionHandled;
     if ($DynamicGovernanceRole) {
+        my $ScriptResult = $Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->Resolve(
+            GovernanceRole => $DynamicGovernanceRole,
+            Ticket         => $Ticket,
+            UserID         => 1,
+        );
+        if ( ( $ScriptResult->{Status} || '' ) eq 'RETURNED' ) {
+            $ResolutionCandidate = $ScriptResult->{Value};
+            if ( ( $ScriptResult->{ValueType} || '' ) eq 'GovernanceObject.SupportProfile' ) {
+                $ResolvedSupportProfile = $ScriptResult->{Value};
+            }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'CustomerUser' ) {
+                $RequesterOwnerUserID = $ScriptResult->{Value};
+            }
+            elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'Collection<SupportAssignment>' ) {
+                my $Assignments = $ScriptResult->{Value};
+                my @Targets = ref $Assignments eq 'ARRAY'
+                    ? grep { ref $_ eq 'HASH' && $_->{Type} && defined $_->{Value} } @{$Assignments}
+                    : ();
+                if ( @Targets != 1 ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: TransitionAction requires one SupportAssignment target; found " . scalar(@Targets) . " TicketID=$TicketID" );
+                    return 1;
+                }
+                if ( $Targets[0]->{Type} eq 'GovernanceObject.SupportProfile' ) {
+                    $ResolvedSupportProfile = $Targets[0]->{Value};
+                }
+                elsif ( $Targets[0]->{Type} eq 'CustomerUser' ) {
+                    $RequesterOwnerUserID = $Targets[0]->{Value};
+                }
+                else {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: unsupported SupportAssignment target type $Targets[0]->{Type} TicketID=$TicketID" );
+                    return 1;
+                }
+            }
+            elsif (
+                ( $ScriptResult->{ValueType} || '' ) eq 'Collection<GovernanceObject.SupportProfile>'
+                || ( $ScriptResult->{ValueType} || '' ) eq 'Collection<CustomerUser>'
+                )
+            {
+                my $Targets = $ScriptResult->{Value};
+                if ( ref $Targets ne 'ARRAY' ) {
+                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
+                    return 1;
+                }
+                if ( !@{$Targets} ) {
+                    $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
+                        TicketID => $TicketID, State => 'closed no action', UserID => 1,
+                    );
+                    ZTSMArticleCreate(
+                        TicketID => $TicketID,
+                        Subject  => 'Dynamic assignment completed with no action',
+                        Body     => "The GovernanceRole resolver returned no eligible assignment targets.\n\nNo lifecycle transition was initiated by assignment resolution.",
+                        HistoryComment => 'ZTSM: dynamic assignment returned no targets',
+                        UserID => 1,
+                    );
+                    return 1;
+                }
+                if ( @{$Targets} != 1 ) {
+                    $LogObject->Log(
+                        Priority => 'notice',
+                        Message  => 'ZTSMRoleDirector: multiple typed targets require GenericAgent reconciliation; found '
+                            . scalar(@{$Targets}) . " TicketID=$TicketID",
+                    );
+                    return 1;
+                }
+                if ( $ScriptResult->{ValueType} eq 'Collection<CustomerUser>' ) {
+                    $RequesterOwnerUserID = $Targets->[0];
+                }
+                else {
+                    $ResolvedSupportProfile = $Targets->[0];
+                }
+            }
+            else {
+                $LogObject->Log(
+                    Priority => 'error',
+                    Message  => 'ZTSMRoleDirector: GovernanceRole script returned unsupported type '
+                        . ( $ScriptResult->{ValueType} || 'N/A' ) . " TicketID=$TicketID",
+                );
+                return 1;
+            }
+            $ScriptResolutionHandled = 1;
+        }
+        elsif ( ( $ScriptResult->{Status} || '' ) ne 'NO_SCRIPT' ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => 'ZTSMRoleDirector: GovernanceRole script resolution failed '
+                    . ( $ScriptResult->{Error} || 'UNKNOWN' ) . " TicketID=$TicketID",
+            );
+            return 1;
+        }
+    }
+
+    if ( $DynamicGovernanceRole && !$ScriptResolutionHandled ) {
         if ( _IsRequesterDefaultProfile($ProfileDisplay) ) {
             $ResolutionCandidate = _ResolveRequesterProfile(
 

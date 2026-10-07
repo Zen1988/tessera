@@ -314,15 +314,6 @@ GenericAgents:
     TimePendingSearchType: ''
     TimeSearchType: ''
     Title: ''
-    Types:
-    - Approval
-    - Assessment
-    - Confirmation
-    - Diagnosis
-    - Endorsement
-    - Implementation
-    - Task
-    - Verification
     Valid: '1'
   TESSERA-PURPLEBOOK-READER:
     ChangeTimeSearchType: ''

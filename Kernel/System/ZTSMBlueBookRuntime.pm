@@ -421,6 +421,13 @@ sub _TicketFieldSet {
         Name => $Param{FieldName},
     );
 
+    if ( ( ref $DynamicFieldConfig ne 'HASH' || !keys %{$DynamicFieldConfig} )
+        && $Param{FieldName} eq 'RiskAssessment' ) {
+        $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => 'ZRM-RiskAssessment',
+        );
+    }
+
     return if !$DynamicFieldConfig;
     return if !$DynamicFieldConfig->{ID};
     return if $DynamicFieldConfig->{ObjectType} && $DynamicFieldConfig->{ObjectType} ne 'Ticket';
@@ -1284,6 +1291,7 @@ sub LevelSpawn {
             Priority      => $ParentTicket->{Priority},
             State         => 'new',
             CustomerUser  => $ParentTicket->{CustomerUserID},
+            CustomerID    => $ParentTicket->{CustomerID},
             OwnerID       => 1,
             UserID        => $Param{UserID} || 1,
             Type          => $ChildType,
@@ -1317,6 +1325,8 @@ sub LevelSpawn {
             'ZTicket-BlueLevel'         => $Record->{BlueLevel},
             'ZTicket-Chapter'           => $Record->{Chapter},
             'ZTicket-Application'       => $ParentTicket->{'DynamicField_ZTicket-Application'},
+            'ZRM-OriginatedEvent'       => $ParentTicket->{'DynamicField_ZRM-OriginatedEvent'},
+            'ZRM-Framework'             => $ParentTicket->{'DynamicField_ZRM-Framework'},
             'ZTicket-Profile'           => $Record->{Profile},
             'ZTicket-OwnerGroup'        => $OwnerGroup,
             'ZTicket-Owner'             => $Owner,
@@ -1387,6 +1397,10 @@ sub LevelSpawn {
             ArticleParam   => $Param{ArticleParam},
             UserID         => $Param{UserID} || 1,
         );
+
+        RiskAssessmentAutomationEvidenceEnsure( TicketID => $NewTicketID )
+            if $ChildType eq 'Assessment'
+            && _NormalizeValue( $ParentTicket->{'DynamicField_ZRM-OriginatedEvent'} );
     }
 
     if ( !$Param{PreserveParentBlueLevel} ) {
@@ -1399,6 +1413,27 @@ sub LevelSpawn {
     }
 
     return @CreatedTicketIDs ? @CreatedTicketIDs : @ExistingTicketIDs;
+}
+
+sub RiskAssessmentAutomationEvidenceEnsure {
+    my (%Param) = @_;
+    return 1 if !$Param{TicketID};
+    my $Success = eval {
+        require Kernel::Modules::CustomerTicketZTSMAction;
+        my $Assessment = Kernel::Modules::CustomerTicketZTSMAction->new();
+        $Assessment->RiskAssessmentAutomationEvidenceEnsure(
+            TicketID => $Param{TicketID},
+        );
+    };
+    if ( !$Success || $@ ) {
+        _RuntimeLog(
+            Priority => 'error',
+            Message => "Framework automatic Assessment evidence failed for ticket $Param{TicketID}: "
+                . ( $@ || 'unknown error' ),
+        );
+        return;
+    }
+    return 1;
 }
 
 sub ChildTemplateApply {
@@ -1421,7 +1456,7 @@ sub ChildTemplateApply {
     if ( $Rows && @{$Rows} ) {
         my $FieldSet = _TicketFieldSet(
             TicketID  => $Param{TicketID},
-            FieldName => 'ZRM-RiskAssessment',
+            FieldName => 'RiskAssessment',
             Value     => $Rows,
             UserID    => $UserID,
         );
@@ -1463,6 +1498,80 @@ sub ChildTemplateApply {
     );
 
     return 1;
+}
+
+sub ChangeTemplatePayloadGet {
+    my (%Param) = @_;
+
+    return {
+        Success => 0,
+        Message => 'TemplateID is required.',
+    } if !$Param{TemplateID};
+
+    my $Template = _GovernanceObjectResolve(
+        Value   => $Param{TemplateID},
+        Classes => ['Template'],
+    );
+
+    return {
+        Success => 0,
+        Message => 'The selected change template could not be resolved.',
+    } if !$Template || ref $Template ne 'HASH';
+
+    my %PhaseMap = (
+        'ZTemplate-ChPrecheck'       => 'ZCH-Precheck',
+        'ZTemplate-ChImplementation' => 'ZCH-Implementation',
+        'ZTemplate-ChPostChange'     => 'ZCH-PostChange',
+        'ZTemplate-ChRollback'       => 'ZCH-Rollback',
+    );
+    my %FieldMap = (
+        'ZTemplate-ChSeq'         => 'ZCH-Seq',
+        'ZTemplate-ChStrict'      => 'ZCH-Strict',
+        'ZTemplate-ChMandatory'   => 'ZCH-Mandatory',
+        'ZTemplate-ChActivity'    => 'ZCH-Activity',
+        'ZTemplate-ChDescription' => 'ZCH-Description',
+        'ZTemplate-ChTicketType'  => 'ZCH-TicketType',
+        'ZTemplate-ChProfile'     => 'ZCH-Profile',
+        'ZTemplate-ChWeightage'   => 'ZCH-Weightage',
+        'ZTemplate-ChBlueLevel'   => 'ZCH-BlueLevel',
+    );
+    my %Payload;
+
+    for my $SourcePhase ( sort keys %PhaseMap ) {
+        my $Rows = _SetRowsNormalize(
+            _ObjectValueGet(
+                Object => $Template,
+                Field  => $SourcePhase,
+            )
+        );
+        next if !$Rows || ref $Rows ne 'ARRAY';
+
+        my @MappedRows;
+        ROW:
+        for my $Row ( @{$Rows} ) {
+            next ROW if !$Row || ref $Row ne 'HASH';
+
+            my %MappedRow;
+            for my $SourceField ( sort keys %FieldMap ) {
+                my $Value = _RecordValueGet(
+                    Record => $Row,
+                    Fields => [$SourceField],
+                );
+                next if !defined $Value;
+                $MappedRow{ $FieldMap{$SourceField} } = $Value;
+            }
+            push @MappedRows, \%MappedRow if %MappedRow;
+        }
+
+        $Payload{ $PhaseMap{$SourcePhase} } = \@MappedRows;
+    }
+
+    return {
+        Success      => 1,
+        TemplateID   => $Param{TemplateID},
+        TemplateName => $Template->{Name} || $Template->{Number} || $Param{TemplateID},
+        Payload      => \%Payload,
+    };
 }
 
 sub TemplateIDForTicket {

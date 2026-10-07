@@ -421,6 +421,13 @@ sub _TicketFieldSet {
         Name => $Param{FieldName},
     );
 
+    if ( ( ref $DynamicFieldConfig ne 'HASH' || !keys %{$DynamicFieldConfig} )
+        && $Param{FieldName} eq 'RiskAssessment' ) {
+        $DynamicFieldConfig = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => 'ZRM-RiskAssessment',
+        );
+    }
+
     return if !$DynamicFieldConfig;
     return if !$DynamicFieldConfig->{ID};
     return if $DynamicFieldConfig->{ObjectType} && $DynamicFieldConfig->{ObjectType} ne 'Ticket';
@@ -1319,6 +1326,7 @@ sub LevelSpawn {
             'ZTicket-Chapter'           => $Record->{Chapter},
             'ZTicket-Application'       => $ParentTicket->{'DynamicField_ZTicket-Application'},
             'ZRM-OriginatedEvent'       => $ParentTicket->{'DynamicField_ZRM-OriginatedEvent'},
+            'ZRM-Framework'             => $ParentTicket->{'DynamicField_ZRM-Framework'},
             'ZTicket-Profile'           => $Record->{Profile},
             'ZTicket-OwnerGroup'        => $OwnerGroup,
             'ZTicket-Owner'             => $Owner,
@@ -1448,7 +1456,7 @@ sub ChildTemplateApply {
     if ( $Rows && @{$Rows} ) {
         my $FieldSet = _TicketFieldSet(
             TicketID  => $Param{TicketID},
-            FieldName => 'ZRM-RiskAssessment',
+            FieldName => 'RiskAssessment',
             Value     => $Rows,
             UserID    => $UserID,
         );

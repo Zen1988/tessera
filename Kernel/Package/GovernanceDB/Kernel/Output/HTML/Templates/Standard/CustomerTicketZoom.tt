@@ -268,7 +268,8 @@
     }
 
     .TicketZoom .ZTSMRequesterModal,
-    .TicketZoom .ZTSMRequestDetailOverlay {
+    .Ticket
+Zoom .ZTSMRequestDetailOverlay {
         display: none;
         position: fixed;
         inset: 0;
@@ -559,7 +560,8 @@
         vertical-align: top;
     }
 
-    .TicketZoom #ZTSMStoryLinks p,
+    .T
+icketZoom #ZTSMStoryLinks p,
     .TicketZoom #ZTSMStoryLinks ul,
     .TicketZoom #ZTSMArticleSummaryPanel ul {
         margin: 0;
@@ -775,7 +777,8 @@
 [% RenderBlockEnd("Expand") %]
 [% RenderBlockStart("ZTSMRuntimeActionMenuItem") %]
 [% IF Data.DirectURL %]
-                <a role="menuitem" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZTSMAction;TicketID=[% Data.TicketID | uri %];RuntimeAction=[% Data.Action | uri %]">[% Translate(Data.Label) | html %]</a>
+
+  <a role="menuitem" href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZTSMAction;TicketID=[% Data.TicketID | uri %];RuntimeAction=[% Data.Action | uri %]">[% Translate(Data.Label) | html %]</a>
 [% ELSE %]
                 <a role="menuitem" href="#Process_ZTSM_[% Data.Action | uri %]" onclick="var Element = document.getElementById('Process_ZTSM_[% Data.Action | uri %]'); if (Element) { Element.hidden = false; Element.style.display = 'block'; Element.classList.remove('Hidden'); Element.classList.add('Visible'); var Menu = this.closest('details'); if (Menu) { Menu.open = false; } Element.scrollIntoView({ behavior: 'smooth', block: 'start' }); var Field = Element.querySelector('textarea, select, input:not([type=hidden]), button[type=submit]'); if (Field) { window.setTimeout(function () { Field.focus(); }, 250); } } return false;">[% Translate(Data.Label) | html %]</a>
 [% END %]
@@ -854,6 +857,7 @@
                     <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
                     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
                     <input type="hidden" name="RuntimeAction" value="[% Data.Action | html %]"/>
+                    <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
                     <button id="Button_ZTSM_[% Data.Action | uri %]" title="[% Translate(Data.Label) | html %]" class="oooM ActivitySubmitButton ZTSMDirectActionButton" type="submit">[% Translate(Data.Label) | html %]</button>
                 </form>
 [% ELSE %]
@@ -866,7 +870,8 @@
         <ul id='oooArticleListExpanded'[% IF Data.TicketInfoDisplayType == 'Permanent' %] class="oooTicketInfoPermanent"[% END %]>
 [% RenderBlockStart("ProcessActivity") %]
             <li id="Process_[% Data.ActivityDialogEntityID | uri %]" class="Activity">
-                [% Data.ActivityHTML %]
+
+           [% Data.ActivityHTML %]
             </li>
 [% RenderBlockEnd("ProcessActivity") %]
 [% RenderBlockStart("ZTSMRuntimeActionDialog") %]
@@ -998,7 +1003,8 @@
                                 ExecuteScripts(Body);
                                 return;
                             }
-                            Container.setAttribute('data-loaded', '0');
+                            Container
+.setAttribute('data-loaded', '0');
                             Body.innerHTML = '[% Translate("Could not load diagnosis form.") | html %]';
                         };
                         Request.send();
@@ -1038,17 +1044,46 @@
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField:first-of-type {
                         margin-top: 8px;
                     }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan {
+                        margin: 0 0 18px;
+                        padding: 16px 18px;
+                        border: 1px solid #d5dbea;
+                        border-left: 4px solid #5a67d8;
+                        border-radius: 6px;
+                        background: #f7f8fc;
+                        color: #17203a;
+                    }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan h3 {
+                        margin: 0 0 8px;
+                        font-size: 15px;
+                    }
+                    .ZTSMRuntimeActionDialog .ZTSMRiskTreatmentPlan p {
+                        margin: 0;
+                        line-height: 1.55;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > .Field:hover ~ label,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > .Field.oooFull ~ label,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > .Field.oooSelected ~ label,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > label.oooFocus,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > label,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label.oooFocus,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label {
                         position: absolute;
                         top: -10px;
-                        left: 32px;
+                        left: 12px;
+                        margin: 0;
+                        width: auto;
+                        float: none;
+                        text-align: left;
+                        transform: none;
                         display: inline-block;
                         padding: 0 8px;
                         background: #fff;
                         color: #7e7da5;
                         line-height: 1.2;
                         white-space: nowrap;
+                        transition: none;
+                        letter-spacing: normal;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .Field,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea {
@@ -1062,9 +1097,46 @@
                         min-height: 34px;
                         box-sizing: border-box;
                     }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField > .Field {
+                        margin: 0;
+                        padding: 0;
+                        float: none;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField textarea {
+                        display: block;
+                        width: 100%;
+                        min-height: 140px;
+                        margin: 0;
+                        padding: 12px;
+                        box-sizing: border-box;
+                        box-shadow: none;
+                        resize: vertical;
+                    }
+                    /* Selected chips must be positioned inside their own search control. */
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_InputContainer {
+                        position: relative;
+                        width: 100%;
+                        min-height: 46px;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Search {
+                        min-height: 46px;
+                        margin: 0;
+                    }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Selection {
-                        min-height: 34px;
-                        padding: 6px 10px;
+                        top: 6px;
+                        left: 10px;
+                        margin: 0;
+                        height: 34px;
+                        min-height: 0;
+                        max-width: calc(100% - 20px);
+                        padding: 0 10px;
+                        box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRiskField .InputField_Selection > .Text {
+                        max-width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks {
                         min-height: 180px;
@@ -1077,6 +1149,14 @@
                         background: transparent;
                         resize: vertical;
                         box-sizing: border-box;
+                    }
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks > label {
+                        left: 12px;
+                        margin: 0;
+                        width: auto;
+                        float: none;
+                        text-align: left;
+                        transform: none;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMRuntimeRemarks textarea:focus {
                         outline: 0;
@@ -1122,58 +1202,45 @@
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck,
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck {
-                        position: relative;
+                        position: static;
+                        float: none;
                         display: flex;
-                        align-items: center;
+                        align-items: flex-start;
                         gap: 12px;
+                        width: auto;
                         max-width: 100%;
+                        height: auto;
                         margin: 0;
+                        padding: 0;
+                        background: transparent;
+                        color: #17203a;
                         cursor: pointer;
                         white-space: normal;
                         overflow-wrap: anywhere;
                     }
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"],
                     .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"] {
-                        position: absolute;
-                        left: 0;
-                        top: 50%;
+                        appearance: auto;
+                        position: static;
+                        display: inline-block;
+                        flex: 0 0 20px;
+                        float: none;
                         width: 20px !important;
                         height: 20px;
                         min-height: 20px;
-                        margin: -10px 0 0 0;
-                        opacity: 0;
+                        margin: 2px 0 0;
+                        padding: 0;
+                        opacity: 1;
                         cursor: pointer;
+                        pointer-events: auto;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMCheckboxVisual {
-                        position: relative;
-                        display: inline-block;
-                        flex: 0 0 auto;
-                        width: 18px;
-                        height: 18px;
-                        border: 2px solid #161b66;
-                        border-radius: 4px;
-                        background: #fff;
-                        box-sizing: border-box;
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:focus-visible,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:focus-visible {
+                        outline: 2px solid #1028ff;
+                        outline-offset: 3px;
                     }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual {
-                        background: #1028ff;
-                        border-color: #1028ff;
-                    }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after,
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck input[type="checkbox"]:checked + .ZTSMCheckboxVisual:after {
-                        content: "";
-                        position: absolute;
-                        left: 5px;
-                        top: 1px;
-                        width: 5px;
-                        height: 10px;
-                        border: solid #fff;
-                        border-width: 0 2px 2px 0;
-                        transform: rotate(45deg);
-                    }
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span:not(.ZTSMCheckboxVisual),
-                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span:not(.ZTSMCheckboxVisual) {
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMOverrideAck span,
+                    .ZTSMRuntimeActionDialog .Messenger .ZTSMDelegateAck span {
                         display: block;
                         min-width: 0;
                         line-height: 1.35;
@@ -1183,6 +1250,7 @@
                     <input type="hidden" name="Action" value="CustomerTicketZTSMAction"/>
                     <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]"/>
                     <input type="hidden" name="RuntimeAction" value="[% Data.Action | html %]"/>
+                    <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
                     <div class="Messenger">
                         <fieldset class="DontPrint">
                             <div class="MessageHeader">
@@ -1254,7 +1322,8 @@
                     </div>
                     <label for="RichText" class="Mandatory">[% Translate("Text") | html %] <span class="Marker">*</span></label>
                     <div id="RichTextServerError" class="TooltipErrorMessage NoJavaScriptMessage[% Data.RichTextInvalid | html %]">
-                        <p>[% Translate("This field is required.") | html %]</p>
+                        <p>[% Translate("This field is requ
+ired.") | html %]</p>
                     </div>
                 </div>
 

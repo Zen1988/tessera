@@ -296,7 +296,7 @@
         </Value>
     </Setting>
     <Setting Name="CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset" Required="0" Valid="1">
-        <Description Translatable="1">Hides the customer asset navigation entry unless the customer has a matching ASSET SupportAssignment.</Description>
+        <Description Translatable="1">Hides the customer CMDB navigation entry unless the customer has a matching TESSERA::CMDB::READ SupportAssignment.</Description>
         <Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
         <Value>
             <Hash>
@@ -583,6 +583,16 @@
         <Description Translatable="1">Preview-first GovernanceObject XLSX import and export.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
         <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Description">GovernanceObject Excel import and export.</Item><Item Key="Title">GovernanceObject Excel Import/Export</Item><Item Key="NavBarName">GovernanceDB</Item></Hash></Item></Value>
     </Setting>
+    <Setting Name="Frontend::Module###AdminServiceWorkbook" Required="0" Valid="1">
+        <Description Translatable="1">Preview-first Service XLSX import and export.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array></Array></Item><Item Key="Group"><Array><Item>admin</Item></Array></Item><Item Key="Description">Service Excel import and export.</Item><Item Key="Title">Service Excel Import/Export</Item><Item Key="NavBarName">Admin</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminServiceWorkbook###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Loader for Service XLSX import and export.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.Service.Workbook.js</Item></Array></Item></Hash></Value>
+    </Setting>
     <Setting Name="Loader::Module::AgentGovernanceObjectWorkbook###003-GovernanceDB" Required="0" Valid="1">
         <Description Translatable="1">Loader for GovernanceObject XLSX.</Description><Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
         <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.GovernanceObject.Edit.css</Item></Array></Item><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>ZTSM.Agent.Object.Workbook.js</Item></Array></Item></Hash></Value>
@@ -593,6 +603,37 @@
     </Setting>
     <Setting Name="GovernanceObject::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1">
         <Description Translatable="1">Shows GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item><Item Key="Name">Activity Articles</Item><Item Key="Description">Every recorded activity</Item><Item Key="Action">AgentGovernanceObjectActivity</Item><Item Key="Link">Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item><Item Key="Target">PopUp</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GovernanceObject::EventModulePost###120-TESSERAControlDiscovery" Required="0" Valid="1">
+        <Description Translatable="1">Reconcile Controls from an active ControlObjective PolicyFilter after the complete object save.</Description>
+        <Navigation>Core::Event::GovernanceObject</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::System::TESSERA::ControlDiscovery</Item>
+            <Item Key="Event">^(GovernanceObjectCreate|GovernanceObjectUpdate|GovernanceObjectDynamicFieldUpdate_ZRM-PolicyFilter)$</Item>
+            <Item Key="Transaction">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERAControlEvaluation" Required="0" Valid="1">
+        <Description Translatable="1">Evaluate due automatic Controls according to their ControlObjective cycle.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERAControlEvaluation</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item>
+            <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERAControlDiscovery" Required="0" Valid="1">
+        <Description Translatable="1">Discover new targets for active ControlObjectives every five minutes.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERAControlDiscovery</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::ControlDiscovery</Item>
+            <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
     </Setting>
     <Setting Name="GovernanceObject::EventModulePost###110-TESSERAActivityArticles" Required="0" Valid="1">
         <Description Translatable="1">Records every GovernanceObject event as an immutable activity article.</Description><Navigation>Core::Event::GovernanceObject</Navigation><Value><Hash><Item Key="Module">Kernel::System::GovernanceObject::Event::ActivityRecorder</Item><Item Key="Event">(GovernanceObjectCreate|GovernanceObjectUpdate|VersionCreate|VersionUpdate|GovernanceObjectDelete|LinkAdd|LinkDelete|DefinitionUpdate|NameUpdate|VersionDelete|AttachmentAddPost|AttachmentDeletePost|GovernanceObjectDynamicField.*)</Item><Item Key="Transaction">0</Item></Hash></Value>
@@ -2596,6 +2637,9 @@
         </Value>
     </Setting>
 
+    <Setting Name="Loader::Customer::CommonCSS###099-TESSERAProfile" Required="1" Valid="1"><Description Translatable="1">Customer profile photo and navigation control styles.</Description><Navigation>Frontend::Customer</Navigation><Value><Array><Item>TESSERA.Customer.Profile.css</Item></Array></Value></Setting>
+    <Setting Name="CustomerPreferencesGroups###TESSERAProfilePhoto" Required="0" Valid="1"><Description Translatable="1">Customer profile photo upload.</Description><Navigation>Frontend::Customer::View::Preferences</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::Preferences::TESSERACustomerPhoto</Item><Item Key="PreferenceGroup">UserProfile</Item><Item Key="PrefKey">TESSERAProfilePhoto</Item><Item Key="Label">Profile photo</Item><Item Key="Desc">Upload a photo or use your initials.</Item><Item Key="Prio">3800</Item><Item Key="Active">1</Item></Hash></Value></Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerProfilePhoto" Required="0" Valid="1"><Description>Authenticated customer profile photo.</Description><Navigation>Frontend::Customer::ModuleRegistration</Navigation><Value><Item ValueType="FrontendRegistration"><Hash><Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item><Item Key="Description">Profile photo</Item><Item Key="Title">Profile photo</Item><Item Key="NavBarName"></Item></Hash></Item></Value></Setting>
     <Setting Name="CustomerPreferencesGroups###ZTSMRequestDefaults" Required="0" Valid="1">
         <Description Translatable="1">Defines customer-selectable default governance request context.</Description>
         <Navigation>Frontend::Customer::View::Preferences</Navigation>
@@ -3075,5 +3119,108 @@
                 <Item Key="SwappedDiskSN">ITSMStorage-SerialNumber</Item>
             </Hash>
         </Value>
+    </Setting>
+    <Setting Name="MELTObject::EventModulePost###120-TESSERARiskMasterTicket" Required="0" Valid="1">
+        <Description Translatable="1">Create the Framework-mapped risk master ServiceRequest when the originating Risk and Risk Management StateBook are available.</Description>
+        <Navigation>Core::Event::MELTObject</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Module">Kernel::System::TESSERA::RiskMasterTicket</Item>
+                <Item Key="Event">(MELTObjectDynamicFieldUpdate_.*|MELTObjectUpdate)</Item>
+                <Item Key="Transaction">0</Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERARiskMasterTicket" Required="0" Valid="1">
+        <Description Translatable="1">Reconcile Framework-mapped master ServiceRequests for existing MELT Risks every five minutes.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERARiskMasterTicket</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::RiskMasterTicket</Item>
+            <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerRiskRegister" Required="0" Valid="1">
+        <Description Translatable="1">Derived Risk Register from governed master tickets.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item>
+            <Item Key="Description">Risk Register</Item><Item Key="Title">Risk Register</Item><Item Key="NavBarName">Ticket</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Navigation###CustomerRiskRegister###001-RiskRegister" Required="0" Valid="1">
+        <Description Translatable="1">Risk Register portal button.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
+        <Value><Array><DefaultItem ValueType="FrontendNavigation"><Hash/></DefaultItem><Item><Hash>
+            <Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item>
+            <Item Key="Name">Risk Register</Item><Item Key="Description">Current governed risks and annual reviews.</Item>
+            <Item Key="Link">Action=CustomerRiskRegister</Item><Item Key="LinkOption"/>
+            <Item Key="NavBar">Ticket</Item><Item Key="Type">Menu</Item><Item Key="Block"/><Item Key="AccessKey"/>
+            <Item Key="Prio">320</Item><Item Key="svgIcon">var/httpd/htdocs/common/img/TESSERA/risk_register.svg</Item>
+        </Hash></Item></Array></Value>
+    </Setting>
+    <Setting Name="TESSERA::RiskRegister::Columns" Required="1" Valid="1">
+        <Description Translatable="1">YAML list of ordered Risk Register view and Excel column mappings. Each entry has Label, Source (Row, Assessment, Master, TargetGO), Field and optional ValueMap. TargetGO requires Via. Use existing exact field names. Restore default after upgrading from the invalid 0.0.96 empty-row setting, then apply administrator mappings.</Description>
+        <Navigation>TESSERA::RiskRegister</Navigation>
+        <Value><Item ValueType="YAML">- Label: "Assessment"
+  Source: Assessment
+  Field: TicketNumber
+  ValueMap: {}
+- Label: "Category"
+  Source: Row
+  Field: ZRM-ImpactCategory
+  ValueMap: {}
+- Label: "Risk Category"
+  Source: Row
+  Field: ZRM-RiskCategory
+  ValueMap: {}
+- Label: "Risk Statement"
+  Source: Row
+  Field: ZRM-RiskStatement
+  ValueMap: {}
+- Label: "Risk Detail"
+  Source: Row
+  Field: ZRM-RiskDetail
+  ValueMap: {}
+- Label: "Inherent Calculated Risk"
+  Source: Row
+  Field: ZRM-InherentCalculatedRisk
+  ValueMap: {}
+- Label: "Risk Action"
+  Source: Row
+  Field: ZRM-RiskAction
+  ValueMap: {}
+- Label: "Risk Plan"
+  Source: Row
+  Field: ZRM-RiskPlan
+  ValueMap: {}
+- Label: "Residual Calculated Risk"
+  Source: Row
+  Field: ZRM-ResidualCalculatedRisk
+  ValueMap: {}
+- Label: "State"
+  Source: Master
+  Field: State
+  ValueMap: {}
+- Label: "Governed Risk Outcome"
+  Source: Master
+  Field: Outcome
+  ValueMap: {}
+- Label: "Governance Date (UTC)"
+  Source: Master
+  Field: GovernanceDate
+  ValueMap: {}
+- Label: "Review Due (UTC)"
+  Source: Master
+  Field: ReviewDue
+  ValueMap: {}
+</Item></Value>
+    </Setting>
+    <Setting Name="TESSERA::RiskAssessment::DefaultFramework" Required="1" Valid="1">
+        <Description Translatable="1">Exact Framework object name used for new Assessment rows and when the selected RiskStatement has no ZRM-RMF. Selection must resolve exactly one Framework. Assessors can override the row Framework.</Description>
+        <Navigation>TESSERA::RiskAssessment</Navigation>
+        <Value><Item ValueType="String">Asset Risk Management</Item></Value>
     </Setting>
 </otobo_config>

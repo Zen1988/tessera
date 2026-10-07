@@ -218,6 +218,22 @@ object's class before indexing and fails if the selected index is absent or a
 reference cannot be resolved. The existing single-value expression remains valid.
 The example is `docs/examples/framework/risk-master-ticket.yml`.
 
+From package123, the mapping may also assign `ZTicket-OwnerGroup`. For the
+Application default contact use `'"APPLICATION::DEFAULT"'`. The adapter loads
+the uniquely named GovernanceRole and runs its administrator-owned script
+through GovernanceRoleResolver with the mapped Application as ticket context.
+Its typed result must be exactly one existing SupportProfile. A direct
+SupportProfile ID/name is also accepted. Missing/ambiguous mappings and wrong
+result classes fail before ticket creation; no fallback group is chosen.
+This is explicit Framework creation policy, separate from automatic execution
+role replacement (which excludes catalog master ticket types). The profile is
+written before StateBook orchestration. Existing masters, including blank
+owners on previously orchestrated tickets, are not automatically backfilled or
+reassigned. A restarted cycle resolves the current mapping afresh. Package
+installation does not overwrite administrator-owned Framework YAML; add the
+assignment to each applicable Framework's existing `ZRM-MasterTicket` value.
+
+
 Assessment follows `ZTicket-Parent` to the parent ServiceRequest and reads
 that ticket's `ZRM-OriginatedEvent` to find the MELT Risk. A copied child
 origin must agree with the parent. Framework `ZRM-RiskScoringEngine` may select

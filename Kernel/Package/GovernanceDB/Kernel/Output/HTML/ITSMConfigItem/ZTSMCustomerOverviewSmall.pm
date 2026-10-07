@@ -138,16 +138,13 @@ sub new {
         $Self->{ColumnsEnabled} = IsArrayRefWithData($ColumnsEnabled) ? $ColumnsEnabled : [];
     }
 
-    # The customer asset register has a governed, consistent column contract.
+    # Internal identifiers remain in exports, not the customer-facing register.
+    $Self->{ColumnsAvailable} = [ grep { $_ ne 'Number' && $_ ne 'Class' }
+        @{ $Self->{ColumnsAvailable} || [] } ];
+    if ( !grep { $_ eq 'ZTSMAssetType' } $Self->{ColumnsAvailable}->@* ) {
+        splice $Self->{ColumnsAvailable}->@*, 1, 0, 'ZTSMAssetType';
+    }
     $Self->{ColumnsEnabled} = [ $Self->{ColumnsAvailable}->@* ];
-
-    # always set config item number
-    if ( !grep { $_ eq 'Number' } $Self->{ColumnsEnabled}->@* ) {
-        unshift $Self->{ColumnsEnabled}->@*, 'Number';
-    }
-    if ( !grep { $_ eq 'Number' } $Self->{ColumnsAvailable}->@* ) {
-        unshift $Self->{ColumnsAvailable}->@*, 'Number';
-    }
 
     # get necessary dynamic field objects
     my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
@@ -215,6 +212,7 @@ sub new {
         'CurDeplState' => 1,
         'InciState'    => 1,
         'CurInciState' => 1,
+        'ZTSMAssetType'       => 1,
         'ZTSMAssetTag'        => 1,
         'ZTSMProductModel'    => 1,
         'ZTSMApplication'     => 1,
@@ -326,7 +324,8 @@ sub ActionRow {
             elsif ( $Column eq 'ZTSMDomain' ) {
                 $TranslatedWord = Translatable('Domain');
             }
-            elsif ( $Column eq 'ZTSMAssetTag' ) { $TranslatedWord = Translatable('Asset Tag'); }
+            elsif ( $Column eq 'ZTSMAssetType' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Asset Type'); }
+                elsif ( $Column eq 'ZTSMAssetTag' ) { $TranslatedWord = Translatable('Asset Tag'); }
             elsif ( $Column eq 'ZTSMApplication' ) { $TranslatedWord = Translatable('Application'); }
             elsif ( $Column eq 'ZTSMEnvironment' ) { $TranslatedWord = Translatable('Environment'); }
             elsif ( $Column eq 'ZTSMLocation' ) { $TranslatedWord = Translatable('Location'); }
@@ -369,7 +368,7 @@ sub ActionRow {
     }
 
     my $Output = $LayoutObject->Output(
-        TemplateFile => 'CustomerITSMConfigItemOverviewSmall',
+        TemplateFile => 'ZTSMCustomerITSMConfigItemOverviewSmall',
         Data         => \%Param,
     );
 
@@ -510,6 +509,10 @@ sub Run {
                 DynamicFields => 1,
             );
             my %ConfigItem = $ConfigItemRef->%*;
+            $ConfigItem{ZTSMAssetType} = $Self->_ZTSMVirtualValueGet(
+                ConfigItem => \%ConfigItem,
+                Candidates => [ 'ZTAM-WorkloadType', 'ZTAM-NetworkNodeType', 'ZTAM-FacilityEquipmentType', 'ZTAM-PeripheralNodeType' ],
+            );
             $ConfigItem{ZTSMAssetTag} = $Self->_ZTSMVirtualValueGet(
                 ConfigItem => \%ConfigItem, Candidates => [ 'AssetTag', 'Asset Tag' ],
             );
@@ -580,6 +583,7 @@ sub Run {
 
     # define special config item columns
     my %SpecialColumns = (
+        Name          => 1,
         Number        => 1,
         CurDeplSignal => 1,
         CurInciSignal => 1,
@@ -639,7 +643,8 @@ sub Run {
                 Data => {},
             );
 
-            if ( $SpecialColumns{$Column} ) {
+            # Name has a linked row cell but uses the generic filter/sort header.
+            if ( $SpecialColumns{$Column} && $Column ne 'Name' ) {
 
                 if ( $Param{SortBy} && ( $Param{SortBy} eq $Column ) ) {
                     my $TitleDesc;
@@ -674,6 +679,7 @@ sub Run {
                 elsif ( $Column eq 'ZTSMDomain' ) {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Domain');
                 }
+                elsif ( $Column eq 'ZTSMAssetType' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Asset Type'); }
                 elsif ( $Column eq 'ZTSMAssetTag' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Asset Tag'); }
                 elsif ( $Column eq 'ZTSMApplication' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Application'); }
                 elsif ( $Column eq 'ZTSMEnvironment' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Environment'); }
@@ -844,6 +850,7 @@ sub Run {
                 elsif ( $Column eq 'ZTSMDomain' ) {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Domain');
                 }
+                elsif ( $Column eq 'ZTSMAssetType' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Asset Type'); }
                 elsif ( $Column eq 'ZTSMAssetTag' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Asset Tag'); }
                 elsif ( $Column eq 'ZTSMApplication' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Application'); }
                 elsif ( $Column eq 'ZTSMEnvironment' ) { $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Environment'); }
@@ -1529,7 +1536,7 @@ sub Run {
 
     # use template
     my $Output = $LayoutObject->Output(
-        TemplateFile => 'CustomerITSMConfigItemOverviewSmall',
+        TemplateFile => 'ZTSMCustomerITSMConfigItemOverviewSmall',
         Data         => {
             %Param,
             Type => $Self->{ViewType},
@@ -1551,8 +1558,9 @@ sub _GetColumnValues {
         $ConfigItemIDs = $Param{OriginalConfigItemIDs};
     }
 
-    if ( $HeaderColumn eq 'Name' || $HeaderColumn =~ m{\A ZTSM(?:AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile) \z}xms ) {
+    if ( $HeaderColumn eq 'Name' || $HeaderColumn =~ m{\A ZTSM(?:AssetType|AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile) \z}xms ) {
         my %Candidates = (
+            ZTSMAssetType    => [ 'ZTAM-WorkloadType', 'ZTAM-NetworkNodeType', 'ZTAM-FacilityEquipmentType', 'ZTAM-PeripheralNodeType' ],
             ZTSMAssetTag     => [ 'AssetTag', 'Asset Tag' ],
             ZTSMProductModel => [ 'ProductModel', 'Product' ],
             ZTSMApplication  => [ 'Application', 'ApplicationSystem', 'Application System' ],
@@ -1675,7 +1683,7 @@ sub _InitialColumnFilter {
     my $Label = $Param{Label} || $Param{ColumnName};
     $Label = $LayoutObject->{LanguageObject}->Translate($Label);
 
-    my $IsZTSMTextFilter = $Param{ColumnName} =~ m{\A (?:Name|ZTSM(?:AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile)) \z}xms;
+    my $IsZTSMTextFilter = $Param{ColumnName} =~ m{\A (?:Name|ZTSM(?:AssetType|AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile)) \z}xms;
 
     # set fixed values
     my $Data = [
@@ -1877,7 +1885,7 @@ sub _ColumnFilterJSON {
                 Name         => 'ColumnFilter' . $Param{ColumnName},
                 Data         => $Data,
                 Class        => (
-                    $Param{ColumnName} =~ m{\A (?:Name|ZTSM(?:AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile)) \z}xms
+                    $Param{ColumnName} =~ m{\A (?:Name|ZTSM(?:AssetType|AssetTag|ProductModel|Application|Environment|Location|Domain|FunctionProfile)) \z}xms
                     ? 'ColumnFilter Hidden'
                     : 'ColumnFilter Modernize'
                 ),

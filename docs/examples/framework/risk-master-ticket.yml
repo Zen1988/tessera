@@ -10,7 +10,11 @@ RETURN:
     CustomerUser: '"tessera@ica.gov.sg"'
     Title: '@RISK.Name'
     ZRM-OriginatedEvent: '@RISK.MELTObjectID'
+    ZRM-Framework: '@FRAMEWORK.GovernanceObjectID'
     # MELT-RelatedGO is the Risk's single GovernanceObject reference.
     # The runtime requires it to resolve to an Application.
     ZTicket-Application: '@RISK.MELT-RelatedGO'
+    # Resolve the Application RoleMap through this administrator-owned role.
+    # Store the resulting SupportProfile as the master risk owner.
+    ZTicket-OwnerGroup: '"APPLICATION::DEFAULT"'
     ZTicket-StateBook: '@FRAMEWORK.ZRM-RiskMgtStateBook'

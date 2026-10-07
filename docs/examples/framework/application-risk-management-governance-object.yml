@@ -27,12 +27,27 @@ fields:
     - 'EventSeverity: Critical'
     ZRM-StartScore: '20'
   ZRM-Annex: APRM
-  ZRM-MasterTicket: "# ScriptEngine field assignments for the risk master ServiceRequest.\r\nVERSION:
-    1\r\nRETURN:\r\n  AS: Ticket.ServiceRequest\r\n  FIELD ASSIGNMENTS:\r\n    Type:
-    '\"ServiceRequest\"'\r\n    Service: '\"Risk::Management\"'\r\n    CustomerUser:
-    '\"tessera@ica.gov.sg\"'\r\n    Title: '@RISK.Name'\r\n    ZRM-OriginatedEvent:
-    '@RISK.MELTObjectID'\r\n    ZTicket-Application: '@RISK.MELT-RelatedGO'\r\n    ZTicket-StateBook:
-    '@FRAMEWORK.ZRM-RiskMgtStateBook'"
+  ZRM-MasterTicket: |-
+    # Framework.ZRM-MasterTicket for Infrastructure Risk Framework.
+    # ScriptEngine field assignments for Framework.ZRM-MasterTicket.
+    # Execution waits until Framework.ZRM-RiskMgtStateBook points to a StateBook.
+    VERSION: 1
+    RETURN:
+      AS: Ticket.ServiceRequest
+      FIELD ASSIGNMENTS:
+        Type: '"ServiceRequest"'
+        Service: '"Risk::Management"'
+        CustomerUser: '"tessera@ica.gov.sg"'
+        Title: '@RISK.Name'
+        ZRM-OriginatedEvent: '@RISK.MELTObjectID'
+        ZRM-Framework: '@FRAMEWORK.GovernanceObjectID'
+        # MELT-RelatedGO is the Risk's single GovernanceObject reference.
+        # The runtime requires it to resolve to an Application.
+        ZTicket-Application: '@RISK.MELT-RelatedGO'
+        # Resolve the Application RoleMap through this administrator-owned role.
+        # Store the resulting SupportProfile as the master risk owner.
+        ZTicket-OwnerGroup: '"APPLICATION::DEFAULT"'
+        ZTicket-StateBook: '@FRAMEWORK.ZRM-RiskMgtStateBook'
   ZRM-PolicyOwner:
   - 'Organization: ICA::HTX'
   ZRM-PolicyType: IT
@@ -73,7 +88,7 @@ fields:
     x {impact_factor_chain}) = ceil({impact_adjusted}) = {framework_impact}.\r\n      Framework
     suggestion = {framework_likelihood} x {framework_impact} = {framework_score}.\r\n
     \     Assessor selection = {submitted_likelihood} x {submitted_impact} = {submitted_score}.\r\n\r\nASSESSMENT
-    RESULT:\r\n  TICKET TYPE: Assessment\r\n  FIELD: ZRM-RiskAssessment\r\n  ROW TARGET:
+    RESULT:\r\n  TICKET TYPE: Assessment\r\n  FIELD: RiskAssessment\r\n  ROW TARGET:
     ZRM-RiskTargetGO\r\n  TARGET VALUE: SCORING CONTEXT\r\n  RELATED ASSETS FIELD:
     ZRM-RiskTargetCI\r\n  RELATED ASSETS FROM: CURRENT RISK.MELT-RelatedCI\r\n  ROW
     RISK STATEMENT: ZRM-RiskStatement\r\n  RISK STATEMENT VALUE: CURRENT RISK STATEMENT\r\n

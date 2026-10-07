@@ -7,7 +7,8 @@ use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZT
 
 our @ObjectDependencies = (
     'Kernel::System::MELTObject', 'Kernel::System::GovernanceObject',
-    'Kernel::System::TESSERA::ScriptEngine', 'Kernel::System::Ticket',
+    'Kernel::System::TESSERA::ScriptEngine', 'Kernel::System::TESSERA::GovernanceRoleResolver',
+    'Kernel::System::Ticket',
     'Kernel::System::Service', 'Kernel::System::CustomerUser',
     'Kernel::System::DynamicField', 'Kernel::System::DynamicField::Backend',
     'Kernel::System::PID', 'Kernel::System::Log',
@@ -83,7 +84,7 @@ sub _EnsureLocked {
     die "Framework Master Ticket mapping failed: " . ( $Evaluated->{Error} || 'unknown error' ) . "\n"
         if !$Evaluated->{Success} || ref $Evaluated->{Value} ne 'HASH';
     my $TicketMap = $Evaluated->{Value};
-    my %Allowed = map { $_ => 1 } qw(Type Service CustomerUser Title ZRM-OriginatedEvent ZTicket-Application ZTicket-StateBook);
+    my %Allowed = map { $_ => 1 } qw(Type Service CustomerUser Title ZRM-OriginatedEvent ZRM-Framework ZTicket-Application ZTicket-StateBook ZTicket-OwnerGroup);
     for my $Field ( keys %{$TicketMap} ) {
         die "Unsupported Master Ticket assignment $Field.\n" if !$Allowed{$Field};
     }
@@ -94,6 +95,16 @@ sub _EnsureLocked {
         || !$TicketMap->{Service} || !$TicketMap->{CustomerUser};
 
     my $ApplicationID;
+    my $MappedFrameworkID;
+    if (exists $TicketMap->{'ZRM-Framework'}) {
+        $MappedFrameworkID = _SingleID($TicketMap->{'ZRM-Framework'});
+        die "Master Ticket Framework must resolve exactly one Framework.\n" if !$MappedFrameworkID;
+        my $MappedFramework = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+            GovernanceObjectID => $MappedFrameworkID, DynamicFields => 0, Silent => 1,
+        );
+        die "Master Ticket mapped Framework is unavailable.\n"
+            if ref $MappedFramework ne 'HASH' || ($MappedFramework->{Class} || '') ne 'Framework';
+    }
     if ( exists $TicketMap->{'ZTicket-Application'} ) {
         $ApplicationID = _SingleID( $TicketMap->{'ZTicket-Application'} );
         die "Framework Master Ticket must resolve exactly one Application.\n" if !$ApplicationID;
@@ -141,12 +152,15 @@ sub _EnsureLocked {
             TicketID => $LatestTicketID, DynamicFields => 1, UserID => 1, Silent => 1,
         );
         my $LatestState = lc( $LatestTicket{State} || '' );
-        my $Restart = $LatestState =~ m{\Aclosed (?:unsuccessful|rejected)\z} ? 1 : 0;
+        # Cancellation ends this execution cycle, not management of an active Risk.
+        # Reconciliation starts a fresh Framework-mapped cycle and retains this ledger.
+        my $Restart = $LatestState =~ m{\Aclosed (?:unsuccessful|rejected|cancelled|canceled)\z} ? 1 : 0;
         if ( !$Restart ) {
             die "Existing master ServiceRequest has incompatible routing.\n"
                 if !$Self->_FieldsEnsure(
                 TicketID => $LatestTicketID, RiskID => $RiskID, StateBookID => $StateBookID,
                 ApplicationID => $ApplicationID,
+                FrameworkID => $MappedFrameworkID,
                 ServiceID => $ServiceID,
             );
             my @Assessments = $TicketObject->TicketSearch(
@@ -160,6 +174,17 @@ sub _EnsureLocked {
             ) for @Assessments;
             return 1;
         }
+    }
+
+    # Resolve policy-authored ownership only for a fresh cycle. Existing ledgers
+    # keep their original assignment even when the Framework or RoleMap changes.
+    my $OwnerGroupID;
+    if (exists $TicketMap->{'ZTicket-OwnerGroup'}) {
+        $OwnerGroupID = $Self->_OwnerGroupResolve(
+            Value => $TicketMap->{'ZTicket-OwnerGroup'},
+            ApplicationID => $ApplicationID, CustomerUser => $CustomerUser,
+            RiskID => $RiskID, FrameworkID => $MappedFrameworkID,
+        );
     }
 
     my $Title = $TicketMap->{Title} || $Risk->{Name} || 'Risk management';
@@ -177,10 +202,11 @@ sub _EnsureLocked {
         if !$Self->_FieldsEnsure(
             TicketID => $TicketID, RiskID => $RiskID, StateBookID => $StateBookID,
             ApplicationID => $ApplicationID,
-            ServiceID => $ServiceID,
+            FrameworkID => $MappedFrameworkID,
+            ServiceID => $ServiceID, OwnerGroupID => $OwnerGroupID,
         );
     my $RestartReason = $Param{RestartReason}
-        || ( @Existing ? 'The previous Risk Management cycle closed unsuccessful.' : '' );
+        || ( @Existing ? 'The previous Risk Management cycle ended without successful completion.' : '' );
     my $PreviousTicketID = $Param{PreviousTicketID} || ( @Existing ? $Existing[-1] : '' );
     my $Subject = $RestartReason
         ? 'DO-NOT-REPLY: Risk management cycle restarted.'
@@ -211,7 +237,9 @@ sub _FieldsEnsure {
         || ( $Ticket{ServiceID} || '' ) ne $Param{ServiceID};
     for my $Entry (
         [ 'ZRM-OriginatedEvent', $Param{RiskID} ],
+        ( $Param{FrameworkID} ? ( [ 'ZRM-Framework', $Param{FrameworkID} ] ) : () ),
         ( $Param{ApplicationID} ? ( [ 'ZTicket-Application', $Param{ApplicationID} ] ) : () ),
+        ( $Param{OwnerGroupID} ? ( [ 'ZTicket-OwnerGroup', $Param{OwnerGroupID} ] ) : () ),
         [ 'ZTicket-StateBook', $Param{StateBookID} ],
     ) {
         my ( $Name, $Value ) = @{$Entry};
@@ -220,7 +248,7 @@ sub _FieldsEnsure {
             if $Current && $Current ne $Value;
         next if $Current;
         # An already-orchestrated ticket keeps its original governance snapshot.
-        next if $Name eq 'ZTicket-Application'
+        next if ($Name eq 'ZTicket-Application' || $Name eq 'ZRM-Framework')
             && _SingleID( $Ticket{'DynamicField_ZTicket-StateBook'} );
         my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
             Name => $Name,
@@ -234,6 +262,60 @@ sub _FieldsEnsure {
         die "Master ServiceRequest could not set $Name.\n" if !$Success;
     }
     return 1;
+}
+
+# Framework YAML may name a SupportProfile directly or an executable GovernanceRole.
+# Roles are resolved by the shared resolver; the ticket stores the final profile ID.
+sub _OwnerGroupResolve {
+    my ($Self, %Param) = @_;
+    my $Value = _SingleID($Param{Value}) || _Scalar($Param{Value});
+    die "Master Ticket OwnerGroup must identify one SupportProfile or GovernanceRole.\n"
+        if !defined $Value || $Value eq '';
+    my $GO = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my $Object;
+    if ($Value =~ m{\A\d+\z}) {
+        $Object = $GO->GovernanceObjectGet(
+            GovernanceObjectID => $Value, DynamicFields => 1, Silent => 1,
+        );
+    }
+    else {
+        my @IDs = $GO->GovernanceObjectSearch(
+            Result => 'ARRAY', Classes => ['SupportProfile', 'GovernanceRole'],
+            Name => $Value, Limit => 2, UserID => 1,
+        );
+        die "Master Ticket OwnerGroup '$Value' is missing or ambiguous.\n" if @IDs != 1;
+        $Object = $GO->GovernanceObjectGet(
+            GovernanceObjectID => $IDs[0], DynamicFields => 1, Silent => 1,
+        );
+        die "Master Ticket OwnerGroup name did not match exactly.\n"
+            if ref $Object ne 'HASH' || ($Object->{Name} || '') ne $Value;
+    }
+    die "Master Ticket OwnerGroup object is unavailable.\n" if ref $Object ne 'HASH';
+    my $ProfileID;
+    if (($Object->{Class} || '') eq 'SupportProfile') {
+        $ProfileID = _SingleID($Object->{GovernanceObjectID});
+    }
+    elsif (($Object->{Class} || '') eq 'GovernanceRole') {
+        my $Resolved = $Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->Resolve(
+            GovernanceRole => $Object, UserID => 1,
+            Ticket => {
+                Type => 'ServiceRequest', CustomerUser => $Param{CustomerUser},
+                'DynamicField_ZTicket-Application' => $Param{ApplicationID},
+                'DynamicField_ZRM-OriginatedEvent' => $Param{RiskID},
+                'DynamicField_ZRM-Framework' => $Param{FrameworkID},
+            },
+        );
+        die "Master Ticket OwnerGroup role resolution failed: " . ($Resolved->{Error} || 'unknown error') . "\n"
+            if !$Resolved->{Success} || ($Resolved->{ValueType} || '') ne 'GovernanceObject.SupportProfile';
+        $ProfileID = _SingleID($Resolved->{Value});
+    }
+    die "Master Ticket OwnerGroup must resolve exactly one SupportProfile.\n" if !$ProfileID;
+    my $Profile = $GO->GovernanceObjectGet(
+        GovernanceObjectID => $ProfileID, DynamicFields => 0, Silent => 1,
+    );
+    die "Master Ticket OwnerGroup resolved SupportProfile is unavailable.\n"
+        if ref $Profile ne 'HASH' || ($Profile->{Class} || '') ne 'SupportProfile';
+    return $ProfileID;
 }
 
 sub _SingleID {

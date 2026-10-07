@@ -924,4 +924,30 @@ classes:
     name: Verification
     preferences: {}
     valid: valid
+- class: ZTSM::RequestType
+  items:
+  - comment: ''
+    name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Change::Major
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident::Major
+    preferences: {}
+    valid: invalid
+  - comment: ''
+    name: Problem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ServiceRequest
+    preferences: {}
+    valid: valid
 object_type: GeneralCatalog

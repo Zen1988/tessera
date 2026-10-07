@@ -1,59 +1,99 @@
 # --
-# OTOBO is a web-based ticketing system for service organisations.
+# Customer asset overview template installed by GovernanceDB.
 # --
-# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2025 Rother OSS GmbH, https://otobo.io/
-# --
-# This program is free software: you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation, either version 3 of the License, or (at your option) any later version.
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
-# --
-
-<div id='oooContent'>
+<div id='oooContent' class="ZTSMAssetOverview">
     <div id='oooHeader'>
-        <h1>[% Translate("Your ConfigItems") | html %]</h1>
-[% RenderBlockStart("SearchBox") %]
-        <div id="oooSearchBox">
+        <h1>[% Translate("Your Assets") | html %]</h1>
+        [% IF !Data.IsDashboard %]<form class="ZTSMAssetSearch" action="[% Env('CGIHandle') %]" method="get"><input type="hidden" name="Action" value="CustomerITSMConfigItem"/><input type="hidden" name="AssetView" value="List"/><label for="AssetSearch">Asset Search</label><input id="AssetSearch" name="AssetSearch" type="search" value="[% Data.AssetSearch | html %]" placeholder="Name, number, asset tag or type"/><button type="submit">Search</button></form>[% END %]
+        <div class="ZTSMAssetToolbar" aria-label="[% Translate("Asset views and export") | html %]">
+            <a class="ZTSMAssetExportButton" href="[% Env("Baselink") %][% Data.ExportLink | html %]"><i class="fa fa-download" aria-hidden="true"></i> [% Translate("Export Assets") | html %]</a>
+            <div class="ZTSMAssetViewToggle" aria-label="[% Translate("Asset view") | html %]">
+                <a href="[% Env("Baselink") %][% Data.ListLink | html %]" [% IF !Data.IsDashboard %]aria-current="page"[% END %]>[% Translate("List") | html %]</a>
+                <a href="[% Env("Baselink") %][% Data.DashboardLink | html %]" [% IF Data.IsDashboard %]aria-current="page"[% END %]>[% Translate("Dashboard") | html %]</a>
+            </div>
         </div>
-        <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerITSMConfigItemSearch;Filter=1;View=Small;SortBy=Age;OrderBy=Up" title="[% Translate("Search") | html %]" accesskey="[% Data.AccessKey | html %]"><button><span> [% Translate("Search") | html %]</span></button></a>
-[% RenderBlockEnd("SearchBox") %]
     </div>
     <div id='oooMainBox'>
+            
+
         <div id='oooITSMConfigItemListHeader'>
 [% IF Env("Subaction") == 'Search' %]
-            <p class="ooo12 oool Selected">
-                [% Translate("Search") | html %]:  "[% Data.Fulltext | html %]"
-            </p>
+            <p class="ooo12 oool Selected">[% Translate("Search") | html %]: "[% Data.Fulltext | html %]"</p>
 [% END %]
 [% RenderBlockStart("FilterHeader") %]
-            <a class="[% Data.ClassA | html %] ooo12g oool" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=[% Env("Subaction") %];Filter=[% Data.Filter | uri %];SortBy=[% Data.SortBy | uri %];OrderBy=[% Data.OrderBy | uri %][% Data.CustomerIDs %];Fulltext=[% Data.Fulltext | uri %]">
-                [% Translate(Data.Name) | html %] ([% Data.Count | html %])
-            </a>
+            <a class="[% Data.ClassA | html %] ooo12g oool" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=[% Env("Subaction") %];Filter=[% Data.Filter | uri %];SortBy=[% Data.SortBy | uri %];OrderBy=[% Data.OrderBy | uri %][% Data.CustomerIDs %];Fulltext=[% Data.Fulltext | uri %];AssetView=[% Data.AssetView | uri %];AssetSearch=[% Data.AssetSearch | uri %]">[% Translate(Data.Name) | html %] ([% Data.Count | html %])</a>
 [% RenderBlockEnd("FilterHeader") %]
-[% IF Data.SiteNavBar %]
-            <div class="ooo12g ooor">
-                <p>[% Translate("Page") | html %]</p>
-                [% Data.SiteNavBar %]
-            </div>
+[% IF Data.SiteNavBar && !Data.IsDashboard %]
+            <div class="ooo12g ooor"><p>[% Translate("Page") | html %]</p>[% Data.SiteNavBar %]</div>
 [% END %]
 [% RenderBlockStart("FilterDelete") %]
-            <div id="oooITSMConfigItemFilterDelete">
-                <a href="[% Env("Baselink") %]Action=[% Env("Action") %];Filter=[% Data.Filter | uri %];DeleteFilters=DeleteFilters">
-                    [% Translate("Reset overview") | html %]
-                    <i class="ooofo ooofo-delete_outl"></i>
-                </a>
-            </div>
+            <div id="oooITSMConfigItemFilterDelete"><a href="[% Env("Baselink") %]Action=[% Env("Action") %];Filter=[% Data.Filter | uri %];DeleteFilters=DeleteFilters;AssetView=[% Data.AssetView | uri %];AssetSearch=[% Data.AssetSearch | uri %]">[% Translate("Reset overview") | html %] <i class="ooofo ooofo-delete_outl"></i></a></div>
 [% RenderBlockEnd("FilterDelete") %]
-#            <p class="ooo12g oool">[% Data.ITSMConfigItemCount | html %] [% Translate("ConfigItems") | html %]</p>
-#            <p class="ooo12g oool">[% Translate("Sort") | html %]</p>
-#            <p class="ooo12g ooor">[% Translate("Filter") | html %]</p>
-#            <p class="ooo12g ooor">[% Translate("Page") | html %]</p>
         </div>
+[% IF Data.IsDashboard %]
+        <section class="ZTSMAssetDashboard" aria-label="[% Translate("Asset dashboard") | html %]">
+            <div class="ZTSMAssetMetrics">
+                <div><span>[% Translate("Assets") | html %]</span><strong>[% Data.Dashboard.Total | html %]</strong></div>
+                <div><span>[% Translate("Assets with risk") | html %]</span><strong>[% Data.Dashboard.RiskCount | html %]</strong></div>
+            </div>
+            <div class="ZTSMAssetDashboardGrid">
+                <section class="ZTSMAssetDashboardCard">
+                    <h2>[% Translate("Distribution by Asset Type") | html %]</h2>
+[% IF Data.Dashboard.Total %]
+                    <ul class="ZTSMAssetDistribution">
+[% FOREACH Item IN Data.Dashboard.Distribution %]
+                        <li><div><span>[% Item.Type | html %]</span><strong>[% Item.Count | html %] <small>([% Item.Percent | html %]%)</small></strong></div><meter min="0" max="[% Data.Dashboard.Total | html %]" value="[% Item.Count | html %]" aria-label="[% Item.Type | html %]">[% Item.Count | html %]</meter></li>
+[% END %]
+                    </ul>
+[% ELSE %]
+                    <p>[% Translate("No assets match the current filters.") | html %]</p>
+[% END %]
+                </section>
+                <section class="ZTSMAssetDashboardCard">
+                    <h2>[% Translate("Assets with risk") | html %]</h2>
+                    <p class="ZTSMAssetDashboardNote">[% Translate("Assets tagged in active Risk Management tickets you can access. A recorded link does not indicate a calculated risk rating.") | html %]</p>
+[% IF Data.Dashboard.RiskCount %]
+                    <table><thead><tr><th scope="col">[% Translate("Name") | html %]</th><th scope="col">[% Translate("Asset Type") | html %]</th></tr></thead><tbody>
+[% FOREACH Item IN Data.Dashboard.RiskAssets %]
+                        <tr><td><a href="[% Env("Baselink") %]Action=CustomerITSMConfigItemZoom;ConfigItemID=[% Item.ID | uri %]">[% Item.Name | html %]</a></td><td>[% Item.Type | html %]</td></tr>
+[% END %]
+                    </tbody></table>
+[% ELSE %]
+                    <p>[% Translate("No matching assets are tagged in accessible active Risk Management tickets.") | html %]</p>
+[% END %]
+                </section>
+            </div>
+        </section>
+[% ELSE %]
         [% Data.ITSMConfigItemListHTML %]
+[% END %]
     </div>
 </div>
+
+<style>
+.ZTSMAssetOverview #oooHeader { display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+.ZTSMAssetOverview #oooHeader h1 { margin:0; flex:1 1 240px; }
+.ZTSMAssetOverview .ZTSMAssetToolbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.ZTSMAssetOverview .ZTSMAssetViewToggle { display:flex; border:1px solid #cbd0e4; border-radius:24px; overflow:hidden; }
+.ZTSMAssetOverview .ZTSMAssetViewToggle a { padding:12px 20px; background:#fff; color:#000539; }
+.ZTSMAssetOverview .ZTSMAssetViewToggle a[aria-current="page"] { background:#000539; color:#fff; }
+.ZTSMAssetOverview .ZTSMAssetExportButton { position:static !important; margin:0; padding:14px 24px; border-radius:28px; background:#1428ff; color:#fff; }
+.ZTSMAssetOverview .ZTSMAssetToolbar a:focus-visible { outline:3px solid #7c89ff; outline-offset:3px; }
+.ZTSMAssetOverview .ZTSMAssetMetrics { display:flex; flex-wrap:wrap; gap:20px; margin:16px 0 24px; }
+.ZTSMAssetOverview .ZTSMAssetMetrics > div { background:#fff; border:1px solid #e4e6ef; border-radius:16px; padding:24px; min-width:180px; }
+.ZTSMAssetOverview .ZTSMAssetMetrics strong { display:block; font-size:32px; margin-top:8px; }
+.ZTSMAssetOverview .ZTSMAssetDashboardGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.ZTSMAssetOverview .ZTSMAssetDashboardCard { background:#fff; border:1px solid #e4e6ef; border-radius:16px; padding:28px; min-width:0; }
+.ZTSMAssetOverview .ZTSMAssetDashboardCard h2 { font-size:22px; margin-bottom:20px; }
+.ZTSMAssetOverview .ZTSMAssetDistribution { list-style:none; margin:0; padding:0; }
+.ZTSMAssetOverview .ZTSMAssetDistribution li { margin-bottom:20px; }
+.ZTSMAssetOverview .ZTSMAssetDistribution li > div { display:flex; justify-content:space-between; gap:16px; margin-bottom:8px; }
+.ZTSMAssetOverview .ZTSMAssetDistribution small { font-weight:normal; }
+.ZTSMAssetOverview .ZTSMAssetDistribution meter { width:100%; height:20px; accent-color:#1428ff; }
+.ZTSMAssetOverview .ZTSMAssetDashboardNote { color:#656d8c; margin-bottom:20px; line-height:1.5; }
+.ZTSMAssetOverview .ZTSMAssetDashboardCard table { width:100%; border-collapse:collapse; }
+.ZTSMAssetOverview .ZTSMAssetDashboardCard th, .ZTSMAssetOverview .ZTSMAssetDashboardCard td { padding:12px 8px; border-bottom:1px solid #e4e6ef; text-align:left; overflow-wrap:anywhere; }
+@media(max-width:1000px) { .ZTSMAssetOverview .ZTSMAssetDashboardGrid { grid-template-columns:1fr; } }
+</style>
+
+<style>.ZTSMAssetOverview .ZTSMAssetViewToggle{display:inline-flex;margin:0}.ZTSMAssetSearch{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ZTSMAssetSearch input{padding:10px;border:1px solid #cbd0e4;border-radius:16px}.ZTSMAssetSearch button{padding:10px 16px;border-radius:20px}.ZTSMAssetOverview .ZTSMAssetViewToggle a:focus-visible{outline:3px solid #7c89ff;outline-offset:-3px}</style>

@@ -701,6 +701,8 @@ sub Run {
 
     return if !$TicketID;
 
+    return 1 if !$Kernel::OM->Get('Kernel::System::TESSERA::GovernanceRoleResolver')->ExecutionTicketEligible(Ticket=>$Ticket);
+
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',

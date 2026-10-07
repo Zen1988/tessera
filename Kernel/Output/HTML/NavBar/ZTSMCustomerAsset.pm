@@ -15,24 +15,48 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    return if $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->CustomerHasAssetRole(
+    my $CanReadAssets = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->CustomerHasCMDBReadRole(
         CustomerUserID => $Self->{UserID},
     );
 
-    my %Return = %{ $Param{NavBar}->{Sub} || {} };
+    my $Navigation = $Param{NavBarModule};
+    return if ref $Navigation ne 'HASH';
 
-    for my $NavBarName ( keys %Return ) {
-        next if ref $Return{$NavBarName} ne 'HASH';
-
-        for my $Priority ( keys %{ $Return{$NavBarName} } ) {
-            my $Navigation = $Return{$NavBarName}->{$Priority};
-            next if ref $Navigation ne 'HASH';
-            next if ( $Navigation->{Link} || '' ) !~ m{(?:\A|;)Action=CustomerITSMConfigItem(?:;|\z)};
-            delete $Return{$NavBarName}->{$Priority};
-        }
+    my $HideLink = sub {
+        my ($Item) = @_;
+        return if ref $Item ne 'HASH';
+        my $Link = $Item->{Link} || '';
+        return 1 if $Link =~ m{(?:\A|[?;&])Action=CustomerTicketOverview(?:[;&]|\z)}
+            && $Link =~ m{(?:\A|[?;&])Subaction=CompanyTickets(?:[;&]|\z)};
+        return !$CanReadAssets
+            && $Link =~ m{(?:\A|[?;&])Action=CustomerITSMConfigItem(?:Zoom|Search|Attachment)?(?:[;&]|\z)};
+    };
+    my %Return;
+    # Layout has already expanded its map into the merge's argument list.
+    # Override denied main entries with empty hashes, which Layout skips.
+    # Never mutate the map being expanded by the caller.
+    for my $Key ( keys %{$Navigation} ) {
+        next if $Key eq 'Sub';
+        $Return{$Key} = {} if $HideLink->( $Navigation->{$Key} );
     }
+    if ( ref $Navigation->{Sub} eq 'HASH' ) {
+        my %Sub;
+        for my $NavBarName ( keys %{ $Navigation->{Sub} } ) {
+            my $Submenu = $Navigation->{Sub}->{$NavBarName};
+            if ( ref $Submenu ne 'HASH' ) {
+                $Sub{$NavBarName} = $Submenu;
+                next;
+            }
+            my %Items = %{$Submenu};
+            for my $Key ( keys %Items ) {
+                delete $Items{$Key} if $HideLink->( $Items{$Key} );
+            }
+            $Sub{$NavBarName} = \%Items;
+        }
+        $Return{Sub} = \%Sub;
+    }
+    return %Return;
 
-    return ( Sub => \%Return );
 }
 
 1;

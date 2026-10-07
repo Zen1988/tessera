@@ -36,6 +36,64 @@
         <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerTicketMessage" title="[% Translate("New Ticket") | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]"><button><i class="ooofo ooofo-add"></i></button></a>
 #        <h3 id='oooHeaderOptions' class="ooog"><i class="ooofo ooofo-more_h"></i></h3>
     </div>
+        [% IF !Data.Greeting.Message && !Data.Greeting.Completed %]
+        <section id="TESSERASessionGreeting" class="TESSERASessionGreeting" aria-labelledby="TESSERAGreetingTitle">
+            <h2 id="TESSERAGreetingTitle">Welcome back to TESSERA, [% Data.Name | html %].</h2>
+            <p>How are you feeling today?</p>
+            <form action="[% Env('Baselink') %]Action=CustomerDashboard" method="post">
+                <input type="hidden" name="Action" value="CustomerDashboard"/>
+                <input type="hidden" name="Subaction" value="SetSessionMood"/>
+                <input type="hidden" name="ChallengeToken" value="[% Data.GreetingToken | html %]"/>
+                <div class="TESSERAMoodChoices" role="group" aria-label="How are you feeling today?">
+                    <button type="submit" name="Mood" value="1" aria-label="Very sad">😢</button>
+                    <button type="submit" name="Mood" value="2" aria-label="Sad">🙁</button>
+                    <button type="submit" name="Mood" value="3" aria-label="Neutral">😐</button>
+                    <button type="submit" name="Mood" value="4" aria-label="Happy">🙂</button>
+                    <button type="submit" name="Mood" value="5" aria-label="Very happy">😄</button>
+                </div>
+            </form>
+            <p class="TESSERAMoodMessage" role="status" aria-live="polite"></p>
+        </section>
+        <script>
+        function initialiseGreeting() {
+            var card = document.getElementById('TESSERASessionGreeting');
+            if (!card) { return; }
+            var main = document.getElementById('oooMainBox');
+            function alignGreeting() {
+                if (!main) { return; }
+                var bounds = main.getBoundingClientRect(), parent = card.parentElement.getBoundingClientRect();
+                var style = window.getComputedStyle(main);
+                card.style.setProperty('--greeting-left', (bounds.left - parent.left + parseFloat(style.paddingLeft)) + 'px');
+                card.style.setProperty('--greeting-right', (parent.right - bounds.right + parseFloat(style.paddingRight)) + 'px');
+            }
+            alignGreeting();
+            window.addEventListener('resize', alignGreeting);
+            if (main && window.ResizeObserver) { new ResizeObserver(alignGreeting).observe(main); }
+            var form = card.querySelector('form'), status = card.querySelector('[role="status"]');
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                var button = event.submitter;
+                if (!button || form.dataset.saving) { return; }
+                form.dataset.saving = '1';
+                var data = new FormData(form); data.set('Mood', button.value);
+                fetch(form.action, {method: 'POST', body: data, credentials: 'same-origin'})
+                    .then(function (r) { if (!r.ok) { throw new Error(); } return r.json(); })
+                    .then(function (r) {
+                        if (!r.Success) { throw new Error(); }
+                        form.hidden = true;
+                        status.textContent = r.Message;
+                        window.setTimeout(function () { card.hidden = true; }, 4000);
+                    }).catch(function () {
+                        delete form.dataset.saving;
+                        status.textContent = 'Could not save that just now. You can try again.';
+                    });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialiseGreeting, {once: true});
+        } else { initialiseGreeting(); }
+        </script>
+        [% END %]
     <div id='oooMainBox'>
         [% Data.TileHTML %]
     </div>

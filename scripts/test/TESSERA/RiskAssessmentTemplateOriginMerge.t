@@ -30,6 +30,7 @@ die $@ if $@;
 
 {
     package RiskTemplateTestOM;
+    sub GovernanceObjectSearch { return () }
     sub new { return bless {}, shift }
     sub Get { return $_[0] }
     sub MELTObjectGet {
@@ -141,7 +142,7 @@ my $RowHTML = $Action->_RiskAssessmentRowHTML(
 );
 like(
     $RowHTML,
-    qr{<div class="ZTSMRiskAssessmentField ZTSMRiskAssessmentField_ZRM-RiskDetail" role="group" aria-labelledby="RA_0_ZRM-RiskDetail_Caption"><span class="ZTSMRiskAssessmentCaption" id="RA_0_ZRM-RiskDetail_Caption">Risk Detail</span>},
+    qr{<div class="ZTSMRiskAssessmentField ZTSMRiskAssessmentField_ZRM-RiskDetail"[^>]* role="group" aria-labelledby="RA_0_ZRM-RiskDetail_Caption"><span class="ZTSMRiskAssessmentCaption" id="RA_0_ZRM-RiskDetail_Caption">Risk Detail</span>},
     'assessment row renders a visible named caption for its editable field',
 );
 

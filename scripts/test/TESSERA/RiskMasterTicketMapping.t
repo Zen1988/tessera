@@ -55,6 +55,9 @@ our %Tickets;
 our $CreateCount = 0;
 our @FieldSetOrder;
 our @Articles;
+our $OwnerResult = {Success=>1,Value=>1777,ValueType=>'GovernanceObject.SupportProfile'};
+our $OwnerLookups = 0;
+our $OwnerMatches = [1776];
 our $RiskStatus = 'Active';
 
 {
@@ -79,8 +82,18 @@ our $RiskStatus = 'Active';
         my ( $Self, %Param ) = @_;
         return $main::Framework if $Param{GovernanceObjectID} == 1597;
         return { Class => 'StateBook' } if $Param{GovernanceObjectID} == 165;
+        return {Class=>'GovernanceRole',Name=>'APPLICATION::DEFAULT',GovernanceObjectID=>1776} if $Param{GovernanceObjectID} == 1776;
+        return {Class=>'SupportProfile',GovernanceObjectID=>1777} if $Param{GovernanceObjectID} == 1777;
         return { Class => 'Application' } if $Param{GovernanceObjectID} == 1493;
         return;
+    }
+    sub GovernanceObjectSearch { return @{$main::OwnerMatches} }
+    sub Resolve {
+        my ($Self,%P)=@_;
+        $main::OwnerLookups++;
+        die 'wrong application context' if $P{Ticket}{'DynamicField_ZTicket-Application'} != 1493;
+        die 'wrong master role' if $P{GovernanceRole}{GovernanceObjectID} != 1776;
+        return $main::OwnerResult;
     }
     sub FieldAssignmentsEvaluate {
         my ( $Self, %Param ) = @_;
@@ -164,11 +177,94 @@ is( $Tickets{202}{'DynamicField_ZRM-OriginatedEvent'}, 21, 'the new ServiceReque
 like( $Articles[-1]{Body}, qr/Previous ServiceRequest: 201/, 'restart evidence points to the prior cycle' );
 ok( $Runtime->Ensure( RiskID => 21 ), 'reconciliation reuses the active replacement cycle' );
 is( $CreateCount, 2, 'scheduled retry does not duplicate a replacement SR' );
+$Mapping->{'ZRM-Framework'} = [1597];
 $Tickets{202}{State} = 'closed rejected';
 ok( $Runtime->Ensure( RiskID => 21 ), 'a rejected Approval cycle starts another mapped master SR' );
 is( $CreateCount, 3, 'a rejected cycle creates one replacement SR' );
+is($Tickets{203}{'DynamicField_ZRM-Framework'},1597,'mapped Framework is persisted on the fresh master');
+my @NewOrder = @FieldSetOrder[-4..-1];
+is_deeply(\@NewOrder,['ZRM-OriginatedEvent','ZRM-Framework','ZTicket-Application','ZTicket-StateBook'],'mapped Framework is written before orchestration starts');
+delete $Tickets{203}{'DynamicField_ZRM-Framework'};
+ok($Runtime->Ensure(RiskID=>21),'reconciliation preserves orchestrated master snapshot');
+ok(!exists $Tickets{203}{'DynamicField_ZRM-Framework'},'existing orchestrated master is not backfilled');
+$Tickets{203}{State} = 'closed cancelled';
+ok($Runtime->Run(),'scheduled reconciliation restarts a cancelled active Risk cycle');
+is($CreateCount,4,'cancellation creates exactly one fresh master');
+is($Tickets{203}{State},'closed cancelled','cancelled ledger remains unchanged');
+is($Tickets{204}{'DynamicField_ZRM-OriginatedEvent'},21,'replacement remains linked to originating Risk');
+like($Articles[-1]{Body},qr/Previous ServiceRequest: 203/,'replacement evidence references cancelled cycle');
+ok($Runtime->Run(),'repeat reconciliation reuses replacement');
+is($CreateCount,4,'repeat job does not create duplicate replacement');
+$Tickets{204}{State} = 'closed canceled';
+ok($Runtime->Ensure(RiskID=>21),'alternate canceled spelling also restarts');
+is($CreateCount,5,'alternate cancellation creates one replacement');
+$Tickets{205}{State} = 'closed successful';
+ok($Runtime->Run(),'successful cycle is retained');
+is($CreateCount,5,'success does not restart');
+$Tickets{205}{State} = 'closed cancelled';
 $RiskStatus = 'Closed';
 ok( $Runtime->Ensure( RiskID => 21 ), 'closed Risk is not restarted' );
-is( $CreateCount, 3, 'a successfully treated Risk does not create another SR' );
+is( $CreateCount, 5, 'a closed Risk does not create another SR even if its last cycle was cancelled' );
+
+$RiskStatus = 'Active';
+$Mapping->{'ZTicket-OwnerGroup'} = 'APPLICATION::DEFAULT';
+ok($Runtime->Ensure(RiskID=>21),'Framework role mapping creates fresh owned cycle');
+is($Tickets{206}{'DynamicField_ZTicket-OwnerGroup'},1777,'master stores resolved SupportProfile, not role');
+is_deeply([@FieldSetOrder[-5..-1]],['ZRM-OriginatedEvent','ZRM-Framework','ZTicket-Application','ZTicket-OwnerGroup','ZTicket-StateBook'],'risk ownership established before orchestration');
+is($OwnerLookups,1,'shared role resolver used once for fresh master');
+$OwnerResult = {Success=>0,Error=>'RoleMap is ambiguous'};
+ok($Runtime->Ensure(RiskID=>21),'active master preserved despite later role change');
+is($OwnerLookups,1,'existing cycle does not reevaluate its owner');
+is($Tickets{206}{'DynamicField_ZTicket-OwnerGroup'},1777,'original owner retained');
+$Tickets{206}{State}='closed unsuccessful';
+ok(!$Runtime->Ensure(RiskID=>21),'ambiguous role prevents new cycle');
+is($CreateCount,6,'failed ownership does not create orphan ticket');
+$OwnerResult = {Success=>1,Value=>[1777,1778],ValueType=>'GovernanceObject.SupportProfile'};
+ok(!$Runtime->Ensure(RiskID=>21),'multiple owners rejected');
+$OwnerResult = {Success=>1,Value=>1493,ValueType=>'GovernanceObject.Organization'};
+ok(!$Runtime->Ensure(RiskID=>21),'wrong typed resolver output rejected');
+$OwnerResult = {Success=>1,Value=>1493,ValueType=>'GovernanceObject.SupportProfile'};
+ok(!$Runtime->Ensure(RiskID=>21),'wrong actual object class rejected');
+$OwnerMatches = [];
+ok(!$Runtime->Ensure(RiskID=>21),'missing role rejected before creation');
+$OwnerMatches = [1776,1776];
+ok(!$Runtime->Ensure(RiskID=>21),'ambiguous role name rejected before creation');
+$Mapping->{'ZTicket-OwnerGroup'} = 1777;
+ok($Runtime->Ensure(RiskID=>21),'policy may map SupportProfile directly');
+is($Tickets{207}{'DynamicField_ZTicket-OwnerGroup'},1777,'direct SupportProfile stored');
+is($CreateCount,7,'valid direct mapping creates one replacement');
+
+# Exercise the real application RoleMap -> ScriptEngine -> shared resolver chain.
+use lib 'Kernel/Package/GovernanceDB', '.';
+use Kernel::System::TESSERA::GovernanceRoleResolver;
+use Kernel::System::TESSERA::ScriptEngine;
+use YAML::XS ();
+our $RoleRows = [{GovernanceRole=>1776,SupportProfile=>1777}];
+{ package RiskMasterRealRoleOM;
+    our @ISA = ('RiskMasterTestOM');
+    sub Get {
+        my ($Self,$Name)=@_;
+        return Kernel::System::TESSERA::GovernanceRoleResolver->new() if $Name eq 'Kernel::System::TESSERA::GovernanceRoleResolver';
+        return Kernel::System::TESSERA::ScriptEngine->new() if $Name eq 'Kernel::System::TESSERA::ScriptEngine';
+        return $Self;
+    }
+    sub Load {my ($Self,%P)=@_;return YAML::XS::Load($P{Data})}
+    sub GovernanceObjectGet {
+        my ($Self,%P)=@_;
+        return {Class=>'Application',GovernanceObjectID=>1493,'DynamicField_RoleMap'=>$main::RoleRows} if $P{GovernanceObjectID}==1493;
+        return {Class=>'GovernanceRole',Name=>'APPLICATION::DEFAULT',GovernanceObjectID=>1776,'DynamicField_ZTSM-ScriptEngine'=>"VERSION: 1\nLET THIS: TICKET\nRETURN:\n  VALUE: THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n"} if $P{GovernanceObjectID}==1776;
+        return $Self->SUPER::GovernanceObjectGet(%P);
+    }
+}
+$OwnerMatches=[1776];
+$Kernel::OM=RiskMasterRealRoleOM->new();
+my $Owner=$Runtime->_OwnerGroupResolve(Value=>'APPLICATION::DEFAULT',ApplicationID=>1493,CustomerUser=>'tessera@ica.gov.sg');
+is($Owner,1777,'real shared resolver uses Application default RoleMap profile');
+$RoleRows=[{GovernanceRole=>1776,SupportProfile=>1777},{GovernanceRole=>1776,SupportProfile=>1777}];
+my $Ambiguous=eval {$Runtime->_OwnerGroupResolve(Value=>'APPLICATION::DEFAULT',ApplicationID=>1493)};
+ok(!$Ambiguous,'real RoleMap ambiguity fails closed');like($@,qr/exactly one row/,'real role error explains ambiguous mapping');
+$RoleRows=[];
+eval {$Runtime->_OwnerGroupResolve(Value=>'APPLICATION::DEFAULT',ApplicationID=>1493)};
+like($@,qr/exactly one row/,'missing Application RoleMap fails closed');
 
 done_testing();

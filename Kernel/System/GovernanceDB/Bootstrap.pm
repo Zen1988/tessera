@@ -43,6 +43,7 @@ sub InstallDefaults {
     my ( $Self, %Param ) = @_;
 
     $Self->_ActivityTablesEnsure();
+    $Self->_ExternalAPITablesEnsure();
 
     my $Defaults = $Self->_DefaultsLoad();
     return if !$Defaults;
@@ -126,10 +127,6 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
-    $Self->_ReferenceDisplayTypesRepair();
-
-    $Self->_ITSMConfigItemLifecycleDateDynamicFieldsEnsure();
-
     $Self->_ITSMControlDefaultsEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
@@ -138,25 +135,7 @@ sub InstallDefaults {
 
     $Self->_RuntimePrerequisitesEnsure();
 
-    $Self->_TicketReferenceDynamicFieldsRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_ConfigItemsCopyToGovernanceObjects(
-        Classes => $Defaults->{Classes} || [],
-    );
-
-    $Self->_TicketReferenceValuesRepair(
-        Classes => $Defaults->{Classes} || [],
-    );
-
     $Self->_RuntimeOverlayInstall();
-
-    $Self->_CustomerBrandingEnsure();
-
-    $Self->_CustomerDashboardEnsure();
-
-    $Self->_CustomerAssetFrontendEnsure();
 
     $Self->_SysConfigDeploy();
 
@@ -212,6 +191,215 @@ END_SQL
     return 1;
 }
 
+sub _ExternalAPITablesEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+
+    if ( !$Table{ztsm_api_key} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_api_key (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    customer_user_id VARCHAR(200) NOT NULL,
+    key_name VARCHAR(200) NOT NULL,
+    key_prefix VARCHAR(32) NOT NULL,
+    key_hash CHAR(64) NOT NULL,
+    expires_time DATETIME NULL,
+    last_used_time DATETIME NULL,
+    revoke_time DATETIME NULL,
+    revoke_by INTEGER NULL,
+    replaced_by BIGINT NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    change_time DATETIME NULL,
+    change_by INTEGER NULL,
+    PRIMARY KEY (id),
+    UNIQUE INDEX ztsm_api_key_hash (key_hash),
+    INDEX ztsm_api_key_user (customer_user_id),
+    INDEX ztsm_api_key_prefix (key_prefix)
+)
+END_SQL
+    }
+
+    if ( !$Table{ztsm_external_change} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_external_change (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    request_uid VARCHAR(64) NOT NULL,
+    idempotency_key VARCHAR(200) NOT NULL,
+    source_name VARCHAR(100) NOT NULL,
+    customer_user_id VARCHAR(200) NOT NULL,
+    object_type VARCHAR(30) NOT NULL,
+    object_class VARCHAR(100) NOT NULL,
+    operation VARCHAR(30) NOT NULL,
+    target_id BIGINT NULL,
+    expected_version_id BIGINT NULL,
+    ticket_id BIGINT NULL,
+    status VARCHAR(40) NOT NULL,
+    schema_hash CHAR(64) NULL,
+    payload LONGBLOB NOT NULL,
+    normalized_payload LONGBLOB NULL,
+    validation_result LONGBLOB NULL,
+    before_snapshot LONGBLOB NULL,
+    after_snapshot LONGBLOB NULL,
+    released_object_id BIGINT NULL,
+    released_version_id BIGINT NULL,
+    entitlement_snapshot LONGBLOB NULL,
+    parent_change_id BIGINT NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    change_time DATETIME NOT NULL,
+    change_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE INDEX ztsm_external_change_uid (request_uid),
+    UNIQUE INDEX ztsm_external_change_idem (source_name, idempotency_key),
+    INDEX ztsm_external_change_ticket (ticket_id),
+    INDEX ztsm_external_change_target (object_type, target_id),
+    INDEX ztsm_external_change_status (status)
+)
+END_SQL
+    }
+
+    if ( !$Table{ztsm_external_change_history} ) {
+        $DBObject->Do( SQL => <<'END_SQL' );
+CREATE TABLE ztsm_external_change_history (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    change_id BIGINT NOT NULL,
+    old_status VARCHAR(40) NULL,
+    new_status VARCHAR(40) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    detail LONGBLOB NULL,
+    create_time DATETIME NOT NULL,
+    create_by INTEGER NOT NULL,
+    PRIMARY KEY (id),
+    INDEX ztsm_external_history_change (change_id)
+)
+END_SQL
+    }
+
+    return 1;
+}
+
+sub _ExternalAPIFAQEnsure {
+    my ($Self) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+    my %Table = map { lc($_) => 1 } $DBObject->ListTables();
+    if ( !$Table{faq_item} || !$Table{faq_category} ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'TESSERA managed FAQ could not be installed because the FAQ database tables are unavailable.',
+        );
+        return;
+    }
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+    my ( $ContentRef, $ContentFile );
+    FILE:
+    for my $File (
+        "$Home/Custom/var/governancedb/faq/tessera_external_api.md",
+        "$Home/var/governancedb/faq/tessera_external_api.md",
+    ) {
+        $ContentRef = $MainObject->FileRead( Location => $File, Mode => 'utf8' );
+        if ($ContentRef) {
+            $ContentFile = $File;
+            last FILE;
+        }
+    }
+    if ( !$ContentRef ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'TESSERA managed FAQ source was not found below Custom/var or var.',
+        );
+        return;
+    }
+
+    my $FAQObject = eval { $Kernel::OM->Get('Kernel::System::FAQ') };
+    if ( !$FAQObject ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ could not load Kernel::System::FAQ.' );
+        return;
+    }
+
+    my $CategoryID;
+    $DBObject->Prepare(
+        SQL => 'SELECT id FROM faq_category WHERE name = ? AND parent_id = 0',
+        Bind => [ \('TESSERA') ], Limit => 1,
+    );
+    ($CategoryID) = $DBObject->FetchrowArray();
+    $CategoryID ||= $FAQObject->CategoryAdd(
+        Name => 'TESSERA', ParentID => 0, Comment => 'Installed TESSERA reference documentation.',
+        ValidID => 1, UserID => 1,
+    );
+    if ( !$CategoryID ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ category could not be created.' );
+        return;
+    }
+
+    # FAQ categories are permission-bearing. Without this relation the article
+    # exists in the database but remains absent from FAQ Explorer.
+    my $FAQGroupID = $Kernel::OM->Get('Kernel::System::Group')->GroupLookup( Group => 'faq' );
+    if ($FAQGroupID) {
+        my $CategoryGroupOK = $FAQObject->SetCategoryGroup(
+            CategoryID => $CategoryID,
+            GroupIDs   => [$FAQGroupID],
+            UserID     => 1,
+        );
+        if ( !$CategoryGroupOK ) {
+            $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ category permission could not be set.' );
+            return;
+        }
+    }
+
+    my %Languages = reverse $FAQObject->LanguageList( UserID => 1 );
+    my $LanguageID = $Languages{en} || $Languages{'English'} || ( values %Languages )[0];
+    my %States = reverse $FAQObject->StateList( UserID => 1 );
+    my ($StateID) = map { $States{$_} } grep { /public|external/i } sort keys %States;
+    $StateID ||= ( values %States )[0];
+    if ( !$LanguageID || !$StateID ) {
+        $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ could not resolve English language or a public state.' );
+        return;
+    }
+
+    my $ItemID;
+    $DBObject->Prepare(
+        SQL => 'SELECT id FROM faq_item WHERE f_name = ?', Bind => [ \('tessera-external-api-reference') ], Limit => 1,
+    );
+    ($ItemID) = $DBObject->FetchrowArray();
+
+    if ($ItemID) {
+        my %FAQ = $FAQObject->FAQGet( ItemID => $ItemID, UserID => 1 );
+        my $Updated = $FAQObject->FAQUpdate(
+            %FAQ,
+            ItemID => $ItemID, Title => 'TESSERA External API, Ansible, and Script Engine Reference',
+            CategoryID => $CategoryID, StateID => $StateID, LanguageID => $LanguageID,
+            Field1 => ${$ContentRef}, ContentType => 'text/plain', ValidID => 1,
+            Approved => 1, ApprovalOff => 1, UserID => 1,
+        );
+        if ( !$Updated ) {
+            $LogObject->Log( Priority => 'error', Message => 'TESSERA managed FAQ article could not be updated.' );
+            return;
+        }
+        return 1;
+    }
+
+    my $NewItemID = $FAQObject->FAQAdd(
+        Number => 'TESSERA-API-REFERENCE', Name => 'tessera-external-api-reference',
+        Title => 'TESSERA External API, Ansible, and Script Engine Reference',
+        CategoryID => $CategoryID, StateID => $StateID, LanguageID => $LanguageID,
+        Field1 => ${$ContentRef}, Keywords => 'TESSERA API Ansible Script Engine key renewal staging entitlement',
+        ContentType => 'text/plain', ValidID => 1, Approved => 1, UserID => 1,
+    );
+    if ( !$NewItemID ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => "TESSERA managed FAQ article could not be created from $ContentFile.",
+        );
+        return;
+    }
+    return 1;
+}
+
 sub _DefinitionEnsure {
     my ( $Self, %Param ) = @_;
 
@@ -244,24 +432,9 @@ sub _DefinitionEnsure {
         ? $GovernanceObjectObject->RoleDefinitionGet(%GetParam)
         : $GovernanceObjectObject->DefinitionGet(%GetParam);
 
-    if ( $CurrentDefinition && $CurrentDefinition->{DefinitionID} ) {
-        my $Current = $Self->_DefinitionNormalize( $CurrentDefinition->{Definition} || '' );
-        my $Wanted  = $Self->_DefinitionNormalize($Definition);
-
-        return 1 if $Current eq $Wanted;
-
-        # Existing definitions may have been customized by the customer. Merge
-        # only missing packaged structure; existing values, order, and additions
-        # remain authoritative and are never replaced by a reinstall/upgrade.
-        my $Merged = $Self->_DefinitionMerge(
-            Current => $CurrentDefinition->{Definition} || '',
-            Wanted  => $Definition,
-        );
-        return 1 if !$Merged || $Self->_DefinitionNormalize($Merged) eq $Current;
-
-        $AddParam{Definition} = $Merged;
-        $AddParam{Force} = 1;
-    }
+    # Definitions are governance data. Once present, installation and upgrade
+    # must not merge packaged structure into them or create a new version.
+    return 1 if $CurrentDefinition && $CurrentDefinition->{DefinitionID};
 
     my $Result = $Type eq 'Role'
         ? $GovernanceObjectObject->RoleDefinitionAdd(%AddParam)
@@ -773,6 +946,7 @@ sub _RuntimePrerequisitesEnsure {
 
     $Self->_TicketStatesEnsure();
     $Self->_TicketTypesEnsure();
+    $Self->_ExternalAPIGroupsEnsure();
     $Self->_GovernanceRoleObjectsEnsure();
     $Self->_RuntimeProcessesEnsure();
     $Self->_GenericAgentJobsEnsure();
@@ -783,7 +957,16 @@ sub _RuntimePrerequisitesEnsure {
 sub _ServiceTicketTypeACLsRebuild {
     my ( $Self, %Param ) = @_;
 
-    my $Success = $Kernel::OM->Get('Kernel::System::Service')->UpdateTypServiceACLs(
+    my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+    if ( !$ServiceObject->can('UpdateTypServiceACLs') ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => 'GovernanceDB skipped legacy service ticket type ACL regeneration because this OTOBO 11.1 Service backend does not provide UpdateTypServiceACLs.',
+        );
+        return 1;
+    }
+
+    my $Success = $ServiceObject->UpdateTypServiceACLs(
         UserID => 1,
     );
 
@@ -855,25 +1038,10 @@ sub _TicketStatesEnsure {
         my $StateID = $StateObject->StateLookup(
             State => $State->{Name},
         );
-        if ($StateID) {
-            my %Current = $StateObject->StateGet(
-                ID => $StateID,
-            );
-            next STATE
-                if ( $Current{ValidID} || 0 ) == 1
-                && ( $Current{TypeID} || 0 ) == $TypeID
-                && ( $Current{Comment} || '' ) eq $State->{Comment};
-
-            $StateObject->StateUpdate(
-                ID      => $StateID,
-                Name    => $State->{Name},
-                ValidID => 1,
-                TypeID  => $TypeID,
-                Comment => $State->{Comment},
-                UserID  => 1,
-            );
-            next STATE;
-        }
+        # State validity, type and wording are administrator-owned. Installation
+        # only supplies a missing prerequisite and never reactivates or rewrites
+        # an existing state.
+        next STATE if $StateID;
 
         $StateObject->StateAdd(
             Name    => $State->{Name},
@@ -898,9 +1066,11 @@ sub _TicketTypesEnsure {
         Diagnosis
         Endorsement
         Implementation
+        IntegrationRequest
         Incident
         Incident::Major
         Problem
+        RiskTreatment
         ServiceRequest
         Task
         Unclassified
@@ -932,21 +1102,6 @@ sub _TicketTypesEnsure {
 sub _GovernanceRoleObjectsEnsure {
     my ( $Self, %Param ) = @_;
 
-    my @Roles = qw(
-        REQUESTER
-        REQUESTER-DEFAULT
-        REQUESTER-SUPPORT-GROUP
-        DIAGNOSE
-        ASSESSOR
-        ENDORSER
-        APPROVER
-        IMPLEMENTER
-        VERIFIER
-        SUPPORT
-        ASSET
-        ESCALATION
-    );
-
     my $GeneralCatalogObject   = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
 
@@ -966,110 +1121,129 @@ sub _GovernanceRoleObjectsEnsure {
 ---
 SCRIPT: Resolve Requester Governance Role
 VERSION: 1
+LET THIS: TICKET
+
 RETURN:
   IF:
-    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    VALUE: THIS.CustomerUser.ZUser-SupportProfile
     IS NOT EMPTY: true
   THEN:
-    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    VALUE: THIS.CustomerUser.ZUser-SupportProfile
     AS: GovernanceObject.SupportProfile
   ELSE:
-    VALUE: TICKET.CustomerUser
+    VALUE: THIS.CustomerUser
     AS: CustomerUser
 END_REQUESTER_SCRIPT
 
-    my $DynamicResolverScript = <<'END_DYNAMIC_RESOLVER_SCRIPT';
+    my $PlatformRoleMapScript = sub {
+        my (%ScriptParam) = @_;
+        return "---\nSCRIPT: $ScriptParam{Title}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  VALUE: THIS.ZTicket-Application.ZTSMAppSystem-Platform.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n";
+    };
+    my $ApplicationRoleMapScript = sub {
+        my (%ScriptParam) = @_;
+        return "---\nSCRIPT: $ScriptParam{Title}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  VALUE: THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n";
+    };
+    my $PlatformOwnerScript = <<'END_PLATFORM_OWNER_SCRIPT';
 ---
-SCRIPT: Resolve Dynamic Governance Role
+SCRIPT: Resolve Platform Owner Organization
 VERSION: 1
-SEARCH:
-  FOR: GovernanceObject.SupportAssignment
-  AS: MATCHING_ASSIGNMENTS
-  WHERE:
-    ZTSMSupportAssignment-Role:
-      EQUALS: CURRENT OBJECT
-    ZTSMSupportAssignment-Application:
-      EQUALS: TICKET.ZTicket-Application
-  LIMIT: 100
+LET THIS: TICKET
+
 RETURN:
-  FROM: MATCHING_ASSIGNMENTS
-  REQUIRE: EXACTLY ONE
-  FIELD: ZTSMSupportAssignment-SupportProfile
-  AS: GovernanceObject.SupportProfile
-END_DYNAMIC_RESOLVER_SCRIPT
+  VALUE: THIS.ZTicket-Application.ZTSMAppSystem-Platform.Owner
+  AS: GovernanceObject.Organization
+END_PLATFORM_OWNER_SCRIPT
+    my $ApplicationOwnerScript = <<'END_APPLICATION_OWNER_SCRIPT';
+---
+SCRIPT: Resolve Application Owner Organization
+VERSION: 1
+LET THIS: TICKET
+
+RETURN:
+  VALUE: THIS.ZTicket-Application.Owner
+  AS: GovernanceObject.Organization
+END_APPLICATION_OWNER_SCRIPT
 
     my %EvidenceTicketTypeFor = (
-        ASSESSOR    => 'Assessment',
-        ENDORSER    => 'Endorsement',
-        APPROVER    => 'Approval',
-        IMPLEMENTER => 'Implementation',
-        VERIFIER    => 'Verification',
+        'TICKET::DIAGNOSE'    => 'Diagnosis',
+        'TICKET::ASSESSOR'    => 'Assessment',
+        'TICKET::ENDORSER'    => 'Endorsement',
+        'TICKET::APPROVER'    => 'Approval',
+        'TICKET::IMPLEMENTER' => 'Implementation',
+        'TICKET::VERIFIER'    => 'Verification',
+    );
+    my %EvidenceTitleFor = (
+        'TICKET::DIAGNOSE'    => 'Resolve DIAGNOSE From Affected Diagnosis Evidence',
+        'TICKET::ASSESSOR'    => 'Resolve ASSESSOR From Affected Assessment Evidence',
+        'TICKET::ENDORSER'    => 'Resolve Endorser From Endorsement Evidence',
+        'TICKET::APPROVER'    => 'Resolve APPROVER From Approval Evidence',
+        'TICKET::IMPLEMENTER' => 'Resolve IMPLEMENTER From Implementation Evidence',
+        'TICKET::VERIFIER'    => 'Resolve VERIFIER From Verification Evidence',
     );
     my %EvidenceScriptFor = map {
         my $Role       = $_;
         my $TicketType = $EvidenceTicketTypeFor{$Role};
-        $Role => "---\nSCRIPT: Resolve $Role From Execution Evidence\nVERSION: 1\nRETURN:\n  ASSIGNMENTS:\n    TICKET TYPE: $TicketType\n    ITERATION: TICKET.ZIN-Iteration\n    FALLBACK: PREVIOUS ITERATION\n  AS: Collection<SupportAssignment>\n";
+        my $Filter = '';
+        if ( $Role eq 'TICKET::DIAGNOSE' ) {
+            $Filter = "    FILTER:\n      FIELD: ZIN-Outcome\n      IN:\n        - Severity Confirmed\n        - Symptom Observed\n        - Cause Observed\n        - Root Cause Observed\n";
+        }
+        elsif ( $Role eq 'TICKET::ASSESSOR' ) {
+            $Filter = "    FILTER:\n      FIELD: RiskAssessmentOutcome\n      IN:\n        - At Risk - Mitigation Control in Place\n        - At Risk - Mitigation Planned\n        - At Risk - No Mitigation\n        - Risk Accepted\n";
+        }
+        $Role => "---\nSCRIPT: $EvidenceTitleFor{$Role}\nVERSION: 1\nLET THIS: TICKET\n\nRETURN:\n  TICKET FIELD COLLECTION:\n    TICKET TYPE: $TicketType\n    STATE TYPE: closed\n    PARENT:\n      FIELD: ZTicket-Parent\n      VALUE: THIS.ZTicket-Parent\n    ITERATION:\n      FIELD: ZIN-Iteration\n      VALUE: THIS.ZIN-Iteration\n      CURRENT FIRST: true\n      FALLBACK OFFSET: -1\n      UNNUMBERED WHEN EMPTY: true\n$Filter    FIELD: ZTicket-OwnerGroup\n    DISTINCT: true\n    IGNORE EMPTY: true\n    AS: Collection<GovernanceObject.SupportProfile>\n";
     } keys %EvidenceTicketTypeFor;
 
-    my $SupportScript = <<'END_SUPPORT_SCRIPT';
----
-SCRIPT: Resolve Application Default Support Profile
-VERSION: 1
-RETURN:
-  VALUE: TICKET.ZTicket-Application.ZTSMAppSystem-DefaultApprovalProfile
-  AS: GovernanceObject.SupportProfile
-END_SUPPORT_SCRIPT
-
-    my %ScriptFor = (
-        REQUESTER                 => $RequesterScript,
-        'REQUESTER-DEFAULT'       => $RequesterScript,
-        'REQUESTER-SUPPORT-GROUP' => $RequesterScript,
-        map { $_ => $DynamicResolverScript }
-            qw(DIAGNOSE ASSESSOR ENDORSER APPROVER IMPLEMENTER VERIFIER SUPPORT ASSET ESCALATION),
+    my @RoleDefinitions = (
+        { Name => 'PLATFORM::NETWORK', Description => 'Platform Network Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Network' ) },
+        { Name => 'PLATFORM::SERVICE', Description => 'Platform Service Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Service Support' ) },
+        { Name => 'PLATFORM::INFRA', Description => 'Platform Infrastructure Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Infrastructure Support' ) },
+        { Name => 'PLATFORM::SYSTEM', Description => 'Platform System Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform System Support' ) },
+        { Name => 'PLATFORM::HELPDESK', Description => 'Platform Helpdesk Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Helpdesk' ) },
+        { Name => 'PLATFORM::BACKUP', Description => 'Platform Backup Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Backup & Restore Support' ) },
+        { Name => 'PLATFORM::SECURITY', Description => 'Platform Security Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Cyber & Security Support' ) },
+        { Name => 'PLATFORM::DEFAULT', Description => 'Platform Point of Contact', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform default point of contact' ) },
+        { Name => 'PLATFORM::DATABASE', Description => 'Platform Database', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Database Support' ) },
+        { Name => 'PLATFORM::OWNER', Description => 'Platform Owner Organization', Script => $PlatformOwnerScript },
+        { Name => 'PLATFORM::DC', Description => 'Platform DC Support', Script => $PlatformRoleMapScript->( Title => 'Resolve Platform Data Center Support' ) },
+        { Name => 'APPLICATION::OWNER', Description => 'Application Owner Organization', Script => $ApplicationOwnerScript },
+        { Name => 'APPLICATION::SUPPORT', Description => 'Application Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Support' ) },
+        { Name => 'APPLICATION::NETWORK', Description => 'Application Network Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Network Support' ) },
+        { Name => 'APPLICATION::SYSTEM', Description => 'Application System Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application System Support' ) },
+        { Name => 'APPLICATION::DATABASE', Description => 'Application Database Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Database Support' ) },
+        { Name => 'APPLICATION::SECURITY', Description => 'Application Security Support', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Security Support' ) },
+        { Name => 'APPLICATION::DEFAULT', Description => 'Application Point of Contact', Script => $ApplicationRoleMapScript->( Title => 'Resolve Application Point of Contact' ) },
+        { Name => 'TICKET::ENDORSER', Description => 'Ticket Endorser - Who had endorsed the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::ENDORSER'} },
+        { Name => 'TICKET::APPROVER', Description => 'Ticket Approver - Who had approved the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::APPROVER'} },
+        { Name => 'TICKET::ASSESSOR', Description => 'Ticket Assessor - Who had assessed the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::ASSESSOR'} },
+        { Name => 'TICKET::IMPLEMENTER', Description => 'Ticket Implementer - Who had implemented the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::IMPLEMENTER'} },
+        { Name => 'TICKET::REQUESTER', Description => 'Ticket Requester - Who had requested the ticket.', Script => $RequesterScript },
+        { Name => 'TICKET::VERIFIER', Description => 'Ticket Verifier - Who had verified the ticket in last iteration (current or iteration-1)', Script => $EvidenceScriptFor{'TICKET::VERIFIER'} },
+        { Name => 'TICKET::DIAGNOSE', Description => 'Ticket Incident Diagnose - Who had verified the ticket in last iteration (current if exist, else iteration -1)', Script => $EvidenceScriptFor{'TICKET::DIAGNOSE'} },
+        { Name => 'SUPPORT::PRIMARY', Description => 'Support - Primary Assignment' },
+        { Name => 'SUPPORT::SECONDARY', Description => 'Support - Secondary Assignment' },
+        { Name => 'SUPPORT::ESCALATION', Description => 'Support - Escalation Assignment' },
+        { Name => 'TESSERA::CMDB::READ', Description => 'Can read CMDB directly from customer portal' },
+        { Name => 'TESSERA::CMDB::API', Description => 'TESSERA CMDB API Access' },
+        { Name => 'TESSERA::CMDB::API::READONLY', Description => 'TESSERA CMDB API - Readonly' },
+        { Name => 'TESSERA::TICKET::API', Description => 'TESSERA Ticket API Access' },
+        { Name => 'TESSERA::TICKET::API::READONLY', Description => 'TESSERA Ticket API - Readonly' },
+        { Name => 'TESSERA::MELT::API', Description => 'TESSERA MELT API Access' },
+        { Name => 'TESSERA::MELT::API::READONLY', Description => 'TESSERA MELT API - Readonly' },
+        { Name => 'TESSERA::GDB::API', Description => 'TESSERA GDB API Access' },
+        { Name => 'TESSERA::GDB::API::READONLY', Description => 'TESSERA GDB API - Readonly' },
     );
-    @ScriptFor{ keys %EvidenceScriptFor } = values %EvidenceScriptFor;
-    $ScriptFor{SUPPORT} = $SupportScript;
 
     ROLE:
-    for my $Role (@Roles) {
+    for my $RoleDefinition (@RoleDefinitions) {
+        my $Role = $RoleDefinition->{Name};
         my $ExistingID = $Self->_GovernanceObjectNameExists(
             ClassID => $ClassID,
             Name    => $Role,
         );
 
-        if ($ExistingID) {
-            next ROLE if !$ScriptFor{$Role};
-            my $Existing = $GovernanceObjectObject->GovernanceObjectGet(
-                GovernanceObjectID => $ExistingID,
-                DynamicFields      => 1,
-                Silent             => 1,
-            );
-            next ROLE if !$Existing || ref $Existing ne 'HASH';
-            my $CurrentScript = $Existing->{'DynamicField_ZTSM-ScriptEngine'};
-            if ( $Self->_BootstrapValueHasContent($CurrentScript) ) {
-                my $CurrentScalar = $Self->_BootstrapValueScalar($CurrentScript);
-                next ROLE if !defined $CurrentScalar;
-                my $NormalizedCurrent = $CurrentScalar;
-                my $NormalizedLegacy  = $DynamicResolverScript;
-                $NormalizedCurrent =~ s{\r\n?}{\n}g;
-                $NormalizedLegacy  =~ s{\r\n?}{\n}g;
-                $NormalizedCurrent =~ s{\s+\z}{};
-                $NormalizedLegacy  =~ s{\s+\z}{};
-                next ROLE if $NormalizedCurrent ne $NormalizedLegacy;
-            }
-
-            my $Updated = $Self->_GovernanceRoleScriptValueSet(
-                GovernanceObjectID => $ExistingID,
-                Value              => $ScriptFor{$Role},
-            );
-            if ( !$Updated ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "TESSERA bootstrap could not seed ZTSM-ScriptEngine for GovernanceRole $Role ($ExistingID).",
-                );
-            }
-            next ROLE;
-        }
+        # An existing GovernanceRole is authored governance truth, including an
+        # empty or legacy script. Bootstrap only supplies a missing role.
+        next ROLE if $ExistingID;
 
         my $Number = 'TESSERA-ROLE-' . $Role;
         $Number =~ s{[^A-Za-z0-9-]}{-}g;
@@ -1083,9 +1257,11 @@ END_SUPPORT_SCRIPT
             ZTSMStatusID => $StatusID,
             Number       => $Number,
             Name         => $Role,
-            Description  => "Default governance role used by TESSERA runtime orchestration.",
-            ( $ScriptFor{$Role}
-                ? ( 'DynamicField_ZTSM-ScriptEngine' => $ScriptFor{$Role} )
+            Description  => $RoleDefinition->{Description},
+            'DynamicField_ZTSM-Code'   => $Role,
+            'DynamicField_ZTSM-Status' => 'Active',
+            ( $RoleDefinition->{Script}
+                ? ( 'DynamicField_ZTSM-ScriptEngine' => $RoleDefinition->{Script} )
                 : () ),
             UserID       => 1,
         );
@@ -1095,15 +1271,25 @@ END_SUPPORT_SCRIPT
                 Message  => "TESSERA bootstrap could not create default GovernanceRole $Role.",
             );
         }
-        elsif ( $ScriptFor{$Role} ) {
-            my $Seeded = $Self->_GovernanceRoleScriptValueSet(
-                GovernanceObjectID => $CreatedID,
-                Value              => $ScriptFor{$Role},
+        else {
+            my %FieldValue = (
+                'ZTSM-Code'   => $Role,
+                'ZTSM-Status' => 'Active',
+                ( $RoleDefinition->{Script} ? ( 'ZTSM-ScriptEngine' => $RoleDefinition->{Script} ) : () ),
             );
-            if ( !$Seeded ) {
+            my @FailedField;
+            for my $FieldName ( sort keys %FieldValue ) {
+                push @FailedField, $FieldName if !$Self->_GovernanceRoleDynamicFieldValueSet(
+                    GovernanceObjectID => $CreatedID,
+                    FieldName          => $FieldName,
+                    Value              => $FieldValue{$FieldName},
+                );
+            }
+            if (@FailedField) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "TESSERA bootstrap created GovernanceRole $Role but could not seed ZTSM-ScriptEngine ($CreatedID).",
+                    Message  => "TESSERA bootstrap created GovernanceRole $Role but could not seed fields "
+                        . join( ', ', @FailedField ) . " ($CreatedID).",
                 );
             }
         }
@@ -1112,10 +1298,36 @@ END_SUPPORT_SCRIPT
     return 1;
 }
 
-sub _GovernanceRoleScriptValueSet {
+sub _ExternalAPIGroupsEnsure {
+    my ($Self) = @_;
+
+    my %Groups = (
+        'tessera-api'                 => 'Base access to the staged TESSERA external API.',
+        'tessera-cmdb-api'            => 'Submit entitlement-scoped CMDB API requests.',
+        'tessera-melt-api'            => 'Submit entitlement-scoped MELT API requests.',
+        'tessera-governance-api'      => 'Query GovernanceDB through the read-only API.',
+        'tessera-integration-review'  => 'Review staged external requests.',
+        'tessera-integration-release' => 'Release approved external requests through ticket actions.',
+        'tessera-integration-revert'  => 'Request or execute compensating external actions.',
+    );
+    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+    for my $Name ( sort keys %Groups ) {
+        next if $GroupObject->GroupLookup( Group => $Name );
+        $GroupObject->GroupAdd(
+            Name    => $Name,
+            Comment => $Groups{$Name},
+            ValidID => 1,
+            UserID  => 1,
+        );
+    }
+    return 1;
+}
+
+sub _GovernanceRoleDynamicFieldValueSet {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{GovernanceObjectID};
+    return if !$Param{FieldName};
     return if !defined $Param{Value} || $Param{Value} eq '';
 
     my $GovernanceObject = $Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
@@ -1126,7 +1338,7 @@ sub _GovernanceRoleScriptValueSet {
     return if ref $GovernanceObject ne 'HASH' || !$GovernanceObject->{VersionID};
 
     my $DynamicField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
-        Name => 'ZTSM-ScriptEngine',
+        Name => $Param{FieldName},
     );
     return if ref $DynamicField ne 'HASH' || !$DynamicField->{ID};
 
@@ -1248,7 +1460,7 @@ sub _RuntimeProcessesEnsure {
             next FILE;
         }
 
-        if ( $Self->_ActiveProcessNameExists( Name => $Data->{Process}->{Name} ) ) {
+        if ( $Self->_ProcessNameExists( Name => $Data->{Process}->{Name} ) ) {
             next FILE;
         }
 
@@ -1287,7 +1499,7 @@ sub _RuntimeProcessesEnsure {
     return 1;
 }
 
-sub _ActiveProcessNameExists {
+sub _ProcessNameExists {
     my ( $Self, %Param ) = @_;
 
     return if !$Param{Name};
@@ -1300,7 +1512,6 @@ sub _ActiveProcessNameExists {
     for my $Process ( @{$List} ) {
         next PROCESS if ref $Process ne 'HASH';
         next PROCESS if ( $Process->{Name} || '' ) ne $Param{Name};
-        next PROCESS if ( $Process->{State} || '' ) ne 'Active';
         return 1;
     }
 
@@ -1376,11 +1587,11 @@ sub _GenericAgentJobsEnsure {
         my %Existing = $GenericAgentObject->JobGet(
             Name => $Job{Name},
         );
+        # Existing jobs, including invalid or locally edited jobs, are owned by
+        # the administrator and must not be deleted and recreated by bootstrap.
         if (%Existing) {
-            $GenericAgentObject->JobDelete(
-                Name   => $Job{Name},
-                UserID => 1,
-            );
+            $Self->_RoleLookupUniversalTypesEnsure(Job=>\%Existing,Name=>$Job{Name});
+            next JOB;
         }
 
         $GenericAgentObject->JobAdd(
@@ -1390,6 +1601,28 @@ sub _GenericAgentJobsEnsure {
         );
     }
 
+    return 1;
+}
+
+# Remove the legacy execution-type allowlist from the managed resolver job.
+# Runtime excludes master types through the authoritative RequestType catalog.
+sub _RoleLookupUniversalTypesEnsure {
+    my ($Self,%Param)=@_;
+    my $Job=$Param{Job}||{};
+    return 1 if ($Param{Name}||'') ne 'TESSERA-ACTIVITY-ROLELOOKUP'
+        || ($Job->{NewModule}||'') ne 'Kernel::System::GenericAgent::ZTSMRoleDirector';
+    my $Changed;
+    for my $Key (qw(Types TypeIDs)) {
+        next if !exists $Job->{$Key};
+        my $Name=$Param{Name};
+        my $OK=$Kernel::OM->Get('Kernel::System::DB')->Do(
+            SQL=>'DELETE FROM generic_agent_jobs WHERE job_name = ? AND job_key = ?',
+            Bind=>[\$Name,\$Key]);
+        return if !$OK;
+        delete $Job->{$Key};
+        $Changed=1;
+    }
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(Type=>'GenericAgent') if $Changed;
     return 1;
 }
 
@@ -1475,44 +1708,8 @@ sub _ITSMControlDefaultsEnsure {
         return;
     }
 
-    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
-    my %ClassID = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Class', Valid => 0 ) || {} };
-    my %RoleID  = reverse %{ $Catalog->ItemList( Class => 'ITSM::ConfigItem::Role',  Valid => 0 ) || {} };
-    my $YAML = $Kernel::OM->Get('Kernel::System::YAML');
-
-    ITEM:
-    for my $Item ( @{$Seed} ) {
-        next ITEM if ref $Item ne 'HASH' || !defined $Item->{Definition};
-        my ( $ID, $Current, $Add );
-        if ( $Item->{RoleName} ) {
-            $ID = $RoleID{ $Item->{RoleName} } || next ITEM;
-            $Current = $ConfigItemObject->RoleDefinitionGet( RoleID => $ID ) || {};
-            $Add = sub { $ConfigItemObject->RoleDefinitionAdd( RoleID => $ID, Definition => $_[0], UserID => 1 ) };
-        }
-        elsif ( ref $Item->{Class} eq 'HASH' && $Item->{Class}{Name} ) {
-            $ID = $ClassID{ $Item->{Class}{Name} } || next ITEM;
-            $Current = $ConfigItemObject->DefinitionGet( ClassID => $ID ) || {};
-            $Add = sub { $ConfigItemObject->DefinitionAdd( ClassID => $ID, Definition => $_[0], UserID => 1 ) };
-        }
-        else {
-            next ITEM;
-        }
-
-        my $WantedRef  = $YAML->Load( Data => $Item->{Definition} ) || {};
-        my $CurrentRef = $YAML->Load( Data => $Current->{Definition} || '--- {}' ) || {};
-        my $Merged = $Self->_StructureMerge( Current => $CurrentRef, Wanted => $WantedRef );
-        next ITEM if $JSON->Encode( Data => $Merged ) eq $JSON->Encode( Data => $CurrentRef );
-
-        my $Result = $Add->( $YAML->Dump( Data => $Merged ) );
-        if ( !$Result || !$Result->{Success} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'GovernanceDB could not merge missing ConfigItem Control definition structure.',
-            );
-            return;
-        }
-    }
-
+    # ClassImport with IGNORE is the complete bootstrap contract. Existing
+    # ConfigItem classes and role definitions are never supplemented or revised.
     return 1;
 }
 
@@ -1693,24 +1890,7 @@ sub _ClassPreferencesEnsure {
     KEY:
     for my $Key ( sort keys %Wanted ) {
         next KEY if !$Wanted{$Key};
-        if ( $Key eq 'Permission' ) {
-            my @Existing = ref $Preferences{$Key} eq 'ARRAY'
-                ? @{ $Preferences{$Key} }
-                : grep {$_} ( $Preferences{$Key} );
-
-            my %Existing = map { $_ => 1 } @Existing;
-            my @Merged = ( @Existing, grep { !$Existing{$_}++ } @{ $Wanted{$Key} } );
-            next KEY if @Existing && @Merged == @Existing;
-
-            $GeneralCatalogObject->GeneralCatalogPreferencesSet(
-                ItemID => $Param{ItemID},
-                Key    => $Key,
-                Value  => \@Merged,
-            );
-            next KEY;
-        }
-
-        next KEY if $Preferences{$Key};
+        next KEY if exists $Preferences{$Key};
 
         $GeneralCatalogObject->GeneralCatalogPreferencesSet(
             ItemID => $Param{ItemID},
@@ -1784,47 +1964,9 @@ sub _DynamicFieldsEnsure {
         my $FieldType = $Field->{FieldType} || 'Text';
         my $Existing  = $DynamicFieldObject->DynamicFieldGet( Name => $FieldName );
 
-        if ($Existing) {
-            my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
-                Config         => $Existing->{Config} || {},
-                AllowedClasses => \%AllowedClasses,
-            );
-            my $MergedConfig = $Self->_StructureMerge(
-                Current => $CurrentConfig,
-                Wanted  => $Config,
-            );
-
-            next FIELD if $Self->_DynamicFieldConfigEqual(
-                Left  => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $CurrentConfig,
-                },
-                Right => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $MergedConfig,
-                },
-            );
-
-            $Self->_DynamicFieldUpdateForce(
-                ID          => $Existing->{ID},
-                Name        => $Existing->{Name},
-                Label       => $Existing->{Label},
-                FieldOrder  => $Existing->{FieldOrder},
-                FieldType   => $Existing->{FieldType},
-                ObjectType  => $Existing->{ObjectType},
-                Config      => $MergedConfig,
-                ValidID     => $Existing->{ValidID} || 1,
-                UserID      => 1,
-                Reorder     => 0,
-            );
-            next FIELD;
-        }
+        # Dynamic Field validity, type, label and configuration are owned by the
+        # installed environment once the field exists.
+        next FIELD if $Existing;
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $FieldName,
@@ -1857,6 +1999,28 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     my @Fields = (
+        (map { +{
+            Name => 'ZRM-'.$_->[0].'Scale', Label => $_->[0].' Scale', FieldOrder => $_->[1],
+            ObjectType => 'GovernanceObject', FieldType => 'Text',
+            Config => {DefaultValue=>'5',Link=>'',LinkPreview=>'',MultiValue=>0,RegExList=>[],Tooltip=>$_->[0].' Scale'},
+        } } (['Impact',574],['Likelihood',575])),
+
+        {
+            Name => 'ZRM-Framework', Label => 'Framework', FieldOrder => 573,
+            FieldType => 'GovernanceObject',
+            Config => {
+                ClassIDs => ['Framework'], ZTSMStatusIDs => ['Active'],
+                DisplayType => '', EditFieldMode => 'AutoComplete', ImportSearchAttribute => '',
+                MultiValue => 0, Multiselect => 0, PossibleNone => 1, ReferenceFilterList => [],
+                ReferencedObjectType => 'GovernanceObject', SearchAttribute => 'Name', TreeView => 0,
+                Tooltip => 'Risk Management Framework - Usually come with Risk Statement - include what matrix, calculation will work.',
+            },
+        },
+        {
+            Name => 'ITSMDecisionDate', Label => 'Decision Date', FieldOrder => 9, InternalField => 1,
+            FieldType => 'DateTime',
+            Config => { DefaultValue => 0, Link => '', YearsInFuture => 5, YearsInPast => 5, YearsPeriod => 1 },
+        },
         {
             Name       => 'RiskAssessmentOutcome',
             Label      => 'Outcome',
@@ -1875,9 +2039,63 @@ sub _TicketRuntimeDynamicFieldsEnsure {
                     'Not Applicable'                        => 'Not Applicable',
                     'Risk Accepted'                         => 'Risk Accepted',
                 },
-                Tooltip            => 'Risk Assessment Outcome',
+                Tooltip           => 'Risk Assessment Outcome',
                 TranslatableValues => 0,
                 TreeView           => 0,
+            },
+        },
+        {
+            Name       => 'ResolutionOutcome',
+            Label      => 'Outcome',
+            FieldOrder => 568,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'Partially Resolved', 'Resolved', 'Self-Recovered - Reported / No Action',
+                    'Self-Recovered - System Detected', 'Transferred', 'Unresolved', 'Workaround Applied',
+                ) },
+                Tooltip => 'Resolution Outcome', TranslatableValues => 0, TreeView => 0,
+            },
+        },
+        {
+            Name       => 'TreatmentTicket',
+            Label      => 'Risk Treatment Ticket',
+            FieldOrder => 569,
+            FieldType  => 'Ticket',
+            Config     => {
+                DisplayType => '', EditFieldMode => 'AutoComplete', ImportSearchAttribute => '',
+                LinkDirection => 'ReferencingIsSource', LinkObjectForReferenceType => '', MultiValue => 0,
+                Multiselect => 0, PossibleNone => 1, Queue => [], ReferenceFilterList => [],
+                ReferencedObjectType => 'Ticket', SearchAttribute => '', TicketType => [],
+                Tooltip => 'Risk Treatment - Ticket', TreeView => 0,
+            },
+        },
+        {
+            Name       => 'RiskTreatmentOutcome',
+            Label      => 'Outcome',
+            FieldOrder => 570,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'Accepted', 'Avoided', 'Cancelled / No Longer Applicable', 'Mitigated',
+                    'Partially Treated', 'Remediated', 'Transferred', 'Unsuccessful',
+                ) },
+                Tooltip => 'Risk Treatment Outcome', TranslatableValues => 0, TreeView => 0,
+            },
+        },
+        {
+            Name       => 'IncidentState',
+            Label      => 'Incident State',
+            FieldOrder => 571,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '', Link => '', LinkPreview => '', MultiValue => 0, PossibleNone => 0,
+                PossibleValues => { map { $_ => $_ } (
+                    'No Longer Observed', 'Not Resolved', 'Resolved', 'Self-Recovered',
+                ) },
+                Tooltip => 'Incident State', TranslatableValues => 0, TreeView => 0,
             },
         },
         {
@@ -2444,49 +2662,15 @@ sub _TicketRuntimeDynamicFieldsEnsure {
         my $Existing = $DynamicFieldObject->DynamicFieldGet(
             Name => $Field->{Name},
         );
-        if ( $Existing && $Existing->{ID} ) {
-            my $NeedsReferenceRepair = $Field->{Name} eq 'ZIN-KB'
-                && !$Self->_DynamicFieldConfigEqual(
-                    Left => {
-                        Name       => $Existing->{Name},
-                        Label      => $Existing->{Label},
-                        FieldType  => $Existing->{FieldType},
-                        ObjectType => $Existing->{ObjectType},
-                        Config     => $Existing->{Config} || {},
-                    },
-                    Right => {
-                        Name       => $Field->{Name},
-                        Label      => $Field->{Label},
-                        FieldType  => $Field->{FieldType},
-                        ObjectType => 'Ticket',
-                        Config     => $Field->{Config},
-                    },
-                );
-
-            if ($NeedsReferenceRepair) {
-                $Self->_DynamicFieldUpdateForce(
-                    ID         => $Existing->{ID},
-                    Name       => $Field->{Name},
-                    Label      => $Field->{Label},
-                    FieldOrder => $Existing->{FieldOrder},
-                    FieldType  => $Field->{FieldType},
-                    ObjectType => 'Ticket',
-                    Config     => $Field->{Config},
-                    ValidID    => $Existing->{ValidID} || 1,
-                    UserID     => 1,
-                    Reorder    => 0,
-                );
-            }
-
-            next FIELD;
-        }
+        next FIELD if $Existing && $Existing->{ID};
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},
             Label      => $Field->{Label},
             FieldOrder => $Field->{FieldOrder},
             FieldType  => $Field->{FieldType},
-            ObjectType => 'Ticket',
+            ObjectType => $Field->{ObjectType} || 'Ticket',
+            InternalField => $Field->{InternalField} || 0,
             Config     => $Field->{Config},
             ValidID    => 1,
             UserID     => 1,
@@ -2713,47 +2897,7 @@ sub _CustomerUserPreferenceDynamicFieldsEnsure {
         };
 
         my $Existing = $DynamicFieldObject->DynamicFieldGet( Name => $Field->{Name} );
-        if ($Existing) {
-            my $CurrentConfig = $Self->_DynamicFieldConfigSanitize(
-                Config         => $Existing->{Config} || {},
-                AllowedClasses => { map { $_ => $_ } @ClassIDs },
-            );
-            my $NeedsClassIDRepair = $Self->_DynamicFieldClassIDsNeedRepair(
-                Config       => $Existing->{Config} || {},
-                WantedConfig => $Config,
-            );
-
-            next FIELD if !$NeedsClassIDRepair && $Self->_DynamicFieldConfigEqual(
-                Left  => {
-                    Name       => $Existing->{Name},
-                    Label      => $Existing->{Label},
-                    FieldType  => $Existing->{FieldType},
-                    ObjectType => $Existing->{ObjectType},
-                    Config     => $CurrentConfig,
-                },
-                Right => {
-                    Name       => $Field->{Name},
-                    Label      => $Field->{Label},
-                    FieldType  => 'GovernanceObject',
-                    ObjectType => 'CustomerUser',
-                    Config     => $Config,
-                },
-            );
-
-            $Self->_DynamicFieldUpdateForce(
-                ID          => $Existing->{ID},
-                Name        => $Field->{Name},
-                Label       => $Field->{Label},
-                FieldOrder  => $Existing->{FieldOrder} || $Field->{FieldOrder},
-                FieldType   => 'GovernanceObject',
-                ObjectType  => 'CustomerUser',
-                Config      => $Config,
-                ValidID     => $Existing->{ValidID} || 1,
-                UserID      => 1,
-                Reorder     => 0,
-            );
-            next FIELD;
-        }
+        next FIELD if $Existing;
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},
@@ -2892,23 +3036,27 @@ sub _DynamicFieldConfigEqual {
     return defined $Left && defined $Right && $Left eq $Right;
 }
 
+# Repair only the missing required key in registrations deployed by 121-123.
+sub _CustomerPhotoRegistrationRepair {
+    my ($Self) = @_;
+    my $Config = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my $Name = 'CustomerFrontend::Module###CustomerProfilePhoto';
+    my %Setting = $Config->SettingGet(Name => $Name);
+    return 1 if ref $Setting{EffectiveValue} ne 'HASH';
+    return 1 if defined $Setting{EffectiveValue}{NavBarName};
+    my %Value = %{$Setting{EffectiveValue}};
+    $Value{NavBarName} = '';
+    return $Config->SettingsSet(
+        Settings => [{Name => $Name, IsValid => $Setting{IsValid}, EffectiveValue => \%Value}],
+        Comments => 'TESSERA repair profile photo registration required key', UserID => 1,
+    );
+}
+
 sub _SysConfigDeploy {
     my ( $Self, %Param ) = @_;
+    return if !$Self->_CustomerPhotoRegistrationRepair();
 
     my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
-
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'Service',
-        ObjectType => 'GovernanceObject',
-    );
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'Set',
-        ObjectType => 'GovernanceObject',
-    );
-    $Self->_DynamicFieldDriverObjectTypeEnsure(
-        Driver     => 'FAQ',
-        ObjectType => 'GovernanceObject',
-    );
 
     my @DirtySettings   = (
         'DynamicFields::ObjectType###GovernanceObject',
@@ -2950,6 +3098,9 @@ sub _SysConfigDeploy {
         'CustomerFrontend::Module###CustomerTicketZTSMAction',
         'ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime',
         'CustomerPreferencesGroups###ZTSMRequestDefaults',
+        'CustomerPreferencesGroups###TESSERAProfilePhoto',
+        'CustomerFrontend::Module###CustomerProfilePhoto',
+        'Loader::Customer::CommonCSS###099-TESSERAProfile',
         'CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset',
         'CustomerFrontend::Module###CustomerITSMConfigItem',
         'CustomerFrontend::Module###CustomerITSMConfigItemSearch',
@@ -3288,7 +3439,7 @@ sub _CustomerAssetFrontendEnsure {
     }
 
     my @AssetColumns = (
-        'Number', 'Name', 'ZTSMAssetTag', 'Class', 'ZTSMProductModel',
+        'Name', 'ZTSMAssetType', 'ZTSMAssetTag', 'ZTSMProductModel',
         'ZTSMApplication', 'ZTSMEnvironment', 'ZTSMLocation',
         'ZTSMDomain', 'ZTSMFunctionProfile', 'CurDeplState',
     );

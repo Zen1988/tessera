@@ -37,6 +37,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::TESSERA::RiskGovernanceDecision',
 );
 
 sub new {
@@ -238,6 +239,31 @@ sub Run {
             UserID        => 1,
             Silent        => 1,
         );
+    }
+
+    # A completion belongs only to the parent's current execution position.
+    # State-change events and portal actions may both deliver the same closure.
+    # Once its Book/level/iteration has advanced, that evidence is consumed.
+    if (%ParentTicket) {
+        my $ParentBook = _NormalizeValue( $ParentTicket{'DynamicField_ZTicket-BlueBook'} );
+        my $ParentLevel = _NormalizeValue( $ParentTicket{'DynamicField_ZTicket-BlueLevel'} );
+        my $ParentIteration = _NormalizeValue( $ParentTicket{'DynamicField_ZIN-Iteration'} ) // '';
+        my $ChildIteration = _NormalizeValue( $Ticket->{'DynamicField_ZIN-Iteration'} ) // '';
+        if (
+            !defined $BlueBook || !defined $ParentBook || $BlueBook ne $ParentBook
+            || $ChildIteration ne $ParentIteration
+            || (
+                ( $ParentTicket{State} || '' ) ne 'follow-up'
+                && ( !defined $BlueLevel || !defined $ParentLevel || $BlueLevel ne $ParentLevel )
+            )
+        ) {
+            $LogObject->Log(
+                Priority => 'notice',
+                Message => "ZTSMChapterDirector: Ignore completion outside current execution position "
+                    . "ChildTicketID=$TicketID ParentTicketID=$ParentTicketID",
+            );
+            return 1;
+        }
     }
 
     # -------------------------------------------------------- #
@@ -901,6 +927,11 @@ sub Run {
 
         return 1;
     }
+
+    # The completed governed approval level may precede treatment levels.
+    return if !$Kernel::OM->Get('Kernel::System::TESSERA::RiskGovernanceDecision')->FromCompletedLevel(
+        Ticket => \%ParentTicket, BlueBookID => $BlueBook,
+    );
 
     my $BlueBookObject = Kernel::System::ZTSMBlueBookRuntime::BlueBookGet(
         BlueBookID => $BlueBook,

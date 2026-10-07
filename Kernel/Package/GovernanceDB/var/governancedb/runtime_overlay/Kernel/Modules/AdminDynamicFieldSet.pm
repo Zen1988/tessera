@@ -141,7 +141,7 @@ sub _Add {
     my $FieldTypeName = $ConfigObject->Get('DynamicFields::Driver')->{ $GetParam{FieldType} }->{DisplayName} || '';
 
     # check namespace validity
-    my $Namespaces = $ConfigObject->Get('DynamicField::Namespaces');
+    my $Namespaces = $Self->_NamespaceListGet();
     my $Namespace  = '';
     if ( IsArrayRefWithData($Namespaces) && $GetParam{NamespaceFilter} ) {
         $Namespace = ( grep { $_ eq $GetParam{NamespaceFilter} } $Namespaces->@* ) ? $GetParam{NamespaceFilter} : '';
@@ -601,6 +601,11 @@ sub _ChangeAction {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
     $GetParam{RenderLayout} = 'Vertical' if ( $GetParam{RenderLayout} || '' ) ne 'Horizontal';
+    $GetParam{Namespace} = $Self->_EditNamespaceGet(
+        SubmittedNamespace => $GetParam{Namespace},
+        ExistingName       => $DynamicFieldData->{Name},
+    );
+
 
     my @Include;
     if ( $GetParam{Include} ) {
@@ -836,6 +841,26 @@ sub _ChangeAction {
     }
 }
 
+sub _NamespaceListGet {
+    my ( $Self, %Param ) = @_;
+
+    my @Namespaces = $Kernel::OM->Get('Kernel::System::Namespace')->NamespacesList(
+        Scope => 'DynamicField',
+    );
+    push @Namespaces, $Param{ExistingNamespace} if $Param{ExistingNamespace};
+    my %Seen;
+    return [ grep { defined $_ && $_ ne '' && !$Seen{$_}++ } @Namespaces ];
+}
+
+sub _EditNamespaceGet {
+    my ( $Self, %Param ) = @_;
+
+    # An explicit empty selection removes the prefix; an absent input does not.
+    return $Param{SubmittedNamespace} if defined $Param{SubmittedNamespace};
+    return $1 if ( $Param{ExistingName} || '' ) =~ m{\A(.*)-[^-]+\z};
+    return '';
+}
+
 sub _ShowScreen {
     my ( $Self, %Param ) = @_;
 
@@ -933,7 +958,7 @@ sub _ShowScreen {
         Class      => 'Modernize W50pc',
     );
 
-    my $NamespaceList = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::Namespaces');
+    my $NamespaceList = $Self->_NamespaceListGet( ExistingNamespace => $Namespace );
     if ( IsArrayRefWithData($NamespaceList) ) {
         my $NamespaceStrg = $LayoutObject->BuildSelection(
             Data          => $NamespaceList,

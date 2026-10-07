@@ -1589,7 +1589,10 @@ sub _GenericAgentJobsEnsure {
         );
         # Existing jobs, including invalid or locally edited jobs, are owned by
         # the administrator and must not be deleted and recreated by bootstrap.
-        next JOB if %Existing;
+        if (%Existing) {
+            $Self->_RoleLookupUniversalTypesEnsure(Job=>\%Existing,Name=>$Job{Name});
+            next JOB;
+        }
 
         $GenericAgentObject->JobAdd(
             Name   => $Job{Name},
@@ -1598,6 +1601,28 @@ sub _GenericAgentJobsEnsure {
         );
     }
 
+    return 1;
+}
+
+# Remove the legacy execution-type allowlist from the managed resolver job.
+# Runtime excludes master types through the authoritative RequestType catalog.
+sub _RoleLookupUniversalTypesEnsure {
+    my ($Self,%Param)=@_;
+    my $Job=$Param{Job}||{};
+    return 1 if ($Param{Name}||'') ne 'TESSERA-ACTIVITY-ROLELOOKUP'
+        || ($Job->{NewModule}||'') ne 'Kernel::System::GenericAgent::ZTSMRoleDirector';
+    my $Changed;
+    for my $Key (qw(Types TypeIDs)) {
+        next if !exists $Job->{$Key};
+        my $Name=$Param{Name};
+        my $OK=$Kernel::OM->Get('Kernel::System::DB')->Do(
+            SQL=>'DELETE FROM generic_agent_jobs WHERE job_name = ? AND job_key = ?',
+            Bind=>[\$Name,\$Key]);
+        return if !$OK;
+        delete $Job->{$Key};
+        $Changed=1;
+    }
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(Type=>'GenericAgent') if $Changed;
     return 1;
 }
 
@@ -1974,6 +1999,28 @@ sub _TicketRuntimeDynamicFieldsEnsure {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
     my @Fields = (
+        (map { +{
+            Name => 'ZRM-'.$_->[0].'Scale', Label => $_->[0].' Scale', FieldOrder => $_->[1],
+            ObjectType => 'GovernanceObject', FieldType => 'Text',
+            Config => {DefaultValue=>'5',Link=>'',LinkPreview=>'',MultiValue=>0,RegExList=>[],Tooltip=>$_->[0].' Scale'},
+        } } (['Impact',574],['Likelihood',575])),
+
+        {
+            Name => 'ZRM-Framework', Label => 'Framework', FieldOrder => 573,
+            FieldType => 'GovernanceObject',
+            Config => {
+                ClassIDs => ['Framework'], ZTSMStatusIDs => ['Active'],
+                DisplayType => '', EditFieldMode => 'AutoComplete', ImportSearchAttribute => '',
+                MultiValue => 0, Multiselect => 0, PossibleNone => 1, ReferenceFilterList => [],
+                ReferencedObjectType => 'GovernanceObject', SearchAttribute => 'Name', TreeView => 0,
+                Tooltip => 'Risk Management Framework - Usually come with Risk Statement - include what matrix, calculation will work.',
+            },
+        },
+        {
+            Name => 'ITSMDecisionDate', Label => 'Decision Date', FieldOrder => 9, InternalField => 1,
+            FieldType => 'DateTime',
+            Config => { DefaultValue => 0, Link => '', YearsInFuture => 5, YearsInPast => 5, YearsPeriod => 1 },
+        },
         {
             Name       => 'RiskAssessmentOutcome',
             Label      => 'Outcome',
@@ -2622,7 +2669,8 @@ sub _TicketRuntimeDynamicFieldsEnsure {
             Label      => $Field->{Label},
             FieldOrder => $Field->{FieldOrder},
             FieldType  => $Field->{FieldType},
-            ObjectType => 'Ticket',
+            ObjectType => $Field->{ObjectType} || 'Ticket',
+            InternalField => $Field->{InternalField} || 0,
             Config     => $Field->{Config},
             ValidID    => 1,
             UserID     => 1,
@@ -2988,8 +3036,25 @@ sub _DynamicFieldConfigEqual {
     return defined $Left && defined $Right && $Left eq $Right;
 }
 
+# Repair only the missing required key in registrations deployed by 121-123.
+sub _CustomerPhotoRegistrationRepair {
+    my ($Self) = @_;
+    my $Config = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my $Name = 'CustomerFrontend::Module###CustomerProfilePhoto';
+    my %Setting = $Config->SettingGet(Name => $Name);
+    return 1 if ref $Setting{EffectiveValue} ne 'HASH';
+    return 1 if defined $Setting{EffectiveValue}{NavBarName};
+    my %Value = %{$Setting{EffectiveValue}};
+    $Value{NavBarName} = '';
+    return $Config->SettingsSet(
+        Settings => [{Name => $Name, IsValid => $Setting{IsValid}, EffectiveValue => \%Value}],
+        Comments => 'TESSERA repair profile photo registration required key', UserID => 1,
+    );
+}
+
 sub _SysConfigDeploy {
     my ( $Self, %Param ) = @_;
+    return if !$Self->_CustomerPhotoRegistrationRepair();
 
     my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
 
@@ -3033,6 +3098,9 @@ sub _SysConfigDeploy {
         'CustomerFrontend::Module###CustomerTicketZTSMAction',
         'ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime',
         'CustomerPreferencesGroups###ZTSMRequestDefaults',
+        'CustomerPreferencesGroups###TESSERAProfilePhoto',
+        'CustomerFrontend::Module###CustomerProfilePhoto',
+        'Loader::Customer::CommonCSS###099-TESSERAProfile',
         'CustomerFrontend::NavBarModule###900-ZTSMCustomerAsset',
         'CustomerFrontend::Module###CustomerITSMConfigItem',
         'CustomerFrontend::Module###CustomerITSMConfigItemSearch',
@@ -3371,7 +3439,7 @@ sub _CustomerAssetFrontendEnsure {
     }
 
     my @AssetColumns = (
-        'Number', 'Name', 'ZTSMAssetTag', 'Class', 'ZTSMProductModel',
+        'Name', 'ZTSMAssetType', 'ZTSMAssetTag', 'ZTSMProductModel',
         'ZTSMApplication', 'ZTSMEnvironment', 'ZTSMLocation',
         'ZTSMDomain', 'ZTSMFunctionProfile', 'CurDeplState',
     );

@@ -1,0 +1,9 @@
+use strict;use warnings;use Test::More;use Template;
+open my $F,'<','Kernel/Package/GovernanceDB/Kernel/Output/HTML/Templates/Standard/CustomerRiskRegister.tt' or die $!;my $Source=do {local $/;<$F>};my $TT=Template->new();
+my $Data={View=>'Current',CurrentCount=>1,ReviewCount=>0,Columns=>[{Label=>'Risk Statement'},{Label=>'Outcome'},{Label=>'Governance date (UTC)'}],Rows=>[{TicketID=>1,TicketNumber=>'Risk1',Title=>'<script>bad</script>',Cells=>['<script>bad</script>','Risk Accepted','2026-10-07 01:00:00'],RowNumber=>1,State=>'closed successful',Outcome=>'Risk Accepted',Reason=>'Accepted risk',GovernanceDate=>'2026-10-07 01:00:00',ReviewDue=>'2027-10-07 01:00:00'}]};my $Vars={Data=>$Data,Env=>sub{'/otobo/customer.pl?'},Translate=>sub{$_[0]}};my $Out;
+ok($TT->process(\$Source,$Vars,\$Out),'register template renders')or diag($TT->error());like($Out,qr/&lt;script&gt;bad/,'ticket title safely escaped');unlike($Out,qr/<script>bad/,'no executable title injection');like($Out,qr/Current" aria-current="page"/,'selected view exposed accessibly');like($Out,qr/CustomerTicketZoom;TicketID=1/,'links to source assessment');like($Out,qr/Risk Accepted/,'existing configured outcome shown');like($Out,qr/Governance date \(UTC\)/,'timestamp basis labelled');
+$Data->{Rows}[0]{Decorations}=[{}, {Color=>'#000080',Foreground=>'#ffffff',Label=>'Low',Title=>'Application / Low'}, {}];
+$Out='';ok($TT->process(\$Source,$Vars,\$Out),'Framework score decoration renders');
+like($Out,qr/background-color:#000080;color:#ffffff/,'validated Framework colour applied');
+like($Out,qr/Risk Accepted.*Low/s,'severity text remains available without colour perception');
+$Data->{View}='Review';$Data->{Rows}=[];$Out='';ok($TT->process(\$Source,$Vars,\$Out),'empty review view renders');like($Out,qr/No applicable Risk Assessments/,'empty state explained');like($Out,qr/does not renew acceptance/,'no implied workflow automation');done_testing();

@@ -10,12 +10,26 @@ use warnings;
 our @ObjectDependencies = (
     'Kernel::System::CustomerUser',
     'Kernel::System::GovernanceObject',
+    'Kernel::System::GeneralCatalog',
     'Kernel::System::TESSERA::ScriptEngine',
 );
 
 sub new {
     my ( $Type, %Param ) = @_;
     return bless {}, $Type;
+}
+
+sub ExecutionTicketEligible {
+    my ($Self,%Param)=@_;
+    my $Ticket=$Param{Ticket};
+    return if ref $Ticket ne 'HASH' || ($Ticket->{StateType}||'') eq 'closed' || !$Ticket->{Type};
+    my $Masters=$Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(Class=>'ZTSM::RequestType',Valid=>0);
+    if (ref $Masters ne 'HASH' || !keys %{$Masters}) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(Priority=>'error',Message=>'GovernanceRoleResolver: ZTSM::RequestType catalog unavailable; execution assignment skipped.');
+        return;
+    }
+    return if grep { defined $_ && $_ eq $Ticket->{Type} } values %{$Masters};
+    return 1;
 }
 
 sub Resolve {

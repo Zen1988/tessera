@@ -481,6 +481,40 @@
             </Hash>
         </Value>
     </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZoom###110-ZTSMReferenceTrace" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer reference search picker.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ZTSM.Customer.ReferenceTrace.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZTSMAction###110-ZTSMReferenceTrace" Required="0" Valid="1">
+        <Description Translatable="1">Loader module registration for TESSERA customer reference search picker.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="CSS">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>ZTSM.Customer.ReferenceTrace.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
     <Setting Name="ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime" Required="0" Valid="1">
         <Description Translatable="1">Defines TESSERA governance runtime actions available in ACL third level.</Description>
         <Navigation>Core::Ticket::ACL</Navigation>

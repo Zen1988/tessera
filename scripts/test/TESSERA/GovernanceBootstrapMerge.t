@@ -49,8 +49,10 @@ local $/;
 my $BootstrapSource = <$BootstrapFH>;
 close $BootstrapFH;
 
-unlike( $BootstrapSource, qr{\b(?:DELETE\s+FROM|DROP\s+TABLE|TRUNCATE\s+TABLE)\b}i,
-    'bootstrap contains no destructive table or row operation' );
+my $NonMigrationSource=$BootstrapSource;
+$NonMigrationSource =~ s/DELETE FROM generic_agent_jobs WHERE job_name = \? AND job_key = \?//g;
+unlike( $NonMigrationSource, qr{\b(?:DELETE\s+FROM|DROP\s+TABLE|TRUNCATE\s+TABLE)\b}i,
+    'bootstrap removes only scoped legacy role type filters, no other rows or tables' );
 like( $BootstrapSource, qr{ClassExists\s*=>\s*'IGNORE'},
     'ConfigItem class import preserves an existing class' );
 like( $BootstrapSource, qr{StateLookup\(.*?next STATE if \$StateID;}s,
@@ -75,8 +77,8 @@ unlike( $BootstrapSource, qr{InstallDefaults.*?_CustomerBrandingEnsure\(\)}s,
     'installation does not overwrite existing customer branding settings' );
 unlike( $BootstrapSource, qr{JobDelete\(},
     'bootstrap never deletes and recreates an existing GenericAgent job' );
-like( $BootstrapSource, qr{JobGet\(.*?next JOB if %Existing;}s,
-    'existing GenericAgent jobs are left unchanged' );
+like( $BootstrapSource, qr{JobGet\(.*?if \(%Existing\) \{.*?_RoleLookupUniversalTypesEnsure.*?next JOB;}s,
+    'existing jobs receive only scoped role lookup filter migration' );
 like( $BootstrapSource, qr{_ProcessNameExists\(.*?next FILE;}s,
     'existing processes are left unchanged regardless of activation state' );
 unlike( $BootstrapSource, qr{sub _SysConfigDeploy.*?_DynamicFieldDriverObjectTypeEnsure\(}s,

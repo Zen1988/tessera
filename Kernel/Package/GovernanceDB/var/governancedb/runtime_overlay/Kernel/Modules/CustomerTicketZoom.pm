@@ -3274,7 +3274,7 @@ sub _ZTSMDelegateOverrideHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMDelegateAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMDelegateAck"><input type="checkbox" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge the delegation override conditions.</span></label>'
+        . '<label class="ZTSMDelegateAck"><input type="checkbox" id="ZTSMDelegateAcknowledge" name="ZTSMDelegateAcknowledge" value="1" class="Validate_Required" required="required" aria-required="true" /><span>I acknowledge the delegation override conditions.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -3344,7 +3344,7 @@ sub _ZTSMOverrideAcknowledgementHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMOverrideAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge this override condition and will record a clear, auditable justification.</span></label>'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" id="ZTSMOverrideAcknowledge" name="ZTSMOverrideAcknowledge" value="1" class="Validate_Required" required="required" aria-required="true" /><span>I acknowledge this override condition and will record a clear, auditable justification.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -3402,7 +3402,7 @@ sub _ZTSMRecoveryStateHTML {
         . '</div>'
         . '<div class="Row ZTSMRiskField ZTSMOverrideAckRow">'
         . '<div class="Field">'
-        . '<label class="ZTSMOverrideAck"><input type="checkbox" name="ZTSMRecoveryAcknowledge" value="1" class="Validate_Required" /> <span class="ZTSMCheckboxVisual"></span><span>I acknowledge this patch is outside normal workflow and is required due to a process or workflow bug.</span></label>'
+        . '<label class="ZTSMOverrideAck"><input type="checkbox" id="ZTSMRecoveryAcknowledge" name="ZTSMRecoveryAcknowledge" value="1" class="Validate_Required" required="required" aria-required="true" /><span>I acknowledge this patch is outside normal workflow and is required due to a process or workflow bug.</span></label>'
         . '</div>'
         . '<label class="Mandatory">Confirmation: <span class="Marker">*</span></label>'
         . '<div class="Clear"></div>'
@@ -3527,18 +3527,22 @@ sub _ZTSMRiskTreatmentHTML {
     return '<div class="MessageBox Error" role="alert">RiskTreatment needs a valid originating Risk link.</div>'
         if !$OriginID || !$RiskStatementID;
 
+    return '<div class="MessageBox Error" role="alert">RiskTreatment needs its parent execution ledger.</div>' if !$ParentTicketID;
+
     my @AssessmentTicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
         Result                              => 'ARRAY',
         Limit                               => 1000,
         Types                               => ['Assessment'],
-        'DynamicField_ZRM-OriginatedEvent'  => { Equals => $OriginID },
+        'DynamicField_ZTicket-Parent'       => { Equals => $ParentTicketID },
         UserID                              => 1,
         Permission                          => 'ro',
     );
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
-    my $FieldConfig        = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' );
+    my $FieldConfig        = $DynamicFieldObject->DynamicFieldGet( Name => 'RiskAssessment' );
+    $FieldConfig = $DynamicFieldObject->DynamicFieldGet( Name => 'ZRM-RiskAssessment' )
+        if !IsHashRefWithData($FieldConfig);
     return '' if !IsHashRefWithData($FieldConfig);
 
     my @Plans;
@@ -3547,7 +3551,8 @@ sub _ZTSMRiskTreatmentHTML {
             TicketID => $AssessmentTicketID, DynamicFields => 1, UserID => 1, Silent => 1,
         );
         next if !%Assessment;
-        next if !$OriginID || ( _ZTSMNormalizeValue( $Assessment{'DynamicField_ZRM-OriginatedEvent'} ) || '' ) ne $OriginID;
+        next if ( _ZTSMNormalizeValue( $Assessment{'DynamicField_ZTicket-Parent'} ) || '' ) ne $ParentTicketID;
+        next if ( $Assessment{State} || '' ) ne 'closed successful';
         my $Rows = $BackendObject->ValueGet(
             DynamicFieldConfig => $FieldConfig,
             ObjectID           => $AssessmentTicketID,
@@ -3572,7 +3577,6 @@ sub _ZTSMRiskTreatmentHTML {
     return '<section class="ZTSMRiskTreatmentPlan" aria-labelledby="ZTSMRiskTreatmentPlanHeading">'
         . '<h3 id="ZTSMRiskTreatmentPlanHeading">Mapped Risk Treatment Plan</h3>'
         . '<p>' . $SafePlan . '</p>'
-        . '<label><input type="checkbox" name="RiskPlanAcknowledged" value="1" required="required" /> I have reviewed the mapped risk plan before closing this Risk.</label>'
         . '</section>';
 }
 
@@ -3594,7 +3598,7 @@ sub _ZTSMRiskPlanValues {
         }
         return @Plans;
     }
-    return;
+    return $Value;
 }
 
 sub _ZTSMVerificationCompletionHTML {
@@ -4367,9 +4371,25 @@ sub _ZTSMRuntimeRiskFieldsHTML {
         next FIELD if !IsHashRefWithData($DynamicFieldConfig);
         next FIELD if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
 
+        my $Value = $Ticket->{ 'DynamicField_' . $FieldName };
+        # Convert presentation values only; storage and historical evidence remain unchanged.
+        if ( $DynamicFieldConfig->{FieldType} eq 'TextArea' || $DynamicFieldConfig->{FieldType} eq 'RichText' ) {
+            $Value = $DynamicFieldConfig->{Config}->{DefaultValue} if !defined $Value;
+            my @Values = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+            @Values = map {
+                defined $_ && !ref $_ && /<[^>]+>/
+                    ? $LayoutObject->RichText2Ascii( String => $_ ) : $_
+            } @Values;
+            $Value = ref $Value eq 'ARRAY' ? \@Values : $Values[0];
+        }
+        # Use the plain driver locally, without changing the administrator-owned field.
+        my $RenderConfig = $DynamicFieldConfig;
+        if ( $DynamicFieldConfig->{FieldType} eq 'RichText' ) {
+            $RenderConfig = { %{$DynamicFieldConfig}, FieldType => 'TextArea' };
+        }
         my $DynamicFieldHTML = $DynamicFieldBackendObject->EditFieldRender(
-            DynamicFieldConfig => $DynamicFieldConfig,
-            Value              => $Ticket->{ 'DynamicField_' . $FieldName },
+            DynamicFieldConfig => $RenderConfig,
+            Value              => $Value,
             LayoutObject       => $LayoutObject,
             ParamObject        => $ParamObject,
             Mandatory          => 1,
@@ -4457,6 +4477,7 @@ sub _Mask {
                 Data => {
                     %{$RuntimeAction},
                     TicketID => $Param{TicketID},
+                    FormID   => $Self->{FormID},
                 },
             );
         }
