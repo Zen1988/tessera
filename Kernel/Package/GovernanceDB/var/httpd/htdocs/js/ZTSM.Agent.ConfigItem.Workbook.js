@@ -52,13 +52,14 @@ Core.ZTSM.Agent.ConfigItem = Core.ZTSM.Agent.ConfigItem || {};
                 var File = document.getElementById('ZTSMWorkbookFile').files[0];
                 if (!File) { window.alert('Select an XLSX file first.'); return; }
                 File.arrayBuffer().then(function (Buffer) {
-                    var Workbook = XLSX.read(Buffer, { type: 'array', cellDates: true });
+                    var Workbook = XLSX.read(Buffer, { type: 'array', cellDates: false });
                     var Rows = [];
                     Workbook.SheetNames.forEach(function (SheetName) {
                         if (SheetName === 'Instructions' || SheetName === '_Selections') { return; }
                         XLSX.utils.sheet_to_json(Workbook.Sheets[SheetName], { defval: '' }).forEach(function (Row) {
                             var Parsed = { Class: Row.Class || SheetName };
                             Object.keys(Row).forEach(function (Key) { Parsed[Key] = ParseCell(Row[Key]); });
+                            Parsed.__ExcelDate1904 = !!(Workbook.Workbook && Workbook.Workbook.WBProps && Workbook.Workbook.WBProps.date1904);
                             Rows.push(Parsed);
                         });
                     });

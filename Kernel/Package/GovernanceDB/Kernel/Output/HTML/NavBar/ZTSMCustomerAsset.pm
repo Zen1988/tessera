@@ -19,6 +19,9 @@ sub Run {
         CustomerUserID => $Self->{UserID},
     );
 
+    my $CanSecOps = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement')->CustomerHasRole(
+        CustomerUserID => $Self->{UserID}, Role => 'TESSERA::CMDB::SECOPS',
+    );
     my $Navigation = $Param{NavBarModule};
     return if ref $Navigation ne 'HASH';
 
@@ -26,6 +29,7 @@ sub Run {
         my ($Item) = @_;
         return if ref $Item ne 'HASH';
         my $Link = $Item->{Link} || '';
+        return 1 if !$CanSecOps && $Link =~ m{(?:\A|[?;&])Action=CustomerSecurityAdvisory(?:[;&]|\z)};
         return 1 if $Link =~ m{(?:\A|[?;&])Action=CustomerTicketOverview(?:[;&]|\z)}
             && $Link =~ m{(?:\A|[?;&])Subaction=CompanyTickets(?:[;&]|\z)};
         return !$CanReadAssets

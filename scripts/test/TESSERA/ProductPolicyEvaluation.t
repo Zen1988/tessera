@@ -50,12 +50,12 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
             if $P{ConfigItemID} == 90 || $P{ConfigItemID} == 91;
         return;
     }
-    sub ItemList { my ( $Self, %P ) = @_; return $P{Class} =~ /::Class$/ ? {1=>'Risk'} : {2=>'Active'} }
+    sub ItemList { my ( $Self, %P ) = @_; return $P{Class} =~ /::Class$/ ? {1=>'Risk'} : {2=>'Active',3=>'Inactive'} }
     sub MELTObjectSearch {
         my ( $Self, %P ) = @_;
         my ($Key) = grep { /^DynamicField_/ } keys %P;
         return grep {
-            ($Self->{Risks}{$_}{$Key} || '') eq $P{$Key}{Equals}
+            (!$Key || ($Self->{Risks}{$_}{$Key} || '') eq $P{$Key}{Equals})
                 && $Self->{Risks}{$_}{Class} eq $P{Classes}[0]
                 && ( !$P{ZTSMStatusIDs} || $Self->{Risks}{$_}{ZTSMStatusID} == $P{ZTSMStatusIDs}[0] )
         } sort keys %{ $Self->{Risks} };
@@ -377,7 +377,56 @@ my ($NamedRisk)=values %{$Kernel::OM->{Risks}};
 is($NamedRisk->{Name}, 'A-1: EOSL: Alpha - Root', 'Updated YAML resolves actual source Product name');
 $Kernel::OM->{Objects}{1}{Name}='Renamed Product';
 $Runtime->_TargetEvaluate(%P);
-is(scalar keys %{$Kernel::OM->{Risks}},1,'Name update reuses existing Risk');
-is($NamedRisk->{Name}, 'A-1: EOSL: Alpha - Renamed Product', 'Re-evaluation updates existing Risk name');
+is(scalar keys %{$Kernel::OM->{Risks}},2,'Different name creates a separate Risk');
+is($NamedRisk->{Name}, 'A-1: EOSL: Alpha - Root', 'Original Risk name is preserved');
+$Runtime->_TargetEvaluate(%P);
+is(scalar keys %{$Kernel::OM->{Risks}},2,'Same active name reuses its Risk');
+$Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='2035-01-01';
+$Runtime->_TargetEvaluate(%P);
+is($NamedRisk->{ZTSMStatusID},3,'Passing Control marks original associated Risk Inactive');
+is($Kernel::OM->{Risks}{201}{ZTSMStatusID},3,'Passing Control marks latest associated Risk Inactive');
+$Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='2026-01-01';
+$Runtime->_TargetEvaluate(%P);
+is(scalar keys %{$Kernel::OM->{Risks}},3,'Failure after Inactive creates a new episode');
+is($NamedRisk->{ZTSMStatusID},3,'Old Inactive Risk is never reactivated');
+
+
+# Stored selection scripts and date bands are authored YAML, independent of ST-5 IDs.
+Setup();
+$Kernel::OM->{Governance}{73}={GovernanceObjectID=>73,Class=>'EventSeverity',Name=>'Low',ZTSMStatus=>'Active'};
+my $AdvisoryPolicy=YAML::XS::Load(Slurp('Kernel/Package/GovernanceDB/var/governancedb/policy/security_advisory_evaluation.yml'));
+my $AdvisoryRisk=Slurp('Kernel/Package/GovernanceDB/var/governancedb/policy/security_advisory_risk_assignment.yml');
+my $Selection=YAML::XS::Dump({VERSION=>1,SEARCH=>{FOR=>'ITSMConfigItem',CLASS=>'Product',AS=>'Products',LIMIT=>1000,WHERE=>{'ZTAM-Parent'=>{EQUALS=>1}}},RETURN=>{FROM=>'ALL Products',AS=>'Collection<ITSMConfigItem.Product>'}});
+my $Advisory={Class=>'SecurityAdvisory',ConfigItemID=>30,Name=>'Advisory','DynamicField_ZTAM-Annex'=>'ADV-1','DynamicField_ZTAM-Status'=>'open','DynamicField_ZTAM-AdvancedCondition'=>$Selection};
+$Kernel::OM->{Objects}{30}=$Advisory;
+my $AO={GovernanceObjectID=>50,Class=>'ControlObjective','DynamicField_ZRM-CreateRisk'=>1,'DynamicField_ZRM-RiskClass'=>'MELTObject.Risk','DynamicField_ZRM-RiskStmt'=>[50],'DynamicField_ZRM-FieldAssignment'=>$AdvisoryRisk};
+my $AC={ConfigItemID=>90,Class=>'Control','DynamicField_ZRM-CIInstance'=>30};
+for my $Case (['',73],['2026-09-21',70],['2026-09-29',70],['2026-09-30',71],['2026-10-06',71],['2026-10-07',72],['2026-11-21',72],['2026-11-22',73],['2026-12-21',73],['2027-01-01',73]) {
+ $Advisory->{'DynamicField_ZTAM-DueDate'}=$Case->[0];
+ my $Eval=$Engine->PolicyEvaluate(Script=>$AdvisoryPolicy,TargetType=>'ITSMConfigItem.SecurityAdvisory',Now=>$Now,UserID=>1,Context=>{THIS=>$Advisory});
+ ok($Eval->{Success},'advisory evaluates: '.($Case->[0]||'no date')) or diag($Eval->{Error});
+ my $Batch=$Eval->{Batches}[0];
+ my $Plan=$Engine->GroupedFieldAssignmentsEvaluate(Rule=>YAML::XS::Load($AdvisoryRisk)->{RETURN}{'GROUP FINDINGS'},Destination=>'MELTObject.Risk',RiskClass=>'MELTObject.Risk',Source=>$Batch->{Source},Control=>$AC,Objective=>$AO,Evaluation=>$Batch->{Evaluation},ConfigItemID=>90,Now=>$Now,UserID=>1);
+ is($Plan->{Plans}[0]{Values}{'MELT-EventSeverity'},$Case->[1],'authored calendar severity');
+ like($Plan->{Plans}[0]{Identity},qr/:30:2:100:50$/,'identity includes advisory/Product/Application/statement');
+}
+my $VP={Script=>$AdvisoryPolicy,Objective=>$AO,Control=>$AC,ConfigItemID=>90,Now=>$Now,UserID=>1};
+$Advisory->{'DynamicField_ZTAM-DueDate'}='2026-09-29';$Runtime->_TargetEvaluate(%$VP);$Runtime->_TargetEvaluate(%$VP);
+is(scalar keys %{$Kernel::OM->{Risks}},1,'advisory rerun reuses risk by identity');
+is($Kernel::OM->{Risks}{200}{Name},'A-1: ADV-1: Advisory: Child: Alpha','YAML name orders statement annex, advisory annex/name, product and application');
+$Kernel::OM->{Objects}{2}{Name}='Renamed product';$Runtime->_TargetEvaluate(%$VP);
+is(scalar keys %{$Kernel::OM->{Risks}},1,'rename preserves product/application identity');
+my $OtherAdvisory={%$Advisory,ConfigItemID=>31};$Kernel::OM->{Objects}{31}=$OtherAdvisory;
+my $OtherControl={%$AC,ConfigItemID=>91,'DynamicField_ZRM-CIInstance'=>31};my $OtherVP={%$VP,ConfigItemID=>91,Control=>$OtherControl};$Runtime->_TargetEvaluate(%$OtherVP);$Runtime->_TargetEvaluate(%$OtherVP);
+is(scalar keys %{$Kernel::OM->{Risks}},2,'new advisory creates separate risk and reruns reuse it');
+$Advisory->{'DynamicField_ZTAM-DueDate'}='2027-01-01';$Runtime->_TargetEvaluate(%$VP);
+is($Kernel::OM->{Risks}{200}{'DynamicField_MELT-EventSeverity'},70,'lower urgency cannot downgrade active grouped risk');
+$Kernel::OM->{Objects}{11}{'DynamicField_ZTAM-Application'}=101;$Runtime->_TargetEvaluate(%$VP);
+is(scalar keys %{$Kernel::OM->{Risks}},3,'second application creates separate product/application risk');
+$Advisory->{'DynamicField_ZTAM-Status'}='closed';my $Closed=$Runtime->_TargetEvaluate(%$VP);
+is($Closed->{Status},'Pass','closed advisory excluded');is($Kernel::OM->{Risks}{200}{ZTSMStatusID},2,'closed contributor cannot deactivate shared risk');
+$Advisory->{'DynamicField_ZTAM-Status'}='open';$Advisory->{'DynamicField_ZTAM-AdvancedCondition'}='bad: yaml';
+my $Bad=$Engine->PolicyEvaluate(Script=>$AdvisoryPolicy,TargetType=>'ITSMConfigItem.SecurityAdvisory',Now=>$Now,UserID=>1,Context=>{THIS=>$Advisory});
+is($Bad->{Status},'UNKNOWN','invalid stored selection fails closed');
 
 done_testing();

@@ -396,8 +396,13 @@ sub EditFieldRender {
             PossibleValuesFilter => $Self->{PossibleValuesFilter}{ $Param{DynamicFieldConfig}->{Name} }[$SetIndex] // {},
             Visibility           => \%Visibility,
 
-            # TODO:
-            #            Errors               => $Param{DFErrors},
+            Errors => {
+                map {
+                    my $Name = $_;
+                    my $IndexedName = $DynamicField->{$Name}{Name};
+                    $Name => ref $Param{$IndexedName} eq 'HASH' ? $Param{$IndexedName} : {};
+                } keys %{$DynamicField}
+            },
             Object => $Param{Object},
         );
 

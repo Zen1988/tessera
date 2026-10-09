@@ -1,0 +1,347 @@
+{
+  "Order": [
+    "ZRM-PrivilegeRequired",
+    "ZRM-AttackVector",
+    "ZRM-Complexity",
+    "ZRM-InteractionRequirement",
+    "ZRM-Discoverability",
+    "ZRM-Reproducibility",
+    "ZRM-Confidentiality",
+    "ZRM-Integrity",
+    "ZRM-Availability",
+    "ZRM-CodeExecution",
+    "ZRM-PrivilegeEscalation",
+    "ZRM-AdditionalDamage"
+  ],
+  "Fields": {
+    "ZRM-PrivilegeRequired": {
+      "ChangeTime": "2026-10-09 06:57:17",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Administrator privileges": "Administrator privileges",
+          "No account required": "No account required",
+          "Ordinary user account": "Ordinary user account",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 06:57:17",
+      "FieldOrder": "588",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "What privileges are required?",
+      "Name": "ZRM-PrivilegeRequired",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-AttackVector": {
+      "ChangeTime": "2026-10-09 07:10:20",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Adjacent network": "Adjacent network",
+          "Local access": "Local access",
+          "Network": "Network",
+          "Physical access": "Physical access",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "Answer based on published vulnerability information. Skip when the information cannot be established.",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:10:20",
+      "FieldOrder": "589",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Where can exploitation originate?",
+      "Name": "ZRM-AttackVector",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Complexity": {
+      "ChangeTime": "2026-10-09 07:27:11",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "High complexity": "High complexity",
+          "Low complexity": "Low complexity",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "Answer based on published vulnerability information. Skip when the information cannot be established.",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:27:11",
+      "FieldOrder": "593",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "How difficult is exploitation?",
+      "Name": "ZRM-Complexity",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-InteractionRequirement": {
+      "ChangeTime": "2026-10-09 07:13:07",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Active interaction": "Active interaction",
+          "Not": "No",
+          "Passive interaction": "Passive interaction",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:13:07",
+      "FieldOrder": "590",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Does exploitation require user interaction?",
+      "Name": "ZRM-InteractionRequirement",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Discoverability": {
+      "ChangeTime": "2026-10-09 07:20:43",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "No known public exploit": "No known public exploit",
+          "Proof of concept only": "Proof of concept only",
+          "Unknown / Skip": "Unknown / Skip",
+          "Yes": "Yes"
+        },
+        "Tooltip": "Answer based on published vulnerability information. Skip when the information cannot be established.",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:20:43",
+      "FieldOrder": "591",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Is a working exploit publicly available?",
+      "Name": "ZRM-Discoverability",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Reproducibility": {
+      "ChangeTime": "2026-10-09 07:24:20",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Condition-dependent": "Condition-dependent",
+          "Consistently repeatable": "Consistently repeatable",
+          "Rarely repeatable": "Rarely repeatable",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:24:20",
+      "FieldOrder": "592",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "How reproducible is the exploitation?",
+      "Name": "ZRM-Reproducibility",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Confidentiality": {
+      "ChangeTime": "2026-10-09 07:47:20",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Extensive confidential information": "Extensive confidential information",
+          "Limited information": "Limited information",
+          "No unauthorized disclosure": "No unauthorized disclosure",
+          "Sensitive information or credentials": "Sensitive information or credentials",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:47:20",
+      "FieldOrder": "595",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "What information can the attacker obtain?",
+      "Name": "ZRM-Confidentiality",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Integrity": {
+      "ChangeTime": "2026-10-09 07:44:46",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Arbitrary alteration or destruction": "Arbitrary alteration or destruction",
+          "Limited modification": "Limited modification",
+          "No unauthorized modification": "No unauthorized modification",
+          "Significant manipulation": "Significant manipulation",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:38:21",
+      "FieldOrder": "594",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "What can the attacker change?",
+      "Name": "ZRM-Integrity",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-Availability": {
+      "ChangeTime": "2026-10-09 07:51:44",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Complete or sustained outage": "Complete or sustained outage",
+          "Minor degradation": "Minor degradation",
+          "No disruption": "No disruption",
+          "Partial service disruption": "Partial service disruption",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:51:44",
+      "FieldOrder": "596",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Can exploitation disrupt the system?",
+      "Name": "ZRM-Availability",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-CodeExecution": {
+      "ChangeTime": "2026-10-09 07:54:38",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Arbitrary code with limited privileges": "Arbitrary code with limited privileges",
+          "Broad or system-level execution": "Broad or system-level execution",
+          "No": "No",
+          "Restricted commands": "Restricted commands",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:54:38",
+      "FieldOrder": "597",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Can the attacker execute unauthorized commands?",
+      "Name": "ZRM-CodeExecution",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-PrivilegeEscalation": {
+      "ChangeTime": "2026-10-09 07:56:33",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Cross-system or trust-boundary compromise": "Cross-system or trust-boundary compromise",
+          "No": "No",
+          "Privilege escalation": "Privilege escalation",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:56:33",
+      "FieldOrder": "598",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "Can the attacker expand privileges or compromise other systems?",
+      "Name": "ZRM-PrivilegeEscalation",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    },
+    "ZRM-AdditionalDamage": {
+      "ChangeTime": "2026-10-09 07:59:02",
+      "Config": {
+        "DefaultValue": "Unknown / Skip",
+        "Link": "",
+        "LinkPreview": "",
+        "MultiValue": "0",
+        "PossibleNone": "0",
+        "PossibleValues": {
+          "Destructive compromise": "Destructive compromise",
+          "Neither established": "Neither established",
+          "Persistent unauthorized access": "Persistent unauthorized access",
+          "Ransomware-enabling capability": "Ransomware-enabling capability",
+          "Unknown / Skip": "Unknown / Skip"
+        },
+        "Tooltip": "",
+        "TranslatableValues": "0",
+        "TreeView": "0"
+      },
+      "CreateTime": "2026-10-09 07:59:02",
+      "FieldOrder": "599",
+      "FieldType": "Dropdown",
+      "InternalField": "0",
+      "Label": "What additional malicious capabilities are established?",
+      "Name": "ZRM-AdditionalDamage",
+      "ObjectType": "ITSMConfigItem",
+      "ValidID": "1"
+    }
+  }
+}

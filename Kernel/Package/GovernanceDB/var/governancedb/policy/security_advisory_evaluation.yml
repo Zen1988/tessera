@@ -1,0 +1,41 @@
+VERSION: 1
+TARGET: ITSMConfigItem.SecurityAdvisory
+TIME ZONE: Asia/Singapore
+CHECK:
+  EXPECT: '@THIS.ZTAM-Status EQUALS "closed"'
+ON FAIL:
+  FOR EACH SELECTED:
+    SCRIPT FIELD: ZTAM-AdvancedCondition
+    AS: ITSMConfigItem.Product
+    LIMIT: 1000
+    EVALUATE:
+      VERSION: 1
+      TARGET: ITSMConfigItem.Product
+      TIME ZONE: Asia/Singapore
+      CHECK:
+        EXPECT: 'FALSE EQUALS TRUE'
+      ON FAIL:
+        DESCENDANTS:
+          FOR: ITSMConfigItem
+          CLASS: Product
+          PARENT FIELD: ZTAM-Parent
+          INCLUDE SELF: 1
+          MAX DEPTH: 64
+          LIMIT: 1000
+        AFFECTED:
+          - FOR: ITSMConfigItem
+            CLASS: Workload
+            LIMIT: 10000
+            REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+          - FOR: ITSMConfigItem
+            CLASS: NetworkNode
+            LIMIT: 10000
+            REFERENCES: [ZTAM-Model, 'ZTAM-Runtime[*].ZTAM-Installed']
+          - FOR: ITSMConfigItem
+            CLASS: StorageNode
+            LIMIT: 10000
+            REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']
+          - FOR: ITSMConfigItem
+            CLASS: PeripheralNode
+            LIMIT: 10000
+            REFERENCES: [ZTAM-Product, 'ZTAM-Runtime[*].ZTAM-Installed']

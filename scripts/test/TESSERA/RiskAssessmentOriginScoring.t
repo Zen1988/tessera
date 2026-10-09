@@ -3,6 +3,8 @@ use warnings;
 use Test::More;
 use File::Spec;
 use FindBin;
+use YAML::XS;
+use Kernel::System::TESSERA::Questionnaire;
 
 my $Root = File::Spec->catdir( $FindBin::Bin, '..', '..', '..' );
 my $SourceFile = File::Spec->catfile(
@@ -33,6 +35,7 @@ die $@ if $@;
     sub new { return bless {}, shift }
     sub Get {
         my ( $Self, $Name ) = @_;
+        return Kernel::System::TESSERA::Questionnaire->new if $Name eq 'Kernel::System::TESSERA::Questionnaire';
         return $Self;
     }
     sub Load { return $main::Engine }
@@ -46,8 +49,8 @@ die $@ if $@;
     }
     sub ItemList {
         my ( $Self, %Param ) = @_;
-        return { 903 => '3', 906 => '2', 907 => '4' } if $Param{Class} eq 'ZRM::Impact';
-        return { 904 => '2', 905 => '3' } if $Param{Class} eq 'ZRM::Likelihood';
+        return { 903 => '3', 906 => '2', 907 => '4', 908 => '5', 909 => '1' } if $Param{Class} eq 'ZRM::Impact';
+        return { 904 => '2', 905 => '3', 910 => '5', 911 => '1', 912 => '4' } if $Param{Class} eq 'ZRM::Likelihood';
         return {};
     }
     sub GovernanceObjectGet {
@@ -66,6 +69,7 @@ die $@ if $@;
         return { FieldType => 'GovernanceObject', ObjectType => 'GovernanceObject',
             Config => { ClassIDs => [380] } }
             if $Param{Name} eq 'ZTSMAppSystem-CriticalityProfile';
+        return {FieldType=>'GovernanceObject',ObjectType=>'GovernanceObject',Config=>{ClassIDs=>[380]}} if $Param{Name} eq 'ZTSMAppSystem-CriticalityProfile';
         return { FieldType => 'GeneralCatalog', Config => { Class => 'ZRM::Impact' } }
             if $Param{Name} eq 'ZRM-InherentImpact' || $Param{Name} eq 'ZRM-ResidualImpact';
         return { FieldType => 'GeneralCatalog', Config => { Class => 'ZRM::Likelihood' } }
@@ -270,4 +274,22 @@ $Engine->{'ASSESSMENT RESULT'}->{FIELD} = 'RiskAssessment';
 $Rows = $Action->_RiskAssessmentOriginScoresEvaluate( Risk => $Risk, Statement => $Statement );
 ok( ref $Rows eq 'ARRAY' && @{$Rows}, 'Framework accepts unprefixed RiskAssessment result mapping' );
 
+$Engine=YAML::XS::LoadFile('Kernel/Package/GovernanceDB/var/governancedb/policy/vulnerability_questionnaire_scoring.yml');
+$Engine->{FACTORS}=[];
+$GO{1597}->{'DynamicField_ZRM-LikelihoodScale'}=5;
+$GO{1597}->{'DynamicField_ZRM-ImpactScale'}=5;
+$CI{600}={Class=>'SecurityAdvisory','DynamicField_ZRM-PrivilegeRequired'=>'Ordinary user account'};
+$Risk->{'DynamicField_MELT-RelatedCI'}=[600,574,2135];
+delete $Statement->{'DynamicField_ZRM-BaseImpact'};delete $Statement->{'DynamicField_ZRM-BaseLikelihood'};
+$Rows=$Action->_RiskAssessmentOriginScoresEvaluate(Risk=>$Risk,Statement=>$Statement);
+is($Rows->[0]{'ZRM-InherentCalculatedRisk'},'20','questionnaire bases use Framework scales with no statement bases');
+is($Action->{RiskAssessmentQuestionnaireEvidence}{LIKELIHOOD}{Base},4,'advisory base likelihood ceiling precedes application stage');
+$Engine->{FACTORS}=[{REFERENCE=>'ZTSMAppSystem-CriticalityProfile',IMPACT=>'ZRM-ImpactFactor',LIKELIHOOD=>'ZRM-LikelihoodFactor'}];
+$GO{500}->{'DynamicField_ZTSMAppSystem-CriticalityProfile'}=[201];$GO{201}->{ClassID}=380;
+$GO{201}->{'DynamicField_ZRM-ImpactFactor'}='0.8';$GO{201}->{'DynamicField_ZRM-LikelihoodFactor'}='0.5';
+$Rows=$Action->_RiskAssessmentOriginScoresEvaluate(Risk=>$Risk,Statement=>$Statement);
+is($Rows->[0]{'ZRM-InherentCalculatedRisk'},'8','application factors apply after advisory bases: ceil(5*.8) times ceil(4*.5)');
+$CI{601}={Class=>'SecurityAdvisory'};push @{$Risk->{'DynamicField_MELT-RelatedCI'}},601;
+eval {$Action->_RiskAssessmentOriginScoresEvaluate(Risk=>$Risk,Statement=>$Statement)};
+like($@,qr/exactly one matching source/,'multiple advisories cannot be combined into one questionnaire');
 done_testing();

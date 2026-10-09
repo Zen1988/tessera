@@ -1050,6 +1050,7 @@ sub GroupedFieldAssignmentsEvaluate {
             || ( $Config->{ObjectType} || '' ) ne $Kind
             || !$Lifecycle->{'CREATE EVENT VALUE'} || !$Lifecycle->{'CLOSED EVENT VALUE'};
     }
+    die "REUSE BY must be NAME or IDENTITY.\n" if ($Rule->{'REUSE BY'} || 'NAME') !~ /\A(?:NAME|IDENTITY)\z/;
     my $IdentityField = $IdentityRule->{FIELD} || '';
     die "Grouped identity must name an assigned field.\n"
         if $IdentityField !~ /\A[A-Za-z][A-Za-z0-9_-]*\z/ || !exists $Assignments->{$IdentityField};
@@ -1168,6 +1169,7 @@ sub GroupedFieldAssignmentsEvaluate {
         Plans => \@Planned, Merge => $Merge, SeverityRule => $SeverityRule,
         Priority => $Priority, PriorityByName => $PriorityByName,
         Lifecycle => $Lifecycle,
+        ReuseBy => $Rule->{'REUSE BY'} || 'NAME',
     };
 }
 
@@ -1182,8 +1184,10 @@ sub _GroupedSeverity {
         die "Severity rule needs WHEN, NAME and positive PRIORITY.\n"
             if ref $Band ne 'HASH' || !$Band->{WHEN} || !$Band->{NAME}
             || !defined $Band->{PRIORITY} || $Band->{PRIORITY} !~ /\A\d+\z/ || !$Band->{PRIORITY};
-        die "Severity name is repeated.\n" if exists $Priorities{ $Band->{NAME} };
+        die "Severity name has conflicting priorities.\n"
+            if exists $Priorities{ $Band->{NAME} } && $Priorities{ $Band->{NAME} } != $Band->{PRIORITY};
         $Priorities{ $Band->{NAME} } = $Band->{PRIORITY};
+        next if $Chosen;
         my $Match = $Self->ConditionEvaluate( Expression => $Band->{WHEN}, Context => $Param{Context} );
         die "Severity condition is unknown: $Match->{Reason}\n" if $Match->{Status} eq 'UNKNOWN';
         if ( !$Chosen && $Match->{Value} ) { $Chosen = $Band->{NAME}; $Priority = $Band->{PRIORITY} }

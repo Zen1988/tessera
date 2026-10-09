@@ -251,6 +251,7 @@ sub _AutomaticEvaluate {
     return { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN', Reason => $Result->{Reason} }
         if $Result->{Status} eq 'UNKNOWN';
     my $ControlResult = $Result->{Status} eq 'SATISFIED' ? 'Pass' : 'Fail';
+    $Self->_PassedControlRisksDeactivate(%Param) if $ControlResult eq 'Pass';
     $Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-Result', Value => $ControlResult, UserID => $Param{UserID} );
     my $Now = $Kernel::OM->Create(
         'Kernel::System::DateTime',
@@ -286,15 +287,31 @@ sub _TargetEvaluate {
     );
     die (( $Result->{Error} || 'Target evaluation incomplete.' ) . "\n") if !$Result->{Success};
     my @Risks;
+    if ( $Result->{Status} eq 'Pass' && !exists $Result->{Batches} ) {
+        $Self->_PassedControlRisksDeactivate(%Param);
+    }
     if ( $Result->{Status} eq 'Fail' && _Truthy( _Scalar( $Param{Objective}{'DynamicField_ZRM-CreateRisk'} ) ) ) {
         my $Assignment = $Kernel::OM->Get('Kernel::System::YAML')->Load(
             Data => _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '' );
         if ( ref $Assignment eq 'HASH' && ref $Assignment->{RETURN} eq 'HASH'
             && ref $Assignment->{RETURN}->{'GROUP FINDINGS'} eq 'HASH' ) {
-            @Risks = @{ $Self->_GroupedFindingRisksCreate(
-                %Param, Evaluation => $Result, SourceObject => $This,
-                Destination => $Assignment->{RETURN}{AS},
-                Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'} ) };
+            my @Batches = exists $Result->{Batches} ? @{$Result->{Batches}}
+                : ({Source => $This, Evaluation => $Result});
+            for my $Batch (@Batches) {
+                $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
+                    Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'}, Destination => $Assignment->{RETURN}{AS},
+                    RiskClass => _Scalar($Param{Objective}{'DynamicField_ZRM-RiskClass'}),
+                    Source => $Batch->{Source}, Control => $Param{Control}, Objective => $Param{Objective},
+                    Evaluation => $Batch->{Evaluation}, ConfigItemID => $Param{ConfigItemID},
+                    Now => $Param{Now}, UserID => $Param{UserID});
+            }
+            # Evaluate all selections before writes; each source partitions composite identities.
+            for my $Batch (@Batches) {
+                push @Risks, @{ $Self->_GroupedFindingRisksCreate(
+                    %Param, Evaluation => $Batch->{Evaluation}, SourceObject => $Batch->{Source},
+                    Destination => $Assignment->{RETURN}{AS},
+                    Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'} ) };
+            }
         }
         else {
             for my $Finding ( @{ $Result->{Findings} } ) {
@@ -318,6 +335,33 @@ sub _TargetEvaluate {
     return { Success => 1, ConfigItemID => $Param{ConfigItemID}, Status => $Result->{Status}, Findings => scalar @{ $Result->{Findings} }, RiskObjects => \@Risks };
 }
 
+sub _PassedControlRisksDeactivate {
+    my ( $Self, %Param ) = @_;
+    return if _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ) ne 'MELTObject.Risk';
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %Statuses = reverse %{ $Catalog->ItemList( Class => 'ZTSM::MELT::Status', Valid => 1 ) || {} };
+    die "Active/Inactive Risk statuses are unavailable.\n" if !$Statuses{Active} || !$Statuses{Inactive};
+    my $Object = $Kernel::OM->Get('Kernel::System::MELTObject');
+    my @IDs = $Object->MELTObjectSearch( Result => 'ARRAY', Classes => ['Risk'],
+        ZTSMStatusIDs => [$Statuses{Active}], Limit => 10001,
+        'DynamicField_MELT-Control' => { Equals => $Param{ConfigItemID} }, UserID => $Param{UserID} );
+    die "Risk resolution search is incomplete.\n" if @IDs >= 10001;
+    for my $ID (@IDs) {
+        my $Risk = $Object->MELTObjectGet( MELTObjectID => $ID, DynamicFields => 1, UserID => $Param{UserID} );
+        die "Risk cannot be read for resolution.\n" if ref $Risk ne 'HASH';
+        next if _Scalar( $Risk->{'DynamicField_MELT-Control'} ) ne $Param{ConfigItemID};
+        next if _Scalar( $Risk->{'DynamicField_MELT-EventStatus'} ) eq 'Closed';
+        die "Cannot mark resolved Risk Inactive.\n" if !$Object->MELTObjectUpdate(
+            MELTObjectID => $ID, ZTSMStatusID => $Statuses{Inactive}, UserID => $Param{UserID} );
+        die "Cannot record Risk resolution evidence.\n" if !$Kernel::OM->Get('Kernel::System::MELTObject::Activity')->ActivityAdd(
+            MELTObjectID => $ID, EventType => 'ControlResolution', Source => 'ControlRuntime',
+            Subject => 'Control passed; Risk marked Inactive',
+            Body => 'Control ' . $Param{ConfigItemID} . ' passed. Risk retained as history.',
+            Payload => { ControlID => $Param{ConfigItemID}, Result => 'Pass' }, UserID => $Param{UserID} );
+    }
+    return 1;
+}
+
 sub _GroupedFindingRisksCreate {
     my ( $Self, %Param ) = @_;
     my $PlanData = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
@@ -329,6 +373,7 @@ sub _GroupedFindingRisksCreate {
     );
     my ( $Kind, $Class ) = @{ $PlanData->{Class} };
     my $IdentityField = $PlanData->{IdentityField};
+    my $ReuseBy = $PlanData->{ReuseBy} || 'NAME';
     my $Merge = $PlanData->{Merge};
     my $SeverityRule = $PlanData->{SeverityRule};
     my $Priority = $PlanData->{Priority};
@@ -352,13 +397,14 @@ sub _GroupedFindingRisksCreate {
     my $IDKey = $Kind . 'ID';
     my @Results;
     for my $Plan (@Planned) {
-        my $Lock = 'TESSERA.Finding.' . sha256_hex("$Kind\0$Class\0$IdentityField\0$Plan->{Identity}");
+        my $ReuseKey = $ReuseBy eq 'IDENTITY' ? $Plan->{Identity} : $Plan->{Name};
+        my $Lock = 'TESSERA.Finding.' . sha256_hex("$Kind\0$Class\0$ReuseStatusID\0$ReuseKey");
         my $PID = $Kernel::OM->Get('Kernel::System::PID');
         die "Risk identity is busy; retry on the next dispatch.\n" if !$PID->PIDCreate( Name => $Lock );
         my $ID = eval {
             my @Candidates = $Object->$Search( Result => 'ARRAY', Classes => [$Class],
                 ZTSMStatusIDs => [$ReuseStatusID], Limit => 10001,
-                "DynamicField_$IdentityField" => { Equals => $Plan->{Identity} }, UserID => $Param{UserID} );
+                UserID => $Param{UserID} );
             die "Risk identity search is incomplete.\n" if @Candidates >= 10001;
             my @Existing;
             for my $CandidateID (@Candidates) {
@@ -366,6 +412,9 @@ sub _GroupedFindingRisksCreate {
                     DynamicFields => 1, UserID => $Param{UserID} );
                 die "Existing Risk cannot be read.\n"
                     if ref $Candidate ne 'HASH' || $Candidate->{Class} ne $Class;
+                next if $ReuseBy eq 'IDENTITY'
+                    ? (_Scalar($Candidate->{"DynamicField_$IdentityField"}) || '') ne $Plan->{Identity}
+                    : ($Candidate->{Name} || '') ne $Plan->{Name};
                 my $EventField = $Lifecycle->{'EVENT FIELD'};
                 next if $EventField
                     && ( $Candidate->{"DynamicField_$EventField"} || '' ) eq $Lifecycle->{'CLOSED EVENT VALUE'};

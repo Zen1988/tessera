@@ -1167,8 +1167,21 @@ sub Run {
                         Priority  => 'error',
                         Field     => $DynamicFieldConfig->{Name} || '',
                         FieldType => $DynamicFieldConfig->{FieldType} || '',
-                        Message   => $ValidationResult->{ServerError} || '',
+                        Message   => $ValidationResult->{ErrorMessage} || 'Validation rejected without an explanatory message.',
+                        ServerError => $ValidationResult->{ServerError} || '',
                     );
+                    for my $Failure ( @{ $Self->_ZTSMValidationFailures(
+                        Validation => $ValidationResult,
+                        Field      => $DynamicFieldConfig->{Name},
+                    ) } ) {
+                        $ZTSMSubmitTraceLog->(
+                            Stage    => 'backend-validation-member-error',
+                            Priority => 'error',
+                            Container => $DynamicFieldConfig->{Name},
+                            %{$Failure},
+                        );
+                    }
+
                 }
             }
         }
@@ -4834,6 +4847,29 @@ sub _MaskNew {
         }
     }
 
+    # Show returned member errors even when a Set column is outside the viewport.
+    my @ValidationMessages;
+    for my $Field ( sort keys %{ $Param{DFErrors} || {} } ) {
+        my $Failures = $Self->_ZTSMValidationFailures(
+            Field => $Field, Validation => $Param{DFErrors}{$Field},
+        );
+        for my $Failure ( @{$Failures} ) {
+            my $Name = $Failure->{Field};
+            my $Row;
+            $Row = $1 + 1 if $Name =~ s/_(\d+)$//;
+            my $Config = $Self->{DynamicField}{$Name}
+                || $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Name )
+                || {};
+            my $Label = $Config->{Label} || $Name;
+            push @ValidationMessages, {
+                Label => $Label,
+                Row => $Row,
+                Message => $Failure->{Message},
+            };
+        }
+    }
+    $Param{ZTSMValidationMessages} = \@ValidationMessages;
+
     # render dynamic fields
     $Param{DynamicFieldHTML} = $Self->_ServiceExtensionDynamicFieldHTMLBuild(
         LayoutObject         => $LayoutObject,
@@ -4937,3 +4973,23 @@ sub _MaskNew {
 }
 
 1;
+
+sub _ZTSMValidationFailures {
+    my ($Self,%Param)=@_;
+    my @Failures;
+    my $Walk;
+    $Walk=sub {
+        my ($Node,$Path,$Depth)=@_;
+        return if ref $Node ne 'HASH' || $Depth>16;
+        my @Children=grep {ref $Node->{$_} eq 'HASH'} sort keys %{$Node};
+        if ($Node->{ServerError} && !@Children) {
+            my $Message=$Node->{ErrorMessage} || 'Validation rejected without an explanatory message.';
+            $Message =~ s/[\r\n\t]+/ /g;
+            push @Failures,{Field=>$Path,Message=>substr($Message,0,240),ServerError=>1};
+        }
+        for my $Child (@Children) {$Walk->($Node->{$Child},$Child,$Depth+1);}
+    };
+    $Walk->($Param{Validation},$Param{Field},0);
+    undef $Walk;
+    return \@Failures;
+}

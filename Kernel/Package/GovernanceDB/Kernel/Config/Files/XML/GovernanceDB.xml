@@ -3223,4 +3223,17 @@
         <Navigation>TESSERA::RiskAssessment</Navigation>
         <Value><Item ValueType="String">Asset Risk Management</Item></Value>
     </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerSecurityAdvisory" Required="0" Valid="1">
+        <Description Translatable="1">Security Operation Management. Requires TESSERA::CMDB::SECOPS.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item><Item Key="Description">Security Operation Management</Item><Item Key="Title">Security Operation Management</Item><Item Key="NavBarName">Ticket</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Navigation###CustomerSecurityAdvisory###001-SecurityOperations" Required="0" Valid="1">
+        <Description Translatable="1">Security Operation Management portal button.</Description><Navigation>Frontend::Customer::ModuleRegistration::MainMenu</Navigation>
+        <Value><Array><DefaultItem ValueType="FrontendNavigation"><Hash/></DefaultItem><Item><Hash><Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item><Item Key="Name">Security Operation Management</Item><Item Key="Description">Create security advisories and import advisory templates.</Item><Item Key="Link">Action=CustomerSecurityAdvisory</Item><Item Key="LinkOption"/><Item Key="NavBar">Ticket</Item><Item Key="Type">Menu</Item><Item Key="Block"/><Item Key="AccessKey"/><Item Key="Prio">330</Item><Item Key="svgIcon">var/httpd/htdocs/common/img/TESSERA/security_operations.svg</Item></Hash></Item></Array></Value>
+    </Setting>
+    <Setting Name="Loader::Module::CustomerSecurityAdvisory###001-SecurityAdvisory" Required="0" Valid="1">
+        <Description Translatable="1">Security advisory authoring and Excel import resources.</Description><Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>TESSERA.Customer.SecurityAdvisory.css</Item></Array></Item><Item Key="JavaScript"><Array><Item>thirdparty/sheetjs-0.20.3/xlsx.full.min.js</Item><Item>TESSERA.Customer.SecurityAdvisory.js</Item></Array></Item></Hash></Value>
+    </Setting>
 </otobo_config>

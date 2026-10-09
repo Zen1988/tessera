@@ -100,7 +100,7 @@ sub Run {
                 else { push @Errors, 'Row ' . ( $Index + 1 ) . ': explicit CREATE, UPDATE, UPDATE_CLEAR, or SKIP is required.'; next ROW; }
 
                 my %Fields = map { $_ => $Row->{$_} }
-                    grep { $_ !~ m{\A(?:Class|Number|Name|Version|DeploymentState|IncidentState|Description)\z} } keys %{$Row};
+                    grep { $_ !~ m{\A(?:Class|Number|Name|Version|DeploymentState|IncidentState|Description|__ExcelDate1904)\z} } keys %{$Row};
                 my $Result = eval { $Document->Import(
                     Data => {
                         object_type      => 'ITSMConfigItem',
@@ -115,6 +115,7 @@ sub Run {
                     },
                     UserID => $Self->{UserID},
                     Source => 'Excel Import',
+                    ExcelDate1904 => $Row->{__ExcelDate1904} ? 1 : 0,
                 ) };
                 my $Failure = $@ || '';
                 $Failure =~ s{\s+}{ }g;

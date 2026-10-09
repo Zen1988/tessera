@@ -1,0 +1,65 @@
+VERSION: 1
+RETURN:
+  AS: MELTObject.Risk
+  GROUP FINDINGS:
+    SCENARIO: Security advisory vulnerability
+    REUSE BY: IDENTITY
+    TIME ZONE: Asia/Singapore
+    GROUP BY:
+      FROM: FINDING.Asset
+      FIELD: ZTAM-Application
+      AS: GovernanceObject.Application
+      MEMBER FROM: FINDING.Asset.ConfigItemID
+      MEMBERS AS: AssetIDs
+      INCLUDE MEMBERS:
+        - SOURCE.Selected.ConfigItemID
+        - SOURCE.ConfigItemID
+    FOR EACH:
+      FROM: CONTROLOBJECTIVE.ZRM-RiskStmt
+      AS: GovernanceObject.RiskStatement
+    RESOLVE:
+      RMF:
+        FROM: ITEM.ZRM-RMF
+        AS: GovernanceObject.Framework
+    IDENTITY:
+      FIELD: MELT-Reference
+      TEMPLATE: '{SCENARIO.Value}:{SOURCE.ConfigItemID}:{SOURCE.Selected.ConfigItemID}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}'
+    LIFECYCLE:
+      CREATE STATUS: Active
+      REUSE STATUS: Active
+      EVENT FIELD: MELT-EventStatus
+      CREATE EVENT VALUE: Active
+      CLOSED EVENT VALUE: Closed
+    NAME: '{ITEM.ZRM-Annex}: {SOURCE.ZTAM-Annex}: {SOURCE.Name}: {SOURCE.Selected.Name}: {GROUP.Name}'
+    FIELD ASSIGNMENTS:
+      MELT-RelatedGO: '@GROUP.GovernanceObjectID'
+      MELT-RiskStmt: '@ITEM.GovernanceObjectID'
+      MELT-RMF: '@RMF.GovernanceObjectID'
+      MELT-Reference: '@IDENTITY.Value'
+      MELT-RelatedCI: '@GROUP.AssetIDs'
+      MELT-EventSeverity: '@SEVERITY.GovernanceObjectID'
+      MELT-Source: '@SCENARIO.Value'
+      MELT-Control: '@CONTROL.ConfigItemID'
+    MERGE:
+      MELT-RelatedCI: UNION
+      MELT-EventSeverity: MAX_PRIORITY
+      MELT-Control: KEEP_FIRST
+    SEVERITY:
+      AS: GovernanceObject.EventSeverity
+      FIELD: MELT-EventSeverity
+      RULES:
+        - WHEN: '@SOURCE.ZTAM-DueDate IS EMPTY'
+          NAME: Low
+          PRIORITY: 1
+        - WHEN: 'DATE(@SOURCE.ZTAM-DueDate) IS ON OR BEFORE DATE(TODAY + 7 DAYS)'
+          NAME: Critical
+          PRIORITY: 4
+        - WHEN: 'DATE(@SOURCE.ZTAM-DueDate) IS ON OR BEFORE DATE(TODAY + 14 DAYS)'
+          NAME: High
+          PRIORITY: 3
+        - WHEN: 'DATE(@SOURCE.ZTAM-DueDate) IS ON OR BEFORE DATE(TODAY + 60 DAYS)'
+          NAME: Medium
+          PRIORITY: 2
+        - WHEN: 'TRUE EQUALS TRUE'
+          NAME: Low
+          PRIORITY: 1

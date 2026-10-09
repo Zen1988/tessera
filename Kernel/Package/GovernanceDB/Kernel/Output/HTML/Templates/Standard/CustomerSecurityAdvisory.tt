@@ -1,0 +1,45 @@
+<main class="TESSERAAdvisory">
+<header class="AdvisoryHeader"><h1>Security Operation Management</h1><div class="AdvisoryToolbar">
+<button type="button" id="AdvisoryNewToggle" aria-expanded="[% IF Data.ShowForm %]true[% ELSE %]false[% END %]" aria-controls="AdvisoryCreate">+ New Security Advisory</button>
+<a class="AdvisoryButton" href="[% Env('Baselink') %]Action=CustomerSecurityAdvisory;Subaction=ExportList">Export Security Advisory</a>
+<button type="button" id="AdvisoryImportToggle" aria-expanded="false" aria-controls="AdvisoryImport">Import Security Advisory</button></div></header>
+<nav class="AdvisoryViewToggle" aria-label="Security advisory view"><a href="[% Env('Baselink') %]Action=CustomerSecurityAdvisory;AdvisoryView=List" [% IF !Data.IsDashboard %]aria-current="page"[% END %]>List</a><a href="[% Env('Baselink') %]Action=CustomerSecurityAdvisory;AdvisoryView=Dashboard" [% IF Data.IsDashboard %]aria-current="page"[% END %]>Dashboard</a></nav>
+
+[% IF Data.Error %]<p role="alert">[% Data.Error | html %]</p>[% END %]
+[% IF Data.Results.size %]<section aria-label="Submission results"><ul>[% FOREACH Result IN Data.Results %]<li>Row [% Result.Row | html %]: [% Result.Message | html %]</li>[% END %]</ul></section>[% END %]
+<section class="AdvisoryPanel" id="AdvisoryImport" hidden><h2>Import advisories</h2><a href="[% Env('Baselink') %]Action=CustomerSecurityAdvisory;Subaction=Template">Download Excel template</a><p>Use the SecurityAdvisory sheet. Blank Application stays blank. Attachments below use the preview row number.</p>
+<form method="post" enctype="multipart/form-data" id="AdvisoryImportForm" action="[% Env('Baselink') %]">
+<input type="hidden" name="Action" value="CustomerSecurityAdvisory"><input type="hidden" name="Subaction" value="Import"><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"><input type="hidden" name="SubmissionToken" value="[% Data.SubmissionToken | html %]import"><input type="hidden" name="Payload" id="AdvisoryPayload">
+<label for="AdvisoryWorkbook">Excel workbook</label><input id="AdvisoryWorkbook" type="file" accept=".xlsx"><button type="button" id="AdvisoryPreviewButton">Preview import</button><div id="AdvisoryPreview" role="status"></div>
+<fieldset><legend>Attachments</legend>[% FOREACH Slot IN [1] %]<label for="ImportAttachment[% Slot %]">File [% Slot %]</label><input type="file" id="ImportAttachment[% Slot %]" name="Attachment[% Slot %]"><label for="AttachmentRow[% Slot %]">Preview row</label><input type="number" min="1" max="500" id="AttachmentRow[% Slot %]" name="AttachmentRow[% Slot %]">[% END %]</fieldset><button type="submit" id="AdvisoryImportCommit" disabled>Create imported advisories</button></form></section>
+<section class="AdvisoryPanel" id="AdvisoryCreate" [% IF !Data.ShowForm %]hidden[% END %]><h2>New Security Advisory</h2>
+<form method="post" enctype="multipart/form-data" id="AdvisoryForm" action="[% Env('Baselink') %]">
+<input type="hidden" name="Action" value="CustomerSecurityAdvisory"><input type="hidden" name="Subaction" value="Save"><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"><input type="hidden" name="SubmissionToken" value="[% Data.SubmissionToken | html %]save">
+<div class="AdvisoryField"><label for="AdvisoryName">Name <span aria-hidden="true">*</span></label><input id="AdvisoryName" name="Name" required maxlength="250" value="[% Data.Name | html %]"></div>
+[% FOREACH Field IN Data.Fields %]
+[% IF Field.Name == 'ZTAM-ImpactText' %]
+<div class="AdvisoryField"><label for="AdvisoryDescription">Description</label><textarea id="AdvisoryDescription" name="Description" rows="6" class="RichText">[% Data.Description | html %]</textarea></div>
+[% END %]
+<div class="AdvisoryField">
+[% IF Field.Name == 'ZTAM-AdvancedCondition' %]
+<fieldset><legend>Affected conditions</legend><label for="AdvisoryConditionMode">Edit as</label><select id="AdvisoryConditionMode" name="ConditionMode"><option value="Products">Product selection</option><option value="YAML">YAML</option></select>
+<div id="AdvisoryProductMode"><label for="AdvisoryProducts">Products</label><input id="AdvisoryProductSearch" type="search" placeholder="Filter Product names" aria-label="Filter Product names"><select id="AdvisoryProducts" name="ProductIDs" multiple size="8">[% FOREACH Product IN Data.Products %]<option value="[% Product.ID | html %]">[% Product.Name | html %]</option>[% END %]</select><p>Each selected Product is included in the generated condition.</p></div>
+<div id="AdvisoryYAMLMode" hidden><label for="AdvisoryCondition">Advanced condition YAML</label><textarea id="AdvisoryCondition" name="ZTAM-AdvancedCondition" rows="16" spellcheck="false">[% Field.Value | html %]</textarea><p>Advanced scripts are stored as authoring data. Risk evaluation will be configured separately.</p></div><p id="AdvisoryConditionError" role="alert"></p></fieldset>
+[% ELSIF Field.Choices.size || Field.FieldType == 'GovernanceObject' || Field.FieldType == 'ConfigItem' %]
+<label for="[% Field.Name | html %]">[% Field.Label | html %]</label><select id="[% Field.Name | html %]" name="[% Field.Name | html %]" [% IF Field.Config.MultiValue %]multiple size="4"[% END %]><option value="">—</option>[% FOREACH Choice IN Field.Choices %]<option value="[% Choice.ID | html %]" [% IF Choice.Selected %]selected[% END %]>[% Choice.Name | html %]</option>[% END %]</select>
+[% ELSIF Field.FieldType == 'RichText' || Field.FieldType == 'TextArea' %]
+<label for="[% Field.Name | html %]">[% Field.Label | html %]</label><textarea id="[% Field.Name | html %]" name="[% Field.Name | html %]" rows="6" [% IF Field.FieldType == 'RichText' %]class="RichText"[% END %]>[% Field.Value | html %]</textarea>
+[% ELSE %]<label for="[% Field.Name | html %]">[% Field.Label | html %]</label><input id="[% Field.Name | html %]" name="[% Field.Name | html %]" value="[% Field.Value | html %]" [% IF Field.FieldType == 'Date' %]type="date"[% ELSIF Field.FieldType == 'DateTime' %]type="datetime-local" step="1"[% ELSE %]type="text"[% END %]>[% END %]
+</div>
+[% END %]
+<fieldset><legend>Attachments</legend>[% FOREACH Slot IN [1] %]<label for="AdvisoryAttachment[% Slot %]">File [% Slot %]</label><input type="file" id="AdvisoryAttachment[% Slot %]" name="Attachment[% Slot %]">[% END %]<p>One file, up to 5MB.</p></fieldset>
+<div class="AdvisoryFormActions"><button type="submit">Create advisory</button><button type="button" id="AdvisoryCancel">Cancel</button></div></form></section>
+[% IF Data.IsDashboard %]
+<section class="AdvisoryMetrics" aria-label="Security advisory dashboard">[% FOREACH Metric IN Data.Metrics %]<a class="AdvisoryMetric" href="[% Env('Baselink') %]Action=CustomerSecurityAdvisory;AdvisoryView=Dashboard;AdvisoryMetric=[% Metric.Key | uri %]#AdvisoryDetails" [% IF Data.SelectedMetric == Metric.Key %]aria-current="true"[% END %]><span>[% Metric.Label | html %]</span><strong>[% Metric.Count | html %]</strong></a>[% END %]</section><p class="AdvisoryNote">Creation period: [% Data.Period | html %]. Severity distribution covers all visible advisories. Due dates include today through seven days ahead.</p>
+[% IF Data.SelectedMetric %]
+<section class="AdvisoryListing AdvisoryPanel" id="AdvisoryDetails" aria-label="[% Data.SelectedLabel | html %]"><h2>[% Data.SelectedLabel | html %] ([% Data.DetailRows.size | html %])</h2><div class="AdvisoryTableScroll" tabindex="0" role="region" aria-label="Matching security advisories"><table><thead><tr>[% FOREACH Column IN Data.Columns %]<th scope="col">[% Column.Label | html %]</th>[% END %]</tr></thead><tbody>[% FOREACH Row IN Data.DetailRows %]<tr>[% FOREACH Cell IN Row.Cells %]<td>[% Cell | html %]</td>[% END %]</tr>[% END %]</tbody></table></div>[% IF !Data.DetailRows.size %]<p>No security advisories match this metric.</p>[% END %]</section>
+[% END %]
+[% ELSE %]
+<section class="AdvisoryListing" aria-label="Security advisory list"><div class="AdvisoryTableScroll" tabindex="0" role="region" aria-label="Security advisory fields"><table><thead><tr>[% FOREACH Column IN Data.Columns %]<th scope="col">[% Column.Label | html %]</th>[% END %]</tr></thead><tbody>[% FOREACH Row IN Data.Rows %]<tr>[% FOREACH Cell IN Row.Cells %]<td>[% Cell | html %]</td>[% END %]</tr>[% END %]</tbody></table></div>[% IF !Data.Rows.size %]<p>No security advisories are available.</p>[% END %]</section>
+[% END %]
+</main>

@@ -744,6 +744,7 @@ sub _ConfigItemReferenceIDResolve {
         Limit      => 2,
         ClassIDs   => [$ClassID],
         Name       => $Name,
+        QueryCondition => 0, # Portable reference names are literal, not search expressions.
         Permission => 'ro',
         UserID     => $Param{UserID} || 1,
     );

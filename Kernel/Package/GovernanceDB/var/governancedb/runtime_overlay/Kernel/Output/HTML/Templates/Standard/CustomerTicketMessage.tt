@@ -35,6 +35,16 @@
             <input type="hidden" name="FormID" value="[% Data.FormID | html %]" />
             <input type="hidden" name="FromChatID" value="[% Data.FromChatID | html %]" />
             <input type="hidden" name="ZTSMRaiseOnBehalfCustomerUserID" id="ZTSMRaiseOnBehalfCustomerUserID" value="[% Data.ZTSMRaiseOnBehalfCustomerUserID | html %]" />
+[% IF Data.ZTSMValidationMessages.size %]
+            <div role="alert" class="MessageBox Error">
+                <p>[% Translate("The ticket was not submitted. Please correct the following fields:") | html %]</p>
+                <ul>
+[% FOREACH Failure IN Data.ZTSMValidationMessages %]
+                    <li><strong>[% Translate(Failure.Label) | html %][% IF Failure.Row %] ([% Translate("Row") | html %] [% Failure.Row | html %])[% END %]:</strong> [% Translate(Failure.Message) | html %]</li>
+[% END %]
+                </ul>
+            </div>
+[% END %]
             <fieldset class="ModularForm">
 
 [% RenderBlockStart("AsteriskExplanation") %]

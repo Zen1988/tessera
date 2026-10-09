@@ -128,10 +128,12 @@ sub InstallDefaults {
     );
 
     $Self->_ITSMControlDefaultsEnsure();
+    $Self->_AdvisoryQuestionnaireEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
+    $Self->_FirewallProtocolCaseEnsure();
 
     $Self->_RuntimePrerequisitesEnsure();
 
@@ -1222,6 +1224,7 @@ END_APPLICATION_OWNER_SCRIPT
         { Name => 'SUPPORT::PRIMARY', Description => 'Support - Primary Assignment' },
         { Name => 'SUPPORT::SECONDARY', Description => 'Support - Secondary Assignment' },
         { Name => 'SUPPORT::ESCALATION', Description => 'Support - Escalation Assignment' },
+        { Name => 'TESSERA::CMDB::SECOPS', Description => 'Customer security operations advisory authoring capability' },
         { Name => 'TESSERA::CMDB::READ', Description => 'Can read CMDB directly from customer portal' },
         { Name => 'TESSERA::CMDB::API', Description => 'TESSERA CMDB API Access' },
         { Name => 'TESSERA::CMDB::API::READONLY', Description => 'TESSERA CMDB API - Readonly' },
@@ -1676,6 +1679,49 @@ sub _DefaultsLoad {
     return $Kernel::OM->Get('Kernel::System::JSON')->Decode(
         Data => ${$ContentRef},
     );
+}
+
+# Supplement only the requested questionnaire, retaining existing role content and answers.
+sub _AdvisoryQuestionnaireEnsure {
+    my ($Self)=@_;
+    my $Home=$Kernel::OM->Get('Kernel::Config')->Get('Home')||'.';
+    my $Content=$Kernel::OM->Get('Kernel::System::Main')->FileRead(Location=>"$Home/var/governancedb/advisory_questionnaire_fields.json",Mode=>'utf8');
+    return if !$Content;
+    my $Seed=$Kernel::OM->Get('Kernel::System::JSON')->Decode(Data=>$$Content);
+    my $DF=$Kernel::OM->Get('Kernel::System::DynamicField');
+    for my $Name (@{$Seed->{Order}}) {
+        next if $DF->DynamicFieldGet(Name=>$Name);
+        my $F=$Seed->{Fields}{$Name};
+        die "Cannot create advisory questionnaire field $Name" if !$DF->DynamicFieldAdd(
+            Name=>$Name,Label=>$F->{Label},FieldOrder=>$F->{FieldOrder},FieldType=>$F->{FieldType},
+            ObjectType=>$F->{ObjectType},Config=>$F->{Config},ValidID=>1,UserID=>1,Reorder=>0);
+    }
+    my $Roles=$Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(Class=>'ITSM::ConfigItem::Role')||{};
+    my @IDs=grep {$Roles->{$_} eq 'SecurityAdvisory'} keys %$Roles;
+    return if @IDs!=1;
+    my $CI=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    my $Role=$CI->RoleDefinitionGet(RoleID=>$IDs[0]);
+    return if !$Role || !$Role->{Definition};
+    my $YAML=$Kernel::OM->Get('Kernel::System::YAML');
+    my $Data=$YAML->Load(Data=>$Role->{Definition});
+    my $ContentList=$Data->{Sections}{Analysis}{Content};
+    return if ref $ContentList ne 'ARRAY';
+    my %Present=map {ref $_ eq 'HASH' && $_->{DF} ? ($_->{DF}=>1) : ()} @$ContentList;
+    my @Missing=grep {!$Present{$_}} @{$Seed->{Order}};
+    return 1 if !@Missing;
+    my (@New,$Inserted);
+    for my $Entry (@$ContentList) {
+        push @New,$Entry;
+        if (ref $Entry eq 'HASH' && ($Entry->{DF}||'') eq 'ZTAM-Recommendation') {
+            push @New,map {{DF=>$_}} @Missing;$Inserted=1;
+        }
+    }
+    return if !$Inserted;
+    $Data->{Sections}{Analysis}{Content}=\@New;
+    my $Added=$CI->RoleDefinitionAdd(RoleID=>$IDs[0],Definition=>$YAML->Dump(Data=>$Data),UserID=>1);
+    die "Cannot supplement SecurityAdvisory questionnaire role" if !$Added->{Success};
+    $CI->DefinitionSync();
+    return 1;
 }
 
 sub _ITSMControlDefaultsEnsure {
@@ -3493,3 +3539,24 @@ sub _CustomerAssetFrontendEnsure {
 }
 
 1;
+
+# Correct only the shipped lowercase-only rule; custom regexes remain administrator-owned.
+sub _FirewallProtocolCaseEnsure {
+    my ($Self)=@_;
+    my $DF=$Kernel::OM->Get('Kernel::System::DynamicField');
+    my $F=$DF->DynamicFieldGet(Name=>'ZFirewall-DstProtocol');
+    return 1 if !$F || ref $F->{Config}{RegExList} ne 'ARRAY';
+    my $Shipped='^\s*(?:(?:icmp|http|https|ssh|(?:tcp|udp)\/(?:6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]?\d{1,4})))\s*(?:,\s*(?:icmp|http|https|ssh|(?:tcp|udp)\/(?:6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]?\d{1,4}))\s*)*$';
+    my @Rules=map {+{%$_}} @{$F->{Config}{RegExList}};
+    my $Changed;
+    for my $Rule (@Rules) {
+        next if ($Rule->{Value}//'') ne $Shipped;
+        $Rule->{Value}='(?i)'.$Shipped;
+        $Changed=1;
+    }
+    return 1 if !$Changed;
+    my %Config=(%{$F->{Config}},RegExList=>\@Rules);
+    my $OK=$Self->_DynamicFieldUpdateForce(%$F,Config=>\%Config,UserID=>1,Reorder=>0);
+    $DF->EventHandlerTransaction() if $OK;
+    return $OK;
+}

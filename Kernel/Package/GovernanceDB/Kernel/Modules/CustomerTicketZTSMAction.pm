@@ -6299,16 +6299,43 @@ sub _RiskAssessmentOriginScoresEvaluate {
         || ( $Engine->{'ASSESSMENT RESULT'}->{'ROW RISK STATEMENT'} || '' ) ne 'ZRM-RiskStatement'
         || ( $Engine->{'ASSESSMENT RESULT'}->{'SCORE FIELD'} || '' ) ne 'ZRM-InherentCalculatedRisk';
 
-    my $BaseImpact = _RiskAssessmentCatalogNumber(
+    delete $Self->{RiskAssessmentQuestionnaireEvidence};
+    delete $Self->{RiskAssessmentQuestionnaireVersion};
+    my ($BaseImpact, $BaseLikelihood);
+    if (ref $Engine->{'BASE SOURCE'} eq 'HASH') {
+        my $Selector=$Engine->{'BASE SOURCE'};
+        die "Questionnaire BASE SOURCE is invalid.\n"
+            if ($Selector->{FROM}||'') !~ /\ARISK\.([A-Za-z][A-Za-z0-9_-]*)\z/
+            || ($Selector->{CLASS}||'') !~ /\AITSMConfigItem\.([A-Za-z][A-Za-z0-9_-]*)\z/;
+        my ($Field)=$Selector->{FROM}=~/\ARISK\.(.+)\z/;
+        my ($Class)=$Selector->{CLASS}=~/\AITSMConfigItem\.(.+)\z/;
+        my (@Objects,%Seen);
+        for my $ID (_RiskAssessmentFlattenValues($Risk->{'DynamicField_'.$Field})) {
+            die "Questionnaire source reference is invalid.\n" if !defined $ID || $ID !~ /\A\d+\z/;
+            next if $Seen{$ID}++;
+            my $O=$Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(ConfigItemID=>$ID,DynamicFields=>1,Silent=>1);
+            die "Questionnaire source cannot be resolved.\n" if !IsHashRefWithData($O);
+            push @Objects,$O if ($O->{Class}||'') eq $Class;
+        }
+        die "Questionnaire requires exactly one matching source.\n" if @Objects!=1;
+        my $Result=$Kernel::OM->Get('Kernel::System::TESSERA::Questionnaire')->Evaluate(
+            Config=>$Engine->{BASE},Object=>$Objects[0],Framework=>$Framework);
+        $BaseImpact=$Result->{IMPACT}{Base};$BaseLikelihood=$Result->{LIKELIHOOD}{Base};
+        $Self->{RiskAssessmentQuestionnaireEvidence}=$Result;
+        $Self->{RiskAssessmentQuestionnaireVersion}=$Engine->{'MAPPING VERSION'};
+    }
+    else {
+    $BaseImpact = _RiskAssessmentCatalogNumber(
         _RiskStatementObjectValue( Object => $Statement, Field => _RiskAssessmentBaseField( $Engine->{BASE}->{IMPACT}->{FROM} ) )
     );
-    my $BaseLikelihood = _RiskAssessmentCatalogNumber(
+    $BaseLikelihood = _RiskAssessmentCatalogNumber(
         _RiskStatementObjectValue( Object => $Statement, Field => _RiskAssessmentBaseField( $Engine->{BASE}->{LIKELIHOOD}->{FROM} ) )
     );
     die "Risk Statement base scores must be between 1 and 5.\n"
         if !$BaseImpact || !$BaseLikelihood || $BaseImpact < 1 || $BaseImpact > 5
         || $BaseLikelihood < 1 || $BaseLikelihood > 5;
 
+    }
     $Self->{RiskAssessmentFrameworkBreakdown} = {};
     if ($ApplicationMode) {
         return $Self->_RiskAssessmentApplicationScore(
@@ -7398,6 +7425,14 @@ sub _RiskAssessmentEvidenceValues {
             normalized_likelihood => $Likelihood,
         );
         push @FactorLines, _RiskAssessmentEvidenceFormat( Format => $FactorFormat, Values => \%FactorValue );
+    }
+    if (my $Questionnaire=$Self->{RiskAssessmentQuestionnaireEvidence}) {
+        push @FactorLines,'Questionnaire mapping version: '.($Self->{RiskAssessmentQuestionnaireVersion}||'unspecified');
+        for my $Dimension (qw(LIKELIHOOD IMPACT)) {
+            my $D=$Questionnaire->{$Dimension};
+            push @FactorLines,map {"$Dimension $_->{Field}: $_->{Answer} => x$_->{Modifier}"} @{$D->{Answers}};
+            push @FactorLines,"$Dimension advisory base: ceil($D->{Scale} x $D->{Modifier}) = $D->{Base} (Framework minimum applied)";
+        }
     }
     my $SubmittedLikelihood = _RiskAssessmentCatalogNumber( $Row->{'ZRM-InherentLikelihood'} );
     my $SubmittedImpact = _RiskAssessmentCatalogNumber( $Row->{'ZRM-InherentImpact'} );

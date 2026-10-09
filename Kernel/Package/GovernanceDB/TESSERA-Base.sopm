@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.129</Version>
+    <Version>0.0.146</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -17,6 +17,13 @@
 
     <ModuleRequired Version="2.0">GD</ModuleRequired>
     <Filelist>
+        <File Location="var/httpd/htdocs/common/img/TESSERA/security_operations.svg" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/SecurityAdvisory.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerSecurityAdvisory.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerSecurityAdvisory.tt" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/TESSERA.Customer.SecurityAdvisory.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.SecurityAdvisory.css" Permission="660"/>
+
         <File Location="Kernel/System/TESSERA/SessionGreeting.pm" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Profile.css" Permission="660"/>
         <File Location="Kernel/System/TESSERA/CustomerProfilePhoto.pm" Permission="660"/>
@@ -319,6 +326,12 @@
         <File Location="var/httpd/htdocs/js/thirdparty/sheetjs-0.20.3/xlsx.full.min.js" Permission="660"/>
         <File Location="var/httpd/htdocs/js/ZTSM.Agent.Object.Workbook.js" Permission="660"/>
         <File Location="var/httpd/htdocs/js/ZTSM.Agent.ConfigItem.Workbook.js" Permission="660"/>
+        <File Location="var/governancedb/policy/control_discovery_advisories.yml" Permission="660"/>
+        <File Location="var/governancedb/policy/security_advisory_evaluation.yml" Permission="660"/>
+        <File Location="var/governancedb/policy/security_advisory_risk_assignment.yml" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/Questionnaire.pm" Permission="660"/>
+        <File Location="var/governancedb/advisory_questionnaire_fields.json" Permission="660"/>
+        <File Location="var/governancedb/policy/vulnerability_questionnaire_scoring.yml" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[

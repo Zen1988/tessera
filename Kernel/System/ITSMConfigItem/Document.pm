@@ -13,11 +13,24 @@ use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::CustomerCompany',
+    'Kernel::System::DB',
+    'Kernel::System::DynamicField',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::FAQ',
     'Kernel::System::GeneralCatalog',
+    'Kernel::System::GenericInterface::Webservice',
     'Kernel::System::GovernanceObject',
     'Kernel::System::ITSMConfigItem',
     'Kernel::System::ITSMConfigItem::Activity',
     'Kernel::System::Log',
+    'Kernel::System::Queue',
+    'Kernel::System::Service',
+    'Kernel::System::SLA',
+    'Kernel::System::Ticket',
+    'Kernel::System::Type',
+    'Kernel::System::User',
+    'Kernel::System::YAML',
 );
 
 sub Export {
@@ -134,6 +147,22 @@ sub Import {
             Value              => $Fields->{$Name},
             UserID             => $Param{UserID},
         );
+        if ( $Self->_IsPortableObjectReference($DynamicFieldConfig) ) {
+            my @Input = ref $Fields->{$Name} eq 'ARRAY' ? @{ $Fields->{$Name} } : ( $Fields->{$Name} );
+            my @Resolved = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);
+            for my $Index ( 0 .. $#Input ) {
+                next if !defined $Input[$Index] || $Input[$Index] eq '';
+                return { Success => 0, Message => "Field '$Name' contains an unresolved or ambiguous reference. No changes were saved." }
+                    if !defined $Resolved[$Index] || $Resolved[$Index] eq '';
+            }
+        }
+        if ( $DynamicFieldConfig->{FieldType} =~ /\A(?:Date|DateTime)\z/ ) {
+            my $Converted = eval { $Self->_ImportDateNormalize(
+                Value => $Fields->{$Name}, FieldType => $DynamicFieldConfig->{FieldType},
+                Excel => ($Param{Source} || '') eq 'Excel Import', ExcelDate1904 => $Param{ExcelDate1904} ); };
+            return { Success => 0, Message => "Field '$Name' has an invalid date. Use YYYY-MM-DD or YYYY-MM-DD HH:MM:SS. No changes were saved." } if $@;
+            $Value = $Converted;
+        }
         $ObjectData{ 'DynamicField_' . $Name } = $Value;
     }
 
@@ -202,6 +231,35 @@ sub Import {
         return { Success => 1, ConfigItemID => $ConfigItemID, Message => 'ConfigItem document imported.' };
     }
     return { Success => 0, Message => 'ConfigItem import failed.' };
+}
+
+sub _ImportDateNormalize {
+    my ( $Self, %Param ) = @_;
+    my $Value = $Param{Value};
+    return $Value if !defined $Value || $Value eq '';
+    die "Invalid date value" if ref $Value;
+    require DateTime;
+    $Value =~ s/\A\s+|\s+\z//g;
+    return '' if $Value eq '';
+    my $Date;
+    if ( $Param{Excel} && $Value =~ /\A\d+(?:\.\d+)?\z/ ) {
+        die "Excel date out of range" if $Value > 2958465;
+        my $Day = int($Value);
+        die "Excel's fictional leap day is invalid" if !$Param{ExcelDate1904} && $Day == 60;
+        $Date = DateTime->new( year => $Param{ExcelDate1904} ? 1904 : 1899,
+            month => $Param{ExcelDate1904} ? 1 : 12, day => $Param{ExcelDate1904} ? 1 : 31,
+            time_zone => 'floating' );
+        $Day-- if !$Param{ExcelDate1904} && $Day > 60;
+        $Date->add( days => $Day, seconds => int(($Value - int($Value)) * 86400 + 0.5) );
+    }
+    else {
+        my ($Y,$M,$D,$h,$m,$s) = $Value =~ /\A(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?\z/;
+        die "Unsupported date string" if !defined $Y;
+        $Date = DateTime->new( year=>$Y, month=>$M, day=>$D, hour=>$h || 0,
+            minute=>$m || 0, second=>$s || 0, time_zone=>'floating' );
+    }
+    die "Date year out of range" if $Date->year < 1900 || $Date->year > 9999;
+    return $Date->ymd . ' ' . ($Param{FieldType} eq 'Date' ? '00:00:00' : $Date->hms);
 }
 
 1;

@@ -1123,3 +1123,17 @@ ERROR: OTOBO-CGI-25 Perl: 5.38.2 OS: linux Time: Wed Jul  8 08:13:46 2026
 - Add YAML parser diagnostics with source line/column and authoring-time validation on GovernanceRole and ControlObjective save.
 - Extend failure field-assignment authoring with line/column diagnostics and richer calculated-value functions while retaining explicit `ZRM-CreateRisk` gating.
 - Add focused automated tests for native backend permissions, invalid class fields, temporal month-end behavior, duplicate object-name ambiguity, traversal cycles, collection coercion, and GenericAgent article deduplication.
+
+## Security advisory risk conversion follow-up
+
+Security advisory selection-to-RiskStatement/ControlObjective grouping is implemented through ST-5 in0.0.142. Remaining design: impact/recommendation transfer and exploitability questionnaire-to-score mapping, then a vulnerability-specific calculation through the selected Framework. General ALL/ANY conditions remain a future ScriptEngine increment; do not evaluate customer-authored scripts during advisory submission. Portal capability is reserved TESSERA::CMDB::SECOPS, separate from CMDB::READ. Verify live install and customer SupportAssignments before treating portal availability as accepted.
+
+## Vulnerability framework follow-up — ST-5 implemented 2026-10-09
+
+ST-5 executable discovery/evaluation/group creation is deployed in0.0.142 and live verified. See PROJECT_STATUS.md and docs/vulnerability-policy-authoring.md. Remaining design: vulnerability-specific Framework likelihood/impact formula (user deferred), and optional recovery/downgrade/shared-risk resolution policy. Preserve current Application-context RMF scorer and workflow until that calculation is confirmed.
+
+2026-10-09 update: vulnerability questionnaire Framework calculation is implemented/deployed in0.0.144. Both products, Framework scales, two ceiling stages and minimum1 confirmed. Remaining next: verify user-created live assessment evidence and consider per-CVE questionnaire scope/prefill; reusable AI authoring MD remains paused. See PROJECT_STATUS.md.
+
+## Monday 2026-10-12 — full YAML authoring Markdown
+
+User confirmed: save and commit current implementation now; begin the full portable Markdown authoring guide on Monday. Guide must cover actual exported classes/fields, grammar, syntax, supported operations, validation, examples and intention-to-YAML instructions for organization users, Gemini and ChatGPT projects. Include questionnaire and Application scoring, evidence,3800-character field limit and tested scalar anchors. Do not generate the full guide before Monday. Latest live Framework save verified; new live assessment evidence remains to verify.

@@ -54,11 +54,52 @@ sub _Evaluate {
     );
     die (( $Condition->{Reason} || 'Unknown condition.' ) . "\n") if $Condition->{Status} eq 'UNKNOWN';
     my %Evidence = ( Field => $Field, Value => $Value, Condition => $Check->{EXPECT}, Trace => $Condition->{Trace}, EvaluationDate => $Today->ymd, TimeZone => $Zone );
-    return { Success => 1, Status => 'Pass', Findings => [], %Evidence } if $Condition->{Status} eq 'SATISFIED';
+    return { Success => 1, Status => 'Pass', Findings => [],
+        (ref $Script->{'ON FAIL'} eq 'HASH' && exists $Script->{'ON FAIL'}{'FOR EACH SELECTED'} ? (Batches => []) : ()),
+        %Evidence } if $Condition->{Status} eq 'SATISFIED';
 
     # No graph reads occur until this object's own check has failed.
     my $Fail = $Script->{'ON FAIL'};
     die "ON FAIL must be a mapping.\n" if ref $Fail ne 'HASH';
+    if ( exists $Fail->{'FOR EACH SELECTED'} ) {
+        my $Rule = $Fail->{'FOR EACH SELECTED'};
+        die "FOR EACH SELECTED needs SCRIPT FIELD, AS, LIMIT and EVALUATE.\n"
+            if ref $Rule ne 'HASH' || !$Rule->{'SCRIPT FIELD'} || !$Rule->{AS}
+                || ref $Rule->{EVALUATE} ne 'HASH' || ($Rule->{LIMIT} || '') !~ /\A[1-9][0-9]*\z/
+                || $Rule->{LIMIT} > 1000;
+        die "Nested selection evaluation is not allowed.\n" if $Param{SelectedEvaluation};
+        my $Field = $Rule->{'SCRIPT FIELD'};
+        my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(Name => $Field);
+        my ($Owner) = split /\./, $Type;
+        die "Selection script field is not defined on the target.\n"
+            if !$Config || ($Config->{ObjectType} || '') ne $Owner;
+        my $Source = $This->{"DynamicField_$Field"} // $This->{$Field};
+        $Source = $Source->[0] if ref $Source eq 'ARRAY' && @{$Source} == 1;
+        die "Selection script is empty or malformed.\n" if !defined $Source || ref $Source || $Source !~ /\S/ || length($Source) > 65536;
+        my $Selected = $Self->{Engine}->ScriptEvaluate(Source => $Source, Complete => 1,
+            UserID => $Param{UserID}, Context => $Context);
+        die (($Selected->{Error} || 'Selection script failed.') . "\n") if !$Selected->{Success};
+        die "Selection must return the declared typed collection.\n"
+            if ($Selected->{ValueType} || '') ne 'Collection<' . $Rule->{AS} . '>'
+                || ref $Selected->{Value} ne 'ARRAY' || @{$Selected->{Value}} > $Rule->{LIMIT};
+        my ($Kind, $Class) = $Rule->{AS} =~ /\A(ITSMConfigItem|GovernanceObject|MELTObject)\.([A-Za-z][A-Za-z0-9_-]*)\z/;
+        die "Unsupported selection type.\n" if !$Kind;
+        my $IDKey = $Kind eq 'ITSMConfigItem' ? 'ConfigItemID' : $Kind . 'ID';
+        my (@Batches, @Findings, %Seen);
+        for my $Object (@{$Selected->{Value}}) {
+            die "Selection contains an invalid object.\n" if ref $Object ne 'HASH' || ($Object->{Class} || '') ne $Class
+                || ($Object->{$IDKey} || '') !~ /\A[1-9][0-9]*\z/;
+            next if $Seen{$Object->{$IDKey}}++;
+            my $Result = $Self->_Evaluate(%Param, SelectedEvaluation => 1, Script => $Rule->{EVALUATE},
+                TargetType => $Rule->{AS}, Context => {%{$Context}, THIS => $Object});
+            for my $Finding (@{$Result->{Findings}}) { $Finding->{Origin} = $This }
+            push @Findings, @{$Result->{Findings}};
+            push @Batches, { Source => {%{$This}, Selected => $Object}, Evaluation => $Result }
+                if @{$Result->{Findings}};
+        }
+        return { Success => 1, Status => @Findings ? 'Fail' : 'Pass', Findings => \@Findings,
+            Batches => \@Batches, %Evidence };
+    }
     if ( exists $Fail->{'EMIT FINDING'} ) {
         die "EMIT FINDING requires THIS and cannot be combined with DESCENDANTS or AFFECTED.\n"
             if !defined $Fail->{'EMIT FINDING'} || ref $Fail->{'EMIT FINDING'}
