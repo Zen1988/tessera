@@ -1,0 +1,452 @@
+{
+   "Fields" : [
+      {
+         "ChangeTime" : "2026-10-12 02:41:57",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTAM-ConditionIndex"
+               },
+               {
+                  "DF" : "ZTAM-AdvancedCondition"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:35:46",
+         "FieldOrder" : 607,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Advanced Condition YAML",
+         "Name" : "AdvancedCondition",
+         "ObjectType" : "ITSMConfigItem",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:41:02",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-FieldAssignment"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:41:02",
+         "FieldOrder" : 609,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Risk Field Mapping",
+         "Name" : "FieldAsssignment",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:34:14",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-MasterTicket",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:34:14",
+         "FieldOrder" : 606,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Master Ticket Mapping",
+         "Name" : "MasterTicket",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:48:08",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-PolicyEvaluation",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:48:08",
+         "FieldOrder" : 610,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Policy Evaluation",
+         "Name" : "PolicyEvaluation",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:51:16",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-PolicyFilter",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:51:06",
+         "FieldOrder" : 611,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Policy Requirement / Filter",
+         "Name" : "PolicyFilter",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:34:24",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-RiskAggregationEngine",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:32:35",
+         "FieldOrder" : 605,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Risk Aggregation Engine",
+         "Name" : "RiskAggregationEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:34:34",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZRM-RiskScoringEngine",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:30:58",
+         "FieldOrder" : 604,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Risk Scoring Engine",
+         "Name" : "RiskScoringEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:41:45",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex"
+               },
+               {
+                  "DF" : "ZTSM-ScriptEngine"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 02:37:50",
+         "FieldOrder" : 608,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Policy Evaluation",
+         "Name" : "ScriptEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:41:03",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "SET @MELTObject.Risk.MELT-Control THIS",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "3",
+            "Tooltip" : "Field Assignment"
+         },
+         "CreateTime" : "2026-08-17 08:04:09",
+         "FieldOrder" : 548,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "FieldAssignment",
+         "Name" : "ZRM-FieldAssignment",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:34:14",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "3",
+            "Tooltip" : "Master Ticket Mapping, remember include TicketType, etc."
+         },
+         "CreateTime" : "2026-08-19 06:09:47",
+         "FieldOrder" : 556,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Master Ticket Mapping",
+         "Name" : "ZRM-MasterTicket",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:48:08",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "5",
+            "Tooltip" : "Policy Evaluation in order to determine control success or fail"
+         },
+         "CreateTime" : "2026-08-11 01:33:03",
+         "FieldOrder" : 493,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Policy Evaluation",
+         "Name" : "ZRM-PolicyEvaluation",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:51:06",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "5",
+            "Tooltip" : "Control Policy Filter / Filter - it should be in control language"
+         },
+         "CreateTime" : "2026-08-11 01:31:51",
+         "FieldOrder" : 492,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Policy Requirement / Filter",
+         "Name" : "ZRM-PolicyFilter",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:32:35",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "5",
+            "Tooltip" : "Risk Score Aggregation"
+         },
+         "CreateTime" : "2026-08-19 05:10:57",
+         "FieldOrder" : 551,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Risk Aggregation Engine",
+         "Name" : "ZRM-RiskAggregationEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:30:59",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "5",
+            "Tooltip" : "Risk Score Calculation using TESSERA yaml syntax"
+         },
+         "CreateTime" : "2026-08-19 05:10:10",
+         "FieldOrder" : 550,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Risk Scoring Engine",
+         "Name" : "ZRM-RiskScoringEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:35:47",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "3",
+            "Tooltip" : "Advanced YAML for condition"
+         },
+         "CreateTime" : "2026-10-08 06:36:09",
+         "FieldOrder" : 583,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Advanced Condition YAML",
+         "Name" : "ZTAM-AdvancedCondition",
+         "ObjectType" : "ITSMConfigItem",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:35:47",
+         "Config" : {
+            "DefaultValue" : "",
+            "Link" : "",
+            "LinkPreview" : "",
+            "MultiValue" : "0",
+            "RegExList" : [
+               {
+                  "ErrorMessage" : "Index must be an integer from 1 to 99.",
+                  "Value" : "^[1-9][0-9]?$"
+               }
+            ],
+            "Tooltip" : "Condition Block Index"
+         },
+         "CreateTime" : "2026-10-12 02:28:46",
+         "FieldOrder" : 603,
+         "FieldType" : "Text",
+         "InternalField" : 0,
+         "Label" : "Index",
+         "Name" : "ZTAM-ConditionIndex",
+         "ObjectType" : "ITSMConfigItem",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:37:50",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "5",
+            "Tooltip" : "Script Logic/Engineering"
+         },
+         "CreateTime" : "2026-08-19 01:36:16",
+         "FieldOrder" : 549,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Script",
+         "Name" : "ZTSM-ScriptEngine",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 01:57:53",
+         "Config" : {
+            "Include" : [
+               {
+                  "DF" : "ZTemplate-ScriptIndex",
+                  "Mandatory" : "1"
+               },
+               {
+                  "DF" : "ZTemplate-ScriptBlock",
+                  "Mandatory" : "1"
+               }
+            ],
+            "MultiValue" : "1",
+            "RenderLayout" : "Vertical",
+            "Tooltip" : null
+         },
+         "CreateTime" : "2026-10-12 01:57:53",
+         "FieldOrder" : 602,
+         "FieldType" : "Set",
+         "InternalField" : 0,
+         "Label" : "Automation Script",
+         "Name" : "ZTemplate-AutomationScript",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 01:57:53",
+         "Config" : {
+            "Cols" : "100",
+            "DefaultValue" : "",
+            "MultiValue" : "0",
+            "RegExList" : [],
+            "Rows" : "3",
+            "Tooltip" : "Automation Script Block"
+         },
+         "CreateTime" : "2026-10-12 01:49:25",
+         "FieldOrder" : 600,
+         "FieldType" : "TextArea",
+         "InternalField" : 0,
+         "Label" : "Script Block",
+         "Name" : "ZTemplate-ScriptBlock",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      },
+      {
+         "ChangeTime" : "2026-10-12 02:51:06",
+         "Config" : {
+            "DefaultValue" : "",
+            "Link" : "",
+            "LinkPreview" : "",
+            "MultiValue" : "0",
+            "RegExList" : [
+               {
+                  "ErrorMessage" : "Index must be an integer from 1 to 99.",
+                  "Value" : "^[1-9][0-9]?$"
+               }
+            ],
+            "Tooltip" : "Script Block Index"
+         },
+         "CreateTime" : "2026-10-12 01:55:50",
+         "FieldOrder" : 601,
+         "FieldType" : "Text",
+         "InternalField" : 0,
+         "Label" : "Index",
+         "Name" : "ZTemplate-ScriptIndex",
+         "ObjectType" : "GovernanceObject",
+         "ValidID" : 1
+      }
+   ]
+}

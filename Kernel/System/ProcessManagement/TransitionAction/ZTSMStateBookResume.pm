@@ -342,7 +342,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMStateBookResume: Ticket is onhold, skip lifecycle resume TicketID=$TicketID",
+            Message  => "TESSERA StateBookResume: Ticket is onhold, skip lifecycle resume TicketID=$TicketID",
         );
         return 1;
     }
@@ -353,7 +353,7 @@ sub Run {
     if ( !$StateBookID ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookResume: Missing ZTicket-StateBook TicketID=$TicketID",
+            Message  => "TESSERA StateBookResume: Missing ZTicket-StateBook TicketID=$TicketID",
         );
         return;
     }
@@ -366,7 +366,7 @@ sub Run {
     if ( !$StateBook || ref $StateBook ne 'HASH' ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookResume: Failed loading StateBook=$StateBookID TicketID=$TicketID",
+            Message  => "TESSERA StateBookResume: Failed loading StateBook=$StateBookID TicketID=$TicketID",
         );
         return;
     }
@@ -378,7 +378,7 @@ sub Run {
     if ( !@Records ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookResume: No usable StateBook records TicketID=$TicketID StateBook=$StateBookID",
+            Message  => "TESSERA StateBookResume: No usable StateBook records TicketID=$TicketID StateBook=$StateBookID",
         );
         return;
     }
@@ -414,7 +414,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMStateBookResume: Current StateBook stage not found "
+                  "TESSERA StateBookResume: Current StateBook stage not found "
                 . "TicketID=$TicketID "
                 . "State="
                 . ( $CurrentState || '' )
@@ -451,7 +451,7 @@ sub Run {
 
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMStateBookResume: StateBook complete TicketID=$TicketID State=$ResolvedState",
+            Message  => "TESSERA StateBookResume: StateBook complete TicketID=$TicketID State=$ResolvedState",
         );
 
         return 1;
@@ -466,7 +466,7 @@ sub Run {
     if ( !$NextStateID ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookResume: State lookup failed TicketID=$TicketID State=$NextState",
+            Message  => "TESSERA StateBookResume: State lookup failed TicketID=$TicketID State=$NextState",
         );
         return;
     }
@@ -497,7 +497,7 @@ sub Run {
     if ( !$Success ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookResume: Failed moving TicketID=$TicketID State=$NextState",
+            Message  => "TESSERA StateBookResume: Failed moving TicketID=$TicketID State=$NextState",
         );
         return;
     }
@@ -526,7 +526,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMStateBookResume: Advanced one state "
+              "TESSERA StateBookResume: Advanced one state "
             . "TicketID=$TicketID "
             . "From=$ResolvedState "
             . "To=$NextState",
@@ -543,7 +543,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMStateBookResume: Failed reloading ticket before StateBook handoff "
+                  "TESSERA StateBookResume: Failed reloading ticket before StateBook handoff "
                 . "TicketID=$TicketID "
                 . "State=$NextState",
         );
@@ -563,7 +563,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMStateBookResume: StateBook handoff returned false "
+                  "TESSERA StateBookResume: StateBook handoff returned false "
                 . "TicketID=$TicketID "
                 . "State=$NextState",
         );

@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -37,6 +37,7 @@ use Kernel::System::VariableCheck qw(:all);
 our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::GeneralCatalog',
     'Kernel::Output::HTML::DynamicField::Mask',
     'Kernel::System::Log',
     'Kernel::System::Cache',
@@ -127,12 +128,20 @@ sub ValueGet {
         }
     }
 
+    # Shared exported index members cannot define another Set's row count.
+    @SetValue = _ScriptSetStoredRows($Param{DynamicFieldConfig}, \@SetValue)->@*;
     return if !@SetValue;
     return \@SetValue;
 }
 
 sub ValueSet {
     my ( $Self, %Param ) = @_;
+    my $BlockError = _ScriptBlockValidationError($Param{DynamicFieldConfig}, $Param{Value});
+    if ($BlockError) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(Priority => 'error', Message => $BlockError);
+        return;
+    }
+
 
     my @SetValue = defined $Param{Value} ? $Param{Value}->@* : ( {} );
 
@@ -256,6 +265,12 @@ sub ValueSet {
 
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
+    my $BlockError = _ScriptBlockValidationError($Param{DynamicFieldConfig}, $Param{Value});
+    if ($BlockError) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(Priority => 'error', Message => $BlockError);
+        return;
+    }
+
 
     my @SetValue = defined $Param{Value} ? $Param{Value}->@* : ();
 
@@ -286,46 +301,36 @@ sub ValueValidate {
 
 sub EditFieldRender {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     # take config from field config
     my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
     my $FieldName   = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
 
     # check and set class if necessary
-    my $FieldClass = 'DynamicFieldSet';
+    my $FieldClass = $Self->_FieldClassBaseGet();
     if ( defined $Param{Class} && $Param{Class} ne '' ) {
         $FieldClass .= ' ' . $Param{Class};
     }
 
-    # TODO: maybe set all mandatory? necessary?
-    #    # set classes according to mandatory and acl hidden params
-    #    if ( $Param{ACLHidden} && $Param{Mandatory} ) {
-    #        $FieldClass .= ' Validate_Required_IfVisible';
-    #    }
-    #    elsif ( $Param{Mandatory} ) {
-    #        $FieldClass .= ' Validate_Required';
-    #    }
-
-    # TODO:
-    #    # set error css class
-    #    if ( $Param{ServerError} ) {
-    #        $FieldClass .= ' ServerError';
-    #    }
+    if ( $Param{ServerError} ) {
+        $FieldClass .= ' ServerError';
+    }
 
     my %FieldTemplateData = (
         'FieldClass' => $FieldClass,
         'FieldName'  => $FieldName,
     );
 
-    #    if ( $Param{ServerError} ) {
-    #
-    #        $FieldTemplateData{ServerError}  = $Param{ServerError};
-    #        $FieldTemplateData{ErrorMessage} = Translatable( $Param{ErrorMessage} || 'This field is required.' );
-    #    }
+    if ( $Param{ServerError} ) {
+        $FieldTemplateData{ServerError}      = $Param{ServerError};
+        $FieldTemplateData{ErrorMessage}     = $Param{ErrorMessage} || 'This field is required.';
+        $FieldTemplateData{DivIDServerError} = $FieldName . 'ServerError';
+    }
 
-    my $FieldTemplateFile = $Param{CustomerInterface}
-        ? 'DynamicField/Customer/Set'
-        : 'DynamicField/Agent/Set';
+    my $FieldTemplateFile = $Self->_FieldTemplateFileGet(
+        CustomerInterface => $Param{CustomerInterface},
+    );
 
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
@@ -389,8 +394,12 @@ sub EditFieldRender {
             $DynamicField->{$Name}{ProcessSuffix} = $Param{DynamicFieldConfig}{ProcessSuffix};
         }
 
+        my $RenderContent = $Self->_RenderContentGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+        );
+
         my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
-            Content            => $Include,
+            Content            => $RenderContent,
             DynamicFields      => $DynamicField,
             UpdatableFields    => $Param{UpdatableFields},
             LayoutObject       => $Param{LayoutObject},
@@ -402,18 +411,27 @@ sub EditFieldRender {
             PossibleValuesFilter => $Self->{PossibleValuesFilter}{ $Param{DynamicFieldConfig}->{Name} }[$SetIndex] // {},
             Visibility           => \%Visibility,
 
-            # TODO:
-            #            Errors               => $Param{DFErrors},
+            Errors => {
+                map {
+                    my $Name = $_;
+                    my $IndexedName = $DynamicField->{$Name}{Name};
+                    $Name => ref $Param{$IndexedName} eq 'HASH' ? $Param{$IndexedName} : {};
+                } keys %{$DynamicField}
+            },
             Object => $Param{Object},
         );
 
         $ResultHTML[$SetIndex] = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
-                Name             => $Param{DynamicFieldConfig}->{Name},
-                Index            => $SetIndex,
-                OriginIndex      => $SetIndex,
-                DynamicFieldHTML => $DynamicFieldHTML,
+                %FieldTemplateData,
+                Name              => $Param{DynamicFieldConfig}->{Name},
+                Index             => $SetIndex,
+                DynamicFieldHTML  => $DynamicFieldHTML,
+                FieldSetClass     => $Self->_FieldSetClassGet(),
+                RenderLayoutClass => $Self->_RenderLayoutClassGet(
+                    DynamicFieldConfig => $Param{DynamicFieldConfig},
+                ),
             },
         );
 
@@ -431,8 +449,12 @@ sub EditFieldRender {
         my %TemplateValues = map { 'DynamicField_' . $_ => $Self->{TemplateValues}{ $Param{DynamicFieldConfig}->{Name} }{$_} }
             keys %{ $Self->{TemplateValues}{ $Param{DynamicFieldConfig}->{Name} } // {} };
 
+        my $RenderContent = $Self->_RenderContentGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+        );
+
         my $DynamicFieldHTML = $Kernel::OM->Get('Kernel::Output::HTML::DynamicField::Mask')->EditSectionRender(
-            Content            => $Param{DynamicFieldConfig}{Config}{Include},
+            Content            => $RenderContent,
             DynamicFields      => $DynamicField,
             UpdatableFields    => $Param{UpdatableFields},
             LayoutObject       => $Param{LayoutObject},
@@ -449,10 +471,14 @@ sub EditFieldRender {
         my $TemplateHTML = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
-                Name             => $Param{DynamicFieldConfig}->{Name},
-                Index            => 'Template',
-                OriginIndex      => -1,
-                DynamicFieldHTML => $DynamicFieldHTML,
+                %FieldTemplateData,
+                Name              => $Param{DynamicFieldConfig}->{Name},
+                Index             => 'Template',
+                DynamicFieldHTML  => $DynamicFieldHTML,
+                FieldSetClass     => $Self->_FieldSetClassGet(),
+                RenderLayoutClass => $Self->_RenderLayoutClassGet(
+                    DynamicFieldConfig => $Param{DynamicFieldConfig},
+                ),
             },
         );
 
@@ -471,6 +497,7 @@ sub EditFieldRender {
 
 sub EditFieldValueGet {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}{Name};
 
@@ -492,16 +519,6 @@ sub EditFieldValueGet {
         my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
         my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
-        my @DataAll = $Param{ParamObject}->GetArray(
-            Param => 'SetIndex_' . $Param{DynamicFieldConfig}->{Name},
-        );
-
-        # if we have nothing in the frontend just return
-        return if !@DataAll;
-
-        # get the highest multi value index (second to last; last is the empty template)
-        my $IndexMax = $Param{DynamicFieldConfig}{Config}{MultiValue} ? $DataAll[-2] // 0 : 0;
-
         my $Include      = $Param{DynamicFieldConfig}{Config}{Include};
         my $DynamicField = $Self->_GetIncludedDynamicFields(
             InputFieldDefinition => $Include,
@@ -522,14 +539,23 @@ sub EditFieldValueGet {
             $DynamicField->{$Name} = { $DynamicField->{$Name}->%* };
         }
 
-        for my $Pair ( pairs $DynamicField->%* ) {
-            my ( $Name, $DynamicFieldConfig ) = $Pair->@*;
+        my @SetIndex = $Self->_SubmittedSetIndexListGet(
+            DynamicFieldConfig => $Param{DynamicFieldConfig},
+            DynamicField       => $DynamicField,
+            ParamObject        => $Param{ParamObject},
+        );
 
-            for my $SetIndex ( 0 .. $IndexMax ) {
+        return if !@SetIndex;
+
+        for my $SetIndex (@SetIndex) {
+            my $OutputIndex = @SetData;
+
+            for my $Name ( sort keys $DynamicField->%* ) {
+                my $DynamicFieldConfig = { $DynamicField->{$Name}->%* };
                 $DynamicFieldConfig->{Name}          = $Name . ( $Param{DynamicFieldConfig}{ProcessSuffix} // '' ) . '_' . $SetIndex;
                 $DynamicFieldConfig->{ProcessSuffix} = $Param{DynamicFieldConfig}{ProcessSuffix};
 
-                $SetData[$SetIndex]{$Name} = $BackendObject->EditFieldValueGet(
+                $SetData[$OutputIndex]{$Name} = $BackendObject->EditFieldValueGet(
                     %Param,
                     DynamicFieldConfig => $DynamicFieldConfig,
                 );
@@ -553,6 +579,7 @@ sub EditFieldValueGet {
 
 sub EditFieldValueValidate {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     if (
         ( !defined $Param{GetParam}{DynamicField} || !defined $Param{GetParam}{DynamicField}{"DynamicField_$Param{DynamicFieldConfig}{Name}"} )
@@ -568,19 +595,7 @@ sub EditFieldValueValidate {
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
     my $BackendObject      = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
-    my $IndexMax = 0;
-
     my $SetDFConfig = $Param{DynamicFieldConfig};
-
-    if ( $SetDFConfig->{Config}{MultiValue} ) {
-        my @DataAll = $Param{ParamObject}->GetArray(
-            Param => 'SetIndex_' . $SetDFConfig->{Name},
-        );
-
-        # get the highest multi value index (second to last; last is the empty template)
-        $IndexMax = $DataAll[-2] // 0;
-    }
-
     my $Result;
     my $Include      = $SetDFConfig->{Config}{Include};
     my $DynamicField = $Self->_GetIncludedDynamicFields(
@@ -602,35 +617,165 @@ sub EditFieldValueValidate {
         $DynamicField->{$Name} = { $DynamicField->{$Name}->%* };
     }
 
-    for my $SetIndex ( 0 .. $IndexMax ) {
+    my @SetIndex = $Self->_SubmittedSetIndexListGet(
+        DynamicFieldConfig => $SetDFConfig,
+        DynamicField       => $DynamicField,
+        ParamObject        => $Param{ParamObject},
+    );
 
-        # map inner set values to GetParam
-        my %SetDFValues = map {
-            (
-                "DynamicField_$_" => $Param{GetParam}{DynamicField}{"DynamicField_$SetDFConfig->{Name}"}[$SetIndex]{$_}
-            )
-        } keys $Param{GetParam}{DynamicField}{"DynamicField_$SetDFConfig->{Name}"}[$SetIndex]->%*;
+    for my $SetIndex (@SetIndex) {
 
-        for my $Pair ( pairs $DynamicField->%* ) {
-            my ( $Name, $DynamicFieldConfig ) = $Pair->@*;
+        for my $Name ( sort keys $DynamicField->%* ) {
+            my $DynamicFieldConfig = { $DynamicField->{$Name}->%* };
             $DynamicFieldConfig->{Name}          = $Name . ( $SetDFConfig->{ProcessSuffix} // '' ) . '_' . $SetIndex;
             $DynamicFieldConfig->{ProcessSuffix} = $SetDFConfig->{ProcessSuffix};
 
             $Result->{ $DynamicFieldConfig->{Name} } = $BackendObject->EditFieldValueValidate(
                 %Param,
-                GetParam => {
-                    $Param{GetParam}->%*,
-                    DynamicField => {
-                        $Param{GetParam}{DynamicField}->%*,
-                        %SetDFValues,
-                    },
-                },
                 DynamicFieldConfig => $DynamicFieldConfig,
+                Mandatory          => $DynamicFieldConfig->{Mandatory} ? 1 : 0,
             );
         }
     }
 
-    return $Result;
+    if (
+        $Param{Mandatory}
+        && !$Self->_SubmittedSetHasData(
+            DynamicFieldConfig => $SetDFConfig,
+            DynamicField       => $DynamicField,
+            SetIndex           => \@SetIndex,
+            ParamObject        => $Param{ParamObject},
+        )
+        )
+    {
+        return {
+            ServerError  => 1,
+            ErrorMessage => 'This field is required.',
+        };
+    }
+
+    require Kernel::System::TESSERA::ScriptBlocks;
+    my $BlockSpec = Kernel::System::TESSERA::ScriptBlocks::BlockSpec($SetDFConfig->{Name});
+    if ($BlockSpec) {
+        my $Rows = $Param{GetParam}{DynamicField}{'DynamicField_' . $SetDFConfig->{Name}};
+        my $BlockError = _ScriptBlockValidationError($SetDFConfig, $Rows);
+        if ($BlockError) {
+            $Result->{ServerError} = 1;
+            $Result->{ErrorMessage} = $BlockError;
+            return $Result;
+        }
+    }
+
+    my $FindError;
+    $FindError = sub {
+        my ($Validation) = @_;
+        return if ref $Validation ne 'HASH';
+        return $Validation if $Validation->{ServerError};
+        for my $Key ( sort keys %{$Validation} ) {
+            my $Error = $FindError->( $Validation->{$Key} );
+            return $Error if $Error;
+        }
+        return;
+    };
+    my $Error = $FindError->($Result);
+    undef $FindError;
+    if ($Error) {
+        $Result->{ServerError} = 1;
+        $Result->{ErrorMessage} = $Error->{ErrorMessage} || 'Please complete the required fields.';
+    }
+    return $Result || {
+        ServerError  => undef,
+        ErrorMessage => undef,
+    };
+}
+
+sub _SubmittedSetHasData {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{ParamObject};
+    return if !IsHashRefWithData( $Param{DynamicField} );
+
+    my $ProcessSuffix = $Param{DynamicFieldConfig}->{ProcessSuffix} // '';
+
+    SETINDEX:
+    for my $SetIndex ( @{ $Param{SetIndex} || [] } ) {
+        NAME:
+        for my $Name ( sort keys $Param{DynamicField}->%* ) {
+            my $Prefix    = 'DynamicField_' . $Name . $ProcessSuffix . '_' . $SetIndex;
+            my $FieldType = $Param{DynamicField}->{$Name}->{FieldType} || '';
+
+            if ( $FieldType eq 'Date' || $FieldType eq 'DateTime' ) {
+                my $Used = $Param{ParamObject}->GetParam( Param => $Prefix . 'Used' );
+                return 1 if defined $Used && "$Used" =~ m{\S};
+
+                next NAME;
+            }
+
+            for my $ParamName (
+                $Prefix,
+                )
+            {
+                my @Value = $Param{ParamObject}->GetArray( Param => $ParamName );
+                if (!@Value) {
+                    my $Value = $Param{ParamObject}->GetParam( Param => $ParamName );
+                    @Value = defined $Value ? ($Value) : ();
+                }
+
+                VALUE:
+                for my $Value (@Value) {
+                    next VALUE if !defined $Value;
+                    return 1 if "$Value" =~ m{\S};
+                }
+            }
+        }
+    }
+
+    return;
+}
+
+sub _SubmittedSetIndexListGet {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $DynamicField       = $Param{DynamicField};
+    my $ParamObject        = $Param{ParamObject};
+
+    return (0) if !$DynamicFieldConfig->{Config}{MultiValue};
+    return (0) if !$ParamObject;
+
+    my %SetIndex;
+
+    my @DataAll = $ParamObject->GetArray(
+        Param => 'SetIndex_' . $DynamicFieldConfig->{Name},
+    );
+
+    DATA:
+    for my $Index (@DataAll) {
+        next DATA if !defined $Index;
+        next DATA if $Index !~ /^\d+\z/;
+
+        $SetIndex{$Index} = 1;
+    }
+
+    my @ParamNames = $ParamObject->GetParamNames();
+    my $ProcessSuffix = $DynamicFieldConfig->{ProcessSuffix} // '';
+
+    FIELD:
+    for my $Name ( sort keys $DynamicField->%* ) {
+        my $Prefix = 'DynamicField_' . $Name . $ProcessSuffix . '_';
+
+        PARAM:
+        for my $ParamName (@ParamNames) {
+            next PARAM if !defined $ParamName;
+            next PARAM if $ParamName !~ /^\Q$Prefix\E(\d+)(?:\D.*)?\z/;
+
+            $SetIndex{$1} = 1;
+        }
+    }
+
+    my @SetIndex = sort { $a <=> $b } keys %SetIndex;
+
+    return @SetIndex;
 }
 
 sub DisplayValueRender {
@@ -933,6 +1078,7 @@ sub ValueIsDifferent {
 
 sub GetFieldState {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     my %GetParam  = $Param{GetParam}->%*;
     my %DFParam   = %{ $GetParam{DynamicField} // {} };
@@ -1226,7 +1372,26 @@ sub _GetIncludedDynamicFields {
             Name => $DFEntry->{DF},
         );
 
-        return $DynamicField;
+        return if !IsHashRefWithData($DynamicField);
+
+        my %DynamicFieldCopy = %{$DynamicField};
+        $DynamicFieldCopy{Config} = {
+            %{ $DynamicFieldCopy{Config} || {} },
+        };
+
+        $Self->_LegacyGovernanceSetReferenceConfigApply(
+            DynamicFieldConfig => \%DynamicFieldCopy,
+        );
+
+        if (
+            ( $DynamicFieldCopy{FieldType} || '' ) eq 'GeneralCatalog'
+            && !$DynamicFieldCopy{Config}{Class}
+            )
+        {
+            $DynamicFieldCopy{FieldType} = 'Text';
+        }
+
+        return \%DynamicFieldCopy;
     };
 
     ITEM:
@@ -1286,6 +1451,136 @@ sub _GetIncludedDynamicFields {
     return \%DynamicField;
 }
 
+sub _LegacyGovernanceSetReferenceConfigApply {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    return if !IsHashRefWithData($DynamicFieldConfig);
+
+    my $Name   = $DynamicFieldConfig->{Name} || '';
+    my $Config = $DynamicFieldConfig->{Config} ||= {};
+
+    my %GovernanceObjectClassByField = (
+        'ZBlue-Profile'    => ['GovernanceRole'],
+        'ZBlue-Role'       => ['GovernanceRole'],
+        'ZBlue-Template'   => ['Template'],
+        'ZBlue-PurpleBook' => ['BlueBook'],
+    );
+
+    my %GovernanceObjectFieldDefaults = (
+        'ZBlue-Profile' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+        'ZBlue-Role' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-Template' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+        'ZBlue-PurpleBook' => {
+            MultiValue   => 0,
+            PossibleNone => 1,
+        },
+    );
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GovernanceObject'
+        && !IsArrayRefWithData( $Config->{ClassIDs} )
+        && IsArrayRefWithData( $GovernanceObjectClassByField{$Name} )
+        )
+    {
+        my @ClassIDs = $Self->_GovernanceObjectClassIDsResolve(
+            Classes => $GovernanceObjectClassByField{$Name},
+        );
+
+        if (@ClassIDs) {
+            $Config->{ClassIDs}     = \@ClassIDs;
+            $Config->{DisplayType}  ||= 'GovernanceObjectName';
+            $Config->{DefaultValue} = '' if !defined $Config->{DefaultValue};
+            $Config->{Link}         = '' if !defined $Config->{Link};
+            $Config->{LinkPreview}  = '' if !defined $Config->{LinkPreview};
+        }
+    }
+
+    if ( IsHashRefWithData( $GovernanceObjectFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GovernanceObjectFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GovernanceObjectFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    my %GeneralCatalogClassByField = (
+        'ZBlue-TicketType' => 'ZTSM::Type',
+    );
+
+    my %GeneralCatalogFieldDefaults = (
+        'ZBlue-TicketType' => {
+            MultiValue   => 0,
+            PossibleNone => 0,
+        },
+    );
+
+    if (
+        ( $DynamicFieldConfig->{FieldType} || '' ) eq 'GeneralCatalog'
+        && !$Config->{Class}
+        && $GeneralCatalogClassByField{$Name}
+        )
+    {
+        $Config->{Class} = $GeneralCatalogClassByField{$Name};
+    }
+
+    if ( IsHashRefWithData( $GeneralCatalogFieldDefaults{$Name} ) ) {
+        for my $Key ( sort keys %{ $GeneralCatalogFieldDefaults{$Name} } ) {
+            $Config->{$Key} = $GeneralCatalogFieldDefaults{$Name}->{$Key}
+                if !defined $Config->{$Key};
+        }
+    }
+
+    return 1;
+}
+
+sub _GovernanceObjectClassIDsResolve {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsArrayRefWithData( $Param{Classes} );
+
+    my $ClassID2Name = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(
+        Class => 'ZTSM::GovernanceObject::Class',
+    ) || {};
+
+    my %ClassIDByNormalizedName = map {
+        my $Name = $ClassID2Name->{$_} // '';
+        $Name =~ s{\s+}{}g;
+        lc $Name => $_;
+    } grep { defined $ClassID2Name->{$_} } keys %{$ClassID2Name};
+
+    my @ClassIDs;
+    my %Seen;
+    CLASS:
+    for my $Class ( @{ $Param{Classes} } ) {
+        next CLASS if !defined $Class || $Class eq '';
+
+        if ( $Class =~ m{\A\d+\z}xms ) {
+            next CLASS if $Seen{$Class}++;
+            push @ClassIDs, $Class;
+            next CLASS;
+        }
+
+        my $Normalized = $Class;
+        $Normalized =~ s{\s+}{}g;
+        my $ClassID = $ClassIDByNormalizedName{ lc $Normalized };
+        next CLASS if !$ClassID;
+        next CLASS if $Seen{$ClassID}++;
+
+        push @ClassIDs, $ClassID;
+    }
+
+    return @ClassIDs;
+}
+
 sub _GetIncludedFieldOrdered {
     my ( $Self, %Param ) = @_;
 
@@ -1317,22 +1612,154 @@ sub _MergeValues {
     my ( $Self, %Param ) = @_;
 
     my @Return;
+    my $GetParamValue = ref $Param{GetParamValue} eq 'ARRAY' ? $Param{GetParamValue} : [];
 
-    # we need a merge with respect to the nested structure
     SETINDEX:
-    for my $SetIndex ( 0 .. $#{ $Param{GetParamValue} } ) {
+    for my $SetIndex ( 0 .. $#{$GetParamValue} ) {
+        next SETINDEX if ref $GetParamValue->[$SetIndex] ne 'HASH';
 
-        # pre-fill new values with existing ones
-        $Return[$SetIndex]->%* = $Param{GetParamValue}[$SetIndex]->%*;
+        $Return[$SetIndex] = { %{ $GetParamValue->[$SetIndex] } };
 
-        if ( defined $Param{NewValue} && IsArrayRefWithData( $Param{NewValue} ) ) {
-            for my $NewValueKey ( keys $Param{NewValue}[$SetIndex]->%* ) {
-                $Return[$SetIndex]{$NewValueKey} = $Param{NewValue}[$SetIndex]{$NewValueKey};
-            }
+        next SETINDEX if ref $Param{NewValue} ne 'ARRAY';
+        next SETINDEX if ref $Param{NewValue}->[$SetIndex] ne 'HASH';
+
+        for my $NewValueKey ( keys %{ $Param{NewValue}->[$SetIndex] } ) {
+            $Return[$SetIndex]{$NewValueKey} = $Param{NewValue}->[$SetIndex]{$NewValueKey};
         }
     }
 
     return \@Return;
 }
 
+sub _RenderContentGet {
+    my ( $Self, %Param ) = @_;
+
+    my $DynamicFieldConfig = $Param{DynamicFieldConfig};
+    my $Include            = $DynamicFieldConfig->{Config}{Include} || [];
+
+    return $Include if !IsArrayRefWithData($Include);
+
+    my @Fields = $Self->_RenderFieldListGet(
+        Include => $Include,
+    );
+
+    return $Include if !@Fields;
+
+    if ( ( $DynamicFieldConfig->{Config}{RenderLayout} || 'Vertical' ) ne 'Horizontal' ) {
+        return [ map { { $_->%* } } @Fields ];
+    }
+
+    return [
+        {
+            Grid => {
+                Columns => scalar @Fields,
+                Rows    => [ \@Fields ],
+            },
+        },
+    ];
+}
+
+sub _RenderFieldListGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Include = $Param{Include};
+
+    return if !IsArrayRefWithData($Include);
+
+    my @Fields;
+
+    ELEMENT:
+    for my $Element ( $Include->@* ) {
+
+        next ELEMENT if !IsHashRefWithData($Element);
+
+        if ( $Element->{DF} ) {
+            push @Fields, { $Element->%* };
+            next ELEMENT;
+        }
+
+        next ELEMENT if !IsHashRefWithData( $Element->{Grid} );
+        next ELEMENT if !IsArrayRefWithData( $Element->{Grid}{Rows} );
+
+        ROW:
+        for my $Row ( $Element->{Grid}{Rows}->@* ) {
+
+            next ROW if ref $Row ne 'ARRAY';
+
+            FIELD:
+            for my $Field ( $Row->@* ) {
+
+                next FIELD if !IsHashRefWithData($Field);
+                next FIELD if !$Field->{DF};
+
+                push @Fields, { $Field->%* };
+            }
+        }
+    }
+
+    return @Fields;
+}
+
+sub _RenderLayoutClassGet {
+    my ( $Self, %Param ) = @_;
+
+    my $RenderLayout = $Param{DynamicFieldConfig}{Config}{RenderLayout} || 'Vertical';
+
+    return ' DynamicFieldSetLayoutHorizontal' if $RenderLayout eq 'Horizontal';
+    return ' DynamicFieldSetLayoutVertical';
+}
+
+sub _FieldClassBaseGet {
+    return 'DynamicFieldSet';
+}
+
+sub _FieldSetClassGet {
+    return 'DynamicFieldSet';
+}
+
+sub _FieldTemplateFileGet {
+    my ( $Self, %Param ) = @_;
+
+    return $Param{CustomerInterface}
+        ? 'DynamicField/Customer/Set'
+        : 'DynamicField/Agent/Set';
+}
+
 1;
+
+sub _ScriptBlockValidationError {
+    my ($Config, $Rows) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return if !Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    eval { Kernel::System::TESSERA::ScriptBlocks::Assemble(Field => $Config->{Name}, Rows => $Rows); 1 };
+    my $Error = $@;
+    $Error =~ s/\s+\z//;
+    return $Error || undef;
+}
+
+# Form identity only: exported member names and stored field IDs remain unchanged.
+sub _ScriptSetFormConfig {
+    my ($Config) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return $Config if !Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    my $Suffix = '__Set_' . $Config->{Name};
+    my $Current = $Config->{ProcessSuffix} // '';
+    $Current .= $Suffix if $Current !~ /\Q$Suffix\E\z/;
+    return {%{$Config}, ProcessSuffix => $Current};
+}
+
+sub _ScriptSetStoredRows {
+    my ($Config, $Rows) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    my $Spec = Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    return $Rows if !$Spec || $Spec->[0] ne 'ZTemplate-ScriptIndex';
+    my $Last = -1;
+    for my $Position (0 .. $#{$Rows}) {
+        my $Text = $Rows->[$Position]{$Spec->[1]};
+        $Text = $Text->[0] if ref $Text eq 'ARRAY' && @{$Text} == 1;
+        $Last = $Position if defined $Text && (ref $Text || $Text ne '');
+    }
+    # Native source member positions are the persistent order. Index is their
+    # canonical 1-based ordinal; a sibling's shared counter cannot create rows.
+    return [map { +{%{$Rows->[$_]}, $Spec->[0] => 1 + $_} } 0 .. $Last];
+}

@@ -706,7 +706,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMRoleDirector: Ticket is onhold, skip role resolution TicketID=$TicketID",
+            Message  => "TESSERA RoleDirector: Ticket is onhold, skip role resolution TicketID=$TicketID",
         );
         return 1;
     }
@@ -797,7 +797,7 @@ sub Run {
                     ? grep { ref $_ eq 'HASH' && $_->{Type} && defined $_->{Value} } @{$Assignments}
                     : ();
                 if ( @Targets != 1 ) {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: TransitionAction requires one SupportAssignment target; found " . scalar(@Targets) . " TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: TransitionAction requires one SupportAssignment target; found " . scalar(@Targets) . " TicketID=$TicketID" );
                     return 1;
                 }
                 if ( $Targets[0]->{Type} eq 'GovernanceObject.SupportProfile' ) {
@@ -807,7 +807,7 @@ sub Run {
                     $RequesterOwnerUserID = $Targets[0]->{Value};
                 }
                 else {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: unsupported SupportAssignment target type $Targets[0]->{Type} TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: unsupported SupportAssignment target type $Targets[0]->{Type} TicketID=$TicketID" );
                     return 1;
                 }
             }
@@ -818,7 +818,7 @@ sub Run {
             {
                 my $Targets = $ScriptResult->{Value};
                 if ( ref $Targets ne 'ARRAY' ) {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
                     return 1;
                 }
                 if ( !@{$Targets} ) {
@@ -837,7 +837,7 @@ sub Run {
                 if ( @{$Targets} != 1 ) {
                     $LogObject->Log(
                         Priority => 'notice',
-                        Message  => 'ZTSMRoleDirector: multiple typed targets require GenericAgent reconciliation; found '
+                        Message  => 'TESSERA RoleDirector: multiple typed targets require GenericAgent reconciliation; found '
                             . scalar(@{$Targets}) . " TicketID=$TicketID",
                     );
                     return 1;
@@ -852,7 +852,7 @@ sub Run {
             else {
                 $LogObject->Log(
                     Priority => 'error',
-                    Message  => 'ZTSMRoleDirector: GovernanceRole script returned unsupported type '
+                    Message  => 'TESSERA RoleDirector: GovernanceRole script returned unsupported type '
                         . ( $ScriptResult->{ValueType} || 'N/A' ) . " TicketID=$TicketID",
                 );
                 return 1;
@@ -862,7 +862,7 @@ sub Run {
         elsif ( ( $ScriptResult->{Status} || '' ) ne 'NO_SCRIPT' ) {
             $LogObject->Log(
                 Priority => 'error',
-                Message  => 'ZTSMRoleDirector: GovernanceRole script resolution failed '
+                Message  => 'TESSERA RoleDirector: GovernanceRole script resolution failed '
                     . ( $ScriptResult->{Error} || 'UNKNOWN' ) . " TicketID=$TicketID",
             );
             return 1;
@@ -1023,7 +1023,7 @@ sub Run {
             Priority => 'error',
 
             Message =>
-                  'ZTSMRoleDirector: '
+                  'TESSERA RoleDirector: '
                 . 'Unsupported governance profile: '
                 . $ProfileDisplay,
         );
@@ -1071,7 +1071,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $TicketID,
-            Subject  => 'ZTSM Requester Default Resolved',
+            Subject  => 'TESSERA Requester Default Resolved',
             Body     => $Body,
             HistoryComment => 'ZTSM: Requester default resolved to owner',
             UserID   => 1,
@@ -1100,7 +1100,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $TicketID,
-            Subject  => 'ZTSM Governance Resolution Failed',
+            Subject  => 'TESSERA Governance Resolution Failed',
             Body     => $Body,
             HistoryComment =>
                 'ZTSM: Governance resolution failed '
@@ -1155,7 +1155,7 @@ sub Run {
     ZTSMArticleCreate(
         %Param,
         TicketID => $TicketID,
-        Subject  => 'ZTSM Governance Profile Resolved',
+        Subject  => 'TESSERA Governance Profile Resolved',
         Body     => $Body,
         HistoryComment =>
             'ZTSM: Governance resolved '
@@ -1169,7 +1169,7 @@ sub Run {
         Priority => 'notice',
 
         Message =>
-              'ZTSMRoleDirector: '
+              'TESSERA RoleDirector: '
             . 'Governance profile resolved '
             . "TicketID=$TicketID "
             . "Profile=$Profile "

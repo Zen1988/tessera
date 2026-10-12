@@ -54,8 +54,8 @@ is_deeply(
 ok( !exists $Control->{fields}{'ZRM-ImpactFactor'}, 'TESSERA-only factors are not invented' );
 ok( !exists $Control->{fields}{'ZRM-ControlCategory'}, 'OSCAL domain is not confused with TESSERA control category' );
 ok( !exists $Control->{fields}{'ZRM-ControlClass'}, 'OSCAL domain is not imported as customer-authored control target language' );
-ok( !exists $Control->{fields}{'ZRM-PolicyFilter'}, 'OSCAL prose is not imported as programmable policy filter logic' );
-ok( !exists $Control->{fields}{'ZRM-PolicyEvaluation'}, 'OSCAL prose is not imported as programmable policy evaluation logic' );
+ok( !exists $Control->{fields}{'PolicyFilter'}, 'OSCAL prose is not imported as programmable policy filter logic' );
+ok( !exists $Control->{fields}{'PolicyEvaluation'}, 'OSCAL prose is not imported as programmable policy evaluation logic' );
 
 my ($RiskStatement) = grep { $_->{class} eq 'RiskStatement' && $_->{fields}{'ZRM-Annex'} eq 'AS-1' } @{ $Plan->{Documents} };
 is( $RiskStatement->{fields}{'ZRM-PolicyReference'}, $Control->{fields}{'ZRM-PolicyReference'}, 'RiskStatement receives the same OSCAL control references' );
@@ -111,21 +111,21 @@ is_deeply(
         $Inherited,
         {
             'ZRM-ControlClass'     => '@TICKET',
-            'ZRM-PolicyFilter'     => 'return $RiskLevel eq q{medium};',
-            'ZRM-PolicyEvaluation' => 'return $Evidence->{Passed};',
+            'PolicyFilter'     => 'return $RiskLevel eq q{medium};',
+            'PolicyEvaluation' => 'return $Evidence->{Passed};',
         },
         'new Annex version inherits only customer-authored programming from the latest prior ControlObjective',
     );
     is_deeply(
         Kernel::System::GovernanceObject::OSCALImport::_ControlProgrammingFromItem({
-            'DynamicField_ZRM-PolicyFilter'     => 'existing filter',
-            'DynamicField_ZRM-PolicyEvaluation' => 'existing evaluation',
+            'DynamicField_PolicyFilter'     => 'existing filter',
+            'DynamicField_PolicyEvaluation' => 'existing evaluation',
             'DynamicField_ZRM-ControlClass'      => '@GovernanceObject.ControlObjective',
         }),
         {
             'ZRM-ControlClass'     => '@GovernanceObject.ControlObjective',
-            'ZRM-PolicyFilter'     => 'existing filter',
-            'ZRM-PolicyEvaluation' => 'existing evaluation',
+            'PolicyFilter'     => 'existing filter',
+            'PolicyEvaluation' => 'existing evaluation',
         },
         'same-version re-import preserves all existing programmable policy fields',
     );
@@ -141,8 +141,8 @@ sub GovernanceObjectGet {
         Class                               => 'ControlObjective',
         DynamicField_ZRM_Version            => '2025.05.13',
         'DynamicField_ZRM-Version'           => '2025.05.13',
-        'DynamicField_ZRM-PolicyFilter'      => 'return $RiskLevel eq q{medium};',
-        'DynamicField_ZRM-PolicyEvaluation'  => 'return $Evidence->{Passed};',
+        'DynamicField_PolicyFilter'      => 'return $RiskLevel eq q{medium};',
+        'DynamicField_PolicyEvaluation'  => 'return $Evidence->{Passed};',
         'DynamicField_ZRM-ControlClass'       => '@TICKET',
     };
 }

@@ -2,6 +2,7 @@ package Kernel::System::TESSERA::PolicyEvaluation;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 use DateTime;
 
 sub new { my ( $Type, %Param ) = @_; bless \%Param, $Type }
@@ -73,11 +74,11 @@ sub _Evaluate {
         my ($Owner) = split /\./, $Type;
         die "Selection script field is not defined on the target.\n"
             if !$Config || ($Config->{ObjectType} || '') ne $Owner;
-        my $Source = $This->{"DynamicField_$Field"} // $This->{$Field};
+        my $Source = ObjectSource(Object => $This, Field => $Field);
         $Source = $Source->[0] if ref $Source eq 'ARRAY' && @{$Source} == 1;
-        die "Selection script is empty or malformed.\n" if !defined $Source || ref $Source || $Source !~ /\S/ || length($Source) > 65536;
+        die "Selection script is empty or malformed.\n" if !defined $Source || ref $Source || $Source !~ /\S/ || length($Source) > 376200;
         my $Selected = $Self->{Engine}->ScriptEvaluate(Source => $Source, Complete => 1,
-            UserID => $Param{UserID}, Context => $Context);
+            UserID => $Param{UserID}, Context => $Context, AllowedSearchType => $Rule->{AS});
         die (($Selected->{Error} || 'Selection script failed.') . "\n") if !$Selected->{Success};
         die "Selection must return the declared typed collection.\n"
             if ($Selected->{ValueType} || '') ne 'Collection<' . $Rule->{AS} . '>'

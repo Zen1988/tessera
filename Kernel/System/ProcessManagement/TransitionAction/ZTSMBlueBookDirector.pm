@@ -63,7 +63,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMBlueBookDirector: Ticket is onhold, skip BlueBook advance TicketID=$TicketID",
+            Message  => "TESSERA BlueBookDirector: Ticket is onhold, skip BlueBook advance TicketID=$TicketID",
         );
         return 1;
     }
@@ -91,7 +91,7 @@ sub Run {
     if ( !$BlueBook || ref $BlueBook ne 'HASH' ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookDirector: Failed loading BlueBook=$BlueBookID TicketID=$TicketID",
+            Message  => "TESSERA BlueBookDirector: Failed loading BlueBook=$BlueBookID TicketID=$TicketID",
         );
         return;
     }
@@ -111,7 +111,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  "ZTSMBlueBookDirector: No next BlueLevel "
+                  "TESSERA BlueBookDirector: No next BlueLevel "
                 . "TicketID=$TicketID "
                 . "BlueBook=$BlueBookID "
                 . "CurrentBlueLevel=$CurrentBlueLevel",
@@ -155,7 +155,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMBlueBookDirector: BlueBook advanced "
+              "TESSERA BlueBookDirector: BlueBook advanced "
             . "TicketID=$TicketID "
             . "BlueBook=$BlueBookID "
             . "FromBlueLevel=$CurrentBlueLevel "

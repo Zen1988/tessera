@@ -198,7 +198,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMChapterDirector: Ticket is onhold, skip chapter orchestration TicketID=$TicketID",
+            Message  => "TESSERA ChapterDirector: Ticket is onhold, skip chapter orchestration TicketID=$TicketID",
         );
         return 1;
     }
@@ -259,7 +259,7 @@ sub Run {
         ) {
             $LogObject->Log(
                 Priority => 'notice',
-                Message => "ZTSMChapterDirector: Ignore completion outside current execution position "
+                Message => "TESSERA ChapterDirector: Ignore completion outside current execution position "
                     . "ChildTicketID=$TicketID ParentTicketID=$ParentTicketID",
             );
             return 1;
@@ -407,7 +407,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $ParentTicketID,
-            Subject  => 'ZTSM Mandatory Chapter Failed',
+            Subject  => 'TESSERA Mandatory Chapter Failed',
             Body     => $Body,
             HistoryComment =>
                 'ZTSM: Mandatory Chapter failed',
@@ -464,7 +464,7 @@ sub Run {
             Priority => 'error',
 
             Message =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . 'Mandatory Chapter failed '
                 . "ParentTicketID=$ParentTicketID "
                 . "Chapter=$Chapter",
@@ -493,7 +493,7 @@ sub Run {
             Priority => 'notice',
 
             Message =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . 'Waiting for ChapterPlay completion '
                 . "Chapter=$Chapter "
                 . "BlueLevel=$BlueLevel",
@@ -697,7 +697,7 @@ sub Run {
             ZTSMArticleCreate(
                 %Param,
                 TicketID => $ParentTicketID,
-                Subject  => 'ZTSM Parent Closed Without Action',
+                Subject  => 'TESSERA Parent Closed Without Action',
                 Body     => $Body,
                 HistoryComment =>
                     'ZTSM: Parent closed from sole mandatory no-action task',
@@ -707,7 +707,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'notice',
                 Message  =>
-                      'ZTSMChapterDirector: '
+                      'TESSERA ChapterDirector: '
                     . 'Sole mandatory neutral closure propagated '
                     . "ParentTicketID=$ParentTicketID "
                     . "ChildTicketID=$TicketID "
@@ -827,7 +827,7 @@ sub Run {
             ZTSMArticleCreate(
                 %Param,
                 TicketID => $ParentTicketID,
-                Subject  => 'ZTSM Additional ChapterPlay Generated',
+                Subject  => 'TESSERA Additional ChapterPlay Generated',
                 Body     => $Body,
                 HistoryComment =>
                     'ZTSM: Additional ChapterPlay generated',
@@ -862,7 +862,7 @@ sub Run {
     ZTSMArticleCreate(
         %Param,
         TicketID => $ParentTicketID,
-        Subject  => 'ZTSM Chapter Completed',
+        Subject  => 'TESSERA Chapter Completed',
         Body     => $Body,
         HistoryComment =>
             'ZTSM: Chapter completed '
@@ -887,7 +887,7 @@ sub Run {
         Priority => 'notice',
 
         Message =>
-              'ZTSMChapterDirector: '
+              'TESSERA ChapterDirector: '
             . 'Chapter completed '
             . "ParentTicketID=$ParentTicketID "
             . "Chapter=$Chapter "
@@ -898,7 +898,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . "Parent ticket not found ParentTicketID=$ParentTicketID "
                 . "ChildTicketID=$TicketID",
         );
@@ -918,7 +918,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . 'Waiting for BlueLevel completion '
                 . "ParentTicketID=$ParentTicketID "
                 . "BlueBook=$BlueBook "
@@ -963,7 +963,7 @@ sub Run {
             ZTSMArticleCreate(
                 %Param,
                 TicketID => $ParentTicketID,
-                Subject  => 'ZTSM Follow-up Advanced',
+                Subject  => 'TESSERA Follow-up Advanced',
                 Body     =>
                       "** Note: This is a system-generated follow-up orchestration update message.\n\n"
                     . "Follow-up PurpleBook advanced to the next level.\n\n"
@@ -985,7 +985,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'notice',
                 Message  =>
-                      'ZTSMChapterDirector: '
+                      'TESSERA ChapterDirector: '
                     . 'Follow-up PurpleBook advanced '
                     . "ParentTicketID=$ParentTicketID "
                     . "PurpleBook=$BlueBook "
@@ -1010,7 +1010,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      'ZTSMChapterDirector: '
+                      'TESSERA ChapterDirector: '
                     . 'Follow-up BlueBook complete but original ticket state restore failed '
                     . "ParentTicketID=$ParentTicketID "
                     . "PurpleBook=$BlueBook "
@@ -1035,7 +1035,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $ParentTicketID,
-            Subject  => 'ZTSM Follow-up Completed',
+            Subject  => 'TESSERA Follow-up Completed',
             Body     =>
                   "** Note: This is a system-generated follow-up orchestration update message.\n\n"
                 . "Follow-up BlueBook completed successfully.\n\n"
@@ -1051,7 +1051,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . 'Follow-up BlueBook complete, original ticket restored '
                 . "ParentTicketID=$ParentTicketID "
                 . "PurpleBook=$BlueBook "
@@ -1065,7 +1065,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  'ZTSMChapterDirector: '
+                  'TESSERA ChapterDirector: '
                 . 'BlueLevel complete, advancing BlueBook '
                 . "ParentTicketID=$ParentTicketID "
                 . "BlueBook=$BlueBook "
@@ -1085,7 +1085,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              'ZTSMChapterDirector: '
+              'TESSERA ChapterDirector: '
             . 'BlueBook complete, resuming StateBook '
             . "ParentTicketID=$ParentTicketID "
             . "BlueBook=$BlueBook "

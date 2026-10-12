@@ -312,7 +312,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMServiceLibrarian: Ticket is onhold, skip governance context resolution TicketID=$TicketID",
+            Message  => "TESSERA ServiceLibrarian: Ticket is onhold, skip governance context resolution TicketID=$TicketID",
         );
         return 1;
     }
@@ -320,7 +320,7 @@ sub Run {
     if ( _NormalizeValue( $Ticket->{'DynamicField_ZTicket-StateBook'} ) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMServiceLibrarian: Ticket already has ZTicket-StateBook, skip governance context resolution TicketID=$TicketID",
+            Message  => "TESSERA ServiceLibrarian: Ticket already has ZTicket-StateBook, skip governance context resolution TicketID=$TicketID",
         );
         return 1;
     }
@@ -762,7 +762,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message =>
-                      "ZTSM: Failed updating "
+                      "TESSERA: Failed updating "
                     . "$FieldName "
                     . "TicketID=$TicketID",
             );
@@ -876,7 +876,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSM: Governance resolved "
+              "TESSERA: Governance resolved "
             . "TicketID=$TicketID "
             . "ServiceSupportMap=$WinnerID "
             . "Score=$HighestScore",

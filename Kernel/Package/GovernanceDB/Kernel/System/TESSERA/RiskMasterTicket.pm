@@ -2,6 +2,7 @@ package Kernel::System::TESSERA::RiskMasterTicket;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
 
@@ -74,7 +75,7 @@ sub _EnsureLocked {
     die "Risk Framework $FrameworkID is unavailable.\n"
         if ref $Framework ne 'HASH' || ( $Framework->{Class} || '' ) ne 'Framework';
 
-    my $Source = _Scalar( $Framework->{'DynamicField_ZRM-MasterTicket'} );
+    my $Source = ObjectSource(Object => $Framework, Field => 'MasterTicket');
     my $StateBookID = _SingleID( $Framework->{'DynamicField_ZRM-RiskMgtStateBook'} );
     return 1 if !$Source || !$StateBookID;
     my $Evaluated = $Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine')->FieldAssignmentsEvaluate(

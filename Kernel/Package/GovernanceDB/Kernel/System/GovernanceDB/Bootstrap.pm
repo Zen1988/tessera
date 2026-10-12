@@ -6,6 +6,7 @@ package Kernel::System::GovernanceDB::Bootstrap;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(SplitSource);
 use File::Find ();
 use File::Path qw(make_path);
 
@@ -129,6 +130,7 @@ sub InstallDefaults {
 
     $Self->_ITSMControlDefaultsEnsure();
     $Self->_AdvisoryQuestionnaireEnsure();
+    $Self->_ScriptBlockFieldsEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
 
@@ -1264,7 +1266,7 @@ END_APPLICATION_OWNER_SCRIPT
             'DynamicField_ZTSM-Code'   => $Role,
             'DynamicField_ZTSM-Status' => 'Active',
             ( $RoleDefinition->{Script}
-                ? ( 'DynamicField_ZTSM-ScriptEngine' => $RoleDefinition->{Script} )
+                ? ( 'DynamicField_ScriptEngine' => SplitSource(Field => 'ScriptEngine', Source => $RoleDefinition->{Script}) )
                 : () ),
             UserID       => 1,
         );
@@ -1278,7 +1280,7 @@ END_APPLICATION_OWNER_SCRIPT
             my %FieldValue = (
                 'ZTSM-Code'   => $Role,
                 'ZTSM-Status' => 'Active',
-                ( $RoleDefinition->{Script} ? ( 'ZTSM-ScriptEngine' => $RoleDefinition->{Script} ) : () ),
+                ( $RoleDefinition->{Script} ? ( 'ScriptEngine' => SplitSource(Field => 'ScriptEngine', Source => $RoleDefinition->{Script}) ) : () ),
             );
             my @FailedField;
             for my $FieldName ( sort keys %FieldValue ) {
@@ -1999,6 +2001,7 @@ sub _DynamicFieldsEnsure {
                     map {
                         {
                             DF => $_->{DF},
+                            (exists $_->{Mandatory} ? (Mandatory => $_->{Mandatory}) : ()),
                         }
                     } @{ $Config->{Include} },
                 ],
@@ -3559,4 +3562,42 @@ sub _FirewallProtocolCaseEnsure {
     my $OK=$Self->_DynamicFieldUpdateForce(%$F,Config=>\%Config,UserID=>1,Reorder=>0);
     $DF->EventHandlerTransaction() if $OK;
     return $OK;
+}
+
+sub _ScriptBlockFieldsEnsure {
+    my ($Self) = @_;
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $Content = $Kernel::OM->Get('Kernel::System::Main')->FileRead(Location => "$Home/var/governancedb/script_block_fields.json", Mode => 'utf8');
+    return if !$Content;
+    my $Seed = $Kernel::OM->Get('Kernel::System::JSON')->Decode(Data => $$Content);
+    my $DF = $Kernel::OM->Get('Kernel::System::DynamicField');
+    for my $F (sort { ($a->{FieldType} eq 'Set') <=> ($b->{FieldType} eq 'Set') || $a->{Name} cmp $b->{Name} } @{$Seed->{Fields}}) {
+        my $Existing = $DF->DynamicFieldGet(Name => $F->{Name});
+        if (!$Existing) {
+            die "Cannot create script block field $F->{Name}\n" if !$DF->DynamicFieldAdd(
+                Name => $F->{Name}, Label => $F->{Label}, FieldOrder => $F->{FieldOrder},
+                FieldType => $F->{FieldType}, ObjectType => $F->{ObjectType}, Config => $F->{Config},
+                ValidID => 1, UserID => 1, Reorder => 0);
+            next;
+        }
+        # Correct only the exact exported single-digit index rule. Custom rules
+        # and every unrelated field definition remain administrator-owned.
+        next if $F->{Name} !~ /\A(?:ZTAM-ConditionIndex|ZTemplate-ScriptIndex)\z/;
+        my $Rules = $Existing->{Config}{RegExList};
+        next if ref $Rules ne 'ARRAY';
+        my @New = map { +{%$_} } @{$Rules};
+        my $Changed;
+        for my $Rule (@New) {
+            next if ($Rule->{Value} || '') ne '^[0-9]$';
+            $Rule->{Value} = '^[1-9][0-9]?$';
+            $Rule->{ErrorMessage} = 'Index must be an integer from 1 to 99.';
+            $Changed = 1;
+        }
+        if ($Changed) {
+            die "Cannot update script index rule\n" if !$Self->_DynamicFieldUpdateForce(
+                %{$Existing}, Config => {%{$Existing->{Config}}, RegExList => \@New}, UserID => 1, Reorder => 0);
+        }
+    }
+    $DF->EventHandlerTransaction();
+    return 1;
 }

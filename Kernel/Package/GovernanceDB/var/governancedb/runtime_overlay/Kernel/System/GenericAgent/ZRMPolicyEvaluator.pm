@@ -6,6 +6,7 @@ package Kernel::System::GenericAgent::ZRMPolicyEvaluator;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 
 use Digest::SHA qw(sha256_hex);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleCreate);
@@ -60,8 +61,17 @@ sub Run {
         );
         next CONTROL if !IsHashRefWithData($Control);
 
-        my $Filter = _Scalar( $Control->{'DynamicField_ZRM-PolicyFilter'} );
-        my $Policy = _Scalar( $Control->{'DynamicField_ZRM-PolicyEvaluation'} );
+        my ($Filter, $Policy);
+        my $Valid = eval {
+            $Filter = ObjectSource(Object => $Control, Field => 'PolicyFilter');
+            $Policy = ObjectSource(Object => $Control, Field => 'PolicyEvaluation');
+            1;
+        };
+        if (!$Valid) {
+            push @Results, {Control => $Control, Status => 'UNKNOWN', Stage => 'Applicability',
+                Result => {Status => 'UNKNOWN', Error => 'Invalid ordered script blocks.'}};
+            next CONTROL;
+        }
         next CONTROL if !defined $Filter || $Filter eq '';
         next CONTROL if !defined $Policy || $Policy eq '';
 

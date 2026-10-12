@@ -1843,7 +1843,7 @@ sub ZTSMStatusRecalc {
     if ( !defined $WarnStateList ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "ZTSM::GovernanceObject::Status Warning cannot be invalid.",
+            Message  => "TESSERA::GovernanceObject::Status Warning cannot be invalid.",
         );
     }
 

@@ -718,7 +718,7 @@ sub Run {
     if ( !$Param{Ticket} ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => 'ZTSMBlueBookReader: Stop, missing Ticket param',
+            Message  => 'TESSERA BlueBookReader: Stop, missing Ticket param',
         );
         return;
     }
@@ -731,7 +731,7 @@ sub Run {
     if ( !$TicketID ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => 'ZTSMBlueBookReader: Stop, missing TicketID',
+            Message  => 'TESSERA BlueBookReader: Stop, missing TicketID',
         );
         return;
     }
@@ -739,14 +739,14 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMBlueBookReader: Ticket is onhold, skip BlueBook orchestration TicketID=$TicketID",
+            Message  => "TESSERA BlueBookReader: Ticket is onhold, skip BlueBook orchestration TicketID=$TicketID",
         );
         return 1;
     }
 
     $LogObject->Log(
         Priority => 'notice',
-        Message  => "ZTSMBlueBookReader: Enter Run TicketID=$TicketID",
+        Message  => "TESSERA BlueBookReader: Enter Run TicketID=$TicketID",
     );
 
     my $BlueBookID = _NormalizeValue(
@@ -769,7 +769,7 @@ sub Run {
             $Ticket = \%FreshTicket;
             $LogObject->Log(
                 Priority => 'notice',
-                Message  => "ZTSMBlueBookReader: BlueBook resolved after ticket reload TicketID=$TicketID BlueBook=$BlueBookID",
+                Message  => "TESSERA BlueBookReader: BlueBook resolved after ticket reload TicketID=$TicketID BlueBook=$BlueBookID",
             );
         }
     }
@@ -777,7 +777,7 @@ sub Run {
     if ( !$BlueBookID ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Stop, missing ZTicket-BlueBook TicketID=$TicketID",
+            Message  => "TESSERA BlueBookReader: Stop, missing ZTicket-BlueBook TicketID=$TicketID",
         );
         return;
     }
@@ -790,7 +790,7 @@ sub Run {
     if ( !$BlueBook || ref $BlueBook ne 'HASH' ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Failed loading BlueBook=$BlueBookID TicketID=$TicketID",
+            Message  => "TESSERA BlueBookReader: Failed loading BlueBook=$BlueBookID TicketID=$TicketID",
         );
 
         return;
@@ -805,7 +805,7 @@ sub Run {
     if ( !$Records ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Stop, missing ZBlue-Record TicketID=$TicketID BlueBook=$BlueBookID",
+            Message  => "TESSERA BlueBookReader: Stop, missing ZBlue-Record TicketID=$TicketID BlueBook=$BlueBookID",
         );
         return;
     }
@@ -817,14 +817,14 @@ sub Run {
     if ( ref $Records ne 'ARRAY' ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Stop, invalid ZBlue-Record structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Records,
+            Message  => "TESSERA BlueBookReader: Stop, invalid ZBlue-Record structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Records,
         );
         return;
     }
 
     $LogObject->Log(
         Priority => 'notice',
-        Message  => "ZTSMBlueBookReader: Raw records TicketID=$TicketID BlueBook=$BlueBookID Count=" . scalar @{$Records},
+        Message  => "TESSERA BlueBookReader: Raw records TicketID=$TicketID BlueBook=$BlueBookID Count=" . scalar @{$Records},
     );
 
     my @ParsedRecords;
@@ -835,7 +835,7 @@ sub Run {
         if ( ref $Record ne 'HASH' ) {
             $LogObject->Log(
                 Priority => 'error',
-                Message  => "ZTSMBlueBookReader: Skip record, invalid structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Record,
+                Message  => "TESSERA BlueBookReader: Skip record, invalid structure TicketID=$TicketID BlueBook=$BlueBookID Ref=" . ref $Record,
             );
             next RECORD;
         }
@@ -857,7 +857,7 @@ sub Run {
         if ( !$Chapter ) {
             $LogObject->Log(
                 Priority => 'error',
-                Message  => "ZTSMBlueBookReader: Skip record, missing ZBlue-Chapter TicketID=$TicketID BlueBook=$BlueBookID BlueLevel=$BlueLevel",
+                Message  => "TESSERA BlueBookReader: Skip record, missing ZBlue-Chapter TicketID=$TicketID BlueBook=$BlueBookID BlueLevel=$BlueLevel",
             );
             next RECORD;
         }
@@ -900,7 +900,7 @@ sub Run {
     if ( !@ParsedRecords ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Stop, no parsed BlueBook records TicketID=$TicketID BlueBook=$BlueBookID",
+            Message  => "TESSERA BlueBookReader: Stop, no parsed BlueBook records TicketID=$TicketID BlueBook=$BlueBookID",
         );
         return;
     }
@@ -915,7 +915,7 @@ sub Run {
 
     $LogObject->Log(
         Priority => 'error',
-        Message  => "ZTSMBlueBookReader: Parsed records TicketID=$TicketID BlueBook=$BlueBookID Count="
+        Message  => "TESSERA BlueBookReader: Parsed records TicketID=$TicketID BlueBook=$BlueBookID Count="
             . scalar @ParsedRecords
             . " FirstBlueLevel=$CurrentBlueLevel",
     );
@@ -938,7 +938,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMBlueBookReader: Evaluate record spawn "
+                  "TESSERA BlueBookReader: Evaluate record spawn "
                 . "TicketID=$TicketID "
                 . "BlueBook=$BlueBookID "
                 . "BlueLevel=$CurrentBlueLevel "
@@ -968,7 +968,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMBlueBookReader: Existing ChapterPlay for record, skip record spawn "
+                      "TESSERA BlueBookReader: Existing ChapterPlay for record, skip record spawn "
                     . "TicketID=$TicketID "
                     . "BlueBook=$BlueBookID "
                     . "BlueLevel=$CurrentBlueLevel "
@@ -1014,7 +1014,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMBlueBookReader: TicketCreate failed "
+                      "TESSERA BlueBookReader: TicketCreate failed "
                     . "ParentTicketID=$TicketID "
                     . "BlueBook=$BlueBookID "
                     . "BlueLevel=$Record->{BlueLevel} "
@@ -1040,7 +1040,7 @@ sub Run {
 
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMBlueBookReader: Owner group selector assignment "
+            Message  => "TESSERA BlueBookReader: Owner group selector assignment "
                 . "TicketID=$TicketID "
                 . "ChildTicketID=$NewTicketID "
                 . "Profile="
@@ -1084,7 +1084,7 @@ sub Run {
                 $LogObject->Log(
                     Priority => 'error',
                     Message  =>
-                          'ZTSMBlueBookReader: Child field set failed '
+                          'TESSERA BlueBookReader: Child field set failed '
                         . "TicketID=$NewTicketID "
                         . "Field=$FieldName "
                         . 'Value='
@@ -1157,7 +1157,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'error',
         Message  =>
-              "ZTSMBlueBookReader: BlueBook orchestration started "
+              "TESSERA BlueBookReader: BlueBook orchestration started "
             . "TicketID=$TicketID "
             . "BlueBook=$BlueBookID "
             . "BlueLevel=$CurrentBlueLevel "

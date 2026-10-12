@@ -1,3 +1,20 @@
+# Active EOS acceptance priority —152 prepared, 2026-10-12
+
+Live EOS767 scripts use Sets and have correct one-year condition. Missing RiskStmt restored from original workbook through native UI.152 prevents unresolved import refs from silently clearing selections and updates discovery Set event names. Next install152/reload web+daemon workers and verify14G Control evaluation, affected assets/Application grouping, RiskStatement Framework and actual risk result. Exact original reference lookup failure still unproven. Details in latest PROJECT_STATUS.md.
+# Active import validation priority —151 prepared, 2026-10-12
+
+Blank ControlObjective script Set workbook cells were rejected as non-list values, independent of Mandatory.151 accepts explicit empty cells as empty Sets while retaining populated-data validation and omitted-column preservation. Install151, reload web workers, retry corrected v2 workbook, verify source-bearing and empty records. See latest PROJECT_STATUS.md for tests and decisions. Live151 acceptance pending.
+# Current validation priority — 2026-10-12
+
+Installed150 Framework1603 Save is verified after user cache cleanup and web service/container restart: two successful Save/reopen cycles, exact script/index retention, editor closed. Completed evidence and decisions are in PROJECT_STATUS.md. No151 fix needed for this observed mixed-runtime issue. Control Save and EOS import recovery remain unverified; do not infer their acceptance from the Framework check. Keep index uniqueness/consecutive validation within each owning Set.
+# Import recovery priority — 2026-10-12
+
+Latest prepared package149 guards GovernanceObject script Set import collisions and missing definitions. Next: install149, update/reopen the EOS one-row recovery, verify both programs persist, then use ControlObjective/Framework v2 workbooks and SecurityAdvisory v2. Never reuse v1 workbooks with blank legacy member columns. Details/tests recorded in PROJECT_STATUS.md. Live persistence remains unverified.
+
+# Current follow-up — 2026-10-12
+
+Ordered script Sets (1–99), migration workbooks and Assessment section routing are implemented in prepared0.0.148; details moved to PROJECT_STATUS.md and docs/ordered-script-blocks.md. Remaining: live package installation/import acceptance, verify existing administrator-owned Template Pages/GovernanceRole field layout against current exports, and native Excel/OTOBO form acceptance. Do not repeat completed storage/runtime work or overwrite authored definitions. Security review/assignment gates, MFA and email design remain pending below.
+
 # TESSERA Project Next Focus
 
 ## Current accepted baseline — 0.0.129
@@ -1137,3 +1154,33 @@ ST-5 executable discovery/evaluation/group creation is deployed in0.0.142 and li
 ## Monday 2026-10-12 — full YAML authoring Markdown
 
 User confirmed: save and commit current implementation now; begin the full portable Markdown authoring guide on Monday. Guide must cover actual exported classes/fields, grammar, syntax, supported operations, validation, examples and intention-to-YAML instructions for organization users, Gemini and ChatGPT projects. Include questionnaire and Application scoring, evidence,3800-character field limit and tested scalar anchors. Do not generate the full guide before Monday. Latest live Framework save verified; new live assessment evidence remains to verify.
+
+
+## 2026-10-12 AOE security foundation priority
+
+Parser/runtime hardening is prepared in0.0.147; completed details in PROJECT_STATUS.md and docs/policy-script-security-foundation.md. Architect is creating required fields/objects; integrate only verified export names. Next: typed capability/transitive effect registry, immutable submission/review/publication versions, independent reviewer authority, backend save/import/API/direct-field activation gate and runtime identity/capability/record scope checks. Negative bypass tests must pass before privileged connectors or AOE execution. Full AOE design remains pending.
+
+
+## 2026-10-12 Protected permission objects — confirmed review flow
+
+- User identifies SupportAssignment and ContractEntitlement as protected permission-affecting objects. Exact reserved capabilities TESSERA::SYSTEM and TESSERA::SECURITY may change these directly without mandatory security review, within separately authorized target scope. Other identities must submit a review request; no protected mutation while pending. This bypass applies to these two objects, not arbitrary sensitive effects. Reserved TESSERA roles never execute resolver scripts.
+- Initial review request is a restricted backend record managed through the agent portal, not an ordinary customer/frontend ticket. Agent release publishes a linked frontend security-review ticket; release alone is not security approval or authorization to execute.
+- TESSERA::SECURITY is the corporate security review capability. Its review ticket scope must be explicitly assigned; it does not grant blanket operational/customer ticket visibility. Approval remains independent of authorship, even if author also has reviewer capability. Direct-bypass actions still require audit and runtime target authorization.
+- Pending record, released ticket, decision and runtime attempt must link the same immutable definition/version/hash, proposed changes, author and target scope. Changed content invalidates prior release/approval. Deny alternate save/import/API/direct-field bypass paths. Deduplicate release so one request produces one review ticket.
+- Exact agent release capability, review service/Book routing, new schema names and corporate security SupportAssignments remain unconfirmed. Do not invent fields or hardcode a queue. This is confirmed design, not implemented runtime. No package changes or live role/object creation in this update.
+
+
+## 2026-10-12 Reserved security capability assignment boundary
+
+- User confirms TESSERA::SYSTEM and TESSERA::SECURITY may be assigned only through the backend agent portal. Apply to granting, changing or revoking assignments carrying either capability; protect equivalent indirect assignment paths.
+- Enforce at backend assignment write boundaries, not UI hiding. Customer portal, automation/YAML, import/API and direct-module writes cannot grant these capabilities through an alternate path. Agent portal access alone is insufficient: an independently authorized role-management actor and authenticated request context are required. Do not trust a caller-supplied Source or portal flag as authorization.
+- Capability use and capability assignment are distinct permissions. Possession of either capability does not automatically authorize granting it to self or others. Their direct-change exception for SupportAssignment/ContractEntitlement cannot bypass this more specific reserved-capability assignment restriction.
+- Audit actor, target account, capability, scope, before/after and decision. Exact role-management authorization remains to be confirmed; deny ambiguous authorization. Design recorded only; runtime enforcement remains pending.
+
+
+## 2026-10-12 Agent security 2FA and custom email initiative
+
+- User requests adding reserved-role security and proposes special agent-portal2FA plus new custom email engine: copy/save images and rich content, portal links returning to intended context after login/futureSSO. Requirements and source-aligned implementation sequence recorded in docs/agent-security-and-portal-email-design.md.
+- Discovery: existing Auth.pm/TOTP adapter supports agent login factors but lacks the proposed operation-bound fresh proof. Email.pm already supports HTML/plain-text and CID inline images; reuse transport underneath new authoring/rendering/template layer. No email or MFA configuration changed.
+- Reserved-role protection must cover native object/version/direct-field writes and GovernanceRole rename/creation paths, not just portal form. Exact role-management actor still requires user decision; no all-agent/self-assignment assumption. Ordinary assignment compatibility requires tests before claiming no effects.
+- Pending clarifications: role administrator, MFA action scope and first email example. Next: implement shared backend authorization after these choices; then action-bound MFA and image-capable editor/template delivery with registered portal deep links. Email links navigate only; scanner/GET must never mutate; authenticated explicit portal action and fresh permissions required. No new schema names invented, no roles granted or mail sent. This update is design/discovery, not enforcement deployment; package147 remains prepared.

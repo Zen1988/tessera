@@ -2,6 +2,7 @@ package Kernel::System::TESSERA::ControlDiscovery;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 
 our @ObjectDependencies = (
     'Kernel::System::GovernanceObject', 'Kernel::System::ITSMConfigItem',
@@ -61,7 +62,8 @@ sub _Reconcile {
     return { Success => 1, Status => 'INACTIVE' }
         if ref $Objective ne 'HASH' || ( $Objective->{Class} || '' ) ne 'ControlObjective'
             || ( $Objective->{ZTSMStatus} || '' ) ne 'Active';
-    my $Source = $Objective->{'DynamicField_ZRM-PolicyFilter'};
+    my $Source = eval { ObjectSource(Object => $Objective, Field => 'PolicyFilter') };
+    return { Success => 0, Error => $@ } if $@;
     $Source = $Source->[0] if ref $Source eq 'ARRAY' && @{$Source} == 1;
     return { Success => 0, Error => 'Active ControlObjective needs a scalar PolicyFilter YAML script.' }
         if !defined $Source || ref $Source || $Source !~ /\S/;

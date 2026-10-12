@@ -290,7 +290,7 @@ sub Import {
                 : $Self->_PreviousControlProgrammingByAnnex(
                     %{$Identity}, UserID => $Param{UserID},
                 );
-            for my $Field (qw(ZRM-ControlClass ZRM-PolicyFilter ZRM-PolicyEvaluation)) {
+            for my $Field (qw(ZRM-ControlClass PolicyFilter PolicyEvaluation)) {
                 $ImportDocument{fields}{$Field} = $Inherited->{$Field}
                     if exists $Inherited->{$Field};
             }
@@ -367,7 +367,7 @@ sub _PreviousControlProgrammingByAnnex {
 sub _ControlProgrammingFromItem {
     my ($Item) = @_;
     my %Programming;
-    for my $Field (qw(ZRM-ControlClass ZRM-PolicyFilter ZRM-PolicyEvaluation)) {
+    for my $Field (qw(ZRM-ControlClass PolicyFilter PolicyEvaluation)) {
         my $Key = "DynamicField_$Field";
         $Programming{$Field} = $Item->{$Key} if IsHashRefWithData($Item) && exists $Item->{$Key};
     }

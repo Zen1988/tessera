@@ -30,7 +30,7 @@ sub Run {
 
     _Log(
         Priority => 'error',
-        Message  => 'ZTSMPurpleBookReader: enter TicketID='
+        Message  => 'TESSERA PurpleBookReader: enter TicketID='
             . ( $TicketID || '' )
             . " UserID=$UserID",
     );
@@ -38,7 +38,7 @@ sub Run {
     if ( !$TicketID ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: skip missing TicketID',
+            Message  => 'TESSERA PurpleBookReader: skip missing TicketID',
         );
         return 1;
     }
@@ -55,7 +55,7 @@ sub Run {
     if ( !%Ticket ) {
         _Log(
             Priority => 'error',
-            Message  => "ZTSMPurpleBookReader: skip ticket not found TicketID=$TicketID",
+            Message  => "TESSERA PurpleBookReader: skip ticket not found TicketID=$TicketID",
         );
         return 1;
     }
@@ -63,7 +63,7 @@ sub Run {
     if ( ( $Ticket{StateType} || '' ) ne 'closed' ) {
         _Log(
             Priority => 'error',
-            Message  => "ZTSMPurpleBookReader: skip ticket not closed TicketID=$TicketID State="
+            Message  => "TESSERA PurpleBookReader: skip ticket not closed TicketID=$TicketID State="
                 . ( $Ticket{State} || '' )
                 . ' StateType='
                 . ( $Ticket{StateType} || '' ),
@@ -74,7 +74,7 @@ sub Run {
     if ( !$Self->_PurpleBookChildTicket(\%Ticket) ) {
         _Log(
             Priority => 'error',
-            Message  => "ZTSMPurpleBookReader: skip not PurpleBook follow-up child TicketID=$TicketID",
+            Message  => "TESSERA PurpleBookReader: skip not PurpleBook follow-up child TicketID=$TicketID",
         );
         return 1;
     }
@@ -88,7 +88,7 @@ sub Run {
     _Log(
         Priority => 'error',
         Message  =>
-              'ZTSMPurpleBookReader: delegated closed PurpleBook child to ChapterDirector '
+              'TESSERA PurpleBookReader: delegated closed PurpleBook child to ChapterDirector '
             . "TicketID=$TicketID "
             . 'ParentTicketID='
             . ( _NormalizeValue( $Ticket{'DynamicField_ZTicket-Parent'} ) || '' )
@@ -116,7 +116,7 @@ sub _PurpleBookChildTicket {
     if ( !$ParentTicketID || !$BlueBookID || !defined $BlueLevel || $BlueLevel eq '' || !$Chapter ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: missing required child fields TicketID='
+            Message  => 'TESSERA PurpleBookReader: missing required child fields TicketID='
                 . ( $Ticket->{TicketID} || '' )
                 . ' ParentTicketID='
                 . ( $ParentTicketID || '' )
@@ -141,7 +141,7 @@ sub _PurpleBookChildTicket {
     if ( !%ParentTicket ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: parent ticket not found TicketID='
+            Message  => 'TESSERA PurpleBookReader: parent ticket not found TicketID='
                 . ( $Ticket->{TicketID} || '' )
                 . " ParentTicketID=$ParentTicketID",
         );
@@ -152,7 +152,7 @@ sub _PurpleBookChildTicket {
     if ( $ParentState eq 'follow-up' ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: decision parent-follow-up TicketID='
+            Message  => 'TESSERA PurpleBookReader: decision parent-follow-up TicketID='
                 . ( $Ticket->{TicketID} || '' )
                 . " ParentTicketID=$ParentTicketID ParentState="
                 . ( $ParentTicket{State} || '' ),
@@ -163,7 +163,7 @@ sub _PurpleBookChildTicket {
     if ( !$Self->_RequestTypeTicket( \%ParentTicket ) ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: decision parent-not-request-type TicketID='
+            Message  => 'TESSERA PurpleBookReader: decision parent-not-request-type TicketID='
                 . ( $Ticket->{TicketID} || '' )
                 . " ParentTicketID=$ParentTicketID ParentType="
                 . ( $ParentTicket{Type} || '' ),
@@ -174,7 +174,7 @@ sub _PurpleBookChildTicket {
     if ( $Self->_ProcessContextEmpty($Ticket) ) {
         _Log(
             Priority => 'error',
-            Message  => 'ZTSMPurpleBookReader: decision child-process-context-empty TicketID='
+            Message  => 'TESSERA PurpleBookReader: decision child-process-context-empty TicketID='
                 . ( $Ticket->{TicketID} || '' )
                 . " ParentTicketID=$ParentTicketID",
         );
@@ -183,7 +183,7 @@ sub _PurpleBookChildTicket {
 
     _Log(
         Priority => 'error',
-        Message  => 'ZTSMPurpleBookReader: skip parent request type with process context TicketID='
+        Message  => 'TESSERA PurpleBookReader: skip parent request type with process context TicketID='
             . ( $Ticket->{TicketID} || '' )
             . " ParentTicketID=$ParentTicketID ParentType="
             . ( $ParentTicket{Type} || '' ),

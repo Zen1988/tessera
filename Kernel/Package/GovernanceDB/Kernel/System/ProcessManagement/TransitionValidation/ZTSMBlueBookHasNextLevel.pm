@@ -55,7 +55,7 @@ sub Validate {
     if ( !IsHashRefWithData( $Param{Data} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'ZTSMBlueBookHasNextLevel: Data has no values!',
+            Message  => 'TESSERA BlueBookHasNextLevel: Data has no values!',
         );
         return;
     }

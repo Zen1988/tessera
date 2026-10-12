@@ -7,7 +7,7 @@ package Kernel::System::TESSERA::ScriptEngine;
 use strict;
 use warnings;
 
-use Scalar::Util qw(looks_like_number);
+use Scalar::Util qw(looks_like_number refaddr);
 
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
@@ -27,8 +27,65 @@ sub new {
     }, $Type;
 }
 
+# Only plain, bounded data may cross the executable-definition boundary.
+# Limits count expanded aliases as well as distinct nodes; recursion fails closed.
+sub ScriptDataValidate {
+    my ( $Self, $Data ) = @_;
+    my ( $Nodes, $Bytes ) = ( 0, 0 );
+    my %Active;
+    my $Walk;
+    $Walk = sub {
+        my ( $Value, $Depth ) = @_;
+        die "Script structure exceeds limits.\n" if ++$Nodes > 10000 || $Depth > 32;
+        if ( !ref $Value ) {
+            $Bytes += defined $Value ? length($Value) : 0;
+            die "Script data exceeds limits.\n" if $Bytes > 1048576;
+            return;
+        }
+        my $Type = ref $Value;
+        die "Script contains a non-data reference.\n" if $Type ne 'HASH' && $Type ne 'ARRAY';
+        my $Address = refaddr($Value);
+        die "Script contains a recursive alias.\n" if $Active{$Address};
+        local $Active{$Address} = 1;
+        if ( $Type eq 'HASH' ) {
+            for my $Key ( keys %{$Value} ) {
+                $Walk->( $Key, $Depth + 1 );
+                $Walk->( $Value->{$Key}, $Depth + 1 );
+            }
+        }
+        else { $Walk->( $_, $Depth + 1 ) for @{$Value} }
+    };
+    my $OK = eval { $Walk->( $Data, 0 ); 1 };
+    # Break the closure cycle, including after a validation exception.
+    undef $Walk;
+    return $OK ? undef : 'Script must contain bounded, acyclic plain data.';
+}
+
+sub ScriptSourceLoad {
+    my ( $Self, %Param ) = @_;
+    my $Source = $Param{Source};
+    die "Script source must be a scalar of at most 376200 characters.\n"
+        if !defined $Source || ref $Source || length($Source) > 376200;
+    no warnings 'once';
+    require YAML::XS;
+    require Encode;
+    # Do not use the generic OTOBO loader: it logs source contents on errors.
+    local $YAML::XS::LoadBlessed = 0;
+    local $YAML::XS::LoadCode = 0;
+    local $YAML::XS::UseCode = 0;
+    local $YAML::XS::ForbidDuplicateKeys = 1;
+    my @Documents = eval { YAML::XS::Load( Encode::encode('UTF-8', $Source) ) };
+    die "Script YAML is invalid.\n" if $@;
+    die "Script YAML must contain exactly one document.\n" if @Documents != 1;
+    my $Error = $Self->ScriptDataValidate($Documents[0]);
+    die "$Error\n" if $Error;
+    return $Documents[0];
+}
+
 sub PolicyEvaluate {
     my ( $Self, %Param ) = @_;
+    my $Error = $Self->ScriptDataValidate($Param{Script});
+    return { Success => 0, Status => 'UNKNOWN', Error => $Error } if $Error;
     require Kernel::System::TESSERA::PolicyEvaluation;
     return Kernel::System::TESSERA::PolicyEvaluation->new( Engine => $Self )->Evaluate(%Param);
 }
@@ -37,13 +94,17 @@ sub ScriptParse {
     my ( $Self, %Param ) = @_;
 
     my $Script = $Param{Script};
+    my $DataError = $Self->ScriptDataValidate($Script);
+    return { Success => 0, Status => 'UNKNOWN', Error => $DataError } if $DataError;
     if ( ref $Script ne 'HASH' ) {
         my $Source = defined $Param{Source} ? $Param{Source} : '';
+        return { Success => 0, Status => 'UNKNOWN', Error => 'Script source must be a bounded scalar.' }
+            if ref $Source || length($Source) > 376200;
         return { Success => 0, Status => 'UNKNOWN', Error => 'TESSERA script source is empty.' }
             if $Source !~ m{\S};
 
         my $Loaded = eval {
-            $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
+            $Self->ScriptSourceLoad( Source => $Source );
         };
         return {
             Success => 0,
@@ -53,6 +114,9 @@ sub ScriptParse {
         $Script = $Loaded;
     }
 
+    my %Allowed = map { $_ => 1 } ('SCRIPT', 'VERSION', 'LET THIS', 'SEARCH', 'REQUIRE', 'RETURN');
+    return { Success => 0, Status => 'UNKNOWN', Error => 'Unsupported script operation.' }
+        if grep { !$Allowed{$_} } keys %{$Script};
     my $Version = defined $Script->{VERSION} ? $Script->{VERSION} : 1;
     return { Success => 0, Status => 'UNKNOWN', Error => "Unsupported TESSERA script version '$Version'." }
         if "$Version" ne '1';
@@ -72,6 +136,10 @@ sub ScriptParse {
     for my $Search ( @{$Searches} ) {
         return { Success => 0, Status => 'UNKNOWN', Error => 'Each SEARCH entry must be a mapping.' }
             if ref $Search ne 'HASH';
+        return { Success => 0, Status => 'UNKNOWN', Error => 'SEARCH parameters must be scalar.' }
+            if grep { ref $Search->{$_} } ('FOR', 'CLASS', 'AS', 'LIMIT');
+        return { Success => 0, Status => 'UNKNOWN', Error => 'Unsupported SEARCH object type.' }
+            if ($Search->{FOR} || '') !~ /\A(?:Ticket|GovernanceObject|MELTObject|ITSMConfigItem)\z/;
         $Search->{CLASS} ||= $Search->{FOR}
             if ( $Search->{FOR} || '' ) =~ /\ATicket\z/;
         for my $Required ( 'FOR', 'CLASS', 'AS' ) {
@@ -97,10 +165,18 @@ sub ScriptParse {
 sub ScriptEvaluate {
     my ( $Self, %Param ) = @_;
 
-    my $Parsed = $Param{Parsed};
-    $Parsed = $Self->ScriptParse( Source => $Param{Source}, Script => $Param{Script} )
-        if ref $Parsed ne 'HASH';
+    # Parsed is a convenience, never a validation/authorization token.
+    my $Parsed = $Self->ScriptParse( Source => $Param{Source},
+        Script => ref $Param{Parsed} eq 'HASH' ? $Param{Parsed}->{Script} : $Param{Script} );
     return $Parsed if !$Parsed->{Success};
+    # A stored selection program cannot read unrelated classes before returning
+    # an otherwise valid collection. Enforce caller-owned scope before any read.
+    if ( defined $Param{AllowedSearchType} ) {
+        for my $Search (@{$Parsed->{Searches}}) {
+            return { Success => 0, Status => 'UNKNOWN', Error => 'Selection search exceeds its declared type.' }
+                if join('.', $Search->{FOR}, $Search->{CLASS}) ne $Param{AllowedSearchType};
+        }
+    }
 
     my $InputContext = ref $Param{Context} eq 'HASH' ? $Param{Context} : {};
     my $Context = { %{$InputContext} };
@@ -826,6 +902,8 @@ sub ProgramParse {
     my ( $Self, %Param ) = @_;
 
     my $Source = defined $Param{Source} ? $Param{Source} : '';
+    return { Success => 0, Status => 'UNKNOWN', Error => 'Program source must be a bounded scalar.' }
+        if ref $Source || length($Source) > 376200;
     $Source =~ s{\r\n?}{\n}g;
 
     my $Program = {
@@ -956,6 +1034,8 @@ sub Evaluate {
     my ( $Self, %Param ) = @_;
 
     my $Source = defined $Param{Source} ? $Param{Source} : '';
+    return { Status => 'UNKNOWN', Reason => 'Policy source must be a bounded scalar.', Trace => [] }
+        if ref $Source || length($Source) > 376200;
     my $Label  = $Param{Label} || 'Policy';
     my $Context = ref $Param{Context} eq 'HASH' ? $Param{Context} : {};
 
@@ -1024,6 +1104,8 @@ sub ConditionEvaluate {
 sub GroupedFieldAssignmentsEvaluate {
     my ( $Self, %Param ) = @_;
     my $Rule = $Param{Rule};
+    my $DataError = $Self->ScriptDataValidate($Rule);
+    die qq{$DataError\n} if $DataError;
     die "GROUP FINDINGS must be a mapping.\n" if ref $Rule ne 'HASH';
     my ( $Kind, $Class ) = _GroupedClass( $Param{Destination} );
     die "Risk destination does not match ControlObjective.ZRM-RiskClass.\n"
@@ -1277,9 +1359,13 @@ sub FieldAssignmentsEvaluate {
     return { Success => 0, Status => 'UNKNOWN', Error => 'Field-assignment script is empty.' }
         if $Source !~ m{\S} && ref $Param{Script} ne 'HASH';
 
+    return { Success => 0, Status => 'UNKNOWN', Error => 'Script source must be a bounded scalar.' }
+        if ref $Source || length($Source) > 376200;
+    my $DataError = $Self->ScriptDataValidate($Param{Script});
+    return { Success => 0, Status => 'UNKNOWN', Error => $DataError } if $DataError;
     my ( $Target, $Assignments );
     my $Loaded = $Param{Script};
-    $Loaded = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source ) }
+    $Loaded = eval { $Self->ScriptSourceLoad( Source => $Source ) }
         if ref $Loaded ne 'HASH';
     if ( ref $Loaded eq 'HASH' ) {
         my $Version = defined $Loaded->{VERSION} ? $Loaded->{VERSION} : 1;
@@ -1418,6 +1504,10 @@ sub _Value {
     my ( $Self, %Param ) = @_;
 
     my $Expression = $Param{Expression};
+    return { Known => 0, Reason => 'Expression exceeds limits.' }
+        if !defined $Expression || ref $Expression || length($Expression) > 376200
+            || ($Self->{ValueDepth} || 0) >= 32;
+    local $Self->{ValueDepth} = ($Self->{ValueDepth} || 0) + 1;
     $Expression =~ s{\A\s+|\s+\z}{}g;
 
     if ( $Expression =~ m{\A(NUMBER|STRING|DATE|DATETIME)\s*\((.*)\)\z}i ) {

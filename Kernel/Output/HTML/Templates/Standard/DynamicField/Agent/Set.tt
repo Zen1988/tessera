@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,9 @@
 # --
 <input type="hidden" id="DynamicField_[% Data.Name | html %]_[% Data.Index | html %]" name="OriginSetIndex_[% Data.Name | html %]" value="[% Data.OriginIndex | html %]"/>
 <input type="hidden" id="DynamicField_[% Data.Name | html %]_[% Data.Index | html %]" name="SetIndex_[% Data.Name | html %]" value="[% Data.Index | html %]"/>
-<fieldset class="DynamicFieldSet">
+<fieldset class="[% Data.FieldSetClass | html %][% Data.RenderLayoutClass | html %]">
+[% IF Data.ServerError && Data.Index == 0 %]
+<div class="ServerError" role="alert">[% Translate(Data.ErrorMessage) | html %]</div>
+[% END %]
 [% Data.DynamicFieldHTML %]
 </fieldset>

@@ -810,7 +810,7 @@ sub _DiagnosisOwnerGroupsResolve {
 
         $LogObject->Log(
             Priority => 'notice',
-            Message  => 'ZTSMRoleDirector: DIAGNOSE evidence lookup '
+            Message  => 'TESSERA RoleDirector: DIAGNOSE evidence lookup '
                 . "ParentTicketID=$ParentTicketID "
                 . "RequestedIteration=$Iteration "
                 . "MatchedIteration=$CandidateIteration "
@@ -823,7 +823,7 @@ sub _DiagnosisOwnerGroupsResolve {
 
     $LogObject->Log(
         Priority => 'error',
-        Message  => 'ZTSMRoleDirector: DIAGNOSE evidence lookup found no closed Diagnosis tickets '
+        Message  => 'TESSERA RoleDirector: DIAGNOSE evidence lookup found no closed Diagnosis tickets '
             . "ParentTicketID=$ParentTicketID Iteration=$Iteration",
     );
 
@@ -896,7 +896,7 @@ sub _DiagnosisFanoutDynamicFieldsCopy {
 
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMRoleDirector: DIAGNOSE fan-out could not copy dynamic field "
+            Message  => "TESSERA RoleDirector: DIAGNOSE fan-out could not copy dynamic field "
                 . "$DynamicFieldConfig->{Name} SourceTicketID=$Param{SourceTicketID} "
                 . "TargetTicketID=$Param{TargetTicketID}",
         );
@@ -919,7 +919,7 @@ sub _DiagnosisFanoutTicketCreate {
     if ( $AssignmentField eq 'ZTicket-OwnerGroup' && _DiagnosisFanoutExists( %Param, OwnerGroup => $AssignmentValue ) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket already exists '
+            Message  => 'TESSERA RoleDirector: DIAGNOSE fan-out ticket already exists '
                 . "SourceTicketID=$Ticket->{TicketID} OwnerGroup=$AssignmentValue",
         );
         return 1;
@@ -946,7 +946,7 @@ sub _DiagnosisFanoutTicketCreate {
     if ( !$NewTicketID ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out TicketCreate failed '
+            Message  => 'TESSERA RoleDirector: DIAGNOSE fan-out TicketCreate failed '
                 . "SourceTicketID=$Ticket->{TicketID} Assignment=$AssignmentValue",
         );
         return;
@@ -966,7 +966,7 @@ sub _DiagnosisFanoutTicketCreate {
 
     $LogObject->Log(
         Priority => 'notice',
-        Message  => 'ZTSMRoleDirector: DIAGNOSE fan-out ticket created '
+        Message  => 'TESSERA RoleDirector: DIAGNOSE fan-out ticket created '
             . "SourceTicketID=$Ticket->{TicketID} NewTicketID=$NewTicketID "
             . "AssignmentField=$AssignmentField AssignmentValue=$AssignmentValue",
     );
@@ -1040,7 +1040,7 @@ sub _AssignmentCollectionReconcile {
     if ( @Targets > 1 && ( !defined $Parent || $Parent eq '' || !defined $Chapter || $Chapter eq '' ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "ZTSMRoleDirector: collection fan-out requires ZTicket-Parent and ZTicket-Chapter TicketID=$Ticket->{TicketID}",
+            Message  => "TESSERA RoleDirector: collection fan-out requires ZTicket-Parent and ZTicket-Chapter TicketID=$Ticket->{TicketID}",
         );
         return;
     }
@@ -1122,7 +1122,7 @@ sub Run {
     if ( _TicketOnHold( \%Ticket ) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMRoleDirector: Ticket is onhold, skip GenericAgent role resolution TicketID=$TicketID",
+            Message  => "TESSERA RoleDirector: Ticket is onhold, skip GenericAgent role resolution TicketID=$TicketID",
         );
         return 1;
     }
@@ -1240,7 +1240,7 @@ sub Run {
             elsif ( ( $ScriptResult->{ValueType} || '' ) eq 'Collection<SupportAssignment>' ) {
                 my $Assignments = $ScriptResult->{Value};
                 if ( ref $Assignments ne 'ARRAY' || !@{$Assignments} ) {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: empty SupportAssignment collection TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: empty SupportAssignment collection TicketID=$TicketID" );
                     return 1;
                 }
                 my @SupportProfiles;
@@ -1260,7 +1260,7 @@ sub Run {
                     $RequesterOwnerUserID = $CustomerUsers[0];
                 }
                 else {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: SupportAssignment collection has no unambiguous target TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: SupportAssignment collection has no unambiguous target TicketID=$TicketID" );
                     return 1;
                 }
             }
@@ -1271,7 +1271,7 @@ sub Run {
             {
                 my $Targets = $ScriptResult->{Value};
                 if ( ref $Targets ne 'ARRAY' ) {
-                    $LogObject->Log( Priority => 'error', Message => "ZTSMRoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
+                    $LogObject->Log( Priority => 'error', Message => "TESSERA RoleDirector: typed assignment collection is not an array TicketID=$TicketID" );
                     return 1;
                 }
                 my $FieldName = $ScriptResult->{ValueType} eq 'Collection<CustomerUser>' ? 'ZTicket-Owner' : 'ZTicket-OwnerGroup';
@@ -1284,7 +1284,7 @@ sub Run {
             else {
                 $LogObject->Log(
                     Priority => 'error',
-                    Message  => 'ZTSMRoleDirector: GovernanceRole script returned unsupported type '
+                    Message  => 'TESSERA RoleDirector: GovernanceRole script returned unsupported type '
                         . ( $ScriptResult->{ValueType} || 'N/A' ) . " TicketID=$TicketID",
                 );
                 return 1;
@@ -1294,7 +1294,7 @@ sub Run {
         elsif ( ( $ScriptResult->{Status} || '' ) ne 'NO_SCRIPT' ) {
             $LogObject->Log(
                 Priority => 'error',
-                Message  => 'ZTSMRoleDirector: GovernanceRole script resolution failed '
+                Message  => 'TESSERA RoleDirector: GovernanceRole script resolution failed '
                     . ( $ScriptResult->{Error} || 'UNKNOWN' ) . " TicketID=$TicketID",
             );
             return 1;
@@ -1480,7 +1480,7 @@ sub Run {
             Priority => 'error',
 
             Message =>
-                  'ZTSMRoleDirector: '
+                  'TESSERA RoleDirector: '
                 . 'Unsupported governance profile: '
                 . $ProfileDisplay,
         );
@@ -1528,7 +1528,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $TicketID,
-            Subject  => 'ZTSM Requester Default Resolved',
+            Subject  => 'TESSERA Requester Default Resolved',
             Body     => $Body,
             HistoryComment => 'ZTSM: Requester default resolved to owner',
             UserID   => 1,
@@ -1557,7 +1557,7 @@ sub Run {
         ZTSMArticleCreate(
             %Param,
             TicketID => $TicketID,
-            Subject  => 'ZTSM Governance Resolution Failed',
+            Subject  => 'TESSERA Governance Resolution Failed',
             Body     => $Body,
             HistoryComment =>
                 'ZTSM: Governance resolution failed '
@@ -1627,7 +1627,7 @@ sub Run {
     ZTSMArticleCreate(
         %Param,
         TicketID => $TicketID,
-        Subject  => 'ZTSM Governance Profile Resolved',
+        Subject  => 'TESSERA Governance Profile Resolved',
         Body     => $Body,
         HistoryComment =>
             'ZTSM: Governance resolved '
@@ -1641,7 +1641,7 @@ sub Run {
         Priority => 'notice',
 
         Message =>
-              'ZTSMRoleDirector: '
+              'TESSERA RoleDirector: '
             . 'Governance profile resolved '
             . "TicketID=$TicketID "
             . "Profile=$Profile "

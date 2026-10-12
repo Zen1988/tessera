@@ -111,7 +111,7 @@ our $Engine = {
 };
 
 our %GO = (
-    1597 => { Class => 'Framework', Name => 'Application Risk Management', 'DynamicField_ZRM-RiskScoringEngine' => 'test YAML' },
+    1597 => { Class => 'Framework', Name => 'Application Risk Management', 'DynamicField_RiskScoringEngine' => [{'ZTemplate-ScriptIndex'=>1,'ZRM-RiskScoringEngine'=>'test YAML'}] },
     201 => { Class => 'Environment', Name => 'Criticality profile', ClassID => 380, 'DynamicField_ZRM-ImpactFactor' => '0.8',
         'DynamicField_ZRM-LikelihoodFactor' => '0.5' },
     500 => { Class => 'Application', 'DynamicField_ZTSMAppSystem-CriticalityProfile' => [201] },

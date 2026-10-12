@@ -16,5 +16,8 @@
 <input type="hidden" id="DynamicField_[% Data.Name | html %]_[% Data.Index | html %]" name="OriginSetIndex_[% Data.Name | html %]" value="[% Data.OriginIndex | html %]"/>
 <input type="hidden" id="DynamicField_[% Data.Name | html %]_[% Data.Index | html %]" name="SetIndex_[% Data.Name | html %]" value="[% Data.Index | html %]"/>
 <fieldset class="[% Data.FieldSetClass | html %][% Data.RenderLayoutClass | html %]">
+[% IF Data.ServerError && Data.Index == 0 %]
+<div class="ServerError" role="alert">[% Translate(Data.ErrorMessage) | html %]</div>
+[% END %]
 [% Data.DynamicFieldHTML %]
 </fieldset>

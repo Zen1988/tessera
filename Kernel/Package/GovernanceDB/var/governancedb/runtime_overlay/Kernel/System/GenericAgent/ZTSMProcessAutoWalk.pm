@@ -25,7 +25,7 @@ sub new {
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'notice',
-        Message  => 'ZTSMProcessAutoWalk: Constructor called',
+        Message  => 'TESSERA ProcessAutoWalk: Constructor called',
     );
 
     return $Self;
@@ -74,7 +74,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMProcessAutoWalk: Enter Run "
+              "TESSERA ProcessAutoWalk: Enter Run "
             . "TicketID=" . ( $TicketID || '' )
             . " UserID=$UserID",
     );
@@ -91,7 +91,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMProcessAutoWalk: Process field config "
+              "TESSERA ProcessAutoWalk: Process field config "
             . "TicketID=$TicketID "
             . "ProcessIDField=" . ( $ProcessIDField || '' ) . " "
             . "ActivityIDField=" . ( $ActivityIDField || '' ),
@@ -130,7 +130,7 @@ sub Run {
     if ( _TicketOnHold( \%Ticket ) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMProcessAutoWalk: Ticket is onhold, skip process auto-walk TicketID=$TicketID",
+            Message  => "TESSERA ProcessAutoWalk: Ticket is onhold, skip process auto-walk TicketID=$TicketID",
         );
         return 1;
     }
@@ -141,7 +141,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMProcessAutoWalk: Process ticket values "
+              "TESSERA ProcessAutoWalk: Process ticket values "
             . "TicketID=$TicketID "
             . "ProcessEntityID=" . ( $ProcessEntityID || '' ) . " "
             . "ActivityEntityID=" . ( $ActivityEntityID || '' ),
@@ -157,7 +157,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  "ZTSMProcessAutoWalk: Skip ticket, activity id does not match "
+                  "TESSERA ProcessAutoWalk: Skip ticket, activity id does not match "
                 . "TicketID=$TicketID "
                 . "Expected=$OnlyActivityEntityID "
                 . "Actual=$ActivityEntityID",
@@ -174,7 +174,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'notice',
                 Message  =>
-                      "ZTSMProcessAutoWalk: Skip ticket, activity name does not match "
+                      "TESSERA ProcessAutoWalk: Skip ticket, activity name does not match "
                     . "TicketID=$TicketID "
                     . "Expected=$OnlyActivityName "
                     . "Actual=" . ( $ActivityName || '' ) . " "
@@ -227,7 +227,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'notice',
                 Message  =>
-                      "ZTSMProcessAutoWalk: No transition matched "
+                      "TESSERA ProcessAutoWalk: No transition matched "
                     . "TicketID=$TicketID "
                     . "Process=$ProcessEntityID "
                     . "Activity=$ActivityEntityID",
@@ -251,7 +251,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMProcessAutoWalk: Transition matched but did not apply "
+                      "TESSERA ProcessAutoWalk: Transition matched but did not apply "
                     . "TicketID=$TicketID "
                     . "Process=$ProcessEntityID "
                     . "Activity=$ActivityEntityID "
@@ -265,7 +265,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'notice',
             Message  =>
-                  "ZTSMProcessAutoWalk: Transition applied "
+                  "TESSERA ProcessAutoWalk: Transition applied "
                 . "TicketID=$TicketID "
                 . "Process=$ProcessEntityID "
                 . "FromActivity=$ActivityEntityID "
@@ -300,7 +300,7 @@ sub Run {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              "ZTSMProcessAutoWalk: Finished "
+              "TESSERA ProcessAutoWalk: Finished "
             . "TicketID=$TicketID "
             . "WalkCount=$WalkCount",
     );

@@ -53,7 +53,7 @@ for my $Path (
     local $/;
     my $Source = <$FH>;
     close $FH;
-    like( $Source, qr/Objective\}\{'DynamicField_ZRM-FieldAssignment'\}/, "$Path reads risk instructions from ControlObjective" );
+    like( $Source, qr/ObjectSource\(Object => \$Param\{Objective\}, Field => 'FieldAsssignment'\)/, "$Path reads risk instructions from ControlObjective" );
     unlike( $Source, qr/Control\}\{'DynamicField_ZRM-FieldAssignment'\}/, "$Path never reads risk instructions from the Control instance" );
     like( $Source, qr/sub ProcessFailedControl/, "$Path exposes the centralized failed-Control handler" );
 }

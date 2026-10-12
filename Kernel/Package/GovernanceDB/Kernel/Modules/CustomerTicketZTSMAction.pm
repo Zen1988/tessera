@@ -2157,7 +2157,7 @@ sub _FollowUpParentCompleteIfReady {
         TicketID            => $ParentTicketID,
         RuntimeAction       => 'CompleteTask',
         Label               => 'Complete',
-        Subject             => 'ZTSM Follow-up Completed',
+        Subject             => 'TESSERA Follow-up Completed',
         Body                =>
               "** Note: This is a system-generated follow-up orchestration update message.\n\n"
             . "Follow-up BlueBook completed successfully.\n\n"
@@ -6183,7 +6183,7 @@ sub _RiskAssessmentOriginStatementID {
         );
         die "Risk Framework cannot be resolved for statement selection.\n"
             if !IsHashRefWithData($Framework) || ( $Framework->{Class} || '' ) ne 'Framework';
-        my $Source = _NormalizeValue( $Framework->{'DynamicField_ZRM-RiskScoringEngine'} ) || '';
+        my $Source = _FrameworkScriptSource($Framework, 'RiskScoringEngine') || '';
         my $Engine = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
         die "Risk Framework statement selector is invalid.\n" if ref $Engine ne 'HASH';
         my $From = $Engine->{'RISK STATEMENTS'}->{FROM} || '';
@@ -6267,7 +6267,7 @@ sub _RiskAssessmentOriginScoresEvaluate {
     );
     die "Risk Framework cannot be resolved.\n"
         if !IsHashRefWithData($Framework) || ( $Framework->{Class} || '' ) ne 'Framework';
-    my $Source = _NormalizeValue( $Framework->{'DynamicField_ZRM-RiskScoringEngine'} ) || '';
+    my $Source = _FrameworkScriptSource($Framework, 'RiskScoringEngine') || '';
     die "Risk Framework has no scoring engine.\n" if $Source !~ m{\S};
     my $Engine = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
     die "Risk scoring engine must be a VERSION 1 YAML mapping.\n"
@@ -8368,3 +8368,8 @@ sub _ActionableTicketType {
 }
 
 1;
+
+sub _FrameworkScriptSource {
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return Kernel::System::TESSERA::ScriptBlocks::ObjectSource(Object => $_[0], Field => $_[1]);
+}

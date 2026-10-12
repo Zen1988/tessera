@@ -5,6 +5,7 @@ use DateTime;
 use YAML::XS ();
 use lib 'Kernel/Package/GovernanceDB', '.';
 use Kernel::System::TESSERA::ScriptEngine;
+use Kernel::System::TESSERA::ScriptBlocks qw(SplitSource);
 use Kernel::System::TESSERA::ControlRuntime;
 
 sub Slurp { open my $F, '<', $_[0] or die $!; local $/; <$F> }
@@ -158,7 +159,7 @@ $Root=Setup();
 my $Objective={GovernanceObjectID=>50,Class=>'ControlObjective',ZTSMStatus=>'Active',
     'DynamicField_ZRM-RiskClass'=>'MELTObject.Risk','DynamicField_ZRM-CreateRisk'=>1,
     'DynamicField_ZRM-RiskStmt'=>[50],
-    'DynamicField_ZRM-FieldAssignment'=>$RiskText,'DynamicField_ZRM-PolicyEvaluation'=>$PolicyText};
+    'DynamicField_FieldAsssignment'=>SplitSource(Field=>'FieldAsssignment',Source=>$RiskText),'DynamicField_PolicyEvaluation'=>SplitSource(Field=>'PolicyEvaluation',Source=>$PolicyText)};
 my $Control={ConfigItemID=>90,Class=>'Control',Name=>'Root Control','DynamicField_ZRM-CIInstance'=>1,'DynamicField_ZRM-ControlObjective'=>50};
 my %P=(Script=>$Script,Objective=>$Objective,Control=>$Control,ConfigItemID=>90,UserID=>1,Now=>$Now);
 $R=$Runtime->_AutomaticEvaluate(%P);
@@ -266,7 +267,7 @@ $CustomAssignment->{RETURN}{'GROUP FINDINGS'}{'GROUP BY'}{FIELD}='ZTAM-Applicati
 $CustomAssignment->{RETURN}{'GROUP FINDINGS'}{NAME}='{GROUP.Name}: {ITEM.Name} [configured]';
 $CustomAssignment->{RETURN}{'GROUP FINDINGS'}{SEVERITY}{RULES}[1]{WHEN}
     ='DATE(@SOURCE.ZTAM-EoServiceLife) IS LESS THAN DATE(TODAY + 3 MONTHS)';
-$Objective->{'DynamicField_ZRM-FieldAssignment'}=YAML::XS::Dump($CustomAssignment);
+$Objective->{'DynamicField_FieldAsssignment'}=SplitSource(Field=>'FieldAsssignment',Source=>YAML::XS::Dump($CustomAssignment));
 $Kernel::OM->{Objects}{$_}{'DynamicField_ZTAM-ApplicationAlternate'}=101 for (10,11,12,13);
 $Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='2027-01-01';
 $R=$Runtime->_AutomaticEvaluate(%P);
@@ -285,13 +286,13 @@ delete $GroupProgram->{'FIELD ASSIGNMENTS'}{$_} for qw(MELT-RiskStmt MELT-RMF ME
 delete $GroupProgram->{MERGE}{'MELT-EventSeverity'};
 $GroupProgram->{IDENTITY}{TEMPLATE}='{SCENARIO.Value}:{GROUP.GovernanceObjectID}';
 $GroupProgram->{NAME}='{GROUP.Name}: generic group';
-$Objective->{'DynamicField_ZRM-FieldAssignment'}=YAML::XS::Dump($SimpleGroup);
+$Objective->{'DynamicField_FieldAsssignment'}=SplitSource(Field=>'FieldAsssignment',Source=>YAML::XS::Dump($SimpleGroup));
 $R=$Runtime->_AutomaticEvaluate(%P);
 is($R->{Status},'Fail','Grouped program works without severity or item iteration');
 is(scalar keys %{$Kernel::OM->{Risks}},1,'Optional iteration does not multiply Risks');
 my ($SimpleRisk)=values %{$Kernel::OM->{Risks}};
 is($SimpleRisk->{Name},'Alpha: generic group','Generic YAML names the grouped Risk');
-$Objective->{'DynamicField_ZRM-FieldAssignment'}=$RiskText;
+$Objective->{'DynamicField_FieldAsssignment'}=SplitSource(Field=>'FieldAsssignment',Source=>$RiskText);
 
 Setup();
 my $ContractProgram = YAML::XS::Load($RiskText)->{RETURN}{'GROUP FINDINGS'};
@@ -370,7 +371,7 @@ $Root=Setup();
 my $NameUpdateText=Slurp('docs/examples/controlobjective/product-eosl-risk-name-update.yml');
 my $NameUpdate=YAML::XS::Load($NameUpdateText);
 is($NameUpdate->{RETURN}{'GROUP FINDINGS'}{IDENTITY}{TEMPLATE}, YAML::XS::Load($RiskText)->{RETURN}{'GROUP FINDINGS'}{IDENTITY}{TEMPLATE}, 'Product name update preserves shared Risk identity');
-$Objective->{'DynamicField_ZRM-FieldAssignment'}=$NameUpdateText;
+$Objective->{'DynamicField_FieldAsssignment'}=SplitSource(Field=>'FieldAsssignment',Source=>$NameUpdateText);
 $Control->{'DynamicField_ZRM-CIInstance'}=1; $Control->{ConfigItemID}=90; $P{ConfigItemID}=90;
 $Runtime->_AutomaticEvaluate(%P);
 my ($NamedRisk)=values %{$Kernel::OM->{Risks}};
@@ -397,9 +398,9 @@ $Kernel::OM->{Governance}{73}={GovernanceObjectID=>73,Class=>'EventSeverity',Nam
 my $AdvisoryPolicy=YAML::XS::Load(Slurp('Kernel/Package/GovernanceDB/var/governancedb/policy/security_advisory_evaluation.yml'));
 my $AdvisoryRisk=Slurp('Kernel/Package/GovernanceDB/var/governancedb/policy/security_advisory_risk_assignment.yml');
 my $Selection=YAML::XS::Dump({VERSION=>1,SEARCH=>{FOR=>'ITSMConfigItem',CLASS=>'Product',AS=>'Products',LIMIT=>1000,WHERE=>{'ZTAM-Parent'=>{EQUALS=>1}}},RETURN=>{FROM=>'ALL Products',AS=>'Collection<ITSMConfigItem.Product>'}});
-my $Advisory={Class=>'SecurityAdvisory',ConfigItemID=>30,Name=>'Advisory','DynamicField_ZTAM-Annex'=>'ADV-1','DynamicField_ZTAM-Status'=>'open','DynamicField_ZTAM-AdvancedCondition'=>$Selection};
+my $Advisory={Class=>'SecurityAdvisory',ConfigItemID=>30,Name=>'Advisory','DynamicField_ZTAM-Annex'=>'ADV-1','DynamicField_ZTAM-Status'=>'open','DynamicField_AdvancedCondition'=>SplitSource(Field=>'AdvancedCondition',Source=>$Selection)};
 $Kernel::OM->{Objects}{30}=$Advisory;
-my $AO={GovernanceObjectID=>50,Class=>'ControlObjective','DynamicField_ZRM-CreateRisk'=>1,'DynamicField_ZRM-RiskClass'=>'MELTObject.Risk','DynamicField_ZRM-RiskStmt'=>[50],'DynamicField_ZRM-FieldAssignment'=>$AdvisoryRisk};
+my $AO={GovernanceObjectID=>50,Class=>'ControlObjective','DynamicField_ZRM-CreateRisk'=>1,'DynamicField_ZRM-RiskClass'=>'MELTObject.Risk','DynamicField_ZRM-RiskStmt'=>[50],'DynamicField_FieldAsssignment'=>SplitSource(Field=>'FieldAsssignment',Source=>$AdvisoryRisk)};
 my $AC={ConfigItemID=>90,Class=>'Control','DynamicField_ZRM-CIInstance'=>30};
 for my $Case (['',73],['2026-09-21',70],['2026-09-29',70],['2026-09-30',71],['2026-10-06',71],['2026-10-07',72],['2026-11-21',72],['2026-11-22',73],['2026-12-21',73],['2027-01-01',73]) {
  $Advisory->{'DynamicField_ZTAM-DueDate'}=$Case->[0];
@@ -425,7 +426,7 @@ $Kernel::OM->{Objects}{11}{'DynamicField_ZTAM-Application'}=101;$Runtime->_Targe
 is(scalar keys %{$Kernel::OM->{Risks}},3,'second application creates separate product/application risk');
 $Advisory->{'DynamicField_ZTAM-Status'}='closed';my $Closed=$Runtime->_TargetEvaluate(%$VP);
 is($Closed->{Status},'Pass','closed advisory excluded');is($Kernel::OM->{Risks}{200}{ZTSMStatusID},2,'closed contributor cannot deactivate shared risk');
-$Advisory->{'DynamicField_ZTAM-Status'}='open';$Advisory->{'DynamicField_ZTAM-AdvancedCondition'}='bad: yaml';
+$Advisory->{'DynamicField_ZTAM-Status'}='open';$Advisory->{'DynamicField_AdvancedCondition'}=SplitSource(Field=>'AdvancedCondition',Source=>'bad: yaml');
 my $Bad=$Engine->PolicyEvaluate(Script=>$AdvisoryPolicy,TargetType=>'ITSMConfigItem.SecurityAdvisory',Now=>$Now,UserID=>1,Context=>{THIS=>$Advisory});
 is($Bad->{Status},'UNKNOWN','invalid stored selection fails closed');
 

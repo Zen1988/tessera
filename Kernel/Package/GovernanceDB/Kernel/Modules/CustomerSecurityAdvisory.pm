@@ -16,7 +16,10 @@ sub Run {
  my $View=($R->GetParam(Param=>'AdvisoryView')||'') eq 'List' ? 'List' : 'Dashboard';
  if ($Sub eq 'ExportList') {
   my @Headers=('Class','Name','Description',map {$_->{Name}} @{$Overview->{Columns}});
-  my @Rows=map {['SecurityAdvisory',$_->{Object}{Name}//'',$_->{Object}{Description}//'',@{$_->{Cells}}]} @{$Overview->{Rows}};
+  my @Rows=map {my $Row=$_;my @Cells=@{$Row->{Cells}};
+   for my $I (0..$#{$Overview->{Columns}}) {my $Name=$Overview->{Columns}[$I]{Name};
+    if ($Name eq 'AdvancedCondition') {$Cells[$I]=$Kernel::OM->Get('Kernel::System::JSON')->Encode(Data=>$Row->{Object}{'DynamicField_AdvancedCondition'}||[]);}}
+   ['SecurityAdvisory',$Row->{Object}{Name}//'',$Row->{Object}{Description}//'',@Cells]} @{$Overview->{Rows}};
   my $X=$Kernel::OM->Get('Kernel::System::ZTSMWorkbookXLSX')->ExportSheets(Sheets=>[{Name=>'SecurityAdvisory',Head=>\@Headers,Data=>\@Rows}]);
   return $L->Attachment(Filename=>'security_advisories.xlsx',ContentType=>'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',Content=>$X);
  }
@@ -35,10 +38,10 @@ sub Run {
     if (ref $Rows ne 'ARRAY' || @$Rows>500) {$Error='Import must contain at most 500 advisory rows.';} else {@Rows=@$Rows;}}
   } else {
    my %Row=(Class=>'SecurityAdvisory',Name=>$R->GetParam(Param=>'Name')||'',Description=>$R->GetParam(Param=>'Description')||'');
-   for my $F (@{$M->{Fields}}) {$Row{$F->{Name}}=$F->{Config}{MultiValue}?[$R->GetArray(Param=>$F->{Name})]:($R->GetParam(Param=>$F->{Name})//'');}
+   for my $F (@{$M->{Fields}}) {$Row{$F->{Name}}=($F->{Config}{MultiValue} && $F->{Name} ne 'AdvancedCondition')?[$R->GetArray(Param=>$F->{Name})]:($R->GetParam(Param=>$F->{Name})//'');}
    if (($R->GetParam(Param=>'ConditionMode')||'Products') eq 'Products') {
     my $Y=eval{$S->ProductCondition(Model=>$M,ProductIDs=>[$R->GetArray(Param=>'ProductIDs')])};
-    if ($@) {$Error='Select at least one valid Product.';} else {$Row{'ZTAM-AdvancedCondition'}=$Y;}
+    if ($@) {$Error='Select at least one valid Product.';} else {$Row{AdvancedCondition}=$Y;}
    }
    push @Rows,\%Row;
   }

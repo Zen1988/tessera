@@ -21,10 +21,10 @@
 <div class="AdvisoryField"><label for="AdvisoryDescription">Description</label><textarea id="AdvisoryDescription" name="Description" rows="6" class="RichText">[% Data.Description | html %]</textarea></div>
 [% END %]
 <div class="AdvisoryField">
-[% IF Field.Name == 'ZTAM-AdvancedCondition' %]
+[% IF Field.Name == 'AdvancedCondition' %]
 <fieldset><legend>Affected conditions</legend><label for="AdvisoryConditionMode">Edit as</label><select id="AdvisoryConditionMode" name="ConditionMode"><option value="Products">Product selection</option><option value="YAML">YAML</option></select>
 <div id="AdvisoryProductMode"><label for="AdvisoryProducts">Products</label><input id="AdvisoryProductSearch" type="search" placeholder="Filter Product names" aria-label="Filter Product names"><select id="AdvisoryProducts" name="ProductIDs" multiple size="8">[% FOREACH Product IN Data.Products %]<option value="[% Product.ID | html %]">[% Product.Name | html %]</option>[% END %]</select><p>Each selected Product is included in the generated condition.</p></div>
-<div id="AdvisoryYAMLMode" hidden><label for="AdvisoryCondition">Advanced condition YAML</label><textarea id="AdvisoryCondition" name="ZTAM-AdvancedCondition" rows="16" spellcheck="false">[% Field.Value | html %]</textarea><p>Advanced scripts are stored as authoring data. Risk evaluation will be configured separately.</p></div><p id="AdvisoryConditionError" role="alert"></p></fieldset>
+<div id="AdvisoryYAMLMode" hidden><label for="AdvisoryCondition">Advanced condition YAML</label><textarea id="AdvisoryCondition" name="AdvancedCondition" rows="16" spellcheck="false">[% Field.Value | html %]</textarea><p>YAML is saved in ordered blocks automatically and validated before evaluation.</p></div><p id="AdvisoryConditionError" role="alert"></p></fieldset>
 [% ELSIF Field.Choices.size || Field.FieldType == 'GovernanceObject' || Field.FieldType == 'ConfigItem' %]
 <label for="[% Field.Name | html %]">[% Field.Label | html %]</label><select id="[% Field.Name | html %]" name="[% Field.Name | html %]" [% IF Field.Config.MultiValue %]multiple size="4"[% END %]><option value="">—</option>[% FOREACH Choice IN Field.Choices %]<option value="[% Choice.ID | html %]" [% IF Choice.Selected %]selected[% END %]>[% Choice.Name | html %]</option>[% END %]</select>
 [% ELSIF Field.FieldType == 'RichText' || Field.FieldType == 'TextArea' %]

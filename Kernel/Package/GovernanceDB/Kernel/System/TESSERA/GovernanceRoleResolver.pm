@@ -6,6 +6,7 @@ package Kernel::System::TESSERA::GovernanceRoleResolver;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 
 our @ObjectDependencies = (
     'Kernel::System::CustomerUser',
@@ -55,7 +56,8 @@ sub Resolve {
         Error   => 'TESSERA::* GovernanceRoles are reserved system capabilities and cannot execute resolver scripts.',
     } if uc($RoleName) =~ m{\ATESSERA::};
 
-    my $Source = _Scalar( $Role->{'DynamicField_ZTSM-ScriptEngine'} );
+    my $Source = eval { ObjectSource(Object => $Role, Field => 'ScriptEngine') };
+    return { Success => 0, Status => 'UNKNOWN', Error => $@ } if $@;
     return { Success => 0, Status => 'NO_SCRIPT', Error => 'GovernanceRole has no ZTSM-ScriptEngine value.' }
         if !defined $Source || $Source eq '';
 

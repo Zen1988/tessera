@@ -58,7 +58,7 @@ like( $Bootstrap, qr/next ROLE if \$ExistingID;/, 'bootstrap leaves every existi
 like( $Bootstrap, qr/Unknown reference shapes are treated as authored content/, 'bootstrap fails closed against intrusive script replacement' );
 like(
     $Bootstrap,
-    qr/'DynamicField_ZTSM-ScriptEngine'\s*=>\s*\$RoleDefinition->\{Script\}/,
+    qr/'DynamicField_ScriptEngine'\s*=>\s*SplitSource\(Field => 'ScriptEngine', Source => \$RoleDefinition->\{Script\}\)/,
     'bootstrap writes the exact exported script field',
 );
 like( $Bootstrap, qr/'DynamicField_ZTSM-Code'\s*=>\s*\$Role/, 'bootstrap writes the exported role code' );

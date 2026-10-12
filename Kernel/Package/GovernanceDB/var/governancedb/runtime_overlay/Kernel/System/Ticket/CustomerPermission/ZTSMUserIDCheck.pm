@@ -698,7 +698,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'info',
             Message  =>
-                  'ZTSMUserIDCheck: '
+                  'TESSERA UserIDCheck: '
                 . 'IPC global read access granted '
                 . "TicketID=$Param{TicketID} "
                 . "CustomerUserID=$CustomerUserID",
@@ -789,7 +789,7 @@ sub Run {
             Priority => 'info',
 
             Message =>
-                  'ZTSMUserIDCheck: '
+                  'TESSERA UserIDCheck: '
                 . 'Direct participation access granted '
                 . "TicketID=$Param{TicketID} "
                 . "CustomerUserID=$CustomerUserID",
@@ -808,7 +808,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'info',
             Message =>
-                  'ZTSMUserIDCheck: '
+                  'TESSERA UserIDCheck: '
                 . 'Linked ticket read access granted '
                 . "TicketID=$Param{TicketID} "
                 . "CustomerUserID=$CustomerUserID",
@@ -826,7 +826,7 @@ sub Run {
         Priority => 'debug',
 
         Message =>
-              'ZTSMUserIDCheck: '
+              'TESSERA UserIDCheck: '
             . 'Access denied '
             . "TicketID=$Param{TicketID} "
             . "CustomerUserID=$CustomerUserID",

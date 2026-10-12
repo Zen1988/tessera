@@ -609,7 +609,7 @@
         <Navigation>Core::Event::GovernanceObject</Navigation>
         <Value><Hash>
             <Item Key="Module">Kernel::System::TESSERA::ControlDiscovery</Item>
-            <Item Key="Event">^(GovernanceObjectCreate|GovernanceObjectUpdate|GovernanceObjectDynamicFieldUpdate_ZRM-PolicyFilter)$</Item>
+            <Item Key="Event">^(GovernanceObjectCreate|GovernanceObjectUpdate|GovernanceObjectDynamicFieldUpdate_(PolicyFilter|PolicyEvaluation|FieldAsssignment|ZRM-PolicyFilter))$</Item>
             <Item Key="Transaction">1</Item>
         </Hash></Value>
     </Setting>

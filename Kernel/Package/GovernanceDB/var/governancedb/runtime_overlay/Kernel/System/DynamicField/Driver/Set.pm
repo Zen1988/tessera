@@ -128,12 +128,20 @@ sub ValueGet {
         }
     }
 
+    # Shared exported index members cannot define another Set's row count.
+    @SetValue = _ScriptSetStoredRows($Param{DynamicFieldConfig}, \@SetValue)->@*;
     return if !@SetValue;
     return \@SetValue;
 }
 
 sub ValueSet {
     my ( $Self, %Param ) = @_;
+    my $BlockError = _ScriptBlockValidationError($Param{DynamicFieldConfig}, $Param{Value});
+    if ($BlockError) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(Priority => 'error', Message => $BlockError);
+        return;
+    }
+
 
     my @SetValue = defined $Param{Value} ? $Param{Value}->@* : ( {} );
 
@@ -257,6 +265,12 @@ sub ValueSet {
 
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
+    my $BlockError = _ScriptBlockValidationError($Param{DynamicFieldConfig}, $Param{Value});
+    if ($BlockError) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(Priority => 'error', Message => $BlockError);
+        return;
+    }
+
 
     my @SetValue = defined $Param{Value} ? $Param{Value}->@* : ();
 
@@ -287,6 +301,7 @@ sub ValueValidate {
 
 sub EditFieldRender {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     # take config from field config
     my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
@@ -409,6 +424,7 @@ sub EditFieldRender {
         $ResultHTML[$SetIndex] = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
+                %FieldTemplateData,
                 Name              => $Param{DynamicFieldConfig}->{Name},
                 Index             => $SetIndex,
                 DynamicFieldHTML  => $DynamicFieldHTML,
@@ -455,6 +471,7 @@ sub EditFieldRender {
         my $TemplateHTML = $Param{LayoutObject}->Output(
             TemplateFile => $FieldTemplateFile,
             Data         => {
+                %FieldTemplateData,
                 Name              => $Param{DynamicFieldConfig}->{Name},
                 Index             => 'Template',
                 DynamicFieldHTML  => $DynamicFieldHTML,
@@ -480,6 +497,7 @@ sub EditFieldRender {
 
 sub EditFieldValueGet {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     my $FieldName = 'DynamicField_' . $Param{DynamicFieldConfig}{Name};
 
@@ -561,6 +579,7 @@ sub EditFieldValueGet {
 
 sub EditFieldValueValidate {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     if (
         ( !defined $Param{GetParam}{DynamicField} || !defined $Param{GetParam}{DynamicField}{"DynamicField_$Param{DynamicFieldConfig}{Name}"} )
@@ -633,6 +652,18 @@ sub EditFieldValueValidate {
             ServerError  => 1,
             ErrorMessage => 'This field is required.',
         };
+    }
+
+    require Kernel::System::TESSERA::ScriptBlocks;
+    my $BlockSpec = Kernel::System::TESSERA::ScriptBlocks::BlockSpec($SetDFConfig->{Name});
+    if ($BlockSpec) {
+        my $Rows = $Param{GetParam}{DynamicField}{'DynamicField_' . $SetDFConfig->{Name}};
+        my $BlockError = _ScriptBlockValidationError($SetDFConfig, $Rows);
+        if ($BlockError) {
+            $Result->{ServerError} = 1;
+            $Result->{ErrorMessage} = $BlockError;
+            return $Result;
+        }
     }
 
     my $FindError;
@@ -1047,6 +1078,7 @@ sub ValueIsDifferent {
 
 sub GetFieldState {
     my ( $Self, %Param ) = @_;
+    $Param{DynamicFieldConfig} = _ScriptSetFormConfig($Param{DynamicFieldConfig});
 
     my %GetParam  = $Param{GetParam}->%*;
     my %DFParam   = %{ $GetParam{DynamicField} // {} };
@@ -1694,3 +1726,40 @@ sub _FieldTemplateFileGet {
 }
 
 1;
+
+sub _ScriptBlockValidationError {
+    my ($Config, $Rows) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return if !Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    eval { Kernel::System::TESSERA::ScriptBlocks::Assemble(Field => $Config->{Name}, Rows => $Rows); 1 };
+    my $Error = $@;
+    $Error =~ s/\s+\z//;
+    return $Error || undef;
+}
+
+# Form identity only: exported member names and stored field IDs remain unchanged.
+sub _ScriptSetFormConfig {
+    my ($Config) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return $Config if !Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    my $Suffix = '__Set_' . $Config->{Name};
+    my $Current = $Config->{ProcessSuffix} // '';
+    $Current .= $Suffix if $Current !~ /\Q$Suffix\E\z/;
+    return {%{$Config}, ProcessSuffix => $Current};
+}
+
+sub _ScriptSetStoredRows {
+    my ($Config, $Rows) = @_;
+    require Kernel::System::TESSERA::ScriptBlocks;
+    my $Spec = Kernel::System::TESSERA::ScriptBlocks::BlockSpec($Config->{Name});
+    return $Rows if !$Spec || $Spec->[0] ne 'ZTemplate-ScriptIndex';
+    my $Last = -1;
+    for my $Position (0 .. $#{$Rows}) {
+        my $Text = $Rows->[$Position]{$Spec->[1]};
+        $Text = $Text->[0] if ref $Text eq 'ARRAY' && @{$Text} == 1;
+        $Last = $Position if defined $Text && (ref $Text || $Text ne '');
+    }
+    # Native source member positions are the persistent order. Index is their
+    # canonical 1-based ordinal; a sibling's shared counter cannot create rows.
+    return [map { +{%{$Rows->[$_]}, $Spec->[0] => 1 + $_} } 0 .. $Last];
+}

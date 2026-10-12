@@ -109,7 +109,7 @@ sub _IncidentIterationInitialize {
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'notice',
-        Message  => "ZTSMStateBookReader: Initialized missing Incident ZIN-Iteration=1 TicketID=$Ticket->{TicketID}",
+        Message  => "TESSERA StateBookReader: Initialized missing Incident ZIN-Iteration=1 TicketID=$Ticket->{TicketID}",
     );
 
     return 1;
@@ -405,7 +405,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMStateBookReader: Ticket is onhold, skip lifecycle orchestration TicketID=$TicketID",
+            Message  => "TESSERA StateBookReader: Ticket is onhold, skip lifecycle orchestration TicketID=$TicketID",
         );
         return 1;
     }
@@ -413,7 +413,7 @@ sub Run {
     if ( !_IncidentIterationInitialize( Ticket => $Ticket, UserID => $Param{UserID} || 1 ) ) {
         $LogObject->Log(
             Priority => 'error',
-            Message  => "ZTSMStateBookReader: Could not initialize Incident iteration TicketID=$TicketID",
+            Message  => "TESSERA StateBookReader: Could not initialize Incident iteration TicketID=$TicketID",
         );
         return;
     }
@@ -477,7 +477,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMStateBookReader: Missing ZState-StateRecord "
+                  "TESSERA StateBookReader: Missing ZState-StateRecord "
                 . "TicketID=$TicketID "
                 . "StateBook=$StateBookID "
                 . "StateBookName=" . ( $StateBook->{Name} || '' ) . " "
@@ -536,7 +536,7 @@ sub Run {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  "ZTSMStateBookReader: No usable StateBook records "
+                  "TESSERA StateBookReader: No usable StateBook records "
                 . "TicketID=$TicketID "
                 . "StateBook=$StateBookID "
                 . "StateBookName=" . ( $StateBook->{Name} || '' ) . " "
@@ -733,7 +733,7 @@ sub Run {
 			Priority => 'notice',
 
 			Message =>
-				  "ZTSM: BlueBook resolved "
+				  "TESSERA: BlueBook resolved "
 				. "TicketID=$TicketID "
 				. "State=$ResolvedState "
 				. "BlueBook=$BlueBookID",
@@ -754,7 +754,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMStateBookReader: Failed reloading ticket before BlueBook handoff "
+                      "TESSERA StateBookReader: Failed reloading ticket before BlueBook handoff "
                     . "TicketID=$TicketID "
                     . "BlueBook=$BlueBookID",
             );
@@ -773,7 +773,7 @@ sub Run {
             $LogObject->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMStateBookReader: BlueBook handoff returned false "
+                      "TESSERA StateBookReader: BlueBook handoff returned false "
                     . "TicketID=$TicketID "
                     . "BlueBook=$BlueBookID",
             );

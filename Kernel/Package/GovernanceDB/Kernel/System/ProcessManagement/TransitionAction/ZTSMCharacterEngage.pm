@@ -133,7 +133,7 @@ sub Run {
     if ( _TicketOnHold($Ticket) ) {
         $LogObject->Log(
             Priority => 'notice',
-            Message  => "ZTSMCharacterEngage: Ticket is onhold, skip participant engagement TicketID=$TicketID",
+            Message  => "TESSERA CharacterEngage: Ticket is onhold, skip participant engagement TicketID=$TicketID",
         );
         return 1;
     }
@@ -187,7 +187,7 @@ sub Run {
             Priority => 'notice',
 
             Message =>
-                  'ZTSMCharacterEngage: '
+                  'TESSERA CharacterEngage: '
                 . 'ChapterPlay already engaged '
                 . "TicketID=$TicketID",
         );
@@ -392,7 +392,7 @@ sub Run {
     ZTSMArticleCreate(
         %Param,
         TicketID => $TicketID,
-        Subject  => 'ZTSM ChapterEngage',
+        Subject  => 'TESSERA ChapterEngage',
         Body     => $Body,
         HistoryComment =>
             'ZTSM: ChapterEngage '
@@ -410,7 +410,7 @@ sub Run {
         Priority => 'notice',
 
         Message =>
-              'ZTSMCharacterEngage: '
+              'TESSERA CharacterEngage: '
             . 'Participant engaged ChapterPlay '
             . "TicketID=$TicketID "
             . "Participant=$CustomerUserID "

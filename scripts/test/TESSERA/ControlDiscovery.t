@@ -4,6 +4,7 @@ use Test::More;
 use YAML::XS ();
 use lib 'Kernel/Package/GovernanceDB', '.';
 use Kernel::System::TESSERA::ScriptEngine;
+use Kernel::System::TESSERA::ScriptBlocks qw(SplitSource);
 use Kernel::System::TESSERA::ControlDiscovery;
 
 {
@@ -73,7 +74,7 @@ sub Setup {
             11 => { $Key => 11, Class => $Class, Name => 'child', 'DynamicField_ZTAM-EoServiceLife' => '' },
         },
         Objective => { GovernanceObjectID => 50, Class => 'ControlObjective', ZTSMStatus => 'Active', Name => 'Coverage',
-            'DynamicField_ZRM-PolicyFilter' => YAML::XS::Dump($Script) },
+            'DynamicField_PolicyFilter' => SplitSource(Field=>'PolicyFilter',Source=>YAML::XS::Dump($Script)) },
     }, 'DiscoveryAdapters';
     return $Script;
 }
@@ -104,7 +105,7 @@ for my $Case (
 
 my $Script = Setup(qw(ITSMConfigItem Product ConfigItemID));
 $Script->{SEARCH}{LIMIT} = 1;
-$Kernel::OM->{Objective}{'DynamicField_ZRM-PolicyFilter'} = YAML::XS::Dump($Script);
+$Kernel::OM->{Objective}{'DynamicField_PolicyFilter'} = SplitSource(Field=>'PolicyFilter',Source=>YAML::XS::Dump($Script));
 my $Result = $Discovery->Reconcile(GovernanceObjectID => 50);
 ok(!$Result->{Success}, 'Truncated discovery rejected');
 is(scalar keys %{ $Kernel::OM->{Controls} }, 0, 'Overflow writes no Controls');
@@ -130,7 +131,7 @@ is(scalar keys %{ $Kernel::OM->{Controls} }, 0, 'Busy scan writes nothing');
 
 Setup(qw(ITSMConfigItem Product ConfigItemID));
 open my $Example, '<', 'Kernel/Package/GovernanceDB/var/governancedb/policy/control_discovery_products.yml' or die $!;
-$Kernel::OM->{Objective}{'DynamicField_ZRM-PolicyFilter'} = do { local $/; <$Example> };
+$Kernel::OM->{Objective}{'DynamicField_PolicyFilter'} = SplitSource(Field=>'PolicyFilter',Source=>do { local $/; <$Example> });
 $Discovery->Run(Event => 'GovernanceObjectDynamicFieldUpdate_ZRM-PolicyFilter', Data => { GovernanceObjectID => 50 });
 is(scalar keys %{ $Kernel::OM->{Controls} }, 2, 'Packaged paste-ready Product YAML creates both Controls through save handler');
 

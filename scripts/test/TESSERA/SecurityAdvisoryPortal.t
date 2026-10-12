@@ -28,7 +28,7 @@ $r=$s->Create(CustomerUserID=>'customer',Model=>$m,Row=>$row,Attachments=>[{File
 $ci->{allow}=0;$r=$s->Create(CustomerUserID=>'customer',Model=>$m,Row=>$row,Attachments=>[{Filename=>'proof.txt',Content=>'proof',ContentType=>'text/plain'}]);like($r->{AttachmentWarning},qr/proof.txt/,'partial attachment failure retains created record result');
 $perm->{allow}=0;eval{$s->Create(CustomerUserID=>'customer',Model=>$m,Row=>$row)};like($@,qr/access required/,'direct service denied even with forged model');
 open my $fh,'<','Kernel/Output/HTML/Templates/Standard/CustomerSecurityAdvisory.tt' or die $!;my $src=do{local $/;<$fh>};my $out='';my $tt=Template->new();
-ok($tt->process(\$src,{Data=>{Fields=>[{Name=>'ZTAM-AdvancedCondition',Value=>''}],Products=>[{ID=>1,Name=>'<Product>'}]},Env=>sub{''}},\$out),'portal template renders');like($out,qr/Security Operation Management/,'requested button/page title');like($out,qr/&lt;Product&gt;/,'catalog names escaped');like($out,qr/AttachmentRow1/,'bulk attachment row mapping');unlike($out,qr/ZTAM-RMF/,'no RMF form');
+ok($tt->process(\$src,{Data=>{Fields=>[{Name=>'AdvancedCondition',Value=>''}],Products=>[{ID=>1,Name=>'<Product>'}]},Env=>sub{''}},\$out),'portal template renders');like($out,qr/Security Operation Management/,'requested button/page title');like($out,qr/&lt;Product&gt;/,'catalog names escaped');like($out,qr/AttachmentRow1/,'bulk attachment row mapping');unlike($out,qr/ZTAM-RMF/,'no RMF form');
 $perm->{allow}=1;
 {
  no warnings 'redefine';

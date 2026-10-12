@@ -26,7 +26,7 @@ sub Validate {
     if ( !IsHashRefWithData( $Param{Data} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'ZTSMBlueLevelComplete: Data has no values!',
+            Message  => 'TESSERA BlueLevelComplete: Data has no values!',
         );
         return;
     }

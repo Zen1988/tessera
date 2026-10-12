@@ -1,6 +1,7 @@
 package Kernel::System::TESSERA::SecurityAdvisory;
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(Assemble SplitSource);
 use Time::Local qw(timegm);
 our @ObjectDependencies = qw(Kernel::Config Kernel::System::ITSMConfigItem Kernel::System::ITSMConfigItem::Document Kernel::System::ITSMConfigItem::CustomerEntitlement Kernel::System::CustomerUser Kernel::System::DynamicField Kernel::System::DynamicField::Backend Kernel::System::GeneralCatalog Kernel::System::GovernanceObject Kernel::System::YAML Kernel::System::TESSERA::ScriptEngine Kernel::System::ITSMConfigItem::Activity Kernel::System::HTMLUtils);
 sub new { bless {},shift }
@@ -17,7 +18,7 @@ sub Model {
     my %Classes=reverse %{$Catalog->ItemList(Class=>'ITSM::ConfigItem::Class')||{}};
     die "SecurityAdvisory class is unavailable" if !$Classes{SecurityAdvisory};
     my $Def=$CI->DefinitionGet(ClassID=>$Classes{SecurityAdvisory});
-    my @Order=qw(ZTAM-Annex ZTAM-AdvisoryType ZTAM-Source ZTAM-CVE ZTAM-EventSeverity ZTAM-Status ZTAM-IssuedDate ZTAM-DueDate ZTAM-closure ZTAM-AdvancedCondition ZTAM-ImpactText ZTAM-Recommendation ZRM-PrivilegeRequired ZRM-AttackVector ZRM-Complexity ZRM-InteractionRequirement ZRM-Discoverability ZRM-Reproducibility ZRM-Confidentiality ZRM-Integrity ZRM-Availability ZRM-CodeExecution ZRM-PrivilegeEscalation ZRM-AdditionalDamage ZTAM-Application ZTAM-ContractEntitlement);
+    my @Order=qw(ZTAM-Annex ZTAM-AdvisoryType ZTAM-Source ZTAM-CVE ZTAM-EventSeverity ZTAM-Status ZTAM-IssuedDate ZTAM-DueDate ZTAM-closure AdvancedCondition ZTAM-ImpactText ZTAM-Recommendation ZRM-PrivilegeRequired ZRM-AttackVector ZRM-Complexity ZRM-InteractionRequirement ZRM-Discoverability ZRM-Reproducibility ZRM-Confidentiality ZRM-Integrity ZRM-Availability ZRM-CodeExecution ZRM-PrivilegeEscalation ZRM-AdditionalDamage ZTAM-Application ZTAM-ContractEntitlement);
     my @Fields;
     for my $Name (@Order) {
         my $F=$Def->{DynamicFieldRef}{$Name} || $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(Name=>$Name);
@@ -102,6 +103,7 @@ sub Overview {
 sub DisplayValue {
     my ($Self,%P)=@_;
     my $F=$P{Field};my $V=$P{Value};
+    return Assemble(Field => 'AdvancedCondition', Rows => $V) if ($F->{Name} || '') eq 'AdvancedCondition';
     return join('; ',map {$Self->DisplayValue(Field=>$F,Value=>$_)} @$V) if ref $V eq 'ARRAY';
     return '' if !defined $V || ref $V;
     if ($F->{FieldType} eq 'GovernanceObject' && $V =~ /\A[0-9]+\z/) {
@@ -175,9 +177,16 @@ sub Create {
         die "Field $Name must be scalar" if ref $V && !$F->{Config}{MultiValue};
         $Fields{$Name}=$V;
     }
-    my $Condition=$Fields{'ZTAM-AdvancedCondition'}||'';
+    my $RawCondition = $Fields{AdvancedCondition};
+    if (!ref $RawCondition && defined $RawCondition && $RawCondition =~ /^\s*\[/) {
+        $RawCondition = $Kernel::OM->Get('Kernel::System::JSON')->Decode(Data => $RawCondition);
+    }
+    my $Blocks = ref $RawCondition ? $RawCondition : SplitSource(Field => 'AdvancedCondition', Source => $RawCondition);
+    my $Condition = Assemble(Field => 'AdvancedCondition', Rows => $Blocks);
+    $Fields{AdvancedCondition} = $Blocks;
+
     if ($Condition =~ /\S/) {
-        die "Condition exceeds 64KB" if length($Condition)>65536;
+        die "Condition exceeds the script limit" if length($Condition)>376200;
         # Store authoring data only; never evaluate customer-authored YAML here.
         my $Parsed=$Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine')->ScriptParse(Source=>$Condition);
         die $Parsed->{Error} if !$Parsed->{Success};

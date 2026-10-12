@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use namespace::autoclean;
 use utf8;
+use Kernel::System::TESSERA::ScriptBlocks qw(NormalizeImportFields);
 
 use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData IsStringWithData);
 
@@ -230,17 +231,21 @@ sub Import {
         };
     }
 
+    $Fields = eval { NormalizeImportFields(Fields => $Fields, Definition => $Definition->{DynamicFieldRef}) };
+    return {Success => 0, Message => $@ || 'Invalid script Set import.'} if !$Fields;
+
     FIELD:
     for my $FieldName ( sort keys %{$Fields} ) {
         my $DynamicFieldConfig = $Definition->{DynamicFieldRef}{$FieldName};
         next FIELD if !IsHashRefWithData($DynamicFieldConfig);
         next FIELD if $DynamicFieldConfig->{Readonly};
 
-        my $Value = $Self->_ValueFromDocument(
+        my $Value = eval { $Self->_ValueFromDocument(
             DynamicFieldConfig => $DynamicFieldConfig,
             Value              => $Fields->{$FieldName},
             UserID             => $Param{UserID},
-        );
+        ) };
+        return { Success => 0, Message => "Field '$FieldName': " . $@ } if $@;
 
         $ObjectData{ 'DynamicField_' . $FieldName } = $Value if defined $Value;
     }
@@ -524,24 +529,24 @@ sub _ReferenceValueFromDocument {
     my ( $Self, %Param ) = @_;
 
     my $Value = $Param{Value};
+    my $Resolve = sub {
+        my ($Input) = @_;
+        my $Resolved = $Self->_SingleReferenceFromDocument(
+            %Param, Value => $Input,
+        );
+        die "Reference cannot be resolved uniquely.\n"
+            if defined $Input && $Input ne ''
+                && (!defined $Resolved || $Resolved eq '');
+        return $Resolved;
+    };
 
     if ( ref $Value eq 'ARRAY' ) {
         return [
-            map {
-                $Self->_SingleReferenceFromDocument(
-                    DynamicFieldConfig => $Param{DynamicFieldConfig},
-                    Value              => $_,
-                    UserID             => $Param{UserID},
-                )
-            } @{$Value}
+            map { $Resolve->($_) } @{$Value}
         ];
     }
 
-    return $Self->_SingleReferenceFromDocument(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        Value              => $Value,
-        UserID             => $Param{UserID},
-    );
+    return $Resolve->($Value);
 }
 
 sub _SingleReferenceForDocument {

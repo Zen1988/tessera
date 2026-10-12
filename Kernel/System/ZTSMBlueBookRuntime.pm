@@ -80,7 +80,7 @@ sub _ParamHash {
 
     _RuntimeLog(
         Priority => 'error',
-        Message  => "ZTSMBlueBookRuntime: odd argument list received Caller=$Caller RawCount=$RawCount",
+        Message  => "TESSERA BlueBookRuntime: odd argument list received Caller=$Caller RawCount=$RawCount",
     ) if $RawCount % 2;
 
     while (@Raw) {
@@ -89,7 +89,7 @@ sub _ParamHash {
         if ( !@Raw ) {
             _RuntimeLog(
                 Priority => 'error',
-                Message  => "ZTSMBlueBookRuntime: dropping argument without value Caller=$Caller Key="
+                Message  => "TESSERA BlueBookRuntime: dropping argument without value Caller=$Caller Key="
                     . ( defined $Key ? $Key : '' ),
             );
             last;
@@ -509,7 +509,7 @@ sub ChildProcessSet {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  'ZTSMBlueBookRuntime: Child process context not found '
+                  'TESSERA BlueBookRuntime: Child process context not found '
                 . 'Process=ztsm-activity-lifecycle-orchestration '
                 . 'Activity=Start '
                 . "TicketID=$Param{TicketID}",
@@ -536,7 +536,7 @@ sub ChildProcessSet {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  'ZTSMBlueBookRuntime: Failed setting child process '
+                  'TESSERA BlueBookRuntime: Failed setting child process '
                 . "TicketID=$Param{TicketID} "
                 . "Field=$ProcessField "
                 . "ProcessEntityID=$Context{ProcessEntityID}",
@@ -549,7 +549,7 @@ sub ChildProcessSet {
         $LogObject->Log(
             Priority => 'error',
             Message  =>
-                  'ZTSMBlueBookRuntime: Failed setting child process activity '
+                  'TESSERA BlueBookRuntime: Failed setting child process activity '
                 . "TicketID=$Param{TicketID} "
                 . "Field=$ActivityField "
                 . "ActivityEntityID=$Context{ActivityEntityID}",
@@ -561,7 +561,7 @@ sub ChildProcessSet {
     $LogObject->Log(
         Priority => 'notice',
         Message  =>
-              'ZTSMBlueBookRuntime: Child process assigned '
+              'TESSERA BlueBookRuntime: Child process assigned '
             . "TicketID=$Param{TicketID} "
             . "ProcessEntityID=$Context{ProcessEntityID} "
             . "ActivityEntityID=$Context{ActivityEntityID}",
@@ -1356,7 +1356,7 @@ sub LevelSpawn {
                 $LogObject->Log(
                     Priority => 'error',
                     Message  =>
-                          'ZTSMBlueBookRuntime: Child field set failed '
+                          'TESSERA BlueBookRuntime: Child field set failed '
                         . "TicketID=$NewTicketID "
                         . "Field=$FieldName "
                         . 'Value='
@@ -1451,7 +1451,13 @@ sub ChildTemplateApply {
     return if !$Template || ref $Template ne 'HASH';
 
     my $Description = _PlainTextValue( $Template->{Description} );
-    my $Rows        = _TemplateRiskAssessmentRows( Template => $Template );
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(TicketID => $Param{TicketID}, DynamicFields => 0);
+    my $Type = $Ticket{Type} || '';
+    my $Definition = $Kernel::OM->Get('Kernel::System::GovernanceObject')->DefinitionGet(ClassID => $Template->{ClassID});
+    my $Fields = TemplateSectionFields(Sections => $Definition->{DefinitionRef}{Sections}, TicketType => $Type);
+    my $Rows = $Fields->{'ZTemplate-RiskAssessment'}
+        ? _TemplateRiskAssessmentRows(Template => $Template) : [];
+
 
     if ( $Rows && @{$Rows} ) {
         my $FieldSet = _TicketFieldSet(
@@ -1465,7 +1471,7 @@ sub ChildTemplateApply {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  =>
-                      "ZTSMBlueBookRuntime: Template risk assessment field set failed TicketID='$Param{TicketID}' "
+                      "TESSERA BlueBookRuntime: Template risk assessment field set failed TicketID='$Param{TicketID}' "
                     . "TemplateID='$Param{TemplateID}' RowCount='"
                     . scalar( @{$Rows} )
                     . "'.",
@@ -1952,3 +1958,32 @@ sub _RiskScoreCalculate {
 }
 
 1;
+
+# Role merging prefixes section keys (for example General Fields::Assessment).
+# Match the final section name exactly; headers never determine routing.
+sub TemplateSectionFields {
+    my (%Param) = @_;
+    my $Sections = $Param{Sections};
+    my $Type = $Param{TicketType};
+    die "Template ticket type/sections cannot be resolved.\n"
+        if !defined $Type || ref $Type || $Type eq '' || ref $Sections ne 'HASH';
+    my @Names = grep { (split /::/, $_)[-1] eq $Type } keys %{$Sections};
+    die "Ambiguous template section for ticket type.\n" if @Names > 1;
+    return {} if !@Names;
+    my %Fields;
+    my $Walk;
+    $Walk = sub {
+        my ($Node, $Depth) = @_;
+        die "Template section exceeds depth limit.\n" if $Depth > 32;
+        if (ref $Node eq 'ARRAY') { $Walk->($_, $Depth + 1) for @{$Node} }
+        elsif (ref $Node eq 'HASH') {
+            $Fields{$Node->{DF}} = 1 if defined $Node->{DF} && !ref $Node->{DF};
+            $Walk->($Node->{$_}, $Depth + 1) for grep { $_ ne 'DF' } keys %{$Node};
+        }
+    };
+    my $OK = eval { $Walk->($Sections->{$Names[0]}{Content}, 0); 1 };
+    my $Error = $@;
+    undef $Walk;
+    die $Error if !$OK;
+    return \%Fields;
+}

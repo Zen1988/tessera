@@ -6,6 +6,7 @@ package Kernel::System::TESSERA::ControlRuntime;
 
 use strict;
 use warnings;
+use Kernel::System::TESSERA::ScriptBlocks qw(ObjectSource);
 use Digest::SHA qw(sha256_hex);
 
 our @ObjectDependencies = (
@@ -169,7 +170,7 @@ sub EvaluateCompletedTicket {
     return { Success => 0, Status => 'UNKNOWN', Reason => 'Linked ControlObjective cannot be resolved.' }
         if ref $Objective ne 'HASH' || !%{$Objective};
 
-    my $Source = _Scalar( $Objective->{'DynamicField_ZRM-PolicyEvaluation'} ) || '';
+    my $Source = ObjectSource(Object => $Objective, Field => 'PolicyEvaluation') || '';
     my $Result = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ProgramEvaluate(
         Source => $Source, Context => { TICKET => \%Ticket, CONTROLOBJECTIVE => $Objective, CONTROL => $Control },
     );
@@ -220,8 +221,8 @@ sub ProcessFailedControl {
 
     # Per-target finding programs own Risk creation after a complete evaluation.
     # A result-change event has no finding context and must not create a second Risk.
-    my $Program = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load(
-        Data => _Scalar( $Objective->{'DynamicField_ZRM-PolicyEvaluation'} ) || '' ) };
+    my $Program = eval { $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ScriptSourceLoad(
+        Source => ObjectSource(Object => $Objective, Field => 'PolicyEvaluation') || '' ) };
     return { Success => 1, RiskCreated => 0 }
         if ref $Program eq 'HASH' && exists $Program->{TARGET};
 
@@ -237,8 +238,8 @@ sub ProcessFailedControl {
 
 sub _AutomaticEvaluate {
     my ( $Self, %Param ) = @_;
-    my $Source = _Scalar( $Param{Objective}->{'DynamicField_ZRM-PolicyEvaluation'} ) || '';
-    my $Script = eval { $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source ) };
+    my $Source = ObjectSource(Object => $Param{Objective}, Field => 'PolicyEvaluation') || '';
+    my $Script = eval { $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ScriptSourceLoad( Source => $Source ) };
     if ( ref $Script eq 'HASH' && exists $Script->{TARGET} ) {
         my $Result = eval { $Self->_TargetEvaluate( %Param, Script => $Script ) };
         return $Result if !$@ && $Result;
@@ -291,8 +292,8 @@ sub _TargetEvaluate {
         $Self->_PassedControlRisksDeactivate(%Param);
     }
     if ( $Result->{Status} eq 'Fail' && _Truthy( _Scalar( $Param{Objective}{'DynamicField_ZRM-CreateRisk'} ) ) ) {
-        my $Assignment = $Kernel::OM->Get('Kernel::System::YAML')->Load(
-            Data => _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '' );
+        my $Assignment = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ScriptSourceLoad(
+            Source => ObjectSource(Object => $Param{Objective}, Field => 'FieldAsssignment') || '' );
         if ( ref $Assignment eq 'HASH' && ref $Assignment->{RETURN} eq 'HASH'
             && ref $Assignment->{RETURN}->{'GROUP FINDINGS'} eq 'HASH' ) {
             my @Batches = exists $Result->{Batches} ? @{$Result->{Batches}}
@@ -508,8 +509,8 @@ sub _FindingRiskCreate {
     $Target =~ s/^\@//;
     die "Invalid RiskClass.\n" if $Target !~ /\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z/;
     my ( $Kind, $Class ) = ($1, $2);
-    my $Source = _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '';
-    my $Script = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
+    my $Source = ObjectSource(Object => $Param{Objective}, Field => 'FieldAsssignment') || '';
+    my $Script = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ScriptSourceLoad( Source => $Source );
     my $IdentityField = ref $Script eq 'HASH' && ref $Script->{RETURN} eq 'HASH' ? $Script->{RETURN}->{IDENTITY} : '';
     die "Finding assignments require RETURN IDENTITY with an assigned field.\n" if !$IdentityField;
     my $Assignments = $Self->_RiskAssignmentsParse(
@@ -572,7 +573,7 @@ sub _RiskCreateOnFailure {
     return { Success => 0, RiskCreated => 0, RiskError => 'ZRM-RiskClass is required when ZRM-CreateRisk is selected.' }
         if $Target !~ m{\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z};
     my ( $ObjectType, $Class ) = ( $1, $2 );
-    my $Source = _Scalar( $Param{Objective}{'DynamicField_ZRM-FieldAssignment'} ) || '';
+    my $Source = ObjectSource(Object => $Param{Objective}, Field => 'FieldAsssignment') || '';
     my $Assignments = $Self->_RiskAssignmentsParse(
         Source => $Source, ObjectType => $ObjectType, Class => $Class,
         Context => { CONTROL => $Param{Control}, CONTROLOBJECTIVE => $Param{Objective}, TICKET => $Param{Ticket} || {} },
