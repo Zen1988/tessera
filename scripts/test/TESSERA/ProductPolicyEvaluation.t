@@ -20,7 +20,7 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
     sub Get { $_[1] =~ /::(?:PolicyEngine|ScriptEngine)$/ ? $_[0]{Engine} : $_[0] }
     sub Create { my ( $Self, $Type, %P ) = @_; bless { Epoch => $P{ObjectParams}{Epoch} }, 'PolicyClock' }
     sub Load { my ( $Self, %P ) = @_; YAML::XS::Load($P{Data}) }
-    sub PIDCreate { !$_[0]{Busy} }
+    sub PIDCreate { my($S,%P)=@_; !($S->{Busy} && $P{Name} !~ /^TESSERA\.ControlRun\./) }
     sub PIDDelete { 1 }
     sub Ensure { 1 } # RiskMasterTicket is outside this policy adapter test.
     sub DynamicFieldGet {
@@ -51,7 +51,7 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
             if $P{ConfigItemID} == 90 || $P{ConfigItemID} == 91;
         return;
     }
-    sub ItemList { my ( $Self, %P ) = @_; return $P{Class} =~ /::Class$/ ? {1=>'Risk'} : {2=>'Active',3=>'Inactive'} }
+    sub ItemList { my ( $Self, %P ) = @_; return $P{Class} =~ /::Class$/ ? {1=>'Risk'} : {2=>'Active',3=>'Resolved'} }
     sub MELTObjectSearch {
         my ( $Self, %P ) = @_;
         my ($Key) = grep { /^DynamicField_/ } keys %P;
@@ -76,7 +76,7 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
         $Self->{Risks}{$ID} = { %P, Class => 'Risk' };
         return $ID;
     }
-    sub ActivityAdd { my ( $Self, %P ) = @_; push @{ $Self->{Activities} }, \%P; 1 }
+    sub ActivityAdd { my ( $Self, %P ) = @_; return if $Self->{FailActivity}; push @{ $Self->{Activities} }, \%P; 1 }
     sub ValueSet {
         my ( $Self, %P ) = @_;
         $Self->{Saved}{ $P{DynamicFieldConfig}{Name} } = $P{Value};
@@ -85,7 +85,11 @@ my $Now = DateTime->new(year=>2026,month=>9,day=>22,time_zone=>'Asia/Singapore')
     }
     sub Log { 1 }
 }
-{ package PolicyClock; sub ToString { '2026-09-22 00:00:00' } }
+{ package PolicyClock;
+    sub UserDefaultTimeZoneGet { 'Asia/Singapore' }
+    sub ToTimeZone { $_[0]{Zone}=$_[2]; 1 }
+    sub ToString { $_[0]{Zone} ? '2026-09-22 08:00:00' : '2026-09-22 00:00:00' }
+}
 sub Setup {
     my %Objects = (
         1 => {Class=>'Product', Name=>'Root', 'DynamicField_ZTAM-EoServiceLife'=>'2027-09-21'},
@@ -337,6 +341,54 @@ $R=$Runtime->_AutomaticEvaluate(%P);
 is($R->{Status},'UNKNOWN','Automatic entry point rejects invalid dates');
 is(scalar keys %{$Kernel::OM->{Risks}},0,'Invalid evaluation creates no Risk');
 ok(!exists $Kernel::OM->{Saved}{'ZRM-Result'},'Invalid evaluation does not overwrite result with Pass');
+is($R->{ErrorArticleRecorded},1,'Invalid evaluation records an error article');
+like($Kernel::OM->{Activities}[-1]{Body},qr/Run attempted:.*Asia\/Singapore.*Execution outcome: Error/s,
+    'Error evidence uses the configured OTOBO timezone and distinguishes the attempted run');
+ok(!exists $Kernel::OM->{Saved}{'ZRM-LastRun'},'Error article does not suppress retry');
+
+for my $Outcome ('Pass','N/A') {
+    $Root=Setup();
+    delete $Kernel::OM->{Objects}{$_} for (10,11,12,13);
+    my $EmptyScript=YAML::XS::Load($PolicyText);
+    $EmptyScript->{'ON FAIL'}{'ON NO AFFECTED'}={RETURN=>$Outcome,REASON=>'No deployed assets.'};
+    $R=Evaluate($Root,$EmptyScript);
+    is($R->{Status},$Outcome,"Authored empty affected outcome $Outcome");
+    is_deeply($R->{Findings},[],'Empty scan produces no finding');
+    $Objective->{'DynamicField_PolicyEvaluation'}=SplitSource(Field=>'PolicyEvaluation',Source=>YAML::XS::Dump($EmptyScript));
+    $R=$Runtime->_AutomaticEvaluate(%P);
+    is($R->{Status},$Outcome,'Empty affected runtime evaluation completes');
+    ok($Kernel::OM->{Saved}{'ZRM-LastRun'},'Completed empty scan advances LastRun');
+    is(scalar keys %{$Kernel::OM->{Risks}},0,'Empty scan creates no risk');
+    $Root=Setup();
+    $R=Evaluate($Root,$EmptyScript);
+    is($R->{Status},'Fail','Empty override cannot hide matched assets');
+}
+$Objective->{'DynamicField_PolicyEvaluation'}=SplitSource(Field=>'PolicyEvaluation',Source=>$PolicyText);
+Setup();delete $Kernel::OM->{Objects}{10}{'DynamicField_ZTAM-Application'};
+$R=$Runtime->_AutomaticEvaluate(%P);
+is($R->{Status},'UNKNOWN','Missing Application remains an evaluation error');
+is($R->{ErrorArticleRecorded},1,'Missing group reference is recorded in the article');
+like($Kernel::OM->{Activities}[-1]{Body},qr/Finding group reference is missing or ambiguous/,'Error article explains grouping failure');
+ok(!exists $Kernel::OM->{Saved}{'ZRM-LastRun'},'Grouping failure retains retry timestamp');
+
+$Root=Setup();
+my $BadEmpty=YAML::XS::Load($PolicyText);
+$BadEmpty->{'ON FAIL'}{'ON NO AFFECTED'}={RETURN=>'Ignore'};
+$R=Evaluate($Root,$BadEmpty);
+is($R->{Status},'UNKNOWN','Invalid empty outcome fails closed');
+
+Setup();$Kernel::OM->{FailActivity}=1;
+$Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='invalid';
+$R=$Runtime->_AutomaticEvaluate(%P);
+is($R->{Status},'UNKNOWN','Failed article storage does not report success');
+is($R->{ErrorArticleRecorded},0,'Failed article storage is exposed');
+ok(!exists $Kernel::OM->{Saved}{'ZRM-LastRun'},'Failed evidence storage does not advance LastRun');
+
+$Root=Setup();delete $Kernel::OM->{Objects}{$_} for (10,11,12,13);
+my $LegacyEmpty=YAML::XS::Load($PolicyText);
+delete $LegacyEmpty->{'ON FAIL'}{'ON NO AFFECTED'};
+$R=Evaluate($Root,$LegacyEmpty);
+is($R->{Status},'Fail','Existing programs retain their empty-scan assessment behavior');
 
 # The same authored check can emit its bound target directly. No Product graph,
 # asset field, or class-based descendant traversal is required.
@@ -384,12 +436,12 @@ $Runtime->_TargetEvaluate(%P);
 is(scalar keys %{$Kernel::OM->{Risks}},2,'Same active name reuses its Risk');
 $Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='2035-01-01';
 $Runtime->_TargetEvaluate(%P);
-is($NamedRisk->{ZTSMStatusID},3,'Passing Control marks original associated Risk Inactive');
-is($Kernel::OM->{Risks}{201}{ZTSMStatusID},3,'Passing Control marks latest associated Risk Inactive');
+is($NamedRisk->{ZTSMStatusID},3,'Passing Control marks original associated Risk Resolved');
+is($Kernel::OM->{Risks}{201}{ZTSMStatusID},3,'Passing Control marks latest associated Risk Resolved');
 $Kernel::OM->{Objects}{1}{'DynamicField_ZTAM-EoServiceLife'}='2026-01-01';
 $Runtime->_TargetEvaluate(%P);
 is(scalar keys %{$Kernel::OM->{Risks}},3,'Failure after Inactive creates a new episode');
-is($NamedRisk->{ZTSMStatusID},3,'Old Inactive Risk is never reactivated');
+is($NamedRisk->{ZTSMStatusID},3,'Old Resolved Risk is never reactivated');
 
 
 # Stored selection scripts and date bands are authored YAML, independent of ST-5 IDs.

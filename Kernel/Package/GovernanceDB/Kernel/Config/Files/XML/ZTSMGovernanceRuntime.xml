@@ -526,4 +526,17 @@
             </Array>
         </Value>
     </Setting>
+    <Setting Name="Loader::Module::CustomerTicketZTSMAction###120-TESSERASecurityResponse" Required="1" Valid="1">
+        <Description Translatable="1">Customer runtime action security response styles.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value><Hash>
+            <Item Key="CSS"><Array/></Item>
+            <Item Key="JavaScript"><Array/></Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Loader::Customer::CommonCSS###120-TESSERAPortalResponse" Required="1" Valid="1">
+        <Description Translatable="1">Shared customer portal error, warning and security response styles.</Description>
+        <Navigation>Frontend::Customer</Navigation>
+        <Value><Array><Item>TESSERA.Customer.SecurityResponse.css</Item></Array></Value>
+    </Setting>
 </otobo_config>

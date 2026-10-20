@@ -88,13 +88,21 @@ my $CatalogSeed = LoadFile('Kernel/Package/GovernanceDB/var/governancedb/default
 my %CatalogClass = map {
     $_->{class} => { map { $_->{name} => $_ } @{ $_->{items} || [] } }
 } @{ $CatalogSeed->{classes} || [] };
+my $ClassSeed = do {
+    open my $F, '<:raw', 'Kernel/Package/GovernanceDB/var/governancedb/default_classes.json' or die $!;
+    local $/;
+    require JSON::PP;
+    JSON::PP::decode_json(<$F>);
+};
+my %SeedClass = map {$_->{Name}=>1} @{$ClassSeed->{Classes}};
+my %SeedRole = map {$_->{Name}=>1} @{$ClassSeed->{Roles}};
 
 for my $NewClass (qw(EventSeverity Severity)) {
-    ok( $CatalogClass{'ZTSM::GovernanceObject::Class'}{$NewClass},
+    ok( $SeedClass{$NewClass},
         "new top-level GovernanceObject class $NewClass is seeded when missing" );
 }
 for my $NewRole ( 'EventSeverity', 'Policy', 'ZTSM Code' ) {
-    ok( $CatalogClass{'ZTSM::GovernanceObject::Role'}{$NewRole},
+    ok( $SeedRole{$NewRole},
         "supporting GovernanceObject role $NewRole is seeded when missing" );
 }
 ok( $CatalogClass{'ZTSM::Type'}{RiskTreatment},
@@ -104,8 +112,8 @@ for my $Deprecated (
     [ 'ZTSM::GovernanceObject::Class', 'ControlRecommendation' ],
     [ 'ZTSM::GovernanceObject::Role',  'ZRM Control' ],
 ) {
-    is( $CatalogClass{$Deprecated->[0]}{$Deprecated->[1]}{valid}, 'invalid',
-        "$Deprecated->[1] remains deprecated for a fresh installation" );
+    ok( !$CatalogClass{$Deprecated->[0]}{$Deprecated->[1]},
+        "$Deprecated->[1] is excluded for a fresh installation" );
 }
 
 done_testing;

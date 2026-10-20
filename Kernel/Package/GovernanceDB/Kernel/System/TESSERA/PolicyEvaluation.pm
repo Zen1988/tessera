@@ -62,6 +62,9 @@ sub _Evaluate {
     # No graph reads occur until this object's own check has failed.
     my $Fail = $Script->{'ON FAIL'};
     die "ON FAIL must be a mapping.\n" if ref $Fail ne 'HASH';
+    die "ON NO AFFECTED is supported only with DESCENDANTS and AFFECTED.\n"
+        if exists $Fail->{'ON NO AFFECTED'}
+            && ( exists $Fail->{'FOR EACH SELECTED'} || exists $Fail->{'EMIT FINDING'} );
     if ( exists $Fail->{'FOR EACH SELECTED'} ) {
         my $Rule = $Fail->{'FOR EACH SELECTED'};
         die "FOR EACH SELECTED needs SCRIPT FIELD, AS, LIMIT and EVALUATE.\n"
@@ -144,6 +147,14 @@ sub _Evaluate {
         }
     }
     die "AFFECTED must be a list.\n" if ref $Fail->{AFFECTED} ne 'ARRAY';
+    my $NoAffected = $Fail->{'ON NO AFFECTED'};
+    if ( exists $Fail->{'ON NO AFFECTED'} ) {
+        die "ON NO AFFECTED requires RETURN Pass or N/A and optional scalar REASON.\n"
+            if ref $NoAffected ne 'HASH' || ref $NoAffected->{RETURN}
+                || ( $NoAffected->{RETURN} || '' ) !~ /\A(?:Pass|N\/A)\z/
+                || ( exists $NoAffected->{REASON} && ( !defined $NoAffected->{REASON} || ref $NoAffected->{REASON} ) )
+                || grep { $_ ne 'RETURN' && $_ ne 'REASON' } keys %{$NoAffected};
+    }
     my %Findings;
     for my $Match ( @{ $Fail->{AFFECTED} } ) {
         die "AFFECTED entry requires FOR, CLASS and REFERENCES.\n"
@@ -169,6 +180,9 @@ sub _Evaluate {
             push @{ $Findings{$Key}{Matches} }, @Matches;
         }
     }
+    return { Success => 1, Status => $NoAffected->{RETURN}, Findings => [], %Evidence,
+        Reason => $NoAffected->{REASON} || 'No affected assets found.' }
+        if !keys(%Findings) && $NoAffected;
     return { Success => 1, Status => 'Fail', Findings => [ map { $Findings{$_} } sort keys %Findings ], %Evidence };
 }
 

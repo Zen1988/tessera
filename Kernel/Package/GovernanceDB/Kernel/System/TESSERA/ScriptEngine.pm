@@ -8,6 +8,7 @@ use strict;
 use warnings;
 
 use Scalar::Util qw(looks_like_number refaddr);
+use Kernel::System::TESSERA::ReferenceScope;
 
 our @ObjectDependencies = (
     'Kernel::System::DateTime',
@@ -1151,6 +1152,10 @@ sub GroupedFieldAssignmentsEvaluate {
     );
     my $GO = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my %Groups;
+    my $PartitionRule = $GroupRule->{'PARTITION BY'};
+    die "PARTITION BY must be a mapping.\n"
+        if exists $GroupRule->{'PARTITION BY'} && ref $PartitionRule ne 'HASH';
+    my $Scope = Kernel::System::TESSERA::ReferenceScope->new();
     my $MembersAs = $GroupRule->{'MEMBERS AS'};
     die "GROUP BY MEMBERS AS requires a valid alias when collecting members.\n"
         if ( $GroupRule->{'MEMBER FROM'} || $GroupRule->{'INCLUDE MEMBERS'} )
@@ -1164,13 +1169,28 @@ sub GroupedFieldAssignmentsEvaluate {
             if !@GroupIDs || grep { !defined $_ || ref $_ || $_ !~ /\A\d+\z/ || !$_ } @GroupIDs;
         my %SeenGroup;
         @GroupIDs = grep { !$SeenGroup{$_}++ } @GroupIDs;
+        my $MemberID;
         if ( $GroupRule->{'MEMBER FROM'} ) {
-            my $MemberID = _GroupedPath( \%Context, $GroupRule->{'MEMBER FROM'} );
+            $MemberID = _GroupedPath( \%Context, $GroupRule->{'MEMBER FROM'} );
             die "Finding member ID is missing or ambiguous.\n"
                 if !defined $MemberID || ref $MemberID || $MemberID !~ /\A\d+\z/ || !$MemberID;
-            $Groups{$_}{MemberIDs}{$MemberID} = 1 for @GroupIDs;
         }
-        push @{ $Groups{$_}{Findings} }, $Finding for @GroupIDs;
+        for my $GroupID (@GroupIDs) {
+            my $Application = _GroupedResolve($GO,$GroupID,$GroupRule->{AS},$Param{UserID});
+            my $Partitions = $PartitionRule ? $Scope->Partition(Rule=>$PartitionRule,
+                Context=>{%Context,APPLICATION=>$Application},UserID=>$Param{UserID}) : [{ID=>0,EntitlementIDs=>[]}];
+            for my $Partition (@$Partitions) {
+                my $Key=$PartitionRule ? "$GroupID:$Partition->{ID}" : $GroupID;
+                $Groups{$Key}{GroupID}=$GroupID;
+                $Groups{$Key}{Partition}=$Partition if $PartitionRule;
+                $Groups{$Key}{Fallback} ||= $Partition->{Fallback} || 0;
+                $Groups{$Key}{MemberIDs}{$MemberID}=1 if $MemberID;
+                $Groups{$Key}{MemberIDs}{$_}=1 for @{$Partition->{EntitlementIDs}};
+                $Groups{$Key}{EntitlementIDs}{$_}=1 for @{$Partition->{EntitlementIDs}};
+                die "Finding partition limit exceeded.\n" if keys(%Groups)>10000;
+                push @{$Groups{$Key}{Findings}},$Finding;
+            }
+        }
     }
     if ( $GroupRule->{'INCLUDE MEMBERS'} ) {
         die "GROUP BY INCLUDE MEMBERS must be a list of paths.\n"
@@ -1183,12 +1203,17 @@ sub GroupedFieldAssignmentsEvaluate {
         }
     }
     for my $GroupID ( keys %Groups ) {
-        my $Group = _GroupedResolve( $GO, $GroupID, $GroupRule->{AS}, $Param{UserID} );
+        my $Group = _GroupedResolve( $GO, $Groups{$GroupID}{GroupID}, $GroupRule->{AS}, $Param{UserID} );
         my %GroupObject = %{$Group};
         if ($MembersAs) {
             die "GROUP BY member alias conflicts with an object field.\n"
                 if exists $GroupObject{$MembersAs} || exists $GroupObject{"DynamicField_$MembersAs"};
             $GroupObject{$MembersAs} = [ sort { $a <=> $b } keys %{ $Groups{$GroupID}{MemberIDs} || {} } ];
+        }
+        if ($PartitionRule) {
+            my $Alias=$PartitionRule->{'MEMBERS AS'};
+            die "Partition member alias conflicts with an object field.\n" if exists $GroupObject{$Alias} || exists $GroupObject{"DynamicField_$Alias"};
+            $GroupObject{$Alias}=[sort {$a<=>$b} keys %{$Groups{$GroupID}{EntitlementIDs}||{}}];
         }
         $Groups{$GroupID}{Object} = \%GroupObject;
     }
@@ -1210,10 +1235,15 @@ sub GroupedFieldAssignmentsEvaluate {
     ( $Severity, $Priority, $PriorityByName ) = $Self->_GroupedSeverity(
         Rule => $SeverityRule, Context => \%Base, UserID => $Param{UserID} ) if $SeverityRule;
     my @Planned;
-    for my $GroupID ( sort { $a <=> $b } keys %Groups ) {
+    for my $GroupID ( sort keys %Groups ) {
         for my $ItemID ( sort { $a <=> $b } @ItemIDs ) {
             my %Context = ( %Base, GROUP => $Groups{$GroupID}{Object}, ITEM => $Items{$ItemID},
                 SEVERITY => $Severity );
+            if ($PartitionRule) {
+                my $Alias=$PartitionRule->{RESOLVE}{ALIAS};
+                die "Partition alias conflicts with context.\n" if exists $Context{$Alias};
+                $Context{$Alias}=$Groups{$GroupID}{Partition}{Object};
+            }
             for my $Alias ( sort keys %{ $Rule->{RESOLVE} || {} } ) {
                 die "Invalid resolver alias.\n" if $Alias !~ /\A[A-Z][A-Z0-9_]*\z/ || exists $Context{$Alias};
                 my $Resolver = $Rule->{RESOLVE}{$Alias};
@@ -1240,9 +1270,14 @@ sub GroupedFieldAssignmentsEvaluate {
             die "Identity field does not match its template.\n"
                 if !defined $Values{$IdentityField} || ref $Values{$IdentityField}
                 || "$Values{$IdentityField}" ne $Identity;
-            push @Planned, { GroupID => $GroupID, ItemID => $ItemID,
+            push @Planned, { GroupID => $Groups{$GroupID}{GroupID}, ItemID => $ItemID,
+                ($PartitionRule ? (SupportProfileID=>$Groups{$GroupID}{Partition}{ID},
+                    SupportProfileName=>$Groups{$GroupID}{Partition}{Object}{Name},
+                    EntitlementIDs=>$Groups{$GroupID}{Object}{$PartitionRule->{'MEMBERS AS'}},
+                    AssignmentFallback=>$Groups{$GroupID}{Fallback}||0) : ()),
                 Identity => $Identity, Name => $Name, Values => \%Values,
                 Findings => $Groups{$GroupID}{Findings} };
+            die "Grouped Risk plan limit exceeded.\n" if @Planned>10000;
         }
     }
 
@@ -1404,6 +1439,20 @@ sub FieldAssignmentsEvaluate {
         if lc($Target) ne lc($Expected);
 
     my %Values;
+    my %AssignmentContext = %{ $Param{Context} || {} };
+    if (ref $Loaded eq 'HASH' && exists $Loaded->{RETURN}{'RESOLVE REFERENCES'}) {
+        my $Resolvers=$Loaded->{RETURN}{'RESOLVE REFERENCES'};
+        my $OK=eval {
+            die "RESOLVE REFERENCES must be a mapping.\n" if ref $Resolvers ne 'HASH';
+            my $Scope=Kernel::System::TESSERA::ReferenceScope->new();
+            for my $Alias (sort keys %$Resolvers) {
+                die "Invalid reference alias.\n" if $Alias !~ /\A[A-Z][A-Z0-9_]*\z/ || exists $AssignmentContext{$Alias};
+                $AssignmentContext{$Alias}=$Scope->Resolve(Rule=>$Resolvers->{$Alias},Context=>\%AssignmentContext,UserID=>$Param{UserID}||1);
+            }
+            1;
+        };
+        return {Success=>0,Status=>'UNKNOWN',Error=>$@||'Reference resolution failed.'} if !$OK;
+    }
     for my $Field ( sort keys %{$Assignments} ) {
         return { Success => 0, Status => 'UNKNOWN', Error => "Invalid field-assignment field '$Field'." }
             if $Field !~ m{\A[A-Za-z][A-Za-z0-9_-]*\z};
@@ -1412,7 +1461,7 @@ sub FieldAssignmentsEvaluate {
             if ref $Expression;
         my $Value = defined $Expression && uc($Expression) eq 'THIS'
             ? { Known => 1, Value => $Param{ThisValue} }
-            : $Self->ValueEvaluate( Expression => $Expression, Context => $Param{Context} );
+            : $Self->ValueEvaluate( Expression => $Expression, Context => \%AssignmentContext );
         return { Success => 0, Status => 'UNKNOWN', Error => $Value->{Reason} || "Cannot calculate '$Field'." }
             if !$Value->{Known};
         $Values{$Field} = $Value->{Value};

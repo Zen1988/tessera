@@ -58,6 +58,16 @@ sub Resolve {
 
     my $Source = eval { ObjectSource(Object => $Role, Field => 'ScriptEngine') };
     return { Success => 0, Status => 'UNKNOWN', Error => $@ } if $@;
+    # The exported GovernanceRole class stores this member directly, without
+    # exposing its owning ScriptEngine Set. Keep Set storage authoritative when
+    # present, but support the actual class layout as well.
+    if ((!defined $Source || $Source eq '') && !exists $Role->{'DynamicField_ScriptEngine'}) {
+        my $Member = eval { _Scalar($Role->{'DynamicField_ZTSM-ScriptEngine'}) };
+        return { Success => 0, Status => 'UNKNOWN', Error => $@ } if $@;
+        return { Success => 0, Status => 'UNKNOWN', Error => 'GovernanceRole script exceeds 376200 characters.' }
+            if defined $Member && length($Member) > 376200;
+        $Source = $Member;
+    }
     return { Success => 0, Status => 'NO_SCRIPT', Error => 'GovernanceRole has no ZTSM-ScriptEngine value.' }
         if !defined $Source || $Source eq '';
 

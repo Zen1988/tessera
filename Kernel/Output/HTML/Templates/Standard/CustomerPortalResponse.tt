@@ -1,0 +1,21 @@
+[% IF Data.FullPage %]
+<div id="oooContent" class="ZTSMSecurityPage">
+    <header id="oooHeader"><h1>[% Translate("Customer portal") | html %]</h1></header>
+    <main id="oooMainBox">
+[% ELSE %]<div class="ZTSMSecurityPage ZTSMPortalResponseFragment">[% END %]
+        <section class="ZTSMSecurityCard" aria-label="[% Translate(Data.Title) | html %]">
+            [% IF Data.Code %]<p class="ZTSMSecurityCode">[% Data.Code | html %]</p>[% END %]
+            <h2 class="ZTSMPortalResponseTitle">[% Translate(Data.Title) | html %]</h2>
+            <div class="ZTSMSecurityWarning" role="alert"><p>[% Translate(Data.Message) | html %]</p></div>
+            [% IF Data.Comment %]<p class="ZTSMSecurityHelp">[% Translate(Data.Comment) | html %]</p>[% END %]
+            [% IF Data.CustomerUserID || Data.AttemptedAction %]
+            <dl class="ZTSMSecurityDetails">
+                [% IF Data.CustomerUserID %]<div><dt>[% Translate("Signed-in customer ID") | html %]</dt><dd>[% Data.CustomerUserID | html %]</dd></div>[% END %]
+                [% IF Data.AttemptedAction %]<div><dt>[% Translate("Page requested") | html %]</dt><dd>[% Data.AttemptedAction | html %]</dd></div>[% END %]
+            </dl>
+            [% END %]
+            <p class="ZTSMSecurityHelp">[% Translate("Use the portal navigation to continue, or contact support if the problem persists.") | html %]</p>
+            [% IF Data.SignedIn %]<a class="ZTSMSecurityReturn" href="[% Env('Baselink') | html %]Action=CustomerTicketOverview">[% Translate("Return to your tickets") | html %]</a>
+            [% ELSE %]<a class="ZTSMSecurityReturn" href="[% Env('Baselink') | html %]Action=Login">[% Translate("Return to sign in") | html %]</a>[% END %]
+        </section>
+[% IF Data.FullPage %]</main></div>[% ELSE %]</div>[% END %]

@@ -4,14 +4,36 @@ RETURN:
   GROUP FINDINGS:
     SCENARIO: Product EOSL compliance
     TIME ZONE: Asia/Singapore
+    REUSE BY: IDENTITY
     GROUP BY:
       FROM: FINDING.Asset
       FIELD: ZTAM-Application
       AS: GovernanceObject.Application
       MEMBER FROM: FINDING.Asset.ConfigItemID
-      MEMBERS AS: AssetIDs
+      MEMBERS AS: RelatedCIIDs
       INCLUDE MEMBERS:
         - SOURCE.ConfigItemID
+      PARTITION BY:
+        FROM: FINDING.Asset.ZTAM-ContractEntitlement
+        AS: ITSMConfigItem.ContractEntitlement
+        MEMBERS AS: EntitlementIDs
+        ON MISSING:
+          APPLICATION: APPLICATION.GovernanceObjectID
+          ROLE: APPLICATION::DEFAULT
+        COVERAGE:
+          FIELD: Contract-Coverage
+          MATCH:
+            - SOURCE.ZTAM-TechnologyProfile
+            - FINDING.Matches[*].Object.ZTAM-TechnologyProfile
+          AS: GovernanceObject.TechnologyProfile
+          PARENT FIELD: ZTSMTechnologyProfile-Parent
+          INCLUDE CHILDREN: 1
+          MAX DEPTH: 64
+          LIMIT: 1000
+        RESOLVE:
+          FIELD: Contract-SupportProfie
+          AS: GovernanceObject.SupportProfile
+          ALIAS: SUPPORT
     FOR EACH:
       FROM: CONTROLOBJECTIVE.ZRM-RiskStmt
       AS: GovernanceObject.RiskStatement
@@ -21,20 +43,20 @@ RETURN:
         AS: GovernanceObject.Framework
     IDENTITY:
       FIELD: MELT-Reference
-      TEMPLATE: '{SCENARIO.Value}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}:{SOURCE.ConfigItemID}'
+      TEMPLATE: '{SCENARIO.Value}:{GROUP.GovernanceObjectID}:{ITEM.GovernanceObjectID}:{SUPPORT.GovernanceObjectID}:{SOURCE.ConfigItemID}'
     LIFECYCLE:
       CREATE STATUS: Active
       REUSE STATUS: Active
       EVENT FIELD: MELT-EventStatus
       CREATE EVENT VALUE: Active
       CLOSED EVENT VALUE: Closed
-    NAME: '{GROUP.Name}: {ITEM.ZRM-Annex} - {ITEM.Name} - {SOURCE.Name}'
+    NAME: '{GROUP.Name} - {SUPPORT.Name}: {ITEM.ZRM-Annex} - {ITEM.Name} - {SOURCE.Name}'
     FIELD ASSIGNMENTS:
       MELT-RelatedGO: '@GROUP.GovernanceObjectID'
       MELT-RiskStmt: '@ITEM.GovernanceObjectID'
       MELT-RMF: '@RMF.GovernanceObjectID'
       MELT-Reference: '@IDENTITY.Value'
-      MELT-RelatedCI: '@GROUP.AssetIDs'
+      MELT-RelatedCI: '@GROUP.RelatedCIIDs'
       MELT-EventSeverity: '@SEVERITY.GovernanceObjectID'
       MELT-Source: '@SCENARIO.Value'
       MELT-Control: '@CONTROL.ConfigItemID'

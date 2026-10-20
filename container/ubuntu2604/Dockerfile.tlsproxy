@@ -1,0 +1,5 @@
+ARG NGINX_IMAGE=nginx:stable-alpine
+FROM ${NGINX_IMAGE}
+COPY image/nginx-internal-tls.conf /etc/nginx/conf.d/default.conf
+EXPOSE 8443
+# Only server configuration is baked in. Certificates/keys are runtime mounts.

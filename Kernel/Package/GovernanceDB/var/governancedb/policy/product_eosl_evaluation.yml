@@ -8,6 +8,9 @@ CHECK:
     REASON: End of service life is not announced.
   EXPECT: 'DATE(@THIS.ZTAM-EoServiceLife) IS ON OR AFTER DATE(TODAY + 1 YEAR)'
 ON FAIL:
+  ON NO AFFECTED:
+    RETURN: Pass
+    REASON: No deployed assets are affected by this Product.
   DESCENDANTS:
     FOR: ITSMConfigItem
     CLASS: Product

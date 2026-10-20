@@ -66,6 +66,10 @@ To find Governance Objects in your system.
         Name => '%SomeText%',
         Name => ['%SomeTest1%', '%SomeTest2%'],
 
+        # Literal identity lookup; no expression or wildcard interpretation.
+        NameExact   => 'Monitoring & Observability',
+        NumberExact => 'GO-TECHNOLO-00000116',
+
         Classes         => ['Computer', 'Network']   # (optional)
         ClassIDs        => [9, 8, 7, 6],             # (optional)
 
@@ -386,6 +390,14 @@ sub GovernanceObjectSearch {
             BindMode  => 0,
         );
         $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
+    }
+
+    # Reference identities are literal strings, never search expressions.
+    for my $Exact ( [NameExact => 'v.name'], [NumberExact => 'ci.goid'] ) {
+        next if !exists $Param{ $Exact->[0] };
+        return if !defined $Param{ $Exact->[0] } || ref $Param{ $Exact->[0] };
+        $SQLExt .= ' AND ' . $Exact->[1] . " = '"
+            . $DBObject->Quote( $Param{ $Exact->[0] } ) . "'";
     }
 
     # other Governance Object stuff
@@ -958,6 +970,7 @@ sub _VersionSearchIndexSQLJoinNeeded {
     my $SortBy = $Param{SearchParams}{SortBy};
     my @SortBy = ref $SortBy eq 'ARRAY' ? @{$SortBy} : ( defined $SortBy ? ($SortBy) : () );
     return 1 if grep { defined $_ && $_ eq 'Name' } @SortBy;
+    return 1 if exists $Param{SearchParams}{NameExact};
 
     for my $Attribute (qw/Name ZTSMStatuss ZTSMStatusIDs/) {
         return 1 if $Param{SearchParams}{$Attribute};

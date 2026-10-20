@@ -255,7 +255,7 @@ our $RoleRows = [{GovernanceRole=>1776,SupportProfile=>1777}];
     sub GovernanceObjectGet {
         my ($Self,%P)=@_;
         return {Class=>'Application',GovernanceObjectID=>1493,'DynamicField_RoleMap'=>$main::RoleRows} if $P{GovernanceObjectID}==1493;
-        return {Class=>'GovernanceRole',Name=>'APPLICATION::DEFAULT',GovernanceObjectID=>1776,'DynamicField_ScriptEngine'=>Kernel::System::TESSERA::ScriptBlocks::SplitSource(Field=>'ScriptEngine',Source=>"VERSION: 1\nLET THIS: TICKET\nRETURN:\n  VALUE: THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n")} if $P{GovernanceObjectID}==1776;
+        return {Class=>'GovernanceRole',Name=>'APPLICATION::DEFAULT',GovernanceObjectID=>1776,'DynamicField_ZTSM-ScriptEngine'=>"VERSION: 1\nLET THIS: TICKET\nRETURN:\n  VALUE: THIS.ZTicket-Application.RoleMap[GovernanceRole=CURRENT OBJECT].SupportProfile\n  AS: GovernanceObject.SupportProfile\n"} if $P{GovernanceObjectID}==1776;
         return $Self->SUPER::GovernanceObjectGet(%P);
     }
 }

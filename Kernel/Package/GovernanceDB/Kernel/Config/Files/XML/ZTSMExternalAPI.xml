@@ -15,4 +15,16 @@
         <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
         <Value><Hash><Item Key="Name">Status</Item><Item Key="Controller">TESSERA</Item><Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item></Hash></Value>
     </Setting>
+    <Setting Name="GenericInterface::Operation::Module###TESSERA::ExecutionCallback" Required="0" Valid="1">
+        <Description Translatable="1">Authenticates and records asynchronous web service completion callbacks.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">ExecutionCallback</Item><Item Key="Controller">TESSERA</Item><Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="TESSERA::AsyncExecution::Handlers" Required="0" Valid="1">
+        <Description Translatable="1">Backend-owned asynchronous continuation handlers. Never populate from policy YAML.</Description>
+        <Navigation>Core::TESSERA::API</Navigation>
+        <Value><Hash>
+            <Item Key="ControlObjective"><Hash><Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item><Item Key="Function">ContinueAfterExternal</Item></Hash></Item>
+        </Hash></Value>
+    </Setting>
 </otobo_config>

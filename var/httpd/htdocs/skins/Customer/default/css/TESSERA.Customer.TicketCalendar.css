@@ -1,0 +1,36 @@
+.ZTSMCustomerTicketCalendar { background: #fff; border: 1px solid #e4e6ef; border-radius: 16px; padding: 20px; min-height: 30rem; }
+.ZTSMCustomerTicketCalendar .fc-event { border: 0; padding: .2rem .35rem; }
+.ZTSMCustomerTicketCalendar .TESSERA-Change { background: #365ab5; }
+.ZTSMCustomerTicketCalendar .TESSERA-Incident { background: #bd5336; }
+.ZTSMCustomerTicketCalendar .TESSERA-ServiceRequest { background: #237d61; }
+.ZTSMCalendarLegend { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.ZTSMCalendarLegend span { color: #fff; border-radius: 12px; padding: .3rem .7rem; font-weight: 600; }
+.ZTSMCustomerTicketCalendar .fc { max-width: 100%; }
+.ZTSMCustomerTicketCalendar .fc-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ZTSMCustomerTicketCalendar .fc-toolbar > div { float: none; }
+.ZTSMCustomerTicketCalendar .fc-toolbar h2 { font-size: 1.25rem; line-height: 2rem; margin: 0; }
+#oooContent .ZTSMCustomerTicketCalendar .fc-toolbar .fc-button { position: relative; display: inline-block; width: auto; min-width: 0; height: 2.2rem; padding: 0 .75rem; margin: 0; border: 1px solid #cbd0e4; border-radius: 0; box-shadow: none; background: #fff; color: #000539; font-size: .875rem; font-weight: 600; line-height: 2.1rem; text-transform: none; }
+#oooContent .ZTSMCustomerTicketCalendar .fc-toolbar .fc-button:first-child { border-radius: .5rem 0 0 .5rem; }
+#oooContent .ZTSMCustomerTicketCalendar .fc-toolbar .fc-button:last-child { border-radius: 0 .5rem .5rem 0; }
+#oooContent .ZTSMCustomerTicketCalendar .fc-toolbar .fc-button.fc-state-active { background: #000539; color: #fff; }
+.ZTSMCustomerTicketCalendar .fc-day-grid-container { overflow: visible !important; }
+.ZTSMCalendarWorkspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem); gap: 1.25rem; align-items: start; }
+#ZTSMCustomerTicketGroups { max-height: 46rem; overflow: auto; border-left: 1px solid #e4e6ef; padding-left: 1rem; }
+#ZTSMCustomerTicketGroups h3 { margin: 0 0 .75rem; font-size: 1rem; }
+.ZTSMCalendarGroup { border-bottom: 1px solid #e4e6ef; padding: .6rem 0; }
+.ZTSMCalendarGroup summary { cursor: pointer; font-weight: 600; }
+.ZTSMCalendarGroup ul { margin: .5rem 0 0; padding-left: 1.25rem; }
+.ZTSMCalendarGroup li { margin: .35rem 0; overflow-wrap: anywhere; }
+.ZTSMCalendarMasterLink { display: block; margin-top: .4rem; }
+@media (max-width: 70rem) { .ZTSMCalendarWorkspace { grid-template-columns: 1fr; } #ZTSMCustomerTicketGroups { max-height: 18rem; border-left: 0; border-top: 1px solid #e4e6ef; padding: 1rem 0 0; } }
+@media (max-width: 680px) {
+    .ZTSMCustomerTicketCalendar { padding: .75rem; overflow-x: auto; }
+    .ZTSMCustomerTicketCalendar .fc-toolbar { justify-content: center; }
+    .ZTSMCustomerTicketCalendar .fc-toolbar > div { margin: .25rem 0; text-align: center; }
+    .ZTSMCustomerTicketCalendar .fc-view-container { min-width: 38rem; }
+}
+
+.ZTSMCalendarTicketCategories { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .25rem; }
+.ZTSMCalendarTicketCategory { display: inline-block; background: #e4e6ef; color: #000539; border-radius: .35rem; padding: .15rem .4rem; font-size: .75rem; line-height: 1.4; overflow-wrap: anywhere; }
+
+.ZTSMCalendarTicketDates { display: block; margin-top: .2rem; color: #555b73; font-size: .75rem; }

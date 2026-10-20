@@ -1,0 +1,46 @@
+# Host-only configuration; rebuild/review generated config outside the image.
+/Kernel/Config.pm
+/Kernel/Config.pm.*
+/Kernel/Config/Files/ZZZ*.pm
+/Kernel/Config/Files/User/***
+# Customer data and runtime output; provision/mount required directories later.
+/var/article/***
+/var/virtualfs/***
+/var/tmp/***
+/var/log/***
+/var/run/***
+/var/sessions/***
+/var/spool/***
+/var/stats/***
+/var/packages/***
+/var/backup/***
+/var/backups/***
+css-cache/***
+js-cache/***
+# Exclude the host copy, THEN restore package-owned overlay from pinned180 OPM.
+/var/governancedb/runtime_overlay/***
+# VCS, credential stores and common backups at any depth.
+.git/***
+.ssh/***
+.aws/***
+.kube/***
+.gnupg/***
+.env
+.env.*
+.netrc
+.my.cnf
+.pgpass
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql
+*.sql.gz
+*.sql.bz2
+*.sql.xz
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+*.custom_backup
+*~

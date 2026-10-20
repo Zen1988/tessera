@@ -1,0 +1,84 @@
+# Strategic merge PATCH for the future web Deployment, not a standalone deployment.
+# Match the actual Deployment/container names before using. Do not apply to live pods.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tessera-web
+spec:
+  template:
+    spec:
+      automountServiceAccountToken: false
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tessera
+          args: [web]
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: https
+              containerPort: 8443
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: '2'
+              memory: 4Gi
+          startupProbe:
+            tcpSocket: {port: https}
+            failureThreshold: 60
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: https}
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command: [/usr/local/lib/tessera/entrypoint.sh, ready]
+            periodSeconds: 30
+            timeoutSeconds: 15
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: app-tmp, mountPath: /opt/otobo/var/tmp}
+            - {name: app-run, mountPath: /opt/otobo/var/run}
+            - {name: app-log, mountPath: /opt/otobo/var/log}
+            - {name: js-cache, mountPath: /opt/otobo/var/httpd/htdocs/js/js-cache}
+            - {name: agent-css, mountPath: /opt/otobo/var/httpd/htdocs/skins/Agent/default/css-cache}
+            - {name: customer-css, mountPath: /opt/otobo/var/httpd/htdocs/skins/Customer/default/css-cache}
+            - {name: credentials, mountPath: /run/tessera-secrets, readOnly: true}
+            - {name: tls, mountPath: /run/tessera-tls, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 256Mi}}
+        - {name: app-tmp, emptyDir: {sizeLimit: 1Gi}}
+        - {name: app-run, emptyDir: {sizeLimit: 64Mi}}
+        - {name: app-log, emptyDir: {sizeLimit: 256Mi}}
+        - {name: js-cache, emptyDir: {sizeLimit: 256Mi}}
+        - {name: agent-css, emptyDir: {sizeLimit: 128Mi}}
+        - {name: customer-css, emptyDir: {sizeLimit: 128Mi}}
+        - name: credentials
+          secret:
+            secretName: tessera-credentials
+            defaultMode: 0440
+        - name: tls
+          secret:
+            secretName: tessera-portal-tls
+            defaultMode: 0440
+# Base Deployment MUST also mount external Config.pm and prepared generated-config
+# volume. Add durable article/VirtualFS/spool/stats mounts according to inventory.
+# Add writable css-cache mounts for EVERY installed custom skin.
+# Daemon: apply the same security contexts/mounts; keep args:[daemon], omit ports
+# and TCP probes, use native daemon status for liveness. Use one active daemon.

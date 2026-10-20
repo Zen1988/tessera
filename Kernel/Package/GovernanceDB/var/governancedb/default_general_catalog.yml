@@ -1,5 +1,585 @@
 ---
 classes:
+- class: BlueLevel
+  items:
+  - comment: One
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Two
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Three
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Four
+    name: '4'
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Category
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Change::State
+  items:
+  - comment: ''
+    name: approved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: canceled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: failed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending pir
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: rejected
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: requested
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: retracted
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: successful
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Impact
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Priority
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::WorkOrder::State
+  items:
+  - comment: ''
+    name: accepted
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: canceled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: created
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ready
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::WorkOrder::Type
+  items:
+  - comment: ''
+    name: approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: backout
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: decision
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pir
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: workorder
+    preferences: {}
+    valid: valid
+- class: ITSM::ConfigItem::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: Catalog
+    name: Catalog
+    preferences: {}
+    valid: valid
+  - comment: Configuration
+    name: Configuration
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Control
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Entitlement
+    preferences: {}
+    valid: valid
+  - comment: Facility, UPS, SFP and others
+    name: Facility Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Network Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: Workload Infrastructure
+    name: Workload Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Workplace
+    preferences: {}
+    valid: valid
+- class: ITSM::ConfigItem::DeploymentState
+  items:
+  - comment: ''
+    name: Expired
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Inactive
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Maintenance
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Pilot
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Planned
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Production
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Repair
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Test/QA
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+- class: ITSM::ConfigItem::YesNo
+  items:
+  - comment: ''
+    name: No
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Yes
+    preferences: {}
+    valid: valid
+- class: ITSM::Core::IncidentState
+  items:
+  - comment: ''
+    name: Incident
+    preferences:
+      Functionality:
+      - incident
+    valid: valid
+  - comment: ''
+    name: Operational
+    preferences:
+      Functionality:
+      - operational
+    valid: valid
+  - comment: ''
+    name: Warning
+    preferences:
+      Functionality:
+      - warning
+    valid: valid
+- class: ITSM::SLA::Type
+  items:
+  - comment: ''
+    name: Availability
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Errors
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Other
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Recovery Time
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Resolution Rate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Response Time
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Transactions
+    preferences: {}
+    valid: valid
+- class: ITSM::Service::Type
+  items:
+  - comment: ''
+    name: Access Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Application Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Back End
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Backup Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Common Service Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Compute Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Demonstration
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Directory Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: End User Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: File Transfer Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Front End
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: General Assist
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Infra Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: IT Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: IT Operational
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Network Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Other
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Platform Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Privileged Access Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Project
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Protection Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reporting
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Security Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Server Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Storage Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Training
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Underpinning Contract
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Vulnerability Management
+    preferences: {}
+    valid: valid
+- class: IncidentSeverity
+  items:
+  - comment: Critical
+    name: P1
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: P2
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: P3
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: P4
+    preferences: {}
+    valid: valid
+- class: RiskLevel
+  items:
+  - comment: Critical Risk
+    name: CRITICAL
+    preferences: {}
+    valid: valid
+  - comment: High Risk
+    name: HIGH
+    preferences: {}
+    valid: valid
+  - comment: Low Risk
+    name: LOW
+    preferences: {}
+    valid: valid
+  - comment: Medium Risk
+    name: MEDIUM
+    preferences: {}
+    valid: valid
+- class: Service
+  items:
+  - comment: Application Performance Monitoring
+    name: Application Performance Monitoring
+    preferences: {}
+    valid: valid
+  - comment: Command Center Services
+    name: Command Center Services
+    preferences: {}
+    valid: valid
+  - comment: EUCD Management
+    name: EUCD Management
+    preferences: {}
+    valid: valid
+  - comment: General
+    name: General
+    preferences: {}
+    valid: valid
+  - comment: Infrastructure & HQ Support
+    name: Infrastructure & HQ Support
+    preferences: {}
+    valid: valid
+  - comment: Network Management
+    name: Network Management
+    preferences: {}
+    valid: valid
+  - comment: Onboarding Service
+    name: Onboarding Service
+    preferences: {}
+    valid: valid
+  - comment: Patch Management
+    name: Patch Management
+    preferences: {}
+    valid: valid
+  - comment: Professional Services
+    name: Professional Services
+    preferences: {}
+    valid: valid
+  - comment: Security Management
+    name: Security Management
+    preferences: {}
+    valid: valid
+  - comment: Server Management
+    name: Server Management
+    preferences: {}
+    valid: valid
+  - comment: Service Management
+    name: Service Management
+    preferences: {}
+    valid: valid
+- class: SystemEnvironment
+  items:
+  - comment: Developer build / initial testing
+    name: DEV
+    preferences: {}
+    valid: valid
+  - comment: Disaster Recovery
+    name: DR
+    preferences: {}
+    valid: valid
+  - comment: Performance / Load Testing
+    name: PERF
+    preferences: {}
+    valid: valid
+  - comment: Pre Production
+    name: PRE-PROD
+    preferences: {}
+    valid: valid
+  - comment: Production
+    name: PROD
+    preferences: {}
+    valid: valid
+  - comment: Ad-hoc / experimental
+    name: SANDBOX
+    preferences: {}
+    valid: valid
+  - comment: System Integration Testing
+    name: SIT
+    preferences: {}
+    valid: valid
+  - comment: User Acceptance Testing
+    name: UAT
+    preferences: {}
+    valid: valid
 - class: ZRM::Impact
   items:
   - comment: Not Applicable
@@ -108,6 +688,294 @@ classes:
     name: Vendor
     preferences: {}
     valid: valid
+- class: ZRM::RiskLevel
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '10'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '11'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '12'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '13'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '14'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '15'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '16'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '17'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '18'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '19'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '20'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '21'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '22'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '23'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '24'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '25'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '5'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '6'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '7'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '8'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '9'
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::CPU
+  items:
+  - comment: ARM
+    name: ARM
+    preferences: {}
+    valid: valid
+  - comment: POWER
+    name: POWER
+    preferences: {}
+    valid: valid
+  - comment: RISC-V
+    name: RISC-V
+    preferences: {}
+    valid: valid
+  - comment: SPARC
+    name: SPARC
+    preferences: {}
+    valid: valid
+  - comment: x86_32
+    name: x86_32
+    preferences: {}
+    valid: valid
+  - comment: x86_64
+    name: x86_64
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::CpuType
+  items:
+  - comment: ''
+    name: ASIC
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: FPGA
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: GPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: TPU
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::DiskType
+  items:
+  - comment: ''
+    name: HDD
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NVMe
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Object Storage
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: SAN LUN
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: SSD
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::InterfaceType
+  items:
+  - comment: ''
+    name: 100G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 100M Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Fibre MM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Fibre SM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 16G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Fibre MM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Fibre SM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 25G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 32G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 40G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 8G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Virtual
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Wireless
+    preferences: {}
+    valid: valid
+- class: ZTAM::Run::FilesystemType
+  items:
+  - comment: ''
+    name: exFAT
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: EXT3
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: EXT4
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NTFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: swap
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: tmpfs
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: VFAT
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: VMFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: vSAN
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: XFS
+    preferences: {}
+    valid: valid
 - class: ZTSM::GovernanceObject::Category
   items:
   - comment: ''
@@ -145,542 +1013,6 @@ classes:
   - comment: ''
     name: Service
     preferences: {}
-    valid: valid
-- class: ZTSM::GovernanceObject::Class
-  items:
-  - comment: ''
-    name: Application
-    preferences:
-      Categories:
-      - Business
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-    valid: valid
-  - comment: ''
-    name: ApprovalModel
-    preferences:
-      Categories:
-      - Governance
-      NumberModule:
-      - GOID
-      Permission:
-      - '2'
-      - '17'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: BlueBook
-    preferences:
-      Categories:
-      - Governance
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Book
-    preferences: {}
-    valid: valid
-  - comment: Catalog
-    name: Catalog
-    preferences:
-      Categories:
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-      - ZTSMStatusID
-    valid: valid
-  - comment: Control
-    name: Control
-    preferences: {}
-    valid: invalid
-  - comment: ControlObjective
-    name: ControlObjective
-    preferences:
-      Categories:
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-      - ZTSMStatusID
-    valid: valid
-  - comment: ControlRecommendation
-    name: ControlRecommendation
-    preferences: {}
-    valid: invalid
-  - comment: System Criticality
-    name: CriticalityProfile
-    preferences:
-      Categories:
-      - All
-      - Context
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: Data Classification
-    name: DataClassification
-    preferences:
-      Categories:
-      - Context
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Environment
-    preferences:
-      Categories:
-      - Context
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: EventSeverity
-    preferences:
-      Categories:
-      - All
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-    valid: valid
-  - comment: Exposure Profile
-    name: ExposureProfile
-    preferences:
-      Categories:
-      - All
-      - Context
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: Framework
-    name: Framework
-    preferences:
-      Categories:
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-    valid: valid
-  - comment: ''
-    name: FunctionProfile
-    preferences:
-      Categories:
-      - All
-      - Context
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: GovernanceConfigItem
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: GovernanceRole
-    preferences:
-      Categories:
-      - Profile
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Location
-    preferences:
-      Categories:
-      - Context
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Organization
-    preferences:
-      Categories:
-      - Business
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Platform
-    preferences:
-      Categories:
-      - Context
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: Policy
-    name: Policy
-    preferences:
-      Categories:
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-      - ZTSMStatusID
-    valid: valid
-  - comment: RiskStatement
-    name: RiskStatement
-    preferences:
-      Categories:
-      - Governance
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - DefinitionUpdate
-      - Description
-      - Name
-      - ZTSMStatusID
-    valid: valid
-  - comment: ''
-    name: ServiceProfile
-    preferences:
-      Categories:
-      - Service
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: ServiceSupportMap
-    preferences:
-      Categories:
-      - Service
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: Service Tiering
-    name: ServiceTier
-    preferences:
-      Categories:
-      - Context
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: StateBook
-    preferences:
-      Categories:
-      - Governance
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Severity
-    preferences:
-      Categories:
-      - All
-      - Service
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: SupportAssignment
-    preferences:
-      Categories:
-      - Assignment
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: SupportProfile
-    preferences:
-      Categories:
-      - Profile
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: TechnologyProfile
-    preferences:
-      Categories:
-      - Profile
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
-    valid: valid
-  - comment: ''
-    name: Template
-    preferences:
-      Categories:
-      - Reference
-      NameModule:
-      - ''
-      NumberModule:
-      - GOID
-      Permission:
-      - '17'
-      - '2'
-      VersionStringExpression:
-      - ''
-      VersionStringModule:
-      - Incremental
-      VersionTrigger:
-      - Name
-      - Description
-      - DefinitionUpdate
     valid: valid
 - class: ZTSM::GovernanceObject::Class::Category
   items:
@@ -726,124 +1058,6 @@ classes:
     name: ClassDefinition
     preferences: {}
     valid: valid
-- class: ZTSM::GovernanceObject::Role
-  items:
-  - comment: ''
-    name: CMDB Backlinks
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: CMDB Description
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: EventSeverity
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: GovernanceDB Backlinks
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: GovernanceDB Description
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Policy
-    preferences: {}
-    valid: valid
-  - comment: ZRM Catalog
-    name: ZRM Catalog
-    preferences: {}
-    valid: valid
-  - comment: ZRM Control
-    name: ZRM Control
-    preferences: {}
-    valid: invalid
-  - comment: ZRM Control Objective
-    name: ZRM ControlObjective
-    preferences: {}
-    valid: valid
-  - comment: Framework
-    name: ZRM Framework
-    preferences: {}
-    valid: valid
-  - comment: Risk Factor
-    name: ZRM Risk Factor
-    preferences: {}
-    valid: valid
-  - comment: Risk Profile
-    name: ZRM Risk Profile
-    preferences: {}
-    valid: valid
-  - comment: ZRM RiskStatement
-    name: ZRM RiskStatement
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Application
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Approval Model
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Blue Book
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Code
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Environment
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM GovernanceRole
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Location
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Organization
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM Platform
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM ServiceProfile
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM ServiceSupportMap
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM State Book
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM SupportAssignment
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM SupportProfile
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ZTSM TechnologyProfile
-    preferences: {}
-    valid: valid
-  - comment: Ticket Template
-    name: ZTSM Template
-    preferences: {}
-    valid: valid
 - class: ZTSM::GovernanceObject::Status
   items:
   - comment: ''
@@ -866,6 +1080,406 @@ classes:
     name: Review
     preferences: {}
     valid: valid
+- class: ZTSM::MELT::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Event
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Log
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Metric
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Trace
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Class
+  items:
+  - comment: ''
+    name: Alert
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Risk
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
+- class: ZTSM::MELT::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Context
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Event
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Log
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Metric
+    preferences: {}
+    valid: valid
+  - comment: Profile
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: Reference
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: Service
+    name: Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Trace
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Definition
+  items:
+  - comment: ''
+    name: ClassDefinition
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Role
+  items:
+  - comment: ''
+    name: Alert
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CMDB Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CMDB Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Risk
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Status
+  items:
+  - comment: ''
+    name: Active
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Aged-out
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Approved
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Closed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Draft
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Duplicate
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Escalated
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: False Positive
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Resolved
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Suppressed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+- class: ZTSM::RequestType
+  items:
+  - comment: ''
+    name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ServiceRequest
+    preferences: {}
+    valid: valid
+- class: ZTSM::State
+  items:
+  - comment: ''
+    name: approve
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: assess
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: cancelled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed duplicate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed no action
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed rejected
+    preferences: {}
+    valid: valid
+  - comment: Resolved
+    name: closed resolved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed rollback
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed successful
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed unsuccessful
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed with workaround
+    preferences: {}
+    valid: valid
+  - comment: diag
+    name: diagnose
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: endorse
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in-progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: merged
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: new
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: onhold
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: open
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending auto close+
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending auto close-
+    preferences: {}
+    valid: valid
+  - comment: Pending Confirmation
+    name: pending confirmation
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending reminder
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: rejected
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: remediate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: removed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: validate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: verify
+    preferences: {}
+    valid: valid
 - class: ZTSM::Type
   items:
   - comment: ''
@@ -877,11 +1491,15 @@ classes:
     preferences: {}
     valid: valid
   - comment: ''
-    name: Confirmation
+    name: Automation
     preferences: {}
     valid: valid
   - comment: ''
     name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Confirmation
     preferences: {}
     valid: valid
   - comment: ''
@@ -894,10 +1512,6 @@ classes:
     valid: valid
   - comment: ''
     name: Incident
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Incident::Major
     preferences: {}
     valid: valid
   - comment: ''
@@ -924,30 +1538,3 @@ classes:
     name: Verification
     preferences: {}
     valid: valid
-- class: ZTSM::RequestType
-  items:
-  - comment: ''
-    name: Change
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Change::Major
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Incident
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: Incident::Major
-    preferences: {}
-    valid: invalid
-  - comment: ''
-    name: Problem
-    preferences: {}
-    valid: valid
-  - comment: ''
-    name: ServiceRequest
-    preferences: {}
-    valid: valid
-object_type: GeneralCatalog

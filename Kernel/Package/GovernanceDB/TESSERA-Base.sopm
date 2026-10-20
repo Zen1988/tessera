@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.152</Version>
+    <Version>0.0.180</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -17,6 +17,31 @@
 
     <ModuleRequired Version="2.0">GD</ModuleRequired>
     <Filelist>
+        <File Location="Custom/Kernel/System/Cache/Redis.pm" Permission="644"/>
+        <File Location="Custom/Kernel/System/TESSERA/Secrets.pm" Permission="644"/>
+        <File Location="Custom/Kernel/System/TESSERA/SecretRedis.pm" Permission="644"/>
+        <File Location="Kernel/System/TESSERA/NewSetup.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTESSERANewSetup.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTESSERANewSetup.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERANewSetup.xml" Permission="660"/>
+        <File Location="var/governancedb/active_ticket_types.json" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerPortalResponse.tt" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.SecurityResponse.css" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerSecurityRequestRejected.tt" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/thirdparty/fullcalendar-3.10.2/fullcalendar.min.css" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/TESSERA.Customer.TicketCalendar.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.TicketCalendar.css" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/TicketCalendar.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTESSERATicketCalendar.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTESSERATicketCalendar.tt" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/TESSERA.Agent.TicketCalendar.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Agent/default/css/TESSERA.Agent.TicketCalendar.css" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/AsyncExecution.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Operation/TESSERA/ExecutionCallback.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentControlObjectiveRun.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/GovernanceObject/MenuControlRun.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentControlObjectiveRun.tt" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ReferenceScope.pm" Permission="660"/>
         <File Location="Kernel/System/TESSERA/ScriptBlocks.pm" Permission="660"/>
         <File Location="var/governancedb/script_block_fields.json" Permission="660"/>
         <File Location="var/httpd/htdocs/common/img/TESSERA/security_operations.svg" Permission="660"/>
@@ -57,6 +82,8 @@
         <File Location="var/governancedb/policy/control_discovery_products.yml" Permission="660"/>
         <File Location="var/governancedb/policy/product_eosl_evaluation.yml" Permission="660"/>
         <File Location="var/governancedb/policy/product_eosl_risk_assignment.yml" Permission="660"/>
+        <File Location="var/governancedb/policy/product_eosl_entitlement_risk_assignment.yml" Permission="660"/>
+        <File Location="var/governancedb/policy/entitlement_risk_master_ticket.yml" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceOSCALImport.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectAdd.pm" Permission="660"/>
         <File Location="Kernel/Modules/AgentGovernanceObjectAttachment.pm" Permission="660"/>
@@ -181,7 +208,7 @@
         <File Location="Kernel/System/Ticket/Number/TESSERAIdentity.pm" Permission="660"/>
         <File Location="README.md" Permission="660"/>
         <File Location="var/governancedb/default_classes.json" Permission="660"/>
-        <File Location="var/governancedb/default_control_configitem.json" Permission="660"/>
+        <File Location="var/governancedb/default_configitem.json" Permission="660"/>
         <File Location="var/governancedb/default_general_catalog.yml" Permission="660"/>
         <File Location="var/governancedb/runtime_seed/generic_agents.yml" Permission="660"/>
         <File Location="var/governancedb/policy/control_objective_examples.txt" Permission="660"/>
@@ -313,7 +340,6 @@
         <File Location="var/httpd/htdocs/common/img/icons/favicon.ico" Permission="660"/>
         <File Location="var/httpd/htdocs/common/img/icons/product.ico" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Branding.css" Permission="660"/>
-        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Branding.css" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Agent/default/css/ITSM.Agent.GovernanceObject.Overview.css" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Agent/default/css/ITSM.Agent.Admin.GovernanceObject.css" Permission="660"/>
         <File Location="var/httpd/htdocs/skins/Agent/default/css/ITSM.Agent.GovernanceObject.Edit.css" Permission="660"/>
@@ -341,6 +367,8 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA asynchronous callback web service installation failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeInstall>
 
     <CodeUpgrade Type="post"><![CDATA[
@@ -348,6 +376,8 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA asynchronous callback web service upgrade failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeUpgrade>
 
     <CodeReinstall Type="post"><![CDATA[
@@ -355,9 +385,33 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA asynchronous callback web service reinstall failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeReinstall>
 
     <DatabaseInstall Type="post">
+        <TableCreate Type="post" Name="tessera_setup_state">
+            <Column Name="id" Required="true" PrimaryKey="true" Type="INTEGER"/>
+            <Column Name="state_data" Required="true" Type="LONGBLOB"/>
+        </TableCreate>
+        <TableCreate Type="post" Name="ztsm_async_execution">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="execution_uid" Required="true" Size="64" Type="VARCHAR"/>
+            <Column Name="token_hash" Required="true" Size="64" Type="VARCHAR"/>
+            <Column Name="handler_key" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="target_type" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="target_id" Required="true" Type="BIGINT"/>
+            <Column Name="actor_id" Required="true" Type="INTEGER"/>
+            <Column Name="continuation" Required="true" Type="LONGBLOB"/>
+            <Column Name="state" Required="true" Size="20" Type="VARCHAR"/>
+            <Column Name="exit_code" Required="false" Type="INTEGER"/>
+            <Column Name="response" Required="false" Type="LONGBLOB"/>
+            <Column Name="deadline_time" Required="true" Type="DATE"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Unique Name="ztsm_async_execution_uid"><UniqueColumn Name="execution_uid"/></Unique>
+            <Index Name="ztsm_async_execution_state"><IndexColumn Name="state"/></Index>
+        </TableCreate>
         <TableCreate Type="post" Name="ztsm_configitem_activity">
             <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
             <Column Name="configitem_id" Required="false" Type="BIGINT"/>
@@ -895,6 +949,24 @@
         </Insert>
     </DatabaseInstall>
     <DatabaseUpgrade>
+        <TableCreate Type="post" Name="ztsm_async_execution" Version="0.0.158">
+            <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
+            <Column Name="execution_uid" Required="true" Size="64" Type="VARCHAR"/>
+            <Column Name="token_hash" Required="true" Size="64" Type="VARCHAR"/>
+            <Column Name="handler_key" Required="true" Size="100" Type="VARCHAR"/>
+            <Column Name="target_type" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="target_id" Required="true" Type="BIGINT"/>
+            <Column Name="actor_id" Required="true" Type="INTEGER"/>
+            <Column Name="continuation" Required="true" Type="LONGBLOB"/>
+            <Column Name="state" Required="true" Size="20" Type="VARCHAR"/>
+            <Column Name="exit_code" Required="false" Type="INTEGER"/>
+            <Column Name="response" Required="false" Type="LONGBLOB"/>
+            <Column Name="deadline_time" Required="true" Type="DATE"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Column Name="change_time" Required="true" Type="DATE"/>
+            <Unique Name="ztsm_async_execution_uid"><UniqueColumn Name="execution_uid"/></Unique>
+            <Index Name="ztsm_async_execution_state"><IndexColumn Name="state"/></Index>
+        </TableCreate>
         <TableCreate Type="post" Name="governance_object_item" Version="0.0.8">
             <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
             <Column Name="goid" Required="true" Size="100" Type="VARCHAR"/>
@@ -975,6 +1047,7 @@
         </TableCreate>
     </DatabaseUpgrade>
     <DatabaseUninstall Type="pre">
+        <TableDrop Type="pre" Name="ztsm_async_execution"/>
         <TableDrop Type="pre" Name="ztsm_configitem_activity"/>
         <TableDrop Type="pre" Name="governance_object_activity"/>
         <TableDrop Type="pre" Name="governance_object_item"/>

@@ -1,0 +1,22 @@
+VERSION: 1
+RETURN:
+  AS: Ticket.ServiceRequest
+  RESOLVE REFERENCES:
+    SUPPORT:
+      FROM: RISK.MELT-RelatedCI
+      THROUGH: ITSMConfigItem.ContractEntitlement
+      FIELD: Contract-SupportProfie
+      AS: GovernanceObject.SupportProfile
+      ON MISSING:
+        APPLICATION: RISK.MELT-RelatedGO
+        ROLE: APPLICATION::DEFAULT
+  FIELD ASSIGNMENTS:
+    Type: '"ServiceRequest"'
+    Service: '"Risk::Management"'
+    CustomerUser: '"tessera@ica.gov.sg"'
+    Title: '@RISK.Name'
+    ZRM-OriginatedEvent: '@RISK.MELTObjectID'
+    ZRM-Framework: '@FRAMEWORK.GovernanceObjectID'
+    ZTicket-Application: '@RISK.MELT-RelatedGO'
+    ZTicket-OwnerGroup: '@SUPPORT.GovernanceObjectID'
+    ZTicket-StateBook: '@FRAMEWORK.ZRM-RiskMgtStateBook'

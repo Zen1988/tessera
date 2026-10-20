@@ -769,9 +769,14 @@ sub _GovernanceReferenceIDResolve {
 
     my $DynamicFieldConfig = $Param{DynamicFieldConfig};
     my $Value              = $Param{Value};
+    return if !defined $Value || ref $Value;
+    $Value =~ s{\A\s+|\s+\z}{}g;
+    return if $Value eq '';
     my $ClassName;
     if ( $Value =~ m{\A\s*([^:]+?)\s*:\s*(.+)\z}xms ) {
         ( $ClassName, $Value ) = ( $1, $2 );
+        $Value =~ s{\A\s+|\s+\z}{}g;
+        return if $Value eq '';
     }
 
     my @ClassIDs = $Self->_GeneralCatalogRestrictionIDsGet(
@@ -789,8 +794,8 @@ sub _GovernanceReferenceIDResolve {
     }
 
     my @Attempts = (
-        { Name   => $Value },
-        { Number => $Value },
+        { NameExact   => $Value },
+        { NumberExact => $Value },
         {
             'DynamicField_ZTSM-Code' => {
                 Equals => $Value,
@@ -810,7 +815,8 @@ sub _GovernanceReferenceIDResolve {
             %{$Attempt},
         );
 
-        next ATTEMPT if @IDs != 1;
+        return if @IDs > 1;
+        next ATTEMPT if !@IDs;
 
         if ( $DynamicFieldConfig->{FieldType} eq 'GovernanceObjectVersion' ) {
             my $GovernanceObject = $GovernanceObjectObject->GovernanceObjectGet(

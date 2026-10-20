@@ -1,3 +1,132 @@
+# Immediate — Kubernetes daemon generated configuration and node evictions
+
+Owner cluster has3 Running web Pods and1 desired daemon blocked by missing generated config; daemon mounts only external Config.pm and Redis Secret, no Kernel/Config/Files shared volume. No configure Job/app config PVC listed. Many old daemon Pods Evicted on k8s.ncs.local; investigate exact eviction reason separately. Read-only next checks already provided: web deployment mounts/volumes, web+daemon actual imageIDs, evicted Pod status message, generated filenames/permissions in working web. Preserve existing working configuration; backup copied folder is sensitive and does not fix runtime mounts. Then prepare one controlled configure Job and shared config volume for web/daemon; no empty marker/file bypass or per-replica config rebuild. Current180 unchanged. Sentinel discovery unimplemented; proposed infrastructure primary endpoint still requires tested operator/proxy implementation and persistent connection failover tests. Central checkpoint requested by owner includes source/tests/docs/current180 release, excludes local temp/historical duplicate outputs.
+
+# Immediate — resume Docker build after Apache prompt fix
+
+Owner successfully reached Docker Apache setup; a2dismod autoindex prompted and aborted unattended build. Dockerfile now uses a2dismod -f for intentional removal. Patch extracted Dockerfile then rerun build.sh; no prepare, no --no-cache and no live Apache change needed. Actual image/runtime acceptance remains pending.
+
+# Immediate — retry preparation after S/MIME test fixture exclusion
+
+Owner prepare failed on scripts/test/sample/SMIME private .asc fixtures; app/ was never published. Updated source.exclude excludes /scripts/test/***, Docker/audit also reject it, private-key detector remains strict. Updated ZIP available. In extracted kit apply that exclusion (or extract updated source kit), rerun prepare successfully THEN build. Do not bypass audit, copy Config or assume absent app means installed source missing.18 Python checks/build Bash syntax pass; actual Linux preparation/image acceptance still pending.
+
+# Current task — Apache HTTPS container acceptance and root URL routing
+
+Use updated container/ubuntu2604 full kit; Apache2.4/mod_perl/prefork HTTPS8443 default, only tessera.conf enabled, no Nginx migration. Follow examples/HARDENING.md and future pod-security-patch.yaml (patch requires existing Config/generated/durable volumes). Build/run isolated Ubuntu image, verify full Apache config/TLS/mTLS, web+daemon authentication/cache/stop, writable paths under Restricted settings and all uploads/integrations. No actual image built locally. Preserve installed180 source; do not reinstall packages. SSH zen@10.0.1.33 currently authentication denied; no live changes authorized. Requested removal of /otobo remains outstanding: native PSGI explicitly mounts it; design Custom-compatible routing and verify links/redirects/API/CSRF/assets/portal host separation without core rewrite assumptions. Current Apache root handler does not satisfy it. Repackage kit after further changes.
+
+# Current task — run installed-host Ubuntu26.04 image kit and internal PKI
+
+Owner confirms180 already installed; use container/ubuntu2604 complete image kit and outputs/TESSERA-180-Ubuntu26.04-Container-Kit.zip. Do NOT reapply180 OPM or use older restoration staging/179-base delta as primary workflow. Host Ubuntu26.04.1/resolute confirmed; no need ask OS again. prepare copies installed source as-is with exclusions, CPAN requirements from installed CheckModules, full Dockerfile rebuilds apt/Perl dependencies. Optional site entrypoint path can be supplied to prepare, otherwise provided native web/daemon wrapper is used. Shared generated-config volume and explicit configure step precede startup; no automatic schema migration.17 tests+7 Bash syntax+2 Perl syntax pass; actual Docker/Linux runtime build remains unrun here.
+
+Internal PKI decisions confirmed: public/customer CA terminates at ingress; TESSERA internal CA protects backend/component traffic, not public browsers. RSA8192 ALL production keys,3-year calendar expiry, leaves capped by issuer expiry. SANs tessera.local/portal.tessera.local, daemon.tessera.local, redis.tessera.local, db.tessera.local plus separate ingress-client identity. Run PKI tool on host outside build context, encrypted root key offline, no keys baked into image/ZIP. Internal mTLS proxy provided; future DB/Redis templates not activated. Current180 Redis authentication lacks TLS constructor plumbing—do not imply cert files alone enable transport encryption. Verify private DNS, ingress SNI/trust/client cert and server/client TLS before enforcement. MariaDB remains planned inside Kubernetes. No live deployment/data/credential mutation authorized by artifact creation.
+
+# Later Kubernetes migration — discovery and decisions next
+
+Confirmed update: MariaDB will run INSIDE Kubernetes too. Earlier externalDB-first proposal is superseded. Follow revised in-cluster DB section and restore/cutover plan; decide MariaDB version/topology/operator/storage class/capacity/backup target/RPO/RTO. Do not ask database placement again. No deployment or data-migration authorization.
+
+User requests full later migration plan; completed docs/kubernetes-migration-plan.md and Linux staging review/tool/transfer kit recorded PROJECT_STATUS.md. Do not reconstruct plan or assume deployment authorization. Next inventory effective LIVE ArticleStorage/ArticleDataDir and historical DB/FS/S3 data, VirtualFS per-record backends (CMDB/governance/MELT/photos), sessions/queues/spools/generated config and integrations. Local exported ticket configDB/default VirtualFSDB are not proof of live/historical DB-only storage. Keep attachments out of image, preserve them in durable DB or migrated shared storage; verify old/new content after Pod/node replacement. Do not delete old files.
+
+Confirm cluster/storage/MariaDB topology, entrypoint/Dockerfile/base dependencies, availability/scale, RPO/RTO/window. MariaDB placement is confirmed in-cluster. Revised host staging kit provided;5 Python fixture tests pass/1 Unix skip, no Linux host execution. Preserve180 OPM identity. Implement actual image/config-generation/upgrade locking/manifests only after inventory; isolated rehearsal before quiesced cutover and consistent rollback. No production migration, data mutation or deployment requested.
+
+# Build 180 — container build and live acceptance pending
+
+Custom integration/source package complete: owner-supplied Desktop/Redis.pm adapted under Custom/Kernel/System/Cache/Redis.pm, core untouched, existing179 secret modules unchanged. Details and completed work PROJECT_STATUS.md/docs/build-180-redis-integration.md.180 unsigned/not installed;340 payloads, all339 baseline entries preserved.75 assertions pass/7 Linux skips; all3 modules compile. Do not ask for recovered Redis source again.
+
+Next obtain exact existing TESSERA179 image digest/entrypoint and container build environment; verify proposed runtime/first-copy paths, build versioned180 image from sanitized outputs/build-180/container, inspect base layers for old secrets/logs/caches, verify inherited entrypoint/CMD/USER and both web/daemon arguments. No Docker/Podman/nerdctl/kubectl locally; image not built. Sign180 through existing CODESECURITY release workflow before production release. In isolated Linux staging test actual runtime-user reads, real Redis AUTH/cache/TTL/cleanup, rotation/failure/recovery and ongoing Web/Daemon jobs. Initial installation needs controlled process replacement to load the Custom override; subsequent Redis credential refresh uses the existing connection implementation. DB rotation still requires rollout. No live deployment changes authorized. Do not claim zero downtime or image-wide absence of historical credentials without validation.
+
+# New setup remaining stages — after 0.0.178
+
+Organization stage implemented: Admin New setup -> create first Organization name/description -> add more or finish organization setup. Durable progress, request deduplication and backend authorization included; details PROJECT_STATUS.md/docs/new-setup-wizard.md.178 unsigned/not installed,108 checks pass; live MariaDB/browser/admin registration acceptance pending. Do not recreate completed organization-stage design work.
+
+Next implement ticket-prefix/numbering reset, separate ticket/asset/governance reset controls and CSR lifecycle, then Central ingestion/confidential disclosure and whole-platform Docker missing/empty/partial/existing database runner/readiness. Existing confirmed requirements: docs/agent-system-setup-design.md and docs/docker-startup-upgrade-design.md. Organization completion is not complete platform setup. Active-only seeds integrated177;11 definitionless active labels are planned features, not export blockers. No live deployment requested.
+# Shared portal error format — 0.0.174 prepared, 2026-10-15
+
+Standard customer/public error/warning/permission/fatal handlers now share portal card/sidebar layout; completed implementation275 checks in PROJECT_STATUS.md/docs/customer-portal-security.md.174 unsigned/not installed. Next install/hard refresh, verify one shell/sidebar for signed full errors, fragments remain embedded, ordinary warning no attack log, actual403/request400 and normal successful submission. Confirm security rejection retains reference/internal note. Anonymous errors must not expose authenticated navigation/backend diagnostics. Fatal exceptions now500; stage AJAX/dialog compatibility without deliberately crashing production. Common CSS migration preserves admin arrays/repeated installs. Apache/proxy-generated/custom JSON errors remain outside shared handlers. Then resume wider portal injection/CSP work.
+
+# Actual security page styling — 0.0.173 prepared, 2026-10-15
+
+Owner172 screenshot unstyled: confirmed login-only Branding loader mistake, fixed in173 via dedicated module CSS registration plus bootstrap deploy. Completed fix/tests in PROJECT_STATUS.md/docs/customer-portal-security.md.220 checks pass;173 unsigned/not installed by agent. Next install173, verify SysConfig deployment, hard refresh/reopen action URL and inspect large red403/yellow warning/sidebar/card plus attempted action or explicit missing label. Check actual CSS/generated bundle and HTTP403, agent internal audit note with reference. Do not substitute local directly-linked preview for live loader acceptance. Then resume remaining portal injection/CSP work.
+
+# Security rejection UI/audit — 0.0.172 prepared, 2026-10-15
+
+Owner installed171 and confirmed GET denial.172 prepares themed real403 with sidebar/red code/yellow alert/own actor+action+reference and structured system event plus agent-only internal audit note for readable tickets.201 checks/local desktop+mobile preview pass; completed detail PROJECT_STATUS.md/docs/customer-portal-security.md. Next install172/hard refresh and repeat GET: Network403, page styling, same event reference in agent internal note and TESSERA_SECURITY log. No state/governance changes. Valid normal form must still succeed.172 unsigned/not installed by agent. Then resume fragment-script removal, injection/CSP and integrity coverage. Previous171 install-pending instruction is superseded by owner's confirmation.
+
+# Customer portal hardening — 0.0.171 prepared, 2026-10-15
+
+First CSRF/method fix complete,174 checks pass; details in PROJECT_STATUS.md and docs/customer-portal-security.md. Do not install/sign now unless requested;171 unsigned, installed/signed170 preserved. Next trace assessment/diagnosis generated HTML/data contexts and replace CustomerTicketZoom fragment ExecuteScripts with explicit external trusted initialization, then malicious-content regressions. Continue ActivityDialog, articles, uploads, API/lookups and customer permission boundaries. Extensionless /portal-style URL possible but exact URL/config undecided; no Python rewrite required, no routing changed. Browser compatibility/CSRF form acceptance and security guard deployment remain pending.
+
+# App integrity and CSP staging — 2026-10-15
+
+Prepared independent CODESECURITY runtime and tests recorded in PROJECT_STATUS.md; deployment guide `C:\Users\Zen\OneDrive\Documents\CODESECURITY\runtime\DEPLOYMENT.md`. Current Linux Apache/PSGI, future Docker. Next stage actual entry point and SELECT-only MariaDB signed-manifest source, test request/startup denial and preserved article sandbox CSP. Close exact-load/Custom/cache/generated static/CLI/daemon bypasses before claiming full code-execution integrity. CSP currently report-only; observe browser violations, refactor trusted script initialization and introduce trusted-site nonces before enforcement. No live guard/database changes, new signed package or root/admin-control work performed. Existing0.0.170 remains signed and byte-unchanged.
+
+# First publisher signature — 0.0.170 prepared, 2026-10-15
+
+Completed duplicate removal/rebuild/key setup/badge tracing recorded in PROJECT_STATUS.md; previous duplicate-repair priority below is superseded. Owner signing completed; independent signature/public-key/exact OPM verification passed on 2026-10-15. Completed evidence is in PROJECT_STATUS.md. Next integrate protected public-key trust and verification before OTOBO install hooks, with distinct publisher-signature status; native OTOBO verified badge depends on its cloud authority and cannot be earned by our signature alone. No install/runtime enforcement implemented yet.
+
+# Release signing follow-up — 2026-10-15
+
+Independent local signer implemented in `C:\Users\Zen\OneDrive\Documents\CODESECURITY`; completed work and boundaries recorded in PROJECT_STATUS.md and that project's README. Next: remove duplicate customer Branding.css file-list entry from authoritative SOPM in a separately validated new release, rebuild OPM, choose production encrypted key custody and protected NTFS access, then implement trusted public-key verification before package installation hooks and later runtime integrity checks. Do not add signer/private keys to TESSERA or generate approval hashes during install. No production package signed and no key generated. Source temporarily stays in OneDrive at user's request before device repair; verify encrypted recovery copy before future deletion. Web injection prevention and governance approval are independent workstreams.
+
+# Immediate follow-up — native calendar initialization, 0.0.169 prepared
+
+Install169/hard refresh, then enter Calendar from Dashboard/List. Verify first October bars/list without navigation. Native APP_MODULE startup fixes the document-ready-before-Core.Config ordering defect;168 retries alone were insufficient. Check agent calendar too. Completed source/regression and live reproduction are recorded in PROJECT_STATUS.md.
+
+# Immediate follow-up — first Calendar load, 0.0.168 prepared
+
+Install168/hard refresh and open Calendar directly. Verify events load without switching months and repeat month/week/day navigation. If both attempts fail, capture Events HTTP status/response and matching `Customer Tickets calendar events failed` system-log entry; deployed cause remains unproved. Completed recovery/performance changes and validation are in PROJECT_STATUS.md.
+
+# Immediate follow-up — calendar selected-period list, 0.0.167 prepared
+
+Install167/hard refresh. Verify October5 ticket0032 against its displayed execution range in October and September; September panel excludes October-only events, while a real cross-month span remains listed. Check cached month/week/day navigation and local range labels. Exact live ticket dates remain unverified. Completed implementation/testing is in PROJECT_STATUS.md.
+
+# Immediate follow-up — customer calendar 0.0.166 prepared
+
+Install166 and hard-refresh Tickets Calendar. Confirm `>` between ticket number/title and standard category badges match the configured front-page colors. Check long titles/badge wrapping at desktop/mobile widths and retained master permissions. Completed code/testing is recorded in PROJECT_STATUS.md. Earlier calendar acceptance below remains pending where applicable.
+
+# Immediate follow-up — customer calendar 0.0.165 prepared
+
+Install 165 and hard-refresh customer Tickets Calendar. Confirm events load for IPC, check OTOBO system log if the generic error persists, and verify Change/Incident/ServiceRequest children group under the master number. For a master the user cannot read, confirm number-only heading and no title, link, or hidden sibling ticket. Verify readable master link and mobile panel layout. Completed code and tests are in PROJECT_STATUS.md and docs/ticket-calendar.md.
+
+# Immediate follow-up — customer calendar CSS 0.0.164 prepared
+
+Install 164 and hard-refresh the customer Tickets Calendar. Verify native FullCalendar day grid and compact prev/next/today/month/week/day toolbar, legend/event colors, desktop/mobile layout and ticket links. The installed163 screenshot showed missing customer-skin FullCalendar CSS; 164 packages it. Live visual acceptance is pending. Details in PROJECT_STATUS.md.
+
+# Immediate follow-up — customer Tickets Calendar 0.0.163 prepared
+
+Install 163, deploy its CustomerTicketOverview loader setting, and verify Dashboard / List / Calendar tabs. Check type colors and legend at desktop/mobile widths, browser-local times, IPC dense calendar, ticket links, and direct Events URL for two customer users with different SupportAssignments. Confirm forbidden titles and counts do not leak. Completed implementation/tests in PROJECT_STATUS.md and docs/ticket-calendar.md; no live acceptance claimed.
+
+# Immediate follow-up — 0.0.162 prepared
+
+Install 162 for Incident events anchored to native ticket Created time (manual and automated creation). Verify an Incident whose ActualStart is later still begins at Created, along with the 161 calendar permission and layout acceptance below. No new timestamp field or migration is needed. Completed work is in PROJECT_STATUS.md.
+
+# Immediate follow-up — ticket calendar 0.0.161 prepared
+
+Install 161 and deploy its frontend/loader/navigation SysConfig. Verify a planned Change, active Incident and closed ServiceRequest on month/week/day; edit dates/state and refresh. Test two agents in different queue groups plus a privileged agent: direct Events URL, event list and ticket zoom must all agree. Confirm browser-local timezone and responsive layout. Calendar design and completed tests are in PROJECT_STATUS.md and docs/ticket-calendar.md. No live installation or permission acceptance is claimed.
+
+# Immediate follow-up — 0.0.160 prepared
+
+Install 160, retry Control 4600 and confirm risk creation per entitlement support profile. Verify article table and body timestamps after setting UserDefaultTimeZone to Asia/Singapore and/or user preference to the viewer's zone. Implement safe browser timezone detection and preference enrollment on first website visit; OTOBO currently only prompts the user. Do not change database OTOBOTimeZone. Completed 160 design and tests are in PROJECT_STATUS.md.
+
+# Active EOS risk and Control acceptance —159 prepared, 2026-10-13
+
+Install159 and reload web/daemon workers. Confirm SysConfig deployment and Run now. Control4599 (Dell VxRail E560) should complete Pass cleanup using MELT `Resolved`. Control4600 (Dell VxRail E560F) should expose the precise `APPLICATION::DEFAULT` resolver failure in its error article, because seven of ten affected Workloads lack ContractEntitlement while Application1493 visibly maps the default role to SupportProfile1063. Correct that verified resolver/data issue, then rerun and confirm distinct entitlement/default Risks, LastRun, and article timestamps in configured OTOBOTimeZone. Do not claim complete risk acceptance from Risk23 alone.
+
+# Active entitlement-risk acceptance —156 prepared, 2026-10-13
+
+Entitlement-covered technology SupportProfile partitions and missing-entitlement APPLICATION::DEFAULT fallback implemented; completed design/tests in PROJECT_STATUS.md and docs/entitlement-risk-partitions.md. Install156/reload workers, then apply paired EOS FieldAsssignment and Framework MasterTicket examples. Verify separate overlapping-team risks, stable reruns, correct fresh master owners and default fallback; no live156 acceptance claimed. Preserve old ledgers and administrator service/customer values.
+
+# Active CI literal reference acceptance —155 prepared, 2026-10-13
+
+155 fixes154 missing SQL quotation marks and adds CI owning-field error context plus database-executed/native CI tests. Details in PROJECT_STATUS.md. Install155/reload workers and retry original name-based TechnologyProfile/Product imports.154 is superseded; no live155 acceptance claimed. Preserve reference uniqueness/permission checks and authored names.
+
+# Active literal reference acceptance —154 prepared, 2026-10-13
+
+Literal GovernanceObject names/numbers implemented; completed design/testing recorded in PROJECT_STATUS.md and docs/governance-reference-literal-names.md. Install154/reload workers and retry original name-based TechnologyProfile retry9, verifying parent913. Number workaround is superseded after deployment. No review-only tabs should be imported. Live154 acceptance pending.
+
+# Active Control run evidence acceptance —153 prepared, 2026-10-13
+
+ON NO AFFECTED and automatic error articles are implemented; details/reference in PROJECT_STATUS.md and docs/control-run-outcomes.md. Install153/reload workers, then update live EOS YAML and verify zero-asset completion/error evidence. Missing Application findings are errors, not empty scans; Control4141 data/hydration investigation remains pending. No deployment or live YAML change claimed.
+
 # Active EOS acceptance priority —152 prepared, 2026-10-12
 
 Live EOS767 scripts use Sets and have correct one-year condition. Missing RiskStmt restored from original workbook through native UI.152 prevents unresolved import refs from silently clearing selections and updates discovery Set event names. Next install152/reload web+daemon workers and verify14G Control evaluation, affected assets/Application grouping, RiskStatement Framework and actual risk result. Exact original reference lookup failure still unproven. Details in latest PROJECT_STATUS.md.
@@ -1184,3 +1313,18 @@ Parser/runtime hardening is prepared in0.0.147; completed details in PROJECT_STA
 - Discovery: existing Auth.pm/TOTP adapter supports agent login factors but lacks the proposed operation-bound fresh proof. Email.pm already supports HTML/plain-text and CID inline images; reuse transport underneath new authoring/rendering/template layer. No email or MFA configuration changed.
 - Reserved-role protection must cover native object/version/direct-field writes and GovernanceRole rename/creation paths, not just portal form. Exact role-management actor still requires user decision; no all-agent/self-assignment assumption. Ordinary assignment compatibility requires tests before claiming no effects.
 - Pending clarifications: role administrator, MFA action scope and first email example. Next: implement shared backend authorization after these choices; then action-bound MFA and image-capable editor/template delivery with registered portal deep links. Email links navigate only; scanner/GET must never mutate; authenticated explicit portal action and fresh permissions required. No new schema names invented, no roles granted or mail sent. This update is design/discovery, not enforcement deployment; package147 remains prepared.
+## 2026-10-13 External automation completion contract
+
+Implemented in package158: durable execution row, OTOBO GenericInterface outbound task, idempotently installed provider callback web service, exit-code branching, registered continuation, timeout reconciliation and ControlObjective handler. Recorded in PROJECT_STATUS.md and docs/async-execution-contract.md. Remaining integration: configure a requester web service for each external system, attach a trusted workflow step to `AsyncExecution->Start`, and verify a live remote callback. Keep arbitrary YAML external effects disabled until the separate AOE publication/capability gate is implemented. After 158 installation, deploy corrected `Frontend::Module###AgentControlObjectiveRun` and verify the action in live SysConfig.
+
+
+
+
+
+
+
+
+# Agent New setup and Central — 2026-10-19
+
+Requested agent entry point: ticket numbering reset/existing SysConfig prefix prompt; CSR create/complete/renew; CMDB remove/reset; Central automatic missing-human identity creation without credentials or login. Design and pending decisions: docs/agent-system-setup-design.md. Clarify CSR/Central meaning, ticket reset semantics, CMDB scope and trusted identity source before dependent implementation. Never execute reset during install/upgrade or grant login/capabilities through provisioning. No runtime/package changes made.
+

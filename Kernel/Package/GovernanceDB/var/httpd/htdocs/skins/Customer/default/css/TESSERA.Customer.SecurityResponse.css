@@ -1,0 +1,37 @@
+/* Customer security responses share the normal portal shell and navigation. */
+#oooContent.ZTSMSecurityPage { background: #f4f5fb; min-height: calc(100vh - 80px); }
+.ZTSMSecurityPage #oooHeader { background: #fff; border-bottom: 1px solid #e4e7f0; }
+.ZTSMSecurityPage #oooMainBox { padding: clamp(20px, 4vw, 56px); }
+.ZTSMSecurityPage .ZTSMSecurityCard { background: #fff; border: 1px solid #e1e5ef; border-radius: 18px; box-sizing: border-box; color: #101344; margin: 0 auto; max-width: 920px; padding: clamp(24px, 4vw, 52px); }
+.ZTSMSecurityPage .ZTSMSecurityCode { color: #b42318; font-size: clamp(76px, 10vw, 132px); font-weight: 800; line-height: 1; margin: 0 0 14px; }
+.ZTSMSecurityPage #ZTSMSecurityTitle { color: #b42318; font-size: clamp(26px, 3vw, 38px); line-height: 1.25; margin: 0 0 26px; }
+.ZTSMSecurityPage .ZTSMSecurityWarning { background: #fff3c4; border: 1px solid #e5bb4a; border-left: 6px solid #bd8700; border-radius: 8px; color: #604700; font-size: 18px; line-height: 1.6; padding: 20px 24px; }
+.ZTSMSecurityPage .ZTSMSecurityWarning p { margin: 0; }
+.ZTSMSecurityPage .ZTSMSecurityWarning p + p { margin-top: 8px; }
+.ZTSMSecurityPage .ZTSMSecurityDetails { display: grid; gap: 20px 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 30px 0; }
+.ZTSMSecurityPage .ZTSMSecurityDetails dt { color: #596184; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.ZTSMSecurityPage .ZTSMSecurityDetails dd { color: #101344; font-size: 18px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.ZTSMSecurityPage .ZTSMSecurityAuditNotice { color: #843523; font-size: 16px; font-weight: 600; line-height: 1.5; }
+.ZTSMSecurityPage .ZTSMSecurityHelp { color: #596184; font-size: 15px; line-height: 1.7; margin: 14px 0 26px; }
+.ZTSMSecurityPage .ZTSMSecurityReturn { background: #143df0; border-radius: 7px; color: #fff; display: inline-block; font-size: 16px; font-weight: 600; padding: 12px 20px; text-decoration: none; }
+.ZTSMSecurityPage .ZTSMSecurityReturn:hover { background: #102fba; }
+.ZTSMSecurityPage .ZTSMSecurityReturn:focus-visible { outline: 3px solid #bd8700; outline-offset: 4px; }
+@media (max-width: 600px) {
+    .ZTSMSecurityPage .ZTSMSecurityDetails { grid-template-columns: minmax(0, 1fr); }
+    .ZTSMSecurityPage .ZTSMSecurityWarning { padding: 16px; }
+}
+
+body.ZTSMSecurityResponse #oooContent.ZTSMSecurityPage { margin-left: 56px; width: calc(100% - 56px); }
+.ZTSMSecurityPage #oooHeader { box-sizing: border-box; padding: 24px clamp(20px, 4vw, 56px); width: 100%; }
+.ZTSMSecurityPage #oooMainBox { box-sizing: border-box; width: 100%; }
+@media (max-width: 767px) {
+    body.ZTSMSecurityResponse #oooNavigation { height: 100vh; top: 0; width: 56px; }
+    body.ZTSMSecurityResponse #oooNavigation.oooExpanded { width: min(268px, 100%); }
+    body.ZTSMSecurityResponse #oooMobileHeader { box-sizing: border-box; margin-left: 56px; width: calc(100% - 56px); }
+}
+
+/* The same response components serve ordinary customer errors and warnings. */
+.ZTSMSecurityPage .ZTSMPortalResponseTitle { color: #b42318; font-size: clamp(26px, 3vw, 38px); line-height: 1.25; margin: 0 0 26px; }
+.ZTSMPortalResponseFragment { padding: 20px; }
+body.ZTSMPortalResponseAnonymous #oooContent.ZTSMSecurityPage { margin-left: 0; width: 100%; }
+body.ZTSMPortalResponseAnonymous #oooMobileHeader { margin-left: 0; width: 100%; }

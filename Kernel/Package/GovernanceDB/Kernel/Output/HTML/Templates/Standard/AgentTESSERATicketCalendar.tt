@@ -1,0 +1,6 @@
+<div class="MainBox ARIARoleMain TESSERATicketCalendarPage">
+    <h1>[% Translate("Ticket Calendar") | html %]</h1>
+    <p>[% Translate("Scheduled changes and active incident or service request timelines visible to your team.") | html %]</p>
+    <div id="TESSERATicketCalendar" aria-label="[% Translate("Ticket Calendar") | html %]"></div>
+    <p id="TESSERATicketCalendarError" role="alert" hidden></p>
+</div>

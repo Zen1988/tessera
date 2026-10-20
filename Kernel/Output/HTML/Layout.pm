@@ -2,7 +2,7 @@
 # OTOBO is a web-based ticketing system for service organisations.
 # --
 # Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
-# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://ncs.com.sg
 # --
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1668,7 +1668,7 @@ sub _AddHeadersToResponseObject {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     if ( !$ConfigObject->Get('Secure::DisableBanner') ) {
-        $Headers{'X-Powered-By'} = join ' ', $ConfigObject->Get('Product'), $ConfigObject->Get('Version'), '(https://otobo.io/)';
+        $Headers{'X-Powered-By'} = join ' ', $ConfigObject->Get('Product'), $ConfigObject->Get('Version'), '(https://ncs.com.sg)';
     }
 
     if (
@@ -4192,6 +4192,9 @@ sub CustomerLogin {
             );
         }
 
+        my $BGConfig            = $ConfigObject->Get('CustomerLogin::Settings') || {};
+        my $RequestAccountLink = $BGConfig->{RequestAccountLink} || '';
+
         # get create account output
         if (
             $ConfigObject->Get('CustomerPanelCreateAccount')
@@ -4209,6 +4212,12 @@ sub CustomerLogin {
                 Data => \%Param,
             );
         }
+        elsif ($RequestAccountLink) {
+            $Self->Block(
+                Name => 'CreateAccountLink',
+                Data => \%Param,
+            );
+        }
     }
 
     # send data to JS
@@ -4217,9 +4226,12 @@ sub CustomerLogin {
         Value => $Param{LoginFailed},
     );
 
-    my $BGConfig = $ConfigObject->Get('CustomerLogin::Settings');
-    $Param{LoginText}  = $BGConfig->{LoginText} // 'Your Tickets. Your OTOBO.';
-    $Param{Background} = $BGConfig->{Background} || '';
+    my $BGConfig = $ConfigObject->Get('CustomerLogin::Settings') || {};
+    $Param{LoginText}            = $BGConfig->{LoginText} // 'Your Tickets. Your OTOBO.';
+    $Param{RequestAccountLink}   = $BGConfig->{RequestAccountLink} || '';
+    $Param{RequestAccountText}   = $BGConfig->{RequestAccountText} || Translatable('Request Account');
+    $Param{RequestAccountNewTab} = $BGConfig->{RequestAccountNewTab} || 0;
+    $Param{Background}           = $BGConfig->{Background} || '';
     $Param{Background} =~ s{<OTOBO_CONFIG_(.+?)>}{$ConfigObject->Get($1)}egx;
 
     # define color scheme
@@ -4550,13 +4562,10 @@ sub CustomerFatalError {
         );
     }
 
-    my $Output = join '',
-        $Self->CustomerHeader(
-            Area  => 'Frontend',
-            Title => 'Fatal Error'
-        ),
-        $Self->CustomerError(%Param),
-        $Self->CustomerFooter();
+    my $Output = $Self->_CustomerPortalResponse(
+        FullPage => 1, Code => 500, Title => 'Something went wrong',
+        Message => 'We could not complete this request because of a system error. Please try again later or contact support.',
+    );
 
     # Modify the output by applying the output filters.
     $Output = $Self->ApplyOutputFilters( Output => $Output );
@@ -4569,7 +4578,7 @@ sub CustomerFatalError {
     # The OTOBO response object already has the HTPP headers.
     # Enhance it with the HTTP status code and the content.
     my $PlackResponse = Plack::Response->new(
-        200,
+        500,
         $Kernel::OM->Get('Kernel::System::Web::Response')->Headers(),
         $Output
     );
@@ -4950,98 +4959,79 @@ sub CustomerNavigationBar {
 
 }
 
+sub _CustomerPortalResponse {
+    my ( $Self, %Param ) = @_;
+    my %AllowedCode = map { $_ => 1 } qw(400 403 404 500 503);
+    my $Code = exists $Param{Code} ? ( $AllowedCode{$Param{Code} || ''} ? $Param{Code} : 400 ) : undef;
+    my $SignedIn = $Self->{UserID} && $Self->{SessionID} ? 1 : 0;
+    my $Title = $Param{Title} || 'Request could not be completed';
+    my $Output = '';
+    if ($Param{FullPage}) {
+        $Output .= $Self->CustomerHeader(
+            Title => $Title,
+            BodyClass => 'ZTSMSecurityResponse' . ($SignedIn ? '' : ' ZTSMPortalResponseAnonymous'),
+        );
+    }
+    $Output .= $Self->Output(
+        TemplateFile => 'CustomerPortalResponse',
+        Data => {
+            FullPage => $Param{FullPage} ? 1 : 0, Code => $Code, Title => $Title,
+            Message => substr($Param{Message} || 'We could not complete this request. Please try again or contact support.', 0, 1000),
+            Comment => substr($Param{Comment} || '', 0, 1000),
+            CustomerUserID => $SignedIn ? $Self->{UserID} : '',
+            AttemptedAction => $SignedIn ? ($Self->{Action} || '') : '',
+            SignedIn => $SignedIn,
+        },
+    );
+    if ($Param{FullPage}) {
+        # An early session/backend failure must not expose authenticated navigation or recurse.
+        $Output .= eval { $Self->CustomerNavigationBar() } || '' if $SignedIn;
+        $Output .= $Self->CustomerFooter();
+    }
+    $Kernel::OM->Get('Kernel::System::Web::Response')->Code($Code) if $Code;
+    return $Output;
+}
+
 sub CustomerError {
     my ( $Self, %Param ) = @_;
-
-    # get backend error messages
-    $Param{BackendMessage} = $Kernel::OM->Get('Kernel::System::Log')->GetLogEntry(
-        Type => 'Error',
-        What => 'Message'
-    ) || '';
-    if ( !$Param{BackendMessage} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => $Param{Message} || '?',
-        );
-        $Param{BackendMessage} = $Kernel::OM->Get('Kernel::System::Log')->GetLogEntry(
-            Type => 'Error',
-            What => 'Message'
-        ) || '';
-    }
-
-    if ( !$Param{Message} ) {
-        $Param{Message} = $Param{BackendMessage};
-    }
-
-    # create & return output
-    return $Self->Output(
-        TemplateFile => 'CustomerError',
-        Data         => \%Param
+    # Embedded errors keep their caller's response/layout. Never use the last backend log as UI text.
+    return $Self->_CustomerPortalResponse(
+        Title => 'Request could not be completed', Message => $Param{Message}, Comment => $Param{Comment},
     );
 }
 
 sub CustomerErrorScreen {
     my ( $Self, %Param ) = @_;
-
-    return join '',
-        $Self->CustomerHeader( Title => 'Error' ),
-        $Self->CustomerError(%Param),
-        $Self->CustomerFooter();
+    return $Self->_CustomerPortalResponse(
+        FullPage => 1, Code => $Param{StatusCode} || 400,
+        Title => 'Request could not be completed', Message => $Param{Message}, Comment => $Param{Comment},
+    );
 }
 
 sub CustomerWarning {
     my ( $Self, %Param ) = @_;
-
-    # get backend error messages
-    $Param{BackendMessage} = $Kernel::OM->Get('Kernel::System::Log')->GetLogEntry(
-        Type => 'Notice',
-        What => 'Message',
-        )
-        || $Kernel::OM->Get('Kernel::System::Log')->GetLogEntry(
-            Type => 'Error',
-            What => 'Message',
-        ) || '';
-
-    if ( !$Param{Message} ) {
-        $Param{Message} = $Param{BackendMessage};
-    }
-
-    # create & return output
-    return $Self->Output(
-        TemplateFile => 'CustomerWarning',
-        Data         => \%Param
+    # A normal warning is not a security incident or an HTTP server failure.
+    return $Self->_CustomerPortalResponse(
+        Title => 'Please check this request',
+        Message => $Param{Message} || 'Please review your request before continuing.',
+        Comment => $Param{Comment},
     );
 }
 
 sub CustomerNoPermission {
     my ( $Self, %Param ) = @_;
-
-    my $WithHeader = $Param{WithHeader} || 'yes';
-
-    $Param{Message} ||= Translatable('No Permission!');
-
-    # create output
-    my $Output;
-    $Output = $Self->CustomerHeader( Title => Translatable('No Permission') ) if $WithHeader eq 'yes';
-    $Output .= $Self->Output(
-        TemplateFile => 'NoPermission',
-        Data         => \%Param
+    return $Self->_CustomerPortalResponse(
+        FullPage => ( $Param{WithHeader} || 'yes' ) eq 'yes' ? 1 : 0,
+        Code => 403, Title => 'Access unavailable',
+        Message => $Param{Message} || 'You do not have permission to perform this action or access this resource.',
+        Comment => $Param{Comment},
     );
-    $Output .= $Self->CustomerFooter() if $WithHeader eq 'yes';
-
-    # return output
-    return $Output;
 }
 
 # similar to CustomerError() but neither the last log message nor the backtrace is printed
 sub PublicError {
     my ( $Self, %Param ) = @_;
-
-    # create & return output, using the same layout as in the customer interface
-    return $Self->Output(
-        TemplateFile => 'CustomerError',
-        Data         => \%Param
-    );
+    return $Self->CustomerError(%Param);
 }
 
 # using PublicError() internally
@@ -5059,13 +5049,10 @@ sub PublicFatalError {
         );
     }
 
-    my $Output = join '',
-        $Self->CustomerHeader(
-            Area  => 'Frontend',
-            Title => 'Fatal Error'
-        ),
-        $Self->PublicError(%Param),    # without last error message and without last traceback
-        $Self->CustomerFooter();
+    my $Output = $Self->_CustomerPortalResponse(
+        FullPage => 1, Code => 500, Title => 'Something went wrong',
+        Message => 'We could not complete this request because of a system error. Please try again later or contact support.',
+    );
 
     # Modify the output by applying the output filters.
     $Output = $Self->ApplyOutputFilters( Output => $Output );
@@ -5078,7 +5065,7 @@ sub PublicFatalError {
     # The OTOBO response object already has the HTPP headers.
     # Enhance it with the HTTP status code and the content.
     my $PlackResponse = Plack::Response->new(
-        200,
+        500,
         $Kernel::OM->Get('Kernel::System::Web::Response')->Headers(),
         $Output
     );
@@ -5092,11 +5079,7 @@ sub PublicFatalError {
 # using PublicError() internally
 sub PublicErrorScreen {
     my ( $Self, %Param ) = @_;
-
-    return join '',
-        $Self->CustomerHeader( Title => 'Error' ),
-        $Self->PublicError(%Param),
-        $Self->CustomerFooter();
+    return $Self->CustomerErrorScreen(%Param);
 }
 
 =head2 Ascii2RichText()

@@ -1,0 +1,12 @@
+**
+!Dockerfile
+!.dockerignore
+!Custom/
+!Custom/Kernel/
+!Custom/Kernel/System/
+!Custom/Kernel/System/Cache/
+!Custom/Kernel/System/Cache/Redis.pm
+!Custom/Kernel/System/TESSERA/
+!Custom/Kernel/System/TESSERA/Secrets.pm
+!Custom/Kernel/System/TESSERA/SecretRedis.pm
+!TESSERA-Base-0.0.180.opm

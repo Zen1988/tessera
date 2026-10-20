@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Scalar::Util qw(looks_like_number);
 use POSIX qw(ceil);
+use JSON::PP ();
 
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMArticleHelper qw(ZTSMArticleBodyConfigItemReferencesExpand ZTSMArticleCreate);
 use Kernel::System::ProcessManagement::TransitionAction::ZTSMChapterDirector ();
@@ -64,15 +65,6 @@ sub Run {
     my $IPCOverrideAccess = $Self->_IsIPCAgent( CustomerUserID => $Self->{UserID} );
     my %IPCEmergencyAction = map { $_ => 1 } qw(Patch Delegate Override);
 
-    if ( $RuntimeAction eq 'Patch' ) {
-        $Self->_ZTSMActionLog(
-            Priority => 'error',
-            Message  => "IPC Patch submit entered: TicketID='$TicketID' CustomerUserID='$Self->{UserID}' IPCAccess='"
-                . ( $IPCOverrideAccess ? 1 : 0 )
-                . "' Subaction='$Subaction'.",
-        );
-    }
-
     my $Access = $TicketObject->TicketCustomerPermission(
         Type     => 'ro',
         TicketID => $TicketID,
@@ -89,13 +81,11 @@ sub Run {
         $Access = 1 if !$Access && $IPCOverrideAccess && $IPCEmergencyAction{$RuntimeAction};
 
         if ( !$Access ) {
-            $Self->_ZTSMActionLog(
-                Priority => 'error',
-                Message => "Permission denied at initial customer ro gate: TicketID='$TicketID' RuntimeAction='$RuntimeAction' CustomerUserID='$Self->{UserID}' IPCAccess='"
-                    . ( $IPCOverrideAccess ? 1 : 0 )
-                    . "'.",
+            return $Self->_CustomerSecurityRequestReject(
+                LayoutObject => $LayoutObject, ParamObject => $ParamObject,
+                TicketID => $TicketID, RuntimeAction => $RuntimeAction, Subaction => $Subaction,
+                Reason => 'ticket_access_denied', TicketReadable => 0,
             );
-            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
         }
     }
 
@@ -107,6 +97,23 @@ sub Run {
     if ( !%Ticket ) {
         return $LayoutObject->CustomerErrorScreen(
             Message => 'Ticket not found.',
+        );
+    }
+
+    # Customer runtime mutations must never be reachable through GET or a forged POST.
+    # Read-only exceptions are matched to their actual terminal rendering/JSON branches.
+    if ( !$Self->_CustomerRequestSecurityCheck(
+        LayoutObject => $LayoutObject,
+        ParamObject  => $ParamObject,
+        TicketType   => $Ticket{Type} || '',
+        RuntimeAction => $RuntimeAction,
+        Subaction     => $Subaction,
+    ) ) {
+        return $Self->_CustomerSecurityRequestReject(
+            LayoutObject => $LayoutObject, ParamObject => $ParamObject,
+            TicketID => $TicketID, RuntimeAction => $RuntimeAction, Subaction => $Subaction,
+            Reason => $Self->{CustomerSecurityRejectionReason} || 'request_check_failed',
+            TicketReadable => 1,
         );
     }
 
@@ -2157,7 +2164,7 @@ sub _FollowUpParentCompleteIfReady {
         TicketID            => $ParentTicketID,
         RuntimeAction       => 'CompleteTask',
         Label               => 'Complete',
-        Subject             => 'ZTSM Follow-up Completed',
+        Subject             => 'TESSERA Follow-up Completed',
         Body                =>
               "** Note: This is a system-generated follow-up orchestration update message.\n\n"
             . "Follow-up BlueBook completed successfully.\n\n"
@@ -6183,7 +6190,7 @@ sub _RiskAssessmentOriginStatementID {
         );
         die "Risk Framework cannot be resolved for statement selection.\n"
             if !IsHashRefWithData($Framework) || ( $Framework->{Class} || '' ) ne 'Framework';
-        my $Source = _NormalizeValue( $Framework->{'DynamicField_ZRM-RiskScoringEngine'} ) || '';
+        my $Source = _FrameworkScriptSource($Framework, 'RiskScoringEngine') || '';
         my $Engine = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
         die "Risk Framework statement selector is invalid.\n" if ref $Engine ne 'HASH';
         my $From = $Engine->{'RISK STATEMENTS'}->{FROM} || '';
@@ -6267,7 +6274,7 @@ sub _RiskAssessmentOriginScoresEvaluate {
     );
     die "Risk Framework cannot be resolved.\n"
         if !IsHashRefWithData($Framework) || ( $Framework->{Class} || '' ) ne 'Framework';
-    my $Source = _NormalizeValue( $Framework->{'DynamicField_ZRM-RiskScoringEngine'} ) || '';
+    my $Source = _FrameworkScriptSource($Framework, 'RiskScoringEngine') || '';
     die "Risk Framework has no scoring engine.\n" if $Source !~ m{\S};
     my $Engine = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Source );
     die "Risk scoring engine must be a VERSION 1 YAML mapping.\n"
@@ -8368,3 +8375,131 @@ sub _ActionableTicketType {
 }
 
 1;
+
+sub _FrameworkScriptSource {
+    require Kernel::System::TESSERA::ScriptBlocks;
+    return Kernel::System::TESSERA::ScriptBlocks::ObjectSource(Object => $_[0], Field => $_[1]);
+}
+
+sub _CustomerRequestSecurityCheck {
+    my ( $Self, %Param ) = @_;
+    delete $Self->{CustomerSecurityRejectionReason};
+    my $Subaction = $Param{Subaction} || '';
+    my $Action = $Param{RuntimeAction} || '';
+    my $Type = $Param{TicketType} || '';
+
+    # These JSON branches return before any runtime-action mutation.
+    my %ReadOnlyJSON = map { $_ => 1 } qw(
+        RiskStatementDefaults RiskAssessmentScales RiskScoreLevels ZTSMCustomerUserSearch
+    );
+    return 1 if $ReadOnlyJSON{$Subaction};
+
+    # A caller cannot use an inline subaction to exempt a different mutating action.
+    return 1 if $Type eq 'Assessment' && $Action eq 'Assess'
+        && ( $Subaction eq '' || $Subaction eq 'RiskAssessmentInline' );
+    return 1 if $Type eq 'Diagnosis' && $Action eq 'Diagnose'
+        && ( $Subaction eq '' || $Subaction eq 'DiagnosisInline' );
+
+    if ( ( $Param{ParamObject}->RequestMethod() || '' ) ne 'POST' ) {
+        $Self->{CustomerSecurityRejectionReason} = 'method_not_post';
+        return;
+    }
+    # Explicitly reject missing token/session proof before the framework checker:
+    # an empty request token must never equal an absent session token.
+    my $RequestToken = $Param{ParamObject}->GetParam( Param => 'ChallengeToken' ) || '';
+    my $SessionToken = $Param{LayoutObject}->{UserChallengeToken} || '';
+    my $Reason = !$SessionToken ? 'session_proof_missing'
+        : !$RequestToken ? 'csrf_missing'
+        : $RequestToken ne $SessionToken ? 'csrf_mismatch' : '';
+    if ($Reason) {
+        $Self->{CustomerSecurityRejectionReason} = $Reason;
+        return;
+    }
+    my $Valid = eval { $Param{LayoutObject}->ChallengeTokenCheck( Type => 'Customer' ) };
+    if (!$Valid || $@) {
+        $Self->{CustomerSecurityRejectionReason} = 'csrf_check_failed';
+        return;
+    }
+    return 1;
+}
+
+
+sub _CustomerSecurityRequestReject {
+    my ( $Self, %Param ) = @_;
+    my $Audit = eval { $Self->_CustomerSecurityRequestAudit(%Param) } || {};
+    # Failure to record an audit must never permit the attempted mutation.
+    if (!$Audit->{EventID}) {
+        eval { $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error', Message => 'TESSERA security audit failed; request remains denied.'
+        ) };
+    }
+    my $Layout = $Param{LayoutObject};
+    my $Output = $Layout->CustomerHeader( Title => 'Security check failed', BodyClass => 'ZTSMSecurityResponse' );
+    $Output .= $Layout->Output(
+        TemplateFile => 'CustomerSecurityRequestRejected',
+        Data => {
+            CustomerUserID => $Self->{UserID} || '',
+            AttemptedAction => _CustomerSecurityAuditText($Param{RuntimeAction}, 64) || 'No runtime action supplied',
+            EventID => $Audit->{EventID} || '',
+            Recorded => $Audit->{Logged} || $Audit->{ArticleID} ? 1 : 0,
+        },
+    );
+    $Output .= $Layout->CustomerNavigationBar();
+    $Output .= $Layout->CustomerFooter();
+    # Set after the header/footer so the response is a real HTTP403, not merely a page label.
+    $Kernel::OM->Get('Kernel::System::Web::Response')->Code(403);
+    return $Output;
+}
+
+sub _CustomerSecurityAuditText {
+    my ($Value, $Limit) = @_;
+    $Value = '' if !defined $Value || ref $Value;
+    $Value =~ s/[\x00-\x1f\x7f]/?/g;
+    return substr($Value, 0, $Limit || 256);
+}
+
+sub _CustomerSecurityRequestAudit {
+    my ( $Self, %Param ) = @_;
+    my $EventID = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(Length => 20);
+    die 'Invalid security event reference' if !$EventID || $EventID !~ /\A[A-Za-z0-9]+\z/;
+    my %Reasons = map { $_ => 1 } qw(
+        ticket_access_denied method_not_post session_proof_missing csrf_missing csrf_mismatch
+        csrf_check_failed request_check_failed
+    );
+    my $Reason = $Reasons{$Param{Reason} || ''} ? $Param{Reason} : 'request_check_failed';
+    my $Event = {
+        Event => 'CustomerRuntimeRequestRejected', EventID => $EventID,
+        TimeUTC => POSIX::strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+        ActorType => 'CustomerUser', ActorID => _CustomerSecurityAuditText($Self->{UserID}, 256),
+        TicketID => _CustomerSecurityAuditText($Param{TicketID}, 32),
+        Action => _CustomerSecurityAuditText($Param{RuntimeAction}, 64),
+        Subaction => _CustomerSecurityAuditText($Param{Subaction}, 64),
+        Method => _CustomerSecurityAuditText($Param{ParamObject}->RequestMethod(), 12),
+        PeerAddress => _CustomerSecurityAuditText($Param{ParamObject}->RemoteAddr(), 64),
+        Reason => $Reason, Outcome => 'blocked',
+    };
+    my $JSON = JSON::PP->new->canonical->ascii->encode($Event);
+    my $Logged = eval { $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'notice', Message => 'TESSERA_SECURITY ' . $JSON,
+    ) };
+    my $ArticleID;
+    # No writes into inaccessible/nonexistent tickets. Actor comes only from the authenticated session.
+    if ($Param{TicketReadable} && ($Param{TicketID} || '') =~ /\A[1-9][0-9]*\z/) {
+        my $UserID = $Kernel::OM->Get('Kernel::Config')->Get('CustomerPanelUserID') || 1;
+        $ArticleID = eval { $Kernel::OM->Get('Kernel::System::Ticket::Article::Backend::Internal')->ArticleCreate(
+            TicketID => $Param{TicketID}, SenderType => 'system', IsVisibleForCustomer => 0,
+            From => 'TESSERA Security', Subject => 'Security check: blocked customer runtime request',
+            Body => "A customer runtime request was blocked. This event does not establish malicious intent.\n"
+                . "ActorID is the authenticated customer identity; the recording user is the backend service account.\n\n" . $JSON,
+            ContentType => 'text/plain; charset=utf-8',
+            HistoryType => 'AddNote', HistoryComment => 'Security request blocked: ' . $EventID,
+            UserID => $UserID,
+        ) };
+        if (!$ArticleID) {
+            eval { $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error', Message => 'TESSERA_SECURITY audit_note_failed event=' . $EventID,
+            ) };
+        }
+    }
+    return {EventID => $EventID, Logged => $Logged ? 1 : 0, ArticleID => $ArticleID};
+}

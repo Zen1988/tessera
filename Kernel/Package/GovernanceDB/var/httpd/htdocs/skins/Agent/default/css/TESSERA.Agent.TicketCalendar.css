@@ -1,0 +1,8 @@
+.TESSERATicketCalendarPage { padding: 1rem; }
+.TESSERATicketCalendarPage .fc-event { border: 0; padding: .2rem .35rem; }
+.TESSERATicketCalendarPage .TESSERA-Change { background: #365ab5; }
+.TESSERATicketCalendarPage .TESSERA-Incident { background: #bd5336; }
+.TESSERATicketCalendarPage .TESSERA-ServiceRequest { background: #237d61; }
+@media (max-width: 680px) {
+    .TESSERATicketCalendarPage .fc-toolbar > div { float: none; margin: .5rem 0; text-align: center; }
+}

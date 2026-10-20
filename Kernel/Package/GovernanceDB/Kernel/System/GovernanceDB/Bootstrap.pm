@@ -31,6 +31,7 @@ our @ObjectDependencies = (
     'Kernel::System::State',
     'Kernel::System::SysConfig',
     'Kernel::System::Type',
+    'Kernel::System::Valid',
     'Kernel::System::YAML',
 );
 
@@ -42,6 +43,8 @@ sub new {
 
 sub InstallDefaults {
     my ( $Self, %Param ) = @_;
+
+    $Self->_NewSetupStorageEnsure();
 
     $Self->_ActivityTablesEnsure();
     $Self->_ExternalAPITablesEnsure();
@@ -128,7 +131,7 @@ sub InstallDefaults {
         Classes => $Defaults->{Classes} || [],
     );
 
-    $Self->_ITSMControlDefaultsEnsure();
+    die 'Active ConfigItem model installation failed.' if !$Self->_ITSMConfigItemDefaultsEnsure();
     $Self->_AdvisoryQuestionnaireEnsure();
     $Self->_ScriptBlockFieldsEnsure();
 
@@ -151,6 +154,23 @@ sub InstallDefaults {
 # Upgrade-safe repair for activity tables. A failed 0.1.100 attempt may already
 # have created the ConfigItem table, so upgrade metadata must not blindly create
 # it again. Fresh installs still use the SOPM DatabaseInstall definitions.
+sub _NewSetupStorageEnsure {
+    my ($Self)=@_;
+    my $DB=$Kernel::OM->Get('Kernel::System::DB');
+    my %Tables=map {lc($_)=>1} $DB->ListTables();
+    if (!$Tables{tessera_setup_state}) {
+        die 'Cannot create setup storage.' if !$DB->Do(SQL=>
+            'CREATE TABLE IF NOT EXISTS tessera_setup_state (id INTEGER NOT NULL PRIMARY KEY, state_data LONGBLOB NOT NULL) ENGINE=InnoDB');
+    }
+    my $Initial='{"Organizations":[],"Completed":0}';
+    # The row is immutable to install/upgrade once it exists.
+    my $Success=$DB->Do(SQL=>
+        'INSERT INTO tessera_setup_state (id, state_data) SELECT 1, ? WHERE NOT EXISTS (SELECT 1 FROM tessera_setup_state WHERE id = 1)',
+        Bind=>[\$Initial]);
+    die 'Cannot initialize setup storage.' if !$Success;
+    return 1;
+}
+
 sub _ActivityTablesEnsure {
     my ($Self) = @_;
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
@@ -1062,24 +1082,22 @@ sub _TicketStatesEnsure {
 sub _TicketTypesEnsure {
     my ( $Self, %Param ) = @_;
 
-    my @Types = qw(
-        Approval
-        Assessment
-        Change
-        Change::Major
-        Diagnosis
-        Endorsement
-        Implementation
-        IntegrationRequest
-        Incident
-        Incident::Major
-        Problem
-        RiskTreatment
-        ServiceRequest
-        Task
-        Unclassified
-        Verification
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
+    my $Content = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+        Location => "$Home/var/governancedb/active_ticket_types.json", Mode => 'utf8',
     );
+    die 'Active ticket type seed is missing.' if !$Content;
+    my $Seed = $Kernel::OM->Get('Kernel::System::JSON')->Decode(Data => ${$Content});
+    die 'Active ticket type seed is invalid.'
+        if ref $Seed ne 'HASH' || ref $Seed->{TicketTypes} ne 'ARRAY' || !@{ $Seed->{TicketTypes} };
+    my @Types = @{ $Seed->{TicketTypes} };
+    my %Seen;
+    for my $Name (@Types) {
+        die 'Active ticket type seed contains an invalid or duplicate name.'
+            if !defined $Name || ref $Name || $Name eq '' || $Seen{$Name}++;
+    }
+    my $ValidID = $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup(Valid => 'valid');
+    die 'Cannot resolve active ticket type validity.' if !$ValidID;
 
     my $TypeObject = $Kernel::OM->Get('Kernel::System::Type');
 
@@ -1093,11 +1111,12 @@ sub _TicketTypesEnsure {
         # type that an administrator deliberately disabled.
         next TYPE if $TypeID;
 
-        $TypeObject->TypeAdd(
+        my $Created = $TypeObject->TypeAdd(
             Name    => $Type,
-            ValidID => 1,
+            ValidID => $ValidID,
             UserID  => 1,
         );
+        die "Cannot create required ticket type $Type." if !$Created;
     }
 
     return 1;
@@ -1726,16 +1745,16 @@ sub _AdvisoryQuestionnaireEnsure {
     return 1;
 }
 
-sub _ITSMControlDefaultsEnsure {
+sub _ITSMConfigItemDefaultsEnsure {
     my ( $Self, %Param ) = @_;
 
     my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home') || '.';
-    my $File = "$Home/var/governancedb/default_control_configitem.json";
+    my $File = "$Home/var/governancedb/default_configitem.json";
     my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
         Location => $File,
         Mode     => 'utf8',
     );
-    return 1 if !$ContentRef;
+    die 'Active ConfigItem model seed is missing.' if !$ContentRef;
 
     my $JSON = $Kernel::OM->Get('Kernel::System::JSON');
     my $Seed = $JSON->Decode( Data => ${$ContentRef} );
@@ -1743,6 +1762,15 @@ sub _ITSMControlDefaultsEnsure {
 
     my $ConfigItemObject = $Kernel::OM->Get('Kernel::System::ITSMConfigItem');
     my $ImportSeed = $JSON->Decode( Data => ${$ContentRef} );
+    # Native ClassImport only discovers valid catalog rows. Filter against all
+    # rows first so a disabled existing class/role is not created again.
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %ExistingClass = reverse %{ $Catalog->ItemList(Class => 'ITSM::ConfigItem::Class', Valid => 0) || {} };
+    my %ExistingRole = reverse %{ $Catalog->ItemList(Class => 'ITSM::ConfigItem::Role', Valid => 0) || {} };
+    $ImportSeed = [grep {
+        $_->{Class} ? !exists $ExistingClass{$_->{Class}{Name}} : !exists $ExistingRole{$_->{RoleName}}
+    } @{$ImportSeed}];
+    return 1 if !@{$ImportSeed};
     my $Import = $ConfigItemObject->ClassImport(
         Content     => $ImportSeed,
         ClassExists => 'IGNORE',
@@ -1750,8 +1778,8 @@ sub _ITSMControlDefaultsEnsure {
     if ( !$Import || !$Import->{Success} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'GovernanceDB could not ensure the ConfigItem Control model: '
-                . ( $Import->{ErrorMessage} || 'unknown import error' ),
+            Message  => 'GovernanceDB could not ensure the active ConfigItem model: '
+                . ( $Import && $Import->{ErrorMessage} ? $Import->{ErrorMessage} : 'unknown import error' ),
         );
         return;
     }
@@ -1779,8 +1807,28 @@ sub _GeneralCatalogSeedEnsure {
         return 1;
     }
 
+    # Seed validity controls selection, not the validity of an existing record.
+    # Inactive export entries must never be recreated on a fresh installation.
+    my $Seed = $Kernel::OM->Get('Kernel::System::YAML')->Load(Data => ${$ContentRef});
+    die 'GeneralCatalog seed is invalid.' if ref $Seed ne 'HASH' || ref $Seed->{classes} ne 'ARRAY';
+    my @ActiveClasses;
+    for my $Class (@{ $Seed->{classes} }) {
+        die 'GeneralCatalog seed class is invalid.'
+            if ref $Class ne 'HASH' || !$Class->{class} || ref $Class->{items} ne 'ARRAY';
+        my @Items;
+        for my $Item (@{ $Class->{items} }) {
+            die 'GeneralCatalog seed item validity is missing or unknown.'
+                if ref $Item ne 'HASH' || !defined $Item->{valid}
+                || $Item->{valid} !~ /\A(?:valid|invalid|invalid-temporarily)\z/;
+            push @Items, $Item if $Item->{valid} eq 'valid';
+        }
+        push @ActiveClasses, { %{$Class}, items => \@Items } if @Items;
+    }
+    my $ActiveContent = $Kernel::OM->Get('Kernel::System::YAML')->Dump(
+        Data => { %{$Seed}, classes => \@ActiveClasses },
+    );
     my $Result = $Kernel::OM->Get('Kernel::System::GeneralCatalog::Document')->Import(
-        Content => ${$ContentRef},
+        Content => $ActiveContent,
         Format  => 'yaml',
         UserID  => 1,
         CreateOnly => 1,
@@ -3101,13 +3149,33 @@ sub _CustomerPhotoRegistrationRepair {
     );
 }
 
+sub _CustomerResponseLoaderMigration {
+    my ($Self) = @_;
+    my $Config = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my $Name = 'Loader::Module::CustomerTicketZTSMAction###120-TESSERASecurityResponse';
+    my %Setting = $Config->SettingGet(Name => $Name);
+    return 1 if ref $Setting{EffectiveValue} ne 'HASH';
+    my %Value = %{$Setting{EffectiveValue}};
+    return 1 if ref $Value{CSS} ne 'ARRAY';
+    my @CSS = grep { $_ ne 'TESSERA.Customer.SecurityResponse.css' } @{$Value{CSS}};
+    return 1 if @CSS == @{$Value{CSS}};
+    $Value{CSS} = \@CSS;
+    return $Config->SettingsSet(
+        Settings => [{Name => $Name, IsValid => $Setting{IsValid}, EffectiveValue => \%Value}],
+        Comments => 'TESSERA move shared response CSS to common customer loader', UserID => 1,
+    );
+}
+
 sub _SysConfigDeploy {
     my ( $Self, %Param ) = @_;
     return if !$Self->_CustomerPhotoRegistrationRepair();
+    return if !$Self->_CustomerResponseLoaderMigration();
 
     my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
 
     my @DirtySettings   = (
+        'Frontend::Module###AgentTESSERANewSetup',
+        'Frontend::NavigationModule###AgentTESSERANewSetup',
         'DynamicFields::ObjectType###GovernanceObject',
         'DynamicFieldScreens###GovernanceDB',
         'DefaultColumnsScreens###GovernanceDB',
@@ -3145,6 +3213,8 @@ sub _SysConfigDeploy {
         'Ticket::Frontend::MenuModule###430-QuickClose',
         'CustomerTicket::Permission###5-ZTSMUserIDCheck',
         'CustomerFrontend::Module###CustomerTicketZTSMAction',
+        'Loader::Module::CustomerTicketZTSMAction###120-TESSERASecurityResponse',
+        'Loader::Customer::CommonCSS###120-TESSERAPortalResponse',
         'ACLKeysLevel3::Actions###110-ZTSMGovernanceRuntime',
         'CustomerPreferencesGroups###ZTSMRequestDefaults',
         'CustomerPreferencesGroups###TESSERAProfilePhoto',

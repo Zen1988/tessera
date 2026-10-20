@@ -1,0 +1,21 @@
+<div id="oooContent" class="ZTSMSecurityPage">
+    <header id="oooHeader"><h1>[% Translate("Security check") | html %]</h1></header>
+    <main id="oooMainBox">
+        <section class="ZTSMSecurityCard" aria-labelledby="ZTSMSecurityTitle">
+            <p class="ZTSMSecurityCode" aria-label="403 Forbidden">403</p>
+            <h2 id="ZTSMSecurityTitle">[% Translate("Request blocked") | html %]</h2>
+            <div class="ZTSMSecurityWarning" role="alert">
+                <p><strong>[% Translate("This request failed a security check.") | html %]</strong></p>
+                <p>[% Translate("The attempted action was not executed. Reopen the ticket and use its normal action form.") | html %]</p>
+            </div>
+            <dl class="ZTSMSecurityDetails">
+                <div><dt>[% Translate("Signed-in customer ID") | html %]</dt><dd>[% Data.CustomerUserID | html %]</dd></div>
+                <div><dt>[% Translate("Action attempted") | html %]</dt><dd>[% Data.AttemptedAction | html %]</dd></div>
+                [% IF Data.EventID %]<div><dt>[% Translate("Security event reference") | html %]</dt><dd>[% Data.EventID | html %]</dd></div>[% END %]
+            </dl>
+            [% IF Data.Recorded %]<p class="ZTSMSecurityAuditNotice">[% Translate("This blocked attempt has been recorded for security review.") | html %]</p>[% END %]
+            <p class="ZTSMSecurityHelp">[% Translate("An expired form or an incorrect link can also cause this warning. If it continues, contact support with the event reference.") | html %]</p>
+            <a class="ZTSMSecurityReturn" href="[% Env('Baselink') | html %]Action=CustomerTicketOverview">[% Translate("Return to your tickets") | html %]</a>
+        </section>
+    </main>
+</div>

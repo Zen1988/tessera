@@ -78,10 +78,16 @@
         <a id='oooHeaderButton' href="[% Env("Baselink") %]Action=CustomerTicketMessage" title="[% Translate("New Ticket") | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]"><button><i class="ooofo ooofo-add"></i><span> [% Translate("New Ticket") | html %]</span></button></a>
 
         <a id='ZTSMTicketReportDownload' class="ZTSMTicketReportDownload" href="[% Env("Baselink") %][% Data.ExportLink | html %]" title="[% Translate("Export Tickets") | html %]"><button><i class="fa fa-download"></i><span> [% Translate("Export Tickets") | html %]</span></button></a>
-        <nav class="ZTSMPortalViewToggle" aria-label="Ticket view"><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=List" [% IF Data.Display == 'List' %]aria-current="page"[% END %]>List</a><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Dashboard" [% IF Data.Display == 'Dashboard' %]aria-current="page"[% END %]>Dashboard</a></nav>    </div>
+        <nav class="ZTSMPortalViewToggle" aria-label="Ticket view"><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Dashboard" [% IF Data.Display == 'Dashboard' %]aria-current="page"[% END %]>Dashboard</a><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=List" [% IF Data.Display == 'List' %]aria-current="page"[% END %]>List</a><a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Calendar" [% IF Data.Display == 'Calendar' %]aria-current="page"[% END %]>Calendar</a></nav>    </div>
     <div id='oooMainBox'>
         
-        [% IF Data.Display == 'Dashboard' %]
+        [% IF Data.Display == 'Calendar' %]
+        <section class="ZTSMCustomerTicketCalendar" aria-label="Ticket calendar">
+            <div class="ZTSMCalendarLegend" aria-label="Ticket colors"><span class="TESSERA-Change">[% Translate("Change") | html %]</span><span class="TESSERA-Incident">[% Translate("Incident") | html %]</span><span class="TESSERA-ServiceRequest">[% Translate("Service request") | html %]</span></div>
+            <div class="ZTSMCalendarWorkspace"><div id="ZTSMCustomerTicketCalendar"></div><aside id="ZTSMCustomerTicketGroups" aria-label="Tickets by master"></aside></div>
+            <p id="ZTSMCustomerTicketCalendarError" role="alert" hidden></p>
+        </section>
+        [% ELSIF Data.Display == 'Dashboard' %]
         <section class="ZTSMTicketMetrics" aria-label="Ticket counts">
         [% FOREACH Card IN Data.Dashboard.Cards %]<a href="[% Env('Baselink') %]Action=CustomerTicketOverview;Subaction=MyTickets;Display=Dashboard;DashboardFilter=[% Card.Key | uri %]#TicketDashboardDetails">[% Card.Title | html %]<strong>[% Card.Count | html %]</strong>[% IF Card.Note %]<small>[% Card.Note | html %]</small>[% END %]</a>[% END %]
         </section>

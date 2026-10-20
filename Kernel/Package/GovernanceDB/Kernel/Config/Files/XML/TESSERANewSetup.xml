@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AgentTESSERANewSetup" Required="0" Valid="1">
+        <Description Translatable="1">Administrator organization setup wizard.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="Group"><Array><Item>admin</Item></Array></Item>
+            <Item Key="GroupRo"><Array/></Item>
+            <Item Key="Title" Translatable="1">New setup</Item>
+            <Item Key="Description" Translatable="1">Create organizations for this TESSERA instance.</Item>
+            <Item Key="NavBarName">Admin</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AgentTESSERANewSetup" Required="0" Valid="1">
+        <Description Translatable="1">New setup entry in the administration area.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value><Hash>
+            <Item Key="Group"><Array><Item>admin</Item></Array></Item>
+            <Item Key="GroupRo"><Array/></Item>
+            <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+            <Item Key="Name" Translatable="1">New setup</Item>
+            <Item Key="Block">GovernanceDBSettings</Item>
+            <Item Key="Description" Translatable="1">Create the first organization and add further organizations.</Item>
+            <Item Key="IconBig">fa-building</Item><Item Key="IconSmall"/>
+        </Hash></Value>
+    </Setting>
+</otobo_config>

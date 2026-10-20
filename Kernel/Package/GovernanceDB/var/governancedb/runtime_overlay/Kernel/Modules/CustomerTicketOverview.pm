@@ -1177,7 +1177,10 @@ sub Run {
     my $SortBy         = $ParamObject->GetParam( Param => 'SortBy' )  || 'Age';
     my $OrderByCurrent = $ParamObject->GetParam( Param => 'OrderBy' ) || 'Down';
     my $Fulltext       = $ParamObject->GetParam( Param => 'Fulltext' );
-    my $Display = ($ParamObject->GetParam(Param=>'Display')||'') eq 'List' || $Self->{Subaction} eq 'Search' ? 'List' : 'Dashboard';
+    my $RequestedDisplay = $ParamObject->GetParam(Param=>'Display') || '';
+    my $Display = $Self->{Subaction} eq 'Search' ? 'List'
+        : $RequestedDisplay eq 'Calendar' ? 'Calendar'
+        : $RequestedDisplay eq 'List' ? 'List' : 'Dashboard';
 
     # filter definition
     my %Filters = (
@@ -1361,7 +1364,7 @@ sub Run {
 
     my $FilterCurrent = $ParamObject->GetParam( Param => 'Filter' );
     if ( !$FilterCurrent ) {
-        $FilterCurrent = ( $Self->{Subaction} && $Self->{Subaction} eq 'Search' ) ? 'All' : 'Open';
+        $FilterCurrent = ( $Self->{Subaction} && $Self->{Subaction} eq 'Search' ) || $Display eq 'Calendar' ? 'All' : 'Open';
     }
 
     # check if filter is valid
@@ -1387,6 +1390,9 @@ sub Run {
         $SearchInArchive{ArchiveFlags} = [ 'y', 'n' ];
     }
 
+    my $CalendarEventsRequest = $Display eq 'Calendar'
+        && ($ParamObject->GetParam(Param=>'CalendarEvents') || '') eq '1';
+
     my %NavBarFilter;
     my $Counter         = 0;
     my $AllTickets      = 0;
@@ -1396,6 +1402,7 @@ sub Run {
     my %StandardFilterTicketIDs;
 
     for my $Filter ( sort keys %{ $Filters{ $Self->{Subaction} } } ) {
+        next if $CalendarEventsRequest && $Filter ne 'All';
         $Counter++;
 
         my @StandardTicketIDs = _ZTSMOverviewSearchAll($TicketObject,
@@ -1447,6 +1454,24 @@ sub Run {
         );
     }
 
+    if ($CalendarEventsRequest) {
+        my $Events = eval {
+            $Kernel::OM->Get('Kernel::System::TESSERA::TicketCalendar')->EventsForCustomer(
+                CustomerUserID => $Self->{UserID}, TicketIDs => [ do { my %Seen; grep { !$Seen{$_}++ }
+                    (@{ $StandardFilterTicketIDs{All} || [] }, @{ $ZTSMFilterTicketIDs{All} || [] }) } ],
+                Start => $ParamObject->GetParam(Param=>'Start'),
+                End => $ParamObject->GetParam(Param=>'End'),
+            );
+        };
+        return $LayoutObject->JSONReply(Data => $Events) if $Events;
+        my $Error = $@ || 'Calendar returned no event result';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message => 'Customer Tickets calendar events failed: ' . $Error,
+        );
+        return $LayoutObject->JSONReply(Data => {Error => 'Calendar events could not be loaded.'});
+    }
+
     if ( ( $ParamObject->GetParam( Param => 'ExportTickets' ) || '' ) eq 'Excel' ) {
         if ($Display eq 'Dashboard') {my %Seen;@CurrentViewableTickets=grep {!$Seen{$_}++} (@{$StandardFilterTicketIDs{All}||[]},@{$ZTSMFilterTicketIDs{All}||[]});}
         return $Self->_ZTSMTicketReportExport(
@@ -1469,6 +1494,18 @@ sub Run {
         for my $CustomerID (@CustomerIDs) {
             $ExportLink .= ';CustomerIDs=' . $LayoutObject->LinkEncode($CustomerID);
         }
+    }
+
+    if ($Display eq 'Calendar') {
+        my $Title = $Self->{Subaction} eq 'CompanyTickets'
+            ? Translatable('Company Tickets') : Translatable('My Tickets');
+        my $AccessKey = $ConfigObject->Get('CustomerFrontend::Navigation')->{'CustomerTicketMessage'}{'002-Ticket'}[0]{'AccessKey'} || '';
+        return $LayoutObject->CustomerHeader(Title => $Title)
+            . $LayoutObject->Output(TemplateFile => 'CustomerTicketOverview', Data => {
+                %Param, AccessKey => $AccessKey, Display => 'Calendar', ExportLink => $ExportLink,
+            })
+            . $LayoutObject->CustomerNavigationBar()
+            . $LayoutObject->CustomerFooter();
     }
 
     my $StartHit  = int( $ParamObject->GetParam( Param => 'StartHit' ) || 1 );

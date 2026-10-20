@@ -23,11 +23,22 @@ our @ObjectDependencies = (
     'Kernel::System::YAML',
     'Kernel::System::PID',
     'Kernel::System::ITSMConfigItem::Activity',
+    'Kernel::System::GovernanceObject::Activity',
+    'Kernel::System::Daemon::SchedulerDB',
 );
 
 sub new {
     my ( $Type, %Param ) = @_;
     return bless {}, $Type;
+}
+
+sub _EvidenceTime {
+    my ( $Epoch ) = @_;
+    my $Date = $Kernel::OM->Create('Kernel::System::DateTime', ObjectParams => { Epoch => $Epoch });
+    my $Zone = $Date->can('UserDefaultTimeZoneGet') ? $Date->UserDefaultTimeZoneGet() : 'UTC';
+    die "Cannot convert Control evidence time to $Zone.\n"
+        if $Date->can('ToTimeZone') && !$Date->ToTimeZone( TimeZone => $Zone );
+    return $Date->ToString() . " ($Zone)";
 }
 
 sub Run {
@@ -146,6 +157,133 @@ sub ControlDue {
         : { Due => 0, Status => 'NOT_DUE', Reason => 'Control instance is still within its cycle.' };
 }
 
+sub RunControlNow {
+    my ($Self,%P)=@_;
+    my $ID=$P{ConfigItemID}; my $UserID=$P{UserID};
+    return {Success=>0,Status=>'DENIED',Reason=>'An authenticated agent and Control ID are required.'}
+        if !$ID || $ID !~ /\A[1-9][0-9]*\z/ || !$UserID || $UserID !~ /\A[1-9][0-9]*\z/;
+    my $CI=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+    return {Success=>0,Status=>'DENIED',Reason=>'Control write permission is required.'}
+        if !$CI->Permission(Scope=>'Item',ItemID=>$ID,UserID=>$UserID,Type=>'rw');
+    my $Control=$CI->ConfigItemGet(ConfigItemID=>$ID,DynamicFields=>1);
+    return {Success=>0,Status=>'DENIED',Reason=>'The target must be a Control.'}
+        if ref $Control ne 'HASH' || ($Control->{Class}||'') ne 'Control';
+    my $ObjectiveID=_Scalar($Control->{'DynamicField_ZRM-ControlObjective'});
+    my $GO=$Kernel::OM->Get('Kernel::System::GovernanceObject');
+    return {Success=>0,Status=>'DENIED',Reason=>'ControlObjective read permission is required.'}
+        if !$ObjectiveID || !$GO->Permission(Scope=>'Item',ItemID=>$ObjectiveID,UserID=>$UserID,Type=>'ro');
+    my $Objective=$GO->GovernanceObjectGet(GovernanceObjectID=>$ObjectiveID,DynamicFields=>1,Silent=>1);
+    return {Success=>0,Status=>'INACTIVE',Reason=>'ControlObjective must be Active.'}
+        if ref $Objective ne 'HASH' || ($Objective->{Class}||'') ne 'ControlObjective' || ($Objective->{ZTSMStatus}||'') ne 'Active';
+    return {Success=>0,Status=>'AWAITING_EVIDENCE',Reason=>'Run now applies to automatic Controls; manual Controls require evidence.'}
+        if lc(_Scalar($Objective->{'DynamicField_ZRM-ControlType'})||'') ne 'automatic';
+    my $RiskClass=_Scalar($Objective->{'DynamicField_ZRM-RiskClass'});
+    if ($RiskClass) {
+        my ($Kind,$Class)=$RiskClass =~ /\A(MELTObject|GovernanceObject)\.([A-Za-z][A-Za-z0-9_-]*)\z/;
+        return {Success=>0,Status=>'DENIED',Reason=>'Invalid Risk destination.'} if !$Kind;
+        my $Prefix=$Kind eq 'MELTObject' ? 'ZTSM::MELT' : 'ZTSM::GovernanceObject';
+        my %Classes=reverse %{$Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(Class=>"$Prefix\::Class")||{}};
+        return {Success=>0,Status=>'DENIED',Reason=>'Risk destination write permission is required.'}
+            if !$Classes{$Class} || !$Kernel::OM->Get("Kernel::System::$Kind")->Permission(Scope=>'Class',ClassID=>$Classes{$Class},UserID=>$UserID,Type=>'rw');
+    }
+    # Bypass only the due-time gate. Existing policy, identity and evidence rules apply.
+    return $Self->_AutomaticEvaluate(Control=>$Control,Objective=>$Objective,ConfigItemID=>$ID,
+        UserID=>$UserID,Now=>defined $P{Now} ? $P{Now} : time,RunSource=>'Agent Run now');
+}
+
+sub _RunObjectiveGet {
+    my ($Self,%P)=@_;
+    my ($ID,$UserID)=@P{qw(GovernanceObjectID UserID)};
+    die "An authenticated agent and ControlObjective ID are required.\n"
+        if !$ID || $ID !~ /\A[1-9][0-9]*\z/ || !$UserID || $UserID !~ /\A[1-9][0-9]*\z/;
+    my $GO=$Kernel::OM->Get('Kernel::System::GovernanceObject');
+    die "ControlObjective write permission is required.\n"
+        if !$GO->Permission(Scope=>'Item',ItemID=>$ID,UserID=>$UserID,Type=>'rw');
+    my $Objective=$GO->GovernanceObjectGet(GovernanceObjectID=>$ID,DynamicFields=>1,Silent=>1);
+    die "Run now requires an Active automatic ControlObjective.\n" if ref $Objective ne 'HASH'
+        || ($Objective->{Class}||'') ne 'ControlObjective' || ($Objective->{ZTSMStatus}||'') ne 'Active'
+        || lc(_Scalar($Objective->{'DynamicField_ZRM-ControlType'})||'') ne 'automatic';
+    return $Objective;
+}
+
+sub QueueControlObjective {
+    my ($Self,%P)=@_;
+    $Self->_RunObjectiveGet(%P);
+    my $PID=$Kernel::OM->Get('Kernel::System::PID');
+    my $Name='TESSERA.ControlObjectiveRun.'.$P{GovernanceObjectID};
+    my $QueueLock=$Name.'.Queue';
+    return {Status=>'BUSY',Reason=>'This ControlObjective is already being queued.'} if !$PID->PIDCreate(Name=>$QueueLock);
+    my $TaskID=eval {$Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB')->TaskAdd(
+        Type=>'Cron',Name=>$Name,Attempts=>1,MaximumParallelInstances=>1,
+        Data=>{Module=>'Kernel::System::TESSERA::ControlRuntime',Function=>'RunControlObjectiveNow',
+            Params=>[GovernanceObjectID=>$P{GovernanceObjectID},UserID=>$P{UserID}]})};
+    my $Error=$@;
+    $PID->PIDDelete(Name=>$QueueLock);
+    die $Error if $Error;
+    return {Status=>'BUSY',Reason=>'This ControlObjective already has a pending run.'} if defined $TaskID && $TaskID==-1;
+    die "Could not queue ControlObjective evaluation.\n" if !$TaskID;
+    return {Status=>'QUEUED',TaskID=>$TaskID,Reason=>'Run queued. The daemon will evaluate all instances without waiting for their next cycle.'};
+}
+
+sub RunControlObjectiveNow {
+    my ($Self,%P)=@_;
+    my $Objective=$Self->_RunObjectiveGet(%P);
+    my $PID=$Kernel::OM->Get('Kernel::System::PID');
+    my $Lock='TESSERA.ControlObjectiveRun.'.$P{GovernanceObjectID};
+    die "This ControlObjective is already running.\n" if !$PID->PIDCreate(Name=>$Lock);
+    my $OK=eval {
+        my $CI=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+        my @IDs=$CI->ConfigItemSearch(Result=>'ARRAY',Classes=>['Control'],UserID=>1,Limit=>10001,
+            'DynamicField_ZRM-ControlObjective'=>{Equals=>$P{GovernanceObjectID}});
+        die "ControlObjective instance list exceeds 10000.\n" if @IDs>10000;
+        # Refuse the whole batch before execution when any instance is outside the actor's scope.
+        for my $ID (@IDs) {
+            die "Run now requires write access to every Control instance.\n"
+                if !$CI->Permission(Scope=>'Item',ItemID=>$ID,UserID=>$P{UserID},Type=>'rw');
+        }
+        my (%Count,@Results);
+        for my $ID (@IDs) {
+            my $Result=$Self->RunControlNow(ConfigItemID=>$ID,UserID=>$P{UserID});
+            $Count{$Result->{Status}||'UNKNOWN'}++;
+            push @Results,{ConfigItemID=>$ID,Status=>$Result->{Status}||'UNKNOWN'};
+        }
+        die "Cannot record ControlObjective run summary.\n" if !$Kernel::OM->Get('Kernel::System::GovernanceObject::Activity')->ActivityAdd(
+            GovernanceObjectID=>$P{GovernanceObjectID},EventType=>'ControlObjectiveRun',Source=>'Agent Run now',
+            Subject=>'Ad-hoc ControlObjective run completed',Body=>'Evaluated instances: '.scalar(@IDs)."\n"
+                .join("\n",map {$_ . ': ' . $Count{$_}} sort keys %Count),
+            Payload=>{Counts=>\%Count,Results=>\@Results},UserID=>$P{UserID});
+        1;
+    };
+    my $Error=$@;
+    $PID->PIDDelete(Name=>$Lock);
+    die $Error if !$OK;
+    return 1;
+}
+
+# Registered continuation for a completed external web service request. The callback
+# worker rechecks the original actor and records the remote outcome before queuing
+# ordinary local evaluation on a successful external exit.
+sub ContinueAfterExternal {
+    my ($Self,%P)=@_;
+    return if ($P{TargetType}||'') ne 'ControlObjective'
+        || !$P{TargetID} || !$P{ActorID};
+    my $GO=$Kernel::OM->Get('Kernel::System::GovernanceObject');
+    return if !$GO->Permission(Scope=>'Item',ItemID=>$P{TargetID},UserID=>$P{ActorID},Type=>'rw');
+    my $Objective=$GO->GovernanceObjectGet(GovernanceObjectID=>$P{TargetID},DynamicFields=>1,Silent=>1);
+    return if ref $Objective ne 'HASH' || ($Objective->{Class}||'') ne 'ControlObjective';
+    my $Success=defined $P{ExitCode} && $P{ExitCode}==0;
+    my $Exit=defined $P{ExitCode} ? $P{ExitCode} : 'No callback before timeout';
+    my $Body="External execution: $P{ExecutionUID}\nExit code: $Exit\nResponse: "
+        .substr($P{Response}//'',0,4000);
+    return if !$Kernel::OM->Get('Kernel::System::GovernanceObject::Activity')->ActivityAdd(
+        GovernanceObjectID=>$P{TargetID},EventType=>'ControlObjectiveRun',Source=>'External execution callback',
+        Subject=>$Success?'External execution completed':'External execution failed',Body=>$Body,
+        Payload=>{ExecutionUID=>$P{ExecutionUID},ExitCode=>$P{ExitCode}},UserID=>$P{ActorID});
+    return 1 if !$Success;
+    my $Queue=$Self->QueueControlObjective(GovernanceObjectID=>$P{TargetID},UserID=>$P{ActorID});
+    return ($Queue->{Status}||'') eq 'QUEUED' ? 1 : 0;
+}
+
 sub EvaluateCompletedTicket {
     my ( $Self, %Param ) = @_;
     my $TicketID = $Param{TicketID} || return { Success => 0, Status => 'UNKNOWN', Reason => 'TicketID is required.' };
@@ -238,6 +376,43 @@ sub ProcessFailedControl {
 
 sub _AutomaticEvaluate {
     my ( $Self, %Param ) = @_;
+    my $PID=$Kernel::OM->Get('Kernel::System::PID');
+    my $Lock='TESSERA.ControlRun.' . $Param{ConfigItemID};
+    return {Success=>0,ConfigItemID=>$Param{ConfigItemID},Status=>'BUSY',Reason=>'This Control is already running.'}
+        if !$PID->PIDCreate(Name=>$Lock);
+    my $Result = eval { $Self->_AutomaticEvaluateRun(%Param) };
+    my $Error = $@;
+    $Result ||= { ConfigItemID => $Param{ConfigItemID}, Status => 'UNKNOWN',
+        Reason => $Error || 'Automatic evaluation did not complete.' };
+    if ( ( $Result->{Status} || '' ) eq 'UNKNOWN' || $Error
+        || ( exists $Result->{Success} && !$Result->{Success} ) ) {
+        my $Reason = substr( $Error || $Result->{Reason} || 'Evaluation incomplete.', 0, 2000 );
+        my $Recorded = eval {
+            my $AttemptTime = $Kernel::OM->Create('Kernel::System::DateTime',
+                ObjectParams => { Epoch => $Param{Now} })->ToString();
+            $Kernel::OM->Get('Kernel::System::ITSMConfigItem::Activity')->ActivityAdd(
+                ConfigItemID => $Param{ConfigItemID}, EventType => 'PolicyEvaluation', Source => $Param{RunSource} || 'ControlRuntime',
+                Subject => 'Automatic Control run: evaluation error',
+                Body => 'Run attempted: ' . _EvidenceTime($Param{Now}) . "\nExecution outcome: Error\n"
+                    . "Assessment outcome: Unknown\nReason: $Reason\n"
+                    . 'No completed assessment is claimed. The control remains due for retry when its cycle timestamp was not saved.',
+                Payload => { ExecutionOutcome => 'Error', AssessmentOutcome => 'UNKNOWN',
+                    AttemptTime => $AttemptTime, Reason => $Reason }, UserID => $Param{UserID},
+            );
+        };
+        $Result->{ErrorArticleRecorded} = $Recorded ? 1 : 0;
+        $Result->{Success} = 0;
+        $Result->{Status} = 'UNKNOWN';
+        $Result->{Reason} = $Reason;
+        $Kernel::OM->Get('Kernel::System::Log')->Log( Priority => 'error',
+            Message => 'Cannot record Control evaluation error article for ' . $Param{ConfigItemID} ) if !$Recorded;
+    }
+    $PID->PIDDelete(Name=>$Lock);
+    return $Result;
+}
+
+sub _AutomaticEvaluateRun {
+    my ( $Self, %Param ) = @_;
     my $Source = ObjectSource(Object => $Param{Objective}, Field => 'PolicyEvaluation') || '';
     my $Script = eval { $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->ScriptSourceLoad( Source => $Source ) };
     if ( ref $Script eq 'HASH' && exists $Script->{TARGET} ) {
@@ -253,16 +428,23 @@ sub _AutomaticEvaluate {
         if $Result->{Status} eq 'UNKNOWN';
     my $ControlResult = $Result->{Status} eq 'SATISFIED' ? 'Pass' : 'Fail';
     $Self->_PassedControlRisksDeactivate(%Param) if $ControlResult eq 'Pass';
-    $Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-Result', Value => $ControlResult, UserID => $Param{UserID} );
+    die "Cannot save Control result.\n" if !$Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-Result', Value => $ControlResult, UserID => $Param{UserID} );
     my $Now = $Kernel::OM->Create(
         'Kernel::System::DateTime',
         ObjectParams => { Epoch => $Param{Now} },
     )->ToString();
-    $Self->_ConfigItemFieldSet( ConfigItemID => $Param{ConfigItemID}, FieldName => 'ZRM-LastRun', Value => $Now, UserID => $Param{UserID} );
     my $Risk = $Self->ProcessFailedControl(
         Result => $ControlResult, Control => $Param{Control}, Objective => $Param{Objective},
         ConfigItemID => $Param{ConfigItemID}, UserID => $Param{UserID},
     );
+    return { ConfigItemID => $Param{ConfigItemID}, Status => $ControlResult, %{$Risk} }
+        if exists $Risk->{Success} && !$Risk->{Success};
+    die "Cannot record Control evaluation article.\n" if !$Kernel::OM->Get('Kernel::System::ITSMConfigItem::Activity')->ActivityAdd(
+        ConfigItemID=>$Param{ConfigItemID},EventType=>'PolicyEvaluation',Source=>$Param{RunSource}||'ControlRuntime',
+        Subject=>'Automatic Control run: completed',Body=>'Run completed: ' . _EvidenceTime($Param{Now}) . "\nExecution outcome: Completed\nAssessment outcome: $ControlResult",
+        Payload=>{ExecutionOutcome=>'Completed',AssessmentOutcome=>$ControlResult},UserID=>$Param{UserID});
+    die "Cannot save completed Control timestamp.\n" if !$Self->_ConfigItemFieldSet(
+        ConfigItemID=>$Param{ConfigItemID},FieldName=>'ZRM-LastRun',Value=>$Now,UserID=>$Param{UserID});
     return { ConfigItemID => $Param{ConfigItemID}, Status => $ControlResult, %{$Risk} };
 }
 
@@ -299,17 +481,26 @@ sub _TargetEvaluate {
             my @Batches = exists $Result->{Batches} ? @{$Result->{Batches}}
                 : ({Source => $This, Evaluation => $Result});
             for my $Batch (@Batches) {
-                $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
+                my $Prepared = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
                     Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'}, Destination => $Assignment->{RETURN}{AS},
                     RiskClass => _Scalar($Param{Objective}{'DynamicField_ZRM-RiskClass'}),
                     Source => $Batch->{Source}, Control => $Param{Control}, Objective => $Param{Objective},
                     Evaluation => $Batch->{Evaluation}, ConfigItemID => $Param{ConfigItemID},
                     Now => $Param{Now}, UserID => $Param{UserID});
+                for my $Plan (@{$Prepared->{Plans}}) {
+                    next if !exists $Plan->{SupportProfileID};
+                    my %Risk = (Class=>'Risk',Name=>$Plan->{Name},
+                        map {('DynamicField_'.$_=>$Plan->{Values}{$_})} keys %{$Plan->{Values}});
+                    die "Partitioned Risk owner validation failed.\n" if !$Kernel::OM->Get('Kernel::System::TESSERA::RiskMasterTicket')->ValidateOwnership(
+                        Risk=>\%Risk,SupportProfileID=>$Plan->{SupportProfileID},UserID=>$Param{UserID});
+                }
+                $Batch->{PreparedRiskPlans}=$Prepared;
             }
             # Evaluate all selections before writes; each source partitions composite identities.
             for my $Batch (@Batches) {
                 push @Risks, @{ $Self->_GroupedFindingRisksCreate(
                     %Param, Evaluation => $Batch->{Evaluation}, SourceObject => $Batch->{Source},
+                    PreparedRiskPlans => $Batch->{PreparedRiskPlans},
                     Destination => $Assignment->{RETURN}{AS},
                     Rule => $Assignment->{RETURN}->{'GROUP FINDINGS'} ) };
             }
@@ -320,11 +511,12 @@ sub _TargetEvaluate {
             }
         }
     }
-    my $Body = 'Result: ' . $Result->{Status} . "\nTarget: " . ( $This->{Name} || $This->{Title} || $This->{$IDKey} )
+    my $Body = "Execution outcome: Completed\nResult: " . $Result->{Status} . "\nTarget: " . ( $This->{Name} || $This->{Title} || $This->{$IDKey} )
         . "\nField: " . ( $Result->{Field} || '' ) . "\nValue: " . ( $Result->{Value} // '' )
-        . "\nCondition: " . ( $Result->{Condition} || $Result->{Reason} || '' ) . "\nAffected objects: " . scalar( @{ $Result->{Findings} } );
+        . "\nCondition: " . ( $Result->{Condition} || '' ) . "\nReason: " . ( $Result->{Reason} || '' )
+        . "\nAffected objects: " . scalar( @{ $Result->{Findings} } );
     die "Cannot record evaluation evidence.\n" if !$Kernel::OM->Get('Kernel::System::ITSMConfigItem::Activity')->ActivityAdd(
-        ConfigItemID => $Param{ConfigItemID}, EventType => 'PolicyEvaluation', Source => 'ControlRuntime',
+        ConfigItemID => $Param{ConfigItemID}, EventType => 'PolicyEvaluation', Source => $Param{RunSource} || 'ControlRuntime',
         Subject => 'Automatic Control evaluation: ' . $Result->{Status}, Body => $Body,
         Payload => { %{$Result}, RiskObjects => \@Risks }, UserID => $Param{UserID},
     );
@@ -341,7 +533,7 @@ sub _PassedControlRisksDeactivate {
     return if _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ) ne 'MELTObject.Risk';
     my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
     my %Statuses = reverse %{ $Catalog->ItemList( Class => 'ZTSM::MELT::Status', Valid => 1 ) || {} };
-    die "Active/Inactive Risk statuses are unavailable.\n" if !$Statuses{Active} || !$Statuses{Inactive};
+    die "Active/Resolved Risk statuses are unavailable.\n" if !$Statuses{Active} || !$Statuses{Resolved};
     my $Object = $Kernel::OM->Get('Kernel::System::MELTObject');
     my @IDs = $Object->MELTObjectSearch( Result => 'ARRAY', Classes => ['Risk'],
         ZTSMStatusIDs => [$Statuses{Active}], Limit => 10001,
@@ -352,11 +544,11 @@ sub _PassedControlRisksDeactivate {
         die "Risk cannot be read for resolution.\n" if ref $Risk ne 'HASH';
         next if _Scalar( $Risk->{'DynamicField_MELT-Control'} ) ne $Param{ConfigItemID};
         next if _Scalar( $Risk->{'DynamicField_MELT-EventStatus'} ) eq 'Closed';
-        die "Cannot mark resolved Risk Inactive.\n" if !$Object->MELTObjectUpdate(
-            MELTObjectID => $ID, ZTSMStatusID => $Statuses{Inactive}, UserID => $Param{UserID} );
+        die "Cannot mark Risk Resolved.\n" if !$Object->MELTObjectUpdate(
+            MELTObjectID => $ID, ZTSMStatusID => $Statuses{Resolved}, UserID => $Param{UserID} );
         die "Cannot record Risk resolution evidence.\n" if !$Kernel::OM->Get('Kernel::System::MELTObject::Activity')->ActivityAdd(
             MELTObjectID => $ID, EventType => 'ControlResolution', Source => 'ControlRuntime',
-            Subject => 'Control passed; Risk marked Inactive',
+            Subject => 'Control passed; Risk marked Resolved',
             Body => 'Control ' . $Param{ConfigItemID} . ' passed. Risk retained as history.',
             Payload => { ControlID => $Param{ConfigItemID}, Result => 'Pass' }, UserID => $Param{UserID} );
     }
@@ -365,7 +557,7 @@ sub _PassedControlRisksDeactivate {
 
 sub _GroupedFindingRisksCreate {
     my ( $Self, %Param ) = @_;
-    my $PlanData = $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
+    my $PlanData = $Param{PreparedRiskPlans} || $Kernel::OM->Get('Kernel::System::TESSERA::PolicyEngine')->GroupedFieldAssignmentsEvaluate(
         Rule => $Param{Rule}, Destination => $Param{Destination},
         RiskClass => _Scalar( $Param{Objective}{'DynamicField_ZRM-RiskClass'} ),
         Source => $Param{SourceObject}, Control => $Param{Control},
@@ -482,9 +674,13 @@ sub _GroupedFindingRisksCreate {
                         $IDKey => $ObjectID, EventType => 'ControlFinding', Source => 'ControlRuntime',
                         Subject => 'Control finding: ' . ( $Param{Control}{Name} || $Param{ConfigItemID} ),
                         Body => 'Policy finding for group ' . $Plan->{GroupID}
-                            . ' and item ' . $Plan->{ItemID},
+                            . ' and item ' . $Plan->{ItemID}
+                            . ($Plan->{SupportProfileName} ? "\nSupportProfile: $Plan->{SupportProfileName}" : '')
+                            . ($Plan->{AssignmentFallback} ? "\nAssignment: Application default (no linked entitlement)." : ''),
                         Payload => { ControlID => $Param{ConfigItemID}, ObjectiveID => $Param{Objective}{GovernanceObjectID},
                             GroupID => $Plan->{GroupID}, ItemID => $Plan->{ItemID}, Finding => $Finding,
+                            (exists $Plan->{SupportProfileID} ? (SupportProfileID=>$Plan->{SupportProfileID},
+                                EntitlementIDs=>$Plan->{EntitlementIDs},AssignmentFallback=>$Plan->{AssignmentFallback}) : ()),
                             EvaluationDate => $Param{Evaluation}{EvaluationDate} }, UserID => $Param{UserID} );
             }
             $ObjectID;
@@ -493,9 +689,11 @@ sub _GroupedFindingRisksCreate {
         $PID->PIDDelete( Name => $Lock );
         die $Error if $Error;
         if ( $Kind eq 'MELTObject' && $Class eq 'Risk' ) {
-            $Kernel::OM->Get('Kernel::System::TESSERA::RiskMasterTicket')->Ensure(
+            my $Ensured = $Kernel::OM->Get('Kernel::System::TESSERA::RiskMasterTicket')->Ensure(
                 RiskID => $ID, UserID => $Param{UserID},
             );
+            die "Partitioned Risk master ticket could not be ensured.\n"
+                if exists $Plan->{SupportProfileID} && !$Ensured;
         }
         push @Results, { ObjectType => $Kind, Class => $Class, ObjectID => $ID };
     }

@@ -80,6 +80,7 @@ sub _EnsureLocked {
     return 1 if !$Source || !$StateBookID;
     my $Evaluated = $Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine')->FieldAssignmentsEvaluate(
         Source => $Source, ObjectType => 'Ticket', Class => 'ServiceRequest',
+        UserID => $Param{UserID} || 1,
         Context => { RISK => $Risk, FRAMEWORK => $Framework },
     );
     die "Framework Master Ticket mapping failed: " . ( $Evaluated->{Error} || 'unknown error' ) . "\n"
@@ -225,6 +226,33 @@ sub _EnsureLocked {
             ? 'TESSERA: Risk master ticket cycle restarted'
             : 'TESSERA: Risk master ticket created',
     );
+    return 1;
+}
+
+# Validate the Framework's authored owner before partitioned Risk writes.
+# Evaluate only ownership, without fabricating a not-yet-created Risk ID.
+sub ValidateOwnership {
+    my ($Self,%P)=@_;
+    my $Risk=$P{Risk};
+    my $FrameworkID=_SingleID($Risk->{'DynamicField_MELT-RMF'});
+    die "Partitioned Risk requires a Framework.\n" if !$FrameworkID;
+    my $Framework=$Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(
+        GovernanceObjectID=>$FrameworkID,DynamicFields=>1,Silent=>1);
+    die "Partitioned Risk Framework cannot be read.\n" if ref $Framework ne 'HASH' || ($Framework->{Class}||'') ne 'Framework';
+    my $Engine=$Kernel::OM->Get('Kernel::System::TESSERA::ScriptEngine');
+    my $Program=$Engine->ScriptSourceLoad(Source=>ObjectSource(Object=>$Framework,Field=>'MasterTicket')||'');
+    die "Framework must author partitioned Risk ticket ownership.\n" if ref $Program ne 'HASH'
+        || ref $Program->{RETURN} ne 'HASH' || ref $Program->{RETURN}{'FIELD ASSIGNMENTS'} ne 'HASH'
+        || !exists $Program->{RETURN}{'FIELD ASSIGNMENTS'}{'ZTicket-OwnerGroup'};
+    my $OwnerProgram={%$Program,RETURN=>{%{$Program->{RETURN}},'FIELD ASSIGNMENTS'=>{
+        'ZTicket-OwnerGroup'=>$Program->{RETURN}{'FIELD ASSIGNMENTS'}{'ZTicket-OwnerGroup'}}}};
+    my $Result=$Engine->FieldAssignmentsEvaluate(Script=>$OwnerProgram,ObjectType=>'Ticket',Class=>'ServiceRequest',
+        UserID=>$P{UserID}||1,Context=>{RISK=>$Risk,FRAMEWORK=>$Framework});
+    die "Framework partition ownership cannot be evaluated.\n" if !$Result->{Success};
+    my $Owner=$Self->_OwnerGroupResolve(Value=>$Result->{Value}{'ZTicket-OwnerGroup'},
+        ApplicationID=>_SingleID($Risk->{'DynamicField_MELT-RelatedGO'}),FrameworkID=>$FrameworkID,UserID=>$P{UserID}||1);
+    die "Framework owner differs from the matched partition SupportProfile.\n"
+        if $Owner != $P{SupportProfileID};
     return 1;
 }
 

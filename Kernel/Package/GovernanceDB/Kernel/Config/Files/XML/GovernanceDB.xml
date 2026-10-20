@@ -1,6 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_config version="2.0" init="Config">
 
+    <Setting Name="Loader::Module::CustomerTicketOverview###003-TESSERA-CALENDAR" Required="0" Valid="1">
+        <Description Translatable="1">Customer ticket calendar assets.</Description>
+        <Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array>
+            <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.css</Item>
+            <Item>TESSERA.Customer.TicketCalendar.css</Item>
+        </Array></Item><Item Key="JavaScript"><Array>
+            <Item>thirdparty/momentjs-2.29.3/moment.min.js</Item>
+            <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.js</Item>
+            <Item>TESSERA.Customer.TicketCalendar.js</Item>
+        </Array></Item></Hash></Value>
+    </Setting>
+
+    <Setting Name="Frontend::Module###AgentTESSERATicketCalendar" Required="0" Valid="1">
+        <Description Translatable="1">Ticket-backed team calendar.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="Group"><Array></Array></Item><Item Key="GroupRo"><Array></Array></Item>
+            <Item Key="Description">Calendar of readable Change, Incident and ServiceRequest tickets.</Item>
+            <Item Key="Title">Ticket Calendar</Item><Item Key="NavBarName">Ticket Calendar</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentTESSERATicketCalendar###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Ticket calendar assets.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array>
+            <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.css</Item>
+            <Item>TESSERA.Agent.TicketCalendar.css</Item>
+        </Array></Item><Item Key="JavaScript"><Array>
+            <Item>thirdparty/momentjs-2.29.3/moment.min.js</Item>
+            <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.js</Item>
+            <Item>TESSERA.Agent.TicketCalendar.js</Item>
+        </Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="Frontend::Navigation###AgentTESSERATicketCalendar###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Ticket calendar main menu.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::MainMenu</Navigation>
+        <Value><Array><DefaultItem ValueType="FrontendNavigation"><Hash></Hash></DefaultItem>
+            <Item><Hash>
+                <Item Key="Group"><Array></Array></Item><Item Key="GroupRo"><Array></Array></Item>
+                <Item Key="Description">Readable ticket schedules and timelines.</Item>
+                <Item Key="Name">Ticket Calendar</Item>
+                <Item Key="Link">Action=AgentTESSERATicketCalendar</Item>
+                <Item Key="LinkOption"></Item><Item Key="NavBar">Ticket Calendar</Item>
+                <Item Key="Type">Menu</Item><Item Key="Block">ItemArea</Item>
+                <Item Key="AccessKey"></Item><Item Key="Prio">74</Item>
+            </Hash></Item>
+        </Array></Value>
+    </Setting>
+
     <!-- registration of agent and customer frontend modules -->
     <Setting Name="Frontend::Module###AdminGovernanceObject" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for the agent interface.</Description>
@@ -601,6 +651,32 @@
         <Description Translatable="1">GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
         <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="GroupRo"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item><Item Key="Description">Governance activity articles.</Item><Item Key="Title">Governance Activity Articles</Item><Item Key="NavBarName">GovernanceDB</Item></Hash></Item></Value>
     </Setting>
+    <Setting Name="Frontend::Module###AgentControlObjectiveRun" Required="0" Valid="1">
+        <Description Translatable="1">Queue an ad-hoc run of a ControlObjective's instances.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash>
+            <Item Key="GroupRo"><Array></Array></Item>
+            <Item Key="Group"><Array><Item>governance-db</Item><Item>admin</Item></Array></Item>
+            <Item Key="Description">Queue an ad-hoc run of a ControlObjective's instances.</Item>
+            <Item Key="Title">Run ControlObjective now</Item><Item Key="NavBarName">GovernanceDB</Item>
+        </Hash></Item></Value>
+    </Setting>
+    <Setting Name="Loader::Module::AgentControlObjectiveRun###003-GovernanceDB" Required="0" Valid="1">
+        <Description Translatable="1">Native layout for ad-hoc ControlObjective evaluation.</Description>
+        <Navigation>Frontend::Agent::ModuleRegistration::Loader</Navigation>
+        <Value><Hash><Item Key="CSS"><Array><Item>ITSM.Agent.Default.css</Item></Array></Item><Item Key="JavaScript"><Array></Array></Item></Hash></Value>
+    </Setting>
+    <Setting Name="GovernanceObject::Frontend::MenuModule###220-ControlRunNow" Required="0" Valid="1">
+        <Description Translatable="1">Queue evaluation of all instances of this ControlObjective.</Description>
+        <Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation>
+        <Value><Hash>
+            <Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuControlRun</Item>
+            <Item Key="Name">Run now</Item><Item Key="Description">Run this ControlObjective's instances</Item>
+            <Item Key="Action">AgentControlObjectiveRun</Item>
+            <Item Key="Link">Action=AgentControlObjectiveRun;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item>
+            <Item Key="Target">PopUp</Item>
+        </Hash></Value>
+    </Setting>
     <Setting Name="GovernanceObject::Frontend::MenuModule###210-ActivityArticles" Required="0" Valid="1">
         <Description Translatable="1">Shows GovernanceObject activity articles.</Description><Navigation>Frontend::Agent::GovernanceObject::MenuModule</Navigation><Value><Hash><Item Key="Module">Kernel::Output::HTML::GovernanceObject::MenuGeneric</Item><Item Key="Name">Activity Articles</Item><Item Key="Description">Every recorded activity</Item><Item Key="Action">AgentGovernanceObjectActivity</Item><Item Key="Link">Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | html %]</Item><Item Key="Target">PopUp</Item></Hash></Value>
     </Setting>
@@ -621,6 +697,17 @@
             <Item Key="Schedule">*/5 * * * *</Item>
             <Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item>
             <Item Key="Function">Run</Item>
+            <Item Key="MaximumParallelInstances">1</Item>
+        </Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERAAsyncExecutionReconcile" Required="0" Valid="1">
+        <Description Translatable="1">Queue saved asynchronous continuations and resolve callback timeouts.</Description>
+        <Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash>
+            <Item Key="TaskName">TESSERAAsyncExecutionReconcile</Item>
+            <Item Key="Schedule">*/5 * * * *</Item>
+            <Item Key="Module">Kernel::System::TESSERA::AsyncExecution</Item>
+            <Item Key="Function">Reconcile</Item>
             <Item Key="MaximumParallelInstances">1</Item>
         </Hash></Value>
     </Setting>

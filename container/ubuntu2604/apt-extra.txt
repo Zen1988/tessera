@@ -1,0 +1,2 @@
+# Add any additional OS dependencies required by your host's integrations.
+# One Ubuntu26.04 package name per line; optional explicit package=version pins.

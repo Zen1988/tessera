@@ -1,0 +1,21 @@
+<div class="LayoutPopup ARIARoleMain">
+    <div class="Header">
+        <h1>[% Translate("Run now") | html %]: [% Data.Name | html %]</h1>
+        <p><a href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]">[% Translate("Back to ControlObjective") | html %]</a></p>
+    </div>
+    <div class="Content">
+[% IF Data.Result %]
+        <p role="status">[% Data.Result.Reason | html %]</p>
+        <p><a href="[% Env("Baselink") %]Action=AgentGovernanceObjectActivity;GovernanceObjectID=[% Data.GovernanceObjectID | uri %]">[% Translate("View run summary in Activity Articles") | html %]</a></p>
+[% ELSE %]
+        <p>[% Translate("Run all instances of this ControlObjective now, without waiting for their next cycle. Each Control records its evaluation in Activity Articles.") | html %]</p>
+        <form action="[% Env("CGIHandle") %]" method="post">
+            <input type="hidden" name="Action" value="AgentControlObjectiveRun" />
+            <input type="hidden" name="Subaction" value="Queue" />
+            <input type="hidden" name="GovernanceObjectID" value="[% Data.GovernanceObjectID | html %]" />
+            <input type="hidden" name="ChallengeToken" value="[% Env("ChallengeToken") | html %]" />
+            <button type="submit" class="Primary">[% Translate("Run now") | html %]</button>
+        </form>
+[% END %]
+    </div>
+</div>

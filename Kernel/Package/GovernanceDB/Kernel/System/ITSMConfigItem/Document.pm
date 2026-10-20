@@ -142,11 +142,16 @@ sub Import {
         my $DynamicFieldConfig = $Definition->{DynamicFieldRef}->{$Name};
         return { Success => 0, Message => "Field '$Name' is not in class '$Document->{class}'." }
             if !IsHashRefWithData($DynamicFieldConfig);
-        my $Value = $Self->_ValueFromDocument(
+        my $Value = eval { $Self->_ValueFromDocument(
             DynamicFieldConfig => $DynamicFieldConfig,
             Value              => $Fields->{$Name},
             UserID             => $Param{UserID},
-        );
+        ) };
+        if ($@) {
+            my $Error = $@;
+            $Error =~ s{\s+\z}{};
+            return { Success => 0, Message => "Field '$Name': $Error No changes were saved." };
+        }
         if ( $Self->_IsPortableObjectReference($DynamicFieldConfig) ) {
             my @Input = ref $Fields->{$Name} eq 'ARRAY' ? @{ $Fields->{$Name} } : ( $Fields->{$Name} );
             my @Resolved = ref $Value eq 'ARRAY' ? @{$Value} : ($Value);

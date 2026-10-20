@@ -1,0 +1,39 @@
+<div class="MainBox ARIARoleMain">
+    <h1>[% Translate("TESSERA New setup") | html %]</h1>
+    [% IF Data.Message %]<div class="MessageBox Error" role="alert"><p>[% Data.Message | html %]</p></div>[% END %]
+    [% IF Data.State.Completed %]
+        <div class="MessageBox Success"><p>[% Translate("Organization setup is complete.") | html %]</p></div>
+    [% ELSIF Data.State.Organizations.size %]
+        <h2>[% Translate("Would you like to add another organization?") | html %]</h2>
+        <p>[% Translate("Add another organization below, or finish organization setup.") | html %]</p>
+    [% ELSE %]
+        <h2>[% Translate("Create your first organization") | html %]</h2>
+        <p>[% Translate("Enter the organization name and description to begin.") | html %]</p>
+    [% END %]
+    [% IF Data.State.Organizations.size %]
+        <h2>[% Translate("Organizations added during setup") | html %]</h2>
+        <ul>[% FOREACH Org IN Data.State.Organizations %]<li><a href="[% Env("Baselink") %]Action=AgentGovernanceObjectZoom;GovernanceObjectID=[% Org.ID | uri %]">[% Org.Name | html %]</a></li>[% END %]</ul>
+    [% END %]
+    [% UNLESS Data.State.Completed %]
+    <form action="[% Env("CGIHandle") | html %]" method="post" class="Validate PreventMultipleSubmits">
+        <input type="hidden" name="Action" value="AgentTESSERANewSetup"/>
+        <input type="hidden" name="Subaction" value="Save"/>
+        <input type="hidden" name="ChallengeToken" value="[% Env("ChallengeToken") | html %]"/>
+        <input type="hidden" name="RequestKey" value="[% Data.RequestKey | html %]"/>
+        <fieldset class="TableLike">
+            <label for="Name" class="Mandatory"><span class="Marker">*</span> [% Translate("Organization name") | html %]:</label>
+            <div class="Field"><input id="Name" name="Name" type="text" maxlength="200" required class="Validate_Required W50pc" value="[% Data.Name | html %]"/></div><div class="Clear"></div>
+            <label for="Description">[% Translate("Description") | html %]:</label>
+            <div class="Field"><textarea id="Description" name="Description" rows="5" maxlength="20000" class="W50pc">[% Data.Description | html %]</textarea></div><div class="Clear"></div>
+            <div class="Field SpacingTop"><button type="submit" class="CallForAction Primary"><span>[% Translate("Create organization") | html %]</span></button></div>
+        </fieldset>
+    </form>
+    [% IF Data.State.Organizations.size %]
+    <form action="[% Env("CGIHandle") | html %]" method="post">
+        <input type="hidden" name="Action" value="AgentTESSERANewSetup"/><input type="hidden" name="Subaction" value="Complete"/>
+        <input type="hidden" name="ChallengeToken" value="[% Env("ChallengeToken") | html %]"/>
+        <button type="submit" class="CallForAction"><span>[% Translate("Finish organization setup") | html %]</span></button>
+    </form>
+    [% END %]
+    [% END %]
+</div>

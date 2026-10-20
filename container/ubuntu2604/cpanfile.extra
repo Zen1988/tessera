@@ -1,0 +1,7 @@
+# Core application dependencies are generated from the INSTALLED application's
+# bin/otobo.CheckModules.pl --docker-cpanfile. Add integration requirements here.
+requires 'GD';
+requires 'Redis';
+requires 'Redis::Fast';
+requires 'Gazelle';
+requires 'DBD::MariaDB';

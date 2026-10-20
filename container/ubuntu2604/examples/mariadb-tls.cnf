@@ -1,0 +1,7 @@
+# FUTURE MariaDB server mount after certificate/client validation.
+# This is not copied into the application image and contains no credentials.
+[mariadb]
+ssl_ca=/run/tessera-tls/ca.crt
+ssl_cert=/run/tessera-tls/tls.crt
+ssl_key=/run/tessera-tls/tls.key
+require_secure_transport=ON
