@@ -7,9 +7,7 @@ fail() { echo "TESSERA: $*" >&2; exit 1; }
 configure() {
     [[ -r Kernel/Config.pm ]] || fail 'Mount Config.pm first'
     mountpoint -q /opt/otobo/Kernel/Config/Files || fail 'configure needs a shared generated-config volume at Kernel/Config/Files'
-    cp -a /opt/tessera/config-files.dist/. /opt/otobo/Kernel/Config/Files/
-    /usr/bin/perl bin/otobo.Console.pl Maint::Config::Rebuild --deploy-acls --deploy-processes
-    cp /opt/tessera/config-definitions.sha256 Kernel/Config/Files/.tessera-config-definitions.sha256
+    /usr/bin/python3 /usr/local/lib/tessera/configure.py
 }
 trust_bundle() {
     if [[ -r /run/tessera-tls/ca.crt ]]; then
@@ -54,7 +52,7 @@ if [[ "$MODE" == web ]]; then
     done
     mkdir -p var/run/apache
     export APACHE_RUN_DIR=/opt/otobo/var/run/apache
-    export APACHE_RUN_USER=otobo APACHE_RUN_GROUP=otobo
+    export APACHE_RUN_USER=otobo APACHE_RUN_GROUP=www-data
     export APACHE_LOG_DIR=/opt/otobo/var/log APACHE_PID_FILE="$APACHE_RUN_DIR/apache.pid"
     umask 027
     /usr/sbin/apache2 -t -f /usr/local/lib/tessera/apache/main.conf

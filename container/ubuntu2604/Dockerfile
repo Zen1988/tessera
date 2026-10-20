@@ -3,8 +3,9 @@ ARG BASE_IMAGE=ubuntu:26.04
 FROM ${BASE_IMAGE}
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG OTOBO_UID=10001
-ARG OTOBO_GID=10001
+ARG OTOBO_GID=33
 ARG TESSERA_VERSION=0.0.180
+ARG TESSERA_IMAGE_REVISION=r1
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 COPY apt-packages.txt apt-extra.txt /tmp/tessera-apt/
 RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
@@ -13,9 +14,9 @@ RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
  && apt-get update \
  && apt-get install -y --no-install-recommends "${packages[@]}" \
  && rm -rf /var/lib/apt/lists/* /tmp/tessera-apt \
- && groupadd --gid "$OTOBO_GID" otobo \
+ && groupmod --gid "$OTOBO_GID" www-data \
  && useradd --uid "$OTOBO_UID" --gid "$OTOBO_GID" --home-dir /opt/otobo --shell /bin/bash otobo
-ENV OTOBO_HOME=/opt/otobo OTOBO_USER=otobo OTOBO_GROUP=otobo OTOBO_RUNS_UNDER_DOCKER=1
+ENV OTOBO_HOME=/opt/otobo OTOBO_USER=otobo OTOBO_GROUP=www-data OTOBO_RUNS_UNDER_DOCKER=1
 COPY dependencies/cpanfile /opt/tessera/dependencies/cpanfile
 COPY cpanfile.extra /opt/tessera/dependencies/cpanfile.extra
 COPY --chmod=0755 image/ /usr/local/lib/tessera/
@@ -40,13 +41,16 @@ WORKDIR /opt/otobo
 # Build checks never load host Config.pm, contact the DB or reinstall a package.
 RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo \
  && cp -a Kernel/Config/Files /opt/tessera/config-files.dist \
- && find /opt/otobo -type d -exec chmod a+rx {} + \
- && find /opt/otobo -type f -exec chmod a+r {} + \
- && chmod -R a+rx /opt/otobo/bin \
- && install -d -o otobo -g otobo var/tmp var/log var/run var/spool var/article var/virtualfs var/stats \
- && chown -R otobo:otobo var/tmp var/log var/run var/spool var/article var/virtualfs var/stats Kernel/Config/Files \
- && install -d -o otobo -g otobo var/httpd/htdocs/js/js-cache \
- && find var/httpd/htdocs/skins -type d -name css -print0 | while IFS= read -r -d '' dir; do install -d -o otobo -g otobo "$(dirname "$dir")/css-cache"; done \
+ && chown -R root:www-data /opt/tessera/config-files.dist \
+ && find /opt/tessera/config-files.dist -type d -exec chmod 0550 {} + \
+ && find /opt/tessera/config-files.dist -type f -exec chmod 0440 {} + \
+ && chown -R otobo:www-data /opt/otobo \
+ && find /opt/otobo -type d -exec chmod 0550 {} + \
+ && find /opt/otobo -type f -exec chmod 0440 {} + \
+ && find /opt/otobo/bin -type f -exec chmod 0550 {} + \
+ && install -d -m 0750 -o otobo -g www-data var/tmp var/log var/run var/spool var/article var/virtualfs var/stats Kernel/Config/Files \
+ && install -d -m 0750 -o otobo -g www-data var/httpd/htdocs/js/js-cache \
+ && find var/httpd/htdocs/skins -type d -name css -print0 | while IFS= read -r -d '' dir; do install -d -m 0750 -o otobo -g www-data "$(dirname "$dir")/css-cache"; done \
  && python3 /usr/local/lib/tessera/config-digest.py /opt/tessera/config-files.dist > /opt/tessera/config-definitions.sha256 \
  && /usr/bin/perl -c Custom/Kernel/System/TESSERA/Secrets.pm \
  && /usr/bin/perl -c Custom/Kernel/System/TESSERA/SecretRedis.pm \
@@ -54,11 +58,21 @@ RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo \
  && /usr/bin/perl -MGD -MRedis -MRedis::Fast -MDBD::MariaDB -MPlack::Handler::Gazelle -e 'print "Runtime dependency imports OK\n"' \
  && /usr/local/lib/tessera/check-perl.pl \
  && mkdir -p var/run/apache \
- && chown otobo:otobo var/run/apache \
+ && chown otobo:www-data var/run/apache \
  && APACHE_RUN_DIR=/opt/otobo/var/run/apache /usr/sbin/apache2 -t -D TESSERA_CONFIGTEST -f /usr/local/lib/tessera/apache/main.conf \
  && dpkg-query -W > /opt/tessera/dependencies/ubuntu-packages.tsv
 LABEL org.opencontainers.image.title="TESSERA" org.opencontainers.image.version="${TESSERA_VERSION}"
+LABEL io.tessera.image.revision="${TESSERA_IMAGE_REVISION}"
+COPY --chmod=0444 scripts/test-configure.py /opt/tessera/tests/test-configure.py
 USER otobo
+# Verify every packaged definition using the actual configured runtime UID.
+# This check contacts no database and makes no changes to a shared volume.
+RUN /usr/bin/python3 /usr/local/lib/tessera/configure.py check-source
+# Exercise configure's copying/failure/fingerprint lifecycle as otobo, with a
+# disposable fixture command instead of touching a database during image build.
+RUN TESSERA_CONFIGURE_HELPER=/usr/local/lib/tessera/configure.py \
+    TESSERA_REQUIRE_TEST_UID="$OTOBO_UID" \
+    /usr/bin/python3 /opt/tessera/tests/test-configure.py
 EXPOSE 8443
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 CMD ["/usr/local/lib/tessera/healthcheck.sh"]

@@ -8,8 +8,11 @@ preload. Source application files and Build 180 OPM are unchanged.
 Apache uses an explicit standalone main.conf, not the host's stock default site,
 CGI aliases or conf-enabled directory. Only required distro modules are enabled;
 000-default and default-ssl are disabled; only tessera.conf is enabled and loaded.
-autoindex/status and the event MPM are disabled. It runs as UID/GID 10001 on 8443,
-without root, privileged ports or Linux capabilities. Source is root-owned.
+autoindex/status and the event MPM are disabled. It runs as otobo:www-data,
+UID10001/GID33 on8443, without root, privileged ports or Linux capabilities.
+Application source uses otobo:www-data ownership and read-only0550/0440 modes;
+immutable configuration-distribution source is root:www-data0550/0440. Enforce
+readOnlyRootFilesystem to prevent the source owner from changing its own modes.
 Image build removes setuid/setgid from executables under /usr/bin and /usr/sbin.
 Build tools remain for compatibility; no CIS or vulnerability-free certification
 is claimed. Pin the approved image digest, scan packages/CPAN dependencies and

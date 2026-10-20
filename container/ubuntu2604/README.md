@@ -1,5 +1,9 @@
 # Complete TESSERA application image kit — Ubuntu26.04
 
+Image revision **0.0.180-r1** fixes packaged definition permissions and RWX/NFS
+configuration copying. Application Build180 stays unchanged. See
+[revision r1 instructions and Longhorn tests](examples/CONFIGURE-R1.md).
+
 Updated serving mode: **Apache 2.4 + mod_perl + mpm_prefork**, matching the supplied
 host configuration. Apache serves internal HTTPS/mTLS on8443 directly. Read
 [HTTPS and Pod hardening](examples/HARDENING.md) before running the web container.
@@ -72,7 +76,7 @@ integration-specific dependencies to apt-extra.txt and cpanfile.extra. Then:
 
 ```sh
 bash scripts/build.sh
-# Default output: tessera:0.0.180-ubuntu26.04
+# Default output: tessera:0.0.180-r1-ubuntu26.04
 ```
 
 The Dockerfile starts from ubuntu:26.04, installs Ubuntu system Perl, ALL declared
@@ -97,14 +101,14 @@ dependency versions or retain the resulting immutable image for release repeatab
 Optional values:
 
 ```sh
-TESSERA_IMAGE=registry.example/tessera:0.0.180-ubuntu26.04 \
-BASE_IMAGE=ubuntu:26.04 OTOBO_UID=10001 OTOBO_GID=10001 bash scripts/build.sh
-docker save tessera:0.0.180-ubuntu26.04 | gzip > artifacts/tessera-180-image.tar.gz
+TESSERA_IMAGE=registry.example/tessera:0.0.180-r1-ubuntu26.04 \
+BASE_IMAGE=ubuntu:26.04 OTOBO_UID=10001 OTOBO_GID=33 bash scripts/build.sh
+docker save tessera:0.0.180-r1-ubuntu26.04 | gzip > artifacts/tessera-180-image.tar.gz
 ```
 
 Do not change BASE_IMAGE to a different distribution without reworking/testing
 dependencies. Choose a compatible digest/architecture for production. Runtime
-UID/GID defaults10001, avoiding the Ubuntu base's commonly reserved low IDs;
+Runtime defaults to otobo:www-data, UID10001/GID33;
 set PVC/Secret permissions accordingly. No credentials are Docker build arguments.
 
 ## 3. Mount configuration and generate native config once
@@ -137,7 +141,7 @@ docker run --rm \
   --mount type=bind,src=/secure/tessera/Config.pm,dst=/opt/otobo/Kernel/Config.pm,readonly \
   --mount type=bind,src=/secure/tessera/secrets,dst=/run/tessera-secrets,readonly \
   --mount type=volume,src=tessera-config180,dst=/opt/otobo/Kernel/Config/Files \
-  tessera:0.0.180-ubuntu26.04 configure
+  tessera:0.0.180-r1-ubuntu26.04 configure
 ```
 
 Use your actual private paths and container network; this example does not create
@@ -159,7 +163,7 @@ docker run -d --name tessera-web --network tessera-net \
   --mount type=bind,src=/secure/tessera/Config.pm,dst=/opt/otobo/Kernel/Config.pm,readonly \
   --mount type=bind,src=/secure/tessera/secrets,dst=/run/tessera-secrets,readonly \
   --mount type=volume,src=tessera-config180,dst=/opt/otobo/Kernel/Config/Files \
-  tessera:0.0.180-ubuntu26.04 web
+  tessera:0.0.180-r1-ubuntu26.04 web
 # Repeat the mounts/network with --name tessera-daemon and final argument daemon.
 # Use final argument smoke for SELECT1, real Redis AUTH and a TTL60 cache roundtrip.
 ```
@@ -288,10 +292,12 @@ Dockerfile/source-copy/dependency/startup/PKI inputs; app source is collected on
 your host. It is not an already-built image or a Kubernetes production deployment.
 Follow the existing migration plan for in-cluster MariaDB, persistence and cutover.
 
-Local verification:17 automated checks pass (16 source/PKI-policy tests plus an
-actual OpenSSL certificate-chain test with an RSA8192 leaf, positive server/client
-purpose/SAN verification and wrong-name/untrusted-CA rejection). The disposable
-fixture CA is smaller for test speed; production CA and leaves explicitly use8192.
-All7 Bash scripts pass bash -n; both new Perl helpers compile. These do not
+Revision r1 local verification:24 tests pass with2 POSIX-only skips on Windows
+(18 source/PKI-policy tests and6 configure regression tests). Docker build runs
+all8 configure regressions after USER otobo with an explicit UID check; those
+Linux checks and real Longhorn acceptance remain to be executed on the build host.
+Earlier PKI acceptance used a real RSA8192 leaf and disposable smaller fixture CA;
+production CA and leaves explicitly use8192. Changed Bash scripts pass bash -n.
+These checks do not
 substitute for an actual Ubuntu Docker build, Apache runtime/TLS test, real DB/
 Redis authentication or production certificate issuance on the host.

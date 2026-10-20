@@ -12,12 +12,15 @@
 !image/audit-app.py
 !image/check-perl.pl
 !image/config-digest.py
+!image/configure.py
 !image/entrypoint.sh
 !image/healthcheck.sh
 !image/install-perl.sh
 !image/runtime-check.pl
 !image/nginx-internal-tls.conf
 !image/site-entrypoint.sh
+!scripts/
+!scripts/test-configure.py
 !image/apache/
 !image/apache/*.conf
 !app/

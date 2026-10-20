@@ -11,7 +11,7 @@ ROOT_FILES={'Dockerfile','Dockerfile.tlsproxy','.dockerignore','.gitignore',
 SUFFIXES={'.sh','.py','.pl','.conf','.cnf','.exclude','.yaml','.md'}
 
 def main():
-    out=ROOT/'outputs/TESSERA-180-Ubuntu26.04-Container-Kit.zip'
+    out=ROOT/'outputs/TESSERA-180-r1-Ubuntu26.04-Container-Kit.zip'
     out.parent.mkdir(parents=True,exist_ok=True)
     included={}
     for p in KIT.rglob('*'):
