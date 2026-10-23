@@ -1,0 +1,24 @@
+{
+  "name": "redis-recovery",
+  "kind": "redis-replica-replace",
+  "namespace": "tessera",
+  "cluster": "tessera-redis-ha",
+  "master_name": "REPLACE_MASTER_NAME",
+  "member_dns": "{pod}.REPLACE_HEADLESS_SERVICE.tessera.svc.cluster.local",
+  "sentinel_hosts": [
+    "tessera-redis-ha-s-0.REPLACE_SENTINEL_SERVICE.tessera.svc.cluster.local",
+    "tessera-redis-ha-s-1.REPLACE_SENTINEL_SERVICE.tessera.svc.cluster.local",
+    "tessera-redis-ha-s-2.REPLACE_SENTINEL_SERVICE.tessera.svc.cluster.local"
+  ],
+  "redis_port": 6379,
+  "sentinel_port": 26379,
+  "credentials": {
+    "secret": "REPLACE_SECRET",
+    "password_key": "REPLACE_REDIS_PASSWORD_KEY",
+    "sentinel_password_key": "REPLACE_SENTINEL_PASSWORD_KEY",
+    "ca_key": "REPLACE_CA_KEY",
+    "cert_key": "REPLACE_CLIENT_CERT_KEY",
+    "private_key": "REPLACE_CLIENT_KEY"
+  },
+  "tls": true
+}

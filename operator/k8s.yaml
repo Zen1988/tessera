@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tessera-operator
+  namespace: apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tessera-operator-observer
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list]
+  - apiGroups: [storage.k8s.io]
+    resources: [volumeattachments]
+    verbs: [get, list]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes]
+    verbs: [get, list]
+  - nonResourceURLs: [/version]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tessera-operator-observer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tessera-operator-observer
+subjects:
+  - kind: ServiceAccount
+    name: tessera-operator
+    namespace: apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tessera-operator-node-leases
+  namespace: kube-node-lease
+rules:
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tessera-operator-node-leases
+  namespace: kube-node-lease
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tessera-operator-node-leases
+subjects:
+  - kind: ServiceAccount
+    name: tessera-operator
+    namespace: apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tessera-operator-observer
+  namespace: apps
+rules:
+  - apiGroups: [""]
+    resources: [pods, persistentvolumeclaims, services]
+    verbs: [get, list]
+  - apiGroups: [metrics.k8s.io]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tessera-operator-observer
+  namespace: apps
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tessera-operator-observer
+subjects:
+  - kind: ServiceAccount
+    name: tessera-operator
+    namespace: apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tessera-operator-observer
+  namespace: longhorn-system
+rules:
+  - apiGroups: [longhorn.io]
+    resources: [nodes, volumes]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tessera-operator-observer
+  namespace: longhorn-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tessera-operator-observer
+subjects:
+  - kind: ServiceAccount
+    name: tessera-operator
+    namespace: apps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tessera-operator-observer
+  namespace: metallb-system
+rules:
+  - apiGroups: [apps]
+    resources: [deployments, daemonsets]
+    verbs: [get, list]
+  - apiGroups: [metallb.io]
+    resources: [ipaddresspools, l2advertisements]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tessera-operator-observer
+  namespace: metallb-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tessera-operator-observer
+subjects:
+  - kind: ServiceAccount
+    name: tessera-operator
+    namespace: apps
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tessera-operator
+  namespace: apps
+data:
+  config.json: |
+    {
+      "namespaces": ["apps"],
+      "longhorn_namespace": "longhorn-system",
+      "metallb_namespace": "metallb-system",
+      "interval_seconds": 60,
+      "check_deadline_seconds": 45,
+      "max_workers": 4,
+      "targets": []
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tessera-operator
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tessera-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tessera-operator
+    spec:
+      serviceAccountName: tessera-operator
+      terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: observer
+          # Replace with your built registry image, preferably an immutable digest.
+          image: tessera-operator:0.3.2
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: health
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 384Mi
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tessera-operator
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: tessera-operator
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tessera-operator-internal
+  namespace: apps
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: tessera-operator
+  policyTypes: [Ingress]
+  ingress: []

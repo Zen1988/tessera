@@ -1,0 +1,6 @@
+{
+  "name": "longhorn-recovery",
+  "kind": "longhorn-stall-recovery",
+  "namespace": "longhorn-system",
+  "stall_seconds": 900
+}

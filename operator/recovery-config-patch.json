@@ -1,0 +1,5 @@
+{
+  "data": {
+    "recovery.json": "{\n  \"namespace\": \"apps\",\n  \"policies\": [\n    {\n      \"name\": \"postgres-recovery\",\n      \"kind\": \"cnpg-preserve-replace\",\n      \"namespace\": \"postgres\",\n      \"cluster\": \"tessera-postgres\",\n      \"expected_identity\": \"7697134515630092313\"\n    }\n  ]\n}"
+  }
+}

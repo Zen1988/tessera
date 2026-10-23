@@ -1,0 +1,42 @@
+{
+  "namespaces": ["apps"],
+  "longhorn_namespace": "longhorn-system",
+  "metallb_namespace": "metallb-system",
+  "interval_seconds": 60,
+  "check_deadline_seconds": 45,
+  "max_workers": 4,
+  "targets": [
+    {
+      "kind": "mariadb", "name": "galera/member-0",
+      "host": "REPLACE-MEMBER-DNS", "port": 3306,
+      "user": "tessera_monitor", "password_file": "/credentials/mariadb/password",
+      "ca_file": "/credentials/mariadb/ca.crt",
+      "expected_cluster_uuid": "REPLACE-VERIFIED-CLUSTER-UUID", "minimum_members": 3
+    },
+    {
+      "kind": "redis", "name": "redis/member-0",
+      "host": "REPLACE-MEMBER-DNS", "port": 6379, "user": "tessera_monitor",
+      "password_file": "/credentials/redis/password", "ca_file": "/credentials/redis/ca.crt",
+      "expected_role": "master", "minimum_replicas": 2
+    },
+    {
+      "kind": "sentinel", "name": "sentinel/member-0",
+      "host": "REPLACE-SENTINEL-DNS", "port": 26379, "user": "tessera_monitor",
+      "password_file": "/credentials/sentinel/password", "ca_file": "/credentials/sentinel/ca.crt",
+      "master_name": "REPLACE-MONITORED-MASTER-NAME",
+      "expected_primary_host": "REPLACE-VERIFIED-PRIMARY-IP", "expected_primary_port": 6379
+    },
+    {
+      "kind": "postgresql", "name": "postgres/member-0",
+      "host": "REPLACE-MEMBER-DNS", "port": 5432, "database": "postgres",
+      "user": "tessera_monitor", "password_file": "/credentials/postgresql/password",
+      "ca_file": "/credentials/postgresql/ca.crt",
+      "expected_role": "replica", "expected_system_identifier": "REPLACE-VERIFIED-SYSTEM-ID"
+    },
+    {
+      "kind": "awx", "name": "awx/api",
+      "url": "https://REPLACE-AWX-INTERNAL-DNS",
+      "ca_file": "/credentials/awx/ca.crt", "token_file": "/credentials/awx/token"
+    }
+  ]
+}

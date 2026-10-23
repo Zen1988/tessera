@@ -1,0 +1,10 @@
+*
+!Dockerfile
+!monitor.py
+!recovery.py
+!tests/test_recovery.py
+!requirements.txt
+!config.example.json
+!k8s.yaml
+!tests/
+!tests/test_monitor.py

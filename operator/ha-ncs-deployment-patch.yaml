@@ -1,0 +1,38 @@
+spec:
+  replicas: 3
+  template:
+    spec:
+      affinity:
+        $patch: replace
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: tessera-operator
+            topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - k8s.ncs.local
+                - k8s2.ncs.local
+                - k8s3.ncs.local
+      containers:
+      - name: observer
+        image: docker.io/library/tessera-operator:0.3.2
+        imagePullPolicy: Never
+        env:
+        - name: TESSERA_API_ENDPOINTS
+          value: https://10.0.1.61:6443,https://10.0.1.62:6443,https://10.0.1.63:6443
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
