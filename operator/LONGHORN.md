@@ -1,4 +1,4 @@
-# Longhorn stalled recovery — 0.3.2
+# Longhorn stalled recovery — 0.3.3
 
 Longhorn owns replica replication and rebuilding. TESSERA persistently watches the recovery that Longhorn reports and identifies prolonged absence of observable progress. Optional longhorn-stall-recovery policy uses the existing apps Lease/ConfigMap; no operator DB/PVC. Not activated by image upgrade alone. Longhorn policy plus PostgreSQL, Redis and Galera can coexist (four policies). Existing reconciliation checks one policy per monitoring cycle; with four policies, a policy is sampled about every four cycles. Threshold detection and repair occur on those samples, not exact wall-clock deadlines.
 
@@ -13,7 +13,7 @@ Persist repair intent, then request UID/resourceVersion-precondition policy/v1 e
 
 No restarts of healthy managers for slow storage, no engine/instance-manager restarts, no volume/replica writes/deletions, no salvage/force-detach, no capacity changes, no removal of attachment/finalizer safeguards. Full disks, unavailable nodes, failed healthy-copy evidence, all-replicas-faulted or attachment disputes produce explicit stalled reports rather than a guessed repair. This is a bounded repair for a failed native controller, not a generic fix for every storage failure. No application I/O verification claim.
 
-## Enable after importing/building0.3.2
+## Enable after importing/building0.3.3
 
 Retain existing ConfigMap ledger and Lease. Apply optional namespace permissions, append policy preserving other policies, then restart current Deployment to load configuration:
 

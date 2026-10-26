@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-image="${TESSERA_OPERATOR_IMAGE:-docker.io/library/tessera-operator:0.3.2}"
+image="${TESSERA_OPERATOR_IMAGE:-docker.io/library/tessera-operator:0.3.3}"
 address="${BUILDKIT_HOST:-unix:///run/tessera-buildkit/buildkitd.sock}"
 command -v buildctl >/dev/null 2>&1 || { echo 'buildctl is required; see CONTAINERD.md.' >&2; exit 1; }
 command -v sha256sum >/dev/null 2>&1 || { echo 'sha256sum is required.' >&2; exit 1; }

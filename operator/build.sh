@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-image="${TESSERA_OPERATOR_IMAGE:-tessera-operator:0.3.2}"
+image="${TESSERA_OPERATOR_IMAGE:-tessera-operator:0.3.3}"
 command -v docker >/dev/null 2>&1 || { echo 'Docker with Linux containers is required.' >&2; exit 1; }
 docker info >/dev/null
 if docker image inspect "$image" >/dev/null 2>&1; then

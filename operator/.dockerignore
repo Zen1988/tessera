@@ -1,10 +1,14 @@
 *
 !Dockerfile
+!.dockerignore
 !monitor.py
 !recovery.py
-!tests/test_recovery.py
+!redis_recovery.py
+!longhorn_recovery.py
+!package.py
+!redis-policy-ncs.json
 !requirements.txt
 !config.example.json
 !k8s.yaml
 !tests/
-!tests/test_monitor.py
+!tests/*.py

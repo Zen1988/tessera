@@ -9,15 +9,15 @@ BuildKit can build the existing Dockerfile directly and export OCI archives. No 
 Run in a LOCAL PowerShell window (enter the SSH password there):
 
 ```powershell
-scp 'C:\Users\Zen\OneDrive\Documents\TESSERA\outputs\TESSERA-Operator-0.3.2-Build-Kit.zip' 'C:\Users\Zen\OneDrive\Documents\TESSERA\outputs\TESSERA-Operator-0.3.2-Build-Kit.zip.sha256' zen@10.0.1.61:~/
+scp 'C:\Users\Zen\OneDrive\Documents\TESSERA\outputs\TESSERA-Operator-0.3.3-Build-Kit.zip' 'C:\Users\Zen\OneDrive\Documents\TESSERA\outputs\TESSERA-Operator-0.3.3-Build-Kit.zip.sha256' zen@10.0.1.61:~/
 ```
 
 On the remote host:
 
 ```sh
 cd "$HOME"
-sha256sum -c TESSERA-Operator-0.3.2-Build-Kit.zip.sha256
-unzip -n TESSERA-Operator-0.3.2-Build-Kit.zip
+sha256sum -c TESSERA-Operator-0.3.3-Build-Kit.zip.sha256
+unzip -n TESSERA-Operator-0.3.3-Build-Kit.zip
 ```
 
 Use a fresh directory if an older `tessera-operator` directory already exists: `unzip -n` deliberately does not overwrite existing source. `unzip`, `curl`, `tar` and standard coreutils are prerequisites. Do not mix kit revisions.
@@ -63,21 +63,21 @@ The containerd socket above is the conventional default, not verified on this ho
 In remote terminal 2:
 
 ```sh
-cd "$HOME/tessera-operator-0.3.2"
+cd "$HOME/tessera-operator-0.3.3"
 sudo env PATH="/usr/local/bin:$PATH" sh build-containerd.sh
 sudo ctr --namespace k8s.io images import dist/tessera-operator-image.oci.tar
 sudo ctr --namespace k8s.io images list | grep tessera-operator
 ```
 
-Build output must show the embedded test suite and config validation succeeding. The archive, SHA256, build metadata and image reference are in `dist/`. Default reference is `docker.io/library/tessera-operator:0.3.2`; no registry push occurs. Kubernetes namespace `apps` and containerd image namespace `k8s.io` are unrelated. Local import makes the image available only on this node. Import on every eligible Kubernetes node or deliberately publish to an internal registry before deployment. `ctr images import` is an explicit local image-store change, not a rollout.
+Build output must show the embedded test suite and config validation succeeding. The archive, SHA256, build metadata and image reference are in `dist/`. Default reference is `docker.io/library/tessera-operator:0.3.3`; no registry push occurs. Kubernetes namespace `apps` and containerd image namespace `k8s.io` are unrelated. Local import makes the image available only on this node. Import on every eligible Kubernetes node or deliberately publish to an internal registry before deployment. `ctr images import` is an explicit local image-store change, not a rollout.
 
 ## 5. Validate the final image without deploying it
 
 ```sh
-cd "$HOME/tessera-operator-0.3.2"
+cd "$HOME/tessera-operator-0.3.3"
 sudo ctr --namespace k8s.io run --rm --read-only \
   --mount "type=bind,src=$PWD/config.example.json,dst=/etc/tessera-operator/config.json,options=rbind:ro" \
-  docker.io/library/tessera-operator:0.3.2 \
+  docker.io/library/tessera-operator:0.3.3 \
   "tessera-operator-validate-$(date +%s)" \
   python /app/monitor.py --validate
 ```
@@ -87,3 +87,23 @@ Expect `configuration valid` and exit code 0. This exercises final-image executi
 Deployment remains a separate step described in README.md. The baseline is observe-only, internal to `apps`, with no own DB/PVC or externally exposed Service. Recovery/scale/write actions remain unimplemented.
 
 References: [BuildKit usage and exporters](https://github.com/moby/buildkit/blob/master/README.md), [official release](https://github.com/moby/buildkit/releases/tag/v0.34.1), [release asset metadata](https://api.github.com/repos/moby/buildkit/releases/tags/v0.34.1).
+
+## Build-kit corrections in0.3.3
+
+0.3.2 ZIP shipped CRLF shell scripts and an outdated Docker context allowlist. The first prevented sh from parsing set -eu; after line-ending repair, the second excluded Redis/Longhorn source and newer tests from COPY. Version0.3.3 normalizes packaged shell files to UTF-8 without BOM/LF, stores executable permissions, and explicitly admits all Docker COPY inputs and Python tests. Regression tests cover both. Earlier0.3.2 archive is preserved for provenance; use a freshly extracted0.3.3 kit for the corrected build.
+
+An existing extracted0.3.2 directory can be repaired with:
+
+```sh
+sed -i 's/\r$//' build-containerd.sh build.sh inspect-recovery.sh
+cat >> .dockerignore <<'EOF'
+
+!redis_recovery.py
+!longhorn_recovery.py
+!redis-policy-ncs.json
+!tests/*.py
+EOF
+sudo env PATH="/usr/local/bin:$PATH" sh ./build-containerd.sh
+```
+
+Import dist/tessera-operator-image.oci.tar only after a successful build. Image tags differ: repaired0.3.2 remains0.3.2; the fresh0.3.3 kit produces0.3.3. Do not apply a newer deployment patch to an older-tagged image.

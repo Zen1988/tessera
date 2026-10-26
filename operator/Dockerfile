@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM dependencies AS verification
 RUN pip install --no-cache-dir PyYAML==6.0.3
 COPY monitor.py recovery.py longhorn_recovery.py redis_recovery.py redis-policy-ncs.json config.example.json k8s.yaml ./
+COPY package.py Dockerfile .dockerignore ./
 COPY tests ./tests
 USER 65532:65532
 RUN python -m unittest discover -s tests -v \
@@ -19,7 +20,7 @@ RUN python -m unittest discover -s tests -v \
 
 FROM dependencies AS runtime
 LABEL org.opencontainers.image.title="TESSERA Operator" \
-      org.opencontainers.image.version="0.3.2" \
+      org.opencontainers.image.version="0.3.3" \
       org.opencontainers.image.description="Internal infrastructure monitoring with optional policy-bound recovery"
 # Consuming the verified source forces the verification stage to complete.
 COPY --from=verification /app/monitor.py .

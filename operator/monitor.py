@@ -16,7 +16,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 SA = Path("/var/run/secrets/kubernetes.io/serviceaccount")
 STATES = {"healthy": 0, "disabled": 0, "degraded": 1, "unknown": 2, "unavailable": 3}
 MAX_BODY = 8 * 1024 * 1024

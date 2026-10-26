@@ -1,4 +1,4 @@
-# TESSERA Operator 0.3.2
+# TESSERA Operator 0.3.3
 
 Independent in-cluster infrastructure observer in namespace `apps`, built on Ubuntu 26.04 LTS with Python in a dedicated virtual environment. No TESSERA/Perl runtime, own database or PVC. Default deployment is observe-only. Optional automatic PostgreSQL/Galera recovery is implemented in recovery.py and activated separately using RECOVERY.md; it adds privileged scoped permissions. No primary promotion, forced bootstrap, shutdown orchestration or scaling is implemented. No Service, Ingress, Gateway, NodePort, hostPort or LoadBalancer is created. Ingress NetworkPolicy denies Pod ingress; validate your CNI enforces it and permits kubelet probes. Existing additive allow policies can broaden access. The status endpoint is unauthenticated and contains infrastructure metadata: do not expose it.
 
@@ -25,11 +25,11 @@ From this directory on a host with a Linux container builder:
 
 ```sh
 python -m unittest discover -s tests -v
-docker build --pull --no-cache -t tessera-operator:0.3.2 .
+docker build --pull --no-cache -t tessera-operator:0.3.3 .
 docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m \
   --mount type=bind,src="$PWD/config.example.json",dst=/etc/tessera-operator/config.json,readonly \
-  tessera-operator:0.3.2 --validate
-docker save -o tessera-operator-0.3.2.tar tessera-operator:0.3.2
+  tessera-operator:0.3.3 --validate
+docker save -o tessera-operator-0.3.3.tar tessera-operator:0.3.3
 ```
 
 For your registry, tag/push deliberately, then set the resulting image reference/digest in `k8s.yaml`. Alternatively import the saved archive into every eligible node's container runtime. No registry address, credentials or live cluster context is assumed here. Dependencies are version-pinned; the Ubuntu base tag and APT packages are moving upstream inputs. Record the resolved image/base digests and scan the built image before deployment. This repository does not claim a reproducible digest or a completed image build without a builder receipt. User accepts Alpine or Ubuntu; this first image uses Ubuntu 26.04 LTS with only Python/venv/CA packages installed without recommended packages. Python was selected for the first functional implementation because Python is available in the workspace; Go remains a possible later size optimization. Actual image size and memory require Linux measurement.
@@ -73,4 +73,4 @@ Run isolated tests for API loss, DNS loss, permission denial, unavailable DB/PVC
 
 Security rebuilds pull the current Ubuntu base, disable build-layer reuse and upgrade installed APT packages before installing the runtime. This reduces stale-package findings but cannot guarantee a clean VA scan; scan the final image digest with your approved scanner. Ubuntu 26.04 is the current LTS choice; see https://ubuntu.com/about/release-cycle .
 
-Longhorn stalled recovery is available as a separately enabled policy in0.3.2. See LONGHORN.md for progress timing, native-controller repair conditions and limits. This supplements Longhorn's own replica rebuilding; it does not implement volume force-detach or salvage.
+Longhorn stalled recovery is available as a separately enabled policy in0.3.3. See LONGHORN.md for progress timing, native-controller repair conditions and limits. This supplements Longhorn's own replica rebuilding; it does not implement volume force-detach or salvage.

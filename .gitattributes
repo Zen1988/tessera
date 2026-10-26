@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# Keep operator shell entry points portable on Linux checkouts.
+operator/*.sh text eol=lf
+operator/tests/*.sh text eol=lf
