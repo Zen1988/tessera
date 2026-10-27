@@ -1,4 +1,4 @@
-# Redis recovery 0.3.3
+# Redis recovery 0.3.5
 
 Implemented: Sentinel-authorized replacement of one failed replica in a three-member StatefulSet. TLS requires certificate verification, DNS identity checking and configured client certificates. Credentials and CA/client certificate material come from one explicitly named Kubernetes Secret; values are never logged. Redis and Sentinel may use different password keys in that Secret. ACL usernames other than default are not supported yet.
 
@@ -27,11 +27,11 @@ kubectl --server=https://10.0.1.63:6443 --request-timeout=5s get --raw=/readyz
 
 These are per-command endpoint overrides; existing kubeconfig is preserved and TLS verification remains enabled. A certificate SAN error is distinct from routing/API readiness failure. If a direct API works, inspect kube-vip pods, logs, leader lease, node routing and VIP advertisement through that working endpoint. Do not restart all control-plane nodes or remove storage finalizers as a diagnostic step.
 
-## 0.3.3 deployment and API availability
+## 0.3.5 deployment and API availability
 
 Observed NCS deployment is password-authenticated plaintext, not TLS: Sentinel logs explicitly say without TLS, local Redis plaintext INFO succeeds, and there are no certificate mounts. New explicit tls=false policy redis-policy-ncs.json matches that deployment; TLS is never downgraded automatically. Policy uses tessera-redis-auth/password, mymaster, and the observed per-Pod headless service names. Native Opstree status and all Sentinels agree on pod1, IP172.30.1.1. Pod2 confirms replication. Pod0 still needs a current protocol check; Kubernetes Ready alone cannot establish topology.
 
-0.3.3 supports string/set Sentinel flags (redis-py8), checks reachable disagreements even without CKQUORUM, fixes indefinite cooldown extension, checks all-ready role topology, and includes state-machine eviction/replacement tests. Build gate copies the policy test fixture. Optional recovery-redis-rbac.yaml grants only named Secret GET, named StatefulSet GET, Pod inventory and eviction. configure-redis.py appends to existing recovery.json using resourceVersion precondition, preserving PostgreSQL policy and the independent recovery ledger. Run using Python3 on the kubectl host, from the kit directory. It does not activate container args or restart the Deployment itself.
+0.3.5 supports string/set Sentinel flags (redis-py8), checks reachable disagreements even without CKQUORUM, fixes indefinite cooldown extension, checks all-ready role topology, and includes state-machine eviction/replacement tests. Build gate copies the policy test fixture. Optional recovery-redis-rbac.yaml grants only named Secret GET, named StatefulSet GET, Pod inventory and eviction. configure-redis.py appends to existing recovery.json using resourceVersion precondition, preserving PostgreSQL policy and the independent recovery ledger. Run using Python3 on the kubectl host, from the kit directory. It does not activate container args or restart the Deployment itself.
 
 The operator uses the in-cluster Kubernetes API service by default, not SSH kubeconfig. TESSERA_API_ENDPOINTS adds three explicit CA/hostname-verified HTTPS control-plane IPs. Safe GET requests fail over on transport failures and API5xx; authentication/RBAC/404 errors are not masked. Writes select an endpoint via a read first and are never replayed after an ambiguous timeout. Persisted recovery state reconciles uncertain results. Direct IPs must be in the API certificate SANs; no insecure TLS bypass. All endpoints still require functioning API/etcd quorum and Pod-to-host connectivity. This does not fix kube-vip or survive total control-plane loss.
 

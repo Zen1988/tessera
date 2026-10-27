@@ -29,7 +29,7 @@ for doc in docs:
         doc["data"]["config.json"] = json.dumps(config, indent=2) + "\n"
     if doc["kind"] == "Deployment":
         spec = doc["spec"]["template"]["spec"]
-        spec["containers"][0]["image"] = "docker.io/library/tessera-operator:0.3.3"
+        spec["containers"][0]["image"] = "docker.io/library/tessera-operator:0.3.5"
         spec["containers"][0]["imagePullPolicy"] = "Never"
         spec["affinity"] = {"nodeAffinity": {"requiredDuringSchedulingIgnoredDuringExecution": {
             "nodeSelectorTerms": [{"matchFields": [{"key": "metadata.name", "operator": "In",

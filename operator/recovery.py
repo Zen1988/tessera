@@ -9,6 +9,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import ssl
 import tempfile
 import time
@@ -59,10 +60,10 @@ class API(Kube):
                 raise Blocked("API response exceeds bounded limit")
             return json.loads(data) if data else {}
 
-    def logs(self, namespace, pod, container, previous=True):
+    def logs(self, namespace, pod, container, previous=True, recent=False):
         self.get("/version")
         query = urllib.parse.urlencode({"container": container, "previous": str(previous).lower(),
-                                       "tailLines": 120, "limitBytes": 131072})
+                                       "tailLines": 120, "limitBytes": 131072, **({"sinceSeconds": 120} if recent else {})})
         context = ssl.create_default_context(cafile=str(SA / "ca.crt"))
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}),
             urllib.request.HTTPSHandler(context=context), NoRedirect())
@@ -299,9 +300,39 @@ class Controller:
         statuses = pod.get("status", {}).get("containerStatuses", [])
         container = "postgres" if policy["kind"] == "cnpg-preserve-replace" else "mariadb"
         selected = [x for x in statuses if x.get("name") == container]
-        if len(selected) != 1 or selected[0].get("restartCount", 0) < 3 or conditions(pod).get("Ready", {}).get("status") == "True":
+        if len(selected) != 1 or conditions(pod).get("Ready", {}).get("status") != "False":
             return None
-        if selected[0].get("state", {}).get("waiting", {}).get("reason") != "CrashLoopBackOff":
+        status = selected[0]
+        crash = (status.get("restartCount", 0) >= 3 and
+                 status.get("state", {}).get("waiting", {}).get("reason") == "CrashLoopBackOff")
+        running = "running" in status.get("state", {}) and pod.get("status", {}).get("phase") == "Running"
+        if policy["kind"] == "cnpg-preserve-replace" and running:
+            # Current container only: previous=True fails on the zero-restart live case.
+            # Require fresh structured CNPG PostgreSQL records, never arbitrary log substrings.
+            text = self.api.logs(policy["namespace"], pod["metadata"]["name"], container, previous=False, recent=True)
+            segments, waiting = set(), False
+            for line in text.splitlines():
+                try:
+                    event = json.loads(line)
+                    if event.get("logger") != "postgres" or event.get("logging_pod") != pod["metadata"]["name"]:
+                        continue
+                    elapsed = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(event["ts"].replace("Z", "+00:00"))).total_seconds()
+                    if not 0 <= elapsed <= 120:
+                        continue
+                    record = event.get("record", {})
+                    message = record.get("message", "")
+                    if record.get("backend_type") == "walreceiver" and record.get("error_severity") == "FATAL":
+                        match = re.fullmatch(r"could not receive data from WAL stream: ERROR:  requested WAL segment ([0-9A-F]{24}) has already been removed", message)
+                        if match:
+                            segments.add(match.group(1))
+                    if record.get("backend_type") == "startup" and re.fullmatch(r"waiting for WAL to become available at [0-9A-F]+/[0-9A-F]+", message):
+                        waiting = True
+                except (KeyError, ValueError, TypeError, AttributeError):
+                    continue
+            if len(segments) == 1 and waiting:
+                return "postgres-missing-wal:" + next(iter(segments))
+            return None
+        if not crash:
             return None
         text = self.api.logs(policy["namespace"], pod["metadata"]["name"], container)
         if policy["kind"] == "cnpg-preserve-replace":
@@ -310,6 +341,17 @@ class Controller:
         return "galera-transient-join-failure" if any(value in text.lower() for value in signatures) else None
 
     def fence(self, path, cluster, target, enabled):
+        # SQL/lease probes can take seconds while CNPG updates Cluster status.
+        # Refresh resourceVersion just before PUT; never overwrite a concurrent fence.
+        fresh = self.api.get(path)
+        if fresh["metadata"].get("uid") != cluster["metadata"].get("uid"):
+            raise Blocked("cluster identity changed before fence update")
+        for key in ("currentPrimary", "targetPrimary", "systemID"):
+            if fresh.get("status", {}).get(key) != cluster.get("status", {}).get(key):
+                raise Blocked("native authority changed before fence update")
+        if fresh["metadata"].get("annotations", {}).get(FENCE, "[]") != cluster["metadata"].get("annotations", {}).get(FENCE, "[]"):
+            raise Blocked("native fence changed concurrently")
+        cluster = fresh
         annotations = cluster["metadata"].setdefault("annotations", {})
         values = json.loads(annotations.get(FENCE, "[]"))
         if not isinstance(values, list) or "*" in values:
@@ -330,6 +372,13 @@ class Controller:
             return self.step(policy)
         except Blocked as exc:
             return result("recovery/" + policy["name"], "unknown", str(exc))
+        except urllib.error.HTTPError as exc:
+            # Never disclose response bodies, headers, credentials or query strings.
+            url = urllib.parse.urlsplit(exc.geturl() or "")
+            resource = url.path
+            operation = "cluster" if "/clusters/" in resource else "pod logs" if resource.endswith("/log") else "Kubernetes API"
+            return result("recovery/" + policy["name"], "unknown",
+                          "recovery " + operation + " request failed: HTTP " + str(exc.code))
         except Exception as exc:
             return result("recovery/" + policy["name"], "unknown", "recovery check failed: " + type(exc).__name__)
 
@@ -360,7 +409,7 @@ class Controller:
             candidates = [(pod, self.classify(policy, pod)) for pod in pods]
             candidates = [(pod, reason) for pod, reason in candidates if reason]
             if len(candidates) != 1:
-                return result("recovery/" + policy["name"], "healthy" if not candidates else "unknown", "no single recognized failed member eligible for automatic action")
+                return result("recovery/" + policy["name"], "degraded" if any(conditions(p).get("Ready", {}).get("status") != "True" for p in pods) else "healthy", "no single recognized failed member eligible for automatic action")
             pod, reason = candidates[0]
             target = pod["metadata"]["name"]
             owners = pod["metadata"].get("ownerReferences", [])
@@ -418,8 +467,8 @@ class Controller:
                     self.save(record, all_state)
                     return result("recovery/" + policy["name"], "degraded", "reconfirming native primary after failover")
             if state["phase"] == "confirmed":
-                if not self.classify(policy, pod):
-                    raise Blocked("failure signature or crash state changed")
+                if self.classify(policy, pod) != state["diagnosis"]:
+                    raise Blocked("failure signature or recovery state changed")
                 state["confirmations"] += 1
                 if state["confirmations"] >= 3 and age(state["first_seen"]) >= 120:
                     state["phase"] = "fencing" if policy["kind"] == "cnpg-preserve-replace" else "evicting"

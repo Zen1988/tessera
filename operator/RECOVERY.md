@@ -1,4 +1,33 @@
-# Automatic recovery — 0.3.3 implementation and activation
+# 0.3.5: resume stalled unfencing without resetting the operation
+
+Live0.3.4 recognized the missing WAL, preserved the original PVC and completed native join, then stalled in unfencing with generic HTTPError. Owner verifies jobsGET/podlogsGET/podsLIST allowed, correct native Job ownership/Complete and join container; fence still present. Exact failing HTTP code remains unknown. Do not claim missing RBAC or completed recovery.
+
+0.3.5 restricts the120-second log query to explicit failure detection only. Completed join logs remain byte/line bounded but have no time filter, retaining older archive/basebackup evidence. Fence updates re-read the Cluster resourceVersion immediately before PUT, check cluster UID/nativeprimary/systemID/fence unchanged and preserve concurrent metadata/status. HTTP failures report numeric status and fixed resource category only; no response bodies/URLs/credentials. Conflicts retry through ordinary next reconciliation, never replay uncertain writes. Existing ledger/operation/Lease/PVC/nativeJob retained. No new RBAC, manual ownership repair or arbitrary removal of fences.
+
+Build/import the new0.3.5 image on all eligible nodes, then image-only rollout using the commands below. The current operation resumes at unfencing within its existing two-hour action budget. If that budget expires, inspect and design a checked resume; never reset timestamps or ledger blindly. Verify completed phase,3Ready and streaming, with original archive path recorded, before removing older images.
+
+# 0.3.5: running replica blocked on missing WAL
+
+Recognizes the live zero-restart Running/NotReady case using current-container logs from the last 120 seconds. Requires structured CNPG PostgreSQL records for this Pod: a walreceiver FATAL naming exactly one removed 24-digit WAL segment plus startup waiting for WAL. The same segment must persist through at least three observations across 120 seconds. Startup-only, stale/unstructured logs, changing segments and healthy Pods do not authorize replacement. Existing crash-loop timeline-divergence and Galera handling remain.
+
+The existing native-primary/system-ID/timeline/streaming-survivor/node checks, UID checks, fencing, retained-PVC metadata, graceful eviction and native CNPG handoff remain mandatory. An available archive may still recover the replica during observation; readiness stops replacement. This does not establish that no external WAL archive exists. The policy authorizes replacement from verified survivors after sustained failure, preserving the original volume for investigation. No WAL reset or manual promotion.
+
+Upgrade an existing 0.3.3 deployment by building/importing 0.3.5 on every eligible node, then changing only its image. Preserve recovery.json, recovery ledger, Lease, affinity and replica count. No new RBAC is needed for this patch. Do not reapply the generic installation manifest to an existing installation.
+
+```sh
+sudo env PATH="/usr/local/bin:$PATH" sh build-containerd.sh
+sha256sum -c dist/tessera-operator-image.oci.tar.sha256
+sudo ctr --namespace k8s.io images import dist/tessera-operator-image.oci.tar
+# Repeat image import on each eligible node before rollout.
+kubectl -n apps set image deployment/tessera-operator observer=docker.io/library/tessera-operator:0.3.5
+kubectl -n apps rollout status deployment/tessera-operator --timeout=180s
+kubectl -n apps get configmap tessera-recovery-state -o jsonpath='{.data.state\.json}'
+kubectl -n postgres get pods -o wide
+```
+
+Image build, deployment and actual replica recovery must be verified on the administration host; the source ZIP is not a built image. Keep original volumes/receipts. Do not automatically reset an expired or previously completed operation; inspect the existing ledger first.
+
+# Automatic recovery — 0.3.5 implementation and activation
 
 Status: implemented with fake-API regression tests; Linux build, real WebSocket exec, native controller/PDB behavior and isolated recovery acceptance are required. The deployed0.1.0 image remains observe-only until this new image/config/RBAC is installed. This is not universal recovery or a guarantee of zero data loss.
 
@@ -20,7 +49,7 @@ MariaDB root Secret confirmed by owner: `mariadb/tessera-mariadb-root`. Only exa
 
 ## Build and install PostgreSQL recovery
 
-1. Transfer/extract the0.3.3kit into a fresh directory. Run `sudo env PATH="/usr/local/bin:$PATH" sh build-containerd.sh`, verify archive SHA and import it with `sudo ctr --namespace k8s.io images import dist/tessera-operator-image.oci.tar`. Validate using the CONTAINERD.md command with tag0.3.3. Keep the original built0.1.0 image/archive available for rollback.
+1. Transfer/extract the0.3.5kit into a fresh directory. Run `sudo env PATH="/usr/local/bin:$PATH" sh build-containerd.sh`, verify archive SHA and import it with `sudo ctr --namespace k8s.io images import dist/tessera-operator-image.oci.tar`. Validate using the CONTAINERD.md command with tag0.3.5. Keep the original built0.1.0 image/archive available for rollback.
 2. Distribute/import the same new OCI archive on all three eligible nodes **before** applying the HA patch. This patch replaces the old one-node affinity with required Pod anti-affinity and creates two operator replicas on distinct nodes; without image distribution a node may report ErrImageNeverPull. Keep Never pull policy for these locally imported images. A registry is an alternative. Node-level failure of an operator replica is handled by Kubernetes/leadership expiry; an operator Pod on a powered-off node cannot perform recovery itself.
 3. Apply the optional PostgreSQL recovery permissions/state resources: `kubectl apply -f recovery-ncs-rbac.yaml`. The ledger ConfigMap manifest intentionally omits data, so repeated declarative apply preserves controller-owned progress; the Lease manifest omits holder/renewal fields for the same reason. Never add an empty state.json to these manifests or reset existing state during upgrades. Export/backup the live ledger for audit.
 4. Add only the policy key to the existing ConfigMap: `kubectl -n apps patch configmap tessera-operator --type merge --patch-file recovery-config-patch.json`. This preserves existing observe config. Review the known system ID in this file; it comes from verified live cluster evidence.
@@ -60,4 +89,4 @@ Native behavior references: https://github.com/cloudnative-pg/cloudnative-pg/blo
 
 Kubernetes 1.37 WebSocket exec requires both get and create on pods/exec; the optional recovery Role grants both, separately from Pod/log read access. This does not make exec a read-only RBAC capability. See https://www.kubernetes.dev/resources/keps/4006/ .
 
-0.3.3 fixes the live 0.2.0 hand-off stall. Upgrade image and apply updated optional RBAC (adds native Job GET), keeping the existing recovery configuration, ledger and Lease unchanged. Do not re-run fresh activation, reset state or delete the retained PVC. The existing operation resumes at unfencing. Archive paths are recorded in the ledger; same-volume retained directories should be exported to independent storage. This cluster currently has no CSI snapshot API resources, so no independent snapshot is claimed. For stronger future preservation, snapshot/backup infrastructure must be installed and tested before selecting that policy.
+0.3.5 fixes the live 0.2.0 hand-off stall. Upgrade image and apply updated optional RBAC (adds native Job GET), keeping the existing recovery configuration, ledger and Lease unchanged. Do not re-run fresh activation, reset state or delete the retained PVC. The existing operation resumes at unfencing. Archive paths are recorded in the ledger; same-volume retained directories should be exported to independent storage. This cluster currently has no CSI snapshot API resources, so no independent snapshot is claimed. For stronger future preservation, snapshot/backup infrastructure must be installed and tested before selecting that policy.

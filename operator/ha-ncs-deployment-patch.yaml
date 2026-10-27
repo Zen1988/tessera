@@ -22,7 +22,7 @@ spec:
                 - k8s3.ncs.local
       containers:
       - name: observer
-        image: docker.io/library/tessera-operator:0.3.3
+        image: docker.io/library/tessera-operator:0.3.5
         imagePullPolicy: Never
         env:
         - name: TESSERA_API_ENDPOINTS

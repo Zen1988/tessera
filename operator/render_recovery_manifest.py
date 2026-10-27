@@ -44,7 +44,7 @@ patch = {"spec": {"replicas": 2, "template": {"spec": {
     "affinity": {"$patch": "replace", "podAntiAffinity": {"requiredDuringSchedulingIgnoredDuringExecution": [{
         "labelSelector": {"matchLabels": {"app.kubernetes.io/name": "tessera-operator"}},
         "topologyKey": "kubernetes.io/hostname"}]}},
-    "containers": [{"name": "observer", "image": "docker.io/library/tessera-operator:0.3.3",
+    "containers": [{"name": "observer", "image": "docker.io/library/tessera-operator:0.3.5",
                     "args": ["--recovery-config", "/etc/tessera-operator/recovery.json"]}]}}}}
 (root / "recovery-deployment-patch.yaml").write_text(yaml.safe_dump(patch, sort_keys=False))
 print("Recovery RBAC, config and deployment patch generated; no cluster changes.")

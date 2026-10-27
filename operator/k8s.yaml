@@ -183,7 +183,7 @@ spec:
       containers:
         - name: observer
           # Replace with your built registry image, preferably an immutable digest.
-          image: tessera-operator:0.3.3
+          image: tessera-operator:0.3.5
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true

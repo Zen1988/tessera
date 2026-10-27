@@ -1,3 +1,7 @@
+# Next — optional operator image cleanup
+
+Live0.3.5 missing-WAL recovery completed, all3PostgreSQLPodsReady, leader verified/cooldown and old data archive recorded; see PROJECT_STATUS.md. Prior0.3.4/0.3.5 live acceptance tasks closed. Inventory exact older image references and active containers on each node before selective cleanup; keep rollback artifact and recovery evidence/ledger/Lease/PVC/archive/joinJob. No cleanup performed. Independent backup remains unverified.
+
 # 2026-10-26 — Operator0.3.3 fixes published Linux build-kit failures
 
 Owner0.3.2build failed shline2setinvalidoption; ZIP inspection confirmed32CRLFs inbuild-containerd.sh andCRLFs inbuild.sh/inspect-recovery.sh. After ownersedLFrepair, DockerCOPYfailedredis_recovery.pynotfound althoughZIPcontainedit: stale.dockerignore excludedRedis/Longhornmodules,policyfixtureandnewtests. Fixedexplicitbuildallowlist andpackagernormalizationfor.shUTF8noBOM/LF/executable0755; addedexplicitGitLFattributes. Refactoredpackagerintotestablefunction, addedCRLF+BOM/LF/shebang/hash/filemode regressiontests andDockerCOPY/testcontextallowlist/privatefileexclusiontests. Buildverificationstagecopiespackager/Dockerfile/.dockerignorefortests. Currentversion0.3.3; priorZIPunchanged. No recoverybehaviorchanges.

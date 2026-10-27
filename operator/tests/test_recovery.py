@@ -107,6 +107,112 @@ class RecoveryTests(unittest.TestCase):
     def target_writes(self):
         return [item for item in self.api.writes if "/leases/" not in item[1] and "/configmaps/" not in item[1]]
 
+    def missing_wal(self, segment="0000000900000001000000BD", stamp=None):
+        pod = self.api.pod_list[2]
+        pod["status"]["phase"] = "Running"
+        status = pod["status"]["containerStatuses"][0]
+        status.update(restartCount=0, state={"running": {"startedAt": old_stamp(900)}})
+        def event(message, backend, severity):
+            return json.dumps({"ts": stamp or r.utc(), "logger": "postgres", "logging_pod": "db-3",
+                "record": {"message": message, "backend_type": backend, "error_severity": severity}})
+        self.api.log = event("could not receive data from WAL stream: ERROR:  requested WAL segment " + segment + " has already been removed", "walreceiver", "FATAL") + "\n" + event("waiting for WAL to become available at 1/BD002000", "startup", "LOG")
+
+    def test_running_missing_wal_preserved_before_eviction(self):
+        self.missing_wal()
+        self.prepare_eviction()
+        self.assertEqual(self.state()["pg"]["diagnosis"], "postgres-missing-wal:0000000900000001000000BD")
+        self.controller.tick()
+        self.assertEqual(self.state()["pg"]["phase"], "waiting")
+        self.assertFalse(any(method == "DELETE" for method, _, _ in self.api.writes))
+
+    def test_missing_wal_uses_current_logs_and_requires_confirmation(self):
+        self.missing_wal()
+        with patch.object(self.api, "logs", wraps=self.api.logs) as logs:
+            for _ in range(4):
+                self.controller.tick()
+            self.assertFalse(logs.call_args.kwargs["previous"])
+        self.assertEqual(self.state()["pg"]["phase"], "confirmed")
+        self.assertEqual(self.target_writes(), [])
+
+    def test_missing_wal_rejects_stale_or_unstructured_logs(self):
+        for stamp in (old_stamp(300), old_stamp(-300), "invalid"):
+            self.missing_wal(stamp=stamp)
+            self.assertIsNone(self.controller.classify(self.policy, self.api.pod_list[2]))
+        self.api.log = "requested WAL segment 0000000900000001000000BD has already been removed"
+        self.assertIsNone(self.controller.classify(self.policy, self.api.pod_list[2]))
+
+    def test_missing_wal_progress_or_recovered_target_stops_action(self):
+        self.missing_wal()
+        self.controller.tick()
+        self.age_operation()
+        self.missing_wal(segment="0000000900000001000000BE")
+        self.assertEqual(self.controller.tick()["state"], "unknown")
+        self.assertEqual(self.target_writes(), [])
+        self.api.pod_list[2]["status"]["conditions"][0]["status"] = "True"
+        self.assertEqual(self.controller.tick()["state"], "unknown")
+        self.assertEqual(self.target_writes(), [])
+
+    def test_missing_wal_requires_healthy_survivor_and_unique_failure(self):
+        self.missing_wal()
+        self.api.sql["db-2"]["receivers"] = []
+        self.assertEqual(self.controller.tick()["state"], "unknown")
+        self.assertEqual(self.target_writes(), [])
+
+    def test_startup_only_is_degraded_not_automatic_recovery(self):
+        self.missing_wal()
+        self.api.log = self.api.log.splitlines()[-1]
+        self.assertEqual(self.controller.tick()["state"], "degraded")
+        self.assertEqual(self.target_writes(), [])
+
+    def test_handoff_reads_completed_logs_without_recent_filter(self):
+        self.prepare_join_handoff()
+        with patch.object(self.api, "logs", wraps=self.api.logs) as logs:
+            self.controller.tick()
+        self.assertEqual(logs.call_args.args[2], "join")
+        self.assertEqual(logs.call_args.kwargs, {"previous": False})
+        self.assertEqual(self.state()["pg"]["restored_pvc_ownership"], ["db-3"])
+
+    def test_http_status_reported_without_sensitive_body_or_url(self):
+        error = urllib.error.HTTPError("https://host/apis/x/clusters/db?token=secret", 409, "secret", {}, None)
+        with patch.object(self.controller, "step", side_effect=error):
+            value = self.controller.tick()
+        self.assertIn("cluster request failed: HTTP 409", value["reason"])
+        self.assertNotIn("secret", json.dumps(value))
+        self.assertNotIn("https", json.dumps(value))
+
+    def test_fence_refresh_preserves_concurrent_status_and_annotations(self):
+        path, original = self.controller.cluster(self.policy)
+        self.api.objects[path]["metadata"]["resourceVersion"] = "2"
+        self.api.objects[path]["metadata"]["annotations"]["admin-note"] = "keep"
+        self.controller.fence(path, original, "db-3", True)
+        self.assertEqual(self.api.objects[path]["metadata"]["annotations"]["admin-note"], "keep")
+
+    def test_fence_refresh_rejects_changed_authority_or_fence(self):
+        path, original = self.controller.cluster(self.policy)
+        for key, value in (("currentPrimary", "db-2"), ("systemID", "other")):
+            self.api.objects[path]["status"][key] = value
+            with self.assertRaises(r.Blocked):
+                self.controller.fence(path, original, "db-3", False)
+            self.api.objects[path]["status"] = copy.deepcopy(original["status"])
+        self.api.objects[path]["metadata"]["annotations"][r.FENCE] = '["*"]'
+        with self.assertRaises(r.Blocked):
+            self.controller.fence(path, original, "db-3", False)
+        self.assertEqual(self.target_writes(), [])
+
+    def test_log_window_only_for_explicit_recent_detection(self):
+        import io
+        api = r.API.__new__(r.API)
+        api.base = "https://cluster"
+        api.get = MagicMock(return_value={})
+        opener = MagicMock()
+        with patch.object(r.ssl, "create_default_context"), patch.object(r.urllib.request, "build_opener", return_value=opener), patch.object(r.Path, "read_text", return_value="test-token"):
+            for recent in (False, True):
+                opener.open.return_value = io.BytesIO(b"{}")
+                api.logs("postgres", "join-pod", "join", previous=False, recent=recent)
+                query = r.urllib.parse.parse_qs(r.urllib.parse.urlsplit(opener.open.call_args.args[0].full_url).query)
+                self.assertEqual("sinceSeconds" in query, recent)
+                self.assertEqual(query["previous"], ["false"])
+
     def test_recovery_policy_requires_explicit_identity(self):
         value = config()
         value["policies"][0]["expected_identity"] = ""
