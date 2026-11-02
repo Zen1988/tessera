@@ -1,16 +1,27 @@
 # Complete TESSERA application image kit — Ubuntu26.04
 
-Image revision **0.0.180-r1** fixes packaged definition permissions and RWX/NFS
-configuration copying. Application Build180 stays unchanged. See
-[revision r1 instructions and Longhorn tests](examples/CONFIGURE-R1.md).
+For multiple web Pods, use the [shared generated JS/CSS cache setup](examples/shared-loader-cache/README.md).
+It adds a Longhorn RWX claim and nonroot initialization/targeted mounts to the
+existing Deployment. Redis still holds application cache data. No image rebuild
+is needed for that storage fix; private per-Pod asset caches cause intermittent404s.
+
+This toolkit detects the installed TESSERA-Base version during preparation and
+automatically assigns base/r1/r2 image revisions during builds. See
+[automatic versioning and revision history](examples/AUTO-VERSIONING.md).
+Earlier configuration-permission/RWX fixes are included;
+[their acceptance guide](examples/CONFIGURE-R1.md) remains available.
+
+For the owner's Cilium1.20 Gateway API deployment, see the [backend HTTPS configuration](examples/cilium-gateway/README.md). It preserves
+the public Gateway/cookie and uses verified backend TLS plus an ingress-access policy.
+The image now defaults to SSLVerifyClient none; no Apache ConfigMap override is needed.
 
 Updated serving mode: **Apache 2.4 + mod_perl + mpm_prefork**, matching the supplied
-host configuration. Apache serves internal HTTPS/mTLS on8443 directly. Read
+host configuration. Apache serves internal HTTPS on8443 directly. Read
 [HTTPS and Pod hardening](examples/HARDENING.md) before running the web container.
 The optional Nginx image is a separate migration alternative, not the default.
 
 This kit builds the application image from your ALREADY INSTALLED /opt/otobo.
-It does not reinstall180, restore OPM payloads, reset the app, migrate the DB or
+It does not reinstall packages, restore OPM payloads, reset the app, migrate the DB or
 change the source host. It targets your Ubuntu26.04 (Resolute) and system Perl.
 The resulting image is used with either `web` or `daemon`. MariaDB and Redis
 remain separate services, with MariaDB planned inside Kubernetes on durable PVCs.
@@ -63,20 +74,82 @@ finishes successfully. A message that Config.pm is absent alone does not prove
 preparation succeeded. Failed private .source.* stages can be retained for review;
 the Docker context allowlist excludes them, and a retry uses a fresh stage.
 
-Host `local/` and `vendor/` dependencies are not copied. Requirements are generated
-using the installed bin/otobo.CheckModules.pl --docker-cpanfile; compiled modules
-are rebuilt using the image's /usr/bin/perl. Any remaining bundled .so files
+Host `local/` and `vendor/` dependencies are not copied. Core requirements are generated
+using the installed bin/otobo.CheckModules.pl --docker-cpanfile. Preparation also
+reads every installed package's authoritative OPM ModuleRequired declarations from
+the native package registry. Only package names/versions/module minima are exported
+to dependencies/package-modules.json; no Config.pm, credentials or package code
+payload is exported by this helper. The TESSERA dependency record is checked
+against dependencies/package.opm. Registry changes during capture fail preparation.
+These package requirements and cpanfile.extra are merged with the core requirements;
+duplicate constraints are intersected rather than silently replacing stronger
+minimum versions. Future package integrations must declare their external modules
+in ModuleRequired; undeclared native OS libraries still belong in apt-extra.txt.
+Compiled modules are rebuilt using the image's /usr/bin/perl. Any remaining bundled .so files
 cause rejection: declare those integrations in cpanfile.extra/apt-extra.txt and
 package them for the target ABI rather than copying arbitrary host binaries.
 
+All CPAN dependencies are built inside `/opt/otobo/local` in the target image.
+Host `local/` libraries remain excluded and the copied source is audited before
+the build creates this directory. CLI/daemon processes receive its library path
+through `PERL5LIB`; Apache's application vhost explicitly sets
+`PerlSwitches -I/opt/otobo/local/lib/perl5` before the OTOBO preload directive.
+Upgrade staging carries these image-built dependencies into its isolated tree.
+There is no separate `/opt/tessera-perl` runtime dependency directory.
+
 ## 2. Build the entire application image
+
+The build and `modules` check also load the native OpenIDConnect Configuration,
+OAuth2 and AdminOAuthTokenStore classes under the final application library path
+and UID. No profile/token is read, no ObjectManager is created and no database or
+issuer is contacted. `Crypt::JWT` is explicit in cpanfile.extra as well as being
+declared by the upstream OIDC feature. Load failures stop the image build with a
+sanitized dependency name; they cannot be hidden by ObjectManager's generic error.
+
+For an existing server reporting `OpenIDConnect::Configuration could not be
+loaded`, run a direct require **inside the actual web host/container**:
+
+```sh
+sudo -u otobo env PERL5LIB=/opt/otobo/Custom:/opt/otobo/Kernel/cpan-lib:/opt/otobo:/opt/otobo/local/lib/perl5 \
+  /usr/bin/perl -e 'require Kernel::System::OpenIDConnect::Configuration; print "Configuration loads OK\n";'
+```
+
+This reveals missing imports, XS incompatibility or syntax errors without loading
+token profiles. Install/fix only the dependency actually reported, using that
+runtime's interpreter. If this succeeds but the web request still fails after a
+dependency installation, reload/restart the actual OTOBO web workers to clear
+stale failed module loads. A host Apache service and a separate web container are
+different runtimes; restarting the wrong one will not refresh the application.
+Do not infer a bad OAuth token or alter credentials from this generic500 alone.
+
+If package installation reports `Crypt::AuthEnc::GCM is not installed`, install
+the **CryptX** distribution on the Linux host/runtime that runs the OTOBO package
+installer before retrying the OPM. GCM and PRNG are modules inside CryptX; removing
+the OPM dependency or bypassing the check would leave directory credential
+encryption unavailable. For a host using system Perl and cpanminus:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y cpanminus build-essential libperl-dev ca-certificates
+sudo /usr/bin/cpanm --mirror https://cpan.metacpan.org --mirror-only CryptX
+/usr/bin/perl -e 'use Crypt::AuthEnc::GCM 0.087 (); use Crypt::PRNG 0.087 (); print "CryptX dependencies OK\n";'
+```
+
+For containers, put the dependency into the image rather than relying on changes
+inside a running pod. The supplied cpanfile.extra declares CryptX and the exact
+GCM/PRNG modules. The build now checks their minimum versions and an AES-256 GCM
+roundtrip/tampered-tag rejection both immediately after CPAN installation and
+under the final otobo UID/library path. The application's runtime includes
+`/opt/otobo/local/lib/perl5`; testing a different host Perl or missing that path
+does not prove the application has the dependency. No new OPM version is needed
+for this runtime prerequisite correction.
 
 Review staged integrations for literal credentials privately, and add any
 integration-specific dependencies to apt-extra.txt and cpanfile.extra. Then:
 
 ```sh
 bash scripts/build.sh
-# Default output: tessera:0.0.180-r1-ubuntu26.04
+# Image tag is detected automatically; see artifacts/latest-build.json
 ```
 
 The Dockerfile starts from ubuntu:26.04, installs Ubuntu system Perl, ALL declared
@@ -84,6 +157,22 @@ CPAN runtime requirements, Apache2/mod_perl and the OS libraries needed to compi
 them. It explicitly includes libredis-perl, libredis-fast-perl, libgd-perl,
 libgd-dev, libjpeg-dev and libpng-dev plus DB/XML/TLS/LDAP/ODBC/PDF/graph dependencies.
 No distro Perl packages are mixed with an official /usr/local/bin Perl image.
+The interpreter policy is the **target OS's current repository-supported Perl**.
+The source-host interpreter version is inventoried, not copied or pinned into the
+image. The current supported target remains Ubuntu26.04; this update does not
+silently switch distributions or install an unrelated upstream Perl over the
+distro Apache/mod_perl. Such a change requires rebuilding and validating that
+whole serving stack. An explicit `perl` constraint is checked against the actual
+image interpreter, so an unsupported version fails the build.
+
+By default `TESSERA_DEPENDENCY_POLICY=latest`: each build pulls the referenced
+base image and uses a unique dependency-refresh argument so cached APT/CPAN
+installation layers are not reused. APT resolves the newest available packages
+for that base's repositories. CPAN resolves modules required beyond those already
+satisfied by compatible distro packages. Their minimum constraints remain enforced;
+this is not an unconditional upgrade to every latest upstream release.
+For an intentional cached rebuild, set `TESSERA_DEPENDENCY_POLICY=cached`; base
+pulls still occur. Retain immutable images/digests for exact release repeatability.
 Ubuntu26.04 provides the requested [GD Perl package](https://packages.ubuntu.com/resolute/libgd-perl)
 and [Redis Perl package](https://packages.ubuntu.com/fr/resolute/libredis-perl).
 Build dependencies remain installed in this first complete image to avoid an
@@ -101,13 +190,14 @@ dependency versions or retain the resulting immutable image for release repeatab
 Optional values:
 
 ```sh
-TESSERA_IMAGE=registry.example/tessera:0.0.180-r1-ubuntu26.04 \
+TESSERA_IMAGE_REPOSITORY=registry.example/tessera \
 BASE_IMAGE=ubuntu:26.04 OTOBO_UID=10001 OTOBO_GID=33 bash scripts/build.sh
-docker save tessera:0.0.180-r1-ubuntu26.04 | gzip > artifacts/tessera-180-image.tar.gz
+IMAGE=$(python3 -c 'import json; print(json.load(open("artifacts/latest-build.json"))["tag"])')
+docker save "$IMAGE" | gzip > artifacts/tessera-image.tar.gz
 ```
 
 Do not change BASE_IMAGE to a different distribution without reworking/testing
-dependencies. Choose a compatible digest/architecture for production. Runtime
+dependencies. Choose a compatible digest/architecture for production.
 Runtime defaults to otobo:www-data, UID10001/GID33;
 set PVC/Secret permissions accordingly. No credentials are Docker build arguments.
 
@@ -132,6 +222,7 @@ Do not run it independently in every replica. A source digest guards against
 starting with a shared generated-config volume from a different source image.
 Runtime administration can update generated files on that shared volume.
 
+Use IMAGE from artifacts/latest-build.json as shown above.
 Example using an EXISTING isolated DB/Redis reachable from runtime Config.pm:
 
 ```sh
@@ -141,7 +232,7 @@ docker run --rm \
   --mount type=bind,src=/secure/tessera/Config.pm,dst=/opt/otobo/Kernel/Config.pm,readonly \
   --mount type=bind,src=/secure/tessera/secrets,dst=/run/tessera-secrets,readonly \
   --mount type=volume,src=tessera-config180,dst=/opt/otobo/Kernel/Config/Files \
-  tessera:0.0.180-r1-ubuntu26.04 configure
+  "$IMAGE" configure
 ```
 
 Use your actual private paths and container network; this example does not create
@@ -163,7 +254,7 @@ docker run -d --name tessera-web --network tessera-net \
   --mount type=bind,src=/secure/tessera/Config.pm,dst=/opt/otobo/Kernel/Config.pm,readonly \
   --mount type=bind,src=/secure/tessera/secrets,dst=/run/tessera-secrets,readonly \
   --mount type=volume,src=tessera-config180,dst=/opt/otobo/Kernel/Config/Files \
-  tessera:0.0.180-r1-ubuntu26.04 web
+  "$IMAGE" web
 # Repeat the mounts/network with --name tessera-daemon and final argument daemon.
 # Use final argument smoke for SELECT1, real Redis AUTH and a TTL60 cache roundtrip.
 ```
@@ -174,10 +265,10 @@ Do NOT start a second daemon against the active production DB before cutover.
 Use one active daemon initially and Recreate/non-overlap deployment behavior.
 Tini handles reaping; the daemon wrapper invokes native stop on SIGTERM. Allow
 at least60 seconds termination grace and verify it with real long-running jobs.
-Web uses Apache HTTPS/mTLS on8443, prefork, initially16 maximum workers and
+Web uses Apache HTTPS on8443, prefork, initially16 maximum workers and
 MaxConnectionsPerChild1000. Measure worker memory and tune image/apache/main.conf
 before production. Generate and mount the internal portal certificate first
-(section5). The ingress must present its separate client certificate.
+(section5). Cilium must verify the backend CA and hostname using BackendTLSPolicy.
 
 `modules` runs without Config/credentials. `ready` checks DB SELECT1 and actual
 Redis authentication. `smoke` also writes/reads/deletes one nonsecret cache key.
@@ -243,7 +334,7 @@ configured HTTP/Gazelle backend on5000 and is not used by the default web launch
 Do not deploy it against Apache8443 unchanged.
 
 ```sh
-docker build -f Dockerfile.tlsproxy -t tessera-internal-tls:0.0.180 .
+docker build -f Dockerfile.tlsproxy -t tessera-internal-tls:local .
 ```
 
 The proxy listens on8443, presents the portal certificate, and REQUIRES a client
@@ -283,17 +374,17 @@ use a managed internal issuer later if lifecycle automation is required.
 Before release: build on Ubuntu26.04; inspect source/package/Perl inventory; test
 both roles and graceful shutdown; verify actual auth, cache, images/PDF/mail/search
 and integrations; verify old/new attachments survive Pod and node replacement;
-test internal TLS positive and wrong-name/untrusted/no-client-cert rejection.
+test internal TLS positive and wrong-name/untrusted-CA rejection. No client certificate is required by Apache.
 Inspect image layers/context for secrets and record/pin image digest/signature.
 No claim of image-wide secret absence replaces inspection of host-added source.
 
-Application Build180 OPM/source is unchanged. This kit supplies the COMPLETE
+Application SOPM/OPM source is unchanged by this toolkit. This kit supplies the COMPLETE
 Dockerfile/source-copy/dependency/startup/PKI inputs; app source is collected on
 your host. It is not an already-built image or a Kubernetes production deployment.
 Follow the existing migration plan for in-cluster MariaDB, persistence and cutover.
 
-Revision r1 local verification:24 tests pass with2 POSIX-only skips on Windows
-(18 source/PKI-policy tests and6 configure regression tests). Docker build runs
+Current local verification:30 tests pass with3 POSIX-only skips on Windows
+(18 source/PKI-policy,6 configure and6 version/revision regression tests). Docker build runs
 all8 configure regressions after USER otobo with an explicit UID check; those
 Linux checks and real Longhorn acceptance remain to be executed on the build host.
 Earlier PKI acceptance used a real RSA8192 leaf and disposable smaller fixture CA;
@@ -301,3 +392,8 @@ production CA and leaves explicitly use8192. Changed Bash scripts pass bash -n.
 These checks do not
 substitute for an actual Ubuntu Docker build, Apache runtime/TLS test, real DB/
 Redis authentication or production certificate issuance on the host.
+# 0.0.182 target upgrade and AWX end-to-end testing
+
+For an installed182 source, use a fresh kit: preparation now exports and verifies the installed OPM artifact into dependencies/package.opm and records its hash/allowed target origins. New images verify the actual target package release and block startup for mismatches/incomplete upgrades. Use scripts/upgrade-deploy.py for the controlled maintenance/upgrade Job before activating the new web/daemon image; rebuilding files alone does not migrate a target database. No source business database dump or records are imported. Supported test origins are180/181/current182. Source symlinks are rejected before build/upgrade.
+
+Read docs/container-version-upgrade.md and docs/tessera-182-end-to-end.md included in this toolkit for the exact deployment command, failure recovery and callback/inventory/automation tests. This adds no automatic per-Pod migration, new database, service account or RBAC grant. Real Linux/MariaDB/AWX/Kubernetes acceptance is still required.

@@ -4,11 +4,11 @@ FROM ${BASE_IMAGE}
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG OTOBO_UID=10001
 ARG OTOBO_GID=33
-ARG TESSERA_VERSION=0.0.180
-ARG TESSERA_IMAGE_REVISION=r1
+ARG TESSERA_DEPENDENCY_REFRESH=manual
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 COPY apt-packages.txt apt-extra.txt /tmp/tessera-apt/
-RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
+RUN test -n "$TESSERA_DEPENDENCY_REFRESH" \
+ && . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
  && mapfile -t packages < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' /tmp/tessera-apt/*.txt) \
  && for package in "${packages[@]}"; do [[ "$package" =~ ^[a-z0-9][a-z0-9+.:=~_-]*$ ]] || exit 1; done \
  && apt-get update \
@@ -18,8 +18,13 @@ RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
  && useradd --uid "$OTOBO_UID" --gid "$OTOBO_GID" --home-dir /opt/otobo --shell /bin/bash otobo
 ENV OTOBO_HOME=/opt/otobo OTOBO_USER=otobo OTOBO_GROUP=www-data OTOBO_RUNS_UNDER_DOCKER=1
 COPY dependencies/cpanfile /opt/tessera/dependencies/cpanfile
+COPY dependencies/cpanfile.packages dependencies/package-modules.json /opt/tessera/dependencies/
 COPY cpanfile.extra /opt/tessera/dependencies/cpanfile.extra
 COPY --chmod=0755 image/ /usr/local/lib/tessera/
+COPY --chown=0:0 app/ /opt/otobo/
+# Audit copied host source BEFORE building image-only dependencies under local/.
+# Host local/vendor/XS files remain excluded and forbidden by the source audit.
+RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo
 # All CPAN/XS modules are installed using Ubuntu's /usr/bin/perl in THIS image.
 RUN /usr/local/lib/tessera/install-perl.sh
 # Keep the native OTOBO mod_perl/prefork serving model. No default sites/CGI aliases.
@@ -33,13 +38,20 @@ RUN a2dismod -f mpm_event autoindex status \
  && a2ensite tessera \
  && test "$(find /etc/apache2/sites-enabled -mindepth 1 -maxdepth 1 -printf '%f\n')" = tessera.conf \
  && find /usr/bin /usr/sbin -xdev -type f -perm /6000 -exec chmod a-s {} +
-ENV PERL5LIB=/opt/otobo/Custom:/opt/otobo/Kernel/cpan-lib:/opt/otobo:/opt/tessera-perl/lib/perl5
-ENV PATH=/opt/tessera-perl/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-COPY --chown=0:0 app/ /opt/otobo/
+ENV PERL5LIB=/opt/otobo/Custom:/opt/otobo/Kernel/cpan-lib:/opt/otobo:/opt/otobo/local/lib/perl5
+ENV PATH=/opt/otobo/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 COPY dependencies/host-summary.json dependencies/source-sha256.json /opt/tessera/dependencies/
+COPY --chmod=0444 dependencies/release.json /opt/tessera/dependencies/release.json
+COPY --chmod=0444 dependencies/package.opm /opt/tessera/dependencies/package.opm
+ARG TESSERA_VERSION
+ARG TESSERA_IMAGE_REVISION
 WORKDIR /opt/otobo
 # Build checks never load host Config.pm, contact the DB or reinstall a package.
-RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo \
+RUN [[ "$TESSERA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+ && [[ "$TESSERA_IMAGE_REVISION" =~ ^(base|r[1-9][0-9]*)$ ]] \
+ && python3 -c 'import json,os; assert json.load(open("/opt/tessera/dependencies/release.json"))["version"] == os.environ["TESSERA_VERSION"], "Prepared package version differs from image label"' \
+ && python3 /usr/local/lib/tessera/upgrade-stage.py check-source /opt/otobo \
+ && python3 -c 'import hashlib,json; m=json.load(open("/opt/tessera/dependencies/release.json")); assert hashlib.sha256(open("/opt/tessera/dependencies/package.opm","rb").read()).hexdigest() == m["package_sha256"]' \
  && cp -a Kernel/Config/Files /opt/tessera/config-files.dist \
  && chown -R root:www-data /opt/tessera/config-files.dist \
  && find /opt/tessera/config-files.dist -type d -exec chmod 0550 {} + \
@@ -48,6 +60,7 @@ RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo \
  && find /opt/otobo -type d -exec chmod 0550 {} + \
  && find /opt/otobo -type f -exec chmod 0440 {} + \
  && find /opt/otobo/bin -type f -exec chmod 0550 {} + \
+ && if [[ -d /opt/otobo/local/bin ]]; then find /opt/otobo/local/bin -type f -exec chmod 0550 {} +; fi \
  && install -d -m 0750 -o otobo -g www-data var/tmp var/log var/run var/spool var/article var/virtualfs var/stats Kernel/Config/Files \
  && install -d -m 0750 -o otobo -g www-data var/httpd/htdocs/js/js-cache \
  && find var/httpd/htdocs/skins -type d -name css -print0 | while IFS= read -r -d '' dir; do install -d -m 0750 -o otobo -g www-data "$(dirname "$dir")/css-cache"; done \
@@ -64,7 +77,13 @@ RUN python3 /usr/local/lib/tessera/audit-app.py /opt/otobo \
 LABEL org.opencontainers.image.title="TESSERA" org.opencontainers.image.version="${TESSERA_VERSION}"
 LABEL io.tessera.image.revision="${TESSERA_IMAGE_REVISION}"
 COPY --chmod=0444 scripts/test-configure.py /opt/tessera/tests/test-configure.py
+RUN chmod 0555 /opt/tessera/tests \
+ && chmod 0444 /opt/tessera/tests/test-configure.py
 USER otobo
+# Check concrete OPM crypto requirements with final runtime @INC and UID, too.
+RUN /usr/bin/perl /usr/local/lib/tessera/check-integration-deps.pl
+RUN /usr/bin/perl /usr/local/lib/tessera/check-perl.pl --check-only
+RUN /usr/bin/perl /usr/local/lib/tessera/check-oauth-load.pl
 # Verify every packaged definition using the actual configured runtime UID.
 # This check contacts no database and makes no changes to a shared volume.
 RUN /usr/bin/python3 /usr/local/lib/tessera/configure.py check-source

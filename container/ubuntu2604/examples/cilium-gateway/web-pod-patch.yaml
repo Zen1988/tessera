@@ -1,0 +1,22 @@
+# Strategic merge patch. Confirm actual container name first; edit below if needed.
+# Keep existing image/args/Config.pm/generated-config/runtime mounts/probes/resources.
+# Requires the NEW image configured for Apache8443; this patch does not upgrade it.
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 33
+        fsGroup: 33
+      containers:
+        - name: tessera-web
+          volumeMounts:
+            - name: tessera-internal-tls
+              mountPath: /run/tessera-tls
+              readOnly: true
+      volumes:
+        - name: tessera-internal-tls
+          secret:
+            secretName: tessera-portal-tls
+            defaultMode: 0440

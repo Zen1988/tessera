@@ -7,6 +7,8 @@ for tool in rsync python3 realpath perl; do command -v "$tool" >/dev/null || { e
 [[ -d "$SOURCE/Kernel" && -f "$SOURCE/bin/otobo.CheckModules.pl" ]] || { echo 'Not an installed OTOBO source tree' >&2; exit 1; }
 [[ "$KIT" != "$SOURCE" && "$KIT" != "$SOURCE/"* ]] || { echo 'Kit must be outside the application source' >&2; exit 1; }
 [[ ! -e "$KIT/app" && ! -L "$KIT/app" ]] || { echo 'app already exists; build it or use a fresh kit (no automatic overwrite)' >&2; exit 1; }
+PACKAGE_VERSION=$(python3 "$KIT/scripts/release.py" detect "$SOURCE")
+printf 'Installed TESSERA-Base version: %s\n' "$PACKAGE_VERSION"
 if [[ $# == 2 ]]; then
     [[ -f "$2" ]] || { echo 'Supplied site entrypoint missing' >&2; exit 1; }
     cp -- "$2" "$KIT/image/site-entrypoint.sh"
@@ -18,6 +20,7 @@ if (( EUID != 0 )); then command -v sudo >/dev/null; PRIVILEGE=(sudo); fi
 "${PRIVILEGE[@]}" rsync -rlptog --no-specials --no-devices \
     --chown="$(id -u):$(id -g)" --exclude-from="$KIT/scripts/source.exclude" "$SOURCE/" "$STAGE/"
 python3 "$KIT/image/audit-app.py" "$STAGE" --inventory "$KIT/dependencies/source-sha256.json"
+python3 "$KIT/image/upgrade-stage.py" check-source "$STAGE"
 mkdir -p "$KIT/dependencies"
 # Generate requirements from this installed version, not from another checkout.
 env -u PERL5OPT -u PERL5LIB /usr/bin/perl "$STAGE/bin/otobo.CheckModules.pl" --docker-cpanfile > "$KIT/dependencies/cpanfile.new"
@@ -36,6 +39,9 @@ with open(sys.argv[1],'w') as output: output.write(json.dumps(release,indent=2)+
 if release.get('ID')!='ubuntu' or release.get('VERSION_ID')!='26.04':
     raise SystemExit('This kit targets Ubuntu26.04. Source is copied privately; check base compatibility before continuing.')
 PY
+python3 "$KIT/scripts/release.py" capture "$SOURCE" "$PACKAGE_VERSION" "$KIT/dependencies/release.json"
+env -u PERL5OPT -u PERL5LIB /usr/bin/perl "$KIT/scripts/export-module-requirements.pl" "$SOURCE" "$KIT/dependencies/package-modules.json" || { echo 'Cannot capture installed package dependency metadata; verify source-host registry access.' >&2; exit 1; }
+python3 "$KIT/scripts/package-module-requirements.py" "$KIT/dependencies/package-modules.json" "$KIT/dependencies/package.opm" "$KIT/dependencies/cpanfile.packages"
 mv -T -n -- "$STAGE" "$KIT/app"
 [[ ! -d "$STAGE" ]] || { echo 'Another app appeared; private stage retained' >&2; exit 1; }
 printf '\nInstalled source copied unchanged apart from exclusions. No OPM restored or installed.\n'

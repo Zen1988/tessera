@@ -1,0 +1,13 @@
+# Generated CSS/JS only. Do not reuse Redis, database or attachment PVCs.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tessera-loader-cache
+  namespace: tessera
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

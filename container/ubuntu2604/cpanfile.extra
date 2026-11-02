@@ -5,3 +5,9 @@ requires 'Redis';
 requires 'Redis::Fast';
 requires 'Gazelle';
 requires 'DBD::MariaDB';
+requires 'Net::LDAP', '0.68';
+requires 'CryptX', '0.087';
+requires 'Crypt::AuthEnc::GCM', '0.087';
+requires 'Crypt::PRNG', '0.087';
+# OAuth administration and the native OpenIDConnect configuration import this.
+requires 'Crypt::JWT';

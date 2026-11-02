@@ -1,5 +1,6 @@
 ca-certificates
 perl
+libperl-dev
 apache2
 libapache2-mod-perl2
 cpanminus

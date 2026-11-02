@@ -1,0 +1,16 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tessera-web-from-ingress
+  namespace: tessera
+spec:
+  endpointSelector:
+    matchLabels:
+      app: tessera-web
+  ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP

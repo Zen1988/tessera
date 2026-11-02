@@ -20,12 +20,22 @@ trust_bundle() {
 }
 case "$MODE" in
     modules)
+        /usr/bin/perl /usr/local/lib/tessera/check-perl.pl --check-only
+        /usr/bin/perl /usr/local/lib/tessera/check-integration-deps.pl
+        /usr/bin/perl /usr/local/lib/tessera/check-oauth-load.pl
         /usr/bin/perl -c Custom/Kernel/System/TESSERA/Secrets.pm
         /usr/bin/perl -c Custom/Kernel/System/TESSERA/SecretRedis.pm
         /usr/bin/perl -c Custom/Kernel/System/Cache/Redis.pm
         exec /usr/bin/perl -MGD -MRedis -MRedis::Fast -MDBD::MariaDB -MPlack::Handler::Gazelle -e 'print "Image module imports OK\n"'
         ;;
     configure) trust_bundle; configure; exit ;;
+    upgrade)
+        [[ -r Kernel/Config.pm ]] || fail 'Mount target Config.pm first'
+        mountpoint -q /opt/otobo || fail 'upgrade requires the isolated writable application volume'
+        mountpoint -q /opt/otobo/Kernel/Config/Files || fail 'upgrade requires shared generated configuration'
+        trust_bundle
+        exec /usr/bin/perl /usr/local/lib/tessera/release-control.pl upgrade "$@"
+        ;;
     web|daemon|ready|smoke)
         [[ -r Kernel/Config.pm ]] || fail 'Mount external Config.pm'
         for file in ZZZAAuto.pm ZZZACL.pm ZZZProcessManagement.pm; do
@@ -33,6 +43,7 @@ case "$MODE" in
         done
         cmp -s /opt/tessera/config-definitions.sha256 Kernel/Config/Files/.tessera-config-definitions.sha256 || fail 'Generated-config source differs; run the controlled configure step for this image'
         trust_bundle
+        /usr/bin/perl /usr/local/lib/tessera/release-control.pl check
         /usr/bin/perl /usr/local/lib/tessera/runtime-check.pl "$MODE"
         ;;
     *) exec "$MODE" "$@" ;;

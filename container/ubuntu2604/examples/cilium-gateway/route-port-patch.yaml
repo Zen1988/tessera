@@ -1,0 +1,11 @@
+# kubectl patch httproute --type=json --patch-file (not kubectl apply).
+# Preconditions avoid silently editing an unrelated hostname/backend.
+- op: test
+  path: /spec/hostnames
+  value: [tessera.ncs.local]
+- op: test
+  path: /spec/rules/0/backendRefs/0/name
+  value: tessera-web
+- op: replace
+  path: /spec/rules/0/backendRefs/0/port
+  value: 443

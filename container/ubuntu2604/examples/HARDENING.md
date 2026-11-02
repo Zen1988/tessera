@@ -21,10 +21,10 @@ policy belongs to cluster nodes and the platform, not image build commands.
 
 Mount portal tls.crt, tls.key and ca.crt read-only at /run/tessera-tls. The key
 must be group-readable by the runtime group (0440), never world-readable.
-TLS 1.2/1.3 only; ingress must present its separate client certificate. Configure
+TLS 1.2/1.3 only; no client certificate is required by the default Apache site. Configure
 ingress HTTPS backend port 8443, verified CA chain and SNI portal.tessera.local.
 Public/customer ingress certificate remains separate. No plain HTTP fallback.
-Do not expose this mTLS port as a browser endpoint without an ingress. Docker:
+Keep backend8443 restricted to the intended ingress path. Docker:
 
 ```sh
 # Add to the existing web run command (alongside Config/secrets/config volume):
@@ -73,8 +73,8 @@ support need cluster inventory; do not apply an invented deny-all policy to live
 dependencies. No service-account API access is required by this loader.
 
 Acceptance: build actual Ubuntu image; verify apache2 -M reports prefork/perl and
-no event/worker/status/autoindex; verify TLS 1.2/1.3, wrong CA/name and absent client
-cert rejection; verify normal portal/agent/API/upload/downloads, denied TRACE,
+no event/worker/status/autoindex; verify TLS 1.2/1.3, wrong CA/name rejection and acceptance without a client
+certificate; verify normal portal/agent/API/upload/downloads, denied TRACE,
 no static directory listing, security headers and graceful stop. Verify web and
 daemon under the restricted security context, including all writable paths.
 TCP liveness only checks listener health; readiness checks DB/Redis, and separate

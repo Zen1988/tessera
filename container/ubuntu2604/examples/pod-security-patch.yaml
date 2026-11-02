@@ -56,9 +56,9 @@ spec:
             - {name: app-tmp, mountPath: /opt/otobo/var/tmp}
             - {name: app-run, mountPath: /opt/otobo/var/run}
             - {name: app-log, mountPath: /opt/otobo/var/log}
-            - {name: js-cache, mountPath: /opt/otobo/var/httpd/htdocs/js/js-cache}
-            - {name: agent-css, mountPath: /opt/otobo/var/httpd/htdocs/skins/Agent/default/css-cache}
-            - {name: customer-css, mountPath: /opt/otobo/var/httpd/htdocs/skins/Customer/default/css-cache}
+            - {name: tessera-loader-cache, mountPath: /opt/otobo/var/httpd/htdocs/js/js-cache, subPath: js}
+            - {name: tessera-loader-cache, mountPath: /opt/otobo/var/httpd/htdocs/skins/Agent/default/css-cache, subPath: css-Agent-default}
+            - {name: tessera-loader-cache, mountPath: /opt/otobo/var/httpd/htdocs/skins/Customer/default/css-cache, subPath: css-Customer-default}
             - {name: credentials, mountPath: /run/tessera-secrets, readOnly: true}
             - {name: tls, mountPath: /run/tessera-tls, readOnly: true}
       volumes:
@@ -66,9 +66,9 @@ spec:
         - {name: app-tmp, emptyDir: {sizeLimit: 1Gi}}
         - {name: app-run, emptyDir: {sizeLimit: 64Mi}}
         - {name: app-log, emptyDir: {sizeLimit: 256Mi}}
-        - {name: js-cache, emptyDir: {sizeLimit: 256Mi}}
-        - {name: agent-css, emptyDir: {sizeLimit: 128Mi}}
-        - {name: customer-css, emptyDir: {sizeLimit: 128Mi}}
+        - name: tessera-loader-cache
+          persistentVolumeClaim:
+            claimName: tessera-loader-cache
         - name: credentials
           secret:
             secretName: tessera-credentials
@@ -80,5 +80,7 @@ spec:
 # Base Deployment MUST also mount external Config.pm and prepared generated-config
 # volume. Add durable article/VirtualFS/spool/stats mounts according to inventory.
 # Add writable css-cache mounts for EVERY installed custom skin.
+# Apply the generated shared-loader-cache patch/init first; see its README.
+# Shared cache subdirectories must exist; per-Pod emptyDir assets are insufficient.
 # Daemon: apply the same security contexts/mounts; keep args:[daemon], omit ports
 # and TCP probes, use native daemon status for liveness. Use one active daemon.

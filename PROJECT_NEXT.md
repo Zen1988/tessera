@@ -1,12 +1,165 @@
+# Current — Base188 access configuration, toolkit and OAuth diagnosis acceptance
+
+Dedicated Admin → Network simulation access is implemented in Base188. Guide:
+docs/customer-network-simulation.md. Existing Base187 users can still edit the
+three TESSERA::CustomerNetworkSimulation settings directly in SysConfig. Apply
+Base188 normally; no live grants or SupportAssignments were created here.
+
+Toolkit now captures all installed OPM ModuleRequired declarations and merges
+them with core/integration constraints, uses target OS system Perl, refreshes
+APT/CPAN by default, checks actual runtime and records versions. Use refreshed
+59-file ZIP with fresh prepare; old staged contexts lack package dependency data.
+Dependencies now build inside /opt/otobo/local, with explicit CLI/daemon PERL5LIB
+and Apache PerlSwitches before native PSGI preload. Use the refreshed toolkit;
+do not reintroduce the external /opt/tessera-perl prefix. Host local/XS libraries
+remain excluded and image-built local dependencies are preserved for upgrades.
+Run real Linux image build/runtime acceptance: local Docker Linux engine is down,
+and four Linux-only tests remain skipped. Upstream Perl/OS-major auto-upgrade is
+not implemented; preserve ABI-compatible distro Perl/Apache/mod_perl.
+
+Owner confirms live OAuth token management now works after dependency/path repair;
+completed diagnosis and repair are recorded in PROJECT_STATUS.md. Toolkit includes
+explicit JWT/CryptX dependencies and native OAuth load guard. Base188 unchanged.
+Remaining acceptance is a real Linux image build and runtime deployment check.
+
+# Current — Base187 customer network workspace deployment acceptance
+
+Customer network workspace with PROD-default environment selection and automatic
+application/system→CMDB/IP expansion is implemented. Completed code, decisions,
+tests and limits are in PROJECT_STATUS.md and docs/customer-network-simulation.md.
+Do not recreate the agent-ID customer adapter or AWX-owned intelligence patterns.
+
+Next deploy/test native fresh/186→187/reinstall and customer loader/browser/mobile/
+screen-reader behavior. Local browser visual QA was blocked by file-URL policy;
+offline template/interaction checks are complete, not live browser acceptance.
+Configure explicit simulation Enabled/AllowedCustomerUsers and per-environment
+Navis WebserviceID/completed BuildID/registered Namespace, preserving separate
+CMDB detail entitlement. Obtain actual PROD/UAT CMDB and source-scope evidence.
+
+Validate real NAuth/graph/trace/recommendations and revoked-account/assignment/
+endpoint/hidden-hop/direct-result/uncertain-POST cases. Plan evidence retention and
+scaling beyond bounded2000 candidates/128 environments before broad deployment.
+Future extensions: bind analysis reference into an exported service ActivityDialog;
+implement arbitrary what-if rules only with an explicit Navis simulation contract.
+No portal direct apply action or fabricated physical topology.
+
+# Base186 integration prerequisites retained by Base187
+
+Reusable service onboarding and TESSERA-owned Navis orchestration are implemented
+in prepared Base186. Completed design/code/decisions/tests are in PROJECT_STATUS.md
+and docs/integration-onboarding.md. Do not reimplement AWX-owned Navis intelligence.
+AWX runs prepared work and returns evidence only. Existing Base185 directory work
+is preserved; its live acceptance below remains pending.
+
+Next configure protected mounted Navis client secret, actual HTTPS instance,
+operator-issued scopes/source grants, completed build, independently authorized
+CMDB snapshot and approved exact workflow plan. Bind separately reviewed AWX apply
+and readback templates/inventory/limit. No credentials or target mappings from
+portal/YAML; no new governance fields/routing. Simulation is not real apply.
+
+Run native fresh/185→186/reinstall and browser/mobile/accessibility acceptance,
+real TLS/token rotation/scopes, callbacks/timeout/reconciliation, real device
+readback and Navis normalization/dataset/build operator handoff. Ingestion202 is
+staging only; do not invent worker/build/status APIs or mark graph ready. General
+AOE publication/review remains a separate pending foundation.
+
+# Current — Base185 directory self-service deployment acceptance
+
+Directory sync, profile mapping/create options, CustomerUser provisioning,
+external-membership assignments, actual editable ScriptEngine execution, native
+daemon scheduling and external-auth/first-login/default flows are implemented.
+Completed work, constraints and tests live in PROJECT_STATUS.md and
+docs/directory-self-service.md; do not reconstruct it from chat. Preferences
+never create assignments. No new schema/Dynamic Fields or automatic live import.
+
+Next obtain real AD host/search bases/filter/read bind account/CA, company ID and
+SUPPORT role mappings, mounted protected ad-sync-key, approved responsibility text
+and OIDC configuration if chosen. Explicitly configure sole TESSERAIdentity
+customer auth router; no package takeover of existing deployed auth is authorized.
+Import refuses DB fallback/additional customer auth backends. Build/check required
+Net::LDAP/CryptX dependencies before native185 installation; package unsigned.
+
+Run isolated fresh/184→185/reinstall, native MariaDB lock/rollback/cache/events,
+daemon queue/24h schedule, actual AD TLS/paging/nested/disabled/missing membership,
+manual-preservation and credential rotation acceptance. Test provider auth failure
+with no local fallback, real OIDC claims/login/logout/redirects, responsibility
+version/CSRF, mandatory defaults and mobile/accessibility. Test source-owned
+retirement revokes CMDB access; company IDs must not act as user aliases.
+Verify configured SR/CR dialogs and governance default resolution; ticket-create
+defaults do not imply pre-submit UI bindings. Single-source AD, no primary-group/
+cross-forest resolution, no SAML/new identity-adoption migration in this release.
+
+# Current — Navis firewall-request binding and acceptance
+
+Owner replaces NetXMS with Navis for this new flow. Completed standalone script/
+AWX preparation and three vendor simulations are recorded in PROJECT_STATUS.md,
+docs/navis-firewall-preparation.md and the preparation ZIP. Base184 untouched;
+retain NetXMS for upgrade compatibility, do not rebuild its superseded firewall
+direction. Synthetic fixtures are client checks, not live engine validation.
+
+Caller-scoped graph identity replacement is implemented and recorded in
+PROJECT_STATUS.md; do not reintroduce manual Navis UUID association. Exact tuple
+matching preserves opaque IDs and requires independently authorized enrichment.
+
+Next obtain actual SR service/BlueBook/ScriptSet export and authorized CMDB
+context extraction; bind configured ActivityDialog using existing fields
+and preserve started snapshots. Implement/publish real actor/child-ticket
+continuation and article/parent evidence reference. Pending/unavailable/review/
+enrichment/uncertain outcomes must not complete real implementation activities;
+AWXTest/IntegrationTest is acceptance only.
+
+Need Navis HTTPS origin/principal/scopes/source permissions/completed graph,
+graph:read and registered identity namespace. Navis operators must complete
+migration016/btree_gist/conflict review, explicit NetworkNode mappings and client
+identity_source_system_id/identity_object_class setup per pinned commit a00bed98.
+Configure AWX IDs/EE trust, run Linux Ansible syntax and live
+trace→draft→three-vendor simulation→callback acceptance. Real vendor apply,
+approval/reconciliation/native IDs/commit/realization/post-change checks remain
+unfinished runtime work. No temporary fields needed for prepared evidence.
+
 # Next — optional operator image cleanup
 
 Live0.3.5 missing-WAL recovery completed, all3PostgreSQLPodsReady, leader verified/cooldown and old data archive recorded; see PROJECT_STATUS.md. Prior0.3.4/0.3.5 live acceptance tasks closed. Inventory exact older image references and active containers on each node before selective cleanup; keep rollback artifact and recovery evidence/ledger/Lease/PVC/archive/joinJob. No cleanup performed. Independent backup remains unverified.
+
+# Immediate — functional acceptance on successfully upgraded184
+
+Owner confirms live179→184 recovery Job native upgrade, history-schema checks, configuration fingerprint and READY receipt, then successful web3/daemon1 rollouts and maintenance completion. Migration blocker resolved; details in PROJECT_STATUS.md. Do not rerun recovery or treat DB as179. Next verify portal login/normal workflow, daemon processing, then configured AWX callbacks and NetXMS/device evidence. Keep recovery artifacts pending normal retention/cleanup decision. Future release metadata should include reviewed origins and toolkit should retain stage diagnostics/failed-Job handling; no further migration is needed for this successful184 target.
+
+# Immediate — Base184 assessment acceptance and remaining policy engine
+
+CMDB subnet/pool/domain scope, independent NSX overlay selection, NetXMS path invokers, five read-only collectors, AWX callback/result interpretation and package var/tessera relocation are implemented and recorded in PROJECT_STATUS.md. Use docs/tessera-184-network-assessment.md; do not reconstruct the183 foundation. Install184, configure reviewed context/bindings and AWX credential-backed inventory, verify native install/upgrade/reinstall and actual NetXMS/EE/platform responses. Live179-to184 upgrade and rollout acceptance succeeded; AWX/NetXMS/device functional acceptance remains pending. Source root ownership explanation remains unconfirmed; new layout avoids creating docs/examples at Home root without weakening permissions.
+
+The complete automatic firewall-planning goal is still unfinished: implement effective ordered/inherited policy, NAT/PBF, NSX applied-to/exclusions/realized scope and gateway/federation coverage, Check Point Gaia route collection, complex ASA evidence parsing and precise vendor proposal generation. Collection results must not be treated as apply-ready rules. Preserve CMDB NetworkZone vs device-zone separation; overlay membership triggers analysis, not mandatory rule creation. No new schema or permissive fallback mappings.
+
+# Next — NetXMS enterprise observation acceptance and topology layer
+
+Read-only native connector is implemented in Base183; do not rebuild it from the earlier AWX-only proposal. Owner will install latest NetXMS (not installed yet). Configure the183 Web Service endpoint and dedicated observation account, record actual ServerInfo and verify required/v1 operations, object/service relationships, metric timestamps and failure/access/TLS behavior. Source-aware response envelopes and existing automation bindings are implemented; mapping remains in automation, no new CI fields. See docs/netxms-integration.md and latest status.
+
+Remaining: live path acceptance, business-service/SLA operations and normalized dependency/impact model; durable observation/alarm correlation with duplicate/out-of-order/clear/reopen handling before automatic ticket creation; polling/push transport and portal-safe views. Keep observation independent of AWX while AWX owns device actions. Verify or implement a separate Prometheus export path: documented NetXMS Prometheus scraping is the reverse direction. No exporter or live deployment is claimed. Preserve service governance truth and treat unmanaged MPLS as external transit where managed-edge evidence suffices. Base183 package/test kit extends182; existing182 guide still describes its foundation, use183 package for this connector.
+
+# Immediate — run 0.0.182 Linux/target/AWX end-to-end acceptance
+
+Implementation is prepared and recorded in PROJECT_STATUS.md; do not reconstruct or reimplement the old design gap. Install182 on original Linux, use the updated fresh container toolkit, build/import the real versioned image and run scripts/upgrade-deploy.py with the actual web/daemon/container names. It performs controlled maintenance/Job/activation, not source database import or per-Pod migration. Supported target origins180/181/current182; even an already182 target needs the verified receipt initialized by the controlled Job. Keep complete hash/schema/receipt checks. Inspect existing target writers/GitOps, Config.pm/generated-config mounts, image availability and both namespace maintenance/DB claims; never bypass old terminating Pods, stale claims or uncertain native migrations. Native Linux/MariaDB/Kubernetes acceptance remains pending.
+
+Then configure target AWX Web Services, separate restricted inventory-write identity, HTTPS callback URL/EE CA trust and AWXTest continuation. Run the supplied local-only callback and authorized automation inventory-sync→launch fixtures, read saved UID/history after Pod replacement and verify actual final AWX Job status separately. See docs/tessera-182-end-to-end.md. User chose mapping later and confirms mapping in the existing automation; no guessed CI fields/global extraction service. Target credentials stay in AWX; only an execution-scoped callback capability is passed. Production published-script/actor/target authorization still gates provider injection; no portal-wide network privilege was enabled. Large log archives/object storage and retention policies remain future extensions, not a new document database now.
+
+# Follow-up — AWX application acceptance and node cleanup
+
+Two-web/two-task Deployment rollout is complete: owner confirmed web rolloutsuccess, then taskREADY2/2 UP-TO-DATE2 AVAILABLE2 with ProgressingTrue/NewReplicaSetAvailable; newtaskPods4/4 onk8s/k8s2. Earlier progressdeadlineerror superseded. No further rollout patch/restartneeded. Remaining verifylogin/API/job throughawx.ncs.local, retained maxSurge0/maxUnavailable1 afteroperatorreconciliation, database/gatewayavailabilityundercontrollednodefailure. Oldk8s3taskPodTerminating requires separate confirmednode-statecleanup; do not force-deleteorclaimjobcontinuity. Candidate/appliedpatchhistory retained inPROJECT_STATUS/docs/awx-ha.md.
 
 # 2026-10-26 — Operator0.3.3 fixes published Linux build-kit failures
 
 Owner0.3.2build failed shline2setinvalidoption; ZIP inspection confirmed32CRLFs inbuild-containerd.sh andCRLFs inbuild.sh/inspect-recovery.sh. After ownersedLFrepair, DockerCOPYfailedredis_recovery.pynotfound althoughZIPcontainedit: stale.dockerignore excludedRedis/Longhornmodules,policyfixtureandnewtests. Fixedexplicitbuildallowlist andpackagernormalizationfor.shUTF8noBOM/LF/executable0755; addedexplicitGitLFattributes. Refactoredpackagerintotestablefunction, addedCRLF+BOM/LF/shebang/hash/filemode regressiontests andDockerCOPY/testcontextallowlist/privatefileexclusiontests. Buildverificationstagecopiespackager/Dockerfile/.dockerignorefortests. Currentversion0.3.3; priorZIPunchanged. No recoverybehaviorchanges.
 
 120unittests pass fromsourceandfreshlyextractedcorrectedZIP;3GitBashfakebuilder scenarios pass (realcontainerd/imagebuildnotexecutedbyagent). outputs/TESSERA-Operator-0.3.3-Build-Kit.zip plusSHA sidecar. Documentedowner0.3.2inplacerepair andfresh0.3.3buildpath; onlyimportaftersuccessandmatchimagetag. No cluster mutation/deploy. Unrelatedhost-maintenanceworkremainsoutsidekitandcommit.
+# 2026-10-26 — RPM-host Kubernetes shutdown wrapper prepared
+
+Owner confirms same Kubernetes stack on RHEL/Rocky and requires maintenance taint/application admission drain before primary handover. Added operator/host-maintenance Bash coordinator, root-only config, optional explicitly started systemd unit, fail-closed site-adapter example, integration guide and7 passing isolated Bash control-flow tests; Bash syntax/help pass. Atomic cluster ConfigMap mutex, exact nodeUID/operation resume, resourceVersion receipts, uncertain-request no-replay, NoSchedule+cordon, traffic->native handover->PDB drain->cleanup/final->VolumeAttachment gate->optional normal poweroff. NoNoExecute/force/NOSAVE/emptyDir deletion. RPM dependencies documented; no repos/keys/SELinux changes. Raw shutdown signals bypass this deliberate entry point; no universal shutdown interception claim.
+
+IMPORTANT: native service/traffic/storage/recovery-coordination adapter is NOT implemented; example refuses operation. No host installation, actual handover, image rebuild, cluster mutation or poweroff performed. Linux/RPM/systemd/live acceptance pending; tests mock phase side effects. Existing operator0.3.2 lacks maintenance handshake, so no claim this bundle alone safely shuts down actual stack. Next implement verified adapters and return-to-service ownership release, then slow-flush/traffic/quorum/storage/uncertainty rehearsal. Application180 unchanged.
+# 2026-10-26 — Planned host shutdown handover direction
+
+Owner requires primary-role transfer before slow departing-instance PV persistence finishes. Recorded docs/host-shutdown-handover.md: distinct single-host maintenance and whole-cluster stop; cordon/preflight, native synchronized handover, old-writer demotion, verify new ownership/client routing, then old-instance persistence/drain/storage cleanup and safe-poweroff gate. Replication safety cannot be bypassed; no blanket drain first, force promotion/delete or NOSAVE fallback. Current operator0.3.2 has no shutdown coordinator; no runtime/script/hook installed or package changed. Pending native interface/host-unit verification, durable maintenance state machine coordinated with recovery, bounded host client and failure/slow-flush acceptance. Raw OS shutdown hook cannot be assumed to veto poweroff. Application180 unchanged.
 # 2026-10-22 — Longhorn stalled native recovery tracking and bounded manager repair0.3.2
 
 OwnerclarifiesLonghornalreadyownsreplicas;TESSERAmustdetectprolongednativefailureandrestorestalledservice. Implementedoptional longhorn-stall-recovery adapter andconcreteNCS900s policy, namedoptionalnamespaceRBAC/configappend. PersistentpervolumeUIDevidenceinexistingsharedledger:3samples, lastprogress, activeengineRWreplicacount/rebuildStatushighwatermarks; noresourceVersionnoise/oscillationtimerreset; >600sAPIobservationgapresetscontinuity. Respectsmax(policythreshold,nativereplica-replenishment-wait-interval+300s). Idleunuseddetachedvolumesexcluded; desiredattachmentnotattachedtracked; unknownengineevidenceexplicit.4policiesallowed,roundrobinsampletimingdocumented.
@@ -1457,3 +1610,6 @@ Implemented in package158: durable execution row, OTOBO GenericInterface outboun
 
 Requested agent entry point: ticket numbering reset/existing SysConfig prefix prompt; CSR create/complete/renew; CMDB remove/reset; Central automatic missing-human identity creation without credentials or login. Design and pending decisions: docs/agent-system-setup-design.md. Clarify CSR/Central meaning, ticket reset semantics, CMDB scope and trusted identity source before dependent implementation. Never execute reset during install/upgrade or grant login/capabilities through provisioning. No runtime/package changes made.
 
+## Runtime dependency acceptance — CryptX
+
+Missing Crypt::AuthEnc::GCM reported. Corrected toolkit now explicitly installs/checks GCM/PRNG and AES-GCM functionality. Install CryptX in the actual OTOBO installer/runtime Perl (not a different host interpreter), or rebuild/deploy the refreshed immutable image. Verify web/daemon library paths and retry native package install. No live host/container installation or Linux image build performed; Base187 unchanged.

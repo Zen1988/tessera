@@ -1,0 +1,13 @@
+# Optional strategic merge cleanup ONLY if the old Apache override was mounted.
+# Confirm container name before applying. TLS Secret mount/trust ConfigMap remain.
+spec:
+  template:
+    spec:
+      containers:
+        - name: tessera-web
+          volumeMounts:
+            - mountPath: /etc/apache2/sites-available/tessera.conf
+              $patch: delete
+      volumes:
+        - name: tessera-apache-backend-tls
+          $patch: delete

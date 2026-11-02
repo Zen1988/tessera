@@ -1,0 +1,8 @@
+# kubectl patch service --type=merge --patch-file (not kubectl apply).
+# Replaces ports only; preserves ClusterIP, selectors and other Service fields.
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP

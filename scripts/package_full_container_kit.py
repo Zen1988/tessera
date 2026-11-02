@@ -11,7 +11,7 @@ ROOT_FILES={'Dockerfile','Dockerfile.tlsproxy','.dockerignore','.gitignore',
 SUFFIXES={'.sh','.py','.pl','.conf','.cnf','.exclude','.yaml','.md'}
 
 def main():
-    out=ROOT/'outputs/TESSERA-180-r1-Ubuntu26.04-Container-Kit.zip'
+    out=ROOT/'outputs/TESSERA-Ubuntu26.04-Container-Toolkit.zip'
     out.parent.mkdir(parents=True,exist_ok=True)
     included={}
     for p in KIT.rglob('*'):
@@ -22,8 +22,11 @@ def main():
             (relative.parts[0] in {'image','scripts','examples'} and p.suffix in SUFFIXES))
         if allowed:
             assert p.suffix not in {'.key','.pem','.pfx','.p12'}
-            included[relative.as_posix()]=p.read_bytes()
-    for source in ['docs/kubernetes-migration-plan.md']:
+            data=p.read_bytes()
+            if p.suffix in {'.sh','.py','.pl'}:
+                data=data.removeprefix(b'\xef\xbb\xbf').replace(b'\r\n',b'\n')
+            included[relative.as_posix()]=data
+    for source in ['docs/kubernetes-migration-plan.md', 'docs/container-version-upgrade.md', 'docs/tessera-182-end-to-end.md']:
         included[source]=(ROOT/source).read_bytes()
     assert len(included)>15 and all(not n.startswith(('app/','dependencies/','artifacts/')) for n in included)
     sums=[]

@@ -1,5 +1,10 @@
 # Build 180 image revision r1 — configuration permissions
 
+Historical fix/acceptance guide: the current version-independent toolkit detects
+the installed version and chooses revisions automatically. Read AUTO-VERSIONING.md
+and use artifacts/latest-build.json for the actual image tag instead of the
+historical180-r1 examples below. The permission/RWX acceptance requirements remain.
+
 Application/OPM version remains 0.0.180; corrected image tag is
 `tessera:0.0.180-r1-ubuntu26.04`. No application/database schema migration,
 Redis HA change or PVC replacement is introduced.

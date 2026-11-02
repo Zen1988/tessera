@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Quiesce existing deployments, run one native upgrade Job, then activate image."""
+import argparse
+import copy
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import time
+import uuid
+
+LOCK_NAME = 'tessera-release-maintenance'
+
+
+def maintenance_lock(current, namespace, owner, phase):
+    if current:
+        if current.get('metadata', {}).get('labels', {}).get('app.kubernetes.io/managed-by') != 'tessera-release-helper':
+            raise ValueError('Maintenance ConfigMap is not owned by this helper')
+        if phase == 'LOCKED' and current.get('data', {}).get('phase') != 'READY':
+            raise ValueError('Another release is active or needs recovery')
+        if phase == 'READY' and current.get('data', {}).get('owner') != owner:
+            raise ValueError('Maintenance ownership changed')
+    elif phase != 'LOCKED':
+        raise ValueError('Maintenance claim missing')
+    metadata = {'name': LOCK_NAME, 'namespace': namespace,
+                'labels': {'app.kubernetes.io/managed-by': 'tessera-release-helper'}}
+    if current:
+        metadata['resourceVersion'] = current['metadata']['resourceVersion']
+    return {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': metadata,
+            'data': {'phase': phase, 'owner': owner}}
+
+
+def job(web, container_name, image, name, namespace):
+    pod = copy.deepcopy(web['spec']['template']['spec'])
+    matches = [c for c in pod['containers'] if c['name'] == container_name]
+    if len(matches) != 1 or len(pod['containers']) != 1:
+        raise ValueError('This helper requires the verified single-container web Deployment')
+    main = matches[0]
+    paths = {m['mountPath'] for m in main.get('volumeMounts', [])}
+    if not {'/opt/otobo/Kernel/Config.pm', '/opt/otobo/Kernel/Config/Files'} <= paths:
+        raise ValueError('Target Config.pm and shared generated-config mounts are required')
+    if any(m['mountPath'] == '/opt/otobo' for m in main.get('volumeMounts', [])):
+        raise ValueError('Unexpected existing application root mount')
+    if any(v['name'] == 'tessera-upgrade-work' for v in pod.get('volumes', [])):
+        raise ValueError('Upgrade volume name already used')
+    main['image'] = image
+    main.pop('command', None)
+    main['args'] = ['upgrade']
+    for field in ('ports', 'livenessProbe', 'readinessProbe', 'startupProbe', 'lifecycle'):
+        main.pop(field, None)
+    main['env'] = [e for e in main.get('env', []) if e['name'] != 'TESSERA_UPGRADE_QUIESCED'] + [
+        {'name': 'TESSERA_UPGRADE_QUIESCED', 'value': '1'}]
+    main['volumeMounts'] = [{'name': 'tessera-upgrade-work', 'mountPath': '/opt/otobo'}] + main['volumeMounts']
+    pod['containers'] = [main]
+    pod['volumes'] = pod.get('volumes', []) + [{'name': 'tessera-upgrade-work', 'emptyDir': {}}]
+    pod['initContainers'] = [{'name': 'stage-upgrade', 'image': image,
+        'imagePullPolicy': main.get('imagePullPolicy', 'IfNotPresent'),
+        'command': ['/usr/bin/python3', '/usr/local/lib/tessera/upgrade-stage.py'],
+        'volumeMounts': [{'name': 'tessera-upgrade-work', 'mountPath': '/work/application'}],
+        'securityContext': copy.deepcopy(main.get('securityContext', {})),
+        'resources': copy.deepcopy(main.get('resources', {}))}]
+    pod['restartPolicy'] = 'Never'
+    labels = copy.deepcopy(web['spec']['template']['metadata'].get('labels', {}))
+    labels['tessera-release-upgrade'] = name
+    return {'apiVersion': 'batch/v1', 'kind': 'Job', 'metadata': {'name': name, 'namespace': namespace},
+        'spec': {'backoffLimit': 0, 'activeDeadlineSeconds': 1800,
+            'template': {'metadata': {'labels': labels}, 'spec': pod}}}
+
+
+def selector(deployment):
+    s = deployment['spec']['selector']
+    if s.get('matchExpressions') or not s.get('matchLabels'):
+        raise ValueError('Explicit matchLabels selectors are required')
+    return ','.join(f'{k}={v}' for k, v in sorted(s['matchLabels'].items()))
+
+
+def workload_pods(items):
+    # Successful previous upgrade Jobs retain their evidence Pods. They share
+    # egress-policy labels but are not live web/daemon writers to wait/delete.
+    return [p for p in items if not (
+        p.get('status', {}).get('phase') == 'Succeeded'
+        and p.get('metadata', {}).get('labels', {}).get('tessera-release-upgrade')
+        and any(o.get('kind') == 'Job' for o in p.get('metadata', {}).get('ownerReferences', [])))]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for arg in ('namespace', 'web', 'daemon', 'container', 'image', 'state-directory'):
+        parser.add_argument('--' + arg, required=True)
+    args = parser.parse_args()
+    if args.web == args.daemon:
+        parser.error('Web and daemon must be separate Deployments')
+    for value in (args.namespace, args.web, args.daemon, args.container):
+        if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', value):
+            parser.error('Invalid Kubernetes name')
+    if not re.fullmatch(r'[a-z0-9][a-z0-9._:/@-]*', args.image):
+        parser.error('Use an immutable image tag or digest without credentials')
+    if not re.search(r'(?:@sha256:[a-f0-9]{64}|:[0-9]+\.[0-9]+\.[0-9]+(?:-r[1-9][0-9]*)?-ubuntu26\.04)$', args.image):
+        parser.error('Use the versioned toolkit image tag or a pinned sha256 digest')
+    state = Path(args.state_directory)
+    state.mkdir(mode=0o700, parents=True, exist_ok=False)
+    os.chmod(state, 0o700)
+    def run(*parts, read=False):
+        call = ['kubectl', '-n', args.namespace, *parts]
+        if read:
+            return json.loads(subprocess.check_output(call, text=True))
+        subprocess.run(call, check=True)
+    web = run('get', 'deployment', args.web, '-o', 'json', read=True)
+    daemon = run('get', 'deployment', args.daemon, '-o', 'json', read=True)
+    if len(daemon['spec']['template']['spec']['containers']) != 1:
+        raise ValueError('This helper requires the verified single-container daemon Deployment')
+    hpas = run('get', 'hpa', '-o', 'json', read=True)
+    if any(i['spec']['scaleTargetRef']['name'] in (args.web, args.daemon) for i in hpas['items']):
+        raise ValueError('Resolve HPA ownership before release maintenance')
+    name = 'tessera-release-' + str(int(time.time()))
+    manifest = job(web, args.container, args.image, name, args.namespace)
+    for label, value in (('web-before', web), ('daemon-before', daemon), ('upgrade-job', manifest)):
+        path = state / (label + '.json')
+        with path.open('x', encoding='utf-8') as out:
+            os.chmod(path, 0o600)
+            json.dump(value, out, indent=2)
+    # Validate the exact Job with the API before reducing availability.
+    run('create', '--dry-run=server', '-f', str(state / 'upgrade-job.json'), '-o', 'name')
+    def read_lock():
+        raw = subprocess.check_output(['kubectl', '-n', args.namespace, 'get', 'configmap', LOCK_NAME,
+                                       '--ignore-not-found', '-o', 'json'], text=True)
+        return json.loads(raw) if raw.strip() else None
+    owner = uuid.uuid4().hex
+    previous_lock = read_lock()
+    locked = maintenance_lock(previous_lock, args.namespace, owner, 'LOCKED')
+    lock_file = state / 'maintenance-lock.json'
+    with lock_file.open('x', encoding='utf-8') as out:
+        os.chmod(lock_file, 0o600)
+        json.dump(locked, out, indent=2)
+    # Atomic create or resourceVersion-checked replace holds ownership through
+    # image activation, not just the database Job. No expiry/automatic takeover.
+    run('replace' if previous_lock else 'create', '-f', str(lock_file))
+    for deployment, original in ((args.web, web), (args.daemon, daemon)):
+        run('scale', 'deployment/' + deployment, '--replicas=0')
+        old_pods = workload_pods(run('get', 'pods', '-l', selector(original), '-o', 'json', read=True)['items'])
+        if old_pods:
+            run('wait', '--for=delete', *['pod/' + p['metadata']['name'] for p in old_pods], '--timeout=600s')
+        remaining = workload_pods(run('get', 'pods', '-l', selector(original), '-o', 'json', read=True)['items'])
+        if remaining:
+            raise ValueError('Old Pods still exist; no upgrade has been started')
+    # No automatic rollback/resume on failure; the private state files provide
+    # the original images/replicas and the exact failed Job for recovery.
+    run('create', '-f', str(state / 'upgrade-job.json'))
+    run('wait', '--for=condition=complete', 'job/' + name, '--timeout=1800s')
+    for deployment, original in ((args.web, web), (args.daemon, daemon)):
+        if len(original['spec']['template']['spec']['containers']) != 1:
+            raise ValueError('Expected verified single-container Deployment')
+        container = original['spec']['template']['spec']['containers'][0]['name']
+        run('set', 'image', 'deployment/' + deployment, container + '=' + args.image)
+        run('scale', 'deployment/' + deployment, '--replicas=' + str(original['spec'].get('replicas', 1)))
+        run('rollout', 'status', 'deployment/' + deployment, '--timeout=600s')
+    ready = maintenance_lock(read_lock(), args.namespace, owner, 'READY')
+    with (state / 'maintenance-ready.json').open('x', encoding='utf-8') as out:
+        os.chmod(state / 'maintenance-ready.json', 0o600)
+        json.dump(ready, out, indent=2)
+    run('replace', '-f', str(state / 'maintenance-ready.json'))
+    print('Release Job completed and images activated. Run portal/API/daemon acceptance. State:', state)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception:
+        raise SystemExit('Release deployment stopped. Inspect the saved private state and Kubernetes Job; no automatic rollback or retry was attempted.') from None
