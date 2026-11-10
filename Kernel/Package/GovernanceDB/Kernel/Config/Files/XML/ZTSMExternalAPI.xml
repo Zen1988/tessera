@@ -24,6 +24,9 @@
         <Description Translatable="1">Backend-owned asynchronous continuation handlers. Never populate from policy YAML.</Description>
         <Navigation>Core::TESSERA::API</Navigation>
         <Value><Hash>
+            <Item Key="NetworkAssessment"><Hash><Item Key="Module">Kernel::System::TESSERA::NetworkIntelligence</Item><Item Key="Function">Complete</Item></Hash></Item>
+            <Item Key="AWXTest"><Hash><Item Key="Module">Kernel::System::TESSERA::AWXExecution</Item><Item Key="Function">RecordTestCompletion</Item></Hash></Item>
+            <Item Key="NavisControl"><Hash><Item Key="Module">Kernel::System::TESSERA::NavisControl</Item><Item Key="Function">Completed</Item></Hash></Item>
             <Item Key="ControlObjective"><Hash><Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item><Item Key="Function">ContinueAfterExternal</Item></Hash></Item>
         </Hash></Value>
     </Setting>

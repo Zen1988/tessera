@@ -1,0 +1,53 @@
+<main id="NetworkSimulation" class="NetworkSimulation">
+    <header class="NetworkSimulation__header">
+        <div><p class="NetworkSimulation__eyebrow">TESSERA NETWORK WORKSPACE</p><h1>Explore a connection</h1><p>Select an application or system to see its mapped CMDB assets and IPs. Choose connection endpoints to ask Navis for path evidence and recommendations.</p></div>
+        <span class="NetworkSimulation__badge">Analysis only</span>
+    </header>
+    [% IF Data.Error %]<div class="NetworkSimulation__notice" role="alert">[% Data.Error | html %]</div>[% END %]
+    [% UNLESS Data.CanSimulate %]<div class="NetworkSimulation__notice" role="status">You can explore your permitted CMDB endpoints. Simulation must be enabled for your account before contacting Navis.</div>[% END %]
+    [% IF Data.DefaultMissing %]<div class="NetworkSimulation__notice" role="status">A unique active PROD environment is unavailable. Select an environment explicitly.</div>[% END %]
+    <form action="[% Env('CGIHandle') | html %]" method="get" class="NetworkSimulation__environment">
+        <input type="hidden" name="Action" value="CustomerNetworkSimulation"/><input type="hidden" name="Subaction" value="Resolve"/>
+        <label for="SimulationEnvironment">Environment</label>
+        <select id="SimulationEnvironment" name="EnvironmentID"><option value="">Select environment</option>[% FOREACH Environment IN Data.Environments %]<option value="[% Environment.ID | html %]" [% IF Data.EnvironmentID == Environment.ID %]selected[% END %]>[% Environment.Name | html %]</option>[% END %]</select>
+        <button type="submit">Load environment</button><span>Only assets you are entitled to view are listed.</span>
+    </form>
+    <form id="SimulationForm" action="[% Env('CGIHandle') | html %]" method="post" class="NetworkSimulation__inputs">
+        <input type="hidden" name="Action" value="CustomerNetworkSimulation"/><input type="hidden" name="Subaction" value="Analyze"/>
+        <input type="hidden" name="EnvironmentID" value="[% Data.EnvironmentID | html %]"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/>
+        <input type="hidden" name="SubmissionToken" value="[% Data.SubmissionToken | html %]"/>
+        [% FOREACH Side IN ['Source', 'Destination'] %]
+        <fieldset><legend>[% Side | html %]</legend>
+            <label for="[% Side | html %]Application">Application / application system</label><select id="[% Side | html %]Application" name="[% Side | html %]Application"><option value="">All permitted applications</option>[% FOREACH App IN Data.Applications %]<option value="[% App.ID | html %]">[% App.Name | html %]</option>[% END %]</select>
+            <label for="[% Side | html %]System">System / CMDB asset</label><select id="[% Side | html %]System" name="[% Side | html %]System"><option value="">All permitted systems</option>[% FOREACH Asset IN Data.Assets %]<option value="[% Asset.ID | html %]">[% Asset.Name | html %] ([% Asset.Class | html %])</option>[% END %]</select>
+            <label for="[% Side | html %]Endpoint">IP address</label><select id="[% Side | html %]Endpoint" name="[% Side | html %]Endpoint" required><option value="">Select an address</option>[% FOREACH Asset IN Data.Assets %][% FOREACH Endpoint IN Asset.Endpoints %]<option value="[% Endpoint.Key | html %]">[% Endpoint.Address | html %] — [% Asset.Name | html %]</option>[% END %][% END %]</select>
+        </fieldset>
+        [% END %]
+        <fieldset class="NetworkSimulation__service"><legend>Service</legend>
+            <label for="SimulationProtocol">Protocol</label><select id="SimulationProtocol" name="Protocol">[% FOREACH Protocol IN ['tcp', 'udp', 'icmp', 'icmpv6'] %]<option value="[% Protocol | html %]" [% IF Data.Selection.Protocol == Protocol %]selected[% END %]>[% Protocol | html %]</option>[% END %]</select>
+            <label for="SimulationPort">Destination port</label><input id="SimulationPort" name="DestinationPort" type="number" min="0" max="65535" value="[% Data.Selection.DestinationPort | html %]"/><p>Use a port for TCP/UDP. Leave it empty for ICMP.</p>
+            <button type="submit" [% UNLESS Data.CanSimulate AND Data.EnvironmentID %]disabled[% END %]>Run analysis</button><p id="SimulationProgress" role="status" aria-live="polite"></p>
+        </fieldset>
+    </form>
+    <section class="NetworkSimulation__workspace" aria-label="Topology and selected device">
+        <section class="NetworkSimulation__canvasPanel" aria-labelledby="TopologyTitle">
+            <div class="NetworkSimulation__panelHead"><div><h2 id="TopologyTitle">Connection view</h2><p>Lines show analyzed candidate-hop sequence, not verified physical links.</p></div><div class="NetworkSimulation__tools"><button type="button" id="SimulationZoomOut" aria-label="Zoom out">−</button><button type="button" id="SimulationZoomIn" aria-label="Zoom in">+</button><button type="button" id="SimulationReset">Reset</button></div></div>
+            <div id="SimulationCanvas" class="NetworkSimulation__canvas"><svg id="SimulationGraph" viewBox="0 0 960 420" role="group" aria-labelledby="SimulationGraphTitle"><title id="SimulationGraphTitle">Selected CMDB endpoints and authorized analyzed hops</title><g id="SimulationGraphViewport"></g></svg><p id="SimulationEmpty">Choose source and destination addresses to explore a connection.</p></div>
+            <p class="NetworkSimulation__legend"><span>○ CMDB asset</span><span>┄ Candidate path</span><span>Unknown coverage remains unknown</span></p>
+        </section>
+        <aside class="NetworkSimulation__inspector" aria-labelledby="InspectorTitle"><h2 id="InspectorTitle">Selected device</h2><div id="SimulationInspector" aria-live="polite"><p>Select a node or a device in the path table.</p></div></aside>
+    </section>
+    <section class="NetworkSimulation__evidence" aria-labelledby="EvidenceTitle"><h2 id="EvidenceTitle">Analysis evidence</h2>
+        [% IF Data.Result %]
+        <dl class="NetworkSimulation__metrics"><div><dt>Analysis status</dt><dd>[% Data.Result.StatusLabel | html %]</dd></div><div><dt>Connection verdict</dt><dd>[% Data.Result.Verdict | html %]</dd></div><div><dt>Evidence captured</dt><dd><time datetime="[% Data.Result.CreatedAtUTC | html %]">[% Data.Result.CreatedAtUTC | html %]</time></dd></div><div><dt>Analysis reference</dt><dd>[% Data.Result.AnalysisID | html %]</dd></div></dl>
+        [% IF Data.Result.Withheld %]<p class="NetworkSimulation__notice">The path cannot be displayed safely within your current asset scope. Details and recommendations have been withheld.</p>[% END %]
+        [% IF Data.Result.Status == 'TRACE_INTENT' %]<p class="NetworkSimulation__notice">The trace outcome is uncertain. Contact your administrator with the analysis reference before submitting another analysis.</p>[% END %]
+        <table><caption>Authorized main-candidate path</caption><thead><tr><th scope="col">Hop</th><th scope="col">Device</th><th scope="col">Class</th></tr></thead><tbody>[% FOREACH Hop IN Data.Result.Hops %]<tr><td>[% Hop.Number | html %]</td><td><button type="button" class="NetworkSimulation__device" data-device="[% Hop.ID | html %]">[% Hop.Name | html %]</button></td><td>[% Hop.Class | html %]</td></tr>[% END %]</tbody></table>
+        <h3>Recommendation drafts</h3><p>Drafts are analysis evidence. Changes continue through your configured request and approval workflow.</p><ul>[% FOREACH Recommendation IN Data.Result.Recommendations %]<li>[% Recommendation.Name | html %]: [% Recommendation.Action | html %] — [% Recommendation.Status | html %]</li>[% END %]</ul>
+        [% IF Data.Result.Status == 'TRACE_SAVED' OR Data.Result.RecommendationStatus == 'RECOMMENDATION_PENDING' %]<form action="[% Env('CGIHandle') | html %]" method="post"><input type="hidden" name="Action" value="CustomerNetworkSimulation"/><input type="hidden" name="Subaction" value="Refresh"/><input type="hidden" name="AnalysisID" value="[% Data.Result.AnalysisID | html %]"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/><button type="submit">Refresh recommendations</button></form>[% END %]
+        [% IF Data.Result.Findings.size %]<h3>Scoped findings</h3><ul>[% FOREACH Finding IN Data.Result.Findings %]<li>[% Finding.Name | html %]: [% Finding.Code | html %]</li>[% END %]</ul>[% END %]
+        [% ELSE %]<p>Run an analysis to view path evidence and recommendation drafts. CMDB selection alone does not establish connectivity.</p>[% END %]
+    </section>
+    <script id="SimulationPayload" type="application/json">[% Data.Payload %]</script>
+    <noscript><p>JavaScript enables immediate application/system filtering and the interactive canvas. The endpoint form and analyzed path table remain available without it.</p></noscript>
+</main>

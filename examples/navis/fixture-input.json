@@ -1,0 +1,174 @@
+{
+  "execution_uid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "mode": "fixture",
+  "graph_build_id": "20000000-0000-4000-8000-000000000001",
+  "identity_namespace": "CMDB",
+  "flow": {
+    "source": "192.0.2.10",
+    "destination": "198.51.100.5",
+    "protocol": "tcp",
+    "destination_port": 443,
+    "action": "allow"
+  },
+  "cmdb_snapshot": [
+    {
+      "namespace": "CMDB",
+      "ConfigItemID": "000012313213",
+      "Class": "NetworkNode",
+      "platform": "panos",
+      "context": {
+        "vsys": "vsys1",
+        "source_zone": "trust",
+        "destination_zone": "dmz"
+      }
+    },
+    {
+      "namespace": "CMDB",
+      "ConfigItemID": "12312312322",
+      "Class": "NetworkNode",
+      "platform": "aci",
+      "context": {
+        "tenant": "tenant-a",
+        "source_epg": "app",
+        "destination_epg": "db",
+        "contract": "web"
+      }
+    },
+    {
+      "namespace": "CMDB",
+      "ConfigItemID": "12312312323",
+      "Class": "NetworkNode",
+      "platform": "nsx",
+      "context": {
+        "domain": "default",
+        "source_group": "/infra/domains/default/groups/app",
+        "destination_group": "/infra/domains/default/groups/db",
+        "applied_to": "/infra/domains/default/groups/db",
+        "policy": "tessera"
+      }
+    }
+  ],
+  "fixture": {
+    "graph": {
+      "build_id": "20000000-0000-4000-8000-000000000001",
+      "status": "completed",
+      "nodes": [
+        {
+          "id": "30000000-0000-4000-8000-000000000001",
+          "type": "device",
+          "external_identity": {
+            "status": "mapped",
+            "namespace": "CMDB",
+            "object_class": "NetworkNode",
+            "id": "000012313213"
+          }
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000002",
+          "type": "device",
+          "external_identity": {
+            "status": "mapped",
+            "namespace": "CMDB",
+            "object_class": "NetworkNode",
+            "id": "12312312322"
+          }
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000003",
+          "type": "device",
+          "external_identity": {
+            "status": "mapped",
+            "namespace": "CMDB",
+            "object_class": "NetworkNode",
+            "id": "12312312323"
+          }
+        }
+      ],
+      "connections": [],
+      "projection_status": "device_identity_only"
+    },
+    "trace": {
+      "code": "TRACE_RESULT_READY",
+      "graph_build_id": "20000000-0000-4000-8000-000000000001",
+      "trace_session_id": "40000000-0000-4000-8000-000000000001",
+      "results": [
+        {
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "status": "blocked",
+          "connection_verdict": {
+            "status": "unknown",
+            "missing": [
+              "return_path"
+            ]
+          }
+        }
+      ]
+    },
+    "recommendations": {
+      "code": "RECOMMENDATIONS_AVAILABLE",
+      "trace_session_id": "40000000-0000-4000-8000-000000000001",
+      "recommendations": [
+        {
+          "status": "ready",
+          "result": {
+            "device_id": "30000000-0000-4000-8000-000000000001",
+            "source": "192.0.2.10",
+            "destination": "198.51.100.5",
+            "protocol": "tcp",
+            "destination_port": 443,
+            "action": "allow",
+            "status": "draft",
+            "source_zone": "trust",
+            "destination_zone": "dmz",
+            "source_zone_status": "resolved",
+            "destination_zone_status": "resolved",
+            "ingress_interface": "in",
+            "egress_interface": "out",
+            "reason": "synthetic candidate denial"
+          }
+        },
+        {
+          "status": "ready",
+          "result": {
+            "device_id": "30000000-0000-4000-8000-000000000002",
+            "source": "192.0.2.10",
+            "destination": "198.51.100.5",
+            "protocol": "tcp",
+            "destination_port": 443,
+            "action": "allow",
+            "status": "draft",
+            "source_zone": "trust",
+            "destination_zone": "dmz",
+            "source_zone_status": "resolved",
+            "destination_zone_status": "resolved",
+            "ingress_interface": "in",
+            "egress_interface": "out",
+            "reason": "synthetic candidate denial"
+          }
+        },
+        {
+          "status": "ready",
+          "result": {
+            "device_id": "30000000-0000-4000-8000-000000000003",
+            "source": "192.0.2.10",
+            "destination": "198.51.100.5",
+            "protocol": "tcp",
+            "destination_port": 443,
+            "action": "allow",
+            "status": "draft",
+            "source_zone": "trust",
+            "destination_zone": "dmz",
+            "source_zone_status": "resolved",
+            "destination_zone_status": "resolved",
+            "ingress_interface": "in",
+            "egress_interface": "out",
+            "reason": "synthetic candidate denial"
+          }
+        }
+      ]
+    }
+  }
+}

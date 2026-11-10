@@ -131,6 +131,11 @@ sub Run {
             $Self->{Error} = Translatable('Selected support profile is not assigned to this customer user.');
             return;
         }
+        if ($Value && $FieldName ne 'ZUser-SupportProfile') {
+            my %Class=('ZUser-Application'=>'Application','ZUser-Environment'=>'Environment','ZUser-Location'=>'Location');
+            my %Allowed=$Self->_GovernanceObjectData(Classes=>[$Class{$FieldName}]);
+            if (!$Allowed{$Value}) {$Self->{Error}=Translatable('Selected request default is unavailable.');return}
+        }
 
         my $Success;
         if ($Value) {
@@ -230,6 +235,7 @@ sub _GovernanceObjectData {
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my @ObjectIDs = $GovernanceObjectObject->GovernanceObjectSearch(
         Classes => $Param{Classes} || [],
+        ZTSMStatuss => ['Active'],
         Result  => 'ARRAY',
         Limit   => 1000,
     );
@@ -257,9 +263,12 @@ sub _SupportProfileData {
     my $GovernanceObjectObject = $Kernel::OM->Get('Kernel::System::GovernanceObject');
     my @AssignmentIDs = $GovernanceObjectObject->GovernanceObjectSearch(
         Classes => ['SupportAssignment'],
+        'DynamicField_ZTSMSupportAssignment-UserAccount' => {Equals=>$Param{CustomerUserID}},
+        ZTSMStatuss => ['Active'],
         Result  => 'ARRAY',
-        Limit   => 1000,
+        Limit   => 1001,
     );
+    die "Too many customer assignments.\n" if @AssignmentIDs>1000;
 
     my %CustomerUserID = map { lc $_ => 1 } $Self->_CustomerUserReferenceIDs(
         CustomerUserID => $Param{CustomerUserID},
@@ -274,6 +283,7 @@ sub _SupportProfileData {
             Silent             => 1,
         );
         next ASSIGNMENT if !$Assignment || ref $Assignment ne 'HASH';
+        next ASSIGNMENT if ($Assignment->{ZTSMStatus} || '') ne 'Active';
 
         my $AssignmentUser = $Self->_NormalizeReferenceValue(
             $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'},
@@ -291,6 +301,8 @@ sub _SupportProfileData {
     my %Data;
     PROFILEID:
     for my $ProfileID ( sort { $a <=> $b } keys %ProfileID ) {
+        my $Profile=$GovernanceObjectObject->GovernanceObjectGet(GovernanceObjectID=>$ProfileID);
+        next PROFILEID if !$Profile || ($Profile->{ZTSMStatus} || '') ne 'Active';
         my $Name = $Self->_GovernanceObjectName( GovernanceObjectID => $ProfileID );
         next PROFILEID if !$Name;
 
@@ -321,19 +333,7 @@ sub _CustomerUserReferenceIDs {
     my $CustomerUserID = $Self->_NormalizeValue( $Param{CustomerUserID} );
     return if !defined $CustomerUserID || $CustomerUserID eq '';
 
-    my %CustomerUserID = ( $CustomerUserID => 1 );
-
-    for my $CustomerID (
-        $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerIDs(
-            User => $CustomerUserID,
-        )
-        )
-    {
-        my $Value = $Self->_NormalizeValue($CustomerID);
-        $CustomerUserID{$Value} = 1 if defined $Value && $Value ne '';
-    }
-
-    return sort keys %CustomerUserID;
+    return ($CustomerUserID);
 }
 
 sub _NormalizeReferenceValue {

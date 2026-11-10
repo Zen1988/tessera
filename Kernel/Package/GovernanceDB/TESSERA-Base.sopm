@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.180</Version>
+    <Version>0.0.188</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -16,7 +16,51 @@
     </IntroUninstall>
 
     <ModuleRequired Version="2.0">GD</ModuleRequired>
+    <ModuleRequired Version="0.68">Net::LDAP</ModuleRequired>
+    <ModuleRequired Version="0.087">Crypt::AuthEnc::GCM</ModuleRequired>
+    <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/NetworkSimulationAccess.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentNetworkSimulationAccess.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentNetworkSimulationAccess.tt" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/CustomerNetworkSimulation.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerNetworkSimulation.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerNetworkSimulation.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERACustomerNetworkSimulation.xml" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/TESSERA.Customer.NetworkSimulation.js" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.NetworkSimulation.css" Permission="660"/>
+        <File Location="var/tessera/docs/customer-network-simulation.md" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/IntegrationAuth.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/IntegrationOnboarding.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NavisPlan.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NavisControl.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/TESSERA/Request.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Transport/HTTP/TESSERAIntegration.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTESSERAIntegration.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTESSERAIntegration.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERAIntegration.xml" Permission="660"/>
+        <File Location="var/tessera/docs/integration-onboarding.md" Permission="660"/>
+        <File Location="var/tessera/docs/integration-onboarding-design.md" Permission="660"/>
+        <File Location="var/tessera/examples/navis/automation.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/bindings.json" Permission="660"/>
+        <File Location="var/tessera/examples/navis/workflow.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/palo-alto.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/cisco-aci.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/vmware-nsx.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/simulate-device.yml" Permission="660"/>
+        <File Location="var/tessera/examples/navis/simulate-device.py" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/DirectoryLDAP.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/DirectorySync.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/CustomerOnboarding.pm" Permission="660"/>
+        <File Location="Kernel/System/CustomerAuth/TESSERAIdentity.pm" Permission="660"/>
+        <File Location="Kernel/System/Ticket/Event/TESSERARequestDefaults.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTESSERADirectorySync.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerTESSERAOnboarding.pm" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERADirectorySync.xml" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTESSERADirectorySync.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerTESSERAOnboarding.tt" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Identity.css" Permission="660"/>
+        <File Location="var/tessera/docs/directory-self-service.md" Permission="660"/>
         <File Location="Custom/Kernel/System/Cache/Redis.pm" Permission="644"/>
         <File Location="Custom/Kernel/System/TESSERA/Secrets.pm" Permission="644"/>
         <File Location="Custom/Kernel/System/TESSERA/SecretRedis.pm" Permission="644"/>
@@ -360,6 +404,66 @@
         <File Location="Kernel/System/TESSERA/Questionnaire.pm" Permission="660"/>
         <File Location="var/governancedb/advisory_questionnaire_fields.json" Permission="660"/>
         <File Location="var/governancedb/policy/vulnerability_questionnaire_scoring.yml" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/Base.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/JobEvents.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/JobGet.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/JobLaunch.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/JobStdout.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/WorkflowGet.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/WorkflowLaunch.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/WorkflowNodes.pm" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERAAWX.xml" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Maint/TESSERA/AWXTest.pm" Permission="660"/>
+        <File Location="var/webservices/examples/TESSERAAWX.yml" Permission="660"/>
+        <File Location="var/tessera/examples/awx/launch.json" Permission="660"/>
+        <File Location="var/tessera/examples/awx/integration-test.yml" Permission="660"/>
+        <File Location="var/tessera/docs/awx-integration.md" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/Inventory.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/InventoryHostCreate.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/InventoryHosts.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/InventoryHostUpdate.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/AWX/JobLaunchCallback.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ReleaseUpgrade.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ReleasePackage.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/AWXExecution.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/AWXInventory.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/AutomationWebService.pm" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Maint/TESSERA/AWXCallbackTest.pm" Permission="660"/>
+        <File Location="Kernel/System/Console/Command/Maint/TESSERA/AutomationTest.pm" Permission="660"/>
+        <File Location="var/governancedb/container_release.json" Permission="660"/>
+        <File Location="var/webservices/examples/TESSERAAWXInventory.yml" Permission="660"/>
+        <File Location="var/tessera/examples/awx/automation-test.yml" Permission="660"/>
+        <File Location="var/tessera/examples/awx/automation-bindings.json" Permission="660"/>
+        <File Location="var/tessera/examples/awx/callback-test.yml" Permission="660"/>
+        <File Location="var/tessera/docs/container-version-upgrade.md" Permission="660"/>
+        <File Location="var/tessera/docs/tessera-182-end-to-end.md" Permission="660"/>
+        <File Location="var/tessera/examples/awx/callback-inventory-test.yml" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERANetXMS.xml" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/AlarmGet.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/Alarms.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/Base.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/CurrentValues.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/DataCollection.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/History.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/ObjectGet.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/Objects.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/ServerInfo.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/Status.pm" Permission="660"/>
+        <File Location="var/tessera/docs/netxms-integration.md" Permission="660"/>
+        <File Location="var/tessera/examples/netxms/automation-bindings.json" Permission="660"/>
+        <File Location="var/tessera/examples/netxms/automation-test.yml" Permission="660"/>
+        <File Location="var/webservices/examples/TESSERANetXMS.yml" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/PathTrace.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Invoker/NetXMS/PathTraceL2.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NetworkIntelligence.pm" Permission="660"/>
+        <File Location="var/tessera/examples/network/automation.yml" Permission="660"/>
+        <File Location="var/tessera/examples/network/bindings.json" Permission="660"/>
+        <File Location="var/tessera/examples/network/collect-device.yml" Permission="660"/>
+        <File Location="var/tessera/examples/network/collect.yml" Permission="660"/>
+        <File Location="var/tessera/examples/network/context.json" Permission="660"/>
+        <File Location="var/tessera/examples/network/library/tessera_network_collect.py" Permission="660"/>
+        <File Location="var/tessera/docs/tessera-184-network-assessment.md" Permission="660"/>
+        <File Location="var/tessera/docs/network-cmdb-enforcement-contract.md" Permission="660"/>
     </Filelist>
 
     <CodeInstall Type="post"><![CDATA[
@@ -367,6 +471,8 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA execution history migration failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeInstall>
@@ -376,6 +482,8 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA execution history migration failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service upgrade failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeUpgrade>
@@ -385,6 +493,8 @@
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         $BootstrapObject->InstallDefaults();
+        die 'TESSERA execution history migration failed.'
+            if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service reinstall failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->ProviderEnsure();
     ]]></CodeReinstall>
@@ -406,6 +516,8 @@
             <Column Name="state" Required="true" Size="20" Type="VARCHAR"/>
             <Column Name="exit_code" Required="false" Type="INTEGER"/>
             <Column Name="response" Required="false" Type="LONGBLOB"/>
+            <Column Name="request_data" Required="false" Type="LONGBLOB"/>
+            <Column Name="dispatch_data" Required="false" Type="LONGBLOB"/>
             <Column Name="deadline_time" Required="true" Type="DATE"/>
             <Column Name="create_time" Required="true" Type="DATE"/>
             <Column Name="change_time" Required="true" Type="DATE"/>
@@ -961,6 +1073,8 @@
             <Column Name="state" Required="true" Size="20" Type="VARCHAR"/>
             <Column Name="exit_code" Required="false" Type="INTEGER"/>
             <Column Name="response" Required="false" Type="LONGBLOB"/>
+            <Column Name="request_data" Required="false" Type="LONGBLOB"/>
+            <Column Name="dispatch_data" Required="false" Type="LONGBLOB"/>
             <Column Name="deadline_time" Required="true" Type="DATE"/>
             <Column Name="create_time" Required="true" Type="DATE"/>
             <Column Name="change_time" Required="true" Type="DATE"/>

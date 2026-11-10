@@ -11,6 +11,21 @@ our @ObjectDependencies = (
 );
 sub new { my ($Type) = @_; return bless {}, $Type; }
 
+sub StorageEnsure {
+    my ($Self) = @_;
+    my $DB = $Kernel::OM->Get('Kernel::System::DB');
+    return if !$DB->Prepare(SQL=>'SELECT * FROM ztsm_async_execution WHERE 1 = 0');
+    my %Columns = map {lc($_)=>1} $DB->GetColumnNames();
+    $DB->FetchrowArray();
+    # Explicit package-owned additive migration. Never infer arbitrary schema
+    # alterations; repeated upgrade/reinstall preserves the existing ledger.
+    for my $Column (qw(request_data dispatch_data)) {
+        next if $Columns{$Column};
+        return if !$DB->Do(SQL=>"ALTER TABLE ztsm_async_execution ADD COLUMN $Column LONGBLOB NULL");
+    }
+    return 1;
+}
+
 sub ProviderEnsure {
     my ($Self)=@_;
     my $Webservice=$Kernel::OM->Get('Kernel::System::GenericInterface::Webservice');
@@ -57,28 +72,44 @@ sub Start {
     return {Success=>0,Error=>'Web service request timeout must be between 1 and 60 seconds.'}
         if !defined $HTTPTimeout || $HTTPTimeout!~/\A[0-9]+\z/ || $HTTPTimeout<1 || $HTTPTimeout>60;
     my $JSON=$Kernel::OM->Get('Kernel::System::JSON');
+    my $AWX = ($WS->{Config}{Requester}{Invoker}{$P{Invoker}}{Type} || '') eq 'AWX::JobLaunchCallback';
+    my $Request = $JSON->Encode(Data=>{WebserviceID=>$P{WebserviceID},Invoker=>$P{Invoker},Payload=>$P{Payload}},SortKeys=>1);
+    return {Success=>0,Error=>'Execution input exceeds 1 MiB.'} if !defined $Request || length($Request)>1048576;
     my $Context=$JSON->Encode(Data=>$P{Continuation},SortKeys=>1);
     return {Success=>0,Error=>'Continuation is too large.'} if !defined $Context || length($Context)>65536;
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
     return {Success=>0,Error=>'Execution queue is full.'}
-        if !$DB->Prepare(SQL=>"SELECT COUNT(*) FROM ztsm_async_execution WHERE state IN ('PENDING','READY','QUEUED','RUNNING')")
+        if !$DB->Prepare(SQL=>"SELECT COUNT(*) FROM ztsm_async_execution WHERE state IN ('PENDING','WAITING','DISPATCHING','DISPATCH_UNKNOWN','READY','QUEUED','RUNNING')")
         || (($DB->FetchrowArray())[0]||0)>=1000;
     my $Main=$Kernel::OM->Get('Kernel::System::Main');
     my $UID=$Main->GenerateRandomString(Length=>40);
     my $Token=$Main->GenerateRandomString(Length=>64);
     return {Success=>0,Error=>'Could not generate execution identity.'} if !$UID || !$Token;
+    if ($AWX) {
+        require Kernel::GenericInterface::Invoker::AWX::JobLaunchCallback;
+        return {Success=>0,Error=>'Callback identity is runtime-owned.'} if exists $P{Payload}{CallbackToken} || exists $P{Payload}{ExecutionUID};
+        my $Validator=Kernel::GenericInterface::Invoker::AWX::JobLaunchCallback->new(
+            DebuggerObject=>{},WebserviceID=>$P{WebserviceID},Invoker=>$P{Invoker});
+        my $Prepared=$Validator->PrepareRequest(Data=>{%{$P{Payload}},ExecutionUID=>$UID,CallbackToken=>$Token});
+        return {Success=>0,Error=>$Prepared->{ErrorMessage}} if !$Prepared->{Success};
+    }
     my $Hash=sha256_hex($Token);
     my $Timeout=$P{TimeoutSeconds}||3600;
     return {Success=>0,Error=>'Timeout must be between 60 seconds and 7 days.'}
         if $Timeout!~/\A[0-9]+\z/ || $Timeout<60 || $Timeout>604800;
     my $Deadline=$Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(SystemTime=>time+$Timeout);
-    my $OK=$DB->Do(SQL=>'INSERT INTO ztsm_async_execution (execution_uid, token_hash, handler_key, target_type, target_id, actor_id, continuation, state, deadline_time, create_time, change_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp)',
-        Bind=>[\$UID,\$Hash,\$P{HandlerKey},\$P{TargetType},\$P{TargetID},\$P{ActorID},\$Context,\('PENDING'),\$Deadline]);
+    my $OK=$DB->Do(SQL=>'INSERT INTO ztsm_async_execution (execution_uid, token_hash, handler_key, target_type, target_id, actor_id, continuation, state, deadline_time, request_data, create_time, change_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp)',
+        Bind=>[\$UID,\$Hash,\$P{HandlerKey},\$P{TargetType},\$P{TargetID},\$P{ActorID},\$Context,\('PENDING'),\$Deadline,\$Request]);
     return {Success=>0,Error=>'Could not save execution.'} if !$OK;
-    my $Queued=$Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(
+    my %Task = $AWX ? (
+        Type=>'Cron',Name=>'TESSERA.AWXDispatch.'.$UID,Attempts=>1,
+        Data=>{Module=>'Kernel::System::TESSERA::AWXExecution',Function=>'Dispatch',Params=>[
+            ExecutionUID=>$UID,CallbackToken=>$Token,WebserviceID=>$P{WebserviceID},Invoker=>$P{Invoker},Payload=>$P{Payload}]}
+    ) : (
         Type=>'GenericInterface',Name=>'TESSERA.AsyncDispatch.'.$P{Invoker},Attempts=>3,
         Data=>{WebserviceID=>$P{WebserviceID},Invoker=>$P{Invoker},
             Data=>{%{$P{Payload}},ExecutionUID=>$UID,CallbackToken=>$Token}});
+    my $Queued=$Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(%Task);
     if (!$Queued) {
         $DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'DISPATCH_ERROR', change_time = current_timestamp WHERE execution_uid = ? AND state = 'PENDING'",Bind=>[\$UID]);
         return {Success=>0,Error=>'Could not queue OTOBO web service dispatch.',ExecutionUID=>$UID};
@@ -89,9 +120,9 @@ sub Start {
 sub _Get {
     my ($Self,$UID)=@_;
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
-    return if !$DB->Prepare(SQL=>'SELECT execution_uid, token_hash, handler_key, target_type, target_id, actor_id, continuation, state, exit_code, response FROM ztsm_async_execution WHERE execution_uid = ?',Bind=>[\$UID],Limit=>1);
+    return if !$DB->Prepare(SQL=>'SELECT execution_uid, token_hash, handler_key, target_type, target_id, actor_id, continuation, state, exit_code, response, request_data, dispatch_data, deadline_time FROM ztsm_async_execution WHERE execution_uid = ?',Bind=>[\$UID],Limit=>1);
     my @R=$DB->FetchrowArray();return if !@R;
-    my %H; @H{qw(ExecutionUID TokenHash HandlerKey TargetType TargetID ActorID Continuation State ExitCode Response)}=@R;
+    my %H; @H{qw(ExecutionUID TokenHash HandlerKey TargetType TargetID ActorID Continuation State ExitCode Response RequestData DispatchData Deadline)}=@R;
     return \%H;
 }
 
@@ -104,22 +135,27 @@ sub Callback {
     $P{Response}=$Kernel::OM->Get('Kernel::System::JSON')->Encode(Data=>$P{Response},SortKeys=>1)
         if ref $P{Response};
     return {Success=>0,Error=>'Invalid callback.'} if !defined $P{Response} || length($P{Response})>1048576;
+    # Even a playbook that accidentally echoes its callback token cannot put the
+    # plaintext capability into the persistent result or evidence continuation.
+    $P{Response} =~ s/\Q$P{CallbackToken}\E/[REDACTED]/g;
     my $Row=$Self->_Get($P{ExecutionUID});
-    return {Success=>0,Error=>'Invalid callback.'} if !$Row;
+    return {Success=>0,Error=>'Invalid callback.'} if !$Row || ($Row->{TokenHash} || '') !~ /\A[a-f0-9]{64}\z/;
     my $A=sha256_hex($P{CallbackToken});my $Diff=0;
     for my $I (0..63) {$Diff|=ord(substr($A,$I,1))^ord(substr($Row->{TokenHash},$I,1));}
     return {Success=>0,Error=>'Invalid callback.'} if $Diff;
-    if ($Row->{State} ne 'PENDING') {
+    if ($Row->{State} !~ /\A(?:PENDING|WAITING|DISPATCHING|DISPATCH_UNKNOWN)\z/) {
         return {Success=>1,Duplicate=>1,Status=>$Row->{State}}
             if defined $Row->{ExitCode} && $Row->{ExitCode} eq $P{ExitCode} && ($Row->{Response}//'') eq $P{Response};
         return {Success=>0,Error=>'Conflicting or late callback.'};
     }
+    my $Now = $Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(SystemTime=>time);
+    return {Success=>0,Error=>'Callback deadline expired.'} if defined $Row->{Deadline} && $Row->{Deadline} lt $Now;
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
-    my $OK=$DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'READY', exit_code = ?, response = ?, change_time = current_timestamp WHERE execution_uid = ? AND token_hash = ? AND state = 'PENDING'",
+    my $OK=$DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'READY', exit_code = ?, response = ?, change_time = current_timestamp WHERE execution_uid = ? AND token_hash = ? AND state IN ('PENDING','WAITING','DISPATCHING','DISPATCH_UNKNOWN') AND deadline_time >= current_timestamp",
         Bind=>[\$P{ExitCode},\$P{Response},\$P{ExecutionUID},\$Row->{TokenHash}]);
     return {Success=>0,Error=>'Could not store callback.'} if !$OK;
     my $Latest=$Self->_Get($P{ExecutionUID});
-    return {Success=>0,Error=>'Conflicting callback.'} if $Latest->{ExitCode} ne $P{ExitCode} || ($Latest->{Response}//'') ne $P{Response};
+    return {Success=>0,Error=>'Conflicting or late callback.'} if !$Latest || !defined $Latest->{ExitCode} || $Latest->{ExitCode} ne $P{ExitCode} || ($Latest->{Response}//'') ne $P{Response};
     $Self->_QueueResume($P{ExecutionUID});
     return {Success=>1,Status=>'READY'};
 }
@@ -132,7 +168,7 @@ sub _QueueResume {
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
     my $Row=$Self->_Get($UID);
     if (!$Row || $Row->{State} ne 'READY') {$PID->PIDDelete(Name=>$Lock);return;}
-    if (!$DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'QUEUED', change_time = current_timestamp WHERE execution_uid = ? AND state = 'READY'",Bind=>[\$UID])) {
+    if (!$Self->_StateClaim($UID,'READY','QUEUED')) {
         $PID->PIDDelete(Name=>$Lock);return;
     }
     my $Task=$Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB')->TaskAdd(
@@ -154,7 +190,7 @@ sub Resume {
     my $Row=$Self->_Get($P{ExecutionUID});
     if (!$Row || $Row->{State} ne 'QUEUED') {$PID->PIDDelete(Name=>$Lock);return 1;}
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
-    if (!$DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'RUNNING', change_time = current_timestamp WHERE execution_uid = ? AND state = 'QUEUED'",Bind=>[\$P{ExecutionUID}])) {
+    if (!$Self->_StateClaim($P{ExecutionUID},'QUEUED','RUNNING')) {
         $PID->PIDDelete(Name=>$Lock);return 0;
     }
     my $Handler=$Self->_Handler($Row->{HandlerKey});
@@ -173,13 +209,21 @@ sub Resume {
     return $Done ? 1 : 0;
 }
 
+sub _StateClaim {
+    my ($Self,$UID,$From,$To)=@_;
+    my $Handle=$Kernel::OM->Get('Kernel::System::DB')->Connect() or return;
+    my $Now=$Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(SystemTime=>time);
+    my $Rows=$Handle->do('UPDATE ztsm_async_execution SET state = ?, change_time = ? WHERE execution_uid = ? AND state = ?',undef,$To,$Now,$UID,$From);
+    return defined $Rows && $Rows==1 ? 1 : 0;
+}
+
 sub Reconcile {
     my ($Self)=@_;
     my $DB=$Kernel::OM->Get('Kernel::System::DB');
-    if ($DB->Prepare(SQL=>"SELECT execution_uid FROM ztsm_async_execution WHERE state = 'PENDING' AND deadline_time < current_timestamp ORDER BY id",Limit=>100)) {
+    if ($DB->Prepare(SQL=>"SELECT execution_uid FROM ztsm_async_execution WHERE state IN ('PENDING','WAITING','DISPATCHING','DISPATCH_UNKNOWN') AND deadline_time < current_timestamp ORDER BY id",Limit=>100)) {
         my @Expired;while(my @R=$DB->FetchrowArray()){push @Expired,$R[0]}
         for my $UID (@Expired) {
-            $DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'READY', response = 'Callback timeout', change_time = current_timestamp WHERE execution_uid = ? AND state = 'PENDING'",Bind=>[\$UID]);
+            $DB->Do(SQL=>"UPDATE ztsm_async_execution SET state = 'READY', response = 'Callback timeout', change_time = current_timestamp WHERE execution_uid = ? AND state IN ('PENDING','WAITING','DISPATCHING','DISPATCH_UNKNOWN')",Bind=>[\$UID]);
         }
     }
     my $Stale=$Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(SystemTime=>time-1800);

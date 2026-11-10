@@ -1,3 +1,18 @@
+# Current — Live Navis discovery and ingestion acceptance
+
+Owner confirms Base188 Navis onboarding enabled, including successful CLI and
+browser token exchange. See PROJECT_STATUS.md entry 2026-11-10 for secret/CA mounts
+and remaining deployment-manifest reconciliation work. Do not repeat onboarding.
+
+Next select one approved real AWX inventory target/vendor and exact job binding.
+Exercise read-only discovery, retain correlated raw/structured evidence in TESSERA,
+validate/normalize to Navis envelopes with CMDB/NetworkNode/native-ID mapping, then
+submit through TESSERA-owned credentials. Confirm database source permissions;
+issued token scopes alone do not grant source access. Verify worker processing,
+dataset selection and completed graph before trace acceptance. AWX must not own
+Navis credentials; ingestion 202 is staging only. First live target and mapping
+remain unspecified, and the collector-to-ingestion adapter requires verification.
+
 # Current — Base188 access configuration, toolkit and OAuth diagnosis acceptance
 
 Dedicated Admin → Network simulation access is implemented in Base188. Guide:

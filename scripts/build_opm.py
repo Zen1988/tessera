@@ -16,6 +16,13 @@ FILE_RE = re.compile(
 def build(sopm: pathlib.Path, output: pathlib.Path) -> int:
     package_root = sopm.parent
     source = sopm.read_text(encoding="utf-8")
+    definition = ET.fromstring(source)
+    version = tuple(int(n) for n in definition.findtext('Version', '0.0.0').split('.'))
+    if definition.findtext('Name') == 'TESSERA-Base' and version >= (0, 0, 184):
+        for entry in definition.findall('./Filelist/File'):
+            location = pathlib.PurePosixPath(entry.get('Location', ''))
+            if location.is_absolute() or '..' in location.parts or location.parts[0] in {'docs', 'examples'}:
+                raise ValueError('TESSERA runtime package documentation/fixtures must use var/tessera, not new Home roots: ' + str(location))
     count = 0
 
     def embed(match: re.Match[str]) -> str:

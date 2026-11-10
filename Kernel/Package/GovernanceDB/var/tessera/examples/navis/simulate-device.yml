@@ -1,0 +1,12 @@
+---
+- name: Build vendor simulation receipt without contacting a device
+  ansible.builtin.command:
+    argv: [python3, "{{ playbook_dir }}/simulate-device.py"]
+    stdin: "{{ navis_plan | to_json }}"
+  register: navis_device_receipt
+  changed_when: false
+  no_log: true
+- name: Preserve per-target result for TESSERA
+  ansible.builtin.set_fact:
+    navis_devices: "{{ navis_devices + [navis_device_receipt.stdout | from_json] }}"
+  no_log: true

@@ -1,0 +1,69 @@
+{
+  "Debugger": {
+    "DebugThreshold": "error",
+    "TestMode": "0"
+  },
+  "Description": "Restricted inventory-sync identity; grant writes only to designated inventory, no credential or template administration.",
+  "RemoteSystem": "AWX",
+  "Provider": {
+    "Operation": {},
+    "Transport": {
+      "Type": ""
+    }
+  },
+  "Requester": {
+    "Invoker": {
+      "InventoryHosts": {
+        "Type": "AWX::InventoryHosts",
+        "Description": "InventoryHosts",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "InventoryHostCreate": {
+        "Type": "AWX::InventoryHostCreate",
+        "Description": "InventoryHostCreate",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "InventoryHostUpdate": {
+        "Type": "AWX::InventoryHostUpdate",
+        "Description": "InventoryHostUpdate",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      }
+    },
+    "Transport": {
+      "Type": "HTTP::REST",
+      "Config": {
+        "Host": "https://awx.example.invalid",
+        "Timeout": "30",
+        "DefaultCommand": "GET",
+        "SSL": {
+          "UseSSL": "Yes",
+          "SSLVerifyHostname": "Yes",
+          "SSLVerifyMode": "Yes"
+        },
+        "AdditionalHeaders": {
+          "Accept": "application/json"
+        },
+        "InvokerControllerMapping": {
+          "InventoryHosts": {
+            "Controller": "/api/v2/inventories/:InventoryID/hosts/",
+            "Command": "GET"
+          },
+          "InventoryHostCreate": {
+            "Controller": "/api/v2/inventories/:InventoryID/hosts/",
+            "Command": "POST"
+          },
+          "InventoryHostUpdate": {
+            "Controller": "/api/v2/hosts/:HostID/",
+            "Command": "PATCH"
+          }
+        }
+      }
+    }
+  }
+}

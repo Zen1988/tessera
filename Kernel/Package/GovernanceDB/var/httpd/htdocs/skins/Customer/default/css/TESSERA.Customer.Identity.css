@@ -1,0 +1,6 @@
+.TESSERAIdentity { max-width: 64rem; margin: 1rem auto; padding: 1rem; }
+.TESSERAIdentity .TESSERAResponsibilityText { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.TESSERAIdentity form { display: grid; gap: 1rem; max-width: 48rem; }
+.TESSERAIdentity select { max-width: 100%; min-height: 2.5rem; }
+.TESSERAIdentity button { justify-self: start; }
+@media (max-width: 640px) { .TESSERAIdentity { margin: 0; } .TESSERAIdentity select { width: 100%; } }

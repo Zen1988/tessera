@@ -1,0 +1,53 @@
+[
+  {
+    "PlanID": "0dd21b45ecbda4d683e52508a668211294f5a0972ee2ce799525b03b3313faf0",
+    "Target": {
+      "Application": "tessera",
+      "ObjectType": "CMDB",
+      "Namespace": "CMDB",
+      "Class": "NetworkNode",
+      "ConfigItemID": "000012313213"
+    },
+    "Platform": "panos",
+    "Status": "SIMULATED",
+    "Changed": false,
+    "Verified": false,
+    "Missing": [],
+    "RuleReference": "simulation-0dd21b45ecbda4d6",
+    "Operation": "security_rule"
+  },
+  {
+    "PlanID": "4425ec445b4b609474272642cf967fc0629dad2037996202c4d894fff56d3740",
+    "Target": {
+      "Application": "tessera",
+      "ObjectType": "CMDB",
+      "Namespace": "CMDB",
+      "Class": "NetworkNode",
+      "ConfigItemID": "12312312322"
+    },
+    "Platform": "aci",
+    "Status": "SIMULATED",
+    "Changed": false,
+    "Verified": false,
+    "Missing": [],
+    "RuleReference": "simulation-4425ec445b4b6094",
+    "Operation": "contract_filter"
+  },
+  {
+    "PlanID": "04587118a82196678beaa0abcbcf8a621ad67c35a9a92f36b58f94e3f169c8e8",
+    "Target": {
+      "Application": "tessera",
+      "ObjectType": "CMDB",
+      "Namespace": "CMDB",
+      "Class": "NetworkNode",
+      "ConfigItemID": "12312312323"
+    },
+    "Platform": "nsx",
+    "Status": "SIMULATED",
+    "Changed": false,
+    "Verified": false,
+    "Missing": [],
+    "RuleReference": "simulation-04587118a8219667",
+    "Operation": "dfw_rule"
+  }
+]

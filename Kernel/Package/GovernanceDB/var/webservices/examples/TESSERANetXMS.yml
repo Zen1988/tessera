@@ -1,0 +1,157 @@
+{
+  "Debugger": {
+    "DebugThreshold": "error",
+    "TestMode": "0"
+  },
+  "Description": "NetXMS read-only observation connector. Configure endpoint and dedicated restricted API token; no device credentials.",
+  "RemoteSystem": "NetXMS",
+  "Provider": {
+    "Operation": {},
+    "Transport": {
+      "Type": ""
+    }
+  },
+  "Requester": {
+    "Invoker": {
+      "ServerInfo": {
+        "Type": "NetXMS::ServerInfo",
+        "Description": "Read-only ServerInfo",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "Status": {
+        "Type": "NetXMS::Status",
+        "Description": "Read-only Status",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "Objects": {
+        "Type": "NetXMS::Objects",
+        "Description": "Read-only Objects",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "ObjectGet": {
+        "Type": "NetXMS::ObjectGet",
+        "Description": "Read-only ObjectGet",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "Alarms": {
+        "Type": "NetXMS::Alarms",
+        "Description": "Read-only Alarms",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "AlarmGet": {
+        "Type": "NetXMS::AlarmGet",
+        "Description": "Read-only AlarmGet",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "CurrentValues": {
+        "Type": "NetXMS::CurrentValues",
+        "Description": "Read-only CurrentValues",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "DataCollection": {
+        "Type": "NetXMS::DataCollection",
+        "Description": "Read-only DataCollection",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "History": {
+        "Type": "NetXMS::History",
+        "Description": "Read-only History",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "PathTrace": {
+        "Type": "NetXMS::PathTrace",
+        "Description": "Fixed read-only path query; requires source object execute-script permission",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "PathTraceL2": {
+        "Type": "NetXMS::PathTraceL2",
+        "Description": "Fixed read-only path query; requires source object execute-script permission",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      }
+    },
+    "Transport": {
+      "Type": "HTTP::REST",
+      "Config": {
+        "Host": "https://netxms.example.invalid",
+        "Timeout": "30",
+        "DefaultCommand": "GET",
+        "SSL": {
+          "UseSSL": "Yes",
+          "SSLVerifyHostname": "Yes",
+          "SSLVerifyMode": "Yes"
+        },
+        "AdditionalHeaders": {
+          "Accept": "application/json"
+        },
+        "InvokerControllerMapping": {
+          "ServerInfo": {
+            "Controller": "/v1/server-info",
+            "Command": "GET"
+          },
+          "Status": {
+            "Controller": "/v1/status",
+            "Command": "GET"
+          },
+          "Objects": {
+            "Controller": "/v1/objects",
+            "Command": "GET"
+          },
+          "ObjectGet": {
+            "Controller": "/v1/objects/:ObjectID",
+            "Command": "GET"
+          },
+          "Alarms": {
+            "Controller": "/v1/alarms",
+            "Command": "GET"
+          },
+          "AlarmGet": {
+            "Controller": "/v1/alarms/:AlarmID",
+            "Command": "GET"
+          },
+          "CurrentValues": {
+            "Controller": "/v1/objects/:ObjectID/data-collection/current-values",
+            "Command": "GET"
+          },
+          "DataCollection": {
+            "Controller": "/v1/objects/:ObjectID/data-collection/configuration",
+            "Command": "GET"
+          },
+          "History": {
+            "Controller": "/v1/objects/:ObjectID/data-collection/:DCIID/history",
+            "Command": "GET"
+          },
+          "PathTrace": {
+            "Controller": "/v1/objects/:SourceID/execute-script",
+            "Command": "POST"
+          },
+          "PathTraceL2": {
+            "Controller": "/v1/objects/:SourceID/execute-script",
+            "Command": "POST"
+          }
+        }
+      }
+    }
+  }
+}

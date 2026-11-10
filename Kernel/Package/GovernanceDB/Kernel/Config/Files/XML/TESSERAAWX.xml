@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="GenericInterface::Invoker::Module###AWX::JobLaunch" Required="0" Valid="1">
+        <Description Translatable="1">AWX JobLaunch: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">JobLaunch</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::WorkflowLaunch" Required="0" Valid="1">
+        <Description Translatable="1">AWX WorkflowLaunch: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">WorkflowLaunch</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::JobGet" Required="0" Valid="1">
+        <Description Translatable="1">AWX JobGet: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">JobGet</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::WorkflowGet" Required="0" Valid="1">
+        <Description Translatable="1">AWX WorkflowGet: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">WorkflowGet</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::JobStdout" Required="0" Valid="1">
+        <Description Translatable="1">AWX JobStdout: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">JobStdout</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::JobEvents" Required="0" Valid="1">
+        <Description Translatable="1">AWX JobEvents: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">JobEvents</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::WorkflowNodes" Required="0" Valid="1">
+        <Description Translatable="1">AWX WorkflowNodes: non-secret inputs; AWX owns execution credentials.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">WorkflowNodes</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::JobLaunchCallback" Required="0" Valid="1">
+        <Description Translatable="1">AWX JobLaunchCallback integration backend.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">JobLaunchCallback</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::InventoryHosts" Required="0" Valid="1">
+        <Description Translatable="1">AWX InventoryHosts integration backend.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">InventoryHosts</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::InventoryHostCreate" Required="0" Valid="1">
+        <Description Translatable="1">AWX InventoryHostCreate integration backend.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">InventoryHostCreate</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###AWX::InventoryHostUpdate" Required="0" Valid="1">
+        <Description Translatable="1">AWX InventoryHostUpdate integration backend.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">InventoryHostUpdate</Item><Item Key="Controller">AWX</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="TESSERA::AWX::CallbackURL" Required="0" Valid="1">
+        <Description Translatable="1">Externally reachable HTTPS ExecutionCallback URL. Empty disables callback launch. No tokens in this URL.</Description>
+        <Navigation>Core::TESSERA::AWX</Navigation>
+        <Value><Item ValueType="String"></Item></Value>
+    </Setting>
+</otobo_config>

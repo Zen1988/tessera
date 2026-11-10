@@ -1,0 +1,108 @@
+{
+  "tessera_work": {
+    "AnalysisID": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "PlanDigest": "2770dfd6cb76bcbf2222dea1a7b0f732d45cfedc701cffd3acdc0f07602f845f",
+    "Phase": "APPLY",
+    "Plans": [
+      {
+        "PlanID": "0dd21b45ecbda4d683e52508a668211294f5a0972ee2ce799525b03b3313faf0",
+        "Target": {
+          "Application": "tessera",
+          "ObjectType": "CMDB",
+          "Namespace": "CMDB",
+          "Class": "NetworkNode",
+          "ConfigItemID": "000012313213"
+        },
+        "Platform": "panos",
+        "Context": {
+          "vsys": "vsys1",
+          "source_zone": "trust",
+          "destination_zone": "dmz"
+        },
+        "Draft": {
+          "device_id": "30000000-0000-4000-8000-000000000001",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      },
+      {
+        "PlanID": "4425ec445b4b609474272642cf967fc0629dad2037996202c4d894fff56d3740",
+        "Target": {
+          "Application": "tessera",
+          "ObjectType": "CMDB",
+          "Namespace": "CMDB",
+          "Class": "NetworkNode",
+          "ConfigItemID": "12312312322"
+        },
+        "Platform": "aci",
+        "Context": {
+          "tenant": "tenant-a",
+          "source_epg": "app",
+          "destination_epg": "db",
+          "contract": "web"
+        },
+        "Draft": {
+          "device_id": "30000000-0000-4000-8000-000000000002",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      },
+      {
+        "PlanID": "04587118a82196678beaa0abcbcf8a621ad67c35a9a92f36b58f94e3f169c8e8",
+        "Target": {
+          "Application": "tessera",
+          "ObjectType": "CMDB",
+          "Namespace": "CMDB",
+          "Class": "NetworkNode",
+          "ConfigItemID": "12312312323"
+        },
+        "Platform": "nsx",
+        "Context": {
+          "domain": "default",
+          "source_group": "/infra/domains/default/groups/app",
+          "destination_group": "/infra/domains/default/groups/db",
+          "applied_to": "/infra/domains/default/groups/db",
+          "policy": "tessera"
+        },
+        "Draft": {
+          "device_id": "30000000-0000-4000-8000-000000000003",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      }
+    ]
+  }
+}

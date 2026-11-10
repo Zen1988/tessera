@@ -174,6 +174,7 @@ sub _AssignmentsGet {
             Silent             => 1,
         );
         next ASSIGNMENT_ID if !$Assignment;
+        next ASSIGNMENT_ID if ($Assignment->{ZTSMStatus} || '') ne 'Active';
         next ASSIGNMENT_ID if !$Self->_CustomerUserValueMatches(
             Value      => $Assignment->{'DynamicField_ZTSMSupportAssignment-UserAccount'},
             Candidates => \@CustomerReferences,
@@ -198,16 +199,8 @@ sub _CustomerUserReferences {
     my ( $Self, $CustomerUserID ) = @_;
 
     return if !defined $CustomerUserID || $CustomerUserID eq '';
-    my %Reference = ( $CustomerUserID => 1 );
-    for my $CustomerID (
-        $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerIDs(
-            User => $CustomerUserID,
-        )
-        )
-    {
-        $Reference{$CustomerID} = 1 if defined $CustomerID && $CustomerID ne '';
-    }
-    return sort keys %Reference;
+    # CustomerUser references are account identities, never company IDs.
+    return ($CustomerUserID);
 }
 
 sub _CustomerUserValueMatches {
@@ -288,6 +281,7 @@ sub _ReferenceObjects {
 
         for my $Candidate (@Candidates) {
             next if ( $Candidate->{Class} || '' ) ne $Param{Class};
+            next if ($Candidate->{ZTSMStatus} || '') ne 'Active';
             $Found{ $Candidate->{GovernanceObjectID} } = $Candidate;
         }
     }

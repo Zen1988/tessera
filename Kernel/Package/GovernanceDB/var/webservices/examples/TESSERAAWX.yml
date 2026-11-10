@@ -1,0 +1,124 @@
+{
+  "Debugger": {
+    "DebugThreshold": "error",
+    "TestMode": "0"
+  },
+  "Description": "AWX integration; configure HTTPS host and restricted API identity before use. No execution credentials.",
+  "RemoteSystem": "AWX",
+  "Provider": {
+    "Operation": {},
+    "Transport": {
+      "Type": ""
+    }
+  },
+  "Requester": {
+    "Invoker": {
+      "JobLaunch": {
+        "Type": "AWX::JobLaunch",
+        "Description": "AWX JobLaunch",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "WorkflowLaunch": {
+        "Type": "AWX::WorkflowLaunch",
+        "Description": "AWX WorkflowLaunch",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "JobGet": {
+        "Type": "AWX::JobGet",
+        "Description": "AWX JobGet",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "WorkflowGet": {
+        "Type": "AWX::WorkflowGet",
+        "Description": "AWX WorkflowGet",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "JobStdout": {
+        "Type": "AWX::JobStdout",
+        "Description": "AWX JobStdout",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "JobEvents": {
+        "Type": "AWX::JobEvents",
+        "Description": "AWX JobEvents",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "WorkflowNodes": {
+        "Type": "AWX::WorkflowNodes",
+        "Description": "AWX WorkflowNodes",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      },
+      "JobLaunchCallback": {
+        "Type": "AWX::JobLaunchCallback",
+        "Description": "Saved execution callback launch",
+        "Events": [],
+        "MappingInbound": {},
+        "MappingOutbound": {}
+      }
+    },
+    "Transport": {
+      "Type": "HTTP::REST",
+      "Config": {
+        "Host": "https://awx.example.invalid",
+        "Timeout": "30",
+        "DefaultCommand": "GET",
+        "SSL": {
+          "UseSSL": "Yes",
+          "SSLVerifyHostname": "Yes",
+          "SSLVerifyMode": "Yes"
+        },
+        "AdditionalHeaders": {
+          "Accept": "application/json"
+        },
+        "InvokerControllerMapping": {
+          "JobLaunch": {
+            "Controller": "/api/v2/job_templates/:TemplateID/launch/",
+            "Command": "POST"
+          },
+          "WorkflowLaunch": {
+            "Controller": "/api/v2/workflow_job_templates/:TemplateID/launch/",
+            "Command": "POST"
+          },
+          "JobGet": {
+            "Controller": "/api/v2/jobs/:JobID/",
+            "Command": "GET"
+          },
+          "WorkflowGet": {
+            "Controller": "/api/v2/workflow_jobs/:JobID/",
+            "Command": "GET"
+          },
+          "JobStdout": {
+            "Controller": "/api/v2/jobs/:JobID/stdout/",
+            "Command": "GET"
+          },
+          "JobEvents": {
+            "Controller": "/api/v2/jobs/:JobID/job_events/",
+            "Command": "GET"
+          },
+          "WorkflowNodes": {
+            "Controller": "/api/v2/workflow_jobs/:JobID/workflow_nodes/",
+            "Command": "GET"
+          },
+          "JobLaunchCallback": {
+            "Controller": "/api/v2/job_templates/:TemplateID/launch/",
+            "Command": "POST"
+          }
+        }
+      }
+    }
+  }
+}

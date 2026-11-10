@@ -1,0 +1,16 @@
+<main class="MainBox ARIARoleMain TESSERAIdentity">
+<h1>Complete your self-service profile</h1>
+[% IF Data.Message %]<div class="MessageBox Error" role="alert"><p>[% Data.Message | html %]</p></div>[% END %]
+[% IF Data.State.Step == 'Unavailable' %]<p role="alert">Your administrator must configure the license and responsibility text before you can continue.</p>
+[% ELSIF Data.State.Step == 'Consent' %]
+<h2>License and responsibilities</h2><pre class="TESSERAResponsibilityText">[% Data.State.Text | html %]</pre>
+<form method="post" action="[% Env('CGIHandle') | html %]"><input type="hidden" name="Action" value="CustomerTESSERAOnboarding"/><input type="hidden" name="Subaction" value="Accept"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/><input type="hidden" name="Version" value="[% Data.State.Version | html %]"/>
+<label><input type="checkbox" name="Accepted" value="1" required/> I accept the license and responsibility statement above.</label><button type="submit" class="CallForAction Primary"><span>Accept and continue</span></button></form>
+[% ELSE %]
+<h2>Request preferences</h2><p>These choices provide request defaults. They do not grant SupportAssignments or access.</p>
+[% IF Data.Applications.size %]<form method="post" action="[% Env('CGIHandle') | html %]"><input type="hidden" name="Action" value="CustomerTESSERAOnboarding"/><input type="hidden" name="Subaction" value="Defaults"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/>
+<label for="Application">Default application</label><select id="Application" name="Application" required><option value="">Select your application</option>[% FOREACH App IN Data.Applications %]<option value="[% App.ID | html %]">[% App.Name | html %]</option>[% END %]</select>
+[% IF Data.Teams.size %]<label for="Profile">Default team (SupportProfile)</label><select id="Profile" name="Profile" required><option value="">Select an assigned team</option>[% FOREACH Team IN Data.Teams %]<option value="[% Team.ID | html %]">[% Team.Name | html %]</option>[% END %]</select>[% ELSE %]<p>You have no assigned team. You can save your application preference; an administrator or approved membership sync must assign your team separately.</p>[% END %]
+<button type="submit" class="CallForAction Primary"><span>Save preferences and continue</span></button></form>[% ELSE %]<p role="alert">No active application is available. Ask your administrator to configure the application catalog.</p>[% END %]
+[% END %]
+</main>

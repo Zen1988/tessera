@@ -1,0 +1,15 @@
+VERSION: 1
+# TESSERA calls Navis. Trusted NavisContext supplies the completed build and
+# independently authorized CMDB snapshot. AWX is dispatched only after plan approval.
+CALL WEB SERVICE:
+  - SERVICE: Navis
+    INVOKER: NavisAnalyze
+    AS: NAVIS
+    WITH:
+      source: 192.0.2.10
+      destination: 198.51.100.5
+      protocol: tcp
+      destination_port: 443
+      action: allow
+RETURN:
+  VALUE: EXTERNAL.NAVIS.AnalysisID

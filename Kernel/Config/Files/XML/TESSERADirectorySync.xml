@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AgentTESSERADirectorySync" Required="0" Valid="1">
+        <Description>Administrator directory synchronization and external membership mappings.</Description><Navigation>Frontend::Agent::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="Group"><Array><Item>admin</Item></Array></Item><Item Key="GroupRo"><Array/></Item><Item Key="Title">Directory self service</Item><Item Key="Description">AD users, SupportProfiles and external assignments</Item><Item Key="NavBarName">Admin</Item></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AgentTESSERADirectorySync" Required="0" Valid="1">
+        <Description>Configure directory self service.</Description><Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value><Hash><Item Key="Group"><Array><Item>admin</Item></Array></Item><Item Key="GroupRo"><Array/></Item><Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item><Item Key="Name">Directory self service</Item><Item Key="Block">GovernanceDBSettings</Item><Item Key="Description">Directory users and SupportProfile membership</Item><Item Key="IconBig">fa-users</Item><Item Key="IconSmall"/></Hash></Value>
+    </Setting>
+    <Setting Name="Daemon::SchedulerCronTaskManager::Task###TESSERADirectorySync" Required="0" Valid="1">
+        <Description>Check the configured directory schedule hourly; no operation until enabled by an administrator.</Description><Navigation>Daemon::SchedulerCronTaskManager::Task</Navigation>
+        <Value><Hash><Item Key="TaskName">TESSERADirectorySync</Item><Item Key="Schedule">17 * * * *</Item><Item Key="Module">Kernel::System::TESSERA::DirectorySync</Item><Item Key="Function">RunScheduled</Item><Item Key="MaximumParallelInstances">1</Item><Item Key="Params"><Array/></Item></Hash></Value>
+    </Setting>
+    <Setting Name="CustomerPanelPreApplicationModule###000TESSERAIdentityOnboarding" Required="0" Valid="1">
+        <Description>Require responsibility acceptance and request defaults for directory-owned users.</Description><Navigation>Frontend::Customer</Navigation>
+        <Value><Item ValueType="String">Kernel::Modules::CustomerTESSERAOnboarding</Item></Value>
+    </Setting>
+    <Setting Name="CustomerFrontend::Module###CustomerTESSERAOnboarding" Required="0" Valid="1">
+        <Description>Authenticated customer first-login setup.</Description><Navigation>Frontend::Customer::ModuleRegistration</Navigation>
+        <Value><Item ValueType="FrontendRegistration"><Hash><Item Key="Group"><Array/></Item><Item Key="GroupRo"><Array/></Item><Item Key="Title">Complete your profile</Item><Item Key="Description">Accept responsibilities and save request defaults</Item><Item Key="NavBarName"/></Hash></Item></Value>
+    </Setting>
+    <Setting Name="Ticket::EventModulePost###000-TESSERARequestDefaults" Required="0" Valid="1">
+        <Description>Fill empty application/location at ticket creation before orchestration. Preferences never grant assignments.</Description><Navigation>Core::Event::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Module">Kernel::System::Ticket::Event::TESSERARequestDefaults</Item><Item Key="Event">TicketCreate</Item><Item Key="Transaction">0</Item></Hash></Value>
+    </Setting>
+    <Setting Name="Loader::Customer::CommonCSS###230-TESSERAIdentity" Required="0" Valid="1"><Description>Customer onboarding layout.</Description><Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation><Value><Array><Item>TESSERA.Customer.Identity.css</Item></Array></Value></Setting>
+</otobo_config>

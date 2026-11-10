@@ -1,0 +1,8 @@
+{
+  "Inventory": {
+    "InventorySync": 14
+  },
+  "AWX": {
+    "JobLaunchCallback": 12
+  }
+}

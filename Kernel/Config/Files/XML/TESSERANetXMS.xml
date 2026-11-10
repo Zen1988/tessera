@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::ServerInfo" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS ServerInfo observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">ServerInfo</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::Status" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS Status observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">Status</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::Objects" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS Objects observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">Objects</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::ObjectGet" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS ObjectGet observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">ObjectGet</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::Alarms" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS Alarms observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">Alarms</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::AlarmGet" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS AlarmGet observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">AlarmGet</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::CurrentValues" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS CurrentValues observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">CurrentValues</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::DataCollection" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS DataCollection observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">DataCollection</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::History" Required="0" Valid="1">
+        <Description Translatable="1">Read-only NetXMS History observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">History</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::PathTrace" Required="0" Valid="1">
+        <Description Translatable="1">Fixed NetXMS path observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">PathTrace</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Invoker::Module###NetXMS::PathTraceL2" Required="0" Valid="1">
+        <Description Translatable="1">Fixed NetXMS path observation.</Description>
+        <Navigation>GenericInterface::Invoker::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">PathTraceL2</Item><Item Key="Controller">NetXMS</Item><Item Key="ConfigDialog">AdminGenericInterfaceInvokerDefault</Item></Hash></Value>
+    </Setting>
+</otobo_config>

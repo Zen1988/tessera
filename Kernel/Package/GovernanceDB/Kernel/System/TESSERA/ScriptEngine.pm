@@ -25,6 +25,7 @@ sub new {
         SearchProvider => $Param{SearchProvider},
         TicketProvider => $Param{TicketProvider},
         MaxSearchLimit => $Param{MaxSearchLimit} || 1000,
+        WebServiceProvider => $Param{WebServiceProvider},
     }, $Type;
 }
 
@@ -115,12 +116,26 @@ sub ScriptParse {
         $Script = $Loaded;
     }
 
-    my %Allowed = map { $_ => 1 } ('SCRIPT', 'VERSION', 'LET THIS', 'SEARCH', 'REQUIRE', 'RETURN');
+    my %Allowed = map { $_ => 1 } ('SCRIPT', 'VERSION', 'LET THIS', 'SEARCH', 'REQUIRE', 'RETURN', 'CALL WEB SERVICE');
     return { Success => 0, Status => 'UNKNOWN', Error => 'Unsupported script operation.' }
         if grep { !$Allowed{$_} } keys %{$Script};
     my $Version = defined $Script->{VERSION} ? $Script->{VERSION} : 1;
     return { Success => 0, Status => 'UNKNOWN', Error => "Unsupported TESSERA script version '$Version'." }
         if "$Version" ne '1';
+    my $Calls = $Script->{'CALL WEB SERVICE'};
+    $Calls = [$Calls] if ref $Calls eq 'HASH';
+    if (defined $Calls) {
+        return {Success=>0,Status=>'UNKNOWN',Error=>'CALL WEB SERVICE requires at most 20 calls.'} if ref $Calls ne 'ARRAY' || @{$Calls}>20;
+        for my $Call (@{$Calls}) {
+            return {Success=>0,Status=>'UNKNOWN',Error=>'Invalid configured web service call.'} if ref $Call ne 'HASH'
+                || grep { !/\A(?:SERVICE|INVOKER|WITH|AS)\z/ } keys %{$Call};
+            for my $Key (qw(SERVICE INVOKER AS)) {
+                return {Success=>0,Status=>'UNKNOWN',Error=>'Web service call identifiers must be fixed configured names.'}
+                    if !defined $Call->{$Key} || ref $Call->{$Key} || $Call->{$Key} !~ /\A[A-Za-z][A-Za-z0-9_ -]{0,99}\z/;
+            }
+            return {Success=>0,Status=>'UNKNOWN',Error=>'Web service WITH must be an object.'} if ref $Call->{WITH} ne 'HASH';
+        }
+    }
 
     if ( exists $Script->{'LET THIS'} ) {
         return { Success => 0, Status => 'UNKNOWN', Error => 'LET THIS currently supports only TICKET.' }
@@ -170,6 +185,10 @@ sub ScriptEvaluate {
     my $Parsed = $Self->ScriptParse( Source => $Param{Source},
         Script => ref $Param{Parsed} eq 'HASH' ? $Param{Parsed}->{Script} : $Param{Script} );
     return $Parsed if !$Parsed->{Success};
+    my $WebCalls = $Parsed->{Script}->{'CALL WEB SERVICE'} || [];
+    $WebCalls = [$WebCalls] if ref $WebCalls eq 'HASH';
+    return {Success=>0,Status=>'UNKNOWN',Error=>'Web service effects require an authorized backend provider.'}
+        if @{$WebCalls} && (defined $Param{AllowedSearchType} || ref $Self->{WebServiceProvider} ne 'CODE');
     # A stored selection program cannot read unrelated classes before returning
     # an otherwise valid collection. Enforce caller-owned scope before any read.
     if ( defined $Param{AllowedSearchType} ) {
@@ -180,6 +199,10 @@ sub ScriptEvaluate {
     }
 
     my $InputContext = ref $Param{Context} eq 'HASH' ? $Param{Context} : {};
+    if (exists $InputContext->{EXTERNAL}) {
+        my $ExternalError = $Self->ScriptDataValidate($InputContext->{EXTERNAL});
+        return {Success => 0, Status => 'UNKNOWN', Error => $ExternalError} if $ExternalError;
+    }
     my $Context = { %{$InputContext} };
     if ( exists $Parsed->{Script}->{'LET THIS'} ) {
         return { Success => 0, Status => 'UNKNOWN', Error => 'LET THIS TICKET requires a complete ticket context.' }
@@ -222,6 +245,17 @@ sub ScriptEvaluate {
         };
     }
 
+    for my $Call (@{$WebCalls}) {
+        my $Payload = eval { $Self->_WebInput($Call->{WITH}, $Context, \%Variables) };
+        return {Success=>0,Status=>'UNKNOWN',Error=>'Could not resolve web service input.',Trace=>\@Trace} if $@;
+        my $Response = eval { $Self->{WebServiceProvider}->(Service=>$Call->{SERVICE},Invoker=>$Call->{INVOKER},Data=>$Payload,UserID=>$Param{UserID} || 1) };
+        return {Success=>0,Status=>'UNKNOWN',Error=>'Configured web service call failed; inspect its saved execution.',Trace=>\@Trace}
+            if $@ || ref $Response ne 'HASH' || !$Response->{Success} || ref $Response->{Data} ne 'HASH' || $Self->ScriptDataValidate($Response->{Data});
+        require Storable;
+        $Context->{EXTERNAL} = Storable::dclone($Context->{EXTERNAL} || {});
+        $Context->{EXTERNAL}{$Call->{AS}} = $Response->{Data};
+        push @Trace, 'CALL WEB SERVICE ' . $Call->{SERVICE} . ' / ' . $Call->{INVOKER};
+    }
     my $Returned = $Self->_ScriptReturn(
         Return    => $Parsed->{Script}->{RETURN},
         Context   => $Context,
@@ -230,6 +264,15 @@ sub ScriptEvaluate {
     );
     $Returned->{Trace} = \@Trace;
     return $Returned;
+}
+
+sub _WebInput {
+    my ($Self, $Value, $Context, $Variables) = @_;
+    if (ref $Value eq 'HASH') { return {map {$_=>$Self->_WebInput($Value->{$_},$Context,$Variables)} keys %{$Value}} }
+    if (ref $Value eq 'ARRAY') { return [map {$Self->_WebInput($_,$Context,$Variables)} @{$Value}] }
+    my $R = $Self->_ScriptValueResolve(Value=>$Value,Context=>$Context,Variables=>$Variables);
+    die "Unavailable input.\n" if !$R->{Success};
+    return $R->{Value};
 }
 
 sub _ScriptSearch {
@@ -840,7 +883,7 @@ sub _ScriptValueResolve {
         if uc($Value) eq 'CURRENT OBJECT';
     return { Success => 1, Value => $Param{Context}->{THIS} }
         if uc($Value) eq 'THIS';
-    if ( $Value =~ m{\A\@?(TICKET|THIS)(?:\.|\z)}i ) {
+    if ( $Value =~ m{\A\@?(TICKET|THIS|EXTERNAL)(?:\.|\z)}i ) {
         my $Root = uc($1);
         my @Path = split m{\.(?![^\[]*\])}, $Value;
         shift @Path;

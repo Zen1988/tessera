@@ -1,0 +1,260 @@
+{
+  "Status": "REVIEW_REQUIRED",
+  "Simulation": true,
+  "ApplyReady": false,
+  "CallerSessionID": "tessera-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "TraceSessionID": "40000000-0000-4000-8000-000000000001",
+  "GraphBuildID": "20000000-0000-4000-8000-000000000001",
+  "RequestDigest": "0ea19a221abd78de3149544426c7f7da9d02e59282ca8c85d58581df5ee239b3",
+  "CMDBSnapshotDigest": "e365203af02c032d5f984fd224c177f0ce2af88d2b419a57b0cb70ae59d87bb0",
+  "GraphIdentityDigest": "04342b4ff43057dac082ca15e50f8065cbb7fc87941e6350a9f42076a5c21592",
+  "RequestedAction": "allow",
+  "Summary": [
+    {
+      "flow": {
+        "source": "192.0.2.10",
+        "destination": "198.51.100.5",
+        "protocol": "tcp",
+        "destination_port": 443
+      },
+      "status": "unknown",
+      "missing": [
+        "return_path"
+      ]
+    }
+  ],
+  "Plans": [
+    {
+      "PlanID": "0dd21b45ecbda4d683e52508a668211294f5a0972ee2ce799525b03b3313faf0",
+      "Target": {
+        "Application": "tessera",
+        "ObjectType": "CMDB",
+        "Namespace": "CMDB",
+        "Class": "NetworkNode",
+        "ConfigItemID": "000012313213"
+      },
+      "Platform": "panos",
+      "Context": {
+        "vsys": "vsys1",
+        "source_zone": "trust",
+        "destination_zone": "dmz"
+      },
+      "Draft": {
+        "device_id": "30000000-0000-4000-8000-000000000001",
+        "source": "192.0.2.10",
+        "destination": "198.51.100.5",
+        "protocol": "tcp",
+        "destination_port": 443,
+        "action": "allow",
+        "status": "draft",
+        "source_zone": "trust",
+        "destination_zone": "dmz",
+        "source_zone_status": "resolved",
+        "destination_zone_status": "resolved",
+        "ingress_interface": "in",
+        "egress_interface": "out",
+        "reason": "synthetic candidate denial"
+      }
+    },
+    {
+      "PlanID": "4425ec445b4b609474272642cf967fc0629dad2037996202c4d894fff56d3740",
+      "Target": {
+        "Application": "tessera",
+        "ObjectType": "CMDB",
+        "Namespace": "CMDB",
+        "Class": "NetworkNode",
+        "ConfigItemID": "12312312322"
+      },
+      "Platform": "aci",
+      "Context": {
+        "tenant": "tenant-a",
+        "source_epg": "app",
+        "destination_epg": "db",
+        "contract": "web"
+      },
+      "Draft": {
+        "device_id": "30000000-0000-4000-8000-000000000002",
+        "source": "192.0.2.10",
+        "destination": "198.51.100.5",
+        "protocol": "tcp",
+        "destination_port": 443,
+        "action": "allow",
+        "status": "draft",
+        "source_zone": "trust",
+        "destination_zone": "dmz",
+        "source_zone_status": "resolved",
+        "destination_zone_status": "resolved",
+        "ingress_interface": "in",
+        "egress_interface": "out",
+        "reason": "synthetic candidate denial"
+      }
+    },
+    {
+      "PlanID": "04587118a82196678beaa0abcbcf8a621ad67c35a9a92f36b58f94e3f169c8e8",
+      "Target": {
+        "Application": "tessera",
+        "ObjectType": "CMDB",
+        "Namespace": "CMDB",
+        "Class": "NetworkNode",
+        "ConfigItemID": "12312312323"
+      },
+      "Platform": "nsx",
+      "Context": {
+        "domain": "default",
+        "source_group": "/infra/domains/default/groups/app",
+        "destination_group": "/infra/domains/default/groups/db",
+        "applied_to": "/infra/domains/default/groups/db",
+        "policy": "tessera"
+      },
+      "Draft": {
+        "device_id": "30000000-0000-4000-8000-000000000003",
+        "source": "192.0.2.10",
+        "destination": "198.51.100.5",
+        "protocol": "tcp",
+        "destination_port": 443,
+        "action": "allow",
+        "status": "draft",
+        "source_zone": "trust",
+        "destination_zone": "dmz",
+        "source_zone_status": "resolved",
+        "destination_zone_status": "resolved",
+        "ingress_interface": "in",
+        "egress_interface": "out",
+        "reason": "synthetic candidate denial"
+      }
+    }
+  ],
+  "Issues": [],
+  "Mode": "fixture",
+  "Request": {
+    "source": "192.0.2.10",
+    "destination": "198.51.100.5",
+    "protocol": "tcp",
+    "destination_port": 443,
+    "graph_build_id": "20000000-0000-4000-8000-000000000001",
+    "caller_session_id": "tessera-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "Trace": {
+    "code": "TRACE_RESULT_READY",
+    "graph_build_id": "20000000-0000-4000-8000-000000000001",
+    "trace_session_id": "40000000-0000-4000-8000-000000000001",
+    "results": [
+      {
+        "source": "192.0.2.10",
+        "destination": "198.51.100.5",
+        "protocol": "tcp",
+        "destination_port": 443,
+        "status": "blocked",
+        "connection_verdict": {
+          "status": "unknown",
+          "missing": [
+            "return_path"
+          ]
+        }
+      }
+    ],
+    "caller_session_id": "tessera-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "Recommendations": {
+    "code": "RECOMMENDATIONS_AVAILABLE",
+    "trace_session_id": "40000000-0000-4000-8000-000000000001",
+    "recommendations": [
+      {
+        "status": "ready",
+        "result": {
+          "device_id": "30000000-0000-4000-8000-000000000001",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      },
+      {
+        "status": "ready",
+        "result": {
+          "device_id": "30000000-0000-4000-8000-000000000002",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      },
+      {
+        "status": "ready",
+        "result": {
+          "device_id": "30000000-0000-4000-8000-000000000003",
+          "source": "192.0.2.10",
+          "destination": "198.51.100.5",
+          "protocol": "tcp",
+          "destination_port": 443,
+          "action": "allow",
+          "status": "draft",
+          "source_zone": "trust",
+          "destination_zone": "dmz",
+          "source_zone_status": "resolved",
+          "destination_zone_status": "resolved",
+          "ingress_interface": "in",
+          "egress_interface": "out",
+          "reason": "synthetic candidate denial"
+        }
+      }
+    ],
+    "caller_session_id": "tessera-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "Graph": {
+    "build_id": "20000000-0000-4000-8000-000000000001",
+    "status": "completed",
+    "nodes": [
+      {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "type": "device",
+        "external_identity": {
+          "status": "mapped",
+          "namespace": "CMDB",
+          "object_class": "NetworkNode",
+          "id": "000012313213"
+        }
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000002",
+        "type": "device",
+        "external_identity": {
+          "status": "mapped",
+          "namespace": "CMDB",
+          "object_class": "NetworkNode",
+          "id": "12312312322"
+        }
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000003",
+        "type": "device",
+        "external_identity": {
+          "status": "mapped",
+          "namespace": "CMDB",
+          "object_class": "NetworkNode",
+          "id": "12312312323"
+        }
+      }
+    ],
+    "connections": [],
+    "projection_status": "device_identity_only"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "TemplateID": 42,
+  "inventory": 7,
+  "verbosity": 3,
+  "extra_vars": {
+    "tessera_request": {
+      "reference": "integration-test-001",
+      "data": {
+        "message": "hello from TESSERA"
+      },
+      "targets": [
+        "localhost"
+      ]
+    }
+  }
+}

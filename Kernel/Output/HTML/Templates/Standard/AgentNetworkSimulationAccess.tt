@@ -1,0 +1,22 @@
+<div class="MainBox ARIARoleMain">
+<h1>Network simulation access</h1>
+<p>Grant customer accounts permission to request network analysis and choose the Navis graph for each environment. Customers still need their existing ContractEntitlement, SupportAssignment and TESSERA::CMDB::READ permission for every asset shown.</p>
+[% IF Data.Message %]<div class="MessageBox Error" role="alert"><p>[% Data.Message | html %]</p></div>[% END %]
+[% IF Data.HasOverrides %]<div class="MessageBox Notice"><p>These settings have a configuration-file override. Manage the override before saving here.</p></div>[% END %]
+[% IF Data.InactiveBindings.size %]<div class="MessageBox Notice"><p>Bindings for inactive or removed environments will be cleared on save. They do not authorize active customer simulation.</p></div>[% END %]
+<p><a href="[% Env('Baselink') %]Action=AgentTESSERAIntegration">Integration onboarding</a> — configure the Navis connection and machine credentials there. This page grants no agent role, CMDB assignment or execution approval.</p>
+<form action="[% Env('CGIHandle') | html %]" method="post" class="Validate PreventMultipleSubmits">
+<input type="hidden" name="Action" value="AgentNetworkSimulationAccess"/><input type="hidden" name="Subaction" value="Save"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/><input type="hidden" name="Revision" value="[% Data.Revision | html %]"/>
+<fieldset class="TableLike"><legend>Customer access</legend>
+<div class="Field"><label><input type="checkbox" name="Enabled" value="1" [% IF Data.Enabled %]checked[% END %]/> Enable remote simulation for the accounts below</label></div><div class="Clear"></div>
+<label for="SimulationUsers">Customer account logins</label><div class="Field"><textarea id="SimulationUsers" name="Users" rows="8" class="W50pc">[% Data.UsersText | html %]</textarea><p>One exact active login per line. Removing a login revokes simulation and saved-result access. Company IDs and wildcards are not accepted.</p></div><div class="Clear"></div>
+</fieldset>
+<table class="DataTable"><caption>Current listed accounts</caption><thead><tr><th scope="col">Account</th><th scope="col">Active</th><th scope="col">CMDB read assignment</th></tr></thead><tbody>[% FOREACH User IN Data.Users %]<tr><td>[% User.Login | html %]</td><td>[% IF User.Valid %]Yes[% ELSE %]No[% END %]</td><td>[% IF User.CMDBRead %]Present — asset entitlement still applies[% ELSE %]Missing — simulation access alone is insufficient[% END %]</td></tr>[% END %]</tbody></table>
+<fieldset><legend>Environment bindings</legend><p>The customer page defaults to the unique active environment named PROD. Each configured environment needs an enabled Navis integration, an operator-provided completed build UUID and the registered caller namespace.</p>
+[% FOREACH Environment IN Data.Environments %]<fieldset class="TableLike"><legend>[% Environment.Name | html %]</legend>
+<label for="Webservice_[% Environment.ID | html %]">Navis connection</label><div class="Field"><select id="Webservice_[% Environment.ID | html %]" name="Webservice_[% Environment.ID | html %]"><option value="">Not configured</option>[% FOREACH Service IN Data.Services %]<option value="[% Service.ID | html %]" [% IF Environment.WebserviceID == Service.ID %]selected[% END %]>[% Service.Name | html %]</option>[% END %]</select></div><div class="Clear"></div>
+<label for="Build_[% Environment.ID | html %]">Completed build UUID</label><div class="Field"><input id="Build_[% Environment.ID | html %]" name="Build_[% Environment.ID | html %]" value="[% Environment.BuildID | html %]" maxlength="36" class="W50pc"/></div><div class="Clear"></div>
+<label for="Namespace_[% Environment.ID | html %]">Caller namespace</label><div class="Field"><input id="Namespace_[% Environment.ID | html %]" name="Namespace_[% Environment.ID | html %]" value="[% Environment.Namespace | html %]" maxlength="255" class="W50pc"/></div><div class="Clear"></div>
+</fieldset>[% END %]</fieldset>
+<div class="Field"><button type="submit" [% IF Data.HasOverrides %]disabled[% END %]>Save access and bindings</button></div><div class="Clear"></div>
+</form></div>

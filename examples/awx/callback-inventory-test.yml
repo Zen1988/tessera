@@ -1,0 +1,80 @@
+# Local EE-only fixture for automation-test.yml; one explicit test alias, no remote connection.
+---
+- name: Verify saved TESSERA execution and completion callback
+  hosts: tessera-ci-1
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Validate callback transport contract
+      ansible.builtin.assert:
+        that:
+          - tessera_callback.URL is match('^https://')
+          - tessera_callback.ExecutionUID | length == 40
+          - tessera_callback.CallbackToken | length == 64
+      no_log: true
+    - name: Start a failure-safe result
+      ansible.builtin.set_fact:
+        tessera_exit_code: 1
+        tessera_result:
+          outcome: failed
+          message: Test did not complete
+    - name: Execute harmless integration test
+      block:
+        - name: Verify business input
+          ansible.builtin.assert:
+            that:
+              - tessera_request.reference is defined
+              - tessera_request.data.message is defined
+        - name: Emit verbose non-secret evidence
+          ansible.builtin.debug:
+            msg: "{{ tessera_request.data.message }}"
+            verbosity: 2
+        - name: Build structured result
+          ansible.builtin.set_fact:
+            tessera_exit_code: 0
+            tessera_result:
+              outcome: passed
+              reference: "{{ tessera_request.reference }}"
+              message: "{{ tessera_request.data.message }}"
+        - name: Publish result artifact
+          ansible.builtin.set_stats:
+            data:
+              tessera_result: "{{ tessera_result }}"
+            per_host: false
+      rescue:
+        - name: Keep the callback result failed
+          ansible.builtin.set_fact:
+            tessera_exit_code: 1
+            tessera_result:
+              outcome: failed
+              message: Integration task failed
+      always:
+        - name: Report only this execution to TESSERA
+          ansible.builtin.uri:
+            url: "{{ tessera_callback.URL }}"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ tessera_callback.CallbackToken }}"
+            body_format: json
+            body:
+              ExecutionUID: "{{ tessera_callback.ExecutionUID }}"
+              ExitCode: "{{ tessera_exit_code | int }}"
+              Response: "{{ tessera_result }}"
+            validate_certs: true
+            follow_redirects: none
+            status_code: 200
+            timeout: 30
+          register: tessera_callback_response
+          retries: 3
+          delay: 3
+          until: tessera_callback_response.status | default(0) == 200
+          no_log: true
+        - name: Verify completion was accepted
+          ansible.builtin.assert:
+            that:
+              - tessera_callback_response.json.ExecutionUID == tessera_callback.ExecutionUID
+          no_log: true
+    - name: Keep failed test visible in AWX
+      ansible.builtin.fail:
+        msg: Integration test reported failure to TESSERA
+      when: tessera_exit_code | int != 0

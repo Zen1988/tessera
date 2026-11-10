@@ -1,3 +1,17 @@
+# 2026-11-10 — GitHub synchronization validation
+
+- Refreshed origin/main: local HEAD and remote both 44d8cdba before synchronization, but Base181-188 working-tree implementation had not been committed. Preparing latest Base188 package/runtime, supporting examples/docs and regression suites for upload; historical archives, scratch artifacts and caches excluded.
+- Authoritative Base188 SOPM and OPM agree on all 441 payload bytes. Ten existing root counterparts differ from packaged payloads; no automatic overwrite performed. Package payload remains authoritative.
+- Validation: 22 Perl suites / 740 assertions pass; 19 offline customer UI checks pass; 7 collector tests and 16 Navis workflow tests pass. Container suite passes 73 tests with 4 platform skips after selecting workspace-local temporary storage (default sandbox Temp path caused permission failures). These are local checks, not live discovery or ingestion acceptance.
+
+# 2026-11-10 — Navis onboarding accepted; discovery ingestion next
+
+- Owner confirms Base188 deployed and Navis connection enabled through browser onboarding at https://navis.ncs.local. CLI IntegrationAuth token exchange also succeeded. Consumer uses namespace CMDB and object class NetworkNode. Credential values must never be recorded here.
+- Dedicated Kubernetes Secret tessera-navis-auth projects navis-client alongside existing Redis credentials under /run/tessera-secrets in web and daemon. Duplicate key cleanup from Redis Secret was instructed; completion not confirmed. Database consumer_data_scope grant remains unconfirmed; token success is not proof of source permissions.
+- Verified internal root CA against Navis. Combined public/internal CA ConfigMap tessera-outbound-ca-bundle mounted in web; system bundle mount resolved browser authentication after environment-only configuration failed. Daemon equivalent patch/test supplied, final acceptance not explicitly evidenced. Refresh combined bundle on public trust changes; subPath mount requires rollout. Persist deployment changes in authoritative infrastructure manifests to prevent reconciliation loss.
+- Web rollout exposed stale tessera-loader-cache-init image 0.0.180-r1; correction to 0.0.188 supplied and portal later operational. Verify durable deployment source uses current init image.
+- Current focus: read-only AWX discovery -> retained collection evidence -> TESSERA normalization/validation -> Navis ingestion -> operator worker/dataset/build -> graph/trace acceptance. AWX has no Navis credential. Existing vendor collectors need contract validation; no assumption that their evidence is Navis normalized input. First real target/vendor, AWX binding, source permissions, identity mapping and staging/processing handoff still required. No live discovery or ingestion acceptance yet.
+
 # 2026-11-02 — Live OAuth repair confirmed
 
 Owner confirms OAuth token management now works after the Linux dependency/path

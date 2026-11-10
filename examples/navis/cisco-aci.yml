@@ -1,0 +1,7 @@
+---
+- name: Validate Cisco ACI simulation dispatch
+  ansible.builtin.assert:
+    that: [navis_plan.Platform == 'aci']
+  no_log: true
+- name: Simulate directional ACI contract and filter
+  ansible.builtin.include_tasks: simulate-device.yml

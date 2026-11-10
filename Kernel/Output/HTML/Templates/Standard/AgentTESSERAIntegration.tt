@@ -1,0 +1,22 @@
+<div class="MainBox ARIARoleMain">
+<h1>Integration onboarding</h1>
+<p><a href="[% Env('Baselink') %]Action=AgentNetworkSimulationAccess">Network simulation access</a> — grant customer analysis access and configure environment graph bindings after onboarding Navis.</p>
+[% IF Data.Message %]<div class="MessageBox Notice" role="status"><p>[% Data.Message | html %]</p></div>[% END %]
+<p>Connect TESSERA to an external service using operator-issued machine credentials. Mount the client secret under /run/tessera-secrets and enter its file name below. Secret contents are never displayed.</p>
+<p><a href="[% Env('Baselink') %]Action=AgentTESSERAIntegration">New connection</a></p>
+<ul>[% FOREACH Connection IN Data.Connections %]<li><a href="[% Env('Baselink') %]Action=AgentTESSERAIntegration;ID=[% Connection.ID | uri %]">[% Connection.Name | html %]</a> [% IF Connection.ValidID == 1 %](enabled)[% ELSE %](disabled)[% END %]</li>[% END %]</ul>
+<form action="[% Env('CGIHandle') | html %]" method="post" class="Validate PreventMultipleSubmits">
+<input type="hidden" name="Action" value="AgentTESSERAIntegration"/>
+<input type="hidden" name="ID" value="[% Data.ID | html %]"/>
+<input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/>
+<fieldset class="TableLike"><legend>Connection and authentication</legend>
+<label for="Name">Connection name</label><div class="Field"><input id="Name" name="Name" value="[% Data.Name | html %]" maxlength="100" required class="W50pc"/></div><div class="Clear"></div>
+<label for="Preset">Service preset</label><div class="Field"><select id="Preset" name="Preset"><option value="Navis">Navis</option><option value="Generic" [% IF Data.Preset == 'Generic' %]selected[% END %]>Generic client credentials</option></select></div><div class="Clear"></div>
+[% FOREACH Input IN Data.Inputs %]<label for="[% Input.Name | html %]">[% Input.Name | html %]</label><div class="Field"><input id="[% Input.Name | html %]" name="[% Input.Name | html %]" value="[% Input.Value | html %]" maxlength="3000" class="W50pc"/></div><div class="Clear"></div>[% END %]
+<div class="Field"><p>Authentication: client credentials with HTTP Basic. TokenURL is the full HTTPS endpoint; Navis uses /nauth/token. InstanceID is metadata. Scope may be omitted to request operator-approved defaults. SecretName identifies a mounted file containing the exact secret, without a trailing newline.</p></div><div class="Clear"></div>
+<label for="Routes">Generic operation routes (JSON)</label><div class="Field"><textarea id="Routes" name="Routes" rows="10" class="W50pc">[% Data.Routes | html %]</textarea><p>Used only for Generic. Each named operation defines Method, Path and Parameters. Navis routes are supplied by its preset.</p></div><div class="Clear"></div>
+<div class="Field"><label><input type="checkbox" name="Enabled" value="1" [% IF Data.Enabled %]checked[% END %]/> Enable connection after a successful authentication test</label></div><div class="Clear"></div>
+</fieldset>
+<div class="Field"><button type="submit" name="Subaction" value="Test">Test authentication</button> <button type="submit" name="Subaction" value="Save">Save connection</button></div><div class="Clear"></div>
+</form>
+</div>

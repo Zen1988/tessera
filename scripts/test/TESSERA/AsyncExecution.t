@@ -19,6 +19,7 @@ use Kernel::System::TESSERA::ControlRuntime;
  sub Do {my($S,%P)=@_;push @{$S->{Writes}},\%P;1}
  sub TaskAdd {my($S,%P)=@_;push @{$S->{Tasks}},\%P;1}
  sub PIDCreate {1} sub PIDDelete {1}
+ sub Connect {$_[0]} sub do {1}
  sub RunResult {my($S,%P)=@_;push @{$S->{Handled}},\%P;1}
 }
 { package AsyncTestConfig;

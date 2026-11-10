@@ -1,0 +1,10 @@
+VERSION: 1
+CALL WEB SERVICE:
+  - SERVICE: Network
+    INVOKER: NetworkAssess
+    AS: ASSESSMENT
+    WITH:
+      Source: source
+      Destination: destination
+RETURN:
+  VALUE: EXTERNAL.ASSESSMENT.ExecutionUID
