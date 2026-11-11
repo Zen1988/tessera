@@ -1,3 +1,9 @@
+# Current — use Base194 for container preparation
+
+Base193 preparation failure is diagnosed and fixed in Base194: the shipped container_release.json was incorrectly left at188. Install194 normally on /opt/otobo and rerun the existing toolkit commands from a fresh extraction. Toolkit ZIP unchanged; no manual JSON edit or guard bypass. Builder now rejects descriptor/version drift. Completed fix/checks are in PROJECT_STATUS.md and outputs/base194-validation.json. Base194 runtime is identical to193 except corrected descriptor/upgrade origins.
+
+Next verify actual Linux prepare -> build -> modules -> image export, then target Kubernetes upgrade. Local tests include actual465-file bundle verification, but no real image build/deployment was performed here. Use194 for all pending acceptance below; previous Base193/192 implementation references describe retained features.
+
 # Current — deploy Base193 ticket diagnostic log cleanup
 
 Completed severity cleanup is recorded in PROJECT_STATUS.md. Install Kernel/Package/TESSERA-Base-0.0.193.opm with its SHA256 and restart consistent workers. Routine ticket action/follow-up/submission and Book evaluation diagnostics now use debug; successful lifecycle milestones info. Genuine backend/configuration/write/security failures remain error. No global severity threshold change and no deletion of old log entries. Verify fresh ticket access against live logs; existing historical errors remain historical. Base193 retains Base192 local identity/selector and earlier integrations; use193 for the pending deployment acceptance below.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import json
 import pathlib
 import re
 import textwrap
@@ -23,6 +24,20 @@ def build(sopm: pathlib.Path, output: pathlib.Path) -> int:
             location = pathlib.PurePosixPath(entry.get('Location', ''))
             if location.is_absolute() or '..' in location.parts or location.parts[0] in {'docs', 'examples'}:
                 raise ValueError('TESSERA runtime package documentation/fixtures must use var/tessera, not new Home roots: ' + str(location))
+    if definition.findtext('Name') == 'TESSERA-Base' and version >= (0, 0, 184):
+        descriptor_path = 'var/governancedb/container_release.json'
+        locations = {entry.get('Location') for entry in definition.findall('./Filelist/File')}
+        if descriptor_path not in locations:
+            raise ValueError('TESSERA container release descriptor must be packaged')
+        descriptor = json.loads((package_root / descriptor_path).read_text(encoding='utf-8'))
+        expected = definition.findtext('Version')
+        if descriptor.get('package') != 'TESSERA-Base' or descriptor.get('version') != expected:
+            raise ValueError('Container release descriptor version must match SOPM version ' + expected)
+        origins = descriptor.get('upgrade_from')
+        if not isinstance(origins, list) or not origins or any(not isinstance(v, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', v) for v in origins):
+            raise ValueError('Container upgrade origins must be explicit version strings')
+        if len(set(origins)) != len(origins) or any(tuple(map(int, v.split('.'))) >= version for v in origins):
+            raise ValueError('Container upgrade origins must be unique older releases')
     count = 0
 
     def embed(match: re.Match[str]) -> str:
