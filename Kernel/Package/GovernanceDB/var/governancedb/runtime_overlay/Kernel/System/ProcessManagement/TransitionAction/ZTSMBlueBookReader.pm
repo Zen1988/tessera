@@ -914,7 +914,7 @@ sub Run {
     my $CurrentBlueLevel = $ParsedRecords[0]->{BlueLevel};
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => "TESSERA BlueBookReader: Parsed records TicketID=$TicketID BlueBook=$BlueBookID Count="
             . scalar @ParsedRecords
             . " FirstBlueLevel=$CurrentBlueLevel",
@@ -936,7 +936,7 @@ sub Run {
         next RECORD if $Record->{BlueLevel} ne $CurrentBlueLevel;
 
         $LogObject->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  =>
                   "TESSERA BlueBookReader: Evaluate record spawn "
                 . "TicketID=$TicketID "
@@ -966,7 +966,7 @@ sub Run {
         if (@RecordExistingTicketIDs) {
             push @ExistingTicketIDs, @RecordExistingTicketIDs;
             $LogObject->Log(
-                Priority => 'error',
+                Priority => 'debug',
                 Message  =>
                       "TESSERA BlueBookReader: Existing ChapterPlay for record, skip record spawn "
                     . "TicketID=$TicketID "
@@ -1039,7 +1039,7 @@ sub Run {
         my $OwnerGroup = $Record->{Profile};
 
         $LogObject->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => "TESSERA BlueBookReader: Owner group selector assignment "
                 . "TicketID=$TicketID "
                 . "ChildTicketID=$NewTicketID "
@@ -1155,7 +1155,7 @@ sub Run {
     );
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'info',
         Message  =>
               "TESSERA BlueBookReader: BlueBook orchestration started "
             . "TicketID=$TicketID "

@@ -1,4 +1,8 @@
-# Current — accept Base192 local paired identities and customer picker
+# Current — deploy Base193 ticket diagnostic log cleanup
+
+Completed severity cleanup is recorded in PROJECT_STATUS.md. Install Kernel/Package/TESSERA-Base-0.0.193.opm with its SHA256 and restart consistent workers. Routine ticket action/follow-up/submission and Book evaluation diagnostics now use debug; successful lifecycle milestones info. Genuine backend/configuration/write/security failures remain error. No global severity threshold change and no deletion of old log entries. Verify fresh ticket access against live logs; existing historical errors remain historical. Base193 retains Base192 local identity/selector and earlier integrations; use193 for the pending deployment acceptance below.
+
+# Current — accept local paired identities and customer picker (included in Base193)
 
 Completed local implementation and decisions are in PROJECT_STATUS.md and docs/local-linked-identity.md; do not rebuild from chat. Install Base192 normally and restart all workers. The User hook installer checks its reviewed native11.1 basis and refuses an unknown third-party override; merge compatibility deliberately if real native files differ. Feature defaults disabled and live authentication is unchanged.
 

@@ -1,0 +1,18 @@
+{
+  "version": "0.0.193",
+  "sha256": "89f6e5e9a9bbe0dc8f879c576b39c4d618af54120d62c7cb3ecdba7415da3c27",
+  "payload_count": 465,
+  "changed_payloads": [
+    "var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketMessage.pm",
+    "var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZTSMAction.pm",
+    "var/governancedb/runtime_overlay/Kernel/Modules/CustomerTicketZoom.pm",
+    "var/governancedb/runtime_overlay/Kernel/System/GenericAgent/ZTSMPurpleBookReader.pm",
+    "var/governancedb/runtime_overlay/Kernel/System/ProcessManagement/TransitionAction/ZTSMBlueBookReader.pm",
+    "var/governancedb/runtime_overlay/Kernel/System/TESSERAResolveGovernance.pm"
+  ],
+  "added_payloads": [],
+  "removed_payloads": [],
+  "validation": "5 existing ticket suites / 119 assertions PASS",
+  "scope": "Diagnostic log severity only; genuine write/configuration/security errors retained",
+  "live_deployment": "not performed"
+}

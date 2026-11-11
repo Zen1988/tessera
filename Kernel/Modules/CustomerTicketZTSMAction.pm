@@ -994,7 +994,7 @@ sub Run {
         );
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
+            Priority => 'debug',
             Message  => "ZTSM CompleteTask outcome debug: TicketID=$TicketID; CustomerUser='$Self->{UserID}'; RawZTicketOutcome='"
                 . _LogValue($ZTicketOutcomeRaw)
                 . "'; NormalizedZTicketOutcome='"

@@ -88,7 +88,7 @@ sub Run {
     }
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => "TESSERA: TicketID=$TicketID ServiceID=$ServiceID",
     );
 
@@ -135,7 +135,7 @@ sub Run {
     my $ConfigItemID = $ConfigItemIDs[0];
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => "TESSERA: Resolved ServiceSupportMap ConfigItemID=$ConfigItemID",
     );
 
@@ -162,7 +162,7 @@ sub Run {
     }
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'debug',
         Message  => 'TESSERA: ConfigItem Snapshot=' . Dumper($ConfigItem),
     );
 
@@ -225,13 +225,13 @@ sub Run {
             );
 
         $LogObject->Log(
-            Priority => 'error',
+            Priority => $Success ? 'debug' : 'error',
             Message  => "TESSERA: Updated $FieldName Value=$Value Result=$Success",
         );
     }
 
     $LogObject->Log(
-        Priority => 'error',
+        Priority => 'info',
         Message  => "TESSERA: Governance resolution completed for TicketID=$TicketID",
     );
 

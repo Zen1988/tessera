@@ -3195,7 +3195,7 @@ sub _ZTSMRuntimeActionDiagnosticsLog {
     }
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => $Param{Priority} || 'debug',
         Message  => "$Prefix: $Param{Message}",
     );
 
@@ -3691,6 +3691,7 @@ sub _ZTSMFollowUpPurpleBookID {
     if ( !IsHashRefWithData($BlueBook) ) {
         $Self->_ZTSMFollowUpLog(
             Ticket  => $Ticket,
+            Priority => 'error',
             Message => "Follow-up PurpleBook lookup rejected: BlueBook '$BlueBookID' could not be resolved.",
         );
         return;
@@ -3711,6 +3712,7 @@ sub _ZTSMFollowUpPurpleBookID {
         if ( !$Record || ref $Record ne 'HASH' ) {
             $Self->_ZTSMFollowUpLog(
                 Ticket  => $Ticket,
+                Priority => 'error',
                 Message => 'Follow-up PurpleBook record skipped: record is not a hash.',
             );
             next RECORD;
@@ -3794,7 +3796,7 @@ sub _ZTSMFollowUpLog {
     }
 
     $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'error',
+        Priority => $Param{Priority} || 'debug',
         Message  => "$Prefix: $Param{Message}",
     );
 

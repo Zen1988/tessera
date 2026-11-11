@@ -234,7 +234,7 @@ sub Run {
         }
 
         $LogObject->Log(
-            Priority => $Data{Priority} || 'error',
+            Priority => $Data{Priority} || 'debug',
             Message  => 'TESSERA CustomerTicketMessage submit trace ' . join( ' ', @Parts ),
         );
     };
@@ -251,7 +251,7 @@ sub Run {
         $ZTSMSubmitTraceLog->(
             Stage       => 'backend-hit',
             Force       => 1,
-            Priority    => 'notice',
+            Priority    => 'debug',
             ServiceID   => $GetParam{ServiceID} || '',
             TypeID      => $GetParam{TypeID} || '',
             Field       => $ParamObject->GetParam( Param => 'Field' ) || '',
@@ -313,7 +313,7 @@ sub Run {
 
         $ZTSMSubmitTraceLog->(
             Stage           => $Valid ? 'backend-datetime-validation-override-pass' : 'backend-datetime-validation-override-fail',
-            Priority        => 'error',
+            Priority        => 'debug',
             Field           => $DynamicFieldConfig->{Name} || '',
             FieldType       => $DynamicFieldConfig->{FieldType} || '',
             DateRestriction => $DateRestriction,
@@ -412,7 +412,7 @@ sub Run {
         $ZTSMSubmitTraceLog->(
             Stage    => 'backend-payload-reference-resolve-result',
             Force    => 1,
-            Priority => 'error',
+            Priority => 'debug',
             Field    => $ParamObject->GetParam( Param => 'Field' ) || '',
             Value    => $ParamObject->GetParam( Param => 'Value' ) || '',
             Success  => $ReferenceResult->{Success} || 0,
@@ -895,7 +895,7 @@ sub Run {
         $ZTSMSubmitTraceLog->(
             Force                   => 1,
             Stage                   => 'backend-store-enter',
-            Priority                => 'error',
+            Priority                => 'debug',
             CustomerUserID          => $Self->{UserID} || '',
             EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
             ServiceID               => $GetParam{ServiceID} || '',
@@ -1032,7 +1032,7 @@ sub Run {
 
         $ZTSMSubmitTraceLog->(
             Stage                   => 'backend-validation-enter',
-            Priority                => 'error',
+            Priority                => 'debug',
             CustomerUserID          => $Self->{UserID} || '',
             EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
             ServiceID               => $GetParam{ServiceID} || '',
@@ -1111,7 +1111,7 @@ sub Run {
                     if ( $RawDateTimeParam{Used} || $DynamicFieldValues{ $DynamicFieldConfig->{Name} } ) {
                         $ZTSMSubmitTraceLog->(
                             Stage          => 'backend-before-datetime-validation',
-                            Priority       => 'error',
+                            Priority       => 'debug',
                             Field          => $DynamicFieldConfig->{Name} || '',
                             FieldType      => $DynamicFieldConfig->{FieldType} || '',
                             RawDateTime    => \%RawDateTimeParam,
@@ -1164,7 +1164,7 @@ sub Run {
 
                     $ZTSMSubmitTraceLog->(
                         Stage     => 'backend-validation-error',
-                        Priority  => 'error',
+                        Priority  => 'debug',
                         Field     => $DynamicFieldConfig->{Name} || '',
                         FieldType => $DynamicFieldConfig->{FieldType} || '',
                         Message   => $ValidationResult->{ErrorMessage} || 'Validation rejected without an explanatory message.',
@@ -1176,7 +1176,7 @@ sub Run {
                     ) } ) {
                         $ZTSMSubmitTraceLog->(
                             Stage    => 'backend-validation-member-error',
-                            Priority => 'error',
+                            Priority => 'debug',
                             Container => $DynamicFieldConfig->{Name},
                             %{$Failure},
                         );
@@ -1319,7 +1319,7 @@ sub Run {
 
             $ZTSMSubmitTraceLog->(
                 Stage    => 'backend-return-with-errors',
-                Priority => 'error',
+                Priority => 'debug',
                 Errors   => join( ',', sort keys %Error ),
             );
 
@@ -1392,7 +1392,7 @@ sub Run {
 
         $ZTSMSubmitTraceLog->(
             Stage       => 'backend-before-ticket-create',
-            Priority    => 'error',
+            Priority    => 'debug',
             QueueID     => $NewQueueID || '',
             State       => $CreateState || '',
             CustomerID  => $EffectiveCustomer{CustomerID} || '',
@@ -1419,7 +1419,7 @@ sub Run {
 
         $ZTSMSubmitTraceLog->(
             Stage    => 'backend-ticket-created',
-            Priority => 'error',
+            Priority => $TicketID ? 'info' : 'error',
             TicketID => $TicketID || '',
         );
 
@@ -1434,7 +1434,7 @@ sub Run {
 
             $ZTSMSubmitTraceLog->(
                 Stage     => 'backend-before-dynamicfield-valueset',
-                Priority  => 'notice',
+                Priority  => 'debug',
                 TicketID  => $TicketID || '',
                 Field     => $DynamicFieldConfig->{Name} || '',
                 FieldType => $DynamicFieldConfig->{FieldType} || '',
@@ -1457,7 +1457,7 @@ sub Run {
 
             $ZTSMSubmitTraceLog->(
                 Stage    => $ValueSetError ? 'backend-dynamicfield-valueset-exception' : 'backend-after-dynamicfield-valueset',
-                Priority => $ValueSetError ? 'error' : 'notice',
+                Priority => ($ValueSetError || !$Success) ? 'error' : 'debug',
                 TicketID => $TicketID || '',
                 Field    => $DynamicFieldConfig->{Name} || '',
                 Success  => $Success ? 1 : 0,
@@ -1620,7 +1620,7 @@ sub Run {
 
         $ZTSMSubmitTraceLog->(
             Stage     => $ArticleID ? 'backend-article-created' : 'backend-article-create-failed',
-            Priority  => $ArticleID ? 'notice' : 'error',
+            Priority  => $ArticleID ? 'info' : 'error',
             TicketID  => $TicketID || '',
             ArticleID => $ArticleID || '',
         );
