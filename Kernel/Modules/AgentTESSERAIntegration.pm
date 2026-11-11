@@ -19,10 +19,12 @@ sub Run {
         my $OK=eval {
             $Name=$R->GetParam(Param=>'Name');$Enabled=$R->GetParam(Param=>'Enabled');
             $C={map {$_=>$R->GetParam(Param=>$_)} qw(Preset Origin InstanceID)};
-            $C->{Authentication}={Provider=>'ClientCredentialsBasic',map {$_=>$R->GetParam(Param=>$_)} qw(TokenURL ClientID SecretName)};
-            my $Scope=$R->GetParam(Param=>'Scope');$C->{Authentication}{Scope}=$Scope if defined $Scope && length $Scope;
+            $C->{Authentication}=$C->{Preset} eq 'AWX'
+                ? {Provider=>'StaticBearer',SecretName=>$R->GetParam(Param=>'SecretName')}
+                : {Provider=>'ClientCredentialsBasic',map {$_=>$R->GetParam(Param=>$_)} qw(TokenURL ClientID SecretName)};
+            my $Scope=$R->GetParam(Param=>'Scope');$C->{Authentication}{Scope}=$Scope if $C->{Preset} ne 'AWX' && defined $Scope && length $Scope;
             $C->{Routes}=JSON::PP->new->decode($R->GetParam(Param=>'Routes') || '{}') if $C->{Preset} eq 'Generic';
-            if ($S->{Subaction} eq 'Test') {$B->Test(UserID=>$S->{UserID},Connection=>$C);$Message='Authentication succeeded. Application and data readiness still require verification.'}
+            if ($S->{Subaction} eq 'Test') {$B->Test(UserID=>$S->{UserID},Connection=>$C);$Message='Authentication succeeded. Template permissions, jobs and application readiness still require verification.'}
             elsif ($S->{Subaction} eq 'Save') {$ID=$B->Save(UserID=>$S->{UserID},ID=>$ID,Name=>$Name,Enabled=>$Enabled,Connection=>$C)}
             else {die 'Unknown action'}
             1;

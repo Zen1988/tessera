@@ -1,0 +1,19 @@
+VERSION: 1
+# First acceptance: ScriptEngine -> authorized provider -> AWX -> callback.
+# Replace TemplateID 42 and inventory 7 with the reviewed localhost test IDs.
+# Use examples/awx/callback-test.yml in the AWX template; no device credentials.
+CALL WEB SERVICE:
+  - SERVICE: AWX
+    INVOKER: JobLaunchCallback
+    AS: LAUNCH
+    WITH:
+      TemplateID: 42
+      inventory: 7
+      verbosity: 3
+      extra_vars:
+        tessera_request:
+          reference: scriptengine-awx-launch-test
+          data:
+            message: hello from the TESSERA ScriptEngine automation test
+RETURN:
+  VALUE: EXTERNAL.LAUNCH.ExecutionUID

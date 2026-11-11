@@ -26,14 +26,22 @@ sub _ConfigurationError {
     return 'AWX web service is unavailable.' if ref $WS ne 'HASH' || ($WS->{ValidID} || 0) != 1;
     my $R = $WS->{Config}{Requester};
     my $T = $R->{Transport};
-    return 'AWX requires HTTP::REST.' if ($T->{Type} || '') ne 'HTTP::REST';
-    my $C = $T->{Config};
-    return 'AWX requires HTTPS without URL credentials.'
-        if ($C->{Host} || '') !~ m{\Ahttps://[A-Za-z0-9.-]+(?::[0-9]+)?/?\z};
-    return 'AWX timeout must be between 1 and 60 seconds.'
-        if ($C->{Timeout} || '') !~ /\A[0-9]+\z/ || $C->{Timeout} < 1 || $C->{Timeout} > 60;
-    return 'AWX TLS verification cannot be disabled.'
-        if ($C->{SSL}{SSLVerifyHostname} || '') eq 'No' || ($C->{SSL}{SSLVerifyMode} || '') eq 'No';
+    my $Managed=($T->{Type} || '') eq 'HTTP::TESSERAIntegration';
+    my $C=$T->{Config};
+    if ($Managed) {
+        require Kernel::System::TESSERA::IntegrationOnboarding;
+        return 'AWX managed connection is invalid.' if ref $C ne 'HASH' || ($C->{Preset} || '') ne 'AWX'
+            || !eval {Kernel::System::TESSERA::IntegrationOnboarding->new()->Validate(dclone($C));1};
+    }
+    else {
+        return 'AWX requires HTTP::REST.' if ($T->{Type} || '') ne 'HTTP::REST';
+        return 'AWX requires HTTPS without URL credentials.'
+            if ($C->{Host} || '') !~ m{\Ahttps://[A-Za-z0-9.-]+(?::[0-9]+)?/?\z};
+        return 'AWX timeout must be between 1 and 60 seconds.'
+            if ($C->{Timeout} || '') !~ /\A[0-9]+\z/ || $C->{Timeout} < 1 || $C->{Timeout} > 60;
+        return 'AWX TLS verification cannot be disabled.'
+            if ($C->{SSL}{SSLVerifyHostname} || '') eq 'No' || ($C->{SSL}{SSLVerifyMode} || '') eq 'No';
+    }
     my ($Resource, $Launch, $Kind) = $Self->_Spec();
     my $Expected = '/api/v2/' . $Resource . '/:' . ($Launch ? 'TemplateID/launch/' : 'JobID/');
     $Expected .= 'stdout/' if ($Kind || '') eq 'stdout';
@@ -41,7 +49,9 @@ sub _ConfigurationError {
     $Expected .= 'workflow_nodes/' if ($Kind || '') eq 'nodes';
     my $Method = $Launch ? 'POST' : 'GET';
     ($Expected, $Method) = $Self->_Endpoint() if $Self->can('_Endpoint');
-    my $Route = $C->{InvokerControllerMapping}{$Self->{Invoker}};
+    my $Route = $Managed
+        ? {Controller=>$C->{Routes}{$Self->{Invoker}}{Path},Command=>$C->{Routes}{$Self->{Invoker}}{Method}}
+        : $C->{InvokerControllerMapping}{$Self->{Invoker}};
     return 'AWX requires the documented controller and HTTP method.'
         if ($Route->{Controller} || '') ne $Expected || ($Route->{Command} || '') ne $Method;
     my $I = $R->{Invoker}{$Self->{Invoker}};

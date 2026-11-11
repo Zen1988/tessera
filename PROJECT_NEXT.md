@@ -1,3 +1,11 @@
+# Current — deploy and accept prepared Base189
+
+Base189 is built with managed AWX bearer-token onboarding and the required Custom Elasticsearch compatibility replacement. Completed implementation, architecture decisions and checks are recorded in PROJECT_STATUS.md; do not reimplement them. Package: Kernel/Package/TESSERA-Base-0.0.189.opm plus SHA256. See docs/awx-managed-onboarding.md.
+
+Next install/upgrade/reinstall acceptance on the real environment, including Custom file ownership and volume/init sources that might restore the stale Elasticsearch override. Restart consistent web/daemon processes and verify customer quick-search and preserved agent CMDB group restrictions. No live deployment performed here.
+
+For AWX, issue a restricted tessera.integrator token, mount exact token at /run/tessera-secrets/awx-api-token in web+daemon, trust AWX CA, then Admin → Integration onboarding → AWX bearer token. Create a new managed connection (existing ansible.awx/ID4 preserved); test read-only /api/v2/me/, enable/save and bind its NEW WebserviceID to the ScriptEngine test. Launch template35 heartbeat ONCE through AutomationTest, then read JobID/status/artifacts. Heartbeat has no callback; test callback-capable template separately. Persistent agent-side Automated Task bridge remains unverified. Never put credentials in scripts or replay uncertain launches.
+
 # Current — Live Navis discovery and ingestion acceptance
 
 Owner confirms Base188 Navis onboarding enabled, including successful CLI and
@@ -152,11 +160,11 @@ Read-only native connector is implemented in Base183; do not rebuild it from the
 
 Remaining: live path acceptance, business-service/SLA operations and normalized dependency/impact model; durable observation/alarm correlation with duplicate/out-of-order/clear/reopen handling before automatic ticket creation; polling/push transport and portal-safe views. Keep observation independent of AWX while AWX owns device actions. Verify or implement a separate Prometheus export path: documented NetXMS Prometheus scraping is the reverse direction. No exporter or live deployment is claimed. Preserve service governance truth and treat unmanaged MPLS as external transit where managed-edge evidence suffices. Base183 package/test kit extends182; existing182 guide still describes its foundation, use183 package for this connector.
 
-# Immediate — run 0.0.182 Linux/target/AWX end-to-end acceptance
+# Current — complete AWX live integration acceptance on Base188
 
-Implementation is prepared and recorded in PROJECT_STATUS.md; do not reconstruct or reimplement the old design gap. Install182 on original Linux, use the updated fresh container toolkit, build/import the real versioned image and run scripts/upgrade-deploy.py with the actual web/daemon/container names. It performs controlled maintenance/Job/activation, not source database import or per-Pod migration. Supported target origins180/181/current182; even an already182 target needs the verified receipt initialized by the controlled Job. Keep complete hash/schema/receipt checks. Inspect existing target writers/GitOps, Config.pm/generated-config mounts, image availability and both namespace maintenance/DB claims; never bypass old terminating Pods, stale claims or uncertain native migrations. Native Linux/MariaDB/Kubernetes acceptance remains pending.
+Owner resumed AWX integration/testing on2026-11-11. Current checkpoint: docs/awx-integration-current-status.md. AWX181/182 implementation is retained in authoritative Base188;28 relevant OPM payloads match sources and6 local suites/204 assertions pass. Do not reconstruct the old implementation gap or downgrade/reinstall182 from historical instructions. Owner previously confirmed Base188 deployed; verify live identity/configuration and preserve outstanding real Linux build/runtime acceptance separately.
 
-Then configure target AWX Web Services, separate restricted inventory-write identity, HTTPS callback URL/EE CA trust and AWXTest continuation. Run the supplied local-only callback and authorized automation inventory-sync→launch fixtures, read saved UID/history after Pod replacement and verify actual final AWX Job status separately. See docs/tessera-182-end-to-end.md. User chose mapping later and confirms mapping in the existing automation; no guessed CI fields/global extraction service. Target credentials stay in AWX; only an execution-scoped callback capability is passed. Production published-script/actor/target authorization still gates provider injection; no portal-wide network privilege was enabled. Large log archives/object storage and retention policies remain future extensions, not a new document database now.
+Begin with read-only existing AWX execution/inventory Webservice IDs and invoker bindings, callback URL/daemon/handler/history configuration, current AWX version/project/EE/localhost inventory and harmless template IDs. Then exercise polling launch/output, callback/history and managed inventory-sync→launch in that order using existing fixtures/commands. IDs in examples are placeholders. Actual live API/job/callback/inventory acceptance is not yet recorded. Keep target credentials in AWX, separate restricted inventory-write identity and verified TLS including callback EE trust. Do not replay uncertain POSTs; resume using saved JobID/ExecutionUID. Field mapping remains existing authorized automation, no guessed CI fields or generic extraction replacement. Production publication/actor/target authorization gates provider injection. See historical docs/tessera-182-end-to-end.md sections3–5 for retained command contracts, not a request to revert the current package.
 
 # Follow-up — AWX application acceptance and node cleanup
 
@@ -1628,3 +1636,26 @@ Requested agent entry point: ticket numbering reset/existing SysConfig prefix pr
 ## Runtime dependency acceptance — CryptX
 
 Missing Crypt::AuthEnc::GCM reported. Corrected toolkit now explicitly installs/checks GCM/PRNG and AES-GCM functionality. Install CryptX in the actual OTOBO installer/runtime Perl (not a different host interpreter), or rebuild/deploy the refreshed immutable image. Verify web/daemon library paths and retry native package install. No live host/container installation or Linux image build performed; Base187 unchanged.
+
+
+# Customer portal security assessment — remaining work after initial screening
+
+Continue from docs/customer-portal-vapt-2026-11-11.md and PROJECT_STATUS.md. Owner authorizes bounded injection/security testing of test portal; self-signed TLS bypass explicitly accepted for this endpoint. Do not save supplied passwords/cookies or mistake negative screening for completed VAPT. Authenticated testuser1 policy gate now accepted.
+
+Required next: deploy/retest Base189 Elasticsearch replacement before quick-search injection acceptance (current probes500); verify deployed authentication backend/HTTPBasicAuth advisory remediation without removing trusted REMOTE_USER support; expand SQLi/XSS coverage to actual input-consuming endpoints, isolated stored-XSS/browser execution and upload/download cases; test other authenticated/API CORS endpoints, CSRF and sessions. Owner assigns AD brute-force/lockout protection to the AD team; exclude AD lockout configuration and guessing tests from this TESSERA assessment. Portal session and authorization controls remain in scope. Retain separate confirmed/suspected findings, source fixes, package integration and live retest evidence.
+
+
+## VAPT continuation — authorization and search
+
+See live state-approval-forgery-probes.json and search-disclosure-probes.json. Parent375 forged Approve/Patch-to-in-progress requests all403 with visible state/owner unchanged. Genuine disposable Approval ticket and independent governance snapshot evidence still needed for approval-role separation and lifecycle immutability claims. Child376403; no mutation attempted. Own92 submitted search positive; candidate85 omitted/direct403. Quick Elasticsearch still500 for both: deploy Base189 compatibility override, confirm indexing and retest actual ES disclosure; do not count failures as passes. No confirmed bypass to patch from this batch.
+
+
+## AWX first proof — ScriptEngine automation triggers the job
+
+Owner explicitly requires script/task-originated launch. Prepare actual configured copies of examples/awx/automation-launch-test.example.yml and automation-launch-bindings.example.json (IDs42/7/12 placeholders). First invoke ScriptEngine through authorized AutomationTest task, capture ExecutionUID, verify AWX dispatch JobID/final result and callback continuation by read-back. Do not substitute a direct AWXTest launch as this proof or rerun YAML to poll. Inventory-write stage follows this first proof.11 fixture tests pass; live IDs requested, no job/task object created yet. Persistent agent-created Automated Task class/field/export and authorized runtime bridge remain unverified; never invent schema or enable ambient CALL WEB SERVICE privileges.
+
+
+AWX first-proof update: owner supplies job-template35. Configured draft in outputs/awx-scriptengine-test/automation.yml uses its bound inventory; Webservice ID, playbook/inventory safety/callback compatibility still pending. bindings.pending.json uses invalid0 deliberately; no dispatch yet.
+
+
+AWX template35 correction: screenshot/local playbook identify heartbeat without callback. Current configured automation.yml uses JobLaunch only and returns JobID; no inventory/verbosity override. Verify actual TESSERA WebserviceID and live project revision, run ScriptEngine once, read final job/artifacts. Callback tests require separate callback-enabled template; do not await ExecutionUID for template35.

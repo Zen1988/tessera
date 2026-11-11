@@ -1,3 +1,14 @@
+# 2026-11-11 — Base189 ready for GitHub: managed AWX bearer onboarding and Elasticsearch replacement
+
+- Version clarification: legacy GovernanceDB reached0.1.128 (PackageMerge); TESSERA-Base was0.0.188 at HEAD and this build is0.0.189. No Base0.1.x downgrade occurred.
+- Current focus: deploy/accept prepared Base189, then prove ScriptEngine-triggered AWX template35 heartbeat. Owner requests GitHub upload at end of day. No live token, connection switch, job launch or package deployment performed.
+- Extended existing Integration onboarding with AWX bearer-token preset; SecretName references restricted /run/tessera-secrets file. Typed8 AWX job/workflow/status/output invokers retained, fixed HTTPS routes, read-only /api/v2/me/ authentication test, immediate mounted-token rotation and no automatic launch/static-token retry. Existing Navis/Generic and native HTTP::REST paths preserved. Existing administrator-owned ansible.awx ID4 is not silently adopted/overwritten; create managed connection deliberately and bind its new ID.
+- Security/architecture: no token in native configuration, scripts or callback business data; existing secret reader reused. No new schema/DynamicFields or ambient stored-script network privilege. Rejected global core auth-dropdown override, arbitrary endpoints, disabling TLS, guessing inventory IDs, reusing noncallback heartbeat as callback job and automatic replay of uncertain POSTs. Admin permissions/POST/CSRF and idempotent connection update/duplicate rejection retained.
+- Included required Custom/Kernel/System/Elasticsearch.pm replacement with current native response semantics and deployed ITSMConfigItemMultitenancy authorization retained. Native fresh/upgrade/reinstall/file-ownership and overlay/init reconciliation remain live acceptance requirements.
+- Package: Kernel/Package/TESSERA-Base-0.0.189.opm,445 payloads verified byte-for-byte,6 semantic integration changes +103 Git-canonical line-ending normalizations +4 additions/no188 removals, unchanged schema/install/upgrade/reinstall hooks. SHA256ae945b7e60229dcaad880f7a623eac02b4863ed8a169d6a5eedf0bce5f910e40. Root mirrors match packaged modules. Local tests:10 AWX/onboarding suites360 assertions; Elasticsearch syntax and12 actual-filter assertions pass. No live GUI/installation acceptance claimed.
+- Next: restricted tessera.integrator token and mounts in web+daemon, AWX CA trust, install189, create/test/enable new AWX managed connection, configure exact ScriptEngine AllowedCalls, run template35 once and retain JobID/terminal tessera_heartbeat artifact. Separate callback/history/inventory tests follow. Persistent agent-created Automated Task bridge still unverified. User assigns AD brute-force policy to AD team, outside this portal assessment.
+- Guides/checkpoints: docs/awx-managed-onboarding.md, docs/awx-integration-current-status.md, docs/customer-portal-vapt-2026-11-11.md; PROJECT_NEXT completed packaging requirement replaced with deployment acceptance. Unrelated user preference/container ZIP changes excluded from release commit.
+
 # 2026-11-10 — GitHub synchronization validation
 
 - Refreshed origin/main: local HEAD and remote both 44d8cdba before synchronization, but Base181-188 working-tree implementation had not been committed. Preparing latest Base188 package/runtime, supporting examples/docs and regression suites for upload; historical archives, scratch artifacts and caches excluded.
@@ -17123,3 +17134,103 @@ User requested current implementation committed and saved. Full portable YAML au
 ## 2026-11-02 — Simulation selection uses caller-native CMDB identity
 
 Owner clarifies application/system/IP selection should resolve CMDB assets and addresses automatically. Updated docs/customer-network-simulation-design.md: default app/system selection, authorized linked-asset/IP expansion, caller-native namespace/class/opaque-ID mapping for labels and click-through. Navis UUID is correlation metadata; IP is a scoped endpoint selector, never identity or permission. Preserve overlapping-network ambiguity and entitlement/detail boundaries. Exact CMDB field names remain export-derived. Design clarification only; Base186 unchanged.
+
+
+## 2026-11-11 — Customer Elasticsearch live-search compatibility replacement prepared
+
+- Live customer quick-search SearchUpdate reproducibly returns HTTP500: custom Elasticsearch.pm dereferences Data as an array; native invoker returns Data->{Records,Total}. Debugger confirms *20* succeeds with85 matches, no timeout/shard failures. Native customer quick-result caller expects the newer wrapper.
+- Compared supplied deployed native/custom files. Custom delta against legacy11.0 is ITSMConfigItemMultitenancy agent CMDB group/class authorization, not Elasticsearch credential authentication. Reject disabling the override without preserving that authorization, global Data replacements, search-delay workarounds and unnecessary reindexing.
+- Prepared outputs/elasticsearch-compatibility-fix/Elasticsearch.pm from byte-matching current native source with deployed multitenancy filter block retained verbatim; native TicketSearch unchanged. Base188 SOPM/OPM untouched; this override is outside its payload. Existing unrelated working changes preserved.
+- Validation: local Perl syntax passes; exact-preservation assertions pass; executable authorization-filter tests cover ordinary/management/nonmatching management roles. See artifact README for deployment and acceptance. Not deployed or live-accepted.
+- Next: replace old override in authoritative image/volume/init source, deploy consistent new image to web/daemon, restart processes and validate quick-search, counts/zero results and agent CMDB authorization across replicas. Customer CI entitlement remains a separate contract; no new permission grants.
+
+
+## 2026-11-11 — Owner requires Elasticsearch replacement in Base189
+
+- Explicit owner instruction: next build189 must package prepared outputs/elasticsearch-compatibility-fix/Elasticsearch.pm and replace the current /opt/otobo/Custom/Kernel/System/Elasticsearch.pm. Added required next-build checklist at the top of PROJECT_NEXT.md.
+- Preserve deployed CMDB multitenancy authorization while retaining native Records/Total compatibility. Include authoritative SOPM/OPM payload, idempotent install/upgrade/reinstall, overlay/init reconciliation and live search/permission acceptance. Remove pending checklist only after confirmed implementation and record completion here.
+- Documentation update only: no189 package generated, no live file replaced and Base188 unchanged.
+
+
+## 2026-11-11 — Customer portal VAPT requested; connectivity pending
+
+- Owner authorizes customer-portal assessment for SQLi, brute-force protection, XSS and other issues, with confirmed-source fixes. Started docs/customer-portal-vapt-2026-11-11.md. Live shell cannot resolve tessera.ncs.local (curl6); no injection/login probes reached server. Requested reachable internal IP plus disposable test account/failed-login budget/test records.
+- Three existing local security suites pass98 assertions (runtime request/CSRF, customer CI entitlement and linked-ticket read permissions). Source review flags existing executable-fragment rendering for tracing; not confirmed exploitable XSS. Login failure counter alone is not proof of throttling. No new vulnerability fixes or security configuration changes made.
+- Next: establish internal access; perform bounded live assessment, confirm findings with sanitized evidence, patch authoritative package sources and retest. Existing Base189 Elasticsearch packaging requirement remains active.
+
+
+## 2026-11-11 — VAPT connectivity established
+
+- Windows hosts portal IP10.0.1.72; unsandboxed explicit-resolve HTTPS reaches service. Client does not trust internal CA; credential-free insecure diagnostic returned login200. No credentials/login guesses sent. Evidence and header observations in docs/customer-portal-vapt-2026-11-11.md. Normal disposable customers needed; AD lockout policy unknown so failed-login testing deferred.
+
+
+## 2026-11-11 — Initial live SQLi/XSS probes
+
+- Seven bounded unauthenticated injection/comparison requests completed; no tested login bypass, raw reflected SVG or checked SQL-error disclosure. Malformed ticket ID400. Results in outputs/portal-vapt/unauthenticated-probes.json; scope/limitations in VAPT report. No exploit confirmed, no full security-pass claim.
+- Customer test credential supplied but not used/saved: TLS trust remains unresolved even using exported public Windows roots. Credential-free probes used verification bypass; authenticated testing pending internal CA trust/independent certificate validation. No brute force, destructive probes or deployed/source security changes.
+
+
+## 2026-11-11 — CORS probes and authenticated-test gate
+
+- Owner authorizes self-signed TLS bypass. Six untrusted-Origin GET/OPTIONS probes show no CORS allow-origin/credentials on unauthenticated dashboard. Not exhaustive.
+- Test login reaches privacy-policy Info gate; authenticated injection results inconclusive, not security passes. Did not accept policy/change account fields. Two500 responses require log correlation, not proof of SQLi. Sensitive cookie files cleaned; no password saved in artifacts. Report updated with official HTTPBasicAuth Remote-User advisory (Beta3 fix), separate from CORS; applicability/backport not yet established.
+
+
+## 2026-11-11 — Authenticated injection/CORS screening completed
+
+- After owner accepted account privacy policy, testuser1 reaches dashboard. Actual submitted TicketNumber search baseline/quote/boolean/SVG returned200 without checked SQL errors/raw SVG; malformed TicketIDs400. Three authenticated origins lack CORS allow-origin/credentials. Three credential-free identity-header baseline/Remote-User/X-Forwarded-User tests remain login. No exploit confirmed in this bounded screening; not full VAPT acceptance.
+- Quick-search injection requests consistently500; pending prepared override deployment and retest. No stored-XSS/browser proof, brute-force/AD lockout tests, destructive queries or ticket/asset writes. Native search may update last-search preferences. Session cookies cleaned, credentials absent from saved reports.
+- Evidence/report: docs/customer-portal-vapt-2026-11-11.md and outputs/portal-vapt/*probes.json. Local HTTPBasicAuth client-header fallback matches advisory pattern but live customer bypass not reproduced; review deployed backend/backport before source/package hardening.
+
+
+## 2026-11-11 — Stored-XSS browser test blocked by unavailable service
+
+- Owner chooses Firewall Policy/firewall rules creation. Browser URL recognition now works; isolated InPrivate testuser1 session preserves Zen regular session. New-ticket requester verified Test; Service field Not available under ServiceRequest and Change. No service selected, StoreNew sent or ticket created. No permissions changed or gates bypassed.
+- Eight draft code-marker probes in outputs/portal-vapt/code-injection-draft-probes.json show no checked raw script/event elements or evaluated markers; this is not stored-XSS acceptance. Next enable legitimate selected-service access/configuration for test account and test saved customer/agent article rendering. Report updated; no vulnerability fix/package generated in this step.
+
+
+## 2026-11-11 — Stored-XSS customer article verified
+
+- Owner enabled service; one direct-request-body stored-XSS test creates ICAT-TI-20260000092/ID375, article2049, via testuser1. Normal Firewall New/Modify DEV orchestration creates assessment child93/ID376; parent assess. Explicit do-not-implement label; no approval or execution submitted.
+- Customer article200 retains marker but has0 script/SVG elements and0 event attributes; CSP script-src none; iframe lacks allow-scripts and description srcdoc fully sandboxed. Browser reports blocked srcdoc scripts; no payload alert observed. Literal Perl/Bash text remains inert. Narrow customer-path result only; agent view pending.
+- Recorded evidence and compatibility warnings (invalid ms-allow-popups, obsolete CSP referrer, stylesheet CSP violations) in docs/customer-portal-vapt-2026-11-11.md and outputs/portal-vapt/stored-xss-customer-evidence.json. No blanket security pass or speculative patch.
+
+
+## 2026-11-11 — State/approval forgery and search isolation screening
+
+- Five forged parent375 approvals/privileged in-progress recovery requests (GET, missing/forged/valid CSRF tokens) all403; visible state assess and displayed owner unchanged after each. Not a genuine Approval-ticket approver-separation test; hidden governance snapshots not independently verified. Child376 inaccessible403; mutation skipped. Evidence outputs/portal-vapt/state-approval-forgery-probes.json.
+- Own92 positive submitted search returns result; candidate85 direct403 and submitted search omits it. Quick ES own/other both500: disclosure assessment incomplete until compatibility fix deployed. Evidence outputs/portal-vapt/search-disclosure-probes.json. No new confirmed exploit or source/package fix.
+- Owner clarifies AD brute-force/lockout belongs to AD team and is excluded from this assessment. Portal authorization/session testing remains in scope. Test-browser inspection showed no active OK or payload-alert dialog when checked.
+
+
+## 2026-11-11 — AWX integration resumed; implementation verified, live acceptance next
+
+- Owner switches focus from VAPT to finishing AWX integration/testing. Reviewed continuity, authoritative Base188 SOPM/OPM, AWX/execution/inventory commands and fixtures,182 acceptance and186 onboarding/Navis contract.28 AWX/onboarding payloads byte-match packaged source. Six AWX suites pass204 assertions. No new source/package changes or live job/configuration operations.
+- Implementation already includes job/workflow/output invokers, durable one-attempt callback dispatch/history, scoped inventory sync and explicitly authorized automation calls. Previously confirmed two-web/two-task rollout is not evidence of completed API/job/callback acceptance. Do not repeat resolved rollout deadlock or treat historical182 install instructions as current deployment direction.
+- Current focus/sequence: read-only actual webservice/template/inventory/EE/callback/daemon configuration; harmless localhost polling→callback/history→managed inventory fixture; then reviewed real discovery mapping and Navis ingestion. Existing target credentials stay AWX-owned; no uncertain-launch replay or ambient script network privilege. Callback DONE requires separate final AWX JobGet verification.
+- Added docs/awx-integration-current-status.md and replaced stale PROJECT_NEXT182 installation section with current Base188 acceptance work. Live IDs/permissions/EE CA trust and real API/job/callback/inventory evidence remain missing. Base189 Elasticsearch requirement and unfinished VAPT evidence remain preserved.
+
+
+## 2026-11-11 — AWX acceptance corrected to ScriptEngine-first launch
+
+- Owner requires automation script/task to trigger Ansible, not only direct connector test. Existing182 automation fixture includes inventory sync; added launch-only examples/awx/automation-launch-test.example.yml and exact-call binding example, using same registered JobLaunchCallback/EXTERNAL return grammar. IDs explicitly placeholders; no secrets or live launch.
+- New AWXAutomationLaunchFixture.t passes11 actual parser/evaluator assertions with mocked provider, including one call/actor/data/UID and denial without provider or in selection context. Existing authorized AutomationTest console task can exercise this path once live IDs configured. Returned UID must be read/polled, not obtained by replaying launch.
+- No persistent agent-created Automated Task object/runtime bridge verified in current package trace; do not conflate trusted console acceptance with production stored-task execution. Actual exported task schema/entry point required if owner means that route. Updated current AWX checkpoint and PROJECT_NEXT; Base188/OPM unchanged.
+
+
+## 2026-11-11 — Owner supplies AWX test template35
+
+- Owner identifies https://awx.ncs.local/#/templates/job_template/35/details. Prepared outputs/awx-scriptengine-test/automation.yml with TemplateID35 and no guessed inventory override. Pending bindings use invalid0 until actual execution Webservice ID confirmed. No job dispatched or template edited.
+- Still verify selected playbook/project, template-bound inventory/EE, required callback/input prompts and TESSERA JobLaunchCallback service identity/CA/callback configuration. Do not assume supplied template is localhost-safe or callback-compatible. Persistent agent task bridge remains unverified.
+
+
+## 2026-11-11 — Template35 heartbeat screenshot resolves first test mode
+
+- Owner screenshot confirms template35 System-AWX Heartbeat, Demo Inventory, ICA Automation project, AWX EE(latest), playbooks/system/awx/awx-heartbeat.yml, verbosity0. Local playbook uses localhost/local, reports EE statistics and publishes tessera_heartbeat without callback; live synced revision still needs verification.
+- Corrected configured script to JobLaunch with TemplateID35 only, preserving template inventory/prompts/defaults, RETURN JobID. Previous callback-first assumption for this specific template rejected. Callback-capable fixture remains subsequent separate acceptance. bindings.pending.json0 still disabled until actual TESSERA service ID/JobLaunch/auth/TLS confirmed. No live job or template changes.
+
+
+## 2026-11-11 — AWX transport identity and token mechanism clarified
+
+- GUI identifies ansible.awx WebserviceID4; endpoint/timeout fields now origin/30, TLS Yes. No agent save/token creation yet; persisted state/invokers unverified. Owner has no token yet and proposes tessera.integrator.
+- Official AWX docs plus native OTOBO source confirm manually issued PAT uses Additional request headers Authorization:Bearer, Authentication dropdown empty. OTOBO OAuth is a separate managed OIDC profile/functional-account retrieval path, not a static PAT selector; do not mix both. Detailed references/current gaps in docs/awx-integration-current-status.md. No backend modification needed for header support; no credentials stored or job launched.

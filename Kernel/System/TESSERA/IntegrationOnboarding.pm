@@ -17,16 +17,29 @@ sub NavisRoutes {return {
     RecommendationsGet=>{Method=>'GET',Path=>'/v1/trace-sessions/:CallerSessionID/recommendations',Parameters=>['CallerSessionID']},
     Ingest=>{Method=>'POST',Path=>'/v1/ingestions',Parameters=>[],SuccessStatus=>202},
 }}
+sub AWXRoutes {return {
+    JobLaunch=>{Method=>'POST',Path=>'/api/v2/job_templates/:TemplateID/launch/',Parameters=>['TemplateID'],SuccessStatus=>201},
+    JobLaunchCallback=>{Method=>'POST',Path=>'/api/v2/job_templates/:TemplateID/launch/',Parameters=>['TemplateID'],SuccessStatus=>201},
+    WorkflowLaunch=>{Method=>'POST',Path=>'/api/v2/workflow_job_templates/:TemplateID/launch/',Parameters=>['TemplateID'],SuccessStatus=>201},
+    JobGet=>{Method=>'GET',Path=>'/api/v2/jobs/:JobID/',Parameters=>['JobID']},
+    WorkflowGet=>{Method=>'GET',Path=>'/api/v2/workflow_jobs/:JobID/',Parameters=>['JobID']},
+    JobStdout=>{Method=>'GET',Path=>'/api/v2/jobs/:JobID/stdout/',Parameters=>['JobID'],QueryParameters=>['format','start_line','end_line']},
+    JobEvents=>{Method=>'GET',Path=>'/api/v2/jobs/:JobID/job_events/',Parameters=>['JobID'],QueryParameters=>['page','page_size','order_by']},
+    WorkflowNodes=>{Method=>'GET',Path=>'/api/v2/workflow_jobs/:JobID/workflow_nodes/',Parameters=>['JobID'],QueryParameters=>['page','page_size','order_by']},
+}}
 sub Validate {
     my ($S,$C)=@_;die "Invalid connection.\n" if ref $C ne 'HASH';
     die "Unsupported connection property.\n" if grep {!/\A(?:Preset|Origin|InstanceID|Authentication|Routes|Timeout|ConnectionUID)\z/} keys %$C;
     die "Invalid connection identity.\n" if defined $C->{ConnectionUID} && $C->{ConnectionUID}!~/\A[a-f0-9]{40}\z/;
-    die "Invalid preset.\n" if ($C->{Preset} || '')!~/\A(?:Navis|Generic)\z/;
+    die "Invalid preset.\n" if ($C->{Preset} || '')!~/\A(?:Navis|Generic|AWX)\z/;
     my $A=Kernel::System::TESSERA::IntegrationAuth->new();my $U=$A->URL($C->{Origin});
     die "HTTPS origin required.\n" if $U->path ne '' && $U->path ne '/';
     $C->{Origin}=~s{/$}{};
     $C->{Timeout}=30; # Prevent native legacy-config migration from rewriting auth.
     $A->Validate($C->{Authentication});
+    die "AWX requires a mounted bearer token.\n" if $C->{Preset} eq 'AWX' && $C->{Authentication}{Provider} ne 'StaticBearer';
+    die "Client credentials required for this preset.\n" if $C->{Preset} ne 'AWX' && $C->{Authentication}{Provider} ne 'ClientCredentialsBasic';
+    $C->{Routes}=AWXRoutes() if $C->{Preset} eq 'AWX';
     die "Navis token endpoint must belong to this installation.\n" if $C->{Preset} eq 'Navis' && $C->{Authentication}{TokenURL} ne $C->{Origin}.'/nauth/token';
     die "Invalid instance reference.\n" if defined $C->{InstanceID} && (ref $C->{InstanceID} || length($C->{InstanceID})>255 || $C->{InstanceID}=~/[\x00-\x1f]/);
     $C->{Routes}=NavisRoutes() if $C->{Preset} eq 'Navis';
@@ -36,7 +49,8 @@ sub Validate {
         die "Invalid operation route.\n" if $Name!~/\A[A-Za-z][A-Za-z0-9]{0,63}\z/ || ref $R ne 'HASH'
             || ($R->{Method} || '')!~/\A(?:GET|POST)\z/ || ($R->{Path} || '')!~m{\A/(?!/)[A-Za-z0-9_/:.~-]+\z}
             || $R->{Path}=~m{(?:\A|/)\.\.?(/|\z)} || ref $R->{Parameters} ne 'ARRAY';
-        die "Unsupported route property.\n" if grep {!/\A(?:Method|Path|Parameters|SuccessStatus)\z/} keys %$R;
+        die "Unsupported route property.\n" if grep {!/\A(?:Method|Path|Parameters|SuccessStatus|QueryParameters)\z/} keys %$R;
+        die "Query parameters are reserved for AWX.\n" if exists $R->{QueryParameters} && $C->{Preset} ne 'AWX';
         die "Invalid expected response status.\n" if defined $R->{SuccessStatus} && $R->{SuccessStatus}!~/\A20[0-9]\z/;
         my @Names=$R->{Path}=~/:([A-Za-z][A-Za-z0-9]*)/g;
         die "Invalid path parameters.\n" if join(',',sort @Names) ne join(',',sort @{$R->{Parameters}}) || grep {ref $_ || !/\A[A-Za-z][A-Za-z0-9]*\z/} @{$R->{Parameters}};
@@ -59,7 +73,14 @@ sub Test {
     my ($S,%P)=@_;die "Administrator access required.\n" if !$S->Authorized($P{UserID});
     my $C=$S->Validate(dclone($P{Connection}));
     my $A=$S->{Auth} || Kernel::System::TESSERA::IntegrationAuth->new();
-    $A->Token(Profile=>$C->{Authentication},Identity=>'onboarding-test',Invalidate=>1);
+    my $Token=$A->Token(Profile=>$C->{Authentication},Identity=>'onboarding-test',Invalidate=>1);
+    if ($C->{Preset} eq 'AWX') {
+        my $R=$A->HTTP(Method=>'GET',URL=>$C->{Origin}.'/api/v2/me/',Headers=>{Authorization=>'Bearer '.$Token,Accept=>'application/json'});
+        die "AWX authentication failed.\n" if ref $R ne 'HASH' || ($R->{Status} || 0)!=200 || length($R->{Body} || '')>65536;
+        my $D=eval {JSON::PP->new->utf8->decode($R->{Body})};
+        die "AWX identity unavailable.\n" if ref $D ne 'HASH' || ref $D->{results} ne 'ARRAY' || @{$D->{results}}!=1
+            || ref $D->{results}[0] ne 'HASH' || ($D->{results}[0]{id} || '')!~/\A[1-9][0-9]*\z/;
+    }
     return {Success=>1};
 }
 sub Save {
@@ -77,7 +98,7 @@ sub Save {
         $C->{ConnectionUID}=$Existing?$Existing->{Config}{Requester}{Transport}{Config}{ConnectionUID}:unpack('H*',Crypt::PRNG::random_bytes(20));
         my $List=$W->WebserviceList(Valid=>0) || {};
         die "Name already exists; select its managed connection.\n" if grep {$List->{$_} eq $P{Name} && (!$Existing || $_!=$P{ID})} keys %$List;
-        my %I=map {$_=>{Type=>'TESSERA::Request'}} keys %{$C->{Routes}};
+        my %I=map {$_=>{Type=>$C->{Preset} eq 'AWX'?'AWX::'.$_:'TESSERA::Request',MappingInbound=>{},MappingOutbound=>{}}} keys %{$C->{Routes}};
         my $Config={Debugger=>{DebugThreshold=>'error',TestMode=>0},Requester=>{Invoker=>\%I,Transport=>{Type=>'HTTP::TESSERAIntegration',Config=>$C}}};
         my %Args=(Name=>$P{Name},Config=>$Config,ValidID=>$P{Enabled}?1:2,UserID=>$P{UserID});
         if ($Existing) {$ID=$P{ID};die "Service update failed.\n" if !$W->WebserviceUpdate(ID=>$ID,%Args)}

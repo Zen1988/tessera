@@ -1,0 +1,21 @@
+use strict;
+use warnings;
+use Test::More;
+use lib '.';
+use Kernel::System::TESSERA::ScriptEngine;
+open my $FH,'<','examples/awx/heartbeat-launch.example.yml' or die $!;
+local $/;my $Source=<$FH>;close $FH;
+my $Calls=0;
+my $Engine=Kernel::System::TESSERA::ScriptEngine->new(WebServiceProvider=>sub {
+ my %P=@_;++$Calls;
+ is($P{Service},'AWX','exact execution service binding');
+ is($P{Invoker},'JobLaunch','heartbeat does not wait for nonexistent callback');
+ is_deeply($P{Data},{TemplateID=>42},'template defaults retained without guessed inventory/prompts');
+ return {Success=>1,Data=>{JobID=>123,Status=>'pending',InputAccepted=>1}};
+});
+my $R=$Engine->ScriptEvaluate(Source=>$Source,UserID=>7);
+ok($R->{Success},'actual ScriptEngine evaluates heartbeat launch');
+is($R->{Value},123,'returns JobID for subsequent read-only reconciliation');
+is($Calls,1,'one launch call per evaluation');
+ok(!Kernel::System::TESSERA::ScriptEngine->new()->ScriptEvaluate(Source=>$Source,UserID=>7)->{Success},'no implicit outbound authority');
+done_testing();

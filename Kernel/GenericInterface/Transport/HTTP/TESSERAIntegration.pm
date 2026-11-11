@@ -17,9 +17,17 @@ sub RequesterPerformRequest {
         my $D=dclone($P{Data});my $Path=$R->{Path};
         for my $K (@{$R->{Parameters}}) {
             my $V=delete $D->{$K};die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,200}\z/;
+            die if $C->{Preset} eq 'AWX' && $V!~/\A[1-9][0-9]{0,14}\z/;
             $Path=~s/:\Q$K\E(?=\/|\z)/uri_escape_utf8($V)/ge;
         }
+        my @Query;
+        for my $K (@{$R->{QueryParameters} || []}) {
+            next if !exists $D->{$K};my $V=delete $D->{$K};
+            die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,32}\z/;
+            push @Query,uri_escape_utf8($K).'='.uri_escape_utf8($V);
+        }
         die if $Path=~/:/ || ($R->{Method} eq 'GET' && keys %$D);
+        $Path.='?'.join('&',@Query) if @Query;
         my $A=$S->{Auth} || Kernel::System::TESSERA::IntegrationAuth->new();
         my $Identity=$C->{ConnectionUID} || JSON::PP->new->canonical->encode($C);
         my $Body=$R->{Method} eq 'POST'?JSON::PP->new->canonical->utf8->encode($D):undef;
@@ -29,7 +37,7 @@ sub RequesterPerformRequest {
             my $Token=$A->Token(Profile=>$C->{Authentication},Identity=>$Identity,Invalidate=>$Attempt);
             $Response=$A->HTTP(Method=>$R->{Method},URL=>$C->{Origin}.$Path,Headers=>{
                 Authorization=>'Bearer '.$Token,Accept=>'application/json','Content-Type'=>'application/json'},Body=>$Body);
-            last unless $Attempt==0 && $R->{Method} eq 'GET' && ($Response->{Status} || 0)==401;
+            last unless $Attempt==0 && $C->{Preset} ne 'AWX' && $R->{Method} eq 'GET' && ($Response->{Status} || 0)==401;
         }
         die if ($Response->{Status} || 0)!=($R->{SuccessStatus} || 200) || length($Response->{Body} || '')>4194304;
         my $Data=JSON::PP->new->utf8->decode($Response->{Body});die if ref $Data ne 'HASH' && ref $Data ne 'ARRAY';

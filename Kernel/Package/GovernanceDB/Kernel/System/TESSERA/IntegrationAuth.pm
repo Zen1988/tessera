@@ -14,7 +14,14 @@ sub new { my ($T,%P)=@_; bless \%P,$T }
 sub _form { my $V=uri_escape_utf8($_[0],q{^A-Za-z0-9\-._~}); $V=~s/%20/+/g; return $V }
 sub Validate {
     my ($S,$C)=@_;
-    die "Invalid authentication profile.\n" if ref $C ne 'HASH' || ($C->{Provider} || '') ne 'ClientCredentialsBasic';
+    die "Invalid authentication profile.\n" if ref $C ne 'HASH';
+    if (($C->{Provider} || '') eq 'StaticBearer') {
+        die "Invalid bearer secret reference.\n" if grep {!/\A(?:Provider|SecretName)\z/} keys %$C;
+        die "Invalid bearer secret reference.\n" if !defined $C->{SecretName} || ref $C->{SecretName}
+            || $C->{SecretName}!~/\A[A-Za-z0-9][A-Za-z0-9_-]{0,127}\z/;
+        return 1;
+    }
+    die "Invalid authentication profile.\n" if ($C->{Provider} || '') ne 'ClientCredentialsBasic';
     die "Unsupported authentication property.\n" if grep {!/\A(?:Provider|TokenURL|ClientID|SecretName|Scope)\z/} keys %$C;
     for my $K (qw(TokenURL ClientID SecretName)) {
         die "Incomplete authentication profile.\n" if !defined $C->{$K} || ref $C->{$K} || !length($C->{$K}) || length($C->{$K})>2048 || $C->{$K}=~/[\x00-\x1f\x7f]/;
@@ -51,6 +58,10 @@ sub Token {
     my ($S,%P)=@_;my $C=$P{Profile};$S->Validate($C);
     my $Secret=$S->_Secret($C->{SecretName});
     die "Credential unavailable.\n" if !defined $Secret || ref $Secret || !length($Secret) || length($Secret)>4096 || $Secret=~/[\x00\r\n]/;
+    if ($C->{Provider} eq 'StaticBearer') {
+        die "Invalid bearer credential.\n" if $Secret!~/\A[A-Za-z0-9\-._~+\/]+=*\z/;
+        return $Secret; # Read on every request: mounted token rotation is immediate.
+    }
     my $Key=sha256_hex(JSON::PP->new->canonical->utf8->encode([$P{Identity},$C,$Secret]));
     my $Now=$S->{Clock}?$S->{Clock}->():time();
     delete $Tokens{$_} for grep {$Tokens{$_}{Until}<=$Now} keys %Tokens;
