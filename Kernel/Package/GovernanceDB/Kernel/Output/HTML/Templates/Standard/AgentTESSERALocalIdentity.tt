@@ -1,0 +1,29 @@
+<div class="MainBox ARIARoleMain">
+<h1>People and agent access</h1>
+<p>The customer is the main person record. Enable a secondary agent record only when this person needs agent access. Local passwords are checked against the customer account, with no password copies.</p>
+[% IF Data.Message %]<div class="MessageBox Notice" role="status"><p>[% Data.Message | html %]</p></div>[% END %]
+<p><a href="[% Env('Baselink') %]Action=AdminCustomerUser;Subaction=Add">Create a customer user</a></p>
+<form action="[% Env('CGIHandle') | html %]" method="get" class="Validate">
+<input type="hidden" name="Action" value="AgentTESSERALocalIdentity"/>
+<label for="PermissionSubjectSearch">Customer user</label>
+<input type="hidden" id="CustomerUserID" name="CustomerUserID" value="[% IF Data.View %][% Data.CustomerUserID | html %][% END %]"/>
+<input id="PermissionSubjectSearch" value="[% Data.SubjectLabel | html %]" required class="W50pc" autocomplete="off" placeholder="Search for an existing customer user" aria-describedby="PermissionSubjectHelp PermissionSubjectStatus"/>
+<p id="PermissionSubjectHelp">Type at least two characters, select an existing account, then load the person.</p>
+<p id="PermissionSubjectStatus" role="status" aria-live="polite">[% IF Data.View %]Selected account: [% Data.CustomerUserID | html %][% ELSE %]No account selected.[% END %]</p>
+<button type="submit">Load person</button></form>
+[% IF Data.View %]
+<h2>[% Data.SubjectLabel | html %]</h2>
+<p><a href="[% Env('Baselink') %]Action=AdminCustomerUser;Subaction=Change;ID=[% Data.CustomerUserID | uri %]">Edit main customer profile or password</a></p>
+[% IF !Data.View.RoutingReady %]<div class="MessageBox Notice"><p>Linked local authentication is not configured. Follow the packaged local-identity guide and restart workers before enabling agent access. Existing authentication has not been changed.</p></div>[% END %]
+<form action="[% Env('CGIHandle') | html %]" method="post" class="Validate PreventMultipleSubmits">
+<input type="hidden" name="Action" value="AgentTESSERALocalIdentity"/><input type="hidden" name="Subaction" value="Save"/>
+<input type="hidden" name="CustomerUserID" value="[% Data.CustomerUserID | html %]"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/>
+<fieldset class="TableLike"><legend>Agent access</legend>
+<div class="Field"><label><input type="checkbox" name="AgentEnabled" value="1" [% IF Data.View.Link.Enabled %]checked[% END %]/> This customer also has agent access</label><p>Disabling agent access preserves the customer, link and history.</p></div><div class="Clear"></div>
+<label for="GroupIDs">Agent groups (read/write)</label><div class="Field"><select id="GroupIDs" name="GroupIDs" multiple size="8" class="W50pc">[% FOREACH Group IN Data.Groups %]<option value="[% Group.ID | html %]" [% IF Group.Selected %]selected[% END %]>[% Group.Name | html %]</option>[% END %]</select></div><div class="Clear"></div>
+<label for="RoleIDs">Agent roles</label><div class="Field"><select id="RoleIDs" name="RoleIDs" multiple size="6" class="W50pc">[% FOREACH Role IN Data.Roles %]<option value="[% Role.ID | html %]" [% IF Role.Selected %]selected[% END %]>[% Role.Name | html %]</option>[% END %]</select><p>Select approved agent permissions explicitly. Customer SupportAssignments are not copied into agent groups. Existing independently assigned agent permissions are preserved.</p></div><div class="Clear"></div>
+[% IF Data.View.Link.AgentID %]<div class="Field"><p>Linked agent: [% Data.View.Agent.UserLogin | html %] (ID [% Data.View.Link.AgentID | html %]). Effective access: [% IF Data.View.EffectiveAgentActive %]active[% ELSE %]disabled or not ready[% END %]. Password changes through either interface use the customer password source.</p></div><div class="Clear"></div>[% ELSE %]
+<label for="ExistingAgentID">Existing agent ID (only for deliberate linking)</label><div class="Field"><input id="ExistingAgentID" name="ExistingAgentID" type="number" min="2"/><label><input type="checkbox" name="ConfirmExisting" value="1"/> I confirm this existing agent belongs to this customer. Replace its independent password with the customer's password source.</label><p>Leave empty to create a secondary agent when the login is unused. Root and your current administrator account cannot be linked.</p></div><div class="Clear"></div>[% END %]
+</fieldset><button type="submit" [% IF !Data.View.RoutingReady %]disabled[% END %]>Save agent access</button></form>
+[% END %]
+</div>

@@ -9,6 +9,36 @@ sub _admin {
     my ($S,$U)=@_;
     die "Administrator access required.\n" if !$Kernel::OM->Get('Kernel::System::TESSERA::IntegrationOnboarding')->Authorized($U);
 }
+sub SubjectSearch {
+    my ($S,%P)=@_;$S->_admin($P{UserID});
+    my $Term=$P{Term}//'';
+    return [] if ref $Term || length($Term)<2 || length($Term)>100 || $Term=~/[\x00-\x1f\x7f]/ || $Term!~/[\pL\pN]/;
+    my $Users=$Kernel::OM->Get('Kernel::System::CustomerUser');
+    my %Matches=$Users->CustomerSearch(Search=>'*'.$Term.'*',Valid=>1,Limit=>20);
+    my %EmailMatches=$Users->CustomerSearch(PostMasterSearch=>'*'.$Term.'*',Valid=>1,Limit=>20);
+    @Matches{keys %EmailMatches}=values %EmailMatches;
+    my @Results;
+    for my $Login (sort keys %Matches) {
+        my %U=$Users->CustomerUserDataGet(User=>$Login);
+        next if !$U{UserLogin} || ($U{ValidID}||$U{UserValidID}||0)!=1;
+        push @Results,{Value=>$U{UserLogin},Label=>$S->_SubjectLabel(\%U)};
+        last if @Results>=20;
+    }
+    return \@Results;
+}
+sub _SubjectLabel {
+    my ($S,$U)=@_;
+    my $Name=join(' ',grep {defined $_ && length $_} @{$U}{qw(UserFirstname UserLastname)});
+    my $Email=$U->{UserEmail}||'';
+    return ($Name?"$Name ":'').($Email?"<$Email> ":'').'('.$U->{UserLogin}.')';
+}
+sub SubjectLabel {
+    my ($S,%P)=@_;$S->_admin($P{UserID});
+    return '' if !$P{CustomerUserID};
+    my %U=$Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(User=>$P{CustomerUserID});
+    return $P{CustomerUserID}.' (unavailable)' if !$U{UserLogin};
+    return $S->_SubjectLabel(\%U).(($U{ValidID}||$U{UserValidID}||0)==1?'':' (inactive)');
+}
 sub StorageEnsure {
     my ($S)=@_; my $DB=$Kernel::OM->Get('Kernel::System::DB');
     return if !$DB->Do(SQL=>q{CREATE TABLE IF NOT EXISTS tessera_api_identity (

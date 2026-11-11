@@ -13,7 +13,7 @@ use Kernel::GenericInterface::Operation::TESSERA::Common;
  sub KeyAuthenticate {return $main::key_valid ? {KeyID=>11,CustomerUserID=>'subject'} : undef}
  sub KeyCreate {return {KeyID=>12,APIKey=>'test-secret'}}
  sub KeyRevoke {$main::revoked++;return 1}
- package PCustomer;sub CustomerUserDataGet {return (UserLogin=>'subject',ValidID=>1)}
+ package PCustomer;sub CustomerSearch {return (subject=>'Test User',inactive=>'Inactive')}sub CustomerUserDataGet {return (UserLogin=>$_[2],UserFirstname=>'Test',UserLastname=>'User',UserEmail=>'test@example.invalid',ValidID=>$_[2] eq 'inactive'?2:1)}
  package PDB;
  sub Do {my ($s,%p)=@_;push @{$s->{writes}},$p{SQL};return !$main::bind_failure if $p{SQL}=~/INSERT INTO tessera_api_identity_token/;return 1}
  sub Prepare {
@@ -59,4 +59,11 @@ $admin=1;
 ok($s->StorageEnsure(),'provider tables initialize');ok($s->StorageEnsure(),'repeated initialization supported');
 my $ddl=join '\n',@{$db->{writes}};
 unlike($ddl,qr/DROP TABLE|DELETE FROM/,'setup preserves existing identities and token data');
+$admin=1;
+my $matches=$s->SubjectSearch(UserID=>1,Term=>'su');
+is(scalar @$matches,1,'inactive account excluded from selector');
+is($matches->[0]{Value},'subject','selector submits exact login');
+like($matches->[0]{Label},qr/Test User.*test\@example.invalid.*subject/,'suggestion identifies name email and login');
+is_deeply($s->SubjectSearch(UserID=>1,Term=>'s'),[],'short queries do not enumerate users');
+$admin=0;ok(!eval {$s->SubjectSearch(UserID=>2,Term=>'su');1},'nonadmin cannot enumerate subjects');
 done_testing;

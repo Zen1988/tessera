@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use Kernel::System::TESSERA::ScriptBlocks qw(SplitSource);
 use File::Find ();
+use Digest::SHA qw(sha256_hex);
 use File::Path qw(make_path);
 
 our @ObjectDependencies = (
@@ -35,6 +36,7 @@ our @ObjectDependencies = (
     'Kernel::System::YAML',
     'Kernel::System::TESSERA::Observability',
     'Kernel::System::TESSERA::ProviderIdentity',
+    'Kernel::System::TESSERA::LocalIdentity',
 );
 
 sub new {
@@ -50,6 +52,7 @@ sub InstallDefaults {
 
     $Self->_ActivityTablesEnsure();
     $Self->_ExternalAPITablesEnsure();
+    die 'Cannot initialize local linked identity storage.' if !$Kernel::OM->Get('Kernel::System::TESSERA::LocalIdentity')->StorageEnsure();
     die 'Cannot initialize provider API identities.' if !$Kernel::OM->Get('Kernel::System::TESSERA::ProviderIdentity')->StorageEnsure();
     die 'Cannot initialize observability storage.' if !$Kernel::OM->Get('Kernel::System::TESSERA::Observability')->StorageEnsure();
     die 'Cannot initialize observability provider.' if !$Kernel::OM->Get('Kernel::System::TESSERA::Observability')->ProviderEnsure();
@@ -593,6 +596,26 @@ sub _RuntimeOverlayInstall {
                 local $/;
                 my $Content = <$SourceFH>;
                 close $SourceFH;
+
+                if ($Target =~ m{[\\/]Custom[\\/]Kernel[\\/]System[\\/]User\.pm\z}) {
+                    my ($Basis)=$Content=~/TESSERA-Native-User-SHA256: ([a-f0-9]{64})/;
+                    open my $BasisFH,'<:raw',"$Home/Kernel/System/User.pm" or die 'Cannot inspect native User module.';
+                    my $NativeBasis=<$BasisFH>;close $BasisFH;$NativeBasis=~s/\r\n/\n/g;
+                    die 'Native User module differs from the reviewed linked-password basis; compatibility merge required.' if !$Basis || sha256_hex($NativeBasis) ne $Basis;
+                }
+
+                # Do not replace an unknown third-party User customization.
+                # The linked-password hook is based on the native 11.1 module.
+                if ($Target =~ m{[\\/]Custom[\\/]Kernel[\\/]System[\\/]User\.pm\z} && -f $Target) {
+                    open my $ExistingFH,'<:raw',$Target or die 'Cannot inspect existing User customization.';
+                    my $Existing=<$ExistingFH>;close $ExistingFH;
+                    if ($Existing !~ /sub TESSERALocalPasswordRouting/) {
+                        open my $NativeFH,'<:raw',"$Home/Kernel/System/User.pm" or die 'Cannot inspect native User module.';
+                        my $Native=<$NativeFH>;close $NativeFH;
+                        $Existing=~s/\r\n/\n/g;$Native=~s/\r\n/\n/g;
+                        die 'Existing third-party User customization requires an explicit compatibility merge.' if $Existing ne $Native;
+                    }
+                }
 
                 open my $TargetFH, '>:raw', $Target or do {
                     $LogObject->Log(

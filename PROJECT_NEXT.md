@@ -1,6 +1,16 @@
-# Current — deploy and accept prepared Base191 provider integrations
+# Current — accept Base192 local paired identities and customer picker
 
-Base191 implements API identity/token administration, scoped Grafana ticket/alert/risk reporting and Alertmanager-to-MELT evidence intake. Completed design and checks are recorded in PROJECT_STATUS.md and docs/observability-provider.md; do not reimplement or invent new governance fields. Package: Kernel/Package/TESSERA-Base-0.0.191.opm plus SHA256. Base191 includes the Base190 Elasticsearch ownership fix and Base189 managed AWX onboarding.
+Completed local implementation and decisions are in PROJECT_STATUS.md and docs/local-linked-identity.md; do not rebuild from chat. Install Base192 normally and restart all workers. The User hook installer checks its reviewed native11.1 basis and refuses an unknown third-party override; merge compatibility deliberately if real native files differ. Feature defaults disabled and live authentication is unchanged.
+
+Next use a disposable local customer and an independent unlinked emergency admin. Follow the packaged auth configuration fragment: sole TESSERALocalIdentity agent router, explicit disabled sync, local mode enabled, compatible existing customer DB/TESSERA local routing. No additional agent/customer auth fallback modules. Verify emergency login, then Admin -> People and agent access -> select customer -> explicit agent checkbox and approved groups/roles. Never automatically adopt an existing same-login agent; confirm its ID. Root/current acting admin cannot be linked.
+
+Run real customer/agent password change and native admin reset acceptance, old-password denial, profile/invalidity and independent agent revocation, managed grants, collision/rollback/concurrency, all replicas loaded, MFA/password policies and selector/browser accessibility/mobile. Per-interface policy/history/session/MFA are not unified by this phase; login renames/merges and auth rollback/uninstall require reviewed migration. No real account, password, grant, configuration or Kubernetes deployment changed here.
+
+Owner ultimately wants AD and local, but local testing is first because no AD environment is available. AD-backed pairing remains future implementation: shared directory authentication, stable directory identity, explicit secondary agent provisioning and agent grants, no local shadow password, retirement/revocation and idempotent migrations preserving local links. Do not claim AD support from local tests.
+
+# Current — deploy and accept prepared Base192 provider integrations
+
+Base192 implements API identity/token administration, scoped Grafana ticket/alert/risk reporting and Alertmanager-to-MELT evidence intake. Completed design and checks are recorded in PROJECT_STATUS.md and docs/observability-provider.md; do not reimplement or invent new governance fields. Package: Kernel/Package/TESSERA-Base-0.0.192.opm plus SHA256. Base192 includes the Base190 Elasticsearch ownership fix and Base189 managed AWX onboarding.
 
 Next run native fresh/188-or190 upgrade/reinstall acceptance, including existing multitenancy ownership, proper overlay deployment and consistent worker restart. Keep ITSMConfigItemMultitenancy installed. Build the new version into the web/daemon/loader-init image before Kubernetes rollout; no image/manifests deployed here.
 

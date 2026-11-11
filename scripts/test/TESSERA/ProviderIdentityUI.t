@@ -11,9 +11,12 @@ use Kernel::Modules::AgentTESSERAAPIIdentity;
  sub Save {$main::writes++;return 1}
  sub Issue {$main::writes++;return {APIKey=>'once-token'}}
  sub Get {return {ID=>1,Name=>'<script>marker</script>',CustomerUserID=>'subject',Settings=>{Grants=>[]}}}
+ sub SubjectLabel {return "Test User (subject)"}
+ sub SubjectSearch {return [{Value=>"subject",Label=>"Test User (subject)"}]}
  sub List {return []}sub Tokens {return []}
  package ULayout;
  sub NoPermission {return 'denied'}sub ErrorScreen {return 'error'}sub ChallengeTokenCheck {return 1}
+ sub Attachment {my ($s,%p)=@_;return $p{Content}}sub JSONEncode {return 'subject-results'}
  sub Header {return ''}sub NavigationBar {return ''}sub Footer {return ''}
  sub Output {my ($s,%p)=@_;return $p{Data}{NewToken}||'page'}
  package UResponse;sub Header {return 1}
@@ -34,4 +37,9 @@ my $tt=Template->new(INCLUDE_PATH=>'Kernel/Package/GovernanceDB/Kernel/Output/HT
 ok($tt->process('AgentTESSERAAPIIdentity.tt',{Data=>{Name=>'<script>marker</script>',ID=>1,NewToken=>'test-only',Grants=>[],Tokens=>[],Inputs=>[],Identities=>[]},Env=>sub {'/index.pl'}},\$html),'admin template renders');
 unlike($html,qr/<script>marker/,'identity text cannot inject markup');like($html,qr/&lt;script&gt;marker/,'identity name escaped');
 like($html,qr/name="ChallengeToken"/,'mutation forms contain CSRF token');
+$s->{Subaction}='SearchSubjects';$method='GET';$params{Term}='su';
+is($s->Run(),'subject-results','admin can search customer subjects without mutation');
+$admin=0;is($s->Run(),'denied','subject search requires administrator');
+like($html,qr/type="hidden" id="CustomerUserID"/,'only selected login is submitted');
+like($html,qr/id="PermissionSubjectSearch"/,'visible customer selector rendered');
 done_testing;

@@ -9,6 +9,10 @@ sub Run {
     my $R=$Kernel::OM->Get('Kernel::System::Web::Request');
     my $B=$Kernel::OM->Get('Kernel::System::TESSERA::ProviderIdentity');
     return $L->NoPermission(WithHeader=>1) if !eval {$B->_admin($S->{UserID});1};
+    if (($S->{Subaction}||'') eq 'SearchSubjects') {
+        my $Results=$B->SubjectSearch(UserID=>$S->{UserID},Term=>$R->GetParam(Param=>'Term'));
+        return $L->Attachment(ContentType=>'application/json',Content=>$L->JSONEncode(Data=>$Results),Type=>'inline',NoCache=>1);
+    }
     my $ID=$R->GetParam(Param=>'ID')||'';
     return $L->ErrorScreen(Message=>'Invalid API identity.') if $ID && $ID!~/\A[1-9][0-9]{0,11}\z/;
     my ($Message,$NewToken)=('','');
@@ -47,7 +51,7 @@ sub Run {
     my @Inputs=map {{Name=>$_,Value=>$C{$_}||''}} qw(SourceName TargetMELTObjectID ActorID);
     push @Inputs,map {{Name=>$_,Value=>join(',',@{$C{$_}||[]})}} qw(TicketQueueIDs MELTObjectIDs);
     my $Output=$L->Header(Title=>'API identities and tokens').$L->NavigationBar().$L->Output(TemplateFile=>'AgentTESSERAAPIIdentity',Data=>{
-        %$I,ID=>$ID,Message=>$Message,NewToken=>$NewToken,Inputs=>\@Inputs,
+        %$I,ID=>$ID,SubjectLabel=>$ID?$B->SubjectLabel(UserID=>$S->{UserID},CustomerUserID=>$I->{CustomerUserID}):'',Message=>$Message,NewToken=>$NewToken,Inputs=>\@Inputs,
         Grants=>[map {{Name=>$_,Selected=>$Grants{$_}}} qw(report:tickets report:risks report:alerts ingest:alertmanager)],
         Identities=>$B->List(UserID=>$S->{UserID}),Tokens=>$ID?$B->Tokens(UserID=>$S->{UserID},ID=>$ID):[]}).$L->Footer();
     $Kernel::OM->Get('Kernel::System::Web::Response')->Header('Cache-Control'=>'no-store');

@@ -12,6 +12,8 @@ Enable TESSERA::API::Enabled and TESSERA::Observability::Enabled in SysConfig on
 
 Admin -> API identities and tokens (Action=AgentTESSERAAPIIdentity):
 
+Permission subject is a searchable existing-user selector in Base192: type at least two characters of a name, login or email and select a suggestion. Editing the text clears the selected login. Saved subjects display the identified account and remain immutable.
+
 1. Create grafana-reader, select an existing valid customer permission subject, enable only report:tickets, report:alerts and report:risks. Specify allowed TicketQueueIDs and MELTObjectIDs. Queue scope limits candidate tickets; the existing requester/SupportAssignment visibility service must also authorize each returned ticket. Alert scope also requires MELT API capability and object entitlement. Risk data uses the subject's permission-filtered governed Risk Register. No company-only scope expansion.
 2. Create alertmanager-writer with only ingest:alertmanager. Set a unique SourceName, one existing TargetMELTObjectID and a valid agent ActorID for audit evidence. The permission subject needs the existing MELT API capability/groups/SupportAssignment and access to the target. The payload cannot choose its own target or actor. No automatic MELT objects or entitlements are created.
 3. Enable the identity and issue a named token with a 1-365 day lifetime. Copy the token once into the consumer's protected secret store. The administration page is no-store; later views show metadata and prefix only. No credentials in URLs, dashboard definitions or ticket scripts.

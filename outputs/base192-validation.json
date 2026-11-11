@@ -1,0 +1,29 @@
+{
+  "version": "0.0.192",
+  "payload_count": 465,
+  "sha256": "77f276932bc25f60cdf594b88e8b0f74cb817dc2f79320c5f89bd837c51d0d96",
+  "added_payloads": [
+    "Kernel/Config/Files/XML/TESSERALocalIdentity.xml",
+    "Kernel/Modules/AgentTESSERALocalIdentity.pm",
+    "Kernel/Output/HTML/Templates/Standard/AgentTESSERALocalIdentity.tt",
+    "Kernel/System/Auth/TESSERALocalIdentity.pm",
+    "Kernel/System/CustomerUser/Event/TESSERALocalIdentity.pm",
+    "Kernel/System/TESSERA/LocalIdentity.pm",
+    "var/governancedb/runtime_overlay/Kernel/System/User.pm",
+    "var/httpd/htdocs/js/TESSERA.Agent.APIIdentity.js",
+    "var/tessera/docs/local-linked-identity.md",
+    "var/tessera/examples/identity/local-auth-config.example.pl"
+  ],
+  "changed_payloads": [
+    "Kernel/Config/Files/XML/TESSERAObservability.xml",
+    "Kernel/Modules/AgentTESSERAAPIIdentity.pm",
+    "Kernel/Output/HTML/Templates/Standard/AgentTESSERAAPIIdentity.tt",
+    "Kernel/System/GovernanceDB/Bootstrap.pm",
+    "Kernel/System/TESSERA/ProviderIdentity.pm",
+    "var/tessera/docs/observability-provider.md"
+  ],
+  "removed_payloads": [],
+  "validation": "22 suites / 508 assertions PASS; selector JavaScript interaction checks PASS",
+  "live_activation": "not performed; local opt-in flow only, AD integration pending",
+  "native_user_basis_sha256": "966cc18aecfdeccb688a29df4f40ce7d6c758f943ce3f520f8f06cc90250ae50"
+}

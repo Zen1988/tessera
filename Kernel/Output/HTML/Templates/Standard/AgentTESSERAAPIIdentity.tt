@@ -2,15 +2,21 @@
 <h1>API identities and tokens</h1>
 <p>API identities are machine callers, with no portal password or agent session. Each identity uses an existing customer account only as its authorization subject: SupportAssignments and object entitlements still apply.</p>
 [% IF Data.Message %]<div class="MessageBox Notice" role="status"><p>[% Data.Message | html %]</p></div>[% END %]
-[% IF Data.NewToken %]<label for="NewToken">New bearer token — copy now</label><textarea id="NewToken" rows="2" readonly autocomplete="off" class="W75pc">[% Data.NewToken | html %]</textarea>[% END %]
+[% IF Data.NewToken %]<label for="NewToken">New bearer token â€” copy now</label><textarea id="NewToken" rows="2" readonly autocomplete="off" class="W75pc">[% Data.NewToken | html %]</textarea>[% END %]
 <p><a href="[% Env('Baselink') %]Action=AgentTESSERAAPIIdentity">Create API identity</a></p>
-<ul>[% FOREACH Identity IN Data.Identities %]<li><a href="[% Env('Baselink') %]Action=AgentTESSERAAPIIdentity;ID=[% Identity.ID | uri %]">[% Identity.Name | html %]</a> — [% Identity.CustomerUserID | html %] [% IF Identity.Enabled %](enabled)[% ELSE %](disabled)[% END %]</li>[% END %]</ul>
+<ul>[% FOREACH Identity IN Data.Identities %]<li><a href="[% Env('Baselink') %]Action=AgentTESSERAAPIIdentity;ID=[% Identity.ID | uri %]">[% Identity.Name | html %]</a> â€” [% Identity.CustomerUserID | html %] [% IF Identity.Enabled %](enabled)[% ELSE %](disabled)[% END %]</li>[% END %]</ul>
 <form action="[% Env('CGIHandle') | html %]" method="post" class="Validate PreventMultipleSubmits">
 <input type="hidden" name="Action" value="AgentTESSERAAPIIdentity"/><input type="hidden" name="Subaction" value="Save"/>
 <input type="hidden" name="ID" value="[% Data.ID | html %]"/><input type="hidden" name="ChallengeToken" value="[% Env('ChallengeToken') | html %]"/>
 <fieldset class="TableLike"><legend>Identity, capabilities and data scope</legend>
 <label for="Name">API identity name</label><div class="Field"><input id="Name" name="Name" value="[% Data.Name | html %]" maxlength="100" required class="W50pc"/></div><div class="Clear"></div>
-<label for="CustomerUserID">Permission subject</label><div class="Field"><input id="CustomerUserID" name="CustomerUserID" value="[% Data.CustomerUserID | html %]" required [% IF Data.ID %]readonly[% END %] class="W50pc"/><p>Existing valid customer login. Immutable after creation. Company membership alone grants no additional scope.</p></div><div class="Clear"></div>
+<label for="PermissionSubjectSearch">Permission subject</label><div class="Field">
+<input type="hidden" id="CustomerUserID" name="CustomerUserID" value="[% Data.CustomerUserID | html %]"/>
+<input id="PermissionSubjectSearch" value="[% Data.SubjectLabel | html %]" required [% IF Data.ID %]readonly[% END %] class="W50pc" autocomplete="off" placeholder="Search for an existing customer user" aria-describedby="PermissionSubjectHelp PermissionSubjectStatus"/>
+<p id="PermissionSubjectHelp">[% IF Data.ID %]This selected account cannot be changed. Create a new API identity to use another account.[% ELSE %]Type at least two characters of a name, login or email, then select a customer user from the suggestions.[% END %] Company membership alone grants no additional scope.</p>
+<p id="PermissionSubjectStatus" role="status" aria-live="polite">[% IF Data.ID %]Selected account: [% Data.CustomerUserID | html %][% ELSE %]No account selected.[% END %]</p>
+<noscript><p>Enable JavaScript to search and select a permission subject.</p></noscript>
+</div><div class="Clear"></div>
 [% FOREACH Grant IN Data.Grants %]<div class="Field"><label><input type="checkbox" name="Grant_[% Grant.Name | html %]" value="1" [% IF Grant.Selected %]checked[% END %]/> [% Grant.Name | html %]</label></div><div class="Clear"></div>[% END %]
 [% FOREACH Input IN Data.Inputs %]<label for="[% Input.Name | html %]">[% Input.Name | html %]</label><div class="Field"><input id="[% Input.Name | html %]" name="[% Input.Name | html %]" value="[% Input.Value | html %]" maxlength="2200" class="W50pc"/></div><div class="Clear"></div>[% END %]
 <div class="Field"><p>TicketQueueIDs and MELTObjectIDs are comma-separated reporting scope IDs (maximum 200). Scope does not bypass per-object permission checks. Ingestion needs a unique SourceName, existing TargetMELTObjectID and valid agent ActorID for evidence attribution. Risk reporting uses the subject's governed Risk Register.</p><label><input type="checkbox" name="Enabled" value="1" [% IF Data.Enabled %]checked[% END %]/> Enable this API identity</label></div><div class="Clear"></div>
