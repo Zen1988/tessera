@@ -1,3 +1,7 @@
+## Base190 installation correction (2026-11-11)
+
+Base189 is superseded: its direct Elasticsearch Filelist entry conflicts with ITSMConfigItemMultitenancy-11.0.2. Install Base190 normally; it deploys the identical compatibility replacement through the existing runtime overlay. Keep multitenancy installed. Restart all web/daemon workers after installation. A later multitenancy upgrade can restore its older module; reapply Base190 afterward. Live install acceptance pending.
+
 # AWX integration checkpoint â€” 2026-11-11
 
 Current authoritative package: prepared TESSERA-Base0.0.189; previously confirmed live release0.0.188. Historical review below predates the new extension. SOPM/OPM versions agree; all28 AWX/onboarding-related OPM payloads checked match package-source bytes. No189 package built. Owner previously confirmed Base188 deployed; verify live package/configuration before acceptance. Do not reinstall or downgrade to182 because older guides use that release number.

@@ -1,0 +1,10 @@
+{
+  "version": "0.0.190",
+  "payload_count": 445,
+  "sha256": "63c77f31ed7bb17e7efba0343126257e5f9f161915687944fedff4fa66258979",
+  "removed_ownership": "Custom/Kernel/System/Elasticsearch.pm",
+  "added_overlay": "var/governancedb/runtime_overlay/Kernel/System/Elasticsearch.pm",
+  "all_other_payloads_identical_to_189": true,
+  "overlay_and_multitenancy_assertions": 21,
+  "live_installation": "pending"
+}

@@ -1,3 +1,11 @@
+# 2026-11-11 — Base190 fixes confirmed Base189 installation ownership conflict
+
+- User deployment rejected Base189: Custom/Kernel/System/Elasticsearch.pm is owned by ITSMConfigItemMultitenancy-11.0.2. Base189 must not be used for this upgrade; do not force installation or uninstall multitenancy.
+- Base190 packages the same byte-exact compatibility module under var/governancedb/runtime_overlay/Kernel/System/Elasticsearch.pm. Existing Bootstrap::_RuntimeOverlayInstall deploys it to Custom during install/upgrade/reinstall without claiming the other package file. Other 444 payloads and hooks unchanged from189; AWX bearer onboarding retained. Direct duplicate Filelist ownership rejected approach.
+- Existing multitenancy package remains installed and owns its file; its own later upgrade/reinstall can restore the old module. Reapply the TESSERA overlay through package reinstall afterward and restart all web/daemon workers. No package repository ownership edits or forced install.
+- Verified445 payloads against SOPM sources, byte equality with189 except relocated payload, unchanged hooks, and21 assertions covering actual Bootstrap fresh/stale-upgrade/reinstall deployment plus preserved multitenancy filters. Native Linux OTOBO installation acceptance remains pending; no live installation here.
+- Current focus: install Base190 normally, restart consistent workers, confirm portal quick-search and CMDB restrictions; then mount AWX token/CA, create managed connection and launch heartbeat template35 once. Base189 superseded by190.
+
 # 2026-11-11 — Base189 ready for GitHub: managed AWX bearer onboarding and Elasticsearch replacement
 
 - Version clarification: legacy GovernanceDB reached0.1.128 (PackageMerge); TESSERA-Base was0.0.188 at HEAD and this build is0.0.189. No Base0.1.x downgrade occurred.

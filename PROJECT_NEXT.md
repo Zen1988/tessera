@@ -1,6 +1,6 @@
-# Current — deploy and accept prepared Base189
+# Current — deploy and accept prepared Base190
 
-Base189 is built with managed AWX bearer-token onboarding and the required Custom Elasticsearch compatibility replacement. Completed implementation, architecture decisions and checks are recorded in PROJECT_STATUS.md; do not reimplement them. Package: Kernel/Package/TESSERA-Base-0.0.189.opm plus SHA256. See docs/awx-managed-onboarding.md.
+Base189 was blocked by duplicate Elasticsearch file ownership; use Base190 with the existing runtime-overlay deployment path. Keep ITSMConfigItemMultitenancy installed. Base190 is built with managed AWX bearer-token onboarding and the required Custom Elasticsearch compatibility replacement. Completed implementation, architecture decisions and checks are recorded in PROJECT_STATUS.md; do not reimplement them. Package: Kernel/Package/TESSERA-Base-0.0.190.opm plus SHA256. See docs/awx-managed-onboarding.md.
 
 Next install/upgrade/reinstall acceptance on the real environment, including Custom file ownership and volume/init sources that might restore the stale Elasticsearch override. Restart consistent web/daemon processes and verify customer quick-search and preserved agent CMDB group restrictions. No live deployment performed here.
 
@@ -1642,12 +1642,12 @@ Missing Crypt::AuthEnc::GCM reported. Corrected toolkit now explicitly installs/
 
 Continue from docs/customer-portal-vapt-2026-11-11.md and PROJECT_STATUS.md. Owner authorizes bounded injection/security testing of test portal; self-signed TLS bypass explicitly accepted for this endpoint. Do not save supplied passwords/cookies or mistake negative screening for completed VAPT. Authenticated testuser1 policy gate now accepted.
 
-Required next: deploy/retest Base189 Elasticsearch replacement before quick-search injection acceptance (current probes500); verify deployed authentication backend/HTTPBasicAuth advisory remediation without removing trusted REMOTE_USER support; expand SQLi/XSS coverage to actual input-consuming endpoints, isolated stored-XSS/browser execution and upload/download cases; test other authenticated/API CORS endpoints, CSRF and sessions. Owner assigns AD brute-force/lockout protection to the AD team; exclude AD lockout configuration and guessing tests from this TESSERA assessment. Portal session and authorization controls remain in scope. Retain separate confirmed/suspected findings, source fixes, package integration and live retest evidence.
+Required next: deploy/retest Base190 Elasticsearch replacement before quick-search injection acceptance (current probes500); verify deployed authentication backend/HTTPBasicAuth advisory remediation without removing trusted REMOTE_USER support; expand SQLi/XSS coverage to actual input-consuming endpoints, isolated stored-XSS/browser execution and upload/download cases; test other authenticated/API CORS endpoints, CSRF and sessions. Owner assigns AD brute-force/lockout protection to the AD team; exclude AD lockout configuration and guessing tests from this TESSERA assessment. Portal session and authorization controls remain in scope. Retain separate confirmed/suspected findings, source fixes, package integration and live retest evidence.
 
 
 ## VAPT continuation — authorization and search
 
-See live state-approval-forgery-probes.json and search-disclosure-probes.json. Parent375 forged Approve/Patch-to-in-progress requests all403 with visible state/owner unchanged. Genuine disposable Approval ticket and independent governance snapshot evidence still needed for approval-role separation and lifecycle immutability claims. Child376403; no mutation attempted. Own92 submitted search positive; candidate85 omitted/direct403. Quick Elasticsearch still500 for both: deploy Base189 compatibility override, confirm indexing and retest actual ES disclosure; do not count failures as passes. No confirmed bypass to patch from this batch.
+See live state-approval-forgery-probes.json and search-disclosure-probes.json. Parent375 forged Approve/Patch-to-in-progress requests all403 with visible state/owner unchanged. Genuine disposable Approval ticket and independent governance snapshot evidence still needed for approval-role separation and lifecycle immutability claims. Child376403; no mutation attempted. Own92 submitted search positive; candidate85 omitted/direct403. Quick Elasticsearch still500 for both: deploy Base190 compatibility override, confirm indexing and retest actual ES disclosure; do not count failures as passes. No confirmed bypass to patch from this batch.
 
 
 ## AWX first proof — ScriptEngine automation triggers the job
