@@ -1,8 +1,12 @@
+# Current — deploy Base195 customer search dialog styling
+
+Use Base195 for the next package/container build; it retains the Base194 descriptor fix and adds the scoped customer search dialog theme. Standard install, loader cache rebuild and consistent worker restart, then hard-refresh. Check the actual search popup header/close, result navigation, keyboard focus/Escape and mobile layout. Local fixture review and four release tests passed; live acceptance remains pending. Completed design is recorded in PROJECT_STATUS.md.
+
 # Current — use Base194 for container preparation
 
 Base193 preparation failure is diagnosed and fixed in Base194: the shipped container_release.json was incorrectly left at188. Install194 normally on /opt/otobo and rerun the existing toolkit commands from a fresh extraction. Toolkit ZIP unchanged; no manual JSON edit or guard bypass. Builder now rejects descriptor/version drift. Completed fix/checks are in PROJECT_STATUS.md and outputs/base194-validation.json. Base194 runtime is identical to193 except corrected descriptor/upgrade origins.
 
-Next verify actual Linux prepare -> build -> modules -> image export, then target Kubernetes upgrade. Local tests include actual465-file bundle verification, but no real image build/deployment was performed here. Use194 for all pending acceptance below; previous Base193/192 implementation references describe retained features.
+Next verify actual Linux prepare -> build -> modules -> image export, then target Kubernetes upgrade. Local tests include actual465-file bundle verification, but no real image build/deployment was performed here. Use195 for all pending acceptance below; previous Base193/192 implementation references describe retained features.
 
 # Current — deploy Base193 ticket diagnostic log cleanup
 

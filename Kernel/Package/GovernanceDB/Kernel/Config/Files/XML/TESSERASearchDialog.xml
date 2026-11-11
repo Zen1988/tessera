@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+<Setting Name="Loader::Customer::CommonCSS###240-TESSERASearchDialog" Required="1" Valid="1"><Description>Customer search result dialog: portal navy header, fixed close target and responsive Material-style results.</Description><Navigation>Frontend::Customer::ModuleRegistration::Loader</Navigation><Value><Array><Item>TESSERA.Customer.SearchDialog.css</Item></Array></Value></Setting>
+</otobo_config>

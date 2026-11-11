@@ -1,0 +1,189 @@
+/* Customer Elasticsearch result dialog. Native markup and dialog controls stay owned by OTOBO. */
+@supports selector(:has(*)) {
+    .Dialog:has(#oooESOuter) {
+        --tessera-search-top: clamp(88px, 14vh, 120px);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        width: min(1120px, calc(100vw - 64px));
+        min-width: 0;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - var(--tessera-search-top) - 24px);
+        max-height: calc(100dvh - var(--tessera-search-top) - 24px);
+        top: var(--tessera-search-top) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%);
+        overflow: hidden;
+        padding: 0;
+        border: 1px solid rgba(20, 32, 76, .08);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 24px 64px rgba(0, 2, 60, .22), 0 4px 12px rgba(0, 2, 60, .08);
+    }
+
+    .Dialog:has(#oooESOuter) > .Header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 0 0 72px;
+        box-sizing: border-box;
+        min-height: 72px;
+        margin: 0;
+        padding: 0 80px 0 28px;
+        background: var(--colMainDark, #00023c);
+        color: #fff;
+    }
+
+    .Dialog:has(#oooESOuter) > .Header h2 {
+        position: static;
+        float: none;
+        margin: 0;
+        padding: 0;
+        color: inherit;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.4;
+        text-align: start;
+    }
+
+    .Dialog:has(#oooESOuter) > .Header .Close {
+        position: absolute;
+        inset: 14px 16px auto auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .Dialog:has(#oooESOuter) > .Header .Close > i { display: none; }
+    .Dialog:has(#oooESOuter) > .Header .Close::before,
+    .Dialog:has(#oooESOuter) > .Header .Close::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 2px;
+        border-radius: 1px;
+        background: currentColor;
+        transform: rotate(45deg);
+    }
+    .Dialog:has(#oooESOuter) > .Header .Close::after { transform: rotate(-45deg); }
+    .Dialog:has(#oooESOuter) > .Header .Close:hover { background: rgba(255, 255, 255, .14); }
+    .Dialog:has(#oooESOuter) > .Header .Close:focus-visible {
+        background: rgba(255, 255, 255, .14);
+        outline: 2px solid #b7c9ff;
+        outline-offset: 2px;
+    }
+
+    .Dialog:has(#oooESOuter) > .Content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: auto;
+        overflow-y: scroll;
+        scrollbar-gutter: stable;
+        padding: 0;
+        scrollbar-color: #c8cfdf #fff;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100%;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter .InnerContent {
+        max-height: none;
+        overflow: visible;
+        padding: 0;
+    }
+    .Dialog:has(#oooESOuter) #ElasticsearchQuickResult { margin: 0; padding: 0; }
+    .Dialog:has(#oooESOuter) #oooESOuter table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f5f7fb;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter th,
+    .Dialog:has(#oooESOuter) #oooESOuter td {
+        box-sizing: border-box;
+        height: auto;
+        max-width: none;
+        padding: 16px 24px;
+        border: 0;
+        border-bottom: 1px solid #e8edf5;
+        text-align: start;
+        vertical-align: middle;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter th {
+        padding-top: 13px;
+        padding-bottom: 13px;
+        background: #f5f7fb;
+        color: #59677f;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .04em;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter th a { color: inherit; }
+    .Dialog:has(#oooESOuter) #oooESOuter th:first-child { width: 30%; }
+    .Dialog:has(#oooESOuter) #oooESOuter th.TicketAge { width: 13%; }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody tr:nth-child(n),
+    .Dialog:has(#oooESOuter) #oooESOuter tbody td { background: #fff; }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody tr:last-child td { border-bottom: 0; }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody a {
+        display: block;
+        overflow: hidden;
+        color: #33405b;
+        font-size: 14px;
+        line-height: 1.5;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        text-decoration: none;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody td:first-child a {
+        color: var(--colMainDark, #00023c);
+        font-weight: 700;
+    }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody tr:hover td,
+    .Dialog:has(#oooESOuter) #oooESOuter tbody tr:focus-within td { background: #f0f4ff; }
+    .Dialog:has(#oooESOuter) #oooESOuter tbody a:focus-visible {
+        outline: 2px solid var(--colMainLight, #001bff);
+        outline-offset: 3px;
+        border-radius: 3px;
+    }
+
+    @media (max-width: 767px) {
+        .Dialog:has(#oooESOuter) {
+            --tessera-search-top: 192px;
+            width: calc(100vw - 24px);
+            border-radius: 16px;
+        }
+        .Dialog:has(#oooESOuter) > .Header { flex-basis: 64px; min-height: 64px; padding-left: 20px; }
+        .Dialog:has(#oooESOuter) > .Header .Close { top: 10px; right: 10px; }
+        .Dialog:has(#oooESOuter) #oooESOuter th,
+        .Dialog:has(#oooESOuter) #oooESOuter td { padding-left: 16px; padding-right: 16px; }
+    }
+    @media (max-width: 619px) {
+        .Dialog:has(#oooESOuter) #oooESOuter th:first-child,
+        .Dialog:has(#oooESOuter) #oooESOuter td:first-child { display: table-cell; width: 42%; }
+        .Dialog:has(#oooESOuter) #oooESOuter th.TicketAge,
+        .Dialog:has(#oooESOuter) #oooESOuter tr[id^="TicketID_"] td:nth-child(2) { display: none; }
+        .Dialog:has(#oooESOuter) #oooESOuter th:last-child { width: 58%; }
+        .Dialog:has(#oooESOuter) #oooESOuter tbody a { white-space: normal; overflow-wrap: anywhere; }
+    }
+    @media (max-height: 540px) {
+        .Dialog:has(#oooESOuter) { --tessera-search-top: 72px; }
+    }
+}

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.194</Version>
+    <Version>0.0.195</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -20,6 +20,9 @@
     <ModuleRequired Version="0.087">Crypt::AuthEnc::GCM</ModuleRequired>
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/Config/Files/XML/TESSERASearchDialog.xml" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.SearchDialog.css" Permission="660"/>
+
         <File Location="var/httpd/htdocs/js/TESSERA.Agent.APIIdentity.js" Permission="660"/>
         <File Location="Kernel/System/TESSERA/LocalIdentity.pm" Permission="660"/>
         <File Location="Kernel/System/Auth/TESSERALocalIdentity.pm" Permission="660"/>

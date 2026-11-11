@@ -1,0 +1,16 @@
+{
+  "version": "0.0.195",
+  "payloads": 467,
+  "changed": [
+    "var/governancedb/container_release.json"
+  ],
+  "added": [
+    "Kernel/Config/Files/XML/TESSERASearchDialog.xml",
+    "var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.SearchDialog.css"
+  ],
+  "sha256": "3da10826e74680b739abd45d927bd85d178d679a8c33b09530344af7b20f9cb5",
+  "release_tests": "4 passed",
+  "visual_review": "Headless Edge native dialog fixture at 1512x900 and 496x844. Header navy; close 44px, remains in header on content scroll; equal white rows; scrollable; no horizontal dialog overflow at narrow viewport.",
+  "live_deployment": false,
+  "scrollbar": "overflow-y:scroll with stable gutter; header outside scroll container"
+}
