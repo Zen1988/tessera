@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.190</Version>
+    <Version>0.0.191</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -20,6 +20,17 @@
     <ModuleRequired Version="0.087">Crypt::AuthEnc::GCM</ModuleRequired>
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/ProviderIdentity.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/Observability.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Operation/TESSERA/Observability.pm" Permission="660"/>
+        <File Location="Kernel/GenericInterface/Transport/HTTP/TESSERAObservability.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTESSERAAPIIdentity.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentTESSERAAPIIdentity.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERAObservability.xml" Permission="660"/>
+        <File Location="var/tessera/docs/observability-provider.md" Permission="660"/>
+        <File Location="var/tessera/examples/observability/grafana-datasource.yml" Permission="660"/>
+        <File Location="var/tessera/examples/observability/alertmanager-receiver.yml" Permission="660"/>
+
         <File Location="var/governancedb/runtime_overlay/Kernel/System/Elasticsearch.pm" Permission="660"/>
         <File Location="var/tessera/docs/awx-managed-onboarding.md" Permission="660"/>
         <File Location="var/tessera/examples/awx/heartbeat-launch.example.yml" Permission="660"/>

@@ -33,6 +33,8 @@ our @ObjectDependencies = (
     'Kernel::System::Type',
     'Kernel::System::Valid',
     'Kernel::System::YAML',
+    'Kernel::System::TESSERA::Observability',
+    'Kernel::System::TESSERA::ProviderIdentity',
 );
 
 sub new {
@@ -48,6 +50,9 @@ sub InstallDefaults {
 
     $Self->_ActivityTablesEnsure();
     $Self->_ExternalAPITablesEnsure();
+    die 'Cannot initialize provider API identities.' if !$Kernel::OM->Get('Kernel::System::TESSERA::ProviderIdentity')->StorageEnsure();
+    die 'Cannot initialize observability storage.' if !$Kernel::OM->Get('Kernel::System::TESSERA::Observability')->StorageEnsure();
+    die 'Cannot initialize observability provider.' if !$Kernel::OM->Get('Kernel::System::TESSERA::Observability')->ProviderEnsure();
 
     my $Defaults = $Self->_DefaultsLoad();
     return if !$Defaults;

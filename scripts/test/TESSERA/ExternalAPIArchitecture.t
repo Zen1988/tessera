@@ -23,7 +23,7 @@ like(
     qr/TESSERA::CMDB::API.*TESSERA::TICKET::API.*TESSERA::MELT::API.*TESSERA::GDB::API/s,
     'reserved API GovernanceRole capability objects are bootstrapped',
 );
-like( $Bootstrap, qr/IntegrationRequest/, 'review ticket type is create-only bootstrapped' );
+unlike( $Bootstrap, qr/IntegrationRequest/, 'retired hardcoded integration ticket type is not reintroduced' );
 
 my $Key = content('Kernel/Package/GovernanceDB/Kernel/System/TESSERA/APIKey.pm');
 like( $Key, qr/GenerateRandomString\( Length => 64 \)/, 'API keys use a high-entropy secret' );

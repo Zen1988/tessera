@@ -1,0 +1,24 @@
+{
+  "version": "0.0.191",
+  "payload_count": 455,
+  "sha256": "23b2826b4fb363e6992bd422c9f3cb59dc0dcfa5327b859935789b1b5a79e081",
+  "added_payloads": [
+    "Kernel/Config/Files/XML/TESSERAObservability.xml",
+    "Kernel/GenericInterface/Operation/TESSERA/Observability.pm",
+    "Kernel/GenericInterface/Transport/HTTP/TESSERAObservability.pm",
+    "Kernel/Modules/AgentTESSERAAPIIdentity.pm",
+    "Kernel/Output/HTML/Templates/Standard/AgentTESSERAAPIIdentity.tt",
+    "Kernel/System/TESSERA/Observability.pm",
+    "Kernel/System/TESSERA/ProviderIdentity.pm",
+    "var/tessera/docs/observability-provider.md",
+    "var/tessera/examples/observability/alertmanager-receiver.yml",
+    "var/tessera/examples/observability/grafana-datasource.yml"
+  ],
+  "changed_payloads": [
+    "Kernel/GenericInterface/Operation/TESSERA/Common.pm",
+    "Kernel/System/GovernanceDB/Bootstrap.pm"
+  ],
+  "removed_payloads": [],
+  "checks": "427 assertions across 18 suites passed",
+  "live_acceptance": "pending native Linux OTOBO/MariaDB, TLS ingress, Grafana and Alertmanager"
+}

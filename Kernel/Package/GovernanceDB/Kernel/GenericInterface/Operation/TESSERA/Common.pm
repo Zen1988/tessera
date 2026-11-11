@@ -8,6 +8,7 @@ use namespace::autoclean;
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::TESSERA::APIKey',
+    'Kernel::System::TESSERA::ProviderIdentity',
     'Kernel::System::TESSERA::APIPermission',
     'Kernel::System::Web::Request',
 );
@@ -26,6 +27,7 @@ sub APIAuthenticate {
     return if $Header !~ m{\ABearer\s+(.+)\z}i;
     my $Identity = $Kernel::OM->Get('Kernel::System::TESSERA::APIKey')->KeyAuthenticate( APIKey => $1 );
     return if !$Identity;
+    return if !$Kernel::OM->Get('Kernel::System::TESSERA::ProviderIdentity')->LegacyKeyAllowed(KeyID=>$Identity->{KeyID});
     return if $Param{ObjectType} && !$Kernel::OM->Get('Kernel::System::TESSERA::APIPermission')->CapabilityCheck(
         CustomerUserID => $Identity->{CustomerUserID}, ObjectType => $Param{ObjectType},
     );
