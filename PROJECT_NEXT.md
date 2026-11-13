@@ -1,3 +1,21 @@
+# Current — accept Base197 ticket search paging
+
+Completed popup scrolling/paging implementation and local verification are recorded in PROJECT_STATUS.md. Install Base197 on source and rebuild matching image/bundle for the controlled deployment when appropriate. Check real index totals, Next/Previous, keyboard/mobile scrolling and custom page size with consistent loader caches/workers. No reindex or Redis changes required by this UI patch. The196 native Job has already started; obtain its outcome before any further deployment, never repeat pre-Job continuation.
+
+# Current — continue196 pre-native-Job checkpoint on k8s
+
+Saved target intent is3 web/1 daemon; state artifacts/deploy-0.0.196-20261113-080437-5fcea43770 is on k8s. Stop original waiting helper with Ctrl-C if active, extract small resume update and run scripts/resume-before-upgrade.py --state-directory with that path. Existing Job must still be absent; claims/DB journal protections retained. Corrected quiescence preserves old terminal Job evidence without waiting for deletion. No image rebuild/upload, no namespace lock clear or new wrapper run. Completed helper/tests in PROJECT_STATUS.md; native execution and196 acceptance pending.
+
+# Current — retry196 with unique temporary bundle deployment wrapper
+
+Current196 attempt stopped at fixed-name PVC AlreadyExists, before upload/upgrade. New scripts/deploy-release.py creates unique helper-managed PVC and calls controlled upgrade with success-only cleanup; completed Job/PVC/log evidence archived first and old failed evidence retained. Completed implementation in PROJECT_STATUS.md. Transfer small script update, extract into existing prepared build folder, ensure196 image on all nodes and run wrapper --image docker.io/library/tessera:0.0.196-ubuntu26.04. No image rebuild. Live deployment/cleanup and Base196 feature acceptance pending.
+
+# Current — deploy/accept Base196 IPC search and workspace counts
+
+Base196 is prepared; completed decisions/tests/artifact hashes in PROJECT_STATUS.md and docs/customer-ticket-search-scope.md. Standard source install196 then rebuild runtime image/matching one-time bundle and controlled target195-to196 upgrade. Existing one-time repair remains retired. No manual permission/MaxTickets changes or index schema changes required.
+
+Next verify IPC same permitted ticket scope across overview/workspace/ES, actual fulltext matching totals versus configured preview Count, workspace20 total with all rows reachable, Include closed versus historical-date cards, revocation/write denial/internal article privacy, ordinary customer isolation and explicit narrow filters. Check live cache/worker restart and keyboard/mobile behavior. Package is not deployed/uploaded yet. Non-IPC SupportAssignment ES parity/index freshness are separate pending traces; do not broaden native scope based on this IPC-only fix.
+
 # Current — post-upgrade acceptance and release retention
 
 Owner confirms retirement recoveryv2 and new deployment are working on2026-11-13. Completed reconciliation/bundle/permission/diagnostic/recovery work and decisions are in PROJECT_STATUS.md. Do not rerun scoped one-time recovery or reinstall the retired repair package. Keep image and matching separate upgrade bundle together for release/recovery; retain private saved deployment/recovery evidence per operational needs.

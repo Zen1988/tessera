@@ -180,6 +180,17 @@ class UpgradeTest(unittest.TestCase):
         failed = copy.deepcopy(completed)
         failed['status']['phase'] = 'Failed'
         self.assertEqual(deploy.workload_pods([completed, live, failed]), [live, failed])
+        terminated = copy.deepcopy(failed)
+        terminated['status']['containerStatuses'] = [{'state': {'terminated': {'exitCode': 25}}}]
+        terminated['status']['initContainerStatuses'] = [{'state': {'terminated': {'exitCode': 0}}}]
+        self.assertEqual(deploy.workload_pods([terminated, live]), [live])
+        deleting = copy.deepcopy(terminated)
+        deleting['metadata']['deletionTimestamp'] = '2026-11-13T08:00:00Z'
+        application = copy.deepcopy(terminated)
+        application['metadata']['ownerReferences'] = [{'kind': 'ReplicaSet'}]
+        active = copy.deepcopy(terminated)
+        active['status']['containerStatuses'][0]['state'] = {'running': {}}
+        self.assertEqual(deploy.workload_pods([deleting, application, active]), [deleting, application, active])
 
 
 if __name__ == '__main__':

@@ -1,0 +1,20 @@
+{
+  "version": "0.0.196",
+  "payload_count": 469,
+  "changed": [
+    "var/governancedb/runtime_overlay/Kernel/System/Elasticsearch.pm",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt",
+    "var/governancedb/container_release.json"
+  ],
+  "added": [
+    "var/governancedb/runtime_overlay/Kernel/Modules/CustomerElasticsearchQuickResult.pm",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerElasticsearchQuickResult.tt"
+  ],
+  "removed": [],
+  "unchanged_payloads": 463,
+  "sha256": "b65e704888065476f444fab64c044c4f3e21df96ca48b24b28d028acaeab7d38",
+  "tests": "52 new assertions:Workspace26;ElasticsearchIPC14;CustomerQuickSearch12. Existing dashboard,overlay14,multitenancy12 and4 release metadata checks passed.",
+  "basis": "Authoritative Base195 OPM; unrelated working changes excluded",
+  "acceptance": "Native installation/live ES/browser acceptance pending"
+}

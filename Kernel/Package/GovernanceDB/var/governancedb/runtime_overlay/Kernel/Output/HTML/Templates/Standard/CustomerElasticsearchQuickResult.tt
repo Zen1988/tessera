@@ -1,0 +1,103 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+<div class="InnerContent[% IF Data.TicketSummary %] TESSERATicketSearchResults[% END %]"[% IF Data.TicketSummary %] data-search-query="[% Data.SearchQuery | html %]"[% END %]>
+    <form action="[% Env("CGIHandle") %]" method="post" id="ElasticsearchQuickResult">
+        <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+        <input type="hidden" name="Subaction" value="Redirect"/>
+        [% IF Data.TicketSummary %]
+        <div class="TESSERASearchSummary" role="status" aria-live="polite" tabindex="-1">Showing [% Data.TicketPageStart | html %] to [% Data.TicketPageEnd | html %] of [% Data.TicketMatchCount | html %] matching tickets</div>
+        <div class="TESSERASearchScroll" tabindex="0" aria-label="Ticket search results">
+        [% END %]
+        <table class="TableSmall NoCellspacing">
+            <thead>
+[% RenderBlockStart("TicketHeader") %]
+                <tr>
+                    <th class="OverviewHeader TicketNumber">
+                        <a name="OverviewControl"  title="TicketNummer">Ticket#</a>
+                    </th>
+                    <th class="OverviewHeader TicketAge">
+                        <a name="OverviewControl"  title="TicketAge">[% Translate("Age") | html %]</a>
+                    </th>
+                    <th class="OverviewHeader TicketTitle">
+                        <a name="OverviewControl"  title="TicketTitle">[% Translate("Title") | html  %]</a>
+                    </th>
+                </tr>
+[% RenderBlockEnd("TicketHeader") %]
+[% RenderBlockStart("FAQHeader") %]
+                <tr>
+                    <th class="OverviewHeader FAQNumber">
+                        <a name="OverviewControl"  title="FAQNumber">[% Translate("FAQ#") | html  %]</a>
+                    </th>
+                    <th class="OverviewHeader FAQTitle">
+                        <a name="OverviewControl"  title="FAQTitle">[% Translate("Title") | html  %]</a>
+                    </th>
+                </tr>
+[% RenderBlockEnd("FAQHeader") %]
+            </thead>
+            <tbody>
+
+[% RenderBlockStart("Record") %]
+                <tr id="TicketID_[% Data.TicketID | html %]" class="MasterAction">
+
+[% RenderBlockStart("RecordTicketNumber") %]
+                    <td>
+                        <a href="[% Env("Baselink") %]Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %]" title="[% Data.Title | html %]" class="MasterActionLink">[% Data.TicketNumber | html %]</a>
+                    </td>
+[% RenderBlockEnd("RecordTicketNumber") %]
+
+[% RenderBlockStart("RecordTicketAge") %]
+                    <td>
+                        <a href="[% Env("Baselink") %]Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %]" title="[%  Data.Title | html %]" class="MasterActionLink">[% Data.TicketAge %]</a>
+                    </td>
+[% RenderBlockEnd("RecordTicketAge") %]
+
+[% RenderBlockStart("RecordTicketTitle") %]
+                    <td>
+                        <a href="[% Env("Baselink") %]Action=CustomerTicketZoom;TicketID=[% Data.TicketID | uri %]" title="[% Data.Title | html %]" class="MasterActionLink">[% Data.TicketTitle | html %]</a>
+                    </td>
+[% RenderBlockEnd("RecordTicketTitle") %]
+                </tr>
+[% RenderBlockEnd("Record") %]
+[% RenderBlockStart("FAQRecord") %]
+                <tr id="FAQID_[% Data.FAQID | html %]" class="MasterAction">
+
+[% RenderBlockStart("RecordFAQNumber") %]
+                    <td>
+                        <a href="[% Env("Baselink") %]Action=CustomerFAQZoom;ItemID=[% Data.FAQID | uri %]" title="[% Data.Title | html %]" class="MasterActionLink">[% Data.FAQNumber | html %]</a>
+                    </td>
+[% RenderBlockEnd("RecordFAQNumber") %]
+
+[% RenderBlockStart("RecordFAQTitle") %]
+                    <td>
+                        <a href="[% Env("Baselink") %]Action=CustomerFAQZoom;ItemID=[% Data.FAQID | uri %]" title="[%  Data.Title | html %]" class="MasterActionLink">[% Data.FAQTitle %]</a>
+                    </td>
+[% RenderBlockEnd("RecordFAQTitle") %]
+                </tr>
+[% RenderBlockEnd("FAQRecord") %]
+            </tbody>
+        </table>
+        [% IF Data.TicketSummary %]
+        </div>
+        <nav class="TESSERASearchPager" aria-label="Ticket search pages">
+            <button type="button" class="TESSERASearchPage" data-search-page="[% Data.TicketPreviousPage | html %]" data-search-direction="previous"[% IF !Data.TicketPreviousPage %] disabled[% END %]>Previous</button>
+            <span>Page [% Data.TicketPage | html %] of [% Data.TicketPages | html %]</span>
+            <button type="button" class="TESSERASearchPage" data-search-page="[% Data.TicketNextPage | html %]" data-search-direction="next"[% IF !Data.TicketNextPage %] disabled[% END %]>Next</button>
+        </nav>
+        <span class="TESSERASearchPageError" role="alert"></span>
+        [% END %]
+    </form>
+</div>

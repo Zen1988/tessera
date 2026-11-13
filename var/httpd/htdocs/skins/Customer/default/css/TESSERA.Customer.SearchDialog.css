@@ -1,4 +1,4 @@
-/* Customer Elasticsearch result dialog. Native markup and dialog controls stay owned by OTOBO. */
+/* Customer Elasticsearch results. Native dialog/close ownership is retained; ticket paging is TESSERA-owned. */
 @supports selector(:has(*)) {
     .Dialog:has(#oooESOuter) {
         --tessera-search-top: clamp(88px, 14vh, 120px);
@@ -162,6 +162,78 @@
         outline: 2px solid var(--colMainLight, #001bff);
         outline-offset: 3px;
         border-radius: 3px;
+    }
+
+    /* One scroll owner for ticket pages; summary/footer never scroll away. */
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) {
+        height: min(700px, calc(100vh - var(--tessera-search-top) - 24px)) !important;
+        height: min(700px, calc(100dvh - var(--tessera-search-top) - 24px)) !important;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) > .Content {
+        display: flex;
+        overflow: hidden;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) #oooESOuter {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) #oooESOuter > .InnerContent.TESSERATicketSearchResults,
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) #ElasticsearchQuickResult {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchSummary {
+        flex: 0 0 auto;
+        padding: 10px 24px;
+        color: #33405b;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchScroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        scrollbar-color: #c8cfdf #fff;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 24px;
+        border-top: 1px solid #e8edf5;
+        background: #fff;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPage {
+        min-height: 44px;
+        min-width: 80px;
+        padding: 8px 16px;
+        border: 1px solid #c8cfdf;
+        border-radius: 24px;
+        background: #fff;
+        color: #00023c;
+        cursor: pointer;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPage:disabled {
+        opacity: .5;
+        cursor: default;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPage:focus-visible,
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchScroll:focus-visible {
+        outline: 2px solid #001bff;
+        outline-offset: -3px;
+    }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPageError:empty { display: none; }
+    .Dialog:has(#oooESOuter .TESSERATicketSearchResults) .TESSERASearchPageError:not(:empty) {
+        flex: 0 0 auto;
+        padding: 8px 24px;
+        color: #a22020;
     }
 
     @media (max-width: 767px) {

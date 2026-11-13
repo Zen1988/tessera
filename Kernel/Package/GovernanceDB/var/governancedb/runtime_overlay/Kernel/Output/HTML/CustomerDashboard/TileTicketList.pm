@@ -286,6 +286,41 @@ sub _PermissionFilter {
     return @TicketIDs;
 }
 
+# Use the same complete-candidate strategy as CustomerTicketOverview before
+# applying the shared customer permission check. Page only the permitted rows.
+sub _TicketSearchAll {
+    my ($Ticket, %Search) = @_;
+    my $Count = $Ticket->TicketSearch(%Search, Result => 'COUNT', Limit => 1);
+    return if !defined $Count || $Count !~ /^\d+$/ || !$Count;
+    return $Ticket->TicketSearch(%Search, Result => 'ARRAY', Limit => $Count);
+}
+
+sub _WorkspacePage {
+    my (%P) = @_;
+    my $Rows = $P{Rows} || [];
+    my $Total = scalar @$Rows;
+    my $Size = $P{PageSize};
+    $Size = 9 if !defined $Size || $Size !~ /^\d+$/ || !$Size;
+    my $Pages = $Total ? int(($Total - 1) / $Size) + 1 : 1;
+    my $Page = $P{Page};
+    $Page = 1 if !defined $Page || $Page !~ /^\d+$/ || !$Page;
+    $Page = $Pages if $Page > $Pages;
+    my $Start = ($Page - 1) * $Size;
+    my $End = $Start + $Size;
+    $End = $Total if $End > $Total;
+    return (
+        WorkspaceRows => $Total ? [@$Rows[$Start .. $End - 1]] : [],
+        WorkspaceCount => $Total,
+        WorkspaceCountText => "$Total",
+        WorkspacePage => $Page,
+        WorkspacePages => $Pages,
+        WorkspacePageStart => $Total ? $Start + 1 : 0,
+        WorkspacePageEnd => $End,
+        WorkspacePreviousPage => $Page > 1 ? $Page - 1 : 0,
+        WorkspaceNextPage => $Page < $Pages ? $Page + 1 : 0,
+    );
+}
+
 sub _ZTSMWorkableTicketIDs {
     my (%Param) = @_;
 
@@ -296,7 +331,7 @@ sub _ZTSMWorkableTicketIDs {
     my @Candidate;
 
     if ( _IsIPCAgent( CustomerUserID => $Param{CustomerUserID} ) ) {
-        my @TicketIDs = $TicketObject->TicketSearch(
+        my @TicketIDs = _TicketSearchAll($TicketObject,
             Result  => 'ARRAY',
             SortBy  => $Param{SortBy}  || 'Changed',
             OrderBy => $Param{OrderBy} || 'Down',
@@ -314,7 +349,7 @@ sub _ZTSMWorkableTicketIDs {
 
         next PROFILE if !$SupportProfile;
 
-        my @ProfileTicketIDs = $TicketObject->TicketSearch(
+        my @ProfileTicketIDs = _TicketSearchAll($TicketObject,
             Result => 'ARRAY',
             'DynamicField_ZTicket-OwnerGroup' => {
                 Equals => $SupportProfile,
@@ -334,7 +369,7 @@ sub _ZTSMWorkableTicketIDs {
     for my $CustomerUserID ( _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserID} ) ) {
         next if !$CustomerUserID;
 
-        my @OwnerTicketIDs = $TicketObject->TicketSearch(
+        my @OwnerTicketIDs = _TicketSearchAll($TicketObject,
             Result => 'ARRAY',
             'DynamicField_ZTicket-Owner' => {
                 Equals => $CustomerUserID,
@@ -355,7 +390,7 @@ sub _ZTSMWorkableTicketIDs {
         for my $CustomerUserLogin ( _CustomerUserReferenceIDs( CustomerUserID => $Param{CustomerUserLogin} ) ) {
             next if !$CustomerUserLogin;
 
-            my @OwnerTicketIDs = $TicketObject->TicketSearch(
+            my @OwnerTicketIDs = _TicketSearchAll($TicketObject,
                 Result => 'ARRAY',
                 'DynamicField_ZTicket-Owner' => {
                     Equals => $CustomerUserLogin,
@@ -480,7 +515,7 @@ sub _MajorChangeTicketIDs {
 
     return if !$StateLookup{approved};
 
-    my @TicketIDs = $TicketObject->TicketSearch(
+    my @TicketIDs = _TicketSearchAll($TicketObject,
         Result    => 'ARRAY',
         Types     => ['Change::Major'],
         States    => ['approved'],
@@ -529,9 +564,11 @@ sub Run {
         IncludeClosed  => $ShowAllWorkspace,
     );
 
-    if ( $Param{Config}{MaxTickets} && $Param{Config}{MaxTickets} - 1 < $#WorkspaceRows ) {
-        @WorkspaceRows = @WorkspaceRows[ 0 .. $Param{Config}{MaxTickets} - 1 ];
-    }
+    my %Workspace = _WorkspacePage(
+        Rows => \@WorkspaceRows,
+        PageSize => $Param{Config}{MaxTickets},
+        Page => $ParamObject->GetParam(Param => 'WorkspacePage'),
+    );
 
     my @MajorChangeRows = _TicketRowsBuild(
         TicketIDs => [
@@ -546,9 +583,7 @@ sub Run {
         Data         => {
             TileID           => $Param{TileID},
             Text             => 'My workspace',
-            WorkspaceRows    => \@WorkspaceRows,
-            WorkspaceCount   => scalar @WorkspaceRows,
-            WorkspaceCountText => '' . scalar @WorkspaceRows,
+            %Workspace,
             ShowAllWorkspace => $ShowAllWorkspace,
             MajorChangeRows  => \@MajorChangeRows,
             MajorChangeCount => scalar @MajorChangeRows,

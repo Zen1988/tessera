@@ -13,6 +13,43 @@ import uuid
 LOCK_NAME = 'tessera-release-maintenance'
 
 
+def cleanup_bundle(prefix, state, name, container, pvc, uid):
+    """Archive evidence before deleting this completed Job and its dedicated PVC.
+
+    Caller retains LOCKED maintenance ownership until this returns. Cleanup
+    failure never changes successful rollout status or deletes unverified data.
+    """
+    try:
+        def get(*parts):
+            return json.loads(subprocess.check_output(prefix + ['get', *parts, '-o', 'json'], text=True))
+        current = get('pvc', pvc)
+        labels = current['metadata'].get('labels', {})
+        if current['metadata']['uid'] != uid or labels.get('app.kubernetes.io/managed-by') != 'tessera-release-helper' or labels.get('tessera-upgrade-bundle') != 'true':
+            raise ValueError('Bundle PVC identity or ownership differs')
+        finished = get('job', name)
+        if finished.get('status', {}).get('active', 0) or not any(c.get('type') == 'Complete' and c.get('status') == 'True' for c in finished.get('status', {}).get('conditions', [])):
+            raise ValueError('Upgrade Job is not terminal Complete')
+        evidence = {'job': finished, 'bundle_pvc': current}
+        for filename, content in [('upgrade-completed.json', json.dumps(evidence, indent=2)),
+                                  ('upgrade-completed.log', subprocess.check_output(prefix + ['logs', 'job/' + name, '-c', container], text=True))]:
+            with (Path(state) / filename).open('x', encoding='utf-8') as output:
+                os.chmod(output.name, 0o600)
+                output.write(content)
+        # Foreground deletion waits for the completed Pod to release its mount.
+        subprocess.run(prefix + ['delete', 'job', name, '--cascade=foreground', '--wait=true', '--timeout=120s'], check=True)
+        for pod in get('pods')['items']:
+            if any(v.get('persistentVolumeClaim', {}).get('claimName') == pvc for v in pod.get('spec', {}).get('volumes', [])):
+                raise ValueError('Another Pod still references bundle PVC')
+        if get('pvc', pvc)['metadata']['uid'] != uid:
+            raise ValueError('Bundle PVC was replaced')
+        subprocess.run(prefix + ['delete', 'pvc', pvc, '--wait=false'], check=True)
+        print('Temporary upgrade bundle cleanup requested; evidence saved in', state)
+        return True
+    except Exception:
+        print('Upgrade succeeded; automatic cleanup deferred. Preserve/inspect Job', name, 'and PVC', pvc, 'with saved state', state)
+        return False
+
+
 def maintenance_lock(current, namespace, owner, phase):
     if current:
         if current.get('metadata', {}).get('labels', {}).get('app.kubernetes.io/managed-by') != 'tessera-release-helper':
@@ -81,12 +118,20 @@ def selector(deployment):
 
 
 def workload_pods(items):
-    # Successful previous upgrade Jobs retain their evidence Pods. They share
-    # egress-policy labels but are not live web/daemon writers to wait/delete.
-    return [p for p in items if not (
-        p.get('status', {}).get('phase') == 'Succeeded'
-        and p.get('metadata', {}).get('labels', {}).get('tessera-release-upgrade')
-        and any(o.get('kind') == 'Job' for o in p.get('metadata', {}).get('ownerReferences', [])))]
+    # Retained Job evidence shares app labels. Failed Job Pods are also safe
+    # evidence only when their containers are proven terminated. Do not hide
+    # active/unknown/terminating Pods or failed Deployment-owned application Pods.
+    def evidence(pod):
+        meta = pod.get('metadata', {})
+        if meta.get('deletionTimestamp') or not meta.get('labels', {}).get('tessera-release-upgrade') or not any(o.get('kind') == 'Job' for o in meta.get('ownerReferences', [])):
+            return False
+        status = pod.get('status', {})
+        if status.get('phase') == 'Succeeded':
+            return True
+        containers = status.get('containerStatuses', [])
+        all_containers = containers + status.get('initContainerStatuses', [])
+        return status.get('phase') == 'Failed' and bool(containers) and all(c.get('state', {}).get('terminated') is not None for c in all_containers)
+    return [pod for pod in items if not evidence(pod)]
 
 
 def main():
@@ -94,6 +139,7 @@ def main():
     for arg in ('namespace', 'web', 'daemon', 'container', 'image', 'state-directory'):
         parser.add_argument('--' + arg, required=True)
     parser.add_argument('--upgrade-bundle-pvc', required=True)
+    parser.add_argument('--cleanup-bundle', action='store_true', help='After successful rollouts, archive Job evidence and remove its managed temporary bundle PVC')
     args = parser.parse_args()
     if args.web == args.daemon:
         parser.error('Web and daemon must be separate Deployments')
@@ -114,6 +160,13 @@ def main():
         subprocess.run(call, check=True)
     web = run('get', 'deployment', args.web, '-o', 'json', read=True)
     daemon = run('get', 'deployment', args.daemon, '-o', 'json', read=True)
+    bundle_uid = None
+    if args.cleanup_bundle:
+        bundle = run('get', 'pvc', args.upgrade_bundle_pvc, '-o', 'json', read=True)
+        labels = bundle['metadata'].get('labels', {})
+        if labels.get('app.kubernetes.io/managed-by') != 'tessera-release-helper' or labels.get('tessera-upgrade-bundle') != 'true':
+            raise ValueError('Cleanup requires a dedicated helper-managed upgrade bundle PVC')
+        bundle_uid = bundle['metadata']['uid']
     if len(daemon['spec']['template']['spec']['containers']) != 1:
         raise ValueError('This helper requires the verified single-container daemon Deployment')
     hpas = run('get', 'hpa', '-o', 'json', read=True)
@@ -161,6 +214,12 @@ def main():
         run('set', 'image', 'deployment/' + deployment, container + '=' + args.image)
         run('scale', 'deployment/' + deployment, '--replicas=' + str(original['spec'].get('replicas', 1)))
         run('rollout', 'status', 'deployment/' + deployment, '--timeout=600s')
+    held = read_lock()
+    maintenance_lock(held, args.namespace, owner, 'READY')  # verify ownership before cleanup
+    if held['data'].get('phase') != 'LOCKED':
+        raise ValueError('Maintenance must remain locked until cleanup finishes')
+    if args.cleanup_bundle:
+        cleanup_bundle(['kubectl', '-n', args.namespace], state, name, args.container, args.upgrade_bundle_pvc, bundle_uid)
     ready = maintenance_lock(read_lock(), args.namespace, owner, 'READY')
     with (state / 'maintenance-ready.json').open('x', encoding='utf-8') as out:
         os.chmod(state / 'maintenance-ready.json', 0o600)

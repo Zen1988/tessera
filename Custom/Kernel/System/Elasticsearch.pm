@@ -44,6 +44,8 @@ our @ObjectDependencies = (
 # There is no need to discard this module when one of the soft dependencies is discarded.
 our @SoftObjectDependencies = (
 
+    'Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck',
+
     'Kernel::System::FAQ',
     'Kernel::System::GeneralCatalog',
     'Kernel::System::ITSMConfigItem',
@@ -131,6 +133,21 @@ Performs a ticket search via Elasticsearch.
 
 =cut
 
+# Reuse TESSERA's existing IPC classification, never infer it from company,
+# request parameters, an agent numeric ID or Elasticsearch group membership.
+sub CustomerGlobalTicketRead {
+    my ($Self, %P) = @_;
+    return if !$P{CustomerUserID} || ref $P{CustomerUserID};
+    return if ($P{Permission} || 'ro') ne 'ro';
+    my $Allowed = eval {
+        $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck');
+        Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck::_IsIPCAgent(
+            CustomerUserID => $P{CustomerUserID},
+        );
+    };
+    return $Allowed ? 1 : 0;
+}
+
 sub TicketSearch {
     my ( $Self, %Param ) = @_;
 
@@ -176,8 +193,23 @@ sub TicketSearch {
         };
     }
 
+    # IPC has the same global ticket read scope as the customer overview.
+    # Keep CustomerUserID throughout: fulltext must still exclude internal
+    # articles and attachments. Other customer/group and non-read paths retain
+    # the native multitenancy behavior below.
+    my $GlobalCustomerRead = $Self->CustomerGlobalTicketRead(%Param);
+    if ($GlobalCustomerRead) {
+        # Explicit caller-selected scopes remain narrower than global access.
+        for my $Spec (['CustomerIDRaw','CustomerID'], ['CustomerUserLoginRaw','CustomerUserID']) {
+            next if !defined $Param{$Spec->[0]};
+            my $Value = $Param{$Spec->[0]};
+            my @Values = ref $Value eq 'ARRAY' ? @$Value : !ref $Value ? ($Value) : ();
+            return if !@Values || grep { !defined $_ || ref $_ || $_ eq '' } @Values;
+            push @Filters, {terms => {$Spec->[1] => \@Values}};
+        }
+    }
     # customer groups
-    if ( $Param{CustomerUserID} ) {
+    if ( $Param{CustomerUserID} && !$GlobalCustomerRead ) {
         my %GroupList = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
             UserID => $Param{CustomerUserID},
             Type   => $Param{Permission} || 'ro',
@@ -565,6 +597,14 @@ sub TicketSearch {
 
     my $Total   = $Result->{Data}->{Total}   // 0;
     my $Records = $Result->{Data}->{Records} // [];
+
+    if ($GlobalCustomerRead) {
+        # Global ticket visibility is still a customer capability. Never expose
+        # internal article/attachment source fields through a FULL result.
+        for my $Record (@$Records) {
+            delete @{$Record}{qw(ArticlesInternal AttachmentsInternal)};
+        }
+    }
 
     # Issue 5814- reduce logging, re-enable for debugging manually if needed:
     #

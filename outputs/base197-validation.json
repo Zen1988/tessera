@@ -1,0 +1,254 @@
+{
+  "version": "0.0.197",
+  "payload_count": 470,
+  "changed": [
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerElasticsearchQuickResult.tt",
+    "var/governancedb/runtime_overlay/Kernel/Modules/CustomerElasticsearchQuickResult.pm",
+    "Kernel/Config/Files/XML/TESSERASearchDialog.xml",
+    "var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.SearchDialog.css",
+    "var/governancedb/container_release.json"
+  ],
+  "added": [
+    "var/httpd/htdocs/js/TESSERA.Customer.SearchPaging.js"
+  ],
+  "unchanged_payloads": 464,
+  "sha256": "333aa1c18e2a6af51d8ab72d2ffeb2df6a847ff5669aa7458aeec496f7504639",
+  "server_paging_assertions": 34,
+  "customer_scope_assertions": 12,
+  "ipc_backend_assertions": 14,
+  "browser": {
+    "desktop": {
+      "results": [
+        {
+          "name": "bounded scroll area actually overflows",
+          "pass": true
+        },
+        {
+          "name": "result rows can scroll",
+          "pass": true
+        },
+        {
+          "name": "header stationary on results scroll",
+          "pass": true
+        },
+        {
+          "name": "pager stationary on results scroll",
+          "pass": true
+        },
+        {
+          "name": "footer remains within dialog",
+          "pass": true
+        },
+        {
+          "name": "dialog within horizontal viewport",
+          "pass": true
+        },
+        {
+          "name": "next touch target at least44px",
+          "pass": true
+        },
+        {
+          "name": "previous disabled on first page",
+          "pass": true
+        },
+        {
+          "name": "next sends page2",
+          "pass": true
+        },
+        {
+          "name": "same fulltext preserved",
+          "pass": true
+        },
+        {
+          "name": "duplicate loading click ignored",
+          "pass": true
+        },
+        {
+          "name": "page2 replaces just popup content",
+          "pass": true
+        },
+        {
+          "name": "page2 contains distinct ticket11",
+          "pass": true
+        },
+        {
+          "name": "new page scroll starts at top",
+          "pass": true
+        },
+        {
+          "name": "keyboard focus retained on pager",
+          "pass": true
+        },
+        {
+          "name": "changed-query response discarded",
+          "pass": true
+        },
+        {
+          "name": "closed dialog never reopened",
+          "pass": true
+        },
+        {
+          "name": "closed dialog response discarded",
+          "pass": true
+        },
+        {
+          "name": "failure restores controls",
+          "pass": true
+        },
+        {
+          "name": "failure is announced locally",
+          "pass": true
+        },
+        {
+          "name": "detached old response cannot overwrite new search",
+          "pass": true
+        },
+        {
+          "name": "paging response does not execute scripts",
+          "pass": true
+        },
+        {
+          "name": "last page has3 rows",
+          "pass": true
+        },
+        {
+          "name": "next disabled last page",
+          "pass": true
+        }
+      ],
+      "metrics": {
+        "viewport": [
+          1486,
+          807
+        ],
+        "dialog": [
+          183,
+          112.96875,
+          1303,
+          782.984375
+        ],
+        "scrollHeight": 580,
+        "clientHeight": 494,
+        "pagerBottom": 781.984375
+      },
+      "passed": true
+    },
+    "mobile": {
+      "results": [
+        {
+          "name": "bounded scroll area actually overflows",
+          "pass": true
+        },
+        {
+          "name": "result rows can scroll",
+          "pass": true
+        },
+        {
+          "name": "header stationary on results scroll",
+          "pass": true
+        },
+        {
+          "name": "pager stationary on results scroll",
+          "pass": true
+        },
+        {
+          "name": "footer remains within dialog",
+          "pass": true
+        },
+        {
+          "name": "dialog within horizontal viewport",
+          "pass": true
+        },
+        {
+          "name": "next touch target at least44px",
+          "pass": true
+        },
+        {
+          "name": "previous disabled on first page",
+          "pass": true
+        },
+        {
+          "name": "next sends page2",
+          "pass": true
+        },
+        {
+          "name": "same fulltext preserved",
+          "pass": true
+        },
+        {
+          "name": "duplicate loading click ignored",
+          "pass": true
+        },
+        {
+          "name": "page2 replaces just popup content",
+          "pass": true
+        },
+        {
+          "name": "page2 contains distinct ticket11",
+          "pass": true
+        },
+        {
+          "name": "new page scroll starts at top",
+          "pass": true
+        },
+        {
+          "name": "keyboard focus retained on pager",
+          "pass": true
+        },
+        {
+          "name": "changed-query response discarded",
+          "pass": true
+        },
+        {
+          "name": "closed dialog never reopened",
+          "pass": true
+        },
+        {
+          "name": "closed dialog response discarded",
+          "pass": true
+        },
+        {
+          "name": "failure restores controls",
+          "pass": true
+        },
+        {
+          "name": "failure is announced locally",
+          "pass": true
+        },
+        {
+          "name": "detached old response cannot overwrite new search",
+          "pass": true
+        },
+        {
+          "name": "paging response does not execute scripts",
+          "pass": true
+        },
+        {
+          "name": "last page has3 rows",
+          "pass": true
+        },
+        {
+          "name": "next disabled last page",
+          "pass": true
+        }
+      ],
+      "metrics": {
+        "viewport": [
+          496,
+          807
+        ],
+        "dialog": [
+          12,
+          192,
+          484,
+          783
+        ],
+        "scrollHeight": 790,
+        "clientHeight": 423,
+        "pagerBottom": 782
+      },
+      "passed": true
+    }
+  },
+  "acceptance": "Live native package install, loader caching and real index/popup acceptance pending; no Redis changes"
+}
