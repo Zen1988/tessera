@@ -43,6 +43,7 @@ case "$MODE" in
         done
         cmp -s /opt/tessera/config-definitions.sha256 Kernel/Config/Files/.tessera-config-definitions.sha256 || fail 'Generated-config source differs; run the controlled configure step for this image'
         trust_bundle
+        /usr/bin/perl /usr/local/lib/tessera/package-inventory.pl
         /usr/bin/perl /usr/local/lib/tessera/release-control.pl check
         /usr/bin/perl /usr/local/lib/tessera/runtime-check.pl "$MODE"
         ;;

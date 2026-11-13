@@ -17,9 +17,9 @@ RUN test -n "$TESSERA_DEPENDENCY_REFRESH" \
  && groupmod --gid "$OTOBO_GID" www-data \
  && useradd --uid "$OTOBO_UID" --gid "$OTOBO_GID" --home-dir /opt/otobo --shell /bin/bash otobo
 ENV OTOBO_HOME=/opt/otobo OTOBO_USER=otobo OTOBO_GROUP=www-data OTOBO_RUNS_UNDER_DOCKER=1
-COPY dependencies/cpanfile /opt/tessera/dependencies/cpanfile
-COPY dependencies/cpanfile.packages dependencies/package-modules.json /opt/tessera/dependencies/
-COPY cpanfile.extra /opt/tessera/dependencies/cpanfile.extra
+COPY --chmod=0444 dependencies/cpanfile /opt/tessera/dependencies/cpanfile
+COPY --chmod=0444 dependencies/cpanfile.packages dependencies/package-modules.json /opt/tessera/dependencies/
+COPY --chmod=0444 cpanfile.extra /opt/tessera/dependencies/cpanfile.extra
 COPY --chmod=0755 image/ /usr/local/lib/tessera/
 COPY --chown=0:0 app/ /opt/otobo/
 # Audit copied host source BEFORE building image-only dependencies under local/.
@@ -40,9 +40,8 @@ RUN a2dismod -f mpm_event autoindex status \
  && find /usr/bin /usr/sbin -xdev -type f -perm /6000 -exec chmod a-s {} +
 ENV PERL5LIB=/opt/otobo/Custom:/opt/otobo/Kernel/cpan-lib:/opt/otobo:/opt/otobo/local/lib/perl5
 ENV PATH=/opt/otobo/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-COPY dependencies/host-summary.json dependencies/source-sha256.json /opt/tessera/dependencies/
+COPY --chmod=0444 dependencies/host-summary.json dependencies/source-sha256.json /opt/tessera/dependencies/
 COPY --chmod=0444 dependencies/release.json /opt/tessera/dependencies/release.json
-COPY --chmod=0444 dependencies/package.opm /opt/tessera/dependencies/package.opm
 ARG TESSERA_VERSION
 ARG TESSERA_IMAGE_REVISION
 WORKDIR /opt/otobo
@@ -51,7 +50,6 @@ RUN [[ "$TESSERA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
  && [[ "$TESSERA_IMAGE_REVISION" =~ ^(base|r[1-9][0-9]*)$ ]] \
  && python3 -c 'import json,os; assert json.load(open("/opt/tessera/dependencies/release.json"))["version"] == os.environ["TESSERA_VERSION"], "Prepared package version differs from image label"' \
  && python3 /usr/local/lib/tessera/upgrade-stage.py check-source /opt/otobo \
- && python3 -c 'import hashlib,json; m=json.load(open("/opt/tessera/dependencies/release.json")); assert hashlib.sha256(open("/opt/tessera/dependencies/package.opm","rb").read()).hexdigest() == m["package_sha256"]' \
  && cp -a Kernel/Config/Files /opt/tessera/config-files.dist \
  && chown -R root:www-data /opt/tessera/config-files.dist \
  && find /opt/tessera/config-files.dist -type d -exec chmod 0550 {} + \
@@ -79,7 +77,14 @@ LABEL io.tessera.image.revision="${TESSERA_IMAGE_REVISION}"
 COPY --chmod=0444 scripts/test-configure.py /opt/tessera/tests/test-configure.py
 RUN chmod 0555 /opt/tessera/tests \
  && chmod 0444 /opt/tessera/tests/test-configure.py
+# Normalize the final tree after every COPY/build-generated inventory. A readable
+# file is still inaccessible if an ancestor lacks directory search permission.
+RUN chmod 0755 /opt/tessera /opt/tessera/dependencies \
+ && find /opt/tessera/dependencies -maxdepth 1 -type f -exec chmod 0444 {} +
 USER otobo
+# BuildKit preserves source modes unless COPY overrides them. Test metadata
+# as the final user: source preparation may run with umask 077.
+RUN /usr/bin/python3 -c 'import json; from pathlib import Path; root=Path("/opt/tessera/dependencies"); [json.loads((root/name).read_text()) for name in ("package-modules.json", "release.json", "host-summary.json", "source-sha256.json")]'
 # Check concrete OPM crypto requirements with final runtime @INC and UID, too.
 RUN /usr/bin/perl /usr/local/lib/tessera/check-integration-deps.pl
 RUN /usr/bin/perl /usr/local/lib/tessera/check-perl.pl --check-only

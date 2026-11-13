@@ -42,6 +42,16 @@ def deployment():
 
 
 class UpgradeTest(unittest.TestCase):
+    def test_bundle_is_readonly_and_only_mounted_in_upgrade_job(self):
+        original = deployment()
+        j = deploy.job(original, 'web', 'tessera:194', 'release-test', 'tessera', 'release-opms')
+        pod = j['spec']['template']['spec']
+        mount = pod['containers'][0]['volumeMounts'][-1]
+        self.assertEqual(mount, {'name': 'tessera-upgrade-bundle', 'mountPath': '/opt/tessera/upgrade-bundle', 'subPath': 'upgrade', 'readOnly': True})
+        self.assertEqual(pod['volumes'][-1]['persistentVolumeClaim'], {'claimName': 'release-opms', 'readOnly': True})
+        self.assertFalse(any(v['name'] == 'tessera-upgrade-bundle' for v in pod['initContainers'][0]['volumeMounts']))
+        self.assertFalse(any(v['name'] == 'tessera-upgrade-bundle' for v in original['spec']['template']['spec']['volumes']))
+
     def test_stage_copies_code_not_host_config_and_is_writable(self):
         with tempfile.TemporaryDirectory() as d:
             source, target = Path(d) / 'source', Path(d) / 'destination'
@@ -140,7 +150,7 @@ class UpgradeTest(unittest.TestCase):
                 if '--for=condition=complete' in command:
                     raise subprocess.CalledProcessError(1, command)
             arguments = ['upgrade-deploy.py', '--namespace', 'tessera', '--web', 'web', '--daemon', 'daemon',
-                '--container', 'web', '--image', 'tessera:0.0.182-ubuntu26.04', '--state-directory', str(Path(d) / 'state')]
+                '--upgrade-bundle-pvc', 'upgrade-bundle', '--container', 'web', '--image', 'tessera:0.0.182-ubuntu26.04', '--state-directory', str(Path(d) / 'state')]
             with patch.object(sys, 'argv', arguments), patch.object(deploy.subprocess, 'check_output', side_effect=read), patch.object(deploy.subprocess, 'run', side_effect=run):
                 with self.assertRaises(subprocess.CalledProcessError):
                     deploy.main()

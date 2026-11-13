@@ -11,7 +11,6 @@
 !dependencies/host-summary.json
 !dependencies/source-sha256.json
 !dependencies/release.json
-!dependencies/package.opm
 !image/
 !image/audit-app.py
 !image/check-perl.pl
@@ -25,6 +24,7 @@
 !image/install-perl.sh
 !image/runtime-check.pl
 !image/release-control.pl
+!image/package-inventory.pl
 !image/upgrade-stage.py
 !image/nginx-internal-tls.conf
 !image/site-entrypoint.sh
@@ -59,6 +59,7 @@ app/var/spool/**
 app/var/sessions/**
 app/var/stats/**
 app/var/packages/**
+app/**/*.opm
 app/local/**
 app/vendor/**
 app/Export/**
@@ -67,3 +68,6 @@ app/.artifacts/**
 app/backups/**
 app/dumps/**
 app/scripts/test/**
+
+!image/package-reconcile.pl
+!image/check-package-bundle.py

@@ -7,6 +7,7 @@ The failed Job and maintenance lock are preserved.
 import argparse
 import copy
 import json
+from pathlib import Path
 import re
 import subprocess
 import time
@@ -23,9 +24,7 @@ my $OK=eval {
     my $Meta=do {local $/;JSON::PP->new->decode(<$FH>)};close $FH;
     die "Invalid release metadata.\n" if ref $Meta ne 'HASH' || ($Meta->{version} || '')!~/\A[0-9]+\.[0-9]+\.[0-9]+\z/;
     print "image_version=$Meta->{version}\n";
-    open $FH,'<:raw','/opt/tessera/dependencies/package.opm' or die "Image package unreadable.\n";
-    my $Bytes=do {local $/;<$FH>};close $FH;
-    print 'image_package_hash_matches=',sha256_hex($Bytes) eq ($Meta->{package_sha256} || '') ? 'yes' : 'no',"\n";
+    print "image_package_payload=external-upgrade-bundle\n";
     print 'application_tree_writable=',-w '/opt/otobo/Kernel/System' ? 'yes' : 'no',"\n";
     $Stage='object-manager';
     require Kernel::System::ObjectManager;
@@ -57,12 +56,7 @@ my $OK=eval {
     if ($State && ($State->{phase} || '') eq 'READY') {
         print 'ready_receipt_matches_target=',($State->{version} || '') eq $Current && ($State->{hash} || '') eq $Hash ? 'yes' : 'no',"\n";
     }
-    $Stage='package-parser';
-    my $Package=$Kernel::OM->Get('Kernel::System::TESSERA::ReleasePackage');
-    require Encode;
-    my $String=Encode::decode('UTF-8',$Bytes,Encode::FB_CROAK());
-    my %Structure=$Package->PackageParse(String=>$String);
-    print 'package_parse_matches_image=',($Structure{Name}{Content} || '') eq 'TESSERA-Base' && ($Structure{Version}{Content} || '') eq $Meta->{version} ? 'yes' : 'no',"\n";
+    # PACKAGE_PLAN
     print "diagnostic=completed-no-upgrade-run\n";
     1;
 };
@@ -76,6 +70,49 @@ if (!$OK) {
     exit 1;
 }
 '''
+
+PACKAGE_PLAN = r'''
+    $Stage='package-journals';
+    die "Package journal unavailable.\n" if !$DB->Prepare(SQL=>q{SELECT data_key, data_value FROM system_data WHERE data_key LIKE 'TESSERA::PackageUpgrade::%'});
+    my $Count=0;
+    while (my @R=$DB->FetchrowArray()) {
+        $Count++;
+        my $J=eval {JSON::PP->new->decode($R[1])} || {};
+        my @Safe=map {defined $_ && /\A[A-Za-z0-9_:.-]{1,160}\z/?$_:'invalid'} ($R[0],$J->{phase},$J->{version});
+        print 'package_journal=',join(',',@Safe),"\n";
+    }
+    print "package_journal_count=$Count\n";
+    $Stage='package-plan';
+    open my $PlanFH,'<:raw','/opt/tessera/dependencies/package-modules.json' or die "Package inventory unavailable.\n";
+    my $Inventory=JSON::PP->new->utf8->decode(do {local $/;<$PlanFH>});close $PlanFH;
+    my $Package=$Kernel::OM->Get('Kernel::System::TESSERA::ReleasePackage');
+    print 'native_repository_cache_clear_available=', $Package->can('_RepositoryCacheClear')?'yes':'no',"\n";
+    my %Expected=map {$_->{name}=>$_->{version}} @{$Inventory->{packages} || []};
+    die "Package registry unavailable.\n" if !$DB->Prepare(SQL=>q{SELECT name, version FROM package_repository WHERE install_status = ? ORDER BY name, version},Bind=>[\(my $Status='installed')]);
+    while (my @R=$DB->FetchrowArray()) {
+        my @Safe=map {defined $_ && /\A[A-Za-z0-9_.-]{1,120}\z/?$_:'invalid'} ($R[0],$R[1],$Expected{$R[0]} // 'absent-from-image');
+        print 'package_compare=',join(',',@Safe),"\n";
+    }
+    my $PlanOK=eval {ReconcilePackages($Inventory,$DB,$Package,'/opt/tessera/upgrade-bundle/packages',1);1};
+    if (!$PlanOK) {
+        my $Error=$@ || '';
+        if ($Error =~ /\A((?:Incomplete package upgrade journal; inspect before retry|Invalid package manifest|Invalid package identity|Missing bundled OPM for [A-Za-z0-9_.-]+|Bundled OPM (?:hash|identity) mismatch for [A-Za-z0-9_.-]+|Extra or ambiguous target package; reconciliation stopped|Unsupported target version for [A-Za-z0-9_.-]+|Refusing package downgrade for [A-Za-z0-9_.-]+|Same-version artifact mismatch for [A-Za-z0-9_.-]+|Cyclic package dependency at [A-Za-z0-9_.-]+|Missing bundled dependency for [A-Za-z0-9_.-]+|Package artifact unavailable(?: or ambiguous)? for [A-Za-z0-9_.-]+)\.)/) {
+            print "package_plan_error=$1\n";
+        } elsif ($Error =~ /Can't locate ([A-Za-z0-9_\/.:-]+\.pm)/) {print "package_plan_missing_module=$1\n"}
+        else {print "package_plan_error=unclassified; exception withheld\n"}
+    } else {print "package_plan_status=passed-no-hooks-run\n"}
+'''
+
+
+def diagnostic_program(package_plan=False):
+    if not package_plan:
+        return PERL
+    image = Path(__file__).resolve().parents[1] / 'image'
+    inventory = (image / 'package-inventory.pl').read_text().split('unless (caller)', 1)[0]
+    reconcile = (image / 'package-reconcile.pl').read_text()
+    if '$PlanOnly' not in reconcile:
+        raise ValueError('Updated read-only planner is required')
+    return inventory + '\n' + reconcile + '\n' + PERL.replace('    # PACKAGE_PLAN', PACKAGE_PLAN)
 
 # Reproduce the entrypoint's CA bundle setup without running upgrade/configure.
 SHELL = '''set -eu
@@ -91,7 +128,7 @@ exec /usr/bin/perl -e "$1"
 '''
 
 
-def diagnostic_job(original, namespace, name):
+def diagnostic_job(original, namespace, name, package_plan=False):
     conditions = original.get('status', {}).get('conditions', [])
     if original.get('status', {}).get('active', 0) or not any(c.get('type') == 'Failed' and c.get('status') == 'True' for c in conditions):
         raise ValueError('Source upgrade Job must be terminal Failed with no active Pods')
@@ -102,7 +139,7 @@ def diagnostic_job(original, namespace, name):
     if [c['name'] for c in pod.get('initContainers', [])] != ['stage-upgrade']:
         raise ValueError('Expected the isolated stage-upgrade init container')
     main['command'] = ['/bin/bash', '-c', SHELL, 'diagnose-release']
-    main['args'] = [PERL]
+    main['args'] = [diagnostic_program(package_plan)]
     main['env'] = [e for e in main.get('env', []) if e['name'] != 'TESSERA_UPGRADE_QUIESCED']
     for key in ('livenessProbe', 'readinessProbe', 'startupProbe', 'lifecycle', 'ports'):
         main.pop(key, None)
@@ -120,13 +157,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--namespace', required=True)
     parser.add_argument('--job', required=True)
+    parser.add_argument('--package-plan', action='store_true', help='Read package journals and run read-only planning; never execute native hooks')
     args = parser.parse_args()
     for value in (args.namespace, args.job):
         if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', value): parser.error('Invalid Kubernetes name')
     prefix = ['kubectl', '-n', args.namespace]
     original = json.loads(subprocess.check_output(prefix + ['get', 'job', args.job, '-o', 'json'], text=True))
     name = 'tessera-release-diag-' + uuid.uuid4().hex[:12]
-    manifest = diagnostic_job(original, args.namespace, name)
+    manifest = diagnostic_job(original, args.namespace, name, args.package_plan)
     payload = json.dumps(manifest)
     subprocess.run(prefix + ['create', '--dry-run=server', '-f', '-'], input=payload, text=True, check=True)
     subprocess.run(prefix + ['create', '-f', '-'], input=payload, text=True, check=True)

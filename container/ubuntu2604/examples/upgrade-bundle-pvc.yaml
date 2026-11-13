@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tessera-upgrade-bundle
+spec:
+  accessModes: [ReadWriteOnce]
+  # Uses the cluster default StorageClass. Size for your actual OPM bundle.
+  resources:
+    requests:
+      storage: 2Gi

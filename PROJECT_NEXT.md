@@ -1,3 +1,9 @@
+# Current — post-upgrade acceptance and release retention
+
+Owner confirms retirement recoveryv2 and new deployment are working on2026-11-13. Completed reconciliation/bundle/permission/diagnostic/recovery work and decisions are in PROJECT_STATUS.md. Do not rerun scoped one-time recovery or reinstall the retired repair package. Keep image and matching separate upgrade bundle together for release/recovery; retain private saved deployment/recovery evidence per operational needs.
+
+Next verify intended add-ons (including OTOBO-AI), package-manager versions, portal and daemon behavior. When no longer needed for recovery, retire completed upgrade Jobs and dedicated temporary bundle PVC through normal operations. No broad package-uninstall policy or startup migrations are authorized. Earlier Base195 feature-specific checks below remain acceptance references, not instructions to repeat completed upgrade recovery.
+
 # Current — deploy Base195 customer search dialog styling
 
 Use Base195 for the next package/container build; it retains the Base194 descriptor fix and adds the scoped customer search dialog theme. Standard install, loader cache rebuild and consistent worker restart, then hard-refresh. Check the actual search popup header/close, result navigation, keyboard focus/Escape and mobile layout. Local fixture review and four release tests passed; live acceptance remains pending. Completed design is recorded in PROJECT_STATUS.md.

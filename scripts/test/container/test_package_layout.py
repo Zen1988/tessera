@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -25,8 +26,11 @@ class Layout(unittest.TestCase):
             target.parent.mkdir(parents=True)
             target.write_text('test')
             source = base / 'package.sopm'
-            source.write_text('<otobo_package><Name>TESSERA-Base</Name><Version>0.0.184</Version><Filelist><File Location="var/tessera/docs/example.md" Permission="660"/></Filelist></otobo_package>')
-            self.assertEqual(builder.build(source, base / 'out.opm'), 1)
+            descriptor = base / 'var/governancedb/container_release.json'
+            descriptor.parent.mkdir(parents=True)
+            descriptor.write_text(json.dumps({'package': 'TESSERA-Base', 'version': '0.0.184', 'upgrade_from': ['0.0.183']}))
+            source.write_text('<otobo_package><Name>TESSERA-Base</Name><Version>0.0.184</Version><Filelist><File Location="var/governancedb/container_release.json" Permission="660"/><File Location="var/tessera/docs/example.md" Permission="660"/></Filelist></otobo_package>')
+            self.assertEqual(builder.build(source, base / 'out.opm'), 2)
 
 
 if __name__ == '__main__': unittest.main()

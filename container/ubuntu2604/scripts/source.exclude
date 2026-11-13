@@ -20,6 +20,8 @@
 /var/spool/***
 /var/stats/***
 /var/packages/***
+# Package archives are delivered separately for one-time migration.
+*.opm
 /var/backup/***
 /var/backups/***
 /local/***

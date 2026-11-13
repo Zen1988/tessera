@@ -42,7 +42,10 @@ PY
 python3 "$KIT/scripts/release.py" capture "$SOURCE" "$PACKAGE_VERSION" "$KIT/dependencies/release.json"
 env -u PERL5OPT -u PERL5LIB /usr/bin/perl "$KIT/scripts/export-module-requirements.pl" "$SOURCE" "$KIT/dependencies/package-modules.json" || { echo 'Cannot capture installed package dependency metadata; verify source-host registry access.' >&2; exit 1; }
 python3 "$KIT/scripts/package-module-requirements.py" "$KIT/dependencies/package-modules.json" "$KIT/dependencies/package.opm" "$KIT/dependencies/cpanfile.packages"
+python3 "$KIT/image/check-package-bundle.py" "$KIT/dependencies"
+python3 "$KIT/scripts/export-upgrade-bundle.py" "$KIT/dependencies" "$KIT/artifacts/upgrade-bundle"
 mv -T -n -- "$STAGE" "$KIT/app"
 [[ ! -d "$STAGE" ]] || { echo 'Another app appeared; private stage retained' >&2; exit 1; }
 printf '\nInstalled source copied unchanged apart from exclusions. No OPM restored or installed.\n'
 printf 'Next: review app/ and integration dependencies, then bash scripts/build.sh\n'
+printf 'Transfer artifacts/upgrade-bundle/ separately for the controlled target upgrade; OPMs are excluded from the runtime image.\n'

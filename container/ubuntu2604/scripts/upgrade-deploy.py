@@ -31,7 +31,7 @@ def maintenance_lock(current, namespace, owner, phase):
             'data': {'phase': phase, 'owner': owner}}
 
 
-def job(web, container_name, image, name, namespace):
+def job(web, container_name, image, name, namespace, bundle_pvc=None):
     pod = copy.deepcopy(web['spec']['template']['spec'])
     matches = [c for c in pod['containers'] if c['name'] == container_name]
     if len(matches) != 1 or len(pod['containers']) != 1:
@@ -54,6 +54,11 @@ def job(web, container_name, image, name, namespace):
     main['volumeMounts'] = [{'name': 'tessera-upgrade-work', 'mountPath': '/opt/otobo'}] + main['volumeMounts']
     pod['containers'] = [main]
     pod['volumes'] = pod.get('volumes', []) + [{'name': 'tessera-upgrade-work', 'emptyDir': {}}]
+    if bundle_pvc:
+        if any(v['name'] == 'tessera-upgrade-bundle' for v in pod['volumes']) or any(m['mountPath'].startswith('/opt/tessera/upgrade-bundle') for m in main['volumeMounts']):
+            raise ValueError('Upgrade bundle mount already used')
+        pod['volumes'].append({'name': 'tessera-upgrade-bundle', 'persistentVolumeClaim': {'claimName': bundle_pvc, 'readOnly': True}})
+        main['volumeMounts'].append({'name': 'tessera-upgrade-bundle', 'mountPath': '/opt/tessera/upgrade-bundle', 'subPath': 'upgrade', 'readOnly': True})
     pod['initContainers'] = [{'name': 'stage-upgrade', 'image': image,
         'imagePullPolicy': main.get('imagePullPolicy', 'IfNotPresent'),
         'command': ['/usr/bin/python3', '/usr/local/lib/tessera/upgrade-stage.py'],
@@ -88,10 +93,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for arg in ('namespace', 'web', 'daemon', 'container', 'image', 'state-directory'):
         parser.add_argument('--' + arg, required=True)
+    parser.add_argument('--upgrade-bundle-pvc', required=True)
     args = parser.parse_args()
     if args.web == args.daemon:
         parser.error('Web and daemon must be separate Deployments')
-    for value in (args.namespace, args.web, args.daemon, args.container):
+    for value in (args.namespace, args.web, args.daemon, args.container, args.upgrade_bundle_pvc):
         if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', value):
             parser.error('Invalid Kubernetes name')
     if not re.fullmatch(r'[a-z0-9][a-z0-9._:/@-]*', args.image):
@@ -114,7 +120,7 @@ def main():
     if any(i['spec']['scaleTargetRef']['name'] in (args.web, args.daemon) for i in hpas['items']):
         raise ValueError('Resolve HPA ownership before release maintenance')
     name = 'tessera-release-' + str(int(time.time()))
-    manifest = job(web, args.container, args.image, name, args.namespace)
+    manifest = job(web, args.container, args.image, name, args.namespace, args.upgrade_bundle_pvc)
     for label, value in (('web-before', web), ('daemon-before', daemon), ('upgrade-job', manifest)):
         path = state / (label + '.json')
         with path.open('x', encoding='utf-8') as out:

@@ -79,7 +79,8 @@ class PackageModules(unittest.TestCase):
             module.write_text('''package Kernel::System::ObjectManager;
 sub new { print "private-bootstrap-output"; bless {query=>0},shift }
 sub Get { $_[0] }
-sub Prepare {my ($s,%p)=@_;die "private-SQL" unless $p{SQL}=~/^SELECT name, version FROM package_repository/ && ${$p{Bind}[0]} eq 'installed';$s->{query}++;$s->{rows}=[['TESSERA-Base','0.0.187'],['AnotherIntegration',($ENV{CHANGE} && $s->{query}>1)?'2.0.0':'1.0.0']];1}
+sub GetDatabaseFunction {1}
+sub Prepare {my ($s,%p)=@_;if($p{SQL}=~/^SELECT content/){$s->{rows}=[[${$p{Bind}[0]}]];return 1}die "private-SQL" unless $p{SQL}=~/^SELECT name, version FROM package_repository/ && ${$p{Bind}[0]} eq 'installed';$s->{query}++;$s->{rows}=[['TESSERA-Base','0.0.187'],['AnotherIntegration',($ENV{CHANGE} && $s->{query}>1)?'2.0.0':'1.0.0']];1}
 sub FetchrowArray {my $s=shift;return if !@{$s->{rows}};return @{shift @{$s->{rows}}}}
 sub RepositoryGet { my ($s,%p)=@_;return $p{Name} }
 sub PackageParse {my($s,%p)=@_;die "private-parser-error" if $ENV{FAIL};return (Name=>{Content=>$p{String}},Version=>{Content=>$p{String} eq 'TESSERA-Base'?'0.0.187':'1.0.0'},ModuleRequired=>[{Content=>$p{String} eq 'TESSERA-Base'?'Crypt::PRNG':'JSON::PP',Version=>'0.087'}])}
