@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "helper_only_update": true,
+  "opm_changed": false,
+  "cleanup_tests": 4,
+  "tests_passed": true,
+  "archive_integrity": "verified",
+  "helper_payloads": "exact LF-normalized source",
+  "live_kubernetes_cleanup": "not verified",
+  "assets": {
+    "TESSERA-Deployment-Cleanup-Update.zip": "17189cd0e2590509ac796b77ccc33b57616aefc46d1cb09af67ee7cf93566800",
+    "TESSERA-Deployment-Cleanup-Update.zip.sha256": "b1bfdaa952dbf761679f4b4f3ad29b4657586cdd9e0dd18861847781259844e4",
+    "TESSERA-Ubuntu26.04-Container-Toolkit.zip": "f8dcaf34f6f811f9816bca160bca9c0fbeea1ae630d2f820a50cda24b7929fcd",
+    "TESSERA-Ubuntu26.04-Container-Toolkit.zip.sha256": "4bfeca1929e68f689c5871135edee61401c32a4e88768d20287cd086813dbe57"
+  }
+}

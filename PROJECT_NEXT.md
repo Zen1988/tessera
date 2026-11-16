@@ -1,3 +1,11 @@
+# Current live priority — CONFIGURING continuation, not a fresh deployment
+
+Follow docs/configure-010-recovery.md for failed tessera-release-1794798990. Exact0.1.0 artifact and all26 package skips verified by live read-only diagnostic. Preserve LOCKED maintenance, current bundle and original private state. Publish/use the separately named recovery ZIP; no package hook replay, arbitrary lock clearing, replica guessing or image rebuild. Await configuration Job/rollout output before claiming recovery. Earlier fixed-PVC removal authorization applied only to the obsolete run; it does not authorize deleting the current bundle.
+
+# Current deployment — unique-PVC wrapper and published helper update
+
+Owner confirms old fixed tessera-upgrade-bundle is obsolete and authorizes deleting that PVC only; command supplied, live deletion not observed. Install TESSERA-Deployment-Cleanup-Update.zip into the existing prepared build folder, then use python3 scripts/deploy-release.py --image docker.io/library/tessera:0.1.0-ubuntu26.04. Do not first create the fixed-name YAML or copy the old195 create/upload/direct-upgrade block. Correct guides and full/helper toolkit archives prepared; four cleanup tests pass, real Kubernetes cleanup pending. This helper-only update does not require rebuilding the existing matching image/bundle and does not sweep old failed evidence. Existing maintenance/native-Job guards remain authoritative.
+
 # GitHub —0.1.0 published; source PR remains draft
 
 First regular release/tag0.1.0 is published at https://github.com/Zen1988/tessera/releases/tag/0.1.0 with verified OPM, checksum and validation report. Public OPM SHA256 matches the prepared package. Draft source PR: https://github.com/Zen1988/tessera/pull/1 on codex/release-0.1.0; main is unchanged. Do not recreate/overwrite this release. Owner's FAQ admin-list observation and all real-index/browser/native/migration/image acceptance below remain pending; publication is not runtime acceptance. No live deployment performed.

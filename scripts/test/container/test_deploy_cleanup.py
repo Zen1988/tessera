@@ -92,8 +92,8 @@ class Cleanup(unittest.TestCase):
             try:
                 bundle = Path('artifacts/upgrade-bundle')
                 bundle.mkdir(parents=True)
-                (bundle / 'release.json').write_text(json.dumps({'version': '0.0.196'}))
-                args = ['deploy-release.py', '--image', 'docker.io/library/tessera:0.0.196-ubuntu26.04']
+                (bundle / 'release.json').write_text(json.dumps({'version': '0.1.0'}))
+                args = ['deploy-release.py', '--image', 'docker.io/library/tessera:0.1.0-ubuntu26.04']
                 with patch.object(sys, 'argv', args), patch.object(release.check, 'validate'), patch.object(release.subprocess, 'run', side_effect=run):
                     if fail:
                         with self.assertRaises(subprocess.CalledProcessError):

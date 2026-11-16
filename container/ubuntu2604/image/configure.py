@@ -13,6 +13,30 @@ DIGEST = Path('/opt/tessera/config-definitions.sha256')
 MARKER = '.tessera-config-definitions.sha256'
 GENERATED = ('ZZZAAuto.pm', 'ZZZACL.pm', 'ZZZProcessManagement.pm')
 
+# Keep the native console, locking, ACL/process deployment and exit handling.
+# Only this short-lived configuration process reads its initial settings from
+# the database rather than an externally cached, pre-upgrade setting list.
+REBUILD_PROGRAM = r'''
+use strict; use warnings;
+use Kernel::MinimalPerlVersion ();
+use Kernel::System::ObjectManager ();
+my $Code;
+{
+    local $Kernel::OM = Kernel::System::ObjectManager->new(
+        'Kernel::System::Log' => {LogPrefix => 'OTOBO-otobo.Console.pl'});
+    $Kernel::OM->Get('Kernel::System::Cache')->Configure(
+        CacheInBackend => 0, CacheInMemory => 0);
+    $Code = $Kernel::OM->Get('Kernel::System::Console::InterfaceConsole')->Run(@ARGV);
+}
+exit $Code;
+'''
+
+
+def rebuild_command():
+    return ['/usr/bin/perl', '-I/opt/otobo/Custom', '-I/opt/otobo/Kernel/cpan-lib',
+            '-I/opt/otobo', '-e', REBUILD_PROGRAM, 'Maint::Config::Rebuild',
+            '--deploy-acls', '--deploy-processes']
+
 
 def source_files(source):
     """Validate the entire source before modifying the mounted destination."""
@@ -113,8 +137,7 @@ def main():
             print(f'Packaged configuration readable and immutable for UID {os.geteuid()}: {len(files)} files')
         elif not sys.argv[1:]:
             configure(SOURCE, DESTINATION, DIGEST,
-                      ['/usr/bin/perl', 'bin/otobo.Console.pl', 'Maint::Config::Rebuild',
-                       '--deploy-acls', '--deploy-processes'], '/opt/otobo')
+                      rebuild_command(), '/opt/otobo')
             print('TESSERA: Configuration rebuilt and fingerprint published')
         else:
             raise ValueError('Unsupported configure helper arguments')
