@@ -112,6 +112,10 @@ sub Run {
     $Count = 0 if !defined $Count || $Count !~ /\A[1-9][0-9]*\z/;
     my $ESStrLength   = length $ParamObject->GetParam( Param => 'FulltextES' );
 
+    if ($ConfigObject->Get('TESSERA::WorkplaceSearch') && $Self->{Subaction} eq 'SearchUpdate' && $ESStrLength > 1) {
+        return $Self->_WorkplaceRun(Count => $Count || 10);
+    }
+
     # Subaction eq SearchUpdate is returned by on click and on input events of the ESfulltext-field. See Core.UI.Elasticsearch.js
     if ( $Self->{Subaction} eq 'SearchUpdate' && $ESStrLength > 1 && $Count ) {
 
@@ -287,6 +291,67 @@ sub Run {
         Content     => '<div/>',
         Type        => 'inline',
     );
+}
+
+sub _WorkplaceRun {
+    my ($Self, %P) = @_;
+    my $Request = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $Layout = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $Config = $Kernel::OM->Get('Kernel::Config');
+    my $ES = $Kernel::OM->Get('Kernel::System::Elasticsearch');
+    my $Query = $Request->GetParam(Param => 'FulltextES') || '';
+    my $Scope = $Request->GetParam(Param => 'SearchScope') || 'All';
+    $Scope = 'All' if $Scope !~ /\A(?:All|Ticket|Asset|FAQ|People)\z/;
+    my $Page = $Request->GetParam(Param => 'SearchPage') || 1;
+    $Page = 1 if $Page !~ /\A[1-9][0-9]{0,8}\z/;
+    my $Size = $P{Count};
+    $Size = 10 if !$Size || $Size !~ /\A[1-9][0-9]*\z/;
+    $Size = 100 if $Size > 100;
+    my (@Rows, @Types, @Errors);
+    my ($Pages, $Total) = (1, 0);
+    for my $Type (qw(Ticket Asset FAQ People)) {
+        next if $Scope ne 'All' && $Scope ne $Type;
+        my ($Result, @TypeRows);
+        if ($Type eq 'Ticket') {
+            my %Selection;
+            if (!$ES->CustomerGlobalTicketRead(CustomerUserID => $Self->{UserID}, Permission => 'ro')) {
+                if (!$Config->Get('Ticket::Frontend::CustomerDisableCompanyTicketAccess')) {
+                    my %Customers = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupContextCustomers(CustomerUserID => $Self->{UserID});
+                    $Selection{CustomerIDRaw} = [keys %Customers];
+                }
+                else { $Selection{CustomerUserLoginRaw} = $Self->{UserID} }
+            }
+            $Result = _TicketPageSearch(ES => $ES, PageSize => $Size, Page => $Scope eq 'All' ? 1 : $Page,
+                Search => {%Selection, Fulltext => $Query, CustomerUserID => $Self->{UserID}, Permission => 'ro', ExtendedSearch => 0});
+            for my $Record (@{$Result->{Data} || []}) {
+                my ($ID, $Data) = %$Record;
+                push @TypeRows, {Type => 'Ticket', ID => $ID, Name => $Data->{Title}, Description => $Data->{TicketNumber}, Action => 'CustomerTicketZoom', Parameter => 'TicketID'};
+            }
+            $Result->{Total} = $Result->{TicketMatchCount};
+            $Page = $Result->{TicketPage} if $Scope ne 'All';
+            $Pages = $Result->{TicketPages} if $Scope ne 'All';
+        }
+        else {
+            $Result = $Kernel::OM->Get('Kernel::System::TESSERA::WorkplaceSearch')->Search(
+                CustomerUserID => $Self->{UserID}, Scope => $Type, Query => $Query);
+            push @Errors, $Type if $Result->{Unavailable};
+            my @All = @{$Result->{Rows} || []};
+            my $TypePages = @All ? int(($#All) / $Size) + 1 : 1;
+            my $TypePage = $Scope eq 'All' ? 1 : ($Page > $TypePages ? $TypePages : $Page);
+            @TypeRows = splice @All, ($TypePage - 1) * $Size, $Size;
+            ($Page, $Pages) = ($TypePage, $TypePages) if $Scope ne 'All';
+        }
+        push @Types, {Scope => $Type, Count => $Result->{Total} || 0};
+        $Total += $Result->{Total} || 0;
+        push @Rows, @TypeRows;
+    }
+    my $Output = $Layout->Output(TemplateFile => 'TESSERAWorkplaceSearch', Data => {
+        SearchQuery => $Query, SearchScope => $Scope, Rows => \@Rows, Types => \@Types,
+        Total => $Total, Shown => scalar @Rows, Page => $Page, Pages => $Pages,
+        PreviousPage => $Page > 1 ? $Page - 1 : 0, NextPage => $Page < $Pages ? $Page + 1 : 0,
+        All => $Scope eq 'All', PageSize => $Size, Unavailable => join(', ', @Errors),
+    });
+    return $Layout->Attachment(NoCache => 1, ContentType => 'text/html', Charset => $Layout->{UserCharset}, Content => $Output || '', Type => 'inline');
 }
 
 1;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.197</Version>
+    <Version>0.1.0</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -20,6 +20,22 @@
     <ModuleRequired Version="0.087">Crypt::AuthEnc::GCM</ModuleRequired>
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/FAQAccess.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/WorkplaceSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQExplorer.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQPrint.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQRelatedArticles.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQExplorer.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQPrint.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQRSS.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Layout/FAQ.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/TESSERAWorkplaceSearch.tt" Permission="660"/>
+        <File Location="var/tessera/docs/workplace-search.md" Permission="660"/>
+
         <File Location="var/httpd/htdocs/js/TESSERA.Customer.SearchPaging.js" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerElasticsearchQuickResult.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerElasticsearchQuickResult.pm" Permission="660"/>
@@ -502,8 +518,12 @@
     <CodeInstall Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service installation failed.'
@@ -513,8 +533,12 @@
     <CodeUpgrade Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service upgrade failed.'
@@ -524,8 +548,12 @@
     <CodeReinstall Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service reinstall failed.'

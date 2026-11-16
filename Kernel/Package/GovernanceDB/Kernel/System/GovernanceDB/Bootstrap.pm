@@ -144,6 +144,8 @@ sub InstallDefaults {
     $Self->_ScriptBlockFieldsEnsure();
 
     $Self->_CustomerUserPreferenceDynamicFieldsEnsure();
+    $Self->_FAQApplicationFieldEnsure();
+    $Self->_FAQApplicationScreensEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
     $Self->_FirewallProtocolCaseEnsure();
@@ -2970,6 +2972,102 @@ sub _ITSMConfigItemLifecycleDateDynamicFieldsEnsure {
     return 1;
 }
 
+
+sub _FAQApplicationFieldEnsure {
+    my ($Self) = @_;
+    $Self->_FAQApplicationRegistrationEnsure();
+    my $DF = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $Existing = $DF->DynamicFieldGet(Name => 'FAQApplication');
+    my $Legacy = $DF->DynamicFieldGet(Name => 'ZFAQ-Application');
+    my $HasExisting = ref $Existing eq 'HASH' && keys %{$Existing};
+    my $HasLegacy = ref $Legacy eq 'HASH' && keys %{$Legacy};
+    die 'Both FAQApplication and ZFAQ-Application exist; migration requires an explicit data merge.' if $HasExisting && $HasLegacy;
+    if ($HasLegacy) {
+        die 'Legacy ZFAQ-Application must be an FAQ GovernanceObject reference.'
+            if ($Legacy->{ObjectType} || '') ne 'FAQ' || ($Legacy->{FieldType} || '') ne 'GovernanceObject' || !$Legacy->{ID};
+        # Preserve the Dynamic Field ID: existing value rows stay attached to it.
+        die 'Cannot migrate ZFAQ-Application to FAQApplication.' if !$DF->DynamicFieldUpdate(
+            %{$Legacy}, Name => 'FAQApplication', UserID => 1, Reorder => 0,
+        );
+        $DF->EventHandlerTransaction();
+        return 1;
+    }
+    if (ref $Existing eq 'HASH' && keys %{$Existing}) {
+        die 'FAQApplication must be an FAQ GovernanceObject reference.'
+            if ($Existing->{ObjectType} || '') ne 'FAQ' || ($Existing->{FieldType} || '') ne 'GovernanceObject';
+        return 1; # Existing values and administrator settings remain owned by the administrator.
+    }
+    my $Classes = $Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(Class => 'ZTSM::GovernanceObject::Class') || {};
+    my @IDs = grep {$Classes->{$_} eq 'Application'} keys %$Classes;
+    die 'Cannot resolve unique Application class for FAQApplication.' if @IDs != 1;
+    die 'Cannot create FAQApplication.' if !$DF->DynamicFieldAdd(
+        Name => 'FAQApplication', Label => 'Application', FieldOrder => 10300,
+        FieldType => 'GovernanceObject', ObjectType => 'FAQ', ValidID => 1, UserID => 1, Reorder => 0,
+        Config => {ClassIDs => \@IDs, ReferencedObjectType => 'GovernanceObject',
+            DisplayType => 'GovernanceObjectName', MultiValue => 1, Multiselect => 0,
+            PossibleNone => 1, EditFieldMode => 'Dropdown', DefaultValue => '',
+            ReferenceFilterList => [], Tooltip => 'Empty: all portal users. Selected applications: matching active SupportAssignment required.'},
+    );
+    $DF->EventHandlerTransaction();
+    return 1;
+}
+
+sub _FAQApplicationRegistrationEnsure {
+    my ($Self) = @_;
+    my $SC = $Kernel::OM->Get('Kernel::System::SysConfig');
+    my @Definitions = (
+        ['DynamicFields::ObjectType###FAQ', 'Kernel::System::DynamicField::ObjectType::FAQ'],
+        ['DynamicFields::Driver###GovernanceObject', 'Kernel::System::DynamicField::Driver::GovernanceObject'],
+    );
+    for my $Definition (@Definitions) {
+        my ($Name, $Module) = @$Definition;
+        my %Setting = $SC->SettingGet(Name => $Name);
+        if (!%Setting) {
+            # Import native XML defaults, preserving deployed administrator values.
+            die "Cannot import native Dynamic Field registration for $Name."
+                if !$SC->ConfigurationXML2DB(UserID => 1, CleanUp => 0);
+            %Setting = $SC->SettingGet(Name => $Name);
+        }
+        die "Native FAQ/reference registration is unavailable: $Name."
+            if ref $Setting{EffectiveValue} ne 'HASH';
+        my %Value = %{$Setting{EffectiveValue}};
+        die "Conflicting Dynamic Field handler for $Name."
+            if ($Value{Module} || '') ne $Module;
+        my $Changed = !$Setting{IsValid};
+        # An omitted/empty ObjectTypes list means unrestricted. Never narrow it.
+        if ($Name =~ /Driver/ && ref $Value{ObjectTypes} eq 'ARRAY' && @{$Value{ObjectTypes}}
+            && !grep {$_ eq 'FAQ'} @{$Value{ObjectTypes}}) {
+            $Value{ObjectTypes} = [@{$Value{ObjectTypes}}, 'FAQ'];
+            $Changed = 1;
+        }
+        next if !$Changed;
+        die "Cannot enable native FAQ/reference registration: $Name." if !$SC->SettingsSet(
+            Settings => [{Name => $Name, IsValid => 1, EffectiveValue => \%Value}],
+            Comments => 'Ensure native FAQ Application reference registration', UserID => 1,
+        );
+    }
+    return 1;
+}
+
+sub _FAQApplicationScreensEnsure {
+    my ($Self) = @_;
+    my $SC = $Kernel::OM->Get('Kernel::System::SysConfig');
+    for my $Screen (qw(AgentFAQAdd AgentFAQEdit)) {
+        my $Name = 'FAQ::Frontend::' . $Screen . '###DynamicField';
+        my %Setting = $SC->SettingGet(Name => $Name);
+        die "Missing FAQ screen setting $Name." if ref $Setting{EffectiveValue} ne 'HASH';
+        my %Value = %{$Setting{EffectiveValue}};
+        next if exists $Value{FAQApplication} && !exists $Value{'ZFAQ-Application'};
+        $Value{FAQApplication} = exists $Value{'ZFAQ-Application'} ? $Value{'ZFAQ-Application'} : 1
+            if !exists $Value{FAQApplication};
+        delete $Value{'ZFAQ-Application'};
+        die "Cannot enable Application on $Screen." if !$SC->SettingsSet(
+            Settings => [{Name => $Name, IsValid => 1, EffectiveValue => \%Value}],
+            Comments => 'Enable optional FAQ Application reference', UserID => 1);
+    }
+    return 1;
+}
+
 sub _CustomerUserPreferenceDynamicFieldsEnsure {
     my ( $Self, %Param ) = @_;
 
@@ -3215,8 +3313,12 @@ sub _SysConfigDeploy {
         'DynamicFields::Driver###Service',
         'DynamicFields::Driver###Set',
         'DynamicFields::Driver###FAQ',
+        'DynamicFields::ObjectType###FAQ',
         'DynamicFields::Driver###GovernanceObject',
         'DynamicFields::Driver###GovernanceObjectVersion',
+        'TESSERA::WorkplaceSearch',
+        'FAQ::Frontend::AgentFAQAdd###DynamicField',
+        'FAQ::Frontend::AgentFAQEdit###DynamicField',
         'GovernanceObject::Frontend::AgentGovernanceObject###DefaultCategory',
         'GovernanceObject::Frontend::AgentGovernanceObject###DefaultColumns',
         'GovernanceObject::Frontend::AgentGovernanceObject###ClassColumnsAvailable',

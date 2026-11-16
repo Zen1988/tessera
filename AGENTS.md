@@ -636,3 +636,16 @@ without manual intervention.
 
 ## TESSERA UI Engineering Standard
 A UI patch is not accepted just because it looks correct. It must also preserve DOM simplicity, component clarity, CSS ownership, responsiveness, accessibility, and maintainability.
+
+
+## TESSERA-Base version series (owner decision 2026-11-16)
+
+- After TESSERA-Base0.0.199, use0.1.0 instead of0.0.200.
+- Roll the patch series every200 positions:0.1.0 through0.1.199, then0.2.0; continue the same pattern unless the owner changes it.
+- This applies to TESSERA-Base. Do not rewrite the separate GovernanceDB PackageMerge target/version from this rule.
+
+## FAQ Application field (owner decision 2026-11-16)
+
+- Exact current field name is FAQApplication, ObjectType FAQ, FieldType GovernanceObject, optional multiple Application references. Empty means applicable to all portal users.
+- Do not depend on a ZFAQ namespace. Ensure native FAQ object-type/reference-driver registration before field creation.
+- Upgrade compatible legacy ZFAQ-Application with a native same-ID rename, preserving existing values/configuration; reject ambiguous dual-name records rather than deleting or overwriting data.

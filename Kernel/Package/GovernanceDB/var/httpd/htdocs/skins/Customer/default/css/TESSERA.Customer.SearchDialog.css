@@ -1,4 +1,28 @@
-/* Customer Elasticsearch results. Native dialog/close ownership is retained; ticket paging is TESSERA-owned. */
+/* Customer Elasticsearch results. Native dialog/close ownership is retained. */
+.TESSERAWorkplaceSearch .TESSERASearchTypes {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 24px;
+    flex: 0 0 auto; border-bottom: 1px solid #e8edf5;
+}
+
+/* Workplace columns own their widths independently of the legacy ticket table. */
+.Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch th:first-child,
+.Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch td:first-child { width: 18%; }
+.Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch th:nth-child(2) { width: 42%; }
+.Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch th:last-child { width: 40%; }
+.Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch td { white-space: normal; }
+@media (max-width: 619px) {
+    .Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch th,
+    .Dialog:has(#oooESOuter) #oooESOuter .TESSERAWorkplaceSearch td { padding-inline: 8px; }
+}
+.TESSERAWorkplaceSearch .TESSERASearchType {
+    min-height: 44px; padding: 8px 16px; border: 1px solid #c8cfdf;
+    border-radius: 24px; background: #fff; color: #00023c; cursor: pointer;
+}
+.TESSERAWorkplaceSearch .TESSERASearchType[aria-pressed="true"] { background: #00023c; color: #fff; }
+.TESSERAWorkplaceSearch .TESSERASearchType:focus-visible { outline: 2px solid #001bff; outline-offset: 2px; }
+.TESSERAWorkplaceSearch .TESSERASearchSummary span { display: inline-block; margin-inline-end: 12px; }
+.TESSERAWorkplaceSearch .TESSERASearchUnavailable { padding: 8px 24px; margin: 0; }
+.TESSERAWorkplaceSearch td { overflow-wrap: anywhere; }
 @supports selector(:has(*)) {
     .Dialog:has(#oooESOuter) {
         --tessera-search-top: clamp(88px, 14vh, 120px);
