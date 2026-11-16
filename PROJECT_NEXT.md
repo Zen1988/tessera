@@ -1,3 +1,7 @@
+# GitHub —0.1.0 published; source PR remains draft
+
+First regular release/tag0.1.0 is published at https://github.com/Zen1988/tessera/releases/tag/0.1.0 with verified OPM, checksum and validation report. Public OPM SHA256 matches the prepared package. Draft source PR: https://github.com/Zen1988/tessera/pull/1 on codex/release-0.1.0; main is unchanged. Do not recreate/overwrite this release. Owner's FAQ admin-list observation and all real-index/browser/native/migration/image acceptance below remain pending; publication is not runtime acceptance. No live deployment performed.
+
 # Current — accept TESSERA-Base0.1.0 / FAQApplication
 
 Owner explicitly replaces planned0.0.200 with0.1.0 and rolls Base patch version every200 positions. Exact current field is FAQApplication, optional multiple Application references, EMPTY=ALL portal users. No ZFAQ namespace dependency. See PROJECT_STATUS.md and docs/workplace-search.md. Use Kernel/Package/TESSERA-Base-0.1.0.opm; do not generate/publish0.0.200 or recreate from older naming assumptions.
