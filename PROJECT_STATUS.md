@@ -1,3 +1,7 @@
+# 2026-11-16 — Configuration recovery published
+
+- Uploaded TESSERA-0.1.0-Config-Rebuild-Recovery.zip and checksum to existing regular0.1.0 release; public downloads verified. ZIP SHA2569f75d5da0477b0cb4426332a89ae6137b4413309c3778d8196ae99067112dd7d. Source recovery/toolkit changes pushed as2b4e79a2ae111495f8bbec9a538baef8e6204c8a to existing draft PR1. Normal checkout/index preserved; main/tag/OPM and prior release assets unchanged. Runtime continuation still awaits owner execution/output.
+
 # 2026-11-16 — Verified 0.1.0 configuration-only recovery prepared
 
 - Live diagnostic for tessera-release-1794798990 confirms image/receipt/installed artifact0.1.0 match, CONFIGURING from0.0.196, no journals, all26 package-plan entries skip. Package installation completed; do not replay hooks or rebuild the image based on obsolete local helpers. Owner downloaded the updated full toolkit successfully. Namespace maintenance remains LOCKED; preserve current bundle and failed Job.
