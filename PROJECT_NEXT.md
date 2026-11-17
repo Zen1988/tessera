@@ -1,6 +1,6 @@
 # Current — Application named topology automation and Base0.1.5 native acceptance
 
-Completed simulation/docs/pack work is in PROJECT_STATUS, docs/releases/0.1.5.md and outputs/base015-validation.json. Current prepared artifacts:0.1.5 OPM, versioned container toolkit and ScriptEngine offline authoring pack. No deployment/publication here. Use matching newer Navis named-topology/visibility/progress code and migrations through021; docs/reference/navis/PROVENANCE.json records the verified published contract snapshot. The separate Navis chat published2a43005e; its checkout was not modified here. Older acd2b5d does not contain the later name/progress APIs.
+Completed simulation/docs/pack work is in PROJECT_STATUS, docs/releases/0.1.5.md and outputs/base015-validation.json. Current prepared artifacts:0.1.5 OPM, versioned container toolkit and ScriptEngine offline authoring pack. Source and kits pushed to GitHub draft PR1 (codex/release-0.1.0); no new GitHub Release or deployment. Use matching newer Navis named-topology/visibility/progress code and migrations through021; docs/reference/navis/PROVENANCE.json records the verified published contract snapshot. The separate Navis chat published2a43005e; its checkout was not modified here. Older acd2b5d does not contain the later name/progress APIs.
 
 ## Application automation still to implement
 

@@ -1,3 +1,9 @@
+# 2026-11-17 — TESSERA0.1.5 source and kits pushed to GitHub
+
+- Owner authorized GitHub push. Verified existing draft PR1 head bd7d4d06, then fast-forward pushed b88cd813afea94f668a947769983a56e6db51cc0 to Zen1988/tessera branch codex/release-0.1.0. Existing PR1 now describes cumulative0.1.5 scope and validation. Main and published0.1.0 release/tag/assets unchanged; no new GitHub Release or deployment.
+- Used isolated Git index and authoritative decoded0.1.5 payloads for source/package mirrors, preserving unrelated local edits/index/checkout. Included versioned0.1.5 container toolkit and offline ScriptEngine ZIP/checksums under outputs, package versions/checksums, source, tests and docs. 630 files changed in feature commit. Final artifact hashes remain those recorded below.
+- Remaining: native acceptance and separately scoped discovery/topology-creation automation. Download from PR1 branch, not main. Publication continuity recorded in a follow-up commit.
+
 # 2026-11-17 — Base0.1.5 simulation, Application topology and offline documentation prepared
 
 - Verified published Navis commit 2a43005e445c2a33f6b6139cc8e8e6d05140feff: 19-path OpenAPI matches the tested snapshot; all 14 Tessera routes and two default/named requests match. Requires matching Navis release and migrations through021. The separate Navis checkout was not edited.
