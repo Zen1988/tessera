@@ -1,0 +1,46 @@
+{
+  "version": "0.1.1",
+  "baseline_sha256": "ecedb348d955af2ee0461f367a7234ddd1fc3ceb2698ab1f3288c3ba1a10cb2d",
+  "sha256": "52d3cc1fb398dbdcad77384fa05f39e4540842ea5965f7bf445db84ea77e2048",
+  "payloads": 497,
+  "new": [
+    "Kernel/Config/Files/XML/TESSERAUtilities.xml",
+    "Kernel/Modules/AgentUtilities.pm",
+    "Kernel/Modules/CustomerUtilities.pm",
+    "Kernel/Output/HTML/Templates/Standard/AgentUtilities.tt",
+    "Kernel/Output/HTML/Templates/Standard/CustomerUtilities.tt",
+    "Kernel/Output/HTML/Templates/Standard/TESSERAUtilitiesShortcuts.tt",
+    "Kernel/System/TESSERA/Utilities.pm",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileToolBox.pm",
+    "var/httpd/htdocs/common/img/TESSERA/utilities.svg",
+    "var/httpd/htdocs/skins/Agent/default/css/TESSERA.Agent.Utilities.css",
+    "var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Utilities.css",
+    "var/tessera/docs/utilities.md"
+  ],
+  "changed": [
+    "Kernel/System/TESSERA/NetworkSimulationAccess.pm",
+    "var/governancedb/container_release.json",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerNavigationBar.tt"
+  ],
+  "unchanged": 482,
+  "hooks_preserved": true,
+  "deployed": false,
+  "validation": {
+    "perl_assertions": 188,
+    "perl_suites": 4,
+    "release_metadata_tests": 4,
+    "browser_layouts": 5,
+    "browser_checks": [
+      "horizontal overflow",
+      "unique control IDs",
+      "external-link isolation",
+      "keyboard control access"
+    ],
+    "visual_review": [
+      "customer desktop",
+      "agent mobile"
+    ],
+    "native_full_install_acceptance": false,
+    "live_deployed": false
+  }
+}

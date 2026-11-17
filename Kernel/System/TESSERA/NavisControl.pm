@@ -31,7 +31,12 @@ sub _context {
         || ($C->{ActorID} || 0)!=$Actor || ($C->{NavisWebserviceID} || '')!~/\A[1-9][0-9]*\z/
         || ($C->{TargetID} || '')!~/\A[1-9][0-9]*\z/ || ($C->{TargetType} || '')!~/\A[A-Za-z][A-Za-z0-9_]{0,49}\z/;
     die "Authorized CMDB context required.\n" if ref $C->{Snapshot} ne 'ARRAY' || @{$C->{Snapshot}}>1000
-        || !Kernel::System::TESSERA::NavisPlan::_text($C->{Namespace}) || !Kernel::System::TESSERA::NavisPlan::_uuid($C->{BuildID});
+        || !Kernel::System::TESSERA::NavisPlan::_text($C->{Namespace})
+        || (defined $C->{BuildID} && !Kernel::System::TESSERA::NavisPlan::_uuid($C->{BuildID}))
+        || (defined $C->{SourceNamespace} && length($C->{SourceNamespace}) && !Kernel::System::TESSERA::NavisPlan::_text($C->{SourceNamespace}));
+    die "Invalid trace context.\n" if defined $C->{TraceMode} && ($C->{TraceMode} || '')!~/\A(?:Default|Application)\z/;
+    die "Application graph mapping required.\n" if ($C->{TraceMode} || '') eq 'Application' && !defined $C->{BuildID} && !Kernel::System::TESSERA::NavisPlan::_text($C->{TopologyName});
+    die "Default tracing must not pin an application graph.\n" if ($C->{TraceMode} || '') eq 'Default' && (defined $C->{BuildID} || defined $C->{TopologyName} || defined $C->{TopologyVersionID});
     my $WS=$Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(ID=>$C->{NavisWebserviceID});
     die "Enabled Navis connection required.\n" if !$WS || ($WS->{ValidID} || 0)!=1
         || ($WS->{Config}{Requester}{Transport}{Type} || '') ne 'HTTP::TESSERAIntegration'
@@ -43,6 +48,11 @@ sub _bound {
     die "Analysis scope mismatch.\n" if grep {($D->{$_} // '') ne ($C->{$_} // '')} qw(ActorID NavisWebserviceID TargetType TargetID);
     my $Planner=Kernel::System::TESSERA::NavisPlan->new();
     die "Authorized CMDB context changed.\n" if $D->{Namespace} ne $C->{Namespace} || $Planner->Digest($D->{Snapshot}) ne $Planner->Digest($C->{Snapshot});
+    die "Trace context changed.\n" if ($D->{TopologyName} || '') ne ($C->{TopologyName} || '')
+        || ($D->{TopologyVersionID} || '') ne ($C->{TopologyVersionID} || '')
+        || ($D->{SourceNamespace} || '') ne ($C->{SourceNamespace} || '')
+        || ($D->{TraceMode} || '') ne ($C->{TraceMode} || '')
+        || (defined $C->{BuildID} && $D->{Request}{graph_build_id} ne $C->{BuildID});
     $S->_connection($D);
 }
 sub _connection {
@@ -59,23 +69,37 @@ sub _call {
 sub Analyze {
     my ($S,%P)=@_;my $C=$S->_context($P{Context},$P{ActorID});my $Planner=Kernel::System::TESSERA::NavisPlan->new();
     require Crypt::PRNG;my $ID=unpack('H*',Crypt::PRNG::random_bytes(20));
-    my $Q=$Planner->Request(Flow=>$P{Data},BuildID=>$C->{BuildID},CallerID=>'tessera-'.$ID);
+    my $Q=$Planner->Request(Flow=>$P{Data},BuildID=>$C->{BuildID},OnDemand=>!defined $C->{BuildID},Namespace=>$C->{SourceNamespace},TopologyName=>$C->{TopologyName},TopologyVersionID=>$C->{TopologyVersionID},CallerID=>'tessera-'.$ID);
     my $D={AnalysisID=>$ID,ActorID=>$P{ActorID},map {$_=>$C->{$_}} qw(NavisWebserviceID TargetType TargetID)};
     my $WS=$Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(ID=>$C->{NavisWebserviceID});
+    $D->{TopologyName}=$C->{TopologyName} || '';$D->{TopologyVersionID}=$C->{TopologyVersionID} || '';
+    $D->{SubmittedRequest}=dclone($Q);$D->{SourceNamespace}=$C->{SourceNamespace} || '';$D->{TraceMode}=$C->{TraceMode} || '';
     $D->{ConnectionDigest}=$Planner->Digest($WS->{Config});
-    @$D{qw(Request Snapshot Namespace Action Status)}=($Q,dclone($C->{Snapshot}),$C->{Namespace},$P{Data}{action},'CREATED');
+    @$D{qw(Request Snapshot Namespace Action Status)}=(dclone($Q),dclone($C->{Snapshot}),$C->{Namespace},$P{Data}{action},'CREATED');
     $S->_save($D,1);
     my $OK=eval {
-        $D->{Graph}=$S->_call($C->{NavisWebserviceID},'GraphGet',{BuildID=>$C->{BuildID}});$Planner->Graph($D->{Graph},$C->{BuildID});
+        if (defined $C->{BuildID}) {$D->{Graph}=$S->_call($C->{NavisWebserviceID},'GraphGet',{BuildID=>$C->{BuildID}});$Planner->Graph($D->{Graph},$C->{BuildID})}
         $D->{Status}='TRACE_INTENT';$S->_save($D);
-        $D->{Trace}=$S->_call($C->{NavisWebserviceID},'Trace',$Q);
+        my $T=$S->_call($C->{NavisWebserviceID},'Trace',$Q);
+        die "Mismatched trace identity.\n" if ($T->{code} || '') ne 'TRACE_RESULT_READY' || ($T->{caller_session_id} || '') ne $Q->{caller_session_id}
+            || !Kernel::System::TESSERA::NavisPlan::_uuid($T->{graph_build_id}) || !Kernel::System::TESSERA::NavisPlan::_uuid($T->{trace_session_id})
+            || (defined $C->{BuildID} && $T->{graph_build_id} ne $C->{BuildID});
+        $D->{Trace}=$T;$D->{Request}{graph_build_id}=$T->{graph_build_id};
+        delete @{$D->{Request}}{qw(topology_name topology_version_id)};
         $D->{Status}='TRACE_SAVED';$S->_save($D);
+        if (!defined $C->{BuildID}) {
+            $D->{Graph}=$S->_call($C->{NavisWebserviceID},'GraphGet',{BuildID=>$T->{graph_build_id}});
+            $Planner->Graph($D->{Graph},$T->{graph_build_id});$S->_save($D);
+        }
         $S->_recommend($D);1;
     };
     return {Success=>$OK?1:0,Data=>{AnalysisID=>$ID,Status=>$OK?$D->{Status}:'FAILED_OR_UNCERTAIN'}};
 }
 sub _recommend {
-    my ($S,$D)=@_;$D->{Recommendations}=$S->_call($D->{NavisWebserviceID},'RecommendationsGet',{CallerSessionID=>$D->{Request}{caller_session_id}});
+    my ($S,$D)=@_;
+    if (!$D->{Graph}) {$D->{Graph}=$S->_call($D->{NavisWebserviceID},'GraphGet',{BuildID=>$D->{Request}{graph_build_id}});
+        Kernel::System::TESSERA::NavisPlan->new()->Graph($D->{Graph},$D->{Request}{graph_build_id});$S->_save($D)}
+    $D->{Recommendations}=$S->_call($D->{NavisWebserviceID},'RecommendationsGet',{CallerSessionID=>$D->{Request}{caller_session_id}});
     $D->{Plan}=Kernel::System::TESSERA::NavisPlan->new()->Prepare(Request=>$D->{Request},Trace=>$D->{Trace},Graph=>$D->{Graph},Recommendations=>$D->{Recommendations},Snapshot=>$D->{Snapshot},Namespace=>$D->{Namespace},Action=>$D->{Action});
     $D->{PlanDigest}=Kernel::System::TESSERA::NavisPlan->new()->Digest($D->{Plan});$D->{Status}=$D->{Plan}{Status};$S->_save($D);
 }
@@ -205,12 +229,57 @@ sub _publish {
         push @Verification,{PlanID=>$Plan->{PlanID},Status=>$Complete{$Key} && $Found?'OBSERVED_MATCH':'UNKNOWN',ConnectivityVerified=>JSON::PP::false};
     }
     $D->{ReadbackVerification}=\@Verification;
-    $D->{ObservedReadback}=dclone($Evidence);$D->{Ingestions}=[];$D->{Status}='INGEST_INTENT';$S->_save($D);
+    $D->{ObservedReadback}=dclone($Evidence);$D->{Ingestions}=[];
+    $D->{CollectionRunID}='tessera-readback-'.$D->{AnalysisID};$D->{ExpectedSubmissions}=scalar @{$Evidence->{Envelopes}};
+    my $Items=0;$Items+=scalar @{$_->{payload}{entries}} for @{$Evidence->{Envelopes}};$D->{ExpectedItems}=$Items;$D->{Status}='INGEST_INTENT';$S->_save($D);
     for my $E (@{$Evidence->{Envelopes}}) {
-        my $Receipt=$S->_call($D->{NavisWebserviceID},'Ingest',$E);
+        my $Receipt=$S->_call($D->{NavisWebserviceID},'Ingest',{%$E,collection_run_id=>$D->{CollectionRunID},expected_submissions=>$D->{ExpectedSubmissions},expected_items=>$D->{ExpectedItems}});
         die "Invalid staging receipt.\n" if !Kernel::System::TESSERA::NavisPlan::_uuid($Receipt->{ingestion_id}) || ($Receipt->{status} || '') ne 'pending_identity';
         push @{$D->{Ingestions}},{Receipt=>$Receipt,EnvelopeDigest=>Kernel::System::TESSERA::NavisPlan->new()->Digest($E)};$S->_save($D);
     }
-    $D->{Status}='NAVIS_STAGED_OPERATOR_PROCESSING_REQUIRED';$S->_save($D);
+    $D->{Status}='NAVIS_INGESTION_PENDING';$S->_save($D);
 }
+sub _collectionStatus {
+    my ($S,$D)=@_;my $R=$S->_call($D->{NavisWebserviceID},'CollectionProgressGet',{CollectionRunID=>$D->{CollectionRunID},limit=>1,offset=>0});
+    die "Collection progress identity mismatch.\n" if ($R->{collection_run_id} || '') ne $D->{CollectionRunID}
+        || ($R->{expected_submissions} || 0)!=$D->{ExpectedSubmissions} || !defined $R->{expected_items} || $R->{expected_items}!=$D->{ExpectedItems}
+        || ref $R->{counts} ne 'HASH' || ($R->{processing_status} || '')!~/\A(?:complete|complete_for_received_data|needs_attention|awaiting_uploads|processing_pending)\z/;
+    for my $K (qw(received_submissions processed_submissions failed_submissions pending_submissions raw_only_submissions input_items processed_items)) {
+        die "Invalid processing counts.\n" if !defined $R->{counts}{$K} || ref $R->{counts}{$K} || $R->{counts}{$K}!~/\A[0-9]{1,10}\z/;
+    }
+    my $Counts=$R->{counts};
+    my $Done=$R->{processing_status} eq 'complete' && JSON::PP::is_bool($R->{upload_complete}) && $R->{upload_complete}
+        && JSON::PP::is_bool($R->{normalization_success}) && $R->{normalization_success}
+        && $Counts->{received_submissions}==$D->{ExpectedSubmissions} && $Counts->{processed_submissions}==$D->{ExpectedSubmissions}
+        && !$Counts->{failed_submissions} && !$Counts->{pending_submissions} && !$Counts->{raw_only_submissions}
+        && $Counts->{input_items}==$D->{ExpectedItems} && $Counts->{processed_items}==$D->{ExpectedItems};
+    # The aggregate covers all pages; do not persist or disclose raw submission rows.
+    my %SafeCounts=map {$_=>0+$Counts->{$_}} qw(received_submissions processed_submissions failed_submissions pending_submissions raw_only_submissions input_items processed_items);
+    $D->{ProcessingSummary}={ProcessingStatus=>$R->{processing_status},Counts=>\%SafeCounts,CheckedAt=>time(),GraphStatus=>'not_checked'};
+    $D->{Status}=$Done?'NAVIS_INGESTION_PROCESSED':$R->{processing_status} eq 'needs_attention'?'NAVIS_INGESTION_NEEDS_ATTENTION':$Counts->{raw_only_submissions}?'NAVIS_INGESTION_RAW_ONLY':'NAVIS_INGESTION_PENDING';
+    $S->_save($D);return {Success=>1,Data=>{AnalysisID=>$D->{AnalysisID},Status=>$D->{Status},Processed=>$Done?1:0,%{$D->{ProcessingSummary}}}};
+}
+# Safe GET-only continuation: processing success is distinct from graph readiness.
+sub IngestionStatus {
+    my ($S,%P)=@_;
+    return $S->_lock($P{AnalysisID},sub {
+        my $D=$S->_read($P{AnalysisID});$S->_bound($D,$P{Context},$P{ActorID});
+        return $S->_collectionStatus($D) if $D->{CollectionRunID};
+        die "Saved ingestion receipts required.\n" if ref $D->{Ingestions} ne 'ARRAY' || !@{$D->{Ingestions}} || @{$D->{Ingestions}}>1000
+            || $D->{Status}!~/\A(?:NAVIS_INGESTION_PENDING|NAVIS_STAGED_OPERATOR_PROCESSING_REQUIRED|NAVIS_INGESTION_PROCESSED|NAVIS_INGESTION_RAW_ONLY)\z/;
+        my ($Pending,$RawOnly)=(0,0);
+        for my $Row (@{$D->{Ingestions}}) {
+            my $ID=$Row->{Receipt}{ingestion_id};
+            die "Invalid saved ingestion reference.\n" if !Kernel::System::TESSERA::NavisPlan::_uuid($ID);
+            my $Reply=$S->_call($D->{NavisWebserviceID},'IngestionGet',{IngestionID=>$ID});
+            die "Invalid ingestion status response.\n" if ($Reply->{ingestion_id} || '') ne $ID
+                || ($Reply->{status} || '')!~/\A(?:pending_identity|processed|raw_only)\z/;
+            $Row->{ProcessingStatus}=$Reply->{status};$Pending++ if $Reply->{status} eq 'pending_identity';$RawOnly++ if $Reply->{status} eq 'raw_only';
+        }
+        $D->{Status}=$Pending?'NAVIS_INGESTION_PENDING':$RawOnly?'NAVIS_INGESTION_RAW_ONLY':'NAVIS_INGESTION_PROCESSED';
+        $S->_save($D);
+        return {Success=>1,Data=>{AnalysisID=>$D->{AnalysisID},Status=>$D->{Status},Processed=>!$Pending && !$RawOnly?1:0,GraphStatus=>'not_checked'}};
+    });
+}
+
 1;

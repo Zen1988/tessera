@@ -1,0 +1,43 @@
+{
+  "origin": "Published Navis contract",
+  "commit": "2a43005e445c2a33f6b6139cc8e8e6d05140feff",
+  "captured_date": "2026-11-17",
+  "files": {
+    "DATA_LIFECYCLE.md": {
+      "sha256": "71b01402e83e7f3d7b7edbd72d0df21e0cd62216544eb69c750fde866863241a",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/DATA_LIFECYCLE.md"
+    },
+    "INGESTION_PROGRESS.md": {
+      "sha256": "5e7d56bc57bc304aa39356a203cf3b18a8cfdd28683d82998676eabecf565624",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/INGESTION_PROGRESS.md"
+    },
+    "INTEGRATION_API.md": {
+      "sha256": "3fc44dd3cbab86d4c677ce8a59cbf7b25ee5e0288d289d49717d385e9655a3c2",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/INTEGRATION_API.md"
+    },
+    "ONBOARDING_API.md": {
+      "sha256": "4768d98d998e65827f8d1a88c4afe6769458e09d0520739eb7eb33b786cbf679",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/ONBOARDING_API.md"
+    },
+    "TOPOLOGY_WORKFLOW.md": {
+      "sha256": "d7491c64b3ee91838fb51f8930b8e5f72180f7d368d67dcef1f43e964f1e6790",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/TOPOLOGY_WORKFLOW.md"
+    },
+    "UPGRADING.md": {
+      "sha256": "88771effa1c910d83cf838f98884e1212528d21eeaaa663b88545c636f143210",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/UPGRADING.md"
+    },
+    "openapi.json": {
+      "sha256": "453a3da60db8035777d6684a14ba9da50efb4c919170ba533147b940604802df",
+      "url": "https://github.com/Zen1988/navis/blob/2a43005e445c2a33f6b6139cc8e8e6d05140feff/docs/api/openapi.json"
+    }
+  },
+  "validation": {
+    "read_only_snapshot_tests": 313,
+    "database_test_skipped": 1,
+    "mock_requests": 9,
+    "mock_responses": 3,
+    "api_paths": 19,
+    "live_deployment_verified": false
+  }
+}

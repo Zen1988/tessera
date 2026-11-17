@@ -64,6 +64,14 @@ local $Kernel::OM=bless {WS=>{},Next=>10,Data=>{},Rows=>{},Launches=>[]},'Integr
 my $B=Kernel::System::TESSERA::IntegrationOnboarding->new(Auth=>$A);
 my $Connection={Preset=>'Navis',Origin=>'https://navis.test',InstanceID=>'instance',Authentication=>$Auth};
 ok(!eval {$B->Save(UserID=>8,Name=>'Test',Connection=>$Connection);1},'unauthorized backend save denied');
+my $Profile={%$Connection,CustomerSimulation=>{Enabled=>1,SourceNamespace=>'collection-a',IdentityNamespace=>'cmdb-a'}};
+ok($B->Validate(dclone($Profile)),'on-demand customer profile validated');
+for my $BadProfile (
+    {Enabled=>1,IdentityNamespace=>''},
+    {Enabled=>1,IdentityNamespace=>"bad\nnamespace"},
+    {Enabled=>1,IdentityNamespace=>'CMDB',BuildID=>'not-allowed'},
+    {Enabled=>[],IdentityNamespace=>'CMDB'},
+) {ok(!eval {$B->Validate({%$Connection,CustomerSimulation=>$BadProfile});1},'invalid or pinned graph profile rejected')}
 my $ID=$B->Save(UserID=>7,Name=>'Navis',Connection=>$Connection);
 is($Kernel::OM->{WS}{$ID}{ValidID},2,'new service disabled');
 is($Kernel::OM->{WS}{$ID}{Config}{Requester}{Transport}{Type},'HTTP::TESSERAIntegration','native web service with safe transport');
@@ -87,8 +95,15 @@ is(scalar(grep {$_->{URL}=~/traces$/} @Calls),1,'single mutating request');
 @Calls=();ok(!$T->RequesterPerformRequest(Operation=>'GraphGet',Data=>{BuildID=>'../escape'})->{Success},'path injection rejected');
 is(scalar @Calls,0,'invalid input never reaches network');
 @Statuses=(403);ok(!$T->RequesterPerformRequest(Operation=>'GraphGet',Data=>{BuildID=>'abc'})->{Success},'403 fails without refresh loop');
+@Calls=();@Statuses=(200);ok($T->RequesterPerformRequest(Operation=>'TopologyByNameGet',Data=>{Name=>'application 1',namespace=>'net a'})->{Success},'named topology lookup supports encoded labels');
+my ($NamedCall)=grep {$_->{URL}=~/by-name/} @Calls;like($NamedCall->{URL},qr{/by-name/application%201\?namespace=net%20a},'label and namespace are individually encoded');
+@Calls=();ok(!$T->RequesterPerformRequest(Operation=>'TopologyByNameGet',Data=>{Name=>'..'})->{Success},'name path traversal rejected');is(scalar @Calls,0,'invalid name never reaches network');
 my $Planner=Kernel::System::TESSERA::NavisPlan->new();
 open my $FH,'<','examples/navis/fixture-input.json' or die $!;local $/;my $Fixture=JSON::PP->new->decode(<$FH>);close $FH;
+my $Auto=$Planner->Request(Flow=>$Fixture->{flow},OnDemand=>1,Namespace=>'collection-a',CallerID=>'tessera-'.('b'x40));
+ok(!exists $Auto->{graph_build_id},'on-demand request has no fixed graph');is($Auto->{namespace},'collection-a','namespace accompanies on-demand flow');
+my $Single=$Planner->Request(Flow=>$Fixture->{flow},OnDemand=>1,CallerID=>'tessera-'.('b'x40));ok(!exists $Single->{namespace},'Navis may resolve one authorized namespace');
+ok(!eval {$Planner->Request(Flow=>$Fixture->{flow},CallerID=>'tessera-'.('b'x40));1},'existing planner callers still require pinned build');
 my $Q=$Planner->Request(Flow=>$Fixture->{flow},BuildID=>$Fixture->{graph_build_id},CallerID=>'tessera-'.('a'x40));
 my $F=$Fixture->{fixture};$F->{trace}{caller_session_id}=$Q->{caller_session_id};$F->{recommendations}{caller_session_id}=$Q->{caller_session_id};
 my %PlanArgs=(Request=>$Q,Trace=>$F->{trace},Recommendations=>$F->{recommendations},Graph=>$F->{graph},Snapshot=>$Fixture->{cmdb_snapshot},Namespace=>$Fixture->{identity_namespace},Action=>'allow');
@@ -100,12 +115,23 @@ is($Plan->{Summary}[0]{Status},'unknown','unknown analysis preserved');
 my $Wrong=dclone($F->{graph});$Wrong->{nodes}[1]{external_identity}=$Wrong->{nodes}[0]{external_identity};
 ok(!eval {$Planner->Prepare(%PlanArgs,Graph=>$Wrong);1},'ambiguous graph identities rejected');
 my $None=$Planner->Prepare(%PlanArgs,Snapshot=>[]);is(scalar @{$None->{Plans}},0,'no CMDB authorization means no targets');
-my @Navis;my $Controller=Kernel::System::TESSERA::NavisControl->new(Async=>$Kernel::OM,Requester=>sub {
-    my %P=@_;push @Navis,\%P;my %Reply=(GraphGet=>$F->{graph},Trace=>$F->{trace},RecommendationsGet=>$F->{recommendations},Ingest=>{ingestion_id=>'10000000-0000-4000-8000-000000000001',status=>'pending_identity'});
+my @Navis;my $ProgressPending=0;my $Controller=Kernel::System::TESSERA::NavisControl->new(Async=>$Kernel::OM,Requester=>sub {
+    my %P=@_;push @Navis,\%P;my %Reply=(GraphGet=>$F->{graph},Trace=>$F->{trace},RecommendationsGet=>$F->{recommendations},IngestionGet=>{ingestion_id=>'10000000-0000-4000-8000-000000000001',status=>'processed'},Ingest=>{ingestion_id=>'10000000-0000-4000-8000-000000000001',status=>'pending_identity'});
+    return {Success=>1,Data=>{collection_run_id=>$P{Data}{CollectionRunID},expected_submissions=>1,expected_items=>0,processing_status=>$ProgressPending?'processing_pending':'complete',upload_complete=>JSON::PP::true,normalization_success=>$ProgressPending?JSON::PP::false:JSON::PP::true,
+        counts=>{received_submissions=>1,processed_submissions=>$ProgressPending?0:1,failed_submissions=>0,pending_submissions=>$ProgressPending?1:0,raw_only_submissions=>0,input_items=>0,processed_items=>0}}} if $P{Invoker} eq 'CollectionProgressGet';
     my $D=dclone($Reply{$P{Invoker}});$D->{caller_session_id}=$P{Data}{caller_session_id} if $P{Invoker} eq 'Trace';
     $D->{caller_session_id}=$P{Data}{CallerSessionID} if $P{Invoker} eq 'RecommendationsGet';return {Success=>1,Data=>$D};
 });
 my $Context={ActorID=>7,NavisWebserviceID=>$ID,BuildID=>$Fixture->{graph_build_id},TargetType=>'Ticket',TargetID=>25,Snapshot=>$Fixture->{cmdb_snapshot},Namespace=>'CMDB'};
+my $DefaultContext={%$Context,TraceMode=>'Default',SourceNamespace=>'collected-net'};delete $DefaultContext->{BuildID};
+my $DefaultAnalysis=$Controller->Analyze(Context=>$DefaultContext,ActorID=>7,Data=>$Fixture->{flow});
+ok($DefaultAnalysis->{Success},'default workflow traces without an application graph');
+my ($DefaultTrace)=grep {$_->{Invoker} eq 'Trace'} @Navis;
+ok(!exists $DefaultTrace->{Data}{graph_build_id},'default trace omits graph ID');
+is($DefaultTrace->{Data}{namespace},'collected-net','default trace uses authorized collection namespace');
+my $DefaultSaved=$Controller->Get(Context=>$DefaultContext,ActorID=>7,AnalysisID=>$DefaultAnalysis->{Data}{AnalysisID})->{Data};
+is($DefaultSaved->{Request}{graph_build_id},$Fixture->{graph_build_id},'server-selected graph UUID retained in evidence');
+@Navis=();
 my $Analyzed=$Controller->Analyze(Context=>$Context,ActorID=>7,Data=>$Fixture->{flow});
 ok($Analyzed->{Success},'TESSERA performs Navis analysis');
 is_deeply([map {$_->{Invoker}} @Navis],[qw(GraphGet Trace RecommendationsGet)],'TESSERA controls context, trace and recommendations');
@@ -130,9 +156,13 @@ my $Envelope={source=>{namespace=>'CMDB',object_class=>'NetworkNode',external_de
 $Kernel::OM->{Rows}{$ReadUID}={State=>'RUNNING',HandlerKey=>'NavisControl',ActorID=>7,TargetType=>'Ticket',TargetID=>25,ExitCode=>0,Continuation=>JSON::PP->new->encode({AnalysisID=>$AnalysisID,Phase=>'READBACK'}),Response=>JSON::PP->new->encode({AnalysisID=>$AnalysisID,PlanDigest=>$Saved->{PlanDigest},Envelopes=>[$Envelope]})};
 ok($Controller->Completed(ExecutionUID=>$ReadUID),'TESSERA stages authenticated readback in Navis');
 is($Navis[-1]{Invoker},'Ingest','TESSERA sends observed rules to Navis');
-is($Controller->Get(Context=>$Context,ActorID=>7,AnalysisID=>$AnalysisID)->{Data}{Status},'NAVIS_STAGED_OPERATOR_PROCESSING_REQUIRED','staging never claims worker/build completion');
+is($Controller->Get(Context=>$Context,ActorID=>7,AnalysisID=>$AnalysisID)->{Data}{Status},'NAVIS_INGESTION_PENDING','staging never claims processing/build completion');
 ok($Controller->Completed(ExecutionUID=>$ReadUID),'repeated completion is harmless');
 is(scalar(grep {$_->{Invoker} eq 'Ingest'} @Navis),1,'readback callback cannot duplicate ingestion');
+my $Processed=$Controller->IngestionStatus(Context=>$Context,ActorID=>7,AnalysisID=>$AnalysisID);
+ok($Processed->{Data}{Processed},'all saved receipts processed successfully');is($Processed->{Data}{GraphStatus},'not_checked','ingestion completion makes no topology readiness claim');
+is($Navis[-1]{Invoker},'CollectionProgressGet','processing reconciliation uses collection totals GET only');
+$ProgressPending=1;my $Pending=$Controller->IngestionStatus(Context=>$Context,ActorID=>7,AnalysisID=>$AnalysisID);ok(!$Pending->{Data}{Processed},'accepted/partially processed collection never completes successfully');is(scalar(grep {$_->{Invoker} eq 'Ingest'} @Navis),1,'processing refresh never repeats an ingestion POST');$ProgressPending=0;
 ok(!eval {$Controller->Get(Context=>{%$Context,TargetID=>26},ActorID=>7,AnalysisID=>$AnalysisID);1},'target scope isolation');
 my $Final=$Controller->Get(Context=>$Context,ActorID=>7,AnalysisID=>$AnalysisID)->{Data};
 is($Final->{ReadbackVerification}[0]{Status},'UNKNOWN','partial readback never becomes verified configuration');

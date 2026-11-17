@@ -1,0 +1,1540 @@
+---
+classes:
+- class: BlueLevel
+  items:
+  - comment: One
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Two
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Three
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Four
+    name: '4'
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Category
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Change::State
+  items:
+  - comment: ''
+    name: approved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: canceled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: failed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending pir
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: rejected
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: requested
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: retracted
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: successful
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Impact
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::Priority
+  items:
+  - comment: ''
+    name: 1 very low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 2 low
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 3 normal
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 4 high
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 5 very high
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::WorkOrder::State
+  items:
+  - comment: ''
+    name: accepted
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: canceled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: created
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ready
+    preferences: {}
+    valid: valid
+- class: ITSM::ChangeManagement::WorkOrder::Type
+  items:
+  - comment: ''
+    name: approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: backout
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: decision
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pir
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: workorder
+    preferences: {}
+    valid: valid
+- class: ITSM::ConfigItem::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: Catalog
+    name: Catalog
+    preferences: {}
+    valid: valid
+  - comment: Configuration
+    name: Configuration
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Control
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Entitlement
+    preferences: {}
+    valid: valid
+  - comment: Facility, UPS, SFP and others
+    name: Facility Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Network Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: Workload Infrastructure
+    name: Workload Infrastructure
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Workplace
+    preferences: {}
+    valid: valid
+- class: ITSM::ConfigItem::DeploymentState
+  items:
+  - comment: ''
+    name: Expired
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Inactive
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Maintenance
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Pilot
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Planned
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Production
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Repair
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences:
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Test/QA
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+- class: ITSM::ConfigItem::YesNo
+  items:
+  - comment: ''
+    name: No
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Yes
+    preferences: {}
+    valid: valid
+- class: ITSM::Core::IncidentState
+  items:
+  - comment: ''
+    name: Incident
+    preferences:
+      Functionality:
+      - incident
+    valid: valid
+  - comment: ''
+    name: Operational
+    preferences:
+      Functionality:
+      - operational
+    valid: valid
+  - comment: ''
+    name: Warning
+    preferences:
+      Functionality:
+      - warning
+    valid: valid
+- class: ITSM::SLA::Type
+  items:
+  - comment: ''
+    name: Availability
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Errors
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Other
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Recovery Time
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Resolution Rate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Response Time
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Transactions
+    preferences: {}
+    valid: valid
+- class: ITSM::Service::Type
+  items:
+  - comment: ''
+    name: Access Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Application Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Back End
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Backup Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Common Service Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Compute Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Demonstration
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Directory Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: End User Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: File Transfer Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Front End
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: General Assist
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Infra Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: IT Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: IT Operational
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Network Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Other
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Platform Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Privileged Access Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Project
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Protection Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reporting
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Security Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Server Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Storage Management
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Training
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Underpinning Contract
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Vulnerability Management
+    preferences: {}
+    valid: valid
+- class: IncidentSeverity
+  items:
+  - comment: Critical
+    name: P1
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: P2
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: P3
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: P4
+    preferences: {}
+    valid: valid
+- class: RiskLevel
+  items:
+  - comment: Critical Risk
+    name: CRITICAL
+    preferences: {}
+    valid: valid
+  - comment: High Risk
+    name: HIGH
+    preferences: {}
+    valid: valid
+  - comment: Low Risk
+    name: LOW
+    preferences: {}
+    valid: valid
+  - comment: Medium Risk
+    name: MEDIUM
+    preferences: {}
+    valid: valid
+- class: Service
+  items:
+  - comment: Application Performance Monitoring
+    name: Application Performance Monitoring
+    preferences: {}
+    valid: valid
+  - comment: Command Center Services
+    name: Command Center Services
+    preferences: {}
+    valid: valid
+  - comment: EUCD Management
+    name: EUCD Management
+    preferences: {}
+    valid: valid
+  - comment: General
+    name: General
+    preferences: {}
+    valid: valid
+  - comment: Infrastructure & HQ Support
+    name: Infrastructure & HQ Support
+    preferences: {}
+    valid: valid
+  - comment: Network Management
+    name: Network Management
+    preferences: {}
+    valid: valid
+  - comment: Onboarding Service
+    name: Onboarding Service
+    preferences: {}
+    valid: valid
+  - comment: Patch Management
+    name: Patch Management
+    preferences: {}
+    valid: valid
+  - comment: Professional Services
+    name: Professional Services
+    preferences: {}
+    valid: valid
+  - comment: Security Management
+    name: Security Management
+    preferences: {}
+    valid: valid
+  - comment: Server Management
+    name: Server Management
+    preferences: {}
+    valid: valid
+  - comment: Service Management
+    name: Service Management
+    preferences: {}
+    valid: valid
+- class: SystemEnvironment
+  items:
+  - comment: Developer build / initial testing
+    name: DEV
+    preferences: {}
+    valid: valid
+  - comment: Disaster Recovery
+    name: DR
+    preferences: {}
+    valid: valid
+  - comment: Performance / Load Testing
+    name: PERF
+    preferences: {}
+    valid: valid
+  - comment: Pre Production
+    name: PRE-PROD
+    preferences: {}
+    valid: valid
+  - comment: Production
+    name: PROD
+    preferences: {}
+    valid: valid
+  - comment: Ad-hoc / experimental
+    name: SANDBOX
+    preferences: {}
+    valid: valid
+  - comment: System Integration Testing
+    name: SIT
+    preferences: {}
+    valid: valid
+  - comment: User Acceptance Testing
+    name: UAT
+    preferences: {}
+    valid: valid
+- class: ZRM::Impact
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Negligible
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Minor
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Moderate
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Major
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Severe
+    name: '5'
+    preferences: {}
+    valid: valid
+- class: ZRM::ImpactCategory
+  items:
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Governance
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: Technical
+    name: Technical
+    preferences: {}
+    valid: valid
+- class: ZRM::Likelihood
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Rare
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: Unlikely
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Possible
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Likely
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Almost Certain
+    name: '5'
+    preferences: {}
+    valid: valid
+- class: ZRM::RiskCategory
+  items:
+  - comment: Business Continuity
+    name: Business Continuity
+    preferences: {}
+    valid: valid
+  - comment: Compliance
+    name: Compliance
+    preferences: {}
+    valid: valid
+  - comment: Cybersecurity
+    name: Cybersecurity
+    preferences: {}
+    valid: valid
+  - comment: Data
+    name: Data
+    preferences: {}
+    valid: valid
+  - comment: Financial
+    name: Financial
+    preferences: {}
+    valid: valid
+  - comment: Operational
+    name: Operational
+    preferences: {}
+    valid: valid
+  - comment: Resource
+    name: Resource
+    preferences: {}
+    valid: valid
+  - comment: Strategic
+    name: Strategic
+    preferences: {}
+    valid: valid
+  - comment: Technology
+    name: Technology
+    preferences: {}
+    valid: valid
+  - comment: Vendor
+    name: Vendor
+    preferences: {}
+    valid: valid
+- class: ZRM::RiskLevel
+  items:
+  - comment: Not Applicable
+    name: '0'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '1'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '10'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '11'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '12'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '13'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '14'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '15'
+    preferences: {}
+    valid: valid
+  - comment: High
+    name: '16'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '17'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '18'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '19'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '2'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '20'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '21'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '22'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '23'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '24'
+    preferences: {}
+    valid: valid
+  - comment: Critical
+    name: '25'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '3'
+    preferences: {}
+    valid: valid
+  - comment: Low
+    name: '4'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '5'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '6'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '7'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '8'
+    preferences: {}
+    valid: valid
+  - comment: Medium
+    name: '9'
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::CPU
+  items:
+  - comment: ARM
+    name: ARM
+    preferences: {}
+    valid: valid
+  - comment: POWER
+    name: POWER
+    preferences: {}
+    valid: valid
+  - comment: RISC-V
+    name: RISC-V
+    preferences: {}
+    valid: valid
+  - comment: SPARC
+    name: SPARC
+    preferences: {}
+    valid: valid
+  - comment: x86_32
+    name: x86_32
+    preferences: {}
+    valid: valid
+  - comment: x86_64
+    name: x86_64
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::CpuType
+  items:
+  - comment: ''
+    name: ASIC
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: FPGA
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: GPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NPU
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: TPU
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::DiskType
+  items:
+  - comment: ''
+    name: HDD
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NVMe
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Object Storage
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: SAN LUN
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: SSD
+    preferences: {}
+    valid: valid
+- class: ZTAM::Build::InterfaceType
+  items:
+  - comment: ''
+    name: 100G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 100M Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Fibre MM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 10G Ethernet Fibre SM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 16G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Copper
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Fibre MM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 1G Ethernet Fibre SM
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 25G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 32G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 40G Ethernet Fibre
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: 8G Fibre Channel
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Virtual
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Wireless
+    preferences: {}
+    valid: valid
+- class: ZTAM::Run::FilesystemType
+  items:
+  - comment: ''
+    name: exFAT
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: EXT3
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: EXT4
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: NTFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: swap
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: tmpfs
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: VFAT
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: VMFS
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: vSAN
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: XFS
+    preferences: {}
+    valid: valid
+- class: ZTSM::GovernanceObject::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service
+    preferences: {}
+    valid: valid
+- class: ZTSM::GovernanceObject::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Context
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: Profile
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: Reference
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: Service
+    name: Service
+    preferences: {}
+    valid: valid
+- class: ZTSM::GovernanceObject::Definition
+  items:
+  - comment: ''
+    name: ClassDefinition
+    preferences: {}
+    valid: valid
+- class: ZTSM::GovernanceObject::Status
+  items:
+  - comment: ''
+    name: Active
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Approved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Draft
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Event
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Log
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Metric
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Trace
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Class
+  items:
+  - comment: ''
+    name: Alert
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
+  - comment: ''
+    name: Risk
+    preferences:
+      Categories:
+      - All
+      - Event
+      NameModule:
+      - ''
+      NumberModule:
+      - MELTID
+      VersionStringExpression:
+      - ''
+      VersionStringModule:
+      - Incremental
+      VersionTrigger:
+      - DefinitionUpdate
+    valid: valid
+- class: ZTSM::MELT::Class::Category
+  items:
+  - comment: ''
+    name: All
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assignment
+    preferences: {}
+    valid: valid
+  - comment: Business
+    name: Business
+    preferences: {}
+    valid: valid
+  - comment: Context
+    name: Context
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Event
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Governance
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Log
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Metric
+    preferences: {}
+    valid: valid
+  - comment: Profile
+    name: Profile
+    preferences: {}
+    valid: valid
+  - comment: Reference
+    name: Reference
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Runtime
+    preferences: {}
+    valid: valid
+  - comment: Service
+    name: Service
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Trace
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Definition
+  items:
+  - comment: ''
+    name: ClassDefinition
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Role
+  items:
+  - comment: ''
+    name: Alert
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CMDB Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: CMDB Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Backlinks
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: MELT Description
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Risk
+    preferences: {}
+    valid: valid
+- class: ZTSM::MELT::Status
+  items:
+  - comment: ''
+    name: Active
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Aged-out
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Approved
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: Closed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Draft
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Duplicate
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Escalated
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+  - comment: ''
+    name: False Positive
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Resolved
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Retired
+    preferences:
+      Functionality:
+      - postproductive
+    valid: valid
+  - comment: ''
+    name: Review
+    preferences:
+      Functionality:
+      - preproductive
+    valid: valid
+  - comment: ''
+    name: Suppressed
+    preferences:
+      Color:
+      - ''
+      Functionality:
+      - productive
+    valid: valid
+- class: ZTSM::RequestType
+  items:
+  - comment: ''
+    name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ServiceRequest
+    preferences: {}
+    valid: valid
+- class: ZTSM::State
+  items:
+  - comment: ''
+    name: approve
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: assess
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: cancelled
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed duplicate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed no action
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed rejected
+    preferences: {}
+    valid: valid
+  - comment: Resolved
+    name: closed resolved
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed rollback
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed successful
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed unsuccessful
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: closed with workaround
+    preferences: {}
+    valid: valid
+  - comment: diag
+    name: diagnose
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: endorse
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: in-progress
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: merged
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: new
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: onhold
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: open
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending auto close+
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending auto close-
+    preferences: {}
+    valid: valid
+  - comment: Pending Confirmation
+    name: pending confirmation
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: pending reminder
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: rejected
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: remediate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: removed
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: validate
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: verify
+    preferences: {}
+    valid: valid
+- class: ZTSM::Type
+  items:
+  - comment: ''
+    name: Approval
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Assessment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Automation
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Change
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Confirmation
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Diagnosis
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Endorsement
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Incident
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Problem
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: RiskTreatment
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: ServiceRequest
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Task
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Unclassified
+    preferences: {}
+    valid: valid
+  - comment: ''
+    name: Verification
+    preferences: {}
+    valid: valid

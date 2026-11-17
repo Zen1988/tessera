@@ -1,3 +1,5 @@
+> Superseded proposal: use [the current Navis workflow](integrations/navis.md). Do not implement mandatory PROD selection or per-environment pinned UUID from this design.
+
 # Customer network simulation workspace
 
 Requirements intake, 2026-11-02. The Base187 implementation and its supported

@@ -1,0 +1,169 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2024 Rother OSS GmbH, https://ncs.com.sg
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+{% if NumberOfSubservices %}
+   <!-- <span class="oooSubservices ooo12g" data-service-id="{{ ID }}">{{ NumberOfSubservices }} {{ 'sub-service(s) available' | Translate }}</span> -->
+{% endif %}
+<div data-service-id="{{ ID }}" class="oooDetailedServiceContainer">
+    <div class="oooDetailedLeft">
+        <div class="oooDetailedServiceName">
+            <h2>{{ Name }}</h2>
+            <!-- <p>{{ DescriptionShort }}</p> -->
+        </div>
+        <div class="oooDetailedDescriptionLong">
+            <iframe sandbox="allow-same-origin allow-popups ms-allow-popups allow-popups-to-escape-sandbox" title="about:blank" frameborder="0" class="VisibleFrame" src="{{ IframeLink }}"></iframe>
+        </div>
+    </div>
+    <div class="oooDetailedRight">
+        <div class="oooDetailedTicketTypeList">
+            {% if TypeList %}
+                {% for TypeName, Type in TypeList %}
+                    {% if loop.index0 < 3 %}    
+                        <a title="{{ 'Create a new ticket of type %s.' | Translate(TypeName) }}" href="{{ Baselink }}Action=CustomerTicketMessage;ServiceID={{ ID }};TypeID={{ Type.ID }}"><i class="ooofo ooofo-faq {{ Type.Classes }}"></i> 
+                            <span>{{ 'Create %s' | Translate(TypeName) }}</span>
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            {# {% else %}
+                <i class="ooofo ooofo-faq"></i><a href="{{ Baselink }}Action=CustomerTicketMessage;ServiceID={{ ID }}"> {{ 'Create Ticket' | Translate }}</a><br> #}
+            {% endif %}
+        </div>
+
+        <div class="oooDetailedAccordionList">
+
+        {% if FAQArticleList %}
+            <div class="oooDetailedAccordion WidgetSimple {% if AdditionalInformation %}Collapsed{% else %}Expanded{% endif %} Animate">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="{{ 'Show or hide the content' | Translate }}">
+                            <h3>{{ 'FAQ article on this topic' | Translate }}</h3>
+                            <div class="oooNumberOfEntries"><span>{{ FAQArticleList.length }}</span></div>
+                            <i class="ooofo ooofo-arrow_u"></i>
+                            <i class="ooofo ooofo-arrow_d"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="oooDetailedFAQ Content" {% if AdditionalInformation %}style="display: none;"{% else %}{% endif %}>
+                    {% for FAQArticle in FAQArticleList %}
+                            <a href="{{ Baselink }}Action=CustomerFAQZoom;ItemID={{ FAQArticle.ItemID }}" title="{{ FAQArticle.Title }}">
+                                <div class="oooDetailedFAQItem">
+                                    <p class="oooDetailedAccordionCaption">{{ FAQArticle.Title }}</p>
+                                    <div class="oooFAQDescription">{{ FAQArticle.Description }}</div>
+                                    <span class="oooFAQDetailsHint oooHidden">{{ 'Details' | Translate }}</span>
+                                </div>
+                            </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if AdditionalInformation %}
+            <div class="oooDetailedAccordion WidgetSimple {% if FAQArticleList %}Collapsed{% else %}Expanded{% endif %} Animate">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="{{ 'Show or hide the content' | Translate }}">
+                            <h3>{{ 'Additional information' | Translate }}</h3>
+                            <i class="ooofo ooofo-arrow_u"></i>
+                            <i class="ooofo ooofo-arrow_d"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="oooDetailedAdditionalInformation Content" {% if FAQArticleList %}style="display: none;"{% else %}{% endif %}>
+                    <div>
+                        {% if WorkingHours or FirstResponseTime or SolutionTime %}
+                            <p class="oooDetailedAccordionCaption oooDetailedSubtitle">{{ 'Service hours' | Translate }}</p>
+                            {% if WorkingHours %}
+                                <p class="oooSLALabel"> 
+                                    <span class="ooo12">
+                                        {% for Run in WorkingHours %}
+                                            {{ Run.StartDay | Translate(Run.StartDay) }}{% if Run.LastDay != Run.StartDay %}&#8211;{{ Run.LastDay | Translate(Run.LastDay) }}{% endif %} {{ Run.FirstHour }}&#8211;{{ Run.LastHour }} {{ "o'clock" | Translate }}
+                                            <br>
+                                        {% endfor %}
+                                    </span>
+                                </span>
+                            {% endif %}
+                            {% if FirstResponseTime %}
+                                <p class="ooo12">{{ 'First Response Time' | Translate }}: {{ FirstResponseTime }} {{ 'hour(s)' | Translate }}</p>
+                            {% endif %}
+                            {% if SolutionTime %}
+                                <p class="ooo12">{{ 'Solution Time' | Translate }}: {{ SolutionTime }} {{ 'hour(s)' | Translate }}</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if DynamicFieldList %}
+                            <p class="oooDetailedAccordionCaption oooDetailedSubtitle">{{ 'Service Information' | Translate }}</p>
+                            {% for DFData in DynamicFieldList %}
+                                {% if DFData.Link %}
+                                <p class="ooo12"><span>{{ DFData.Label }}:</span> <a href="{{ DFData.Link }}" class="DynamicFieldLink" {% if DFData.LinkPreview %} data-trigger="floater" data-floater-url="{{ DFData.LinkPreview }}"{% endif %} target="_blank">{{ DFData.Value }}</a>
+                                {% else %}
+                                <p class="ooo12"><span>{{ DFData.Label }}:</span> {{ DFData.Value }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    {# <iframe sandbox="allow-same-origin allow-popups ms-allow-popups allow-popups-to-escape-sandbox" title="about:blank" frameborder="0" class="VisibleFrame" src="{{ IframeLinkDynamicField }}"></iframe> #}
+                </div>
+            </div>
+        {% else %}
+            <div class="oooDetailedAccordion WidgetSimple {% if FAQArticleList %}Collapsed{% else %}Expanded{% endif %} Animate">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="{{ 'Show or hide the content' | Translate }}">
+                            <h3>{{ 'Additional information' | Translate }}</h3>
+                            <i class="ooofo ooofo-arrow_u"></i>
+                            <i class="ooofo ooofo-arrow_d"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="oooDetailedAdditionalInformation Content" {% if FAQArticleList %}style="display: none;"{% else %}{% endif %}>        
+                    <div>
+                        <p class="oooDetailedAccordionCaption oooDetailedSubtitle">{{ 'No additional data are available.' | Translate }}</p>
+                    </div>            
+                </div>
+            </div>
+        {% endif %}
+
+        {% if SubservicesHTML | length > 0 %}
+            <div class="oooDetailedAccordion WidgetSimple Collapsed Animate">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="{{ 'Show or hide the content' | Translate }}">
+                            <h3>{{ 'Sub-Service(s)' | Translate }}</h3>
+                            <div class="oooNumberOfEntries"><span>{{ NumberOfSubservices }}</span></div>
+                            <i class="ooofo ooofo-arrow_u"></i>
+                            <i class="ooofo ooofo-arrow_d"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="oooDetailedSubservices Content" style="display: none;">
+                    {% for Subservice in SubservicesHTML %}
+                        {{ Subservice | safe }}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        </div>
+    </div>
+
+    <a id="oooDetailedToggleSidebar" href="#" title="{{ 'Further information' | Translate }}" accesskey="n">
+        <button>
+            <i class="ooofo ooofo-more_v"></i>
+        </button>
+    </a>
+
+</div>

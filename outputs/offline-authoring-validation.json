@@ -1,0 +1,60 @@
+{
+  "examples": [
+    {
+      "example": "governance_role_dynamic_resolver.yml",
+      "validation": "selection",
+      "passed": true
+    },
+    {
+      "example": "governance_role_requester.yml",
+      "validation": "selection",
+      "passed": true
+    },
+    {
+      "example": "control_discovery_advisories.yml",
+      "validation": "selection",
+      "passed": true
+    },
+    {
+      "example": "control_discovery_products.yml",
+      "validation": "selection",
+      "passed": true
+    },
+    {
+      "example": "entitlement_risk_master_ticket.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "product_eosl_entitlement_risk_assignment.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "product_eosl_evaluation.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "product_eosl_risk_assignment.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "security_advisory_evaluation.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "security_advisory_risk_assignment.yml",
+      "validation": "yaml",
+      "passed": true
+    },
+    {
+      "example": "vulnerability_questionnaire_scoring.yml",
+      "validation": "yaml",
+      "passed": true
+    }
+  ],
+  "live_runtime_evaluation": false
+}

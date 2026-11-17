@@ -1,0 +1,47 @@
+---
+- name: Read one approved inventory context
+  block:
+    - name: Match inventory identity to backend selection
+      ansible.builtin.assert:
+        that:
+          - network_candidate.InventoryName in hostvars
+          - hostvars[network_candidate.InventoryName].tessera_platform == network_candidate.Platform
+          - hostvars[network_candidate.InventoryName].tessera_context == network_candidate.Context
+          - network_candidate.Context is match('^[A-Za-z0-9_.-]{1,100}$')
+      no_log: true
+    - name: Read ASA context without configuration commands
+      cisco.asa.asa_command:
+        context: "{{ network_candidate.Context if network_candidate.Context != 'single' else omit }}"
+        commands:
+          - show running-config interface
+          - show route
+          - show running-config access-group
+          - show running-config nat
+          - show access-list
+      delegate_to: "{{ network_candidate.InventoryName }}"
+      register: network_asa
+      when: network_candidate.Platform == 'asa'
+      no_log: true
+    - name: Normalize ASA evidence or collect manager API evidence
+      tessera_network_collect:
+        candidate: "{{ network_candidate }}"
+        source: "{{ tessera_network.Source.Address }}"
+        destination: "{{ tessera_network.Destination.Address }}"
+        host: "{{ hostvars[network_candidate.InventoryName].tessera_manager | default('') }}"
+        username: "{{ hostvars[network_candidate.InventoryName].tessera_username | default('') }}"
+        password: "{{ hostvars[network_candidate.InventoryName].tessera_password | default('') }}"
+        token: "{{ hostvars[network_candidate.InventoryName].tessera_token | default('') }}"
+        ca_file: "{{ hostvars[network_candidate.InventoryName].tessera_ca_file | default(omit) }}"
+        options: "{{ hostvars[network_candidate.InventoryName].tessera_options | default({}) }}"
+        asa_output: "{{ dict(interfaces=network_asa.stdout[0], routes=network_asa.stdout[1], access_groups=network_asa.stdout[2], nat=network_asa.stdout[3], access_lists=network_asa.stdout[4]) if network_candidate.Platform == 'asa' else {} }}"
+      register: network_collected
+      no_log: true
+    - name: Preserve structured and raw evidence
+      ansible.builtin.set_fact:
+        network_devices: "{{ network_devices + [network_collected.evidence] }}"
+      no_log: true
+  rescue:
+    - name: Preserve failed context without leaking API errors
+      ansible.builtin.set_fact:
+        network_devices: "{{ network_devices + [network_candidate | combine({'Status': 'FAILED'})] }}"
+      no_log: true

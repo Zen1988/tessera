@@ -1,4 +1,14 @@
-# Current deployment — TESSERA0.1.0
+# Current image preparation — TESSERA-Base0.1.5
+
+Install the0.1.5 OPM normally on the source OTOBO host first. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.5-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
+
+Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.5, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
+
+0.1.5 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
+
+---
+
+# Current deployment â€” TESSERA0.1.0
 
 From the prepared build directory, use ONE wrapper command. It creates a unique
 bundle PVC per attempt and enables success-only cleanup automatically:
@@ -38,7 +48,7 @@ still requires the corresponding guarded recovery, not a fresh deployment.
 
 ---
 
-# Historical196 incident — resume only its recorded pre-native-Job checkpoint
+# Historical196 incident â€” resume only its recorded pre-native-Job checkpoint
 
 If the helper has claimed maintenance/scaled web but waited on retained old failed
 Job Pods, stop the old local command with Ctrl-C. Do not clear the maintenance
@@ -103,7 +113,7 @@ older volumes. Do not delete/reupload those blindly; use the wrapper's new PVC.
 The new scripts require no image/OPM rebuild and can be extracted into an existing
 toolkit folder. Native Kubernetes cleanup behavior still requires live acceptance.
 
-# 2026-11-13 — Separate one-time upgrade bundle
+# 2026-11-13 â€” Separate one-time upgrade bundle
 
 Runtime images contain installed application files plus small release/package
 inventory metadata. They do not contain OPM archives. Preparation generates
@@ -156,7 +166,7 @@ and Base payload checks remain. Legacy179 recovery scripts target old embedded-
 OPM images; use the new controlled bundle flow for new images. Live Linux/
 MariaDB/Kubernetes acceptance remains pending.
 
-# Complete TESSERA application image kit — Ubuntu26.04
+# Complete TESSERA application image kit â€” Ubuntu26.04
 
 For multiple web Pods, use the [shared generated JS/CSS cache setup](examples/shared-loader-cache/README.md).
 It adds a Longhorn RWX claim and nonroot initialization/targeted mounts to the

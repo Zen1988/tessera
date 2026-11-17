@@ -1,4 +1,5 @@
 """Package source/build scripts only. Never include app/config/PKI/private data."""
+import argparse
 import hashlib
 from pathlib import Path
 import stat
@@ -11,7 +12,9 @@ ROOT_FILES={'Dockerfile','Dockerfile.tlsproxy','.dockerignore','.gitignore',
 SUFFIXES={'.sh','.py','.pl','.conf','.cnf','.exclude','.yaml','.md'}
 
 def main():
-    out=ROOT/'outputs/TESSERA-Ubuntu26.04-Container-Toolkit.zip'
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output',type=Path,default=ROOT/'outputs/TESSERA-Ubuntu26.04-Container-Toolkit.zip')
+    out=parser.parse_args().output.resolve()
     out.parent.mkdir(parents=True,exist_ok=True)
     included={}
     for p in KIT.rglob('*'):

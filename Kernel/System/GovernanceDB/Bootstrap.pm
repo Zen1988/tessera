@@ -148,6 +148,12 @@ sub InstallDefaults {
     $Self->_FAQApplicationScreensEnsure();
 
     $Self->_TicketRuntimeDynamicFieldsEnsure();
+    $Kernel::OM->ObjectsDiscard(Objects => ['Kernel::System::TESSERA::ChangeClassificationInstaller'], ForcePackageReload => 1);
+    die 'Change decision fields installation failed.'
+        if !$Kernel::OM->Get('Kernel::System::TESSERA::ChangeClassificationInstaller')->Ensure();
+    $Kernel::OM->ObjectsDiscard(Objects => ['Kernel::System::TESSERA::ApplicationNavisInstaller'], ForcePackageReload => 1);
+    die 'Application Navis label installation failed.'
+        if !$Kernel::OM->Get('Kernel::System::TESSERA::ApplicationNavisInstaller')->Ensure();
     $Self->_FirewallProtocolCaseEnsure();
 
     $Self->_RuntimePrerequisitesEnsure();

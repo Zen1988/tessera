@@ -14,6 +14,13 @@ sub Run {
     my $CI = $ID ? $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet( ConfigItemID => $ID ) : undef;
     return $Layout->ErrorScreen( Message => Translatable('No ConfigItem found!') ) if !$CI;
     my $Rows = $Kernel::OM->Get('Kernel::System::ITSMConfigItem::Activity')->ActivityList( ConfigItemID => $ID );
+    for my $Row ( @{$Rows} ) {
+        next if !$Row->{CreateTime};
+        my $Date = $Kernel::OM->Create('Kernel::System::DateTime', ObjectParams => { String => $Row->{CreateTime} });
+        my $Zone = $Self->{UserTimeZone} || $Date->UserDefaultTimeZoneGet();
+        $Row->{DisplayTime} = $Date->ToTimeZone( TimeZone => $Zone )
+            ? $Date->ToString() . " ($Zone)" : $Row->{CreateTime};
+    }
     return join '', $Layout->Header( Type => 'Small', Title => Translatable('Asset Activity Articles') ),
         $Layout->Output( TemplateFile => 'AgentITSMConfigItemActivity', Data => {
             %Param, ConfigItemID => $ID, Number => $CI->{Number}, Name => $CI->{Name}, Activities => $Rows,

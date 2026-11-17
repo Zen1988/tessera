@@ -1,0 +1,28 @@
+/* Owned by the Security Advisory workspace; override native floating form labels. */
+.TESSERAAdvisory{margin:0 0 0 58px;padding:2.5rem clamp(1rem,5vw,5.25rem);color:#000333;background:#f7f7fa;min-height:80vh;box-sizing:border-box}
+.TESSERAAdvisory .AdvisoryHeader{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.TESSERAAdvisory h1{font-size:2rem;margin:0}.TESSERAAdvisory .AdvisoryToolbar{display:flex;flex-wrap:wrap;gap:.75rem}
+.TESSERAAdvisory button,.TESSERAAdvisory .AdvisoryButton{display:inline-flex;align-items:center;justify-content:center;background:#1010ff;color:#fff;border:0;border-radius:2rem;padding:.8rem 1.25rem;text-decoration:none;cursor:pointer;font:inherit}
+.TESSERAAdvisory button:disabled{opacity:.5;cursor:default}
+.TESSERAAdvisory .AdvisoryViewToggle{display:flex;width:max-content;margin:0 0 1.5rem auto;border:1px solid #d9dbea;border-radius:2rem;overflow:hidden;background:#fff}
+.TESSERAAdvisory .AdvisoryViewToggle a{padding:.8rem 1.25rem;color:#000333;text-decoration:none}.TESSERAAdvisory .AdvisoryViewToggle [aria-current=page]{background:#000333;color:#fff}
+.TESSERAAdvisory .AdvisoryPanel{background:#fff;border:1px solid #e4e6f0;border-radius:1rem;padding:1.5rem;margin-bottom:1.5rem}
+.TESSERAAdvisory form{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:1rem;align-items:start}
+.TESSERAAdvisory form>label{position:static;float:none;display:block;width:auto;margin:0;padding:.65rem 0;transform:none;color:#000333;text-align:left}
+.TESSERAAdvisory form>input[type=hidden]{display:none}
+.TESSERAAdvisory form>input:not([type=hidden]),.TESSERAAdvisory form>select,.TESSERAAdvisory form>textarea{grid-column:2;float:none;margin:0}
+.TESSERAAdvisory fieldset,.TESSERAAdvisory form>button,.TESSERAAdvisory form>div,.TESSERAAdvisory form>p{grid-column:1/-1;min-width:0}
+.TESSERAAdvisory input:not([type=hidden]),.TESSERAAdvisory textarea,.TESSERAAdvisory select{box-sizing:border-box;width:100%;max-width:100%;padding:.65rem;border:1px solid #c9cede;border-radius:.5rem;background:#fff;color:#000333}
+.TESSERAAdvisory fieldset{padding:1rem;border:1px solid #ccd2dc;border-radius:.5rem}.TESSERAAdvisory fieldset label{position:static;float:none;display:block;width:auto;margin:.7rem 0 .3rem;color:#000333}
+.TESSERAAdvisory .AdvisoryFormActions{display:flex;gap:.75rem;flex-wrap:wrap}.TESSERAAdvisory [hidden]{display:none!important}.TESSERAAdvisory #AdvisoryCondition{font-family:monospace}
+.TESSERAAdvisory .AdvisoryMetrics{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.75rem}.TESSERAAdvisory .AdvisoryMetric{background:#fff;border:1px solid #e5e7f0;border-radius:.875rem;padding:1.1rem;min-height:100px;min-width:0;box-sizing:border-box}.TESSERAAdvisory .AdvisoryMetric strong{display:block;font-size:1.75rem;margin-top:.75rem}.TESSERAAdvisory .AdvisoryNote{font-size:.875rem;margin-top:1rem}
+.TESSERAAdvisory .AdvisoryTableScroll{overflow:auto;background:#fff;border-radius:.75rem}.TESSERAAdvisory table{width:100%;border-collapse:collapse}.TESSERAAdvisory td,.TESSERAAdvisory th{padding:1rem;text-align:left;border-bottom:1px solid #e5e7f0;min-width:130px;max-width:350px;overflow-wrap:anywhere;white-space:pre-wrap}
+.TESSERAAdvisory :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #2375cf;outline-offset:2px}
+@media(max-width:650px){.TESSERAAdvisory{padding:1rem;margin-left:58px}.TESSERAAdvisory form{grid-template-columns:1fr}.TESSERAAdvisory form>input:not([type=hidden]),.TESSERAAdvisory form>select,.TESSERAAdvisory form>textarea{grid-column:1}.TESSERAAdvisory form>label{padding:0}.TESSERAAdvisory .AdvisoryViewToggle{margin-left:0}.TESSERAAdvisory h1{font-size:1.5rem}}
+
+.TESSERAAdvisory .AdvisoryField{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:1rem;min-width:0}.TESSERAAdvisory .AdvisoryField>label{position:static!important;float:none!important;display:block!important;width:auto!important;height:auto!important;margin:0!important;padding:.65rem 0!important;transform:none!important;color:#000333!important;text-align:left!important}.TESSERAAdvisory .AdvisoryField>fieldset{grid-column:1/-1}.TESSERAAdvisory .AdvisoryField>:not(label):not(fieldset){min-width:0;grid-column:2}.TESSERAAdvisory .AdvisoryField .cke{width:100%!important;box-sizing:border-box}@media(max-width:650px){.TESSERAAdvisory .AdvisoryField{grid-template-columns:1fr}.TESSERAAdvisory .AdvisoryField>:not(label):not(fieldset){grid-column:1}}
+
+@media(max-width:1100px){.TESSERAAdvisory .AdvisoryMetrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:650px){.TESSERAAdvisory .AdvisoryMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.TESSERAAdvisory a.AdvisoryMetric{display:block;color:inherit;text-decoration:none}.TESSERAAdvisory a.AdvisoryMetric:hover,.TESSERAAdvisory a.AdvisoryMetric[aria-current=true]{border-color:#1010ff;background:#f0f1ff}.TESSERAAdvisory #AdvisoryDetails{margin-top:1.5rem;scroll-margin-top:1rem}

@@ -1,3 +1,5 @@
+> For current customer simulation use [Navis workflow](integrations/navis.md). Base0.1.5 moves connection/identity/optional label setup here; old per-environment BuildID instructions below are superseded.
+
 # Integration onboarding and TESSERA-controlled Navis execution
 
 Prepared in TESSERA-Base 0.0.186. Not installed or live-validated here.

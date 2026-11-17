@@ -27,6 +27,7 @@ our @ObjectDependencies = (
     'Kernel::System::CSV',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::GovernanceObject::Document',
     'Kernel::System::HTMLUtils',
     'Kernel::System::JSON',
     'Kernel::System::Log',
@@ -349,17 +350,17 @@ sub _RowFromTicket {
     return {
         ticket_id       => $Ticket->{TicketID} // '',
         type            => $Ticket->{Type} // '',
-        parent          => $Ticket->{'DynamicField_ZTicket-Parent'} // '',
+        parent          => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-Parent', UserID => $UserID ),
         title           => $Ticket->{Title} // '',
         description     => $Self->_DescriptionGet( TicketID => $Ticket->{TicketID} ),
-        application     => $Ticket->{'DynamicField_ZTicket-Application'} // '',
-        environment     => $Ticket->{'DynamicField_ZTicket-Env'} // '',
-        location        => $Ticket->{'DynamicField_ZTicket-Location'} // '',
+        application     => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-Application', UserID => $UserID ),
+        environment     => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-Env', UserID => $UserID ),
+        location        => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-Location', UserID => $UserID ),
         created_date    => $Ticket->{Created} // $Ticket->{CreateTime} // '',
         created_by      => $CreatedBy,
         customer_data   => $Kernel::OM->Get('Kernel::System::JSON')->Encode( Data => \%CustomerData ) || '',
-        ownergroup      => $Ticket->{'DynamicField_ZTicket-OwnerGroup'} // '',
-        owner           => $Ticket->{'DynamicField_ZTicket-Owner'} // '',
+        ownergroup      => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-OwnerGroup', UserID => $UserID ),
+        owner           => $Self->_PortableDynamicFieldValue( Ticket => $Ticket, Name => 'ZTicket-Owner', UserID => $UserID ),
         state           => $Ticket->{State} // '',
         service         => $Service,
         service_payload => $Self->_ServicePayloadJSON(
@@ -407,13 +408,34 @@ sub _ServicePayloadJSON {
 
         my $Value = $Ticket->{$Key};
         my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $FieldName );
-        if ( IsHashRefWithData($Config) && ( $Config->{FieldType} || '' ) eq 'RichText' ) {
-            $Value = $Self->_RichTextToText($Value);
+        if ( IsHashRefWithData($Config) ) {
+            $Value = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->ValueForExport(
+                DynamicFieldConfig => $Config,
+                Value              => $Value,
+                UserID             => $Param{UserID} || 1,
+            );
         }
         $Payload{$FieldName} = $Value;
     }
 
     return $Kernel::OM->Get('Kernel::System::JSON')->Encode( Data => \%Payload ) || '{}';
+}
+
+sub _PortableDynamicFieldValue {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Ticket}->{ 'DynamicField_' . $Param{Name} };
+    return '' if !defined $Value;
+
+    my $Config = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet( Name => $Param{Name} );
+    return $Value if !IsHashRefWithData($Config);
+
+    my $PortableValue = $Kernel::OM->Get('Kernel::System::GovernanceObject::Document')->ValueForExport(
+        DynamicFieldConfig => $Config,
+        Value              => $Value,
+        UserID             => $Param{UserID} || 1,
+    );
+    return defined $PortableValue ? $PortableValue : '';
 }
 
 sub _ServiceFieldNames {

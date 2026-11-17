@@ -1,0 +1,40 @@
+/* Profile controls own their positions; stock hover decoration is not used. */
+#oooNavigation { overflow: visible; }
+#oooNavigation #oooUserIcons { position: relative; top: 0; left: auto; width: 40px; height: 40px; margin: 0 auto; background: none; }
+#oooNavigation #oooAvatar, #oooNavigation #oooUser:hover #oooAvatar { position: relative; top: 0; left: 0; width: 40px; height: 40px; opacity: 1; transition: none; }
+#oooNavigation #oooAvatar img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+#oooNavigation #oooPreferences, #oooNavigation #oooNavBarAvatarSecondary, #oooNavigation #oooUser:hover #oooNavBarAvatarSecondary { position: absolute; top: 0; left: 48px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #000539; fill: #fef235; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 1; }
+#oooNavigation #oooNavBarAvatarSecondary, #oooNavigation #oooUser:hover #oooNavBarAvatarSecondary { left: 92px; }
+#oooNavigation #oooPreferences svg, #oooNavigation #oooNavBarAvatarSecondary svg { width: 24px; height: 24px; }
+#oooNavigation #oooUser:hover #oooPreferences, #oooNavigation #oooUser:focus-within #oooPreferences, #oooNavigation #oooUser:hover #oooNavBarAvatarSecondary, #oooNavigation #oooUser:focus-within #oooNavBarAvatarSecondary { opacity: 1; pointer-events: auto; }
+#oooNavigation #oooPreferences:focus-visible, #oooNavigation #oooAvatar:focus-visible, #oooNavigation #oooNavBarAvatarSecondary:focus-visible { outline: 3px solid #7c89ff; outline-offset: 3px; }
+.TESSERAProfilePhotoPreview { border-radius: 50%; object-fit: cover; }
+.TESSERAProfilePhotoRemove { position: static !important; display: flex; gap: 8px; align-items: center; }
+@media (max-width: 767px) { #oooNavigation #oooPreferences, #oooNavigation #oooNavBarAvatarSecondary { opacity: 1; pointer-events: auto; } }
+@media (prefers-reduced-motion: reduce) { #oooNavigation #oooPreferences, #oooNavigation #oooNavBarAvatarSecondary { transition: none; } }
+
+/* Keep one continuous pointer path from avatar through the two action gaps. */
+#oooNavigation #oooUserIcons::after { content: ""; position: absolute; top: 0; left: 0; width: 132px; height: 40px; pointer-events: none; z-index: 0; }
+#oooNavigation #oooUser:hover #oooUserIcons::after, #oooNavigation #oooUser:focus-within #oooUserIcons::after { pointer-events: auto; }
+#oooNavigation #oooAvatar { z-index: 1; }
+
+/* Photo controls use stacked labels, not the generic floating input labels. */
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .FieldCell { display: flex; flex-direction: column; gap: 8px; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .FieldCell > label, #oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .FieldCell > .Field:hover ~ label { position: static; inset: auto; transform: none; order: 0; margin: 0; padding: 0; max-width: 100%; width: auto; height: auto; line-height: 1.5; white-space: normal; background: transparent; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .FieldCell > .Field { order: 1; width: 100%; min-width: 0; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) label[for="ProfilePhotoRemove"] { display: none; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .TESSERAProfilePhotoRemove { position: static; inset: auto; display: flex; align-items: center; gap: 10px; padding: 0; margin: 0; max-width: 100%; white-space: normal; background: transparent; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) input[type="checkbox"] { appearance: auto; position: static; display: inline-block; flex: 0 0 18px; width: 18px; height: 18px; opacity: 1; margin: 0; padding: 0; box-shadow: none; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) input[type="file"] { width: 100%; max-width: 100%; box-sizing: border-box; height: auto; padding: 12px; border-radius: 10px; }
+#oooMainBox.Preferences form:has(input[name="Group"][value="TESSERAProfilePhoto"]) .TESSERAProfilePhotoPreview { display: block; margin: 0 0 12px; }
+
+.TESSERASessionGreeting { background: #fff; border: 1px solid #e0e3ef; border-radius: 20px; padding: 24px; box-sizing: border-box; margin: 24px var(--greeting-right, 58px) 0 var(--greeting-left, 102px); }
+.TESSERASessionGreeting h2 { margin: 0 0 8px; font-size: 22px; }
+.TESSERAMoodChoices { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.TESSERAMoodChoices button { width: 56px; height: 56px; padding: 0; border: 1px solid #e0e3ef; border-radius: 50%; background: #f7f7f9; font-size: 30px; cursor: pointer; }
+.TESSERAMoodChoices button:hover { background: #edf0ff; border-color: #001bff; }
+.TESSERAMoodChoices button:focus-visible { outline: 3px solid #001bff; outline-offset: 3px; }
+.TESSERAMoodMessage { margin-top: 16px; }
+.TESSERASessionGreeting[hidden], .TESSERASessionGreeting form[hidden] { display: none; }
+
+@media (max-width: 767px) { .TESSERASessionGreeting { margin-left: var(--greeting-left, 8px); margin-right: var(--greeting-right, 8px); padding: 20px; } }

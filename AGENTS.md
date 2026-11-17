@@ -649,3 +649,30 @@ A UI patch is not accepted just because it looks correct. It must also preserve 
 - Exact current field name is FAQApplication, ObjectType FAQ, FieldType GovernanceObject, optional multiple Application references. Empty means applicable to all portal users.
 - Do not depend on a ZFAQ namespace. Ensure native FAQ object-type/reference-driver registration before field creation.
 - Upgrade compatible legacy ZFAQ-Application with a native same-ID rename, preserving existing values/configuration; reject ambiguous dual-name records rather than deleting or overwriting data.
+
+
+## Change classification and announcements (owner decisions 2026-11-17)
+
+- Native ticket type remains Change. Change::Major is retired/invalid and must not be created or reactivated. Retain its ID/history; do not infer Major or publish historical tickets from the obsolete type.
+- Exact owner-approved Dynamic Field names: ChangeType and ChangeClassification, ObjectType Ticket, FieldType Dropdown. These names are explicit exceptions to the general ZTicket namespace convention; do not replace them with guessed prefixed variants.
+- ChangeType: Normal (default), Standard, Emergency. ChangeClassification: Normal, Not-Assessed (default), Major. No requester creation/generic edit controls. Backend guard must reject generic customer/API/Set writes, including claimed panel-agent identity; defaults are written only by the server initialization event.
+- Change-manager/CAB group access is configurable later; no fixed CAB group or automatic membership. Existing active IPC write membership overrides this operation's configured group/ticket scope. IPC can explicitly override assessment completion with mandatory recorded reason. IPC cannot publish an unapproved change. Ordinary classification follows completed linked assessments; scores support a human decision and do not auto-classify.
+- Approved, manager-prepared Major announcements are readable by every active authenticated portal customer independently of normal ticket grants. Use a dedicated read-only announcement page, not full CustomerTicketZoom/history/articles/attachments. This intentionally published projection may contain reviewed requester/CI display names, environment/application, service, schedule, summary/description and submitted runbook steps; it grants no full ticket, CI discovery/search/detail, API or workflow-write access.
+- Reuse submitted Ticket Sets ZCH-Precheck, ZCH-Implementation, ZCH-PostChange, ZCH-Rollback, already mapped from ZTemplate-Ch* template Sets. Do not regenerate an approved plan from mutable template/BlueBook data, use DynamicFieldSet rendering on the public page, execute steps or expose private owner/profile/weightage columns.
+- Classification evidence records actor/time/reason, IPC overrides and reviewed publication. Preserve lifecycle/Book snapshots. Publication checks must fail closed on missing approval, invalid data, reapproval/withdrawal, demotion or changed public source context; do not widen native ticket/CMDB permissions.
+
+
+## Trace graph restricted-node projection (owner decision 2026-11-17)
+
+- Trace visualization may show anonymous grey placeholders for graph devices outside the viewer's CI permissions, and the linked Application system display name only. This is an explicit graph-only exception; it does not broaden customer CI discovery/search/detail or Application detail permissions.
+- Do not disclose the restricted CI name, address, class, native/remote ID, attributes or object links. Use per-presentation synthetic identifiers, and resolve affiliation only from the trusted configured Navis identity mapping through the existing ZTAM-Application reference. Missing/ambiguous affiliation stays unavailable.
+- Distinguish a restricted device from unmanaged/missing evidence. Neither is verified connectivity. Withhold detailed path evidence and recommendations if any referenced device is outside scope; the limited anonymous shape remains displayable.
+- Application automation should persist a stable Navis topology label on Application (GO); UUIDs belong to per-trace/version evidence. Names and final field schema must be explicit; do not reuse InstanceID as namespace or a field with another meaning.
+
+
+## Application Navis label (owner decision 2026-11-17)
+
+- Exact chosen field name Navis, ObjectType GovernanceObject, FieldType Text, optional and single-valued, used on Application. Stores the stable Navis topology_name, never the current graph UUID. This is an explicit owner-selected naming exception.
+- Additive installer preflights field/layout compatibility, retains administrator pages/roles and values, and adds a separate optional Agent Navis page once. It does not replace Application definitions from old defaults. Conflicting layouts require review before mutation.
+- Trace topology selection is explicit: Default network sends no application graph selector; a permitted Application resolves its current Navis label. Source/destination Application filters are not graph selection or a permission grant. Historical resolved build UUID and original submitted request remain evidence.
+- A label alone does not create a topology, launch discovery, authorize an external call or register an automation scheduler. Those are separate reviewed capabilities.

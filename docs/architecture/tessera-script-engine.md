@@ -1,3 +1,5 @@
+> Detailed interpreter reference. Start with [offline authoring](../scriptengine/README.md). Historical package-number sections describe provenance, not live acceptance; packaged source remains authoritative.
+
 # TESSERA ScriptEngine Knowledge Base
 
 ## Language boundary

@@ -1,0 +1,12 @@
+VERSION: 1
+# Replace placeholder TemplateID42 with a reviewed localhost heartbeat template.
+# Uses template-bound Demo Inventory, EE and verbosity; no launch overrides.
+# This playbook publishes tessera_heartbeat but has no TESSERA callback.
+CALL WEB SERVICE:
+  - SERVICE: AWX
+    INVOKER: JobLaunch
+    AS: LAUNCH
+    WITH:
+      TemplateID: 42
+RETURN:
+  VALUE: EXTERNAL.LAUNCH.JobID

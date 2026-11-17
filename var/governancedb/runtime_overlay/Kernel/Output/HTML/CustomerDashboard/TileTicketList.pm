@@ -21,6 +21,7 @@ use warnings;
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::TESSERA::ChangeClassification',
     'Kernel::Output::HTML::Layout',
     'Kernel::Output::HTML::TicketOverview::CustomerList',
     'Kernel::System::CustomerUser',
@@ -423,7 +424,6 @@ sub _TypeColor {
         'Approval'       => '#8B5CF6',
         'Endorsement'    => '#6366F1',
         'Change'         => '#06B6D4',
-        'Change::Major'  => '#0284C7',
         'Task'           => '#22C55E',
         'Verification'   => '#14B8A6',
         'Incident'       => '#EF4444',
@@ -501,41 +501,6 @@ sub _TicketRowsBuild {
     } @Rows;
 }
 
-sub _MajorChangeTicketIDs {
-    my (%Param) = @_;
-
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-    my %Candidate;
-    my @Candidate;
-    my %StateList = $Kernel::OM->Get('Kernel::System::State')->StateList(
-        Valid  => 0,
-        UserID => 1,
-    );
-    my %StateLookup = reverse %StateList;
-
-    return if !$StateLookup{approved};
-
-    my @TicketIDs = _TicketSearchAll($TicketObject,
-        Result    => 'ARRAY',
-        Types     => ['Change::Major'],
-        States    => ['approved'],
-        StateType => [ 'new', 'open', 'pending' ],
-        SortBy    => 'Changed',
-        OrderBy   => 'Down',
-        UserID    => 1,
-    );
-
-    for my $TicketID (@TicketIDs) {
-        next if !$TicketID;
-        next if $Candidate{$TicketID}++;
-        push @Candidate, $TicketID;
-    }
-
-    return _PermissionFilter(
-        CustomerUserID => $Param{CustomerUserID},
-        TicketIDs      => \@Candidate,
-    );
-}
 
 sub Run {
     my ( $Self, %Param ) = @_;
@@ -570,13 +535,10 @@ sub Run {
         Page => $ParamObject->GetParam(Param => 'WorkspacePage'),
     );
 
-    my @MajorChangeRows = _TicketRowsBuild(
-        TicketIDs => [
-            _MajorChangeTicketIDs(
-                CustomerUserID => $Param{UserID},
-            )
-        ],
-    );
+    my $Announcements = $Kernel::OM->Get('Kernel::System::TESSERA::ChangeClassification');
+    my $MajorRows = eval {$Announcements->PublicList(CustomerUserID => $Param{UserID})};
+    my @MajorChangeRows = @{ $MajorRows || [] };
+    my $CanClassify = $Announcements->Actor(CustomerUserID => $Param{UserID});
 
     my $Content = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Output(
         TemplateFile => 'Dashboard/TileTicketList',
@@ -586,6 +548,8 @@ sub Run {
             %Workspace,
             ShowAllWorkspace => $ShowAllWorkspace,
             MajorChangeRows  => \@MajorChangeRows,
+            CanClassifyChange => $CanClassify ? 1 : 0,
+            AnnouncementUnavailable => $MajorRows ? 0 : 1,
             MajorChangeCount => scalar @MajorChangeRows,
             MajorChangeCountText => '' . scalar @MajorChangeRows,
             %{ $Param{Config} },

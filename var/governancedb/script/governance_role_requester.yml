@@ -1,0 +1,14 @@
+---
+SCRIPT: Resolve Requester Governance Role
+VERSION: 1
+
+RETURN:
+  IF:
+    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    IS NOT EMPTY: true
+  THEN:
+    VALUE: TICKET.CustomerUser.ZUser-SupportProfile
+    AS: GovernanceObject.SupportProfile
+  ELSE:
+    VALUE: TICKET.CustomerUser
+    AS: CustomerUser

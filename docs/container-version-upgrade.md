@@ -1,3 +1,5 @@
+> Current entry point: [controlled deployment](operations/deployment.md). Version-specific recovery commands below apply only to their matching saved incident state.
+
 # Current deployment — TESSERA0.1.0
 
 From the prepared build directory, use ONE wrapper command. It creates a unique

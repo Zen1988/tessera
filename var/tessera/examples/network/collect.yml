@@ -1,0 +1,79 @@
+---
+- name: Collect governed network evidence and return it to TESSERA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Initialize bounded completion
+      ansible.builtin.set_fact:
+        network_devices: []
+        network_exit: 1
+        network_result: {Status: COLLECTION_FAILED}
+      no_log: true
+    - name: Collect only backend selected contexts
+      block:
+        - name: Validate runtime envelope
+          ansible.builtin.assert:
+            that:
+              - tessera_callback.URL is match('^https://')
+              - tessera_network.Candidates | length > 0
+              - tessera_network.Candidates | length <= 32
+              - tessera_network.Digest | length == 64
+          no_log: true
+        - name: Collect each requested device
+          ansible.builtin.include_tasks: collect-device.yml
+          loop: "{{ tessera_network.Candidates }}"
+          loop_control:
+            loop_var: network_candidate
+            label: managed-context
+        - name: Assemble correlated evidence
+          ansible.builtin.set_fact:
+            network_result:
+              Digest: "{{ tessera_network.Digest }}"
+              Devices: "{{ network_devices }}"
+          no_log: true
+        - name: Enforce total callback budget
+          ansible.builtin.assert:
+            that:
+              - network_result | to_json | length < 900000
+          no_log: true
+        - name: Mark collection complete
+          ansible.builtin.set_fact:
+            network_exit: 0
+          no_log: true
+      rescue:
+        - name: Return an explicit bounded failure
+          ansible.builtin.set_fact:
+            network_exit: 1
+            network_result: {Status: COLLECTION_FAILED, Reason: Collection failed or exceeded its evidence budget}
+          no_log: true
+      always:
+        - name: Complete this execution only
+          ansible.builtin.uri:
+            url: "{{ tessera_callback.URL }}"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ tessera_callback.CallbackToken }}"
+            body_format: json
+            body:
+              ExecutionUID: "{{ tessera_callback.ExecutionUID }}"
+              ExitCode: "{{ network_exit | int }}"
+              Response: "{{ network_result }}"
+            validate_certs: true
+            follow_redirects: none
+            status_code: 200
+            timeout: 30
+          register: network_callback
+          retries: 3
+          delay: 3
+          until: network_callback.status | default(0) == 200
+          no_log: true
+        - name: Verify completion identity
+          ansible.builtin.assert:
+            that:
+              - network_callback.json.ExecutionUID == tessera_callback.ExecutionUID
+          no_log: true
+    - name: Expose failure without sensitive device output
+      ansible.builtin.fail:
+        msg: Network collection failed; inspect restricted execution evidence in TESSERA
+      when: network_exit | int != 0

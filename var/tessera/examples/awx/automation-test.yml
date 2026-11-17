@@ -1,0 +1,29 @@
+VERSION: 1
+# Test data only. The production automation supplies its authorized CMDB snapshot.
+# IDs below are placeholders, not CI field names or a built-in extraction map.
+CALL WEB SERVICE:
+  - SERVICE: Inventory
+    INVOKER: InventorySync
+    AS: INVENTORY
+    WITH:
+      InventoryID: 7
+      Hosts:
+        - ConfigItemID: 1
+          Address: 127.0.0.1
+          Variables:
+            purpose: integration_test
+  - SERVICE: AWX
+    INVOKER: JobLaunchCallback
+    AS: LAUNCH
+    WITH:
+      TemplateID: 42
+      inventory: EXTERNAL.INVENTORY.InventoryID
+      limit: EXTERNAL.INVENTORY.Limit
+      verbosity: 3
+      extra_vars:
+        tessera_request:
+          reference: automation-integration-test
+          data:
+            message: hello from TESSERA automation
+RETURN:
+  VALUE: EXTERNAL.LAUNCH.ExecutionUID
