@@ -1,0 +1,33 @@
+<div class="InnerContent TESSERATicketSearchResults TESSERAWorkplaceSearch" data-search-query="[% Data.SearchQuery | html %]" data-search-scope="[% Data.SearchScope | html %]">
+    <form id="ElasticsearchQuickResult" action="[% Env('CGIHandle') %]" method="post">
+        <nav class="TESSERASearchTypes" aria-label="Search result types">
+        [% FOREACH Type IN ['All', 'Ticket', 'Asset', 'FAQ', 'People'] %]
+            <button type="button" class="TESSERASearchType" data-search-scope="[% Type | html %]" aria-pressed="[% IF Data.SearchScope == Type %]true[% ELSE %]false[% END %]">[% IF Type == 'Ticket' %]Tickets[% ELSIF Type == 'Asset' %]Assets[% ELSE %][% Type | html %][% END %]</button>
+        [% END %]
+        </nav>
+        <div class="TESSERASearchSummary" role="status" aria-live="polite" tabindex="-1">
+            [% IF Data.All %]Showing up to [% Data.PageSize | html %] results per type.[% ELSE %]Showing [% Data.Shown | html %] of [% Data.Total | html %] results.[% END %]
+            [% FOREACH Type IN Data.Types %]<span>[% Type.Scope | html %]: [% Type.Count | html %]</span>[% END %]
+        </div>
+        [% IF Data.Unavailable %]<p class="TESSERASearchUnavailable" role="status">Search temporarily unavailable for: [% Data.Unavailable | html %].</p>[% END %]
+        <div class="TESSERASearchScroll" tabindex="0" aria-label="Workplace search results">
+            <table class="TableSmall NoCellspacing">
+                <thead><tr><th scope="col">Type</th><th scope="col">Name</th><th scope="col">Reference / contact</th></tr></thead>
+                <tbody>
+                [% FOREACH Row IN Data.Rows %]
+                    <tr><td>[% Row.Type | html %]</td><td>[% IF Row.Action %]<a href="[% Env('Baselink') %]Action=[% Row.Action | uri %];[% Row.Parameter | uri %]=[% Row.ID | uri %]">[% Row.Name | html %]</a>[% ELSE %][% Row.Name | html %][% END %]</td><td>[% Row.Description | html %][% IF Row.Contact %]<br>[% Row.Contact | html %][% END %]</td></tr>
+                [% END %]
+                [% IF !Data.Shown %]<tr><td colspan="3">No matching results.</td></tr>[% END %]
+                </tbody>
+            </table>
+        </div>
+        [% IF !Data.All %]
+        <nav class="TESSERASearchPager" aria-label="Search result pages">
+            <button type="button" class="TESSERASearchPage" data-search-page="[% Data.PreviousPage | html %]" data-search-direction="previous"[% IF !Data.PreviousPage %] disabled[% END %]>Previous</button>
+            <span>Page [% Data.Page | html %] of [% Data.Pages | html %]</span>
+            <button type="button" class="TESSERASearchPage" data-search-page="[% Data.NextPage | html %]" data-search-direction="next"[% IF !Data.NextPage %] disabled[% END %]>Next</button>
+        </nav>
+        [% END %]
+        <span class="TESSERASearchPageError" role="alert"></span>
+    </form>
+</div>

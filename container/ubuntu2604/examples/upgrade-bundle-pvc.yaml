@@ -1,3 +1,5 @@
+# Advanced/manual example only. Normal deployment uses scripts/deploy-release.py
+# for a unique PVC and success-only cleanup; do not reuse this fixed name.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

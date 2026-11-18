@@ -24,6 +24,7 @@
         </div>
         <div id="oooNavBarModuleIcons">
 [% RenderBlockStart("Item") %]
+[% UNLESS Config('CustomerFrontend::Module').CustomerUtilities AND (Data.Link == 'Action=CustomerTicketSearch' OR Data.Link == 'Action=CustomerNetworkSimulation') %]
             <a href="[% Env("Baselink") %][% Data.Link %]" title="[% Translate(Data.Description || Data.Name) | html %] ([% Data.AccessKey | html %])" accesskey="[% Data.AccessKey | html %]" [% Data.LinkOption %]>
                 <div class="oooNavBarHighlight"></div>
                 <div class="oooIconContainer">
@@ -33,6 +34,7 @@
                     <h3>[% Translate(Data.Name) | html %]</h3>
                 </div>
             </a>
+[% END %]
 [% RenderBlockEnd("Item") %]
         </div>
         <div id="oooUser">

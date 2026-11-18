@@ -15,6 +15,18 @@
 # --
 
 <style>
+    .TicketZoom .ZTSMRequestSummary .ZTSMChangeClassificationMajor {
+        display: inline-block;
+        background: #a84400;
+        color: #fff;
+        border: 1px solid #ffc08a;
+        border-radius: 6px;
+        padding: 3px 10px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+
     .TicketZoom #oooMainBox.ZTSMZoomLayout {
         --ZTSMNavigationOffset: 56px;
         display: grid;

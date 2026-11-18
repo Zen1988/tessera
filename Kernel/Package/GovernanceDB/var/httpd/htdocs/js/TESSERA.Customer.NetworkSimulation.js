@@ -16,7 +16,7 @@
         const progress = document.getElementById('SimulationProgress');
         const ns = 'http://www.w3.org/2000/svg';
         let result = data.Result;
-        let scale = 1, panX = 0, panY = 0, nodes = [], selected = null;
+        let scale = 1, panX = 0, panY = 0, nodes = [], selected = null, vertical = false, viewWidth = 960, viewHeight = 420;
         function element(tag, attrs, text) {
             const item = document.createElementNS(ns, tag);
             Object.keys(attrs || {}).forEach(key => item.setAttribute(key, attrs[key]));
@@ -52,8 +52,15 @@
             inspector.replaceChildren();
             if (!selected) return;
             const title = document.createElement('h3'); title.textContent = selected.Name; inspector.appendChild(title);
+            if (selected.Restricted || selected.Placeholder) {
+                const note = document.createElement('p');
+                note.textContent = selected.Restricted ? 'Device details are restricted.' : 'Missing network evidence; device count and connectivity are unknown.';
+                inspector.appendChild(note);
+                if (selected.ApplicationName) {const app = document.createElement('p');app.textContent = 'Application: ' + selected.ApplicationName;inspector.appendChild(app);}
+                return;
+            }
             const list = document.createElement('dl');
-            [['CMDB identifier', selected.ID], ['Class', selected.Class], ['Selected address', selected.Address || 'Not an endpoint selection']].forEach(pair => {
+            [['CMDB identifier', selected.ID], ['Class', selected.Class], ['Selected address', selected.Address || 'Not an endpoint selection'], ['Evidence', selected.Evidence || 'CMDB selection only'], ['Trace', selected.TraceStatus || 'Not evaluated']].forEach(pair => {
                 const term = document.createElement('dt'), value = document.createElement('dd');
                 term.textContent = pair[0]; value.textContent = pair[1]; list.append(term, value);
             });
@@ -73,25 +80,37 @@
                 const node = (result.Nodes || []).find(item => item.ID === hop.ID);
                 if (node) map.set(node.ID, node);
             });
-            if (destination) map.set(destination.ID, destination);
+            if (result && result.DisplayNodes) result.DisplayNodes.forEach(node => map.set(node.ID, Object.assign({}, map.get(node.ID) || {}, node)));
+            if (destination) map.set(destination.ID, Object.assign({}, destination, map.get(destination.ID) || {}));
             if (!result) contextNodes('Destination').forEach(node => { if (!map.has(node.ID)) map.set(node.ID, node); });
-            nodes = Array.from(map.values()); viewport.replaceChildren();
+            nodes = Array.from(map.values());
+            if (result && result.DisplayEdges && source) {
+                const order = [], seen = new Set();
+                function walk(id) {if (seen.has(id) || !map.has(id)) return;seen.add(id);order.push(map.get(id));
+                    result.DisplayEdges.filter(edge => edge.Source === id).forEach(edge => walk(edge.Target));}
+                walk(source.ID);nodes.forEach(node => walk(node.ID));nodes = order;
+            }
+            viewport.replaceChildren();
             empty.hidden = nodes.length > 0;
             const positions = new Map();
-            nodes.forEach((node, index) => positions.set(node.ID, {x: 130 + index * 220, y: 210}));
-            if (result) (result.Edges || []).forEach(edge => {
+            vertical = svg.getBoundingClientRect().width < 600;
+            viewWidth = vertical ? 300 : 960;viewHeight = vertical ? Math.max(420, Math.min(720, nodes.length * 120 + 80)) : 420;
+            svg.setAttribute('viewBox', '0 0 ' + viewWidth + ' ' + viewHeight);
+            svg.classList.toggle('NetworkSimulation__graph--vertical', vertical);
+            nodes.forEach((node, index) => positions.set(node.ID, vertical ? {x: 150, y: 80 + index * 120} : {x: 130 + index * 220, y: 210}));
+            if (result) (result.DisplayEdges || result.Edges || []).forEach(edge => {
                 const a = positions.get(edge.Source), b = positions.get(edge.Target);
-                if (a && b) viewport.appendChild(element('path', {d: 'M' + a.x + ',' + a.y + ' L' + b.x + ',' + b.y, class: 'NetworkSimulation__edge'}));
+                if (a && b) viewport.appendChild(element('path', {d: 'M' + a.x + ',' + a.y + ' L' + b.x + ',' + b.y, class: 'NetworkSimulation__edge' + (edge.Kind === 'unknown' ? ' NetworkSimulation__edge--unknown' : '')}));
             });
             nodes.forEach(node => {
                 const position = positions.get(node.ID);
-                const group = element('g', {transform: 'translate(' + position.x + ' ' + position.y + ')', class: 'NetworkSimulation__node', tabindex: '0', role: 'button', 'aria-label': 'Inspect ' + node.Name, 'data-node': node.ID});
+                const group = element('g', {transform: 'translate(' + position.x + ' ' + position.y + ')', class: 'NetworkSimulation__node' + (node.Restricted ? ' NetworkSimulation__node--restricted' : node.Placeholder ? ' NetworkSimulation__node--gap' : ''), tabindex: '0', role: 'button', 'aria-label': 'Inspect ' + node.Name, 'data-node': node.ID});
                 group.appendChild(element('rect', {x: -90, y: -43, width: 180, height: 86, rx: 10}));
                 group.appendChild(element('title', {}, node.Name + ' — ' + node.ID));
                 group.appendChild(element('text', {x: 0, y: -10, 'text-anchor': 'middle'}, node.Name.length > 22 ? node.Name.slice(0, 20) + '…' : node.Name));
-                const addressLabel = node.Address || node.Class;
+                const addressLabel = node.ApplicationName ? 'Application: ' + node.ApplicationName : node.Address || node.Class;
                 group.appendChild(element('text', {x: 0, y: 12, 'text-anchor': 'middle'}, addressLabel.length > 24 ? addressLabel.slice(0, 22) + '…' : addressLabel));
-                group.appendChild(element('text', {x: 0, y: 31, 'text-anchor': 'middle'}, 'CMDB ' + node.ID));
+                group.appendChild(element('text', {x: 0, y: 31, 'text-anchor': 'middle'}, node.Restricted ? 'Details restricted' : node.Placeholder ? 'Unknown segment' : node.TraceStatus === 'not_traced' ? 'Not traced' : node.Evidence || 'CMDB asset'));
                 group.addEventListener('click', () => choose(node.ID));
                 group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(node.ID); } });
                 viewport.appendChild(group);
@@ -110,6 +129,8 @@
             const endpoints = filtered.filter(asset => !system.value || asset.ID === system.value).flatMap(asset => (asset.Endpoints || []).map(item => ({value: item.Key, label: item.Address + ' — ' + asset.Name})));
             options(ip, endpoints, 'Select an address', initial ? data.Selection[side + 'Endpoint'] : ip.value);
         }
+        const topologyApplication = document.getElementById('SimulationTopologyApplication');
+        if (topologyApplication) topologyApplication.addEventListener('change', changed);
         ['Source', 'Destination'].forEach(side => {
             const app = document.getElementById(side + 'Application');
             app.value = data.Selection[side + 'Application'] || '';
@@ -118,13 +139,13 @@
             document.getElementById(side + 'System').addEventListener('change', () => { document.getElementById(side + 'Endpoint').value = ''; hydrate(side, false); changed(); });
             document.getElementById(side + 'Endpoint').addEventListener('change', changed);
         });
-        function reset() { scale = Math.min(1, 850 / Math.max(220, nodes.length * 220)); panX = 0; panY = 210 * (1 - scale); transform(); }
+        function reset() { scale = vertical ? 1 : Math.min(1, 850 / Math.max(220, nodes.length * 220)); panX = 0; panY = vertical ? 0 : 210 * (1 - scale); transform(); }
         document.getElementById('SimulationZoomIn').addEventListener('click', () => { scale = Math.min(3, scale * 1.2); transform(); });
         document.getElementById('SimulationZoomOut').addEventListener('click', () => { scale = Math.max(.06, scale / 1.2); transform(); });
         document.getElementById('SimulationReset').addEventListener('click', reset);
         let drag = null;
         svg.addEventListener('pointerdown', event => { if (event.target.closest('[data-node]')) return; drag = {x: event.clientX, y: event.clientY, px: panX, py: panY}; svg.setPointerCapture(event.pointerId); });
-        svg.addEventListener('pointermove', event => { if (!drag) return; const rect = svg.getBoundingClientRect(); panX = drag.px + (event.clientX - drag.x) * 960 / rect.width; panY = drag.py + (event.clientY - drag.y) * 420 / rect.height; transform(); });
+        svg.addEventListener('pointermove', event => { if (!drag) return; const rect = svg.getBoundingClientRect(); panX = drag.px + (event.clientX - drag.x) * viewWidth / rect.width; panY = drag.py + (event.clientY - drag.y) * viewHeight / rect.height; transform(); });
         svg.addEventListener('pointerup', () => { drag = null; }); svg.addEventListener('pointercancel', () => { drag = null; });
         root.querySelectorAll('[data-device]').forEach(button => button.addEventListener('click', () => choose(button.dataset.device)));
         const protocol = document.getElementById('SimulationProtocol'), port = document.getElementById('SimulationPort');

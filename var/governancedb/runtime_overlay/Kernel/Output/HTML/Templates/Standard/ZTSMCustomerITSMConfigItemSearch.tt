@@ -1,0 +1,84 @@
+# --
+# TESSERA customer asset search template.
+# --
+<div id='oooContent' class="ZTSMAssetSearch">
+    <div id='oooHeader'>
+        <h1>[% Translate("Asset Search") | html %]</h1>
+    </div>
+    <div id='oooMainBox'>
+        <div id="oooITSMConfigItemListHeader">
+[% IF Data.SiteNavBar %]
+            <div class="ooo12g ooor"><p>[% Translate("Page") | html %]</p>[% Data.SiteNavBar %]</div>
+[% END %]
+        </div>
+[% RenderBlockStart("SearchForm") %]
+        <div class="oooITSMConfigItemSearch">
+            <div class="oooITSMConfigItemSearchForm">
+                <form action="[% Env("CGIHandle") %]" method="post" id="SearchForm">
+                    <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+                    <input type="hidden" name="Subaction" value="SearchAction"/>
+                    <input type="hidden" name="SearchDialog" value="1"/>
+                    <input type="hidden" name="EmptySearch" value="[% Data.EmptySearch | html %]" id="EmptySearch"/>
+                    <fieldset>
+[% RenderBlockStart("PermissionCondition") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="PermissionCondition">[% Translate("Category") | html %]:</label>
+                            [% Data.PermissionConditionStrg %]
+                        </div>
+[% RenderBlockEnd("PermissionCondition") %]
+[% RenderBlockStart("Class") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="ClassIDs">[% Translate("Class") | html %]:</label>
+                            [% Data.ClassStrg %]
+                        </div>
+[% RenderBlockEnd("Class") %]
+[% RenderBlockStart("Number") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="Number">[% Translate("Number") | html %]:</label>
+                            <input id="Number" type="text" name="Number" value="[% Data.Number | html %]" class="W50pc" />
+                        </div>
+[% RenderBlockEnd("Number") %]
+[% RenderBlockStart("Name") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="Name">[% Translate("Name") | html %]:</label>
+                            <input id="Name" type="text" name="Name" value="[% Data.Name | html %]" class="W50pc" />
+                        </div>
+[% RenderBlockEnd("Name") %]
+[% RenderBlockStart("DeplState") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="DeplStateIDs">[% Translate("State") | html %]:</label>
+                            [% Data.CurDeplStateOptionStrg %]
+                        </div>
+[% RenderBlockEnd("DeplState") %]
+[% RenderBlockStart("InciState") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            <label for="InciStateIDs">[% Translate("Incident State") | html %]:</label>
+                            [% Data.CurInciStateOptionStrg %]
+                        </div>
+[% RenderBlockEnd("InciState") %]
+[% RenderBlockStart("DynamicField") %]
+                        <div class="Clear"></div>
+                        <div class="Row">
+                            [% Data.Label %]
+                            [% Data.Field %]
+                        </div>
+[% RenderBlockEnd("DynamicField") %]
+                    </fieldset>
+                    <div class="Row">
+                        <button id="SearchAction" type="submit" class="CallForAction" value="[% Translate("Search") | html %]"><span>[% Translate("Search") | html %]</span></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+[% RenderBlockEnd("SearchForm") %]
+[% RenderBlockStart("SearchResult") %]
+        [% Data.ITSMConfigItemListHTML %]
+[% RenderBlockEnd("SearchResult") %]
+    </div>
+</div>

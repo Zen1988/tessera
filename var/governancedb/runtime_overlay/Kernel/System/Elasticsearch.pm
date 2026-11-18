@@ -1495,6 +1495,11 @@ sub FAQSearch {
         };
     }
 
+    if ($Param{UserLogin}) {
+        my $Allowed = $Kernel::OM->Get('Kernel::System::TESSERA::FAQAccess')->CustomerIDs(CustomerUserID => $Param{UserLogin});
+        push @Filters, {terms => {ItemID => $Allowed}};
+    }
+
     # define the return type
     my $Return = ( $ResultType eq 'FULL' ) ? '' : 'FAQItemID';
 

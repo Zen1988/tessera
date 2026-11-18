@@ -93,4 +93,5 @@ my $MissingScope=eval {Kernel::System::TESSERA::TicketCalendar->new()->EventsFor
 ok(!$MissingScope,'customer endpoint cannot search arbitrary ticket IDs without overview scope');
 my $Bad=eval {Kernel::System::TESSERA::TicketCalendar->new()->Events(UserID=>7,Start=>'2026-01-01',End=>'2026-10-14')};
 ok(!$Bad,'oversized range rejected');
+ok(!grep({grep {$_ eq 'Change::Major'} @{$_->{Types} || []}} @{$Kernel::OM->{Searches}}),'calendar uses Change and no obsolete Change::Major type');
 done_testing();

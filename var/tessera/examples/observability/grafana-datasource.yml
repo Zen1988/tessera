@@ -1,0 +1,20 @@
+# Supply the token through Grafana's protected deployment environment.
+apiVersion: 1
+datasources:
+  - name: TESSERA
+    uid: tessera-provider
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    url: https://tessera.ncs.local/otobo/nph-genericinterface.pl/Webservice/TESSERAObservability
+    jsonData:
+      auth_method: bearerToken
+      allowedHosts:
+        - https://tessera.ncs.local
+      timeoutInSeconds: 30
+      allowDangerousHTTPMethods: false
+      tlsSkipVerify: false
+    secureJsonData:
+      bearerToken: ${TESSERA_GRAFANA_TOKEN}
+# Trust the internal CA in Grafana's runtime trust store before using this source.
+# Queries: /v1/tickets, /v1/alerts, /v1/risks. Backend parser; root selector Rows.
+# Follow NextCursor until null; never treat a first-page row count as a total.

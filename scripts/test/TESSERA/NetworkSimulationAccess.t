@@ -17,7 +17,7 @@ use Kernel::Modules::AgentNetworkSimulationAccess;
     sub dclone_value {ref $_[0]?Storable::dclone($_[0]):$_[0]}
     sub SettingsSet {
         my ($S,%P)=@_;push @{$S->{Deployments}},Storable::dclone(\%P);my $N=@{$S->{Deployments}};
-        for my $Setting (@{$P{Settings}}) {my $Key=$Setting->{Name};$Key=~s/^.*:://;next if $S->{PartialAt} && $N==$S->{PartialAt} && $Key eq 'Bindings';$S->{Values}{$Key}=dclone_value($Setting->{EffectiveValue})}
+        for my $Setting (@{$P{Settings}}) {my $Key=$Setting->{Name};$Key=~s/^.*:://;next if $S->{PartialAt} && $N==$S->{PartialAt} && $Key eq 'AllowedCustomerUsers';$S->{Values}{$Key}=dclone_value($Setting->{EffectiveValue})}
         return 1;
     }
     sub Prepare {return 1}
@@ -34,15 +34,20 @@ use Kernel::Modules::AgentNetworkSimulationAccess;
     sub ChallengeTokenCheck {$_[0]{ChallengeOK}}
     sub ErrorScreen {my ($S,%P)=@_;return $P{Message}}
 }
+# Older JSON::PP versions (including the deployed runtime) reject scalar roots
+# by default. Enforce that default even on newer developer installations.
+my $JSONNew = \&JSON::PP::new;
+no warnings 'redefine';
+local *JSON::PP::new = sub { $JSONNew->(@_)->allow_nonref(0) };
+use warnings 'redefine';
 my $OM=bless {Values=>{Enabled=>0,AllowedCustomerUsers=>[],Bindings=>'{}'},Deployments=>[],Params=>{},UserChallengeToken=>'real',ChallengeOK=>1},'AccessOM';
 local $Kernel::OM=$OM;my $B=Kernel::System::TESSERA::NetworkSimulationAccess->new();$OM->{Backend}=$B;
 ok(!eval {$B->View(UserID=>8);1},'backend read requires active administrator');
-my $V=$B->View(UserID=>7);is(scalar @{$V->{Environments}},2,'administrator sees active environment choices');
-is_deeply([map {$_->{ID}} @{$V->{Services}}],[12],'only enabled Navis integrations are selectable');
+my $V=$B->View(UserID=>7);ok(!exists $V->{Environments},'grant UI has no environment setup');ok(!exists $V->{Services},'connection configured once in onboarding');
 my $Binding={10=>{WebserviceID=>12,BuildID=>'20000000-0000-4000-8000-000000000001',Namespace=>'CMDB'}};
 ok($B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice','alice'],Bindings=>$Binding),'administrator configures access and bindings');
 is($OM->{Values}{Enabled},1,'simulation enabled after complete deployment');is_deeply($OM->{Values}{AllowedCustomerUsers},['alice'],'duplicate accounts deduplicated');
-is_deeply(JSON::PP->new->decode($OM->{Values}{Bindings}),$Binding,'native SysConfig stores existing binding contract');
+is_deeply(JSON::PP->new->decode($OM->{Values}{Bindings}),{},'legacy bindings preserved untouched');
 is($OM->{Deployments}[0]{Settings}[0]{EffectiveValue},0,'first deployment disables simulation');
 is($OM->{Deployments}[-1]{Settings}[0]{EffectiveValue},1,'last deployment enables simulation');
 for my $D (@{$OM->{Deployments}}) {ok(!grep({$_->{Name}!~/\ATESSERA::CustomerNetworkSimulation::(?:Enabled|AllowedCustomerUsers|Bindings)\z/} @{$D->{Settings}}),'deployment touches only simulation settings')}
@@ -51,11 +56,7 @@ my $Before=@{$OM->{Deployments}};
 ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['bob'],Bindings=>$Binding);1},'stale edit cannot overwrite grants');is(scalar @{$OM->{Deployments}},$Before,'stale edit makes no changes');
 $V=$B->View(UserID=>7);
 for my $Users (['missing'],['*'],["alice\nbob"]) {ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>$Users,Bindings=>$Binding);1},'invalid/inactive/wildcard account rejected')}
-ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice'],Bindings=>{});1},'cannot enable without an environment binding');
-my $Bad=dclone($Binding);$Bad->{10}{WebserviceID}=13;
-ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice'],Bindings=>$Bad);1},'generic service cannot masquerade as Navis');
-$Bad=dclone($Binding);$Bad->{10}{BuildID}='not-a-uuid';
-ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice'],Bindings=>$Bad);1},'invalid completed build reference rejected');
+ok($B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice']),'grant save does not require environment bindings');$V=$B->View(UserID=>7);
 $OM->{Override}=1;ok($B->View(UserID=>7)->{HasOverrides},'configuration override visible to administrator');
 ok(!eval {$B->Save(UserID=>7,Revision=>$V->{Revision},Enabled=>1,Users=>['alice'],Bindings=>$Binding);1},'configuration-file override cannot be silently bypassed');$OM->{Override}=0;
 $OM->{Deployments}=[];$OM->{PartialAt}=2;
@@ -72,5 +73,5 @@ like($Page->Run(),qr/Invalid request token/,'native challenge check required');
 is(Kernel::Modules::AgentNetworkSimulationAccess->new(UserID=>8)->Run(),'DENIED','agent screen independently checks authority');
 my $HTML='';my $TT=Template->new(INCLUDE_PATH=>'Kernel/Output/HTML/Templates/Standard');
 ok($TT->process('AgentNetworkSimulationAccess.tt',{Data=>{%{$B->View(UserID=>7)},UsersText=>'<script>bad</script>'},Env=>sub {'/index.pl'}},\$HTML),'dedicated access screen renders');
-like($HTML,qr/Caller namespace/,'environment binding fields discoverable');unlike($HTML,qr/<script>bad/,'account values escaped');
+unlike($HTML,qr/Caller namespace|Completed build UUID|Environment bindings/,'no duplicate integration or graph configuration');unlike($HTML,qr/<script>bad/,'account values escaped');
 done_testing();

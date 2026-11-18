@@ -1,0 +1,50 @@
+# Change decisions and portal-wide major announcements
+
+TESSERA-Base0.1.2 keeps the native ticket type **Change**. The exact owner-approved Dynamic Field names are **ChangeType** and **ChangeClassification**, both ObjectType Ticket / FieldType Dropdown:
+
+| Field | Options | Default |
+|---|---|---|
+| ChangeType | Normal, Standard, Emergency | Normal |
+| ChangeClassification | Normal, Not-Assessed, Major | Not-Assessed |
+
+These exact names supersede the earlier proposed ZTicket-prefixed name. Neither field is added to requester creation or generic edit screens. A guarded native-compatible Dropdown subclass hides these two fields in generic renderers and permits decision writes only inside the server-owned management operation. Generic writers cannot set, promote, reset or amend either field, including by submitting a default. Only the server-owned initialization scope may write initial defaults; the event uses the same per-ticket lock and reads actual stored rows rather than trusting cached emptiness. A TicketCreate/TicketTypeUpdate event initializes defaults for Change tickets, without requester input or resetting existing decisions. Missing values on existing tickets have the same effective defaults in the management page; there is no bulk historical rewrite.
+
+The installer preflights existing fields, rejects incompatible definitions without overwriting values, retains compatible IDs/data/administrator labels, preserves native driver registration properties and refuses unknown third-party Dropdown customizations. Unrelated dropdowns delegate to the native implementation. Installation retires an existing Change::Major type by setting it invalid; it never creates/reactivates that type or deletes its ID/history. Workplace and calendar active logic no longer use it. Historical tickets are not automatically converted or published.
+
+## Authority and assessment
+
+Configure existing group names later in **TESSERA::ChangeClassification::Groups**. There is no fixed CAB group and no new groups, memberships or GovernanceRoles are created. Empty denies ordinary agents/customer users. Configured write membership identifies change-management authority; normal ticket write permission is also required. Customer-side checks use active customer membership or an active same-login agent membership, consistent with the existing IPC identity pattern.
+
+Existing active **IPC** write membership independently overrides classification group and ticket scope. This override is restricted to the dedicated change-decision operation; it does not alter native ticket/CI grants or general portal write permissions. IPC can explicitly override the assessment prerequisite with a mandatory reason. Its real login and override choice are recorded in private evidence. IPC does not bypass the announcement's approval requirement.
+
+Normally all linked Assessment child tickets must be closed successful before selecting an assessed classification or a nondefault change type. No risk-score threshold auto-classifies a change. The manager/CAB evaluates scope, service, environment, dependencies and recorded assessment evidence. A UAT-only core-infrastructure change is not automatically Major.
+
+Agent entry: open a Change ticket and choose **Change classification**, or `index.pl?Action=AgentTicketChangeClassification;TicketID=...`. Portal entry: the Workplace Major changes panel shows **Manage change classification** only to authorized users; `customer.pl?Action=CustomerChangeClassification` accepts a change ticket number and applies the same authority/ticket checks. The form exposes the two dropdowns, mandatory decision/amendment reason, public description/summary and announcement preview. Mutations require protected POST/native CSRF. Generic ticket field/API/Set submissions cannot bypass the write guard by supplying CustomerPanelUserID or a claimed role.
+
+Each save preflights InnoDB for the evidence tables, uses a per-ticket advisory lock, source/revision fingerprint with a monotonic private revision (rejecting identical-form replays), and a database transaction spanning the Dynamic Fields, public snapshot and private internal article. Failed field/snapshot/evidence/commit operations roll back the transaction. The evidence records actor, old/new values, reason and IPC/assessment override. The service does not set ticket state/type, invoke StateBook/BlueBook readers, rebuild governance snapshots or execute a runbook. Native framework events still apply normally.
+
+## Announcements
+
+An approved, reviewed Major announcement is readable by **every active authenticated portal customer**, independently of ticket participation, company, SupportAssignment or ordinary ticket grants. It has a dedicated read-only list/detail route: `customer.pl?Action=CustomerChangeAnnouncement[;TicketID=...]`. It is not an anonymous/public Internet endpoint or a new generic ticket/CMDB API permission.
+
+Workplace links to this announcement, never to CustomerTicketZoom. The public projection contains title, requester display name, affected CI names, environment, application/system, service, schedule, summary, description and reviewed submitted runbook steps. It contains no ticket article/history/attachments, requester contact/login, operational owner/profile/weightage, live resolver programs, full CI details, private ticket links or workflow mutation controls. Native ticket and ConfigItem endpoints retain their own permissions. Approved CI names are deliberately published announcement text, not a customer asset discovery entitlement.
+
+Public description/summary are plain-text, manager-prepared announcement content; private articles and history streams are never copied. The management page previews the portal data and runbook. Saving Major prepares that snapshot; normal change approval activates publication automatically, with no separate publish-approval step. The summary defaults to the ticket title. The description may prefill only from the original first article when that article is customer-visible; private first articles and later conversation are never copied. Managers can refine these plain-text public fields before saving. Decision reasons remain private. The snapshot uses the existing system_data table under a per-ticket versioned key and is read directly, avoiding external-cache-dependent publication data. Live decision values, approval state and ticket type are queried from the database rather than trusting cached TicketGet responses; decision writes are read back before commit.
+
+Approval policy uses configurable ApprovalStates (default approved) and WithdrawalStates (default current assessment/reapproval/rejection/cancellation/failure states). Announcements remain available during execution after the latest applicable approval. Subsequent assessment/reapproval, rejection or cancellation withdraws them until a new approval. Demotion, legacy/non-Change type, missing/invalid snapshot, missing approval or source-context changes fail closed. Successful historical changes remain in the announcement archive unless governance/operational policy retires them. The current feed has a10000-candidate safety bound; retention and larger-scale paging remain deployment planning work.
+
+## Submitted runbook, not a live template
+
+The owner identified existing GovernanceObject Template Sets: ZTemplate-ChPrecheck, ZTemplate-ChImplementation, ZTemplate-ChPostChange and ZTemplate-ChRollback. The authoritative BlueBook runtime already maps these to submitted Ticket Sets **ZCH-Precheck**, **ZCH-Implementation**, **ZCH-PostChange** and **ZCH-Rollback**.
+
+The announcement reads those saved Ticket Set values. It does not regenerate them from a mutable Template or BlueBook, and never executes them. The cover uses the bound ZCH-Template / ZTicket-BlueBook display names when present. Public steps preserve the executor's level/sequence ordering and include activity, required/timing flags, plain-text description and step schedule; original rich text is converted to plain text and escaped. Operational assignment/profile and other nonpublic columns are omitted. No DynamicFieldSet renderer is used on the public page.
+
+Affected names come from the exported ZRM-RiskTargetCI references and native Ticket↔ITSMConfigItem links; environment/application use exact ZTicket-Env and ZTicket-Application fields; the overall window uses ZTicket-ScheduleStart / ZTicket-ScheduleFinish. Catalog/reference names are resolved before display/snapshot. The schedule is explicitly labelled with the system timezone. No replacement governance fields or invented runbook names are introduced.
+
+The reviewed public source fingerprint covers the displayed ticket context and projected submitted plan. An actual change to that context/plan hides the earlier announcement until management reviews and saves it again. Updating an unrelated private article or operational runbook assignee does not publish its contents. Original governance/lifecycle snapshots stay unchanged.
+
+## Installation and acceptance
+
+Install0.1.2 normally on the source system, use a matching image/upgrade bundle, deploy package XML to the shared generated-config volume through normal configuration and restart all workers consistently. Do not replace Config.pm/its Secret or copy generated ZZZ files. The new guarded driver must be active on every worker before reopening traffic. Existing0.1.1 and0.1.0 packages remain immutable.
+
+Validate fresh install,0.1.1/0.1.0 upgrade and reinstall; field defaults/IDs/data, global driver delegation, ordinary requester forgery through actual customer/API/Set paths, configurable groups and IPC identities, complete/incomplete assessment, real MariaDB transaction/evidence/commit failure, cross-worker concurrent saves/revocation, cached-state withdrawal, all four submitted phases and source edits, actual themed desktop/mobile/keyboard behavior, and unchanged full-ticket/article/CI denial. Local fixtures are evidence of implementation behavior, not full native Linux/live acceptance.

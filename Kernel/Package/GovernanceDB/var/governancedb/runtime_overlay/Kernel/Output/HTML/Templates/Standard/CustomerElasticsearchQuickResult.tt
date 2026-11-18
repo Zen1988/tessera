@@ -83,7 +83,7 @@
 
 [% RenderBlockStart("RecordFAQTitle") %]
                     <td>
-                        <a href="[% Env("Baselink") %]Action=CustomerFAQZoom;ItemID=[% Data.FAQID | uri %]" title="[%  Data.Title | html %]" class="MasterActionLink">[% Data.FAQTitle %]</a>
+                        <a href="[% Env("Baselink") %]Action=CustomerFAQZoom;ItemID=[% Data.FAQID | uri %]" title="[%  Data.Title | html %]" class="MasterActionLink">[% Data.FAQTitle | html %]</a>
                     </td>
 [% RenderBlockEnd("RecordFAQTitle") %]
                 </tr>

@@ -1,0 +1,12 @@
+<main class="TesseraUtilities" aria-labelledby="UtilitiesTitle">
+    <header><p class="TesseraUtilities__eyebrow">YOUR WORKPLACE</p><h1 id="UtilitiesTitle">Utilities</h1><p>Tools and connections available to your account.</p></header>
+    <div class="TesseraUtilities__grid">
+    [% FOREACH Tool IN Data.Tools %]
+        <a class="TesseraUtilities__card" href="[% Env('Baselink') | html %]Action=CustomerUtilities;Subaction=Launch;ID=[% Tool.ID | uri %]"[% IF Tool.External %] target="_blank" rel="noopener noreferrer"[% END %]>
+            [% IF Tool.HasIcon %]<img src="[% Env('Baselink') | html %]Action=CustomerUtilities;Subaction=Icon;ID=[% Tool.ID | uri %]" width="64" height="64" alt=""/>[% ELSIF Tool.LegacyIcon %]<img src="[% Tool.LegacyIcon | html %]" width="64" height="64" alt=""/>[% ELSE %]<span class="TesseraUtilities__symbol" aria-hidden="true">[% IF Tool.External %]&#8599;[% ELSE %]&#9671;[% END %]</span>[% END %]
+            <h2>[% Tool.Name | html %]</h2><p>[% Tool.Description | html %]</p><span class="TesseraUtilities__destination">[% IF Tool.External %]External tool &middot; opens in a new tab[% ELSE %]Open tool &rarr;[% END %]</span>
+        </a>
+    [% END %]
+    </div>
+    [% UNLESS Data.Tools.size %]<p role="status">No utilities are available for your account. Contact your administrator if you need access.</p>[% END %]
+</main>

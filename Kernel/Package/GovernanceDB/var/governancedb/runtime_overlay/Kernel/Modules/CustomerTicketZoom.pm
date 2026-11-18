@@ -2233,6 +2233,11 @@ sub _ZTSMRequestInfoHTML {
         [ 'Created',   $RootTicket->{Created} || $RootTicket->{CreateTime} || '' ],
     );
 
+    my $IsChange = ( $RootTicket->{Type} || '' ) eq 'Change';
+    if ($IsChange) {
+        splice @SummaryFields, 2, 0, $Self->_ZTSMChangeSummaryFields( TicketID => $TicketID );
+    }
+
     if ($IsIncident) {
         my $Severity = $Self->_ZTSMRequestDynamicFieldDisplay(
             FieldName => 'ZIN-Severity',
@@ -2285,6 +2290,7 @@ sub _ZTSMRequestInfoHTML {
         ZTicket-Parent
     );
     $SummaryDynamicField{'ZIN-Severity'} = 1 if $IsIncident;
+    @SummaryDynamicField{qw(ChangeType ChangeClassification)} = (1, 1) if $IsChange;
 
     if ( IsArrayRefWithData($ServiceFieldNames) ) {
         SERVICEFIELD:
@@ -2499,6 +2505,30 @@ sub _ZTSMArticleContentForPanel {
         HTMLResultMode => 1,
         LinkFeature    => 1,
     );
+}
+
+sub _ZTSMChangeSummaryFields {
+    my ( $Self, %Param ) = @_;
+    my $Fields = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $Backend = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $Layout = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my @Rows;
+    for my $Spec (
+        [ 'ChangeType', 'Change Type', 'Normal', { map { $_ => 1 } qw(Normal Standard Emergency) } ],
+        [ 'ChangeClassification', 'Change Classification', 'Not-Assessed', { map { $_ => 1 } qw(Normal Not-Assessed Major) } ],
+    ) {
+        my $Config = $Fields->DynamicFieldGet( Name => $Spec->[0] );
+        my $Value = IsHashRefWithData($Config) ? $Backend->ValueGet(
+            DynamicFieldConfig => $Config, ObjectID => $Param{TicketID},
+        ) : undef;
+        $Value = $Spec->[2] if !defined $Value || ref $Value || !$Spec->[3]{$Value};
+        my $HTML = $Layout->Ascii2Html( Text => $Value );
+        if ( $Spec->[0] eq 'ChangeClassification' && $Value eq 'Major' ) {
+            $HTML = '<span class="ZTSMChangeClassificationMajor">' . $HTML . '</span>';
+        }
+        push @Rows, [ $Spec->[1], $HTML, 1 ];
+    }
+    return @Rows;
 }
 
 sub _ZTSMIncidentSeverityBadgeHTML {

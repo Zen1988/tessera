@@ -20,7 +20,7 @@ sub Events {
     my $FromDate = _Date($From - 86400);
     my $UntilDate = _Date($Until + 86400);
     my @Searches = (
-        { Types => ['Change', 'Change::Major'],
+        { Types => ['Change'],
           'DynamicField_ZTicket-ScheduleStart' => { SmallerThan => $UntilDate },
           'DynamicField_ZTicket-ScheduleFinish' => { GreaterThan => $FromDate } },
         { Types => ['Incident', 'Incident::Major', 'ServiceRequest'], TicketCreateTimeNewerDate => $FromDate,
@@ -79,7 +79,7 @@ sub _EventsFromIDs {
             UserID => $Param{CustomerUserID} ? 1 : $Param{AgentUserID});
         next if !%Ticket;
         my $Type = $Ticket{Type} || '';
-        next if $Type !~ /\A(?:Change(?:::Major)?|Incident(?:::Major)?|ServiceRequest)\z/;
+        next if $Type !~ /\A(?:Change|Incident(?:::Major)?|ServiceRequest)\z/;
         my ($Start, $End);
         if ($Type =~ /\AChange/) {
             $Start = _Moment($Ticket{'DynamicField_ZTicket-ScheduleStart'});

@@ -1,0 +1,26 @@
+---
+- name: Verify the TESSERA input and output contract without target access
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Check structured input
+      ansible.builtin.assert:
+        that:
+          - tessera_request.reference is defined
+          - tessera_request.data.message is defined
+    - name: Produce verbose output
+      ansible.builtin.debug:
+        msg: "Received {{ tessera_request.reference }}: {{ tessera_request.data.message }}"
+        verbosity: 2
+    - name: Publish machine-readable business results
+      ansible.builtin.set_stats:
+        data:
+          tessera_result:
+            reference: "{{ tessera_request.reference }}"
+            message: "{{ tessera_request.data.message }}"
+            outcome: passed
+            records:
+              - name: input_validation
+                result: passed
+        per_host: false

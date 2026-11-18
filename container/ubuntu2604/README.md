@@ -1,4 +1,54 @@
-# Resume a pre-native-Job deployment checkpoint
+# Current image preparation — TESSERA-Base0.1.5
+
+Install the0.1.5 OPM normally on the source OTOBO host first. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.5-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
+
+Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.5, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
+
+0.1.5 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
+
+---
+
+# Current deployment â€” TESSERA0.1.0
+
+From the prepared build directory, use ONE wrapper command. It creates a unique
+bundle PVC per attempt and enables success-only cleanup automatically:
+
+```bash
+python3 scripts/deploy-release.py \
+  --namespace tessera \
+  --web tessera-web \
+  --daemon tessera-daemon \
+  --container tessera-web \
+  --image docker.io/library/tessera:0.1.0-ubuntu26.04 \
+  --bundle artifacts/upgrade-bundle
+```
+
+Do not first create examples/upgrade-bundle-pvc.yaml or manually upload to the
+fixed tessera-upgrade-bundle name. Do not reuse the old195 deployment block.
+The wrapper derives the release version from the verified bundle and selects a
+fresh tessera-upgrade-bundle-<unique-id> name. It retains saved replica counts;
+no hardcoded target version or arbitrary replica count is used.
+
+For an older extracted build directory, install the helper-only update first
+(the existing image and artifacts/upgrade-bundle remain unchanged):
+
+```bash
+curl -fL -o /tmp/TESSERA-Deployment-Cleanup-Update.zip \
+  https://github.com/Zen1988/tessera/releases/download/0.1.0/TESSERA-Deployment-Cleanup-Update.zip
+unzip -o /tmp/TESSERA-Deployment-Cleanup-Update.zip -d .
+```
+
+After the native upgrade and both successful rollouts, the helper archives Job
+logs/metadata, removes its completed Job and requests deletion of that run's
+owned temporary bundle PVC. Failed/uncertain runs retain evidence. Existing old
+PVCs are not swept automatically. If an old fixed-name bundle is confirmed
+obsolete, delete only that PVC explicitly; never remove application/database
+volumes or bypass an active maintenance claim. Existing native Job/LOCKED state
+still requires the corresponding guarded recovery, not a fresh deployment.
+
+---
+
+# Historical196 incident â€” resume only its recorded pre-native-Job checkpoint
 
 If the helper has claimed maintenance/scaled web but waited on retained old failed
 Job Pods, stop the old local command with Ctrl-C. Do not clear the maintenance
@@ -29,7 +79,7 @@ upgrade or a completed upgrade awaiting rollout; existing native Jobs stop it.
 Use the current toolkit's wrapper from the prepared/transferred build directory:
 
 ```bash
-python3 scripts/deploy-release.py --image docker.io/library/tessera:0.0.196-ubuntu26.04
+python3 scripts/deploy-release.py --image docker.io/library/tessera:0.1.0-ubuntu26.04
 ```
 
 This creates a uniquely named, labelled temporary PVC, uploads/verifies the local
@@ -63,7 +113,7 @@ older volumes. Do not delete/reupload those blindly; use the wrapper's new PVC.
 The new scripts require no image/OPM rebuild and can be extracted into an existing
 toolkit folder. Native Kubernetes cleanup behavior still requires live acceptance.
 
-# 2026-11-13 — Separate one-time upgrade bundle
+# 2026-11-13 â€” Separate one-time upgrade bundle
 
 Runtime images contain installed application files plus small release/package
 inventory metadata. They do not contain OPM archives. Preparation generates
@@ -76,18 +126,10 @@ Use a fresh extraction and prepare/build. Source Base194 or195 is supported;
 no Base195 installation is implied. Existing images must be rebuilt to remove
 archives from their layers; deleting them at runtime would not reduce image size.
 
-Target procedure (replace namespace/image with the actual built image):
-
-```bash
-kubectl -n tessera create -f examples/upgrade-bundle-pvc.yaml
-python3 scripts/upload-upgrade-bundle.py --namespace tessera \
-  --pvc tessera-upgrade-bundle --image REGISTRY/tessera:0.0.194-ubuntu26.04 \
-  --bundle artifacts/upgrade-bundle
-python3 scripts/upgrade-deploy.py --namespace tessera --web WEB_DEPLOYMENT \
-  --daemon DAEMON_DEPLOYMENT --container WEB_CONTAINER \
-  --image REGISTRY/tessera:0.0.194-ubuntu26.04 \
-  --upgrade-bundle-pvc tessera-upgrade-bundle --state-directory release-state
-```
+Current target procedure: use scripts/deploy-release.py as shown at the top.
+The former fixed-name create/upload/upgrade sequence is obsolete and intentionally
+not supplied as an executable deployment block. It can fail AlreadyExists and
+omits the wrapper's automatic cleanup flag.
 
 The PVC example uses the default StorageClass and2Gi; size it for the actual
 bundle. The upload helper uses the target runtime image and no application/DB
@@ -124,7 +166,7 @@ and Base payload checks remain. Legacy179 recovery scripts target old embedded-
 OPM images; use the new controlled bundle flow for new images. Live Linux/
 MariaDB/Kubernetes acceptance remains pending.
 
-# Complete TESSERA application image kit — Ubuntu26.04
+# Complete TESSERA application image kit â€” Ubuntu26.04
 
 For multiple web Pods, use the [shared generated JS/CSS cache setup](examples/shared-loader-cache/README.md).
 It adds a Longhorn RWX claim and nonroot initialization/targeted mounts to the

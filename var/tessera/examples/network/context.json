@@ -1,0 +1,81 @@
+{
+  "ActorID": 1,
+  "TargetID": 1,
+  "NetXMSWebserviceID": 2,
+  "AWXWebserviceID": 3,
+  "TemplateID": 42,
+  "InventoryID": 7,
+  "Endpoints": {
+    "source": {
+      "NodeID": 10,
+      "Address": "10.1.0.10",
+      "PlatformID": 50
+    },
+    "destination": {
+      "NodeID": 11,
+      "Address": "10.2.0.10",
+      "PlatformID": 50
+    }
+  },
+  "ConfigItems": [
+    {
+      "Class": "NetworkSegment",
+      "ConfigItemID": 101,
+      "Fields": {
+        "ZCI-CIDR": "10.1.0.0/24",
+        "ZCI-Zone": 701,
+        "ZTAM-Platform": 50
+      }
+    },
+    {
+      "Class": "NetworkSegment",
+      "ConfigItemID": 102,
+      "Fields": {
+        "ZCI-CIDR": "10.2.0.0/24",
+        "ZCI-Zone": 702,
+        "ZTAM-Platform": 50
+      }
+    },
+    {
+      "Class": "NetworkDomain",
+      "ConfigItemID": 201,
+      "Fields": {
+        "ZTAM-NetworkDomainType": 301
+      }
+    },
+    {
+      "Class": "NetworkDomain",
+      "ConfigItemID": 202,
+      "Fields": {
+        "ZTAM-NetworkDomainType": 302
+      }
+    }
+  ],
+  "SegmentDomains": {
+    "101": 201,
+    "102": 202
+  },
+  "DomainBindings": {
+    "201": {
+      "Layer": "Overlay",
+      "Enforcement": [
+        {
+          "InventoryName": "nsx-a",
+          "ConfigItemID": 401,
+          "Platform": "nsx",
+          "Context": "default"
+        }
+      ]
+    },
+    "202": {
+      "Layer": "Underlay"
+    }
+  },
+  "Nodes": {},
+  "Flow": {
+    "Protocol": "tcp",
+    "DestinationPorts": [
+      443
+    ]
+  }
+}

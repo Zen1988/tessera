@@ -23,6 +23,10 @@ sub Run {
                 ? {Provider=>'StaticBearer',SecretName=>$R->GetParam(Param=>'SecretName')}
                 : {Provider=>'ClientCredentialsBasic',map {$_=>$R->GetParam(Param=>$_)} qw(TokenURL ClientID SecretName)};
             my $Scope=$R->GetParam(Param=>'Scope');$C->{Authentication}{Scope}=$Scope if $C->{Preset} ne 'AWX' && defined $Scope && length $Scope;
+            if ($C->{Preset} eq 'Navis') {
+                $C->{CustomerSimulation}={Enabled=>$R->GetParam(Param=>'CustomerSimulationEnabled')?1:0,
+                    map {$_=>$R->GetParam(Param=>$_) || ''} qw(SourceNamespace IdentityNamespace)};
+            }
             $C->{Routes}=JSON::PP->new->decode($R->GetParam(Param=>'Routes') || '{}') if $C->{Preset} eq 'Generic';
             if ($S->{Subaction} eq 'Test') {$B->Test(UserID=>$S->{UserID},Connection=>$C);$Message='Authentication succeeded. Template permissions, jobs and application readiness still require verification.'}
             elsif ($S->{Subaction} eq 'Save') {$ID=$B->Save(UserID=>$S->{UserID},ID=>$ID,Name=>$Name,Enabled=>$Enabled,Connection=>$C)}
@@ -35,7 +39,7 @@ sub Run {
     my @Inputs=map {{Name=>$_,Value=>$C->{$_} || ''}} qw(Origin InstanceID);
     push @Inputs,map {{Name=>$_,Value=>$C->{Authentication}{$_} || ''}} qw(TokenURL ClientID SecretName Scope);
     return $L->Header(Title=>'Integration onboarding').$L->NavigationBar().$L->Output(TemplateFile=>'AgentTESSERAIntegration',Data=>{
-        ID=>$ID,Name=>$Name,Enabled=>$Enabled,Preset=>$C->{Preset},Inputs=>\@Inputs,Message=>$Message,
+        CustomerSimulation=>$C->{CustomerSimulation},ID=>$ID,Name=>$Name,Enabled=>$Enabled,Preset=>$C->{Preset},Inputs=>\@Inputs,Message=>$Message,
         Routes=>JSON::PP->new->canonical->pretty->encode($C->{Routes} || {}),Connections=>$B->View(UserID=>$S->{UserID}),
     }).$L->Footer();
 }

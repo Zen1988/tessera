@@ -332,17 +332,21 @@
 
     <aside class="ztsmMajorChangePanel">
         <h2>Major changes</h2>
-        [% IF Data.MajorChangeCount %]
+        <p>Approved announcements for all portal users.</p>
+        [% IF Data.CanClassifyChange %]<p><a href="[% Env('Baselink') | html %]Action=CustomerChangeClassification">Manage change classification</a></p>[% END %]
+        [% IF Data.AnnouncementUnavailable %]<p role="status">Announcements are temporarily unavailable.</p>
+        [% ELSIF Data.MajorChangeCount %]
             <div class="ztsmMajorChangeList">
                 [% FOREACH Row IN Data.MajorChangeRows %]
                     <div class="ztsmMajorChangeItem">
-                        <a href="[% Env("Baselink") %]Action=CustomerTicketZoom;TicketNumber=[% Row.TicketNumber | html %]">[% Row.Title | html %]</a>
-                        <div class="ztsmMajorChangeMeta">Ticket#[% Row.TicketNumber | html %] - [% Row.State | html %] - [% Row.Changed | html %]</div>
+                        <a href="[% Env("Baselink") %]Action=CustomerChangeAnnouncement;TicketID=[% Row.TicketID | uri %]">[% Row.Title | html %]</a>
+                        <div class="ztsmMajorChangeMeta">[% Row.Environment | html %] &middot; [% Row.Start | html %]</div>
                     </div>
                 [% END %]
             </div>
         [% ELSE %]
-            <div class="ztsmMajorEmpty">No Major Change Announced!</div>
+            <div class="ztsmMajorEmpty">No major changes announced.</div>
         [% END %]
+        <p><a href="[% Env('Baselink') | html %]Action=CustomerChangeAnnouncement">View all major changes &rarr;</a></p>
     </aside>
 </div>

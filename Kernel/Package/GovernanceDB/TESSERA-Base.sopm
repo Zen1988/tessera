@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.0.197</Version>
+    <Version>0.1.5</Version>
     <Framework>11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -20,6 +20,130 @@
     <ModuleRequired Version="0.087">Crypt::AuthEnc::GCM</ModuleRequired>
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/ApplicationNavisInstaller.pm" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.5.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/INGESTION_PROGRESS.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/active-release-seed-tool.md" Permission="660"/>
+        <File Location="var/tessera/docs/agent-security-and-portal-email-design.md" Permission="660"/>
+        <File Location="var/tessera/docs/agent-system-setup-design.md" Permission="660"/>
+        <File Location="var/tessera/docs/async-execution-contract.md" Permission="660"/>
+        <File Location="var/tessera/docs/awx-ha.md" Permission="660"/>
+        <File Location="var/tessera/docs/awx-integration-current-status.md" Permission="660"/>
+        <File Location="var/tessera/docs/build-180-redis-integration.md" Permission="660"/>
+        <File Location="var/tessera/docs/catalogue.md" Permission="660"/>
+        <File Location="var/tessera/docs/configure-010-recovery.md" Permission="660"/>
+        <File Location="var/tessera/docs/control-run-outcomes.md" Permission="660"/>
+        <File Location="var/tessera/docs/customer-network-simulation-design.md" Permission="660"/>
+        <File Location="var/tessera/docs/customer-portal-security.md" Permission="660"/>
+        <File Location="var/tessera/docs/customer-portal-vapt-2026-11-11.md" Permission="660"/>
+        <File Location="var/tessera/docs/customer-ticket-search-scope.md" Permission="660"/>
+        <File Location="var/tessera/docs/docker-startup-upgrade-design.md" Permission="660"/>
+        <File Location="var/tessera/docs/entitlement-risk-partitions.md" Permission="660"/>
+        <File Location="var/tessera/docs/governance-reference-literal-names.md" Permission="660"/>
+        <File Location="var/tessera/docs/host-shutdown-handover.md" Permission="660"/>
+        <File Location="var/tessera/docs/kubernetes-migration-plan.md" Permission="660"/>
+        <File Location="var/tessera/docs/kubernetes-secrets.md" Permission="660"/>
+        <File Location="var/tessera/docs/linux-host-image-staging-review.md" Permission="660"/>
+        <File Location="var/tessera/docs/navis-firewall-preparation.md" Permission="660"/>
+        <File Location="var/tessera/docs/network-change-planning-engine.md" Permission="660"/>
+        <File Location="var/tessera/docs/new-setup-wizard.md" Permission="660"/>
+        <File Location="var/tessera/docs/ordered-script-blocks.md" Permission="660"/>
+        <File Location="var/tessera/docs/package-top-level-path-investigation.md" Permission="660"/>
+        <File Location="var/tessera/docs/policy-script-security-foundation.md" Permission="660"/>
+        <File Location="var/tessera/docs/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/recovery-179-to-184.md" Permission="660"/>
+        <File Location="var/tessera/docs/risk-assessment-framework.md" Permission="660"/>
+        <File Location="var/tessera/docs/risk-register-specification.md" Permission="660"/>
+        <File Location="var/tessera/docs/risk-register-sysconfig.md" Permission="660"/>
+        <File Location="var/tessera/docs/tessera-operator-design.md" Permission="660"/>
+        <File Location="var/tessera/docs/ticket-calendar.md" Permission="660"/>
+        <File Location="var/tessera/docs/vulnerability-policy-authoring.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/data-model.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/overview.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/permissions.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/portal-interaction-model.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/process-philosophy.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/runtime-contract.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/runtime-orchestration.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/statebook-bluebook-model.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/tessera-core-philosophy.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/tessera-script-engine.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/ui-rendering-model.md" Permission="660"/>
+        <File Location="var/tessera/docs/architecture/ztsm-governance-model.md" Permission="660"/>
+        <File Location="var/tessera/docs/development/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/development/validation.md" Permission="660"/>
+        <File Location="var/tessera/docs/guides/administration.md" Permission="660"/>
+        <File Location="var/tessera/docs/integrations/navis.md" Permission="660"/>
+        <File Location="var/tessera/docs/integrations/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/logo/TESSERA_LOGO_v2.svg" Permission="660"/>
+        <File Location="var/tessera/docs/operations/configuration.md" Permission="660"/>
+        <File Location="var/tessera/docs/operations/deployment.md" Permission="660"/>
+        <File Location="var/tessera/docs/operations/recovery.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.0.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.1.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.2.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.3.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/0.1.4.md" Permission="660"/>
+        <File Location="var/tessera/docs/releases/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/context-and-effects.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/fields-and-storage.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/language.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/limitations.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/README.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/recipes.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/validation.md" Permission="660"/>
+        <File Location="var/tessera/docs/scriptengine/workflow.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/DATA_LIFECYCLE.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/INTEGRATION_API.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/ONBOARDING_API.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/openapi.json" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/PROVENANCE.json" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/TOPOLOGY_WORKFLOW.md" Permission="660"/>
+        <File Location="var/tessera/docs/reference/navis/UPGRADING.md" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ChangeClassification.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ChangeClassificationInstaller.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ChangeClassificationScreen.pm" Permission="660"/>
+        <File Location="Kernel/System/DynamicField/Driver/TESSERAChangeDropdown.pm" Permission="660"/>
+        <File Location="Kernel/System/Ticket/Event/ChangeDecisionDefaults.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerChangeAnnouncement.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerChangeClassification.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentTicketChangeClassification.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/TicketMenu/ChangeClassification.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerChangeAnnouncement.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/ChangeClassificationEdit.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERAChangeClassification.xml" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.ChangeAnnouncements.css" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Agent/default/css/TESSERA.ChangeAnnouncements.css" Permission="660"/>
+        <File Location="var/tessera/docs/change-classification.md" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/Utilities.pm" Permission="660"/>
+        <File Location="Kernel/Modules/CustomerUtilities.pm" Permission="660"/>
+        <File Location="Kernel/Modules/AgentUtilities.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerUtilities.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AgentUtilities.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/TESSERAUtilitiesShortcuts.tt" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERAUtilities.xml" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.Utilities.css" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Agent/default/css/TESSERA.Agent.Utilities.css" Permission="660"/>
+        <File Location="var/httpd/htdocs/common/img/TESSERA/utilities.svg" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileToolBox.pm" Permission="660"/>
+        <File Location="var/tessera/docs/utilities.md" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/FAQAccess.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/WorkplaceSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQExplorer.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQPrint.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQRelatedArticles.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerFAQZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQExplorer.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQPrint.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQRSS.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQSearch.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Modules/PublicFAQZoom.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Layout/FAQ.pm" Permission="660"/>
+        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/TESSERAWorkplaceSearch.tt" Permission="660"/>
+        <File Location="var/tessera/docs/workplace-search.md" Permission="660"/>
+
         <File Location="var/httpd/htdocs/js/TESSERA.Customer.SearchPaging.js" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerElasticsearchQuickResult.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Modules/CustomerElasticsearchQuickResult.pm" Permission="660"/>
@@ -502,8 +626,12 @@
     <CodeInstall Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service installation failed.'
@@ -513,8 +641,12 @@
     <CodeUpgrade Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service upgrade failed.'
@@ -524,8 +656,12 @@
     <CodeReinstall Type="post"><![CDATA[
         die 'TESSERA managed FAQ installation failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQInstaller')->Ensure();
+        $Kernel::OM->ObjectsDiscard(
+            Objects => ['Kernel::System::GovernanceDB::Bootstrap'],
+            ForcePackageReload => 1,
+        );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
-        $BootstrapObject->InstallDefaults();
+        die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
         die 'TESSERA asynchronous callback web service reinstall failed.'

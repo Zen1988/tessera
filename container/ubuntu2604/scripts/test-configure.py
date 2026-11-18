@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import shutil
 from unittest.mock import patch
 
 HELPER = Path(os.environ.get('TESSERA_CONFIGURE_HELPER',
@@ -105,6 +106,31 @@ class ConfigureTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.configure()
         self.assertFalse(self.marker.exists())
+
+    @unittest.skipUnless(shutil.which('perl'), 'requires Perl to execute the actual native-console wrapper')
+    def test_native_console_wrapper_fresh_scope_arguments_and_exit_code(self):
+        modules = self.root / 'modules/Kernel/System'
+        modules.mkdir(parents=True)
+        (self.root / 'modules/Kernel/MinimalPerlVersion.pm').write_text('package Kernel::MinimalPerlVersion; 1;')
+        (modules / 'ObjectManager.pm').write_text(r'''
+package Kernel::System::ObjectManager;
+sub new {bless {},$_[0]}
+sub Get {$_[0]}
+sub event {open my $F,'>>',$ENV{FIXTURE_EVENTS} or die;print $F $_[1],"\n";close $F}
+sub Configure {my($S,%P)=@_;die 'External cache enabled' if $P{CacheInBackend} || $P{CacheInMemory};$S->{Fresh}=1;$S->event('fresh')}
+sub Run {my($S,@A)=@_;die 'No fresh scope' if !$S->{Fresh};die 'Wrong native arguments' if join(',',@A) ne 'Maint::Config::Rebuild,--deploy-acls,--deploy-processes';$S->event('native');return $ENV{FIXTURE_EXIT}}
+sub DESTROY {$_[0]->event('events')}
+1;
+''')
+        events = self.root / 'events'
+        env = dict(os.environ, FIXTURE_EVENTS=str(events))
+        for status in (0, 7):
+            events.unlink(missing_ok=True)
+            env['FIXTURE_EXIT'] = str(status)
+            result = subprocess.run([shutil.which('perl'), '-I' + str(self.root / 'modules'), '-e', helper.REBUILD_PROGRAM,
+                                     'Maint::Config::Rebuild', '--deploy-acls', '--deploy-processes'], env=env, capture_output=True)
+            self.assertEqual(result.returncode, status, result.stderr)
+            self.assertEqual(events.read_text().splitlines(), ['fresh', 'native', 'events'])
 
     @unittest.skipUnless(os.name == 'posix' and os.geteuid() != 0, 'requires nonroot POSIX permissions')
     def test_unreadable_source_rejected_before_rebuild(self):
