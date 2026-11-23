@@ -1,5 +1,7 @@
 # Current — accept Base0.1.6 against Navis0.1.1
 
+Source and matching kits are pushed to draft PR1, branch codex/release-0.1.0 (feature commit9cdac9fb). Main remains unchanged; no GitHub Release or deployment.
+
 Use matching0.1.6 OPM/toolkit/offline pack for the next image; install into source normally before fresh prepare/build.0.1.6 fixes topology creation201 handling and numeric/string CMDB selection restoration. Latest Navis ed4ba3e API contract verified; migrations through021, operator NAuth/source grants/identity mappings and successful normalization remain deployment prerequisites. End users never enter graph IDs/labels; default or authorized Application context is resolved server-side.
 
 Native fresh/upgrade/reinstall and live source mapping, default/named trace, real evidence/unknown gaps and all-worker deployment still need acceptance. Full AWX discovery scheduler, CMDB member selection and topology-creation automation remain future work. Older current sections below describe cumulative acceptance context; prepared0.1.6 supersedes0.1.5 as the next artifact.
