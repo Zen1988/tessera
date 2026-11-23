@@ -1,3 +1,13 @@
+# Current — deploy and accept0.1.9 workspace candidate batching
+
+Owner runs0.1.8; access/grant and both schema checks passed. Exact Model failure was global2000-candidate cutoff before entitlement.0.1.9 replaces that with stable500-ID native search batches, full per-CI authorization and8MiB authorized-model response guard, retaining complete cross-page ambiguity checks. Install0.1.9 OPM into source normally, fresh prepare/build with matching toolkit/image/bundle and normal controlled upgrade. Do not rerun historical0.1.7 recovery or alter grants/Config.pm.
+
+Native acceptance:workspace loads for zen.chan@ncs.com.sg without scope error, endpoint counts match entitled assets, no unauthorized CI names/IPs, source/destination selection and default/Application fallback unchanged; measure real large-site timing and verify all-worker rollout. No live change performed here. Future indexed entitlement/paged selectors remain separate if measured scale requires them.
+
+# Current runtime priority — diagnose0.1.8 simulation Model failure
+
+Owner is running0.1.8 and sees workspace model-unavailable400 despite explicit active grant/CMDB-read assignment. Use scripts/diagnose-network-workspace.pl via kubectl exec stdin for exact login zen.chan@ncs.com.sg; await safe model error and installed schema summaries. No Navis call occurs at this stage. Do not broaden CI entitlements or assume graph/integration setup causes this initial error. Earlier0.1.7 recovery is historical unless owner supplies new evidence.
+
 # Live priority — run prepared targeted0.1.7 hook recovery
 
 Diagnostic confirmed exact0.1.7 installed hashes, missing Navis field, UPGRADING from0.1.3 and one Base journal. Owner retains original build folder/artifacts. Extract TESSERA-0.1.7-Navis-Upgrade-Recovery.zip into that original folder, then run once: python3 scripts/recover-navis017.py --namespace tessera --job tessera-release-1795404303. It finds the unique original state directory or accepts --state-directory. No image rebuild or0.1.8 deployment needed for this continuation. Keep failed Job, recovery Job, original bundle and private evidence.

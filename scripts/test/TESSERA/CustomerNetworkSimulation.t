@@ -17,15 +17,39 @@ use Kernel::Modules::CustomerNetworkSimulation;
     sub GetConfig {$_[0]}
     sub GovernanceObjectSearch {my ($S,%P)=@_;return sort {$a<=>$b} grep {$S->{GO}{$_}{Class} eq $P{Classes}[0]} keys %{$S->{GO}}}
     sub GovernanceObjectGet {my ($S,%P)=@_;return Storable::dclone($S->{GO}{$P{GovernanceObjectID}}) if $S->{GO}{$P{GovernanceObjectID}};return}
-    sub ConfigItemSearch {my ($S,%P)=@_;return sort {$a<=>$b} keys %{$S->{CI}}}
+    sub ItemList {$_[0]{Catalog} || {1=>'Workload',2=>'NetworkNode'}}
+    sub ConfigItemSearch {
+        my ($S,%P)=@_;push @{$S->{SearchCalls}},\%P;
+        return if $S->{SearchFailure};
+        my @IDs=sort {$a<=>$b} keys %{$S->{CI}};
+        if (ref $P{ConfigItemID} eq 'ARRAY') {my %IDs=map {$_=>1} @{$P{ConfigItemID}};@IDs=grep {$IDs{$_}} @IDs}
+        @IDs=grep {!$S->{PanelDenied}{$_}} @IDs;
+        return scalar @IDs if ($P{Result} || '') eq 'COUNT';
+        return @IDs;
+    }
     sub ConfigItemGet {my ($S,%P)=@_;return Storable::dclone($S->{CI}{$P{ConfigItemID}}) if $S->{CI}{$P{ConfigItemID}};return}
     sub _ReferenceObjects {my ($S,%P)=@_;my @V=ref $P{Value} eq 'ARRAY'?@{$P{Value}}:($P{Value});return map {$S->{GO}{$_}} grep {defined $_ && $S->{GO}{$_} && $S->{GO}{$_}{Class} eq $P{Class} && $S->{GO}{$_}{ZTSMStatus} eq 'Active'} @V}
     sub DefinitionGet {return {DynamicFieldRef=>{'ZTAM-Application'=>{FieldType=>'GovernanceObject'},'ZTAM-Environment'=>{FieldType=>'GovernanceObject'},'ZTAM-NetworkAdapter'=>{FieldType=>'Set',Config=>{Include=>[{DF=>'ZTAM-IpAddress',Definition=>{FieldType=>'Text'}}]}}}}}
     sub SystemDataGet {my ($S,%P)=@_;return $S->{Data}{$P{Key}}}
     sub SystemDataAdd {my ($S,%P)=@_;die 'duplicate record' if exists $S->{Data}{$P{Key}};$S->{Data}{$P{Key}}=$P{Value};return 1}
     sub SystemDataUpdate {my ($S,%P)=@_;die 'missing record' if !exists $S->{Data}{$P{Key}};$S->{Data}{$P{Key}}=$P{Value};return 1}
-    sub Prepare {return !$_[0]{LockFailure}}
-    sub FetchrowArray {return (1)}
+    sub Prepare {
+        my ($S,%P)=@_;return if $S->{ScanFailure} || ($S->{LockFailure} && $P{SQL}=~/GET_LOCK/);
+        push @{$S->{Queries}},\%P;
+        if ($P{SQL}=~/MAX\(ci.id\)/) {
+            my @IDs=sort {$a<=>$b} keys %{$S->{CI}};$S->{Rows}=[[@IDs?($IDs[-1]):(undef)]];
+        } elsif ($P{SQL}=~/SELECT ci.id FROM configitem/) {
+            die 'Native DB binds must be scalar references' if grep {ref $_ ne 'SCALAR'} @{$P{Bind}};
+            my ($After,$Last)=map {$$_} @{$P{Bind}}[0,1];
+            my @IDs=sort {$a<=>$b} grep {$_>$After && $_<=$Last} keys %{$S->{CI}};
+            splice @IDs,$P{Limit} if @IDs>$P{Limit};
+            $S->{Rows}=[map {[$_]} @IDs];
+            push @{$S->{ScanPages}},[$After,$Last,$P{Limit},scalar @IDs];
+            $S->{PageCalls}++;
+        } else {$S->{Rows}=[[1]]}
+        return 1;
+    }
+    sub FetchrowArray {my $R=shift @{$_[0]{Rows} || []};return $R?@$R:()}
     sub WebserviceList {return $_[0]{NoConnection}?{}:$_[0]{MultipleConnections}?{12=>'Navis',13=>'Navis2'}:{12=>'Navis'}}
     sub WebserviceGet {my $S=shift;return {ValidID=>1,Config=>{Requester=>{Transport=>{Type=>'HTTP::TESSERAIntegration',Config=>{Preset=>'Navis',CustomerSimulation=>{Enabled=>1,SourceNamespace=>'collected-net',IdentityNamespace=>'CMDB'}}}}}}}
     sub GenerateRandomString {return 'N'x40}
@@ -232,5 +256,38 @@ my $Injected=$Backend->_read($InjectedID)->{SubmittedRequest};
 ok(!exists $Injected->{graph_build_id},'customer cannot inject a graph UUID');
 ok(!exists $Injected->{topology_name},'customer cannot inject a graph label into default trace');
 unlike($HTML,qr/name=["'](?:graph_build_id|BuildID|GraphID|TopologyName|topology_name)["']/i,'customer form has no raw graph selector input');
+
+{
+    my $Large=bless {CI=>{},GO=>dclone($OM->{GO}),Config=>dclone($OM->{Config}),Data=>{},
+        Allowed=>{alice=>{1=>1,2505=>1}},Checks=>[]},'SimulationManager';
+    $Large->{ConfigObject}=bless {OM=>$Large},'SimulationConfig';
+    for my $ID (1..2505) {
+        my $Asset=dclone($OM->{CI}{101});$Asset->{ConfigItemID}=$ID;
+        $Asset->{Name}=($ID==1 || $ID==2505)?'Visible '.$ID:'PRIVATE '.$ID;
+        $Large->{CI}{$ID}=$Asset;
+    }
+    local $Kernel::OM=$Large;
+    my $LargeModel=$Backend->Model(CustomerUserID=>'alice');
+    is_deeply([map {$_->{ID}} @{$LargeModel->{Assets}}],[1,2505],'entitled asset beyond global2000 boundary is reachable');
+    is($Large->{PageCalls},6,'candidate scan uses six bounded pages');
+    ok(!(grep {$_->[2]>500 || $_->[3]>500} @{$Large->{ScanPages}}),'every raw ID page is bounded');
+    ok(!(grep {@{$_->{ConfigItemID}} >500 || $_->{SortBy} ne 'Number' || $_->{CacheTTL}} @{$Large->{SearchCalls}}),'native search uses bounded IDs and supported sort/no stale result cache');
+    unlike(JSON::PP->new->encode($LargeModel),qr/PRIVATE/,'unentitled assets are never projected');
+    ok(!eval {$Backend->_endpoint($LargeModel,'1@0',100,1);1},'duplicate address in a later page remains ambiguous');
+    $Large->{PanelDenied}{2505}=1;
+    is_deeply([map {$_->{ID}} @{$Backend->Model(CustomerUserID=>'alice')->{Assets}}],[1],'native panel restriction remains separate from customer entitlement');
+    delete $Large->{PanelDenied};
+    $Large->{Allowed}{alice}={map {$_=>1} 1..2505};
+    is(scalar @{$Backend->Model(CustomerUserID=>'alice')->{Assets}},2505,'more than2000 entitled assets load without truncation');
+    $Large->{SearchFailure}=1;
+    ok(!eval {$Backend->Model(CustomerUserID=>'alice');1},'native search failure never returns partial scope');
+    delete $Large->{SearchFailure};$Large->{ScanFailure}=1;
+    ok(!eval {$Backend->Model(CustomerUserID=>'alice');1},'failed candidate query cannot return partial scope');
+    delete $Large->{ScanFailure};$Large->{Catalog}={1=>'Workload',2=>'NetworkNode',3=>'Workload'};
+    ok(!eval {$Backend->Model(CustomerUserID=>'alice');1},'ambiguous class identity fails closed');
+    delete $Large->{Catalog};$Large->{Allowed}{alice}={1=>1};
+    $Large->{CI}{1}{Name}='x'x(8*1024*1024);
+    ok(!eval {$Backend->Model(CustomerUserID=>'alice');1},'actual authorized response byte budget remains enforced');
+}
 
 done_testing();

@@ -42,3 +42,7 @@ Legacy environment bindings remain untouched only for saved records; new traces 
 ## Trace presentation
 
 The portal displays candidate managed hops, permission-masked grey devices and distinct unmanaged/missing segments. The grey placeholder may show its Application system name only; it has no CI name/IP/class/native or Navis ID, and no device link. Application affiliation is a narrow owner-approved graph projection through the existing ZTAM-Application reference, not a CMDB discovery/detail grant. Missing or ambiguous affiliation remains unavailable. Known managed endpoints beyond a gap are marked not_traced rather than promoted to evaluated/connected. Mobile uses a readable vertical graph with pan/zoom and a keyboard-accessible inspector.
+
+## Workspace inventory size (Base0.1.9)
+
+Candidate assets are read in stable500-ID batches through native search and per-CI customer detail checks. Unrelated inventory above2000 no longer blocks the workspace. The complete authorized model is retained for cross-page address ambiguity checks; responses over8MiB fail closed rather than silently dropping assets. Initial model loading does not call Navis.

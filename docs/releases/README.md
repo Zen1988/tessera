@@ -17,3 +17,5 @@ Prepared artifacts are not live acceptance. Previous OPMs remain immutable. See 
 - [0.1.7 — Application missing-reference default graph fallback](0.1.7.md)
 
 - [0.1.8 — Native missing-field installer fix](0.1.8.md)
+
+- [0.1.9 — Network workspace candidate batching beyond2000 assets](0.1.9.md)

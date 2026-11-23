@@ -9,6 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 KIT=ROOT/'container/ubuntu2604'
 ROOT_FILES={'Dockerfile','Dockerfile.tlsproxy','.dockerignore','.gitignore',
     'apt-packages.txt','apt-extra.txt','cpanfile.extra','README.md'}
+RECOVERY_MODULES={'image/Navis017Recovery.pm','image/navis017-installer.pm'}
 SUFFIXES={'.sh','.py','.pl','.conf','.cnf','.exclude','.yaml','.md'}
 
 def main():
@@ -21,7 +22,7 @@ def main():
         if not p.is_file() or p.is_symlink(): continue
         relative=p.relative_to(KIT)
         if relative.as_posix()=='image/site-entrypoint.sh': continue
-        allowed=(relative.as_posix() in ROOT_FILES or
+        allowed=(relative.as_posix() in ROOT_FILES or relative.as_posix() in RECOVERY_MODULES or
             (relative.parts[0] in {'image','scripts','examples'} and p.suffix in SUFFIXES))
         if allowed:
             assert p.suffix not in {'.key','.pem','.pfx','.p12'}
