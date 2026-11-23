@@ -184,13 +184,39 @@ $OM->{GO}{100}{DynamicField_Navis}='application 1';
 my $ConfiguredModel=$Backend->Model(CustomerUserID=>'alice');my ($ConfiguredApp)=grep {$_->{ID}==100} @{$ConfiguredModel->{Applications}};ok($ConfiguredApp->{HasTopology},'configured Application is available as a topology choice');
 my $AppBinding=$Backend->_applicationBinding($Backend->_binding(),$M,100);is($AppBinding->{GraphName},'application 1','Application Navis field supplies stable topology name');is($AppBinding->{ApplicationID},100,'binding records authorized Application context');
 ok(!eval {$Backend->_applicationBinding($Backend->_binding(),$M,999);1},'unlisted Application ID cannot select a graph');
-ok(!eval {$Backend->_applicationBinding($Backend->_binding(),$M,200);1},'Application with no Navis name cannot silently use default');
+my $FallbackBinding=$Backend->_applicationBinding($Backend->_binding(),$M,200);
+is($FallbackBinding->{GraphName},'','Application with no reference uses the default network');
+is($FallbackBinding->{ApplicationID},200,'fallback retains the permitted Application context');
+for my $Missing (undef,'',[]) {
+    $OM->{GO}{200}{DynamicField_Navis}=$Missing;
+    is($Backend->_applicationBinding($Backend->_binding(),$M,200)->{GraphName},'','missing optional Navis value falls back');
+}
+for my $Invalid ('  ',['one','two'],{}) {
+    $OM->{GO}{200}{DynamicField_Navis}=$Invalid;
+    ok(!eval {$Backend->_applicationBinding($Backend->_binding(),$M,200);1},'malformed reference does not fall back');
+}
+delete $OM->{GO}{200}{DynamicField_Navis};
+for my $Key (grep {/::Rate::/} keys %{$OM->{Data}}) {$OM->{Data}{$Key}=0}
+my $FallbackID=$Backend->Analyze(%Input,TopologyApplicationID=>200,SubmissionToken=>'f'x40);
+my $FallbackSaved=$Backend->_read($FallbackID);
+ok(!exists $FallbackSaved->{SubmittedRequest}{topology_name} && !exists $FallbackSaved->{SubmittedRequest}{graph_build_id},'actual fallback sends no graph selector');
+is($Backend->Result(CustomerUserID=>'alice',AnalysisID=>$FallbackID)->{Result}{TopologyApplicationID},200,'fallback restores its selected Application');
+like($HTML,qr/uses default network/,'Application options explain default fallback');
+unlike($HTML,qr/<option[^>]*value="200"[^>]*disabled/,'Application with no graph remains selectable');
 for my $Key (grep {/::Rate::/} keys %{$OM->{Data}}) {$OM->{Data}{$Key}=0}
 my $NamedID=$Backend->Analyze(%Input,TopologyApplicationID=>100,SubmissionToken=>'m'x40);
 my $SavedNamed=$Backend->_read($NamedID);is($SavedNamed->{SubmittedRequest}{topology_name},'application 1','actual named request stored without pinning stale UUID');ok(!exists $SavedNamed->{SubmittedRequest}{graph_build_id},'named Application request has no fixed graph UUID');
 is($SavedNamed->{Request}{graph_build_id},$Build,'resolved graph UUID remains immutable per-trace evidence');
 is($Backend->Result(CustomerUserID=>'alice',AnalysisID=>$NamedID)->{Result}{TopologyApplicationID},100,'saved named trace restores its explicit Application context');
 $OM->{GO}{100}{DynamicField_Navis}='changed label';ok(!eval {$Backend->Result(CustomerUserID=>'alice',AnalysisID=>$NamedID);1},'changed Application mapping cannot silently relabel saved evidence');$OM->{GO}{100}{DynamicField_Navis}='application 1';
+# An existing named reference that Navis cannot resolve never retries default.
+for my $Key (grep {/::Rate::/} keys %{$OM->{Data}}) {$OM->{Data}{$Key}=0}
+my $BeforeFailure=scalar @Calls;$FailTrace=1;
+my $FailedNamedID=$Backend->Analyze(%Input,TopologyApplicationID=>100,SubmissionToken=>'q'x40);$FailTrace=0;
+my @FailedCalls=@Calls[$BeforeFailure..$#Calls];
+is(scalar @FailedCalls,1,'failed named trace makes exactly one remote call');
+is($FailedCalls[0]{Data}{topology_name},'application 1','unresolvable saved reference stays a named request');
+is($Backend->_read($FailedNamedID)->{Status},'TRACE_INTENT','failed named trace retains uncertainty without default replay');
 # Additional full-page fixtures exercise grey/unknown graph presentation.
 for my $Case (['restricted',$Hidden],['gap',{%$Result,%$Projection}]) {
     my ($Name,$View)=@$Case;my $JSON=JSON::PP->new->canonical->encode({Assets=>$M->{Assets},Result=>$View,Selection=>{SourceEndpoint=>'101@0',DestinationEndpoint=>'102@0',SourceApplication=>'100',DestinationApplication=>'200',SourceSystem=>'101',DestinationSystem=>'102',Protocol=>'tcp',DestinationPort=>443}});

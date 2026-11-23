@@ -111,7 +111,10 @@ sub _applicationBinding {
     my $App=$Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(GovernanceObjectID=>$ID,DynamicFields=>1);
     die "Application topology unavailable.\n" if ref $App ne 'HASH' || ($App->{Class} || '') ne 'Application' || ($App->{ZTSMStatus} || '') ne 'Active';
     my $Name=$App->{DynamicField_Navis};$Name=$Name->[0] if ref $Name eq 'ARRAY' && @$Name==1;
-    die "Configure the Application Navis topology name first.\n" if !Kernel::System::TESSERA::NavisPlan::_text($Name) || $Name=~/^\s|\s$/;
+    # Only an absent optional reference falls back. Invalid/saved-but-unresolvable
+    # names must never silently switch the analysis to a different graph.
+    return {%$B,ApplicationID=>"$ID",GraphName=>''} if !defined $Name || (!ref $Name && $Name eq '') || (ref $Name eq 'ARRAY' && !@$Name);
+    die "Invalid Application Navis topology name.\n" if !Kernel::System::TESSERA::NavisPlan::_text($Name) || $Name=~/^\s|\s$/;
     return {%$B,ApplicationID=>"$ID",GraphName=>$Name};
 }
 sub _savedBinding {

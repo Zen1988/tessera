@@ -1,3 +1,7 @@
+# Current — accept Base0.1.7 Application graph fallback
+
+Next artifact is0.1.7. Verify an authorized active Application with an empty Navis field traces through default and retains its selected Application context. A configured Application uses its saved label; malformed/unauthorized references and remote named failures must not switch to default. Install OPM normally before fresh prepare/build with matching toolkit; no new field/config Secret change. Native fresh/upgrade/reinstall, live Navis evidence/permissions and full automation acceptance remain pending.
+
 # Current — accept Base0.1.6 against Navis0.1.1
 
 Source and matching kits are pushed to draft PR1, branch codex/release-0.1.0 (feature commit9cdac9fb). Main remains unchanged; no GitHub Release or deployment.

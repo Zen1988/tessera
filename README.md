@@ -32,7 +32,7 @@ Parent tickets are governance ledgers; children are execution ledgers. Governanc
 
 The latest `Kernel/Package/GovernanceDB/TESSERA-Base.sopm` and generated OPM are package authority. Root source and old overlays can contain work in progress. Do not build production releases from a dirty tree or apply historical overlays over an installed package.
 
-The next prepared upgrade is **Base 0.1.6**; see [release status](docs/releases/README.md). Package preparation, publication and actual live acceptance are distinct. GovernanceDB's PackageMerge version is separate from Base's version.
+The next prepared upgrade is **Base 0.1.7**; see [release status](docs/releases/README.md). Package preparation, publication and actual live acceptance are distinct. GovernanceDB's PackageMerge version is separate from Base's version.
 
 | Path | Purpose |
 | --- | --- |

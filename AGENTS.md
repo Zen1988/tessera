@@ -676,3 +676,8 @@ A UI patch is not accepted just because it looks correct. It must also preserve 
 - Additive installer preflights field/layout compatibility, retains administrator pages/roles and values, and adds a separate optional Agent Navis page once. It does not replace Application definitions from old defaults. Conflicting layouts require review before mutation.
 - Trace topology selection is explicit: Default network sends no application graph selector; a permitted Application resolves its current Navis label. Source/destination Application filters are not graph selection or a permission grant. Historical resolved build UUID and original submitted request remain evidence.
 - A label alone does not create a topology, launch discovery, authorize an external call or register an automation scheduler. Those are separate reviewed capabilities.
+
+## Application graph fallback (owner decision2026-11-23)
+
+- A permitted active Application with no saved Navis reference uses the namespace default graph. Retain Application context in evidence and send no topology_name/graph_build_id selector.
+- Malformed references, unauthorized/inactive Applications and saved references that Navis cannot resolve remain errors. Never retry a failed named trace against default. Session IDs are per-analysis evidence, not the Application stable reference.

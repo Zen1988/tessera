@@ -13,3 +13,5 @@ Prepared artifacts are not live acceptance. Previous OPMs remain immutable. See 
 
 
 - [0.1.6 — Navis0.1.1 readiness and topology creation status fix](0.1.6.md)
+
+- [0.1.7 — Application missing-reference default graph fallback](0.1.7.md)
