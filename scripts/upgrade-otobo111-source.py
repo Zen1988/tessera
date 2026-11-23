@@ -274,6 +274,25 @@ def preserve_failed_dump(state):
         partial.rename(state / ("database.failed-" + str(time.time_ns()) + ".sql.gz"))
 
 
+def packet_preflight(home, package_data):
+    # RepositoryAdd may base64-encode on non-DirectBlob backends. Allow its
+    # expansion plus protocol overhead, with room for the bundled package set.
+    required = max(64 * 1024**2, 4 * ((len(package_data) + 2) // 3) + 4 * 1024**2)
+    perl = r'''
+use strict;use warnings;use Kernel::System::ObjectManager;
+local $Kernel::OM=Kernel::System::ObjectManager->new();
+my $D=$Kernel::OM->Get('Kernel::System::DB');
+die "Cannot read packet limit\n" if !$D->Prepare(SQL=>'SELECT @@max_allowed_packet');
+my @R=$D->FetchrowArray();print $R[0];
+'''
+    result = as_otobo(home, "perl", "-I.", "-ICustom", "-IKernel/cpan-lib",
+                     "-e", perl, capture=True)
+    available = int(result.stdout.strip())
+    if available < required:
+        raise RuntimeError(f"Application DB max_allowed_packet={available} is too small; "
+                           f"raise it to at least {required} bytes before applying")
+
+
 def apply(args):
     state = args.state.resolve()
     info = json.loads((state / "state.json").read_text())
@@ -324,6 +343,7 @@ def apply(args):
     run(["mariadb", *db_options, "-Nse",
          f"SHOW FUNCTION STATUS WHERE Db='{args.db_name}'; SHOW EVENTS FROM {args.db_name}"],
         capture=True)
+    packet_preflight(home, merged_opm)
     if resume:
         validate_backup_resume(home, state, info, args, merged_opm)
     for path in (home / "var/article", home / "Kernel/Config.pm", home / "Custom"):
@@ -404,7 +424,13 @@ def apply(args):
     run([home / "bin/otobo.SetPermissions.pl"])
     # Beta -> final includes migrations added after beta2. Do not skip as a patch update.
     as_otobo(home, home / "scripts/DBUpdate-to-11.1.pl")
+    info["phase"] = "PACKAGES_UPGRADING"
+    save(state / "state.json", info)
     upgrade_packages(home, merged_opm, merged_files, merged_entries)
+    finish_configuration(home, state, info)
+
+
+def finish_configuration(home, state, info):
     for command in ("Maint::Config::Rebuild", "Maint::Cache::Delete",
                     "Maint::Loader::CacheCleanup", "Maint::Loader::CacheGenerate",
                     "Maint::Translations::Deploy"):

@@ -172,7 +172,7 @@ class UpgradeSafety(unittest.TestCase):
                 UPGRADE.upgrade_packages(self.home, b"reviewed opm", {}, entries)
 
     def test_backup_resume_is_unavailable_after_migration_begins(self):
-        for phase in ("STOPPING", "APPLYING", "UPDATED_STOPPED", "STARTED_PENDING_ACCEPTANCE"):
+        for phase in ("STOPPING", "APPLYING", "PACKAGES_UPGRADING", "UPDATED_STOPPED", "STARTED_PENDING_ACCEPTANCE"):
             with self.assertRaisesRegex(RuntimeError, "requires BACKING_UP"):
                 UPGRADE.backup_mode({"phase": phase}, True)
         self.assertTrue(UPGRADE.backup_mode({"phase": "BACKING_UP"}, True))
@@ -257,6 +257,15 @@ class UpgradeSafety(unittest.TestCase):
                 UPGRADE.apply(args)
             shutdown.assert_not_called()
         self.assertEqual(json.loads((state / "state.json").read_text())["phase"], "PREPARED")
+
+    def test_packet_limit_checked_through_application_connection(self):
+        with patch.object(UPGRADE, "as_otobo",
+                          return_value=SimpleNamespace(stdout=b"16777216")):
+            with self.assertRaisesRegex(RuntimeError, "max_allowed_packet"):
+                UPGRADE.packet_preflight(self.home, b"x" * 18000000)
+        with patch.object(UPGRADE, "as_otobo",
+                          return_value=SimpleNamespace(stdout=b"134217728")):
+            UPGRADE.packet_preflight(self.home, b"x" * 18000000)
 
 
 if __name__ == "__main__":
