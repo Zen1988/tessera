@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -226,12 +227,58 @@ def upgrade_packages(home, data, files, entries):
         raise RuntimeError("Installed TESSERA repository does not match the supplied package")
 
 
+def backup_mode(info, requested):
+    if requested:
+        if info["phase"] != "BACKING_UP":
+            raise RuntimeError("Backup resume requires BACKING_UP; migration phases cannot be resumed this way")
+        return True
+    if info["phase"] != "PREPARED":
+        raise RuntimeError("Not PREPARED; do not retry a partially applied update")
+    return False
+
+
+def validate_backup_resume(home, state, info, args, package_data):
+    required = ("active_services", "cron_present", "daemon_running",
+                "tessera_package_sha256", "db_name")
+    if any(key not in info for key in required) or not isinstance(info["active_services"], list):
+        raise RuntimeError("Incomplete original maintenance state")
+    if info["db_name"] != args.db_name or hashlib.sha256(package_data).hexdigest() != info["tessera_package_sha256"]:
+        raise RuntimeError("Backup retry must use the original database and compatibility package")
+    if not (state / "otobo.crontab").is_file():
+        raise RuntimeError("Original saved crontab is missing")
+    units = set(info["active_services"]) | set(args.services.split(","))
+    for unit in units:
+        if not re.fullmatch(r"[A-Za-z0-9@_.-]+", unit):
+            raise RuntimeError("Invalid saved service")
+        if subprocess.run(["systemctl", "is-active", "--quiet", unit]).returncode == 0:
+            raise RuntimeError("Keep application writers stopped before backup resume: " + unit)
+    cron = subprocess.run(["crontab", "-u", "otobo", "-l"], stdout=subprocess.PIPE)
+    if cron.returncode not in (0, 1) or cron.stdout.strip():
+        raise RuntimeError("Cannot confirm otobo cron remains stopped")
+    daemon = subprocess.run(["runuser", "-u", "otobo", "--",
+        str(home / "bin/otobo.Daemon.pl"), "status"], cwd=home, stdout=subprocess.DEVNULL)
+    if daemon.returncode != 1:
+        raise RuntimeError("Cannot confirm otobo daemon remains stopped")
+    archive = state / "otobo-files.tar"
+    if archive.is_symlink() or not archive.is_file():
+        raise RuntimeError("Original application file backup is missing")
+    with tarfile.open(archive) as saved:
+        members = saved.getmembers()
+        if not members or any(Path(m.name).parts[0] != home.name for m in members):
+            raise RuntimeError("Unexpected application backup contents")
+
+
+def preserve_failed_dump(state):
+    partial = state / "database.sql.gz"
+    if partial.exists():
+        partial.rename(state / ("database.failed-" + str(time.time_ns()) + ".sql.gz"))
+
+
 def apply(args):
     state = args.state.resolve()
     info = json.loads((state / "state.json").read_text())
     home, stage = Path(info["home"]), Path(info["stage"])
-    if info["phase"] != "PREPARED":
-        raise RuntimeError("Not PREPARED; do not retry a partially applied update")
+    resume = backup_mode(info, getattr(args, "resume_backup", False))
     verify_archive(state / "otobo-11.1.1-source.tar.gz")
     # Recheck extracted source against the verified archive, including staged modifications.
     with tarfile.open(state / "otobo-11.1.1-source.tar.gz") as source:
@@ -273,6 +320,12 @@ def apply(args):
         "AND (engine IS NULL OR engine<>'InnoDB')"], capture=True).stdout.strip()
     if nontransactional != b"0":
         raise RuntimeError("Non-InnoDB tables require a site-specific consistent database backup")
+    # SELECT 1 alone does not exercise mysql.proc or mysql.event.
+    run(["mariadb", *db_options, "-Nse",
+         f"SHOW FUNCTION STATUS WHERE Db='{args.db_name}'; SHOW EVENTS FROM {args.db_name}"],
+        capture=True)
+    if resume:
+        validate_backup_resume(home, state, info, args, merged_opm)
     for path in (home / "var/article", home / "Kernel/Config.pm", home / "Custom"):
         if path.is_symlink():
             raise RuntimeError(f"External/symlink data needs a site-specific backup plan: {path}")
@@ -289,32 +342,36 @@ def apply(args):
         f"WHERE table_schema='{args.db_name}'"], capture=True).stdout.strip())
     if shutil.disk_usage(state).free < tree_size + 2 * db_size + 2 * 1024**3:
         raise RuntimeError("Insufficient backup space; use a larger --state filesystem")
-    active = []
-    for unit in args.services.split(","):
-        if not re.fullmatch(r"[A-Za-z0-9@_.-]+", unit):
-            raise RuntimeError("Invalid systemd unit")
-        if subprocess.run(["systemctl", "is-active", "--quiet", unit]).returncode == 0:
-            active.append(unit)
-    cron = subprocess.run(["crontab", "-u", "otobo", "-l"], stdout=subprocess.PIPE)
-    if cron.returncode not in (0, 1):
-        raise RuntimeError("Cannot read otobo crontab")
-    (state / "otobo.crontab").write_bytes(cron.stdout)
-    daemon_running = subprocess.run(["runuser", "-u", "otobo", "--",
-        str(home / "bin/otobo.Daemon.pl"), "status"], cwd=home,
-        stdout=subprocess.DEVNULL).returncode == 0
-    info.update(phase="STOPPING", active_services=active, db_name=args.db_name,
-                cron_present=cron.returncode == 0, daemon_running=daemon_running,
-                tessera_target="0.1.10", tessera_package_sha256=hashlib.sha256(merged_opm).hexdigest())
-    save(state / "state.json", info)
-    for unit in active:
-        run(["systemctl", "stop", unit])
-    as_otobo(home, home / "bin/Cron.sh", "stop")
-    as_otobo(home, home / "bin/otobo.Daemon.pl", "stop")
+    if not resume:
+        active = []
+        for unit in args.services.split(","):
+            if not re.fullmatch(r"[A-Za-z0-9@_.-]+", unit):
+                raise RuntimeError("Invalid systemd unit")
+            if subprocess.run(["systemctl", "is-active", "--quiet", unit]).returncode == 0:
+                active.append(unit)
+        cron = subprocess.run(["crontab", "-u", "otobo", "-l"], stdout=subprocess.PIPE)
+        if cron.returncode not in (0, 1):
+            raise RuntimeError("Cannot read otobo crontab")
+        (state / "otobo.crontab").write_bytes(cron.stdout)
+        daemon_running = subprocess.run(["runuser", "-u", "otobo", "--",
+            str(home / "bin/otobo.Daemon.pl"), "status"], cwd=home,
+            stdout=subprocess.DEVNULL).returncode == 0
+        info.update(phase="STOPPING", active_services=active, db_name=args.db_name,
+                    cron_present=cron.returncode == 0, daemon_running=daemon_running,
+                    tessera_target="0.1.10", tessera_package_sha256=hashlib.sha256(merged_opm).hexdigest())
+        save(state / "state.json", info)
+        for unit in active:
+            run(["systemctl", "stop", unit])
+        as_otobo(home, home / "bin/Cron.sh", "stop")
+        as_otobo(home, home / "bin/otobo.Daemon.pl", "stop")
     # On any error from here, leave services stopped and retain backups/state.
     info["phase"] = "BACKING_UP"
     save(state / "state.json", info)
-    run(["tar", "--acls", "--xattrs", "--numeric-owner", "-cpf",
-         state / "otobo-files.tar", "-C", home.parent, home.name])
+    if resume:
+        preserve_failed_dump(state)
+    else:
+        run(["tar", "--acls", "--xattrs", "--numeric-owner", "-cpf",
+             state / "otobo-files.tar", "-C", home.parent, home.name])
     with (state / "database.sql.gz").open("wb") as output:
         process = subprocess.Popen(["mariadb-dump", *db_options, "--single-transaction",
             "--routines", "--events", "--triggers", "--hex-blob", "--databases", args.db_name],
@@ -393,6 +450,8 @@ def main():
                    help="Reviewed TESSERA-Base-0.1.10.opm; approves only matching exact source hashes")
     p.add_argument("--db-defaults-file", type=Path)
     p.add_argument("--confirm-modules", action="store_true")
+    p.add_argument("--resume-backup", action="store_true",
+                   help="Retry only failed BACKING_UP; preserve original service/crontab state")
     p.add_argument("--services", default="apache2.service,cron.service,postfix.service,otobo-web.service,otobo-daemon.service")
     p = subs.add_parser("start", help="Start only services active before update")
     p.add_argument("--state", type=Path, required=True)
