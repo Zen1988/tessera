@@ -344,6 +344,7 @@
                 <Item Key="BGDark">#bfbfce</Item>
                 <Item Key="TextDark">#00023c</Item>
                 <Item Key="TextLight">#7f809d</Item>
+                <Item Key="TextLink">#001bff</Item>
                 <Item Key="Highlight">#fef235</Item>
                 <Item Key="NotifyOK">#c4cdfa</Item>
                 <Item Key="NotifyWarn">#fffccc</Item>
@@ -505,7 +506,7 @@
         <Description Translatable="1">Defines the URL rich text editor path.</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;js/thirdparty/ckeditor5-47.6.1/</Item>
+            <Item ValueType="String" ValueRegex="">&lt;OTOBO_CONFIG_Frontend::WebPath&gt;js/thirdparty/ckeditor5-48.5.2/</Item>
         </Value>
     </Setting>
     <Setting Name="Frontend::RichTextHeight" Required="1" Valid="1">
@@ -526,14 +527,14 @@
         <Description Translatable="1">Path to CKEditor content CSS file. Changes to this setting will only consistently apply after deleting the OTOBO Cache via the Maint::Cache::Delete command!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-47.6.1-content.css</Item>
+            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-48.5.2-content.css</Item>
         </Value>
     </Setting>
     <Setting Name="Frontend::RichTextEditorStyles" Required="1" Valid="1" ConfigLevel="200">
         <Description Translatable="1">Path to CKEditor editor CSS file. Changes to this setting will only consistently apply after deleting the OTOBO Cache via the Maint::Cache::Delete command!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-47.6.1-editor.css</Item>
+            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-48.5.2-editor.css</Item>
         </Value>
     </Setting>
     <Setting Name="CustomerFrontend::RichText::DefaultCSS" Required="1" Valid="1">
@@ -547,14 +548,14 @@
         <Description Translatable="1">Path to CKEditor content CSS file. Changes to this setting will only consistently apply after deleting the OTOBO Cache via the Maint::Cache::Delete command!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-47.6.1-content.css</Item>
+            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-48.5.2-content.css</Item>
         </Value>
     </Setting>
     <Setting Name="CustomerFrontend::RichTextEditorStyles" Required="1" Valid="1" ConfigLevel="200">
         <Description Translatable="1">Path to CKEditor editor CSS file. Changes to this setting will only consistently apply after deleting the OTOBO Cache via the Maint::Cache::Delete command!</Description>
         <Navigation>Frontend::Base</Navigation>
         <Value>
-            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-47.6.1-editor.css</Item>
+            <Item ValueType="String" ValueRegex="">common/css/ckeditor5-48.5.2-editor.css</Item>
         </Value>
     </Setting>
     <Setting Name="Frontend::RichText::EnhancedMode" Required="1" Valid="1">
@@ -4671,7 +4672,7 @@ via the Preferences button after logging in.
                 </Item>
                 <Item Key="JavaScript">
                     <Array>
-                        <Item>thirdparty/momentjs-2.29.3/moment.min.js</Item>
+                        <Item>thirdparty/momentjs-2.30.1/moment.min.js</Item>
                         <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.js</Item>
                         <Item>thirdparty/d3-3.5.6/d3.min.js</Item>
                         <Item>thirdparty/nvd3-1.7.1/nvd3.min.js</Item>
@@ -8537,9 +8538,13 @@ via the Preferences button after logging in.
                 <Item Key="Print" Translatable="1">Print</Item>
                 <Item Key="CSV" Translatable="1">CSV</Item>
                 <Item Key="Excel" Translatable="1">Excel</Item>
-                <Item Key="D3::BarChart" Translatable="1">Graph: Bar Chart</Item>
-                <Item Key="D3::LineChart" Translatable="1">Graph: Line Chart</Item>
-                <Item Key="D3::StackedAreaChart" Translatable="1">Graph: Stacked Area Chart</Item>
+                <Item Key="Gnuplot::BarChart" Translatable="1">Graph: Clustered Bar Chart (Gnuplot)</Item>
+                <Item Key="Gnuplot::StackedBarChart" Translatable="1">Graph: Stacked Bar Chart (Gnuplot)</Item>
+                <Item Key="Gnuplot::LineChart" Translatable="1">Graph: Line Chart (Gnuplot)</Item>
+                <Item Key="Gnuplot::StackedAreaChart" Translatable="1">Graph: Stacked Area Chart (Gnuplot)</Item>
+                <Item Key="D3::BarChart" Translatable="1">Graph: Bar Chart (D3)</Item>
+                <Item Key="D3::LineChart" Translatable="1">Graph: Line Chart (D3)</Item>
+                <Item Key="D3::StackedAreaChart" Translatable="1">Graph: Stacked Area Chart (D3)</Item>
             </Hash>
         </Value>
     </Setting>
@@ -8565,14 +8570,14 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="Stats::CustomerIDAsMultiSelect" Required="1" Valid="1">
-        <Description Translatable="1">Shows all the customer identifiers in a multi-select field (not useful if you have a lot of customer identifiers).</Description>
+        <Description Translatable="1">Shows all the customer identifiers in a multi-select field (Warning: This significantly lowers performance in large environments with many CustomerIDs).</Description>
         <Navigation>Frontend::Agent::View::Stats</Navigation>
         <Value>
-            <Item ValueType="Checkbox">1</Item>
+            <Item ValueType="Checkbox">0</Item>
         </Value>
     </Setting>
     <Setting Name="Stats::CustomerUserLoginsAsMultiSelect" Required="1" Valid="1">
-        <Description Translatable="1">Shows all the customer user identifiers in a multi-select field (not useful if you have a lot of customer user identifiers).</Description>
+        <Description Translatable="1">Shows all the customer user identifiers in a multi-select field (Warning: This significantly lowers performance in large environments with many CustomerIDs).</Description>
         <Navigation>Frontend::Agent::View::Stats</Navigation>
         <Value>
             <Item ValueType="Checkbox">0</Item>
@@ -9334,6 +9339,13 @@ via the Preferences button after logging in.
         <Navigation>Frontend::Admin::View::CustomerUser</Navigation>
         <Value>
             <Item ValueType="Checkbox">1</Item>
+        </Value>
+    </Setting>
+    <Setting Name="AdminCustomerUser::SearchLimit" Required="0" Valid="1">
+        <Description Translatable="1">Controls the search limit in the AdminCustomerUser interface.</Description>
+        <Navigation>Frontend::Admin::View::CustomerUser</Navigation>
+        <Value>
+            <Item ValueType="String" ValueRegex="^[0-9]{1,6}$">200</Item>
         </Value>
     </Setting>
      <Setting Name="AdminCustomerCompany::RunInitialWildcardSearch" Required="1" Valid="1">
@@ -10607,6 +10619,7 @@ via the Preferences button after logging in.
             </Array>
         </Value>
     </Setting>
+
     <!-- Begin Statistic Reports -->
     <Setting Name="Frontend::Module###AgentStatisticsReports" Required="0" Valid="1">
         <Description Translatable="1">Frontend module registration for the agent interface.</Description>
@@ -10706,6 +10719,13 @@ via the Preferences button after logging in.
                     </Array>
                 </Item>
             </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Gnuplot::Bin" Required="0" Valid="0">
+        <Description Translatable="1">Defines the path to the gnuplot binary.</Description>
+        <Navigation>Core::Gnuplot</Navigation>
+        <Value>
+            <Item ValueRegex="" ValueType="File">/usr/bin/gnuplot</Item>
         </Value>
     </Setting>
     <Setting Name="GoogleChrome::Bin" Required="0" Valid="0">
@@ -10874,7 +10894,7 @@ via the Preferences button after logging in.
                 </Item>
                 <Item Key="JavaScript">
                     <Array>
-                        <Item>thirdparty/momentjs-2.29.3/moment.min.js</Item>
+                        <Item>thirdparty/momentjs-2.30.1/moment.min.js</Item>
                         <Item>thirdparty/fullcalendar-3.10.2/fullcalendar.min.js</Item>
                         <Item>thirdparty/d3-3.5.6/d3.min.js</Item>
                         <Item>thirdparty/nvd3-1.7.1/nvd3.min.js</Item>
@@ -10899,7 +10919,7 @@ via the Preferences button after logging in.
     <!-- Elasticsearch Widget Configs -->
 
     <Setting Name="ElasticsearchWidgetBackend###01-ElasticsearchTickets" Required="0" Valid="1">
-        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Description Translatable="1">Defines the parameters for the Elasticsearch widget backend.</Description>
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Hash>
@@ -10911,7 +10931,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="ElasticsearchWidgetBackend###02-ElasticsearchCustomerCompany" Required="0" Valid="1">
-        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Description Translatable="1">Defines the parameters for the Elasticsearch widget backend.</Description>
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Hash>
@@ -10923,7 +10943,7 @@ via the Preferences button after logging in.
         </Value>
     </Setting>
     <Setting Name="ElasticsearchWidgetBackend###03-ElasticsearchCustomerUser" Required="0" Valid="1">
-        <Description Translatable="1">Defines the parameters for the elasticsearch widget backend.</Description>
+        <Description Translatable="1">Defines the parameters for the Elasticsearch widget backend.</Description>
         <Navigation>Core::Elasticsearch::Settings</Navigation>
         <Value>
             <Hash>
@@ -10970,7 +10990,7 @@ via the Preferences button after logging in.
             </Hash>
         </Value>
     </Setting>
-    <Setting Name="Frontend::Navigation###AdminOAuthTokenStore###001-Framework" Required="0" Valid="0">
+    <Setting Name="Frontend::Navigation###AdminOAuthTokenStore###001-Framework" Required="0" Valid="1">
         <Description Translatable="1">Main menu item registration.</Description>
         <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
         <Value>
@@ -11027,7 +11047,7 @@ via the Preferences button after logging in.
             </Item>
         </Value>
     </Setting>
-    <Setting Name="Frontend::Navigation###AdminOIDCProfiles###001-Framework" Required="0" Valid="0">
+    <Setting Name="Frontend::Navigation###AdminOIDCProfiles###001-Framework" Required="0" Valid="1">
         <Description Translatable="1">Main menu item registration.</Description>
         <Navigation>Frontend::Admin::ModuleRegistration::MainMenu</Navigation>
         <Value>
@@ -11083,14 +11103,14 @@ via the Preferences button after logging in.
     </Setting>
     <!-- OIDC/mail-->
     <Setting Name="SendmailModule::OAuth2FunctionalAccount" Required="0" Valid="0" ConfigLevel="200">
-        <Description Translatable="1">If 'XOAUTH2' or 'OAUTHBEARER' is selected in the 'SendmailModule::OAuth2Method' setting, then this setting needs to be enabled and set to a valid OIDC Functional Account. OIDC Accounts can be configured in the Admin UI 'OAuth Functional Accounts' Module.</Description>
+        <Description Translatable="1">If 'XOAUTH2' or 'OAUTHBEARER' is selected in the 'SendmailModule::OAuth2Method' setting, then this setting needs to be enabled and set to a valid OIDC functional account. OIDC accounts can be configured in the 'OAuth Functional Accounts' module of the administrator interface.</Description>
         <Navigation>Core::Email</Navigation>
         <Value>
             <Item ValueType="String" ValueRegex="">FunctionalAccount</Item>
         </Value>
     </Setting>
     <Setting Name="SendmailModule::OAuth2Method" Required="0" Valid="1" ConfigLevel="200">
-        <Description Translatable="1">The authentication method to use for SMTP Authentication, defaults to 'Basic Auth'. If 'XOAUTH2' or 'OAUTHBEARER' is selected, then the '"SendmailModule '"SendmailModule::OAuth2FunctionalAccount' setting needs to be enabled and set to a valid OIDC Functional Account.  OIDC Accounts can be configured in the Admin UI  'OAuth Functional Accounts' Module.</Description>
+        <Description Translatable="1">The authentication method to use for SMTP Authentication, defaults to 'Basic Auth'. If 'XOAUTH2' or 'OAUTHBEARER' is selected, then the 'SendmailModule::OAuth2FunctionalAccount' setting needs to be enabled and set to a valid OIDC functional account. OIDC accounts can be configured in the 'OAuth Functional Accounts' module of the administrator interface.</Description>
         <Navigation>Core::Email</Navigation>
         <Value>
             <Item ValueType="Select" SelectedID="Basic">

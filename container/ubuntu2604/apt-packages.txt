@@ -32,6 +32,7 @@ libsasl2-dev
 mariadb-client
 redis-tools
 graphviz
+gnuplot-nox
 ghostscript
 poppler-utils
 fontconfig

@@ -133,7 +133,7 @@ sub _Add {
         }
     }
 
-    for my $FilterParam (qw(ObjectTypeFilter NamespaceFilter)) {
+    for my $FilterParam (qw(ObjectTypeFilter FieldTypeFilter NamespaceFilter)) {
         $GetParam{$FilterParam} = $ParamObject->GetParam( Param => $FilterParam );
     }
 
@@ -202,7 +202,7 @@ sub _AddAction {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
 
-    for my $FilterParam (qw(ObjectTypeFilter NamespaceFilter)) {
+    for my $FilterParam (qw(ObjectTypeFilter FieldTypeFilter NamespaceFilter)) {
         $GetParam{$FilterParam} = $ParamObject->GetParam( Param => $FilterParam );
     }
 
@@ -322,6 +322,14 @@ sub _AddAction {
             },
         );
     }
+    if ( IsStringWithData( $GetParam{FieldTypeFilter} ) ) {
+        $RedirectString .= ";FieldTypeFilter=" . $LayoutObject->Output(
+            Template => '[% Data.Filter | uri %]',
+            Data     => {
+                Filter => $GetParam{FieldTypeFilter},
+            },
+        );
+    }
     if ( IsStringWithData( $GetParam{NamespaceFilter} ) ) {
         $RedirectString .= ";NamespaceFilter=" . $LayoutObject->Output(
             Template => '[% Data.Filter | uri %]',
@@ -350,7 +358,7 @@ sub _Change {
         }
     }
 
-    for my $FilterParam (qw(ObjectTypeFilter NamespaceFilter)) {
+    for my $FilterParam (qw(ObjectTypeFilter FieldTypeFilter NamespaceFilter)) {
         $GetParam{$FilterParam} = $ParamObject->GetParam( Param => $FilterParam );
     }
 
@@ -460,7 +468,7 @@ sub _ChangeAction {
         $GetParam{$ConfigParam} = $ParamObject->GetParam( Param => $ConfigParam );
     }
 
-    for my $FilterParam (qw(ObjectTypeFilter NamespaceFilter)) {
+    for my $FilterParam (qw(ObjectTypeFilter FieldTypeFilter NamespaceFilter)) {
         $GetParam{$FilterParam} = $ParamObject->GetParam( Param => $FilterParam );
     }
 
@@ -628,6 +636,14 @@ sub _ChangeAction {
             Template => '[% Data.Filter | uri %]',
             Data     => {
                 Filter => $GetParam{ObjectTypeFilter},
+            },
+        );
+    }
+    if ( IsStringWithData( $GetParam{FieldTypeFilter} ) ) {
+        $FilterString .= ";FieldTypeFilter=" . $LayoutObject->Output(
+            Template => '[% Data.Filter | uri %]',
+            Data     => {
+                Filter => $GetParam{FieldTypeFilter},
             },
         );
     }
@@ -844,24 +860,43 @@ sub _ShowScreen {
     );
 
     # Get a list of available dynamic fields for use as filters.
-    my %DynamicFieldList = %{
-        $DynamicFieldObject->DynamicFieldList(
+    my @DynamicFieldConfigList = @{
+        $DynamicFieldObject->DynamicFieldListGet(
             ObjectType => [ 'Ticket', 'Article' ],
-            Valid      => 1,
-            ResultType => 'HASH',
-        ) // {}
+            FieldType  => [
+                'Checkbox',
+                'Database',
+                'Dropdown',
+                'Lens',
+                'Agent',
+                'ConfigItem',
+                'ConfigItemVersion',
+                'CustomerCompany',
+                'CustomerUser',
+                'FAQ',
+                'Service',
+                'Ticket',
+                'ScriptTemplateToolkit',
+                'TextArea',
+                'Text',
+            ],
+            Valid => 1,
+        ) // []
     };
 
     # Add the dynamic fields to the hash.
     DYNAMICFIELDKEY:
-    for my $DynamicFieldKey ( sort keys %DynamicFieldList ) {
+    for my $DynamicFieldConfig (@DynamicFieldConfigList) {
+        next DYNAMICFIELDKEY if $DynamicFieldConfig->{Config}{MultiValue};
+        next DYNAMICFIELDKEY if $DynamicFieldConfig->{Config}{Multiselect};
+        next DYNAMICFIELDKEY if $DynamicFieldConfig->{Config}{PartOfSet};
 
         # Ignore the own field.
         if ( IsStringWithData( $Param{Name} ) ) {
-            next DYNAMICFIELDKEY if $DynamicFieldList{$DynamicFieldKey} eq $Param{Name};
+            next DYNAMICFIELDKEY if $DynamicFieldConfig->{Name} eq $Param{Name};
         }
 
-        my $DynamicFieldName = 'DynamicField_' . $DynamicFieldList{$DynamicFieldKey};
+        my $DynamicFieldName = 'DynamicField_' . $DynamicFieldConfig->{Name};
         $Filters{$DynamicFieldName} = $DynamicFieldName;
     }
 
@@ -1141,6 +1176,15 @@ sub _ShowScreen {
             Template => '[% Data.Filter | uri %]',
             Data     => {
                 Filter => $Param{ObjectTypeFilter},
+            },
+        );
+    }
+
+    if ( IsStringWithData( $Param{FieldTypeFilter} ) ) {
+        $FilterStrg .= ";FieldTypeFilter=" . $LayoutObject->Output(
+            Template => '[% Data.Filter | uri %]',
+            Data     => {
+                Filter => $Param{FieldTypeFilter},
             },
         );
     }

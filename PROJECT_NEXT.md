@@ -1,3 +1,33 @@
+# Current — execute/accept native11.1.1 + TESSERA0.1.10 source upgrade
+
+All38 reviewed sources accounted for; no missing Custom files. Prepared matching native upgrade ZIP/OPM0.1.10, toolkit and offline pack. Use updated helper with --tessera-package and existing /opt/otobo-update/tessera-11.1.1 state, after dependency/backup checks; do not install010 into beta first, edit reviewed flags or rerun prepare over the existing directory. Exact commands/docs in docs/deployment/otobo-11.1-source-upgrade.md. Success UPDATED_STOPPED permits start; failure retains maintenance/backups and needs inspection, not blind retry.171 Perl/15 Python tests pass; native Linux migration/restore/browser/integration acceptance pending.
+
+K8s is separate: source upgrade changes only source DB. Current wrapper does not invoke native framework DBUpdate-to-11.1. Implement/review a backed-up core DB migration step before beta->stable Kubernetes rollout; kit currently builds the stable source image only. Experimental beta-warning bridge is excluded from010. Prior missing-source/blocked sections below are historical and superseded by this completed merge.
+
+# Immediate — finish stable migration using exact host sources
+
+Owner requests merge all38 paths onto OTOBO11.1.1.24 exact source contents located (23 Base0.1.9 plus one ITSM AdminDynamicField.tt);14 live Custom sources absent from local packages/workspace. Need original15-source collector output to complete. Draft merges under .artifacts/stable-migration,32 targeted assertions pass. GenericAgent still needs native stable import/export integration because old Autoload delegate is not native stable; preserve search guard. All drafts remain unreleased; do not approve report/run apply or modify immutable packages. See outputs/otobo-11.1.1-migration-progress.json and PROJECT_STATUS.
+
+# Current — OTOBO11.1.1 native source upgrade compatibility review
+
+Owner wants only Ubuntu source/build host upgraded; Kubernetes uses rebuilt container kit separately. Prepared outputs/TESSERA-OTOBO-11.1.1-Source-Upgrade.zip and docs/deployment/otobo-11.1-source-upgrade.md. Run prepare only initially. Base0.1.9 overlaps21 upstream beta2->stable changed paths: review outputs/otobo-11.1.1-base019-compatibility.json, merge/validate against official stable before approving exact installed-host conflict report/apply. No fresh installer, uninstall, blind old-package restoration or unattended UpgradeAll. Stable User native basis matches, other overrides not yet accepted. Native upgrade/rollback acceptance pending; no deployment performed. Numeric-warning patch remains interrupted/unreleased. Owner confirmed login now okay; older login/disk priority sections below are historical context, not current tasks.
+
+# Immediate host priority — restore login JavaScript initialization
+
+Owner cannot CLICK Login; session diagnosis was premature. Native button starts disabled and Core.Agent.Login.Init enables the form. Verify/regenerate native loader JS/CSS with Maint::Loader::CacheCleanup then CacheGenerate as otobo, restart Apache only after success and hard-refresh. Full DB/install restore not supported by current evidence. If repair fails, inspect exact command output; if button stays disabled, inspect fresh JS Network results and initializer/disabled state before targeted package integrity repair. Keep existing credentials/config/security controls.
+
+# Current host priority — fresh agent-session failure evidence after space recovery
+
+Space recovered per owner; login page renders but shows Session invalid. Latest pasted fatal disk/DB lines are historical before successful Apache14:37 startup. Try private window with bare /otobo/index.pl and no saved SessionID/Action parameters. If still invalid, collect only new Apache error lines during one attempt and current df. Distinguish stale browser state from failed session persistence/cookie/proxy validation; do not reset credentials or disable session security based only on screenshot. No live cleanup/session changes performed here.
+
+# Immediate priority — reclaim/expand Ubuntu root capacity
+
+Confirmed root98% full with2.2G available, inodes33% used. /var/lib78G is the major consumer. MariaDB errno28 startup failure is confirmed and service has subsequently restarted successfully; no credential change needed from maintenance root-login warnings. Await du /var/lib, docker system df and vgs output before selecting deletion/build-cache cleanup or LVM expansion. No cleanup performed. Do not begin new image build yet.
+
+# Immediate priority — Ubuntu source/build host ENOSPC and local DB outage
+
+Owner confirms this is the Ubuntu source/build host, still failing. Logs explicitly show template-cache mkdir and Apache log writes failing with No space left on device, plus MariaDB127.0.0.1 unreachable. Obtain df-hT, df-i, bounded top-level du, MariaDB service status/recent journal. Determine blocks/inodes/mount and actual reclaim target before deletion; do not remove database data or Docker volumes. No cleanup/service changes done here. Recover source host before new prepare/build. Earlier Kubernetes recovery does not apply.
+
 # Current — deploy and accept0.1.9 workspace candidate batching
 
 Owner runs0.1.8; access/grant and both schema checks passed. Exact Model failure was global2000-candidate cutoff before entitlement.0.1.9 replaces that with stable500-ID native search batches, full per-CI authorization and8MiB authorized-model response guard, retaining complete cross-page ambiguity checks. Install0.1.9 OPM into source normally, fresh prepare/build with matching toolkit/image/bundle and normal controlled upgrade. Do not rerun historical0.1.7 recovery or alter grants/Config.pm.

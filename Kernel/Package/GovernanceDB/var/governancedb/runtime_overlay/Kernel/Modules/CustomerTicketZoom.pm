@@ -1395,6 +1395,7 @@ sub Run {
     # Get values for Ticket fields and use default value for Article fields, if given (this
     # screen generates a new article, then article fields will be always default value or
     # empty at the beginning).
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
     DYNAMICFIELD:
     for my $DynamicFieldConfig ( values $Self->{FollowUpDynamicField}->%* ) {
         next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
@@ -1406,6 +1407,21 @@ sub Run {
         elsif ( $DynamicFieldConfig->{ObjectType} eq 'Article' ) {
             $GetParam{DynamicField}{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = $DynamicFieldConfig->{Config}->{DefaultValue} || '';
         }
+
+        # pre-filling cache for reference field - necessary for ACL calculation of lens fields
+        my $IsReferenceField = $DynamicFieldBackendObject->HasBehavior(
+            Behavior           => 'IsReferenceField',
+            DynamicFieldConfig => $DynamicFieldConfig,
+        );
+
+        next DYNAMICFIELD unless $IsReferenceField;
+
+        $Kernel::OM->Get('Kernel::System::Web::FormCache')->SetFormData(
+            LayoutObject => $LayoutObject,
+            FormID       => $Self->{FormID},
+            Key          => 'PossibleValues_DynamicField_' . $DynamicFieldConfig->{Name},
+            Value        => $GetParam{DynamicField}{"DynamicField_$DynamicFieldConfig->{Name}"},
+        );
     }
 
     my $FieldRestrictionsObject = $Kernel::OM->Get('Kernel::System::Ticket::FieldRestrictions');
@@ -4731,7 +4747,7 @@ sub _Mask {
         my $ProcessEntityIDField = 'DynamicField_'
             . $ConfigObject->Get("Process::DynamicFieldProcessManagementProcessID");
 
-        # get the DF where the AtivityEntityID is stored
+        # get the DF where the ActivityEntityID is stored
         my $ActivityEntityIDField = 'DynamicField_'
             . $ConfigObject->Get("Process::DynamicFieldProcessManagementActivityID");
 
@@ -5017,6 +5033,7 @@ sub _Mask {
             Value              => $Value,
             ValueMaxChars      => 25,
             LayoutObject       => $LayoutObject,
+            MultiLink          => 1,
         );
 
         my $Label = $DynamicFieldConfig->{Label};
@@ -5028,17 +5045,46 @@ sub _Mask {
             },
         );
 
-        if ( $DynamicFieldConfig->{Config}->{Link} ) {
-            $LayoutObject->Block(
-                Name => 'TicketDynamicFieldLink',
-                Data => {
-                    Value                       => $ValueStrg->{Value},
-                    Title                       => $ValueStrg->{Title},
-                    Link                        => $DynamicFieldConfig->{Config}->{Link},
-                    LinkPreview                 => $DynamicFieldConfig->{Config}->{LinkPreview},
-                    $DynamicFieldConfig->{Name} => $ValueStrg->{Value},
-                },
-            );
+        if ( $ValueStrg->{Link} ) {
+            if ( IsArrayRefWithData( $ValueStrg->{Link} ) ) {
+                $LayoutObject->Block(
+                    Name => 'TicketDynamicFieldLink',
+                );
+                for my $Index ( 0 .. $#{ $ValueStrg->{Link} } ) {
+                    $LayoutObject->Block(
+                        Name => 'ValueItemLink',
+                        Data => {
+                            Value                       => $ValueStrg->{Value}[$Index],
+                            Title                       => $ValueStrg->{Title}[$Index],
+                            Link                        => $ValueStrg->{Link}[$Index],
+                            LinkPreview                 => $ValueStrg->{LinkPreview}[$Index],
+                            $DynamicFieldConfig->{Name} => $ValueStrg->{Value}[$Index],
+                        },
+                    );
+
+                    if ( $Index != $#{ $ValueStrg->{Link} } ) {
+                        $LayoutObject->Block(
+                            Name => 'MultivalueSeparatorLink',
+                        );
+                    }
+                }
+            }
+            else {
+                $LayoutObject->Block(
+                    Name => 'TicketDynamicFieldLink',
+                );
+                $LayoutObject->Block(
+                    Name => 'ValueItemLink',
+                    Data => {
+                        Value                       => $ValueStrg->{Value},
+                        Title                       => $ValueStrg->{Title},
+                        Link                        => $ValueStrg->{Link},
+                        LinkPreview                 => $ValueStrg->{LinkPreview},
+                        $DynamicFieldConfig->{Name} => $ValueStrg->{Value},
+                    },
+                );
+            }
+
         }
         else {
             $LayoutObject->Block(
@@ -5504,8 +5550,8 @@ sub _Mask {
         $Avatar = '//www.gravatar.com/avatar/' . md5_hex( lc $CustomerUser{UserEmail} ) . '?s=100&d=' . $DefaultIcon;
     }
     else {
-        $UserInitials = substr( $CustomerUser{UserFirstName} || '', 0, 1 )
-            . substr( $CustomerUser{UserLastName} || '', 0, 1 );
+        $UserInitials = substr( $CustomerUser{UserFirstname} // $CustomerUser{UserFirstName} // '', 0, 1 )
+            . substr( $CustomerUser{UserLastname} // $CustomerUser{UserLastName} // '', 0, 1 );
     }
 
     # explanatory message about asterisk

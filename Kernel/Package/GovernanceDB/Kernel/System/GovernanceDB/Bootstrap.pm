@@ -48,6 +48,8 @@ sub new {
 sub InstallDefaults {
     my ( $Self, %Param ) = @_;
 
+    $Self->_OTOBO111CompatibilityPreflight();
+
     $Self->_NewSetupStorageEnsure();
 
     $Self->_ActivityTablesEnsure();
@@ -3805,5 +3807,43 @@ sub _ScriptBlockFieldsEnsure {
         }
     }
     $DF->EventHandlerTransaction();
+    return 1;
+}
+
+
+sub _OTOBO111CompatibilityPreflight {
+    my ($Self) = @_;
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my $Path = "$Home/var/tessera/compatibility/otobo-11.1.1.json";
+    open my $FH, '<:raw', $Path or die 'Missing stable compatibility manifest.';
+    local $/;
+    my $Manifest = $Kernel::OM->Get('Kernel::System::JSON')->Decode(Data => <$FH>);
+    close $FH;
+    die 'Invalid stable compatibility manifest.' if ref $Manifest ne 'HASH'
+        || $Manifest->{target} ne '11.1.1' || ref $Manifest->{entries} ne 'ARRAY';
+    for my $Entry (@{$Manifest->{entries}}) {
+        next if $Entry->{path} !~ m{\ACustom/};
+        my $Native = "$Home/$Entry->{native_path}";
+        open my $Core, '<:raw', $Native or die "Missing native compatibility basis: $Native";
+        my $NativeData = <$Core>; close $Core;
+        die "Native basis changed; compatibility review required: $Native"
+            if sha256_hex($NativeData) ne $Entry->{target_native_sha256}
+            && sha256_hex($NativeData) ne $Entry->{current_native_sha256};
+        my $Source = "$Home/$Entry->{source_location}";
+        open my $Payload, '<:raw', $Source or die "Missing merged source: $Source";
+        my $SourceData = <$Payload>; close $Payload;
+        die "Merged source integrity mismatch: $Source"
+            if sha256_hex($SourceData) ne $Entry->{merged_sha256};
+        my $Target = "$Home/$Entry->{path}";
+        next if !-e $Target;
+        die "Symlink override requires review: $Target" if -l $Target;
+        open my $Existing, '<:raw', $Target or die "Cannot inspect override: $Target";
+        my $Data = <$Existing>; close $Existing;
+        my $Digest = sha256_hex($Data);
+        die "Unknown administrator override requires merge: $Target"
+            if $Digest ne $Entry->{override_sha256}
+            && $Digest ne $Entry->{merged_sha256}
+            && $Digest ne $Entry->{target_native_sha256};
+    }
     return 1;
 }
