@@ -1,6 +1,6 @@
 # Live priority — diagnose failed0.1.7 Job before recovery
 
-Job tessera-release-1795404303 failed during native hook with incompatible Navis field error plus Redis cache errors. Read-only helper command was supplied; await field metadata and receipt/package-journal output. Do not restart failed upgrade, delete field/journal/maintenance lock, apply old0.1.0 configuration-only recovery or assume0.1.8 image alone can resume. Missing-field native empty-hash bug is fixed in0.1.8 with matching artifacts; actual failed state still needs review. Preserve original Job/bundle and replica evidence. Redis failure diagnosis remains separate.
+Job tessera-release-1795404303 failed during native hook with incompatible Navis field error plus Redis cache errors. Read-only helper command was supplied; await field metadata and receipt/package-journal output. Do not restart failed upgrade, delete field/journal/maintenance lock, apply old0.1.0 configuration-only recovery or assume0.1.8 image alone can resume. Missing-field native empty-hash bug is fixed in0.1.8 with matching artifacts on draft PR2; PR1 was merged externally at0.1.7. actual failed state still needs review. Preserve original Job/bundle and replica evidence. Redis failure diagnosis remains separate.
 
 # Current — accept Base0.1.7 Application graph fallback
 
