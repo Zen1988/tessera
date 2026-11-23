@@ -1,3 +1,9 @@
+# Live priority — run prepared targeted0.1.7 hook recovery
+
+Diagnostic confirmed exact0.1.7 installed hashes, missing Navis field, UPGRADING from0.1.3 and one Base journal. Owner retains original build folder/artifacts. Extract TESSERA-0.1.7-Navis-Upgrade-Recovery.zip into that original folder, then run once: python3 scripts/recover-navis017.py --namespace tessera --job tessera-release-1795404303. It finds the unique original state directory or accepts --state-directory. No image rebuild or0.1.8 deployment needed for this continuation. Keep failed Job, recovery Job, original bundle and private evidence.
+
+Await real output:if cache preflight or native hook/configuration fails, do not rerun or clear journals. Inspect saved recovery subdirectory/job and retain maintenance. Recoverable CONFIGURING vs interrupted-hook ownership must be reviewed from exact resulting phase. Redis root cause still unknown; no credentials changed here.
+
 # Live priority — diagnose failed0.1.7 Job before recovery
 
 Job tessera-release-1795404303 failed during native hook with incompatible Navis field error plus Redis cache errors. Read-only helper command was supplied; await field metadata and receipt/package-journal output. Do not restart failed upgrade, delete field/journal/maintenance lock, apply old0.1.0 configuration-only recovery or assume0.1.8 image alone can resume. Missing-field native empty-hash bug is fixed in0.1.8 with matching artifacts on draft PR2; PR1 was merged externally at0.1.7. actual failed state still needs review. Preserve original Job/bundle and replica evidence. Redis failure diagnosis remains separate.
