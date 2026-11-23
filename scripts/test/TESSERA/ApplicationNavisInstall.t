@@ -27,4 +27,12 @@ my $Bad=bless {Definition=>dclone($Original),Field=>{Name=>'Navis',ObjectType=>'
 ok(!eval {$I->Ensure();1},'incompatible existing name fails before mutation');ok(!$Bad->{Adds} && !$Bad->{Versions},'no field or layout mutation on conflict');
 my $Collision=bless {Definition=>dclone($Original)},'AppInstallOM';push @{$Collision->{Definition}{Pages}},{Name=>'Navis',Content=>[{Section=>'Existing'}]};$Kernel::OM=$Collision;
 ok(!eval {$I->Ensure();1},'administrator-owned Navis page collision requires review');ok(!$Collision->{Adds} && !$Collision->{Versions},'layout preflight precedes field creation');
+# Native DynamicFieldGet returns an empty hashref, not undef, for a missing name.
+my $NativeMissing=bless {Definition=>dclone($Original),Field=>{}},'AppInstallOM';$Kernel::OM=$NativeMissing;
+ok($I->Ensure(),'native empty-hash missing result creates the optional field');
+is($NativeMissing->{Adds},1,'missing native field created once');
+is($NativeMissing->{Field}{Name},'Navis','new field has the exact approved name');
+ok($I->Ensure(),'native missing-field installation remains reinstall safe');
+is($NativeMissing->{Adds},1,'native return shape does not create duplicates');
+
 done_testing();

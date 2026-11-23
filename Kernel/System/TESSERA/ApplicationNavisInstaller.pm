@@ -7,6 +7,8 @@ sub new {bless {},shift}
 sub Ensure {
     my ($S)=@_;my $DF=$Kernel::OM->Get('Kernel::System::DynamicField');
     my $Existing=$DF->DynamicFieldGet(Name=>'Navis');
+    # Native DynamicFieldGet returns {} when the name does not exist.
+    $Existing=undef if ref $Existing eq 'HASH' && !keys %$Existing;
     die "Existing Navis field is incompatible.\n" if $Existing && (($Existing->{Name} || '') ne 'Navis'
         || ($Existing->{ObjectType} || '') ne 'GovernanceObject' || ($Existing->{FieldType} || '') ne 'Text'
         || $Existing->{Config}{MultiValue} || ($Existing->{ValidID} || 0)!=1);
