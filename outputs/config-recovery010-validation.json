@@ -1,0 +1,11 @@
+{
+  "recovery_tests": 7,
+  "configure_tests": 9,
+  "configure_skips": 2,
+  "native_cache_assertions": 10,
+  "broader_container_tests": 102,
+  "broader_errors": "5 missing historical0.0.180 fixture",
+  "broader_skips": 4,
+  "live_acceptance": "pending",
+  "sha256": "9f75d5da0477b0cb4426332a89ae6137b4413309c3778d8196ae99067112dd7d"
+}

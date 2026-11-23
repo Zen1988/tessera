@@ -1,0 +1,16 @@
+# Receiver fragment: merge into existing configuration; do not replace routes.
+receivers:
+  - name: tessera-melt
+    webhook_configs:
+      - url: https://tessera.ncs.local/otobo/nph-genericinterface.pl/Webservice/TESSERAObservability/v1/alertmanager
+        send_resolved: true
+        max_alerts: 100
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/tessera-secrets/alertmanager-provider-token
+          tls_config:
+            ca_file: /etc/alertmanager/certs/tessera-ca.crt
+            insecure_skip_verify: false
+# Deliberately add a reviewed route with group_by: [alertname, instance, cluster].
+# Groups must remain <=100 alerts: TESSERA rejects any truncated notification.

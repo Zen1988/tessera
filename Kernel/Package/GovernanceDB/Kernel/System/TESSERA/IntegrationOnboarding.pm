@@ -12,6 +12,16 @@ sub Authorized {
     return ($D{ValidID} || 0)==1 && $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(UserID=>$U,GroupName=>'admin',Type=>'rw');
 }
 sub NavisRoutes {return {
+    GraphBuildsList=>{Method=>'GET',Path=>'/v1/graph-builds',Parameters=>[],QueryParameters=>['namespace','limit']},
+    TopologyCreate=>{Method=>'POST',Path=>'/v1/topologies',Parameters=>[],SuccessStatus=>201},
+    TopologyByNameGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name',Parameters=>['Name'],QueryParameters=>['namespace','version_id']},
+    TopologyVersionsGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name/versions',Parameters=>['Name'],QueryParameters=>['namespace','limit','include_audit']},
+    TopologyCompareGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name/compare',Parameters=>['Name'],QueryParameters=>['namespace','from_version','to_version']},
+    TopologyRefresh=>{Method=>'POST',Path=>'/v1/topologies/by-name/:Name/refresh',Parameters=>['Name'],QueryParameters=>['namespace']},
+    TopologyGet=>{Method=>'GET',Path=>'/v1/topologies/:BuildID',Parameters=>['BuildID']},
+    CollectionProgressGet=>{Method=>'GET',Path=>'/v1/ingestions/collections/:CollectionRunID',Parameters=>['CollectionRunID'],QueryParameters=>['namespace','limit','offset']},
+    IngestionGet=>{Method=>'GET',Path=>'/v1/ingestions/:IngestionID',Parameters=>['IngestionID']},
+    TraceGraphGet=>{Method=>'GET',Path=>'/v1/trace-sessions/:CallerSessionID/graph',Parameters=>['CallerSessionID']},
     GraphGet=>{Method=>'GET',Path=>'/v1/graph-builds/:BuildID/graph',Parameters=>['BuildID']},
     Trace=>{Method=>'POST',Path=>'/v1/traces',Parameters=>[]},
     RecommendationsGet=>{Method=>'GET',Path=>'/v1/trace-sessions/:CallerSessionID/recommendations',Parameters=>['CallerSessionID']},
@@ -29,7 +39,7 @@ sub AWXRoutes {return {
 }}
 sub Validate {
     my ($S,$C)=@_;die "Invalid connection.\n" if ref $C ne 'HASH';
-    die "Unsupported connection property.\n" if grep {!/\A(?:Preset|Origin|InstanceID|Authentication|Routes|Timeout|ConnectionUID)\z/} keys %$C;
+    die "Unsupported connection property.\n" if grep {!/\A(?:Preset|Origin|InstanceID|Authentication|Routes|Timeout|ConnectionUID|CustomerSimulation)\z/} keys %$C;
     die "Invalid connection identity.\n" if defined $C->{ConnectionUID} && $C->{ConnectionUID}!~/\A[a-f0-9]{40}\z/;
     die "Invalid preset.\n" if ($C->{Preset} || '')!~/\A(?:Navis|Generic|AWX)\z/;
     my $A=Kernel::System::TESSERA::IntegrationAuth->new();my $U=$A->URL($C->{Origin});
@@ -43,6 +53,19 @@ sub Validate {
     die "Navis token endpoint must belong to this installation.\n" if $C->{Preset} eq 'Navis' && $C->{Authentication}{TokenURL} ne $C->{Origin}.'/nauth/token';
     die "Invalid instance reference.\n" if defined $C->{InstanceID} && (ref $C->{InstanceID} || length($C->{InstanceID})>255 || $C->{InstanceID}=~/[\x00-\x1f]/);
     $C->{Routes}=NavisRoutes() if $C->{Preset} eq 'Navis';
+    if (exists $C->{CustomerSimulation}) {
+        my $P=$C->{CustomerSimulation};
+        die "Invalid customer simulation profile.\n" if $C->{Preset} ne 'Navis' || ref $P ne 'HASH'
+            || grep {!/\A(?:Enabled|SourceNamespace|IdentityNamespace|GraphName)\z/} keys %$P;
+        die "Invalid simulation enablement.\n" if !defined $P->{Enabled} || ref $P->{Enabled} || $P->{Enabled}!~/\A[01]\z/;
+        for my $K (qw(SourceNamespace IdentityNamespace GraphName)) {
+            die "Invalid simulation namespace.\n" if defined $P->{$K} && (ref $P->{$K} || length($P->{$K})>255 || $P->{$K}=~/[\x00-\x1f\x7f]/);
+        }
+        die "Topology name must be trimmed and nonblank.\n" if length($P->{GraphName} || '') && $P->{GraphName}=~/^\s|\s$/;
+        die "A named graph requires an explicit collection namespace.\n" if length($P->{GraphName} || '') && !length($P->{SourceNamespace} || '');
+        die "CMDB identity namespace required.\n" if $P->{Enabled} && !length($P->{IdentityNamespace} || '');
+    }
+
     my $Routes=$C->{Routes};die "Operation routes required.\n" if ref $Routes ne 'HASH' || !keys %$Routes || keys(%$Routes)>32;
     for my $Name (keys %$Routes) {
         my $R=$Routes->{$Name};
@@ -50,7 +73,7 @@ sub Validate {
             || ($R->{Method} || '')!~/\A(?:GET|POST)\z/ || ($R->{Path} || '')!~m{\A/(?!/)[A-Za-z0-9_/:.~-]+\z}
             || $R->{Path}=~m{(?:\A|/)\.\.?(/|\z)} || ref $R->{Parameters} ne 'ARRAY';
         die "Unsupported route property.\n" if grep {!/\A(?:Method|Path|Parameters|SuccessStatus|QueryParameters)\z/} keys %$R;
-        die "Query parameters are reserved for AWX.\n" if exists $R->{QueryParameters} && $C->{Preset} ne 'AWX';
+        die "Unsupported query parameters.\n" if exists $R->{QueryParameters} && $C->{Preset} ne 'AWX' && !($C->{Preset} eq 'Navis' && $Name=~/\A(?:GraphBuildsList|TopologyByNameGet|TopologyVersionsGet|TopologyCompareGet|TopologyRefresh|CollectionProgressGet)\z/);
         die "Invalid expected response status.\n" if defined $R->{SuccessStatus} && $R->{SuccessStatus}!~/\A20[0-9]\z/;
         my @Names=$R->{Path}=~/:([A-Za-z][A-Za-z0-9]*)/g;
         die "Invalid path parameters.\n" if join(',',sort @Names) ne join(',',sort @{$R->{Parameters}}) || grep {ref $_ || !/\A[A-Za-z][A-Za-z0-9]*\z/} @{$R->{Parameters}};
@@ -99,6 +122,15 @@ sub Save {
         my $List=$W->WebserviceList(Valid=>0) || {};
         die "Name already exists; select its managed connection.\n" if grep {$List->{$_} eq $P{Name} && (!$Existing || $_!=$P{ID})} keys %$List;
         my %I=map {$_=>{Type=>$C->{Preset} eq 'AWX'?'AWX::'.$_:'TESSERA::Request',MappingInbound=>{},MappingOutbound=>{}}} keys %{$C->{Routes}};
+        if ($P{Enabled} && ref $C->{CustomerSimulation} eq 'HASH' && $C->{CustomerSimulation}{Enabled}) {
+            for my $Other (keys %$List) {
+                next if $P{ID} && $Other==$P{ID};
+                my $W=$W->WebserviceGet(ID=>$Other);
+                die "Another customer simulation connection is enabled.\n" if $W && ($W->{ValidID} || 0)==1
+                    && ($W->{Config}{Requester}{Transport}{Config}{Preset} || '') eq 'Navis'
+                    && $W->{Config}{Requester}{Transport}{Config}{CustomerSimulation}{Enabled};
+            }
+        }
         my $Config={Debugger=>{DebugThreshold=>'error',TestMode=>0},Requester=>{Invoker=>\%I,Transport=>{Type=>'HTTP::TESSERAIntegration',Config=>$C}}};
         my %Args=(Name=>$P{Name},Config=>$Config,ValidID=>$P{Enabled}?1:2,UserID=>$P{UserID});
         if ($Existing) {$ID=$P{ID};die "Service update failed.\n" if !$W->WebserviceUpdate(ID=>$ID,%Args)}

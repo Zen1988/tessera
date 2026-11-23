@@ -1,0 +1,38 @@
+{
+  "version": "0.1.2",
+  "baseline_sha256": "52d3cc1fb398dbdcad77384fa05f39e4540842ea5965f7bf445db84ea77e2048",
+  "sha256": "ee45c46f39af24de8417a1c3af61d6d2e940cbadf8b6b7f6fc6b272c0efc381b",
+  "payloads": 512,
+  "new": [
+    "Kernel/Config/Files/XML/TESSERAChangeClassification.xml",
+    "Kernel/Modules/AgentTicketChangeClassification.pm",
+    "Kernel/Modules/CustomerChangeAnnouncement.pm",
+    "Kernel/Modules/CustomerChangeClassification.pm",
+    "Kernel/Output/HTML/Templates/Standard/ChangeClassificationEdit.tt",
+    "Kernel/Output/HTML/Templates/Standard/CustomerChangeAnnouncement.tt",
+    "Kernel/Output/HTML/TicketMenu/ChangeClassification.pm",
+    "Kernel/System/DynamicField/Driver/TESSERAChangeDropdown.pm",
+    "Kernel/System/TESSERA/ChangeClassification.pm",
+    "Kernel/System/TESSERA/ChangeClassificationInstaller.pm",
+    "Kernel/System/TESSERA/ChangeClassificationScreen.pm",
+    "Kernel/System/Ticket/Event/ChangeDecisionDefaults.pm",
+    "var/httpd/htdocs/skins/Agent/default/css/TESSERA.ChangeAnnouncements.css",
+    "var/httpd/htdocs/skins/Customer/default/css/TESSERA.ChangeAnnouncements.css",
+    "var/tessera/docs/change-classification.md"
+  ],
+  "changed": [
+    "Kernel/System/GovernanceDB/Bootstrap.pm",
+    "Kernel/System/TESSERA/TicketCalendar.pm",
+    "var/governancedb/container_release.json",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/CustomerDashboard/TileTicketList.pm",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Dashboard/TileTicketList.tt"
+  ],
+  "unchanged": 492,
+  "hooks_preserved": true,
+  "deployed": false,
+  "perl_suites": 9,
+  "perl_assertions": 396,
+  "python_checks": 22,
+  "browser_layouts": 6,
+  "native_live_acceptance": false
+}

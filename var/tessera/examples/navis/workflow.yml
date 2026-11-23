@@ -1,0 +1,90 @@
+---
+- name: Simulate vendor work already prepared by TESSERA
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Initialize completion before any remote work
+      ansible.builtin.set_fact:
+        navis_exit: 1
+        navis_result: {Status: FAILED_OR_UNCERTAIN, Simulation: true, ApplyReady: false}
+        navis_devices: []
+      no_log: true
+    - name: Prepare and simulate the authorized request
+      block:
+        - name: Require explicit mode and execution-scoped callback
+          ansible.builtin.assert:
+            that:
+              - tessera_work.Phase == 'APPLY'
+              - tessera_work.Plans | length > 0
+              - tessera_work.PlanDigest | length == 64
+              - tessera_callback.URL is match('^https://')
+              - tessera_callback.ExecutionUID is match('^[a-fA-F0-9]{40}$')
+              - tessera_callback.CallbackToken | length == 64
+          no_log: true
+        - name: Accept only TESSERA prepared simulation intents
+          ansible.builtin.set_fact:
+            navis_result:
+              AnalysisID: "{{ tessera_work.AnalysisID }}"
+              PlanDigest: "{{ tessera_work.PlanDigest }}"
+              Status: SIMULATED
+              Simulation: true
+              ApplyReady: false
+              Plans: "{{ tessera_work.Plans }}"
+          no_log: true
+        - name: Dispatch only the three prepared vendor simulations
+          ansible.builtin.include_tasks: "{{ navis_vendor_files[navis_plan.Platform] }}"
+          vars:
+            navis_vendor_files: {panos: palo-alto.yml, aci: cisco-aci.yml, nsx: vmware-nsx.yml}
+          loop: "{{ navis_result.Plans }}"
+          loop_control:
+            loop_var: navis_plan
+            label: restricted-target
+          no_log: true
+        - name: Retain the vendor receipts
+          ansible.builtin.set_fact:
+            navis_result: "{{ navis_result | combine({'Devices': navis_devices}) }}"
+          no_log: true
+        - name: Mark simulation job complete
+          ansible.builtin.set_fact:
+            navis_exit: 0
+          no_log: true
+      rescue:
+        - name: Retain a sanitized correlation receipt
+          ansible.builtin.set_fact:
+            navis_result:
+              Status: FAILED_OR_UNCERTAIN
+              Simulation: true
+              ApplyReady: false
+              Issues: [TESSERA prepared-work simulation failed]
+          no_log: true
+      always:
+        - name: Require bounded callback evidence
+          ansible.builtin.assert:
+            that: ["navis_result | to_json | length < 900000"]
+          no_log: true
+        - name: Return evidence through existing authenticated TESSERA completion
+          ansible.builtin.uri:
+            url: "{{ tessera_callback.URL }}"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ tessera_callback.CallbackToken }}"
+            body_format: json
+            body:
+              ExecutionUID: "{{ tessera_callback.ExecutionUID }}"
+              ExitCode: "{{ navis_exit | int }}"
+              Response: "{{ navis_result }}"
+            validate_certs: true
+            follow_redirects: none
+            status_code: 200
+            timeout: 30
+          register: navis_callback
+          no_log: true
+        - name: Check completion identity
+          ansible.builtin.assert:
+            that: [navis_callback.json.ExecutionUID == tessera_callback.ExecutionUID]
+          no_log: true
+    - name: Keep job failure visible
+      ansible.builtin.fail:
+        msg: Prepared-work simulation failed; inspect TESSERA execution evidence
+      when: navis_exit | int != 0

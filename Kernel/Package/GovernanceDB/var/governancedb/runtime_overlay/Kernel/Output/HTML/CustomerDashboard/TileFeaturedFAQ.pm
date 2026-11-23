@@ -113,6 +113,7 @@ sub _AnnouncementsGet {
             UserID        => $Param{UserID},
         );
         next ITEMID if !%FAQ;
+        next ITEMID if !$Kernel::OM->Get('Kernel::System::TESSERA::FAQAccess')->Get(CustomerUserID => $Param{UserLogin}, ItemID => $ItemID);
 
         my $StartValue  = $FAQ{ 'DynamicField_' . $Param{StartField} }  || '';
         my $ExpiryValue = $FAQ{ 'DynamicField_' . $Param{ExpiryField} } || '';

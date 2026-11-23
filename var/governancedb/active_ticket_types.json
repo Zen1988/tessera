@@ -1,0 +1,26 @@
+{
+   "Sources" : {
+      "File" : "Export/Export_Types_2026-10-12 02_53_13.yml",
+      "SHA256" : "3a20ff6f822d2a8612bdc19315bcbfb027cec192c1569db85adb08337e4947c5"
+   },
+   "TicketTypes" : [
+      "Approval",
+      "Assessment",
+      "Automation",
+      "Change",
+      "Clarification",
+      "Confirmation",
+      "Diagnosis",
+      "Endorsement",
+      "Implementation",
+      "Incident",
+      "IntegrationRequest",
+      "Problem",
+      "Resolution",
+      "RiskTreatment",
+      "ServiceRequest",
+      "Task",
+      "Unclassified",
+      "Verification"
+   ]
+}

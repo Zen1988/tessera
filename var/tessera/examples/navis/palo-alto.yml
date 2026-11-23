@@ -1,0 +1,7 @@
+---
+- name: Validate Palo Alto simulation dispatch
+  ansible.builtin.assert:
+    that: [navis_plan.Platform == 'panos']
+  no_log: true
+- name: Simulate Palo Alto security rule
+  ansible.builtin.include_tasks: simulate-device.yml

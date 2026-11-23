@@ -1,6 +1,6 @@
 <div class="MainBox ARIARoleMain">
 <h1>Integration onboarding</h1>
-<p><a href="[% Env('Baselink') %]Action=AgentNetworkSimulationAccess">Network simulation access</a> — grant customer analysis access and configure environment graph bindings after onboarding Navis.</p>
+<p><a href="[% Env('Baselink') %]Action=AgentNetworkSimulationAccess">Network simulation access</a> — grant customer analysis access after onboarding Navis.</p>
 [% IF Data.Message %]<div class="MessageBox Notice" role="status"><p>[% Data.Message | html %]</p></div>[% END %]
 <p>Connect TESSERA to an external service using operator-issued machine credentials. Mount the client secret under /run/tessera-secrets and enter its file name below. Secret contents are never displayed.</p>
 <p><a href="[% Env('Baselink') %]Action=AgentTESSERAIntegration">New connection</a></p>
@@ -14,6 +14,14 @@
 <label for="Preset">Service preset</label><div class="Field"><select id="Preset" name="Preset"><option value="Navis">Navis</option><option value="AWX" [% IF Data.Preset == 'AWX' %]selected[% END %]>AWX bearer token</option><option value="Generic" [% IF Data.Preset == 'Generic' %]selected[% END %]>Generic client credentials</option></select></div><div class="Clear"></div>
 [% FOREACH Input IN Data.Inputs %]<label for="[% Input.Name | html %]">[% Input.Name | html %]</label><div class="Field"><input id="[% Input.Name | html %]" name="[% Input.Name | html %]" value="[% Input.Value | html %]" maxlength="3000" class="W50pc"/></div><div class="Clear"></div>[% END %]
 <div class="Field"><p>AWX: use Origin and SecretName only; SecretName references the mounted AWX API token. Test authentication reads /api/v2/me/ and never launches a job. Leave TokenURL, ClientID and Scope empty for AWX. Other presets use client credentials with HTTP Basic. TokenURL is the full HTTPS endpoint; Navis uses /nauth/token. InstanceID is metadata. Scope may be omitted to request operator-approved defaults. SecretName identifies a mounted file containing the exact secret, without a trailing newline.</p></div><div class="Clear"></div>
+<fieldset><legend>Navis customer simulation</legend>
+<p>Configure this once on the Navis connection. No graph UUID or per-environment binding is needed. Requires the Navis on-demand topology API (migrations through 021).</p>
+<label><input type="checkbox" name="CustomerSimulationEnabled" value="1" [% IF Data.CustomerSimulation.Enabled %]checked[% END %]/> Use this Navis connection for customer simulation</label>
+<label for="SourceNamespace">Collection namespace (optional)</label><div class="Field"><input id="SourceNamespace" name="SourceNamespace" maxlength="255" value="[% Data.CustomerSimulation.SourceNamespace | html %]"/><p>Namespace containing the network evidence. Leave empty only when Navis can resolve exactly one authorized source.</p></div><div class="Clear"></div>
+<label for="IdentityNamespace">CMDB identity namespace</label><div class="Field"><input id="IdentityNamespace" name="IdentityNamespace" maxlength="255" value="[% Data.CustomerSimulation.IdentityNamespace | html %]"/><p>Exact namespace in the external CMDB identities Navis returns. This can differ from the collection namespace and is not InstanceID or a Kubernetes namespace.</p></div><div class="Clear"></div>
+<p>Application topology names belong in the Application GO Navis field. Ordinary/firewall traces use the default namespace topology.</p>
+<p>These fields apply only to the Navis preset. Customer login grants are managed separately in Network simulation access.</p>
+</fieldset>
 <label for="Routes">Generic operation routes (JSON)</label><div class="Field"><textarea id="Routes" name="Routes" rows="10" class="W50pc">[% Data.Routes | html %]</textarea><p>Used only for Generic. Each named operation defines Method, Path and Parameters. Navis routes are supplied by its preset.</p></div><div class="Clear"></div>
 <div class="Field"><label><input type="checkbox" name="Enabled" value="1" [% IF Data.Enabled %]checked[% END %]/> Enable connection after a successful authentication test</label></div><div class="Clear"></div>
 </fieldset>

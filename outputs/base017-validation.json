@@ -1,0 +1,29 @@
+{
+  "version": "0.1.7",
+  "baseline_sha256": "d98121e9d36cb4cbfc9afa867c304f4c08d0212707dd5f49de874f5ab40add16",
+  "sha256": "cf6c345ef2b4f6a7638964b2fdd068e8625e6e83954e1c57176c0108393425c6",
+  "payloads": 595,
+  "changed": [
+    "Kernel/Output/HTML/Templates/Standard/CustomerNetworkSimulation.tt",
+    "Kernel/System/TESSERA/CustomerNetworkSimulation.pm",
+    "var/governancedb/container_release.json",
+    "var/tessera/docs/integrations/navis.md",
+    "var/tessera/docs/releases/README.md"
+  ],
+  "new": [
+    "var/tessera/docs/releases/0.1.7.md"
+  ],
+  "unchanged": 589,
+  "hooks_preserved": true,
+  "deployed": false,
+  "navis_requirement": "Navis0.1.1 ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8; migrations through021",
+  "perl_assertions": 101,
+  "offline_ui_checks": 19,
+  "browser_layouts": 6,
+  "navis_route_checks": 14,
+  "navis_request_checks": 2,
+  "native_live_acceptance": false,
+  "TESSERA-0.1.7-Ubuntu26.04-Container-Toolkit.zip": "e61c6885c34eb1d9872083f10d1808f23dc646d6c9f6332b362383bf4fdfa962",
+  "TESSERA-0.1.7-ScriptEngine-Offline-Pack.zip": "b9e0ec7d0bcc678c4d14e3fae8ea84b2864ee27d2132fb4d71d35dfe136e5e84",
+  "offline_pack_files": 158
+}

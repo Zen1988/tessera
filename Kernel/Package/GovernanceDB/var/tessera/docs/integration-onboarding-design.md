@@ -1,3 +1,5 @@
+> Historical proposal. Start with [current integration guidance](integrations/README.md); a design is not proof of an installed capability.
+
 # Reusable outbound integration onboarding
 
 Design intake: 2026-11-02. Implemented source/package direction is documented in

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="TESSERA::API::Enabled" Required="1" Valid="1">
+        <Description Translatable="1">Enables the staged TESSERA external API. Keep disabled until API identities, keys, groups, SupportAssignments, and ContractEntitlements are configured.</Description>
+        <Navigation>Core::TESSERA::API</Navigation>
+        <Value><Item ValueType="Checkbox">0</Item></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###TESSERA::Stage" Required="0" Valid="1">
+        <Description Translatable="1">Registers the entitlement-aware TESSERA staging operation.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">Stage</Item><Item Key="Controller">TESSERA</Item><Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###TESSERA::Status" Required="0" Valid="1">
+        <Description Translatable="1">Registers the caller-owned TESSERA staging status operation.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">Status</Item><Item Key="Controller">TESSERA</Item><Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="GenericInterface::Operation::Module###TESSERA::ExecutionCallback" Required="0" Valid="1">
+        <Description Translatable="1">Authenticates and records asynchronous web service completion callbacks.</Description>
+        <Navigation>GenericInterface::Operation::ModuleRegistration</Navigation>
+        <Value><Hash><Item Key="Name">ExecutionCallback</Item><Item Key="Controller">TESSERA</Item><Item Key="ConfigDialog">AdminGenericInterfaceOperationDefault</Item></Hash></Value>
+    </Setting>
+    <Setting Name="TESSERA::AsyncExecution::Handlers" Required="0" Valid="1">
+        <Description Translatable="1">Backend-owned asynchronous continuation handlers. Never populate from policy YAML.</Description>
+        <Navigation>Core::TESSERA::API</Navigation>
+        <Value><Hash>
+            <Item Key="NetworkAssessment"><Hash><Item Key="Module">Kernel::System::TESSERA::NetworkIntelligence</Item><Item Key="Function">Complete</Item></Hash></Item>
+            <Item Key="AWXTest"><Hash><Item Key="Module">Kernel::System::TESSERA::AWXExecution</Item><Item Key="Function">RecordTestCompletion</Item></Hash></Item>
+            <Item Key="NavisControl"><Hash><Item Key="Module">Kernel::System::TESSERA::NavisControl</Item><Item Key="Function">Completed</Item></Hash></Item>
+            <Item Key="ControlObjective"><Hash><Item Key="Module">Kernel::System::TESSERA::ControlRuntime</Item><Item Key="Function">ContinueAfterExternal</Item></Hash></Item>
+        </Hash></Value>
+    </Setting>
+</otobo_config>

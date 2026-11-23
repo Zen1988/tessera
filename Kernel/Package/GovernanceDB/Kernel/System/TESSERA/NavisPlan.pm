@@ -12,7 +12,7 @@ sub _uuid {defined $_[0] && !ref $_[0] && $_[0]=~/\A[0-9a-f]{8}-(?:[0-9a-f]{4}-)
 sub _text {defined $_[0] && !ref $_[0] && length($_[0])>0 && length($_[0])<=255 && $_[0]!~/[\x00-\x1f]/}
 sub _tuple {JSON::PP->new->canonical->encode([@{$_[0]}{qw(source destination protocol destination_port)}])}
 sub Request {
-    my ($S,%P)=@_;my $F=$P{Flow};die "Invalid flow.\n" if ref $F ne 'HASH' || !_uuid($P{BuildID}) || ($P{CallerID} || '')!~/\Atessera-[a-f0-9]{40}\z/;
+    my ($S,%P)=@_;my $F=$P{Flow};die "Invalid flow.\n" if ref $F ne 'HASH' || (!$P{OnDemand} && !_uuid($P{BuildID})) || (defined $P{BuildID} && !_uuid($P{BuildID})) || ($P{CallerID} || '')!~/\Atessera-[a-f0-9]{40}\z/;
     die "Unsupported flow fields.\n" if grep {!/\A(?:source|destination|protocol|source_port|destination_port|application|action)\z/} keys %$F;
     die "Unsupported requested action.\n" if ($F->{action} || '')!~/\A(?:allow|deny)\z/;
     my $D=dclone($F);delete $D->{action};my $Count=1;
@@ -32,13 +32,33 @@ sub Request {
         $D->{$K}=0+$D->{$K};
     }
     die "Invalid application.\n" if exists $D->{application} && !_text($D->{application});
-    return {%$D,graph_build_id=>$P{BuildID},caller_session_id=>$P{CallerID}};
+    my %Context=(caller_session_id=>$P{CallerID});
+    $Context{graph_build_id}=$P{BuildID} if defined $P{BuildID};
+    if ($P{OnDemand} && defined $P{Namespace} && length $P{Namespace}) {
+        die "Invalid namespace.\n" if !_text($P{Namespace});
+        $Context{namespace}=$P{Namespace};
+    }
+    if (defined $P{TopologyName} && length $P{TopologyName}) {
+        die "Invalid topology selector.\n" if !_text($P{TopologyName}) || defined $P{BuildID};
+        $Context{topology_name}=$P{TopologyName};
+    }
+    if (defined $P{TopologyVersionID}) {
+        die "Invalid topology version.\n" if !_uuid($P{TopologyVersionID}) || !exists $Context{topology_name};
+        $Context{topology_version_id}=$P{TopologyVersionID};
+    }
+    return {%$D,%Context};
 }
 sub Graph {
     my ($S,$G,$Build)=@_;die "Completed matching graph required.\n" if ref $G ne 'HASH' || ($G->{build_id} || '') ne $Build || ($G->{status} || '') ne 'completed'
         || ref $G->{nodes} ne 'ARRAY' || @{$G->{nodes}}>10000;
-    my (%Devices,%Identities);
+    my (%Devices,%Identities,%SeenNodes);
     for my $N (@{$G->{nodes}}) {
+        die "Invalid graph node.\n" if ref $N ne 'HASH' || !defined $N->{id} || ref $N->{id} || $SeenNodes{$N->{id}}++;
+        if (($N->{type} || '') eq 'unmanaged') {
+            my $ID=$N->{id};$ID=~s/\Aunmanaged://;
+            die "Invalid unmanaged graph node.\n" if !$N->{placeholder} || defined $N->{device_id} || !_uuid($ID);
+            next; # A visibility placeholder is never an authorized device identity.
+        }
         die "Invalid graph identity.\n" if ref $N ne 'HASH' || ($N->{type} || '') ne 'device' || !_uuid($N->{id}) || exists $Devices{$N->{id}} || ref $N->{external_identity} ne 'HASH';
         my $I=$N->{external_identity};my $Key;
         if (($I->{status} || '') eq 'mapped') {

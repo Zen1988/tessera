@@ -1,6 +1,82 @@
-# Current — accept Base197 ticket search paging
+# Current — accept Base0.1.7 Application graph fallback
 
-Completed popup scrolling/paging implementation and local verification are recorded in PROJECT_STATUS.md. Install Base197 on source and rebuild matching image/bundle for the controlled deployment when appropriate. Check real index totals, Next/Previous, keyboard/mobile scrolling and custom page size with consistent loader caches/workers. No reindex or Redis changes required by this UI patch. The196 native Job has already started; obtain its outcome before any further deployment, never repeat pre-Job continuation.
+Next artifact is0.1.7, pushed to draft PR1/codex/release-0.1.0 as feature commit931f6597. Verify an authorized active Application with an empty Navis field traces through default and retains its selected Application context. A configured Application uses its saved label; malformed/unauthorized references and remote named failures must not switch to default. Install OPM normally before fresh prepare/build with matching toolkit; no new field/config Secret change. Native fresh/upgrade/reinstall, live Navis evidence/permissions and full automation acceptance remain pending.
+
+# Current — accept Base0.1.6 against Navis0.1.1
+
+Source and matching kits are pushed to draft PR1, branch codex/release-0.1.0 (feature commit9cdac9fb). Main remains unchanged; no GitHub Release or deployment.
+
+Use matching0.1.6 OPM/toolkit/offline pack for the next image; install into source normally before fresh prepare/build.0.1.6 fixes topology creation201 handling and numeric/string CMDB selection restoration. Latest Navis ed4ba3e API contract verified; migrations through021, operator NAuth/source grants/identity mappings and successful normalization remain deployment prerequisites. End users never enter graph IDs/labels; default or authorized Application context is resolved server-side.
+
+Native fresh/upgrade/reinstall and live source mapping, default/named trace, real evidence/unknown gaps and all-worker deployment still need acceptance. Full AWX discovery scheduler, CMDB member selection and topology-creation automation remain future work. Older current sections below describe cumulative acceptance context; prepared0.1.6 supersedes0.1.5 as the next artifact.
+
+# Current — Application named topology automation and Base0.1.5 native acceptance
+
+Completed simulation/docs/pack work is in PROJECT_STATUS, docs/releases/0.1.5.md and outputs/base015-validation.json. Current prepared artifacts:0.1.5 OPM, versioned container toolkit and ScriptEngine offline authoring pack. Source and kits pushed to GitHub draft PR1 (codex/release-0.1.0); no new GitHub Release or deployment. Use matching newer Navis named-topology/visibility/progress code and migrations through021; docs/reference/navis/PROVENANCE.json records the verified published contract snapshot. The separate Navis chat published2a43005e; its checkout was not modified here. Older acd2b5d does not contain the later name/progress APIs.
+
+## Application automation still to implement
+
+The optional Application GO Navis Text field and explicit Default/Application trace context are implemented in current0.1.5 sources. The installer retains existing data/layout/role bindings and adds a separate optional Agent page once; incompatible names/layout collisions fail preflight. Published Navis2a43005e is verified; final OPM, toolkit and offline pack are built and checksum-verified (see PROJECT_STATUS). Store the stable label in Navis; per-trace evidence retains the resolved UUID and original request. No separate table is needed for the current label.
+
+Remaining discovery workflow: an authorized automation/ScriptEngine adapter launches scoped AWX discovery; normalized envelopes are ingested individually with backend-owned run ID/expected totals, then progress is checked. Ingestion creates no application-named topology; default namespace evidence stays Navis-owned. Separately select CMDB application members/IPs, call named topology creation, and retain its stable name on Application plus operation provenance internally. The full scheduler, membership/topology-creation task and callable workflow adapter are not installed merely by adding the field/routes. Do not invent new YAML capabilities. Ordinary/firewall trace omits application selectors; recommendation polling uses the saved caller ID. Preserve unknown/partial/overlapping evidence, approval separation, replay protection and version clocks.
+
+## Native acceptance
+
+Install0.1.5 OPM normally into source before fresh toolkit prepare/build; retain matching upgrade bundle and actual tag. Native fresh/upgrade/reinstall and real MariaDB failures/concurrency, all-worker protected driver activation, effective mounted XML/config and portal theme/mobile/keyboard remain pending. Save managed Navis integration to populate new invokers and configure customer profile once; grant users separately; Utilities owns shortcuts. Test default/named/historical trace, multiple/missing connections, exact namespaces, collection missing/failed/raw-only counts, changed/revoked scope, grey node Application-only projection, gaps and no hidden CI links. Source/identity namespace differences require explicit validated mappings in future discovery/readback adapters.
+
+Existing0.1.2–0.1.4 behavior is cumulative in0.1.5. Historical acceptance notes below remain context, not instructions to rerun completed deployment recovery.
+
+# Current — accept Base0.1.3 Change summary
+
+Install0.1.3 OPM into source host before next prepare/build. Verify Request context for Change Normal/Standard/Emergency and Normal/Not-Assessed/Major, orange Major badge, ordinary ticket types unchanged, child root context, mobile/theme and no duplicate field rows. Prior0.1.2 native acceptance below still applies. No deployment performed.
+
+# Current — accept prepared Base0.1.2 change decisions and announcements
+
+Implementation complete; decisions and evidence recorded in PROJECT_STATUS.md, docs/change-classification.md and docs/releases/0.1.2.md. Use Kernel/Package/TESSERA-Base-0.1.2.opm and versioned0.1.2 toolkit for the next image; install OPM into source host first, fresh prepare/build and retain matching upgrade bundle. No deployment or publication performed.
+
+Next: native Linux fresh installation,0.1.1 upgrade and same-version reinstall; validate existing/new field compatibility and invalid historical Change::Major retention. Verify configured manager groups, empty-group denial, existing IPC overrides, assessment completion, default initialization, generic/API/Set write rejection, failed/concurrent/replayed saves and all-worker protected driver activation. Verify approval automatically activates Major announcement without a second approval step; all active authenticated portal users can read only the projection, ordinary ticket/CMDB permissions remain intact. Exercise withdrawal/reapproval, demotion/source drift, private first article, saved four-phase runbook and real production theme/accessibility. Candidate bound10000 and snapshot retention need operational review at scale. Previous Utilities/simulation acceptance below still applies to this cumulative release.
+
+# Current — deploy and accept prepared Base0.1.1 Utilities and simulation fix
+
+Implementation and completed design moved to PROJECT_STATUS.md and docs/utilities.md. Package: Kernel/Package/TESSERA-Base-0.1.1.opm plus checksum; release notes docs/releases/0.1.1.md, byte/test evidence outputs/base011-validation.json. Published0.1.0 unchanged.188 Perl assertions,4 package/toolkit checks,5 local browser layouts pass. No live deployment/publication. Updated image-build toolkit is outputs/TESSERA-0.1.1-Ubuntu26.04-Container-Toolkit.zip with checksum; install0.1.1 into the source host first, then fresh prepare/build and retain the matching upgrade bundle.
+
+Next: normal native Linux fresh install/0.1.0 upgrade/same-version reinstall; matching runtime image/bundle and configuration deployment into tessera-generated-config PVC; all-worker rollout. Verify Admin -> Utilities create/edit/icon/disable/reload, imported custom toolbox links, selected/all/no audiences and direct launch/icon denial after revocation; preserve unified Workplace Search and native ticket scope. Verify sidebar only Utilities for the two relocated tools, responsive/keyboard behavior with actual portal theme, no duplicate catalogue rows after reinstall, real DB lock/contention/write failure and existing custom overrides. External tools authenticate at their own systems; additional internal functions require installed adapters with backend permissions.
+
+Verify Admin -> Network simulation access loads/saves with strict scalar-root JSON, preserves existing exact-user and environment bindings, and fails closed on partial configuration deployment. Native CMDB entitlement/read and remote simulation grants remain independent. Redis NOAUTH from prior hand-written Perl diagnostic requires normal Custom/runtime library resolution before changing credentials; it is not the JSON exception. No Config.pm Secret replacement or manual ZZZ copy required by these changes.
+
+# Current live priority — CONFIGURING continuation, not a fresh deployment
+
+Owner now supplies tessera-config-resume-2665521396ce Completed plus3 ready web pods and1 ready daemon; the old failed release Job remains retained. This supersedes the earlier no-completion-output checkpoint, but private receipt/READY evidence was not re-read here. Do not replay completed recovery or clear locks speculatively. Keep original bundle/private evidence as needed. Base0.1.1 is a separate prepared feature release, not a reason to rerun0.1.0 recovery.
+
+# Current deployment — unique-PVC wrapper and published helper update
+
+Owner confirms old fixed tessera-upgrade-bundle is obsolete and authorizes deleting that PVC only; command supplied, live deletion not observed. Install TESSERA-Deployment-Cleanup-Update.zip into the existing prepared build folder, then use python3 scripts/deploy-release.py --image docker.io/library/tessera:0.1.0-ubuntu26.04. Do not first create the fixed-name YAML or copy the old195 create/upload/direct-upgrade block. Correct guides and full/helper toolkit archives prepared; four cleanup tests pass, real Kubernetes cleanup pending. This helper-only update does not require rebuilding the existing matching image/bundle and does not sweep old failed evidence. Existing maintenance/native-Job guards remain authoritative.
+
+# GitHub —0.1.0 published; source PR remains draft
+
+First regular release/tag0.1.0 is published at https://github.com/Zen1988/tessera/releases/tag/0.1.0 with verified OPM, checksum and validation report. Public OPM SHA256 matches the prepared package. Draft source PR: https://github.com/Zen1988/tessera/pull/1 on codex/release-0.1.0; main is unchanged. Do not recreate/overwrite this release. Owner's FAQ admin-list observation and all real-index/browser/native/migration/image acceptance below remain pending; publication is not runtime acceptance. No live deployment performed.
+
+# Current — accept TESSERA-Base0.1.0 / FAQApplication
+
+Owner explicitly replaces planned0.0.200 with0.1.0 and rolls Base patch version every200 positions. Exact current field is FAQApplication, optional multiple Application references, EMPTY=ALL portal users. No ZFAQ namespace dependency. See PROJECT_STATUS.md and docs/workplace-search.md. Use Kernel/Package/TESSERA-Base-0.1.0.opm; do not generate/publish0.0.200 or recreate from older naming assumptions.
+
+Verify native FAQ object-type/reference-driver registration is available before field creation, missing field automatic creation, same-ID migration of existing ZFAQ-Application preserving stored values/config/admin screen overrides, duplicate/conflicting records denied without loss, and reinstall idempotency. Local200 checks pass; native Linux/import/migration acceptance still pending. Both visible labels now Search unconditionally with explicit tickets/CMDB/FAQ/people scope tooltip and accessible label. No Ticket Search fallback. Confirm actual active templates and browser behavior; no more browser-refresh-only diagnosis.
+
+Live faq/configitem/customeruser Elasticsearch indexes, population, mappings and source freshness are UNVERIFIED and separate from field/handler registration. Do not claim full search success from package install or label; do not run destructive migration by assumption. Existing normal source install plus matching image/bundle/all-worker deployment contract applies. No live install/indexing/image/Kubernetes operation performed here. Browser/visual policy blocker remains; no bypass attempted.
+
+# Retained — Base199 correction acceptance (superseded by0.1.0)
+
+Owner's Package Manager198 post-hook error is reproduced and fixed in199; see PROJECT_STATUS.md and docs/workplace-search.md. Native DynamicFieldGet returns {} for a missing field; no manual ZFAQ-Application creation is required. Upgrade normally with Kernel/Package/TESSERA-Base-0.0.199.opm.199 automatically creates a missing field, preserves existing compatible configuration and rejects real type conflicts. Post hooks use native forced Bootstrap reload for persistent workers. Failed198 may have already written files; package listing alone is not runtime acceptance. Do not run Kubernetes recovery/migration or create/delete fields as a workaround.
+
+Verify successful native post-hook, field listed under FAQ, Application visible in FAQ Add/Edit, selecting multiple Applications and clearing back to EMPTY=ALL, same SupportAssignment/read boundaries, Search Workplace label, both input IDs, type switching/paging after native blur and Enter preserving unified search.170 local server/template/install/JS unit checks pass; actual browser/visual and native Linux install/reinstall acceptance remain pending. Local browser policy blocker not bypassed. Package Manager installation does not replace the existing matching image/bundle/all-worker deployment contract. No live installation, image build or Kubernetes action performed here.
+
+# Retained — Workplace search acceptance (use Base199)
+
+Completed implementation and owner-approved policy are recorded in PROJECT_STATUS.md and docs/workplace-search.md. Package: Kernel/Package/TESSERA-Base-0.0.199.opm (includes198 features and fixes its post-hook failure). Assets require entitlement AND matching TESSERA::CMDB::READ. New exact ZFAQ-Application is optional/multivalue Application reference: EMPTY MEANS ALL PORTAL USERS; selected applications require active matching SupportAssignment. People search is open to all authenticated portal customers with directory contact projection only. No production grants or data changed.
+
+Before acceptance: native Linux fresh/197 upgrade/same-version reinstall, real indices and source freshness, agent multi-value FAQ edit/clear, customers with matching/unmatched/revoked Application assignments, empty/global FAQ, direct/public/attachment/print/CSV/RSS isolation, asset entitlement/read-role denial and unchanged ticket/IPC behavior. Verify native FAQ overlay basis against target customizations.207 server assertions and4 release-metadata tests pass locally; native PublicFAQRSS dependency XML::RSS::SimpleGen unavailable locally.
+
+Browser fixture outputs/workplace198-preview/preview.html and scripts/test/TESSERA/WorkplaceSearch.browser.js exist, but no browser/visual acceptance: local Edge yields no output, Chrome startup fails, and IAB forbids local-file navigation. Do not claim UI accepted. Run actual desktop/narrow/keyboard/focus/paging/scroll/error acceptance in a working browser and benchmark search latency on the real dataset before acceptance. Follow standard source install and matching rebuilt web/daemon image/bundle workflow. No deployment performed here; obtain existing196 native Job outcome before further deployment and never replay its pre-Job continuation.
 
 # Current — continue196 pre-native-Job checkpoint on k8s
 

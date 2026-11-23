@@ -1,0 +1,34 @@
+# Network change planning through NetXMS, CMDB and AWX
+
+Updated direction: NetXMS is now a first-class enterprise observation connector, not only an optional AWX collector. See docs/netxms-integration.md for the183 read-only foundation and remaining topology/business-service work. Provider-owned MPLS may remain external transit; absent provider internals alone do not block planning where managed-edge evidence is sufficient. Earlier adapter-only alternatives below are historical context.
+
+Owner direction, 2026-10-26: a firewall request should cause the engine to obtain a network path from NetXMS, return that evidence to TESSERA, resolve the involved firewalls through CMDB, collect missing firewall zoning/configuration through Ansible and determine the required change on each firewall. This is a multi-stage evidence and planning use case for the existing automation/Web Service foundation, not a request for an isolated connector for each product. No implementation/deployment is claimed by this design.
+
+## Responsibilities
+
+CMDB remains authoritative for managed identities, classification, ownership, intended relationships and approved operational scope. NetXMS supplies observed topology/routing/path evidence with timestamps/completeness; observations must not silently overwrite governance truth. AWX/Ansible is the device execution and collection point and retains execution credentials. TESSERA binds evidence to the saved request/execution, resolves identities/scope and produces a proposed plan through reviewed automation definitions. Books define governance and approvals; Process orchestrates; tickets hold execution evidence. A path observation or a callback is not approval to apply firewall configuration.
+
+The NetXMS API adapter can itself be an AWX playbook with NetXMS API credentials held in AWX, preserving the user's shared execution entry point. Alternatively a separately authorized read-only configured Web Service can return observations; do not bake NetXMS endpoints/credentials or device mappings into the engine. No new Dynamic Fields, CI field names or vendor assumptions are specified here. Reuse verified current exports once the actual mapping/profile is chosen.
+
+## Evidence-to-plan flow
+
+1. Resolve the authorized request's source/destination endpoints, protocol/ports/direction and network context through the automation's existing mapping. Include address family, site/tenant/VRF and translated/original addresses when relevant; do not infer them from an IP string alone.
+2. Request current NetXMS routing/topology/path evidence through the configured integration. Preserve ordered hops/interfaces, source/destination resolution, polling times, completeness and alternative paths. NetXMS version/API capabilities must be checked against the installed server; do not assume a particular REST path-trace endpoint from latest development documentation.
+3. Correlate observed device IDs/interfaces to exact CMDB CIs. Identify candidate enforcement points, HA clusters/contexts and authorized collection scope. IP/name matching alone is insufficient where addresses overlap, NAT exists or identities are ambiguous. Account for transparent firewalls or other enforcement points that ordinary routed-hop traces may omit.
+4. Dispatch read-only vendor-aware Ansible collection on those candidates: interface-to-zone bindings, routing/VRFs, NAT, security rules/objects/groups, relevant policy ordering, virtual contexts and HA ownership. Gather forward and return-path evidence; do not infer zones merely from interface names or management addresses.
+5. Normalize structured results with provenance and freshness. Reconcile discrepancies between observations rather than trusting the last callback. Resolve ingress/egress interfaces and their actual security zones for each candidate device/context, including pre-/post-NAT packet identity and relevant route/policy semantics.
+6. Produce a proposed per-device/context change: whether existing policy already satisfies the request, reusable/new address/service objects, necessary rules/NAT changes, dependencies/order, duplicate/shadow/conflict checks, expected effect, validation and rollback plan. Prefer typed structured facts for decisions; verbose stdout is diagnostic evidence, not the sole parser contract.
+7. Route the immutable evidence/plan version through existing governance approval. Applying a plan is a separately authorized action, with fresh device-state/hash checks so approved content cannot silently drift. The current request authorizes defining this planning use case, not deploying network changes.
+8. After approved execution, verify device configuration and the requested forward/return flow; record observed results. An API200/AWX launch/callback by itself is not proof of intended network access.
+
+## Fail-closed planning boundaries
+
+An incomplete/stale NetXMS path, missing CMDB identity, unsupported device/context, inconsistent firewall facts, unresolved ECMP/policy routing/NAT/VPN/return path or changed configuration produces an explicit blocked/unknown plan. Do not guess one firewall/zone pair, broaden destinations/services, create a rule on every candidate or replay uncertain changes. Topology-based paths are observations/inferences with coverage limits, not an unconditional proof of the effective packet path.
+
+Durable execution history should link the request, NetXMS evidence, CMDB resolution, AWX collection jobs and proposed plan version/hash. Preserve request/plan snapshots; do not store credentials or automatically publish sensitive raw configuration to customer-visible articles. Existing SQL metadata plus bounded structured payloads is sufficient initially; large raw configuration/stdout/event archives can be separate restricted artifact references without introducing a document database now.
+
+## Implementation status and next discovery
+
+182 supplies the configured Web Service/authorized script hook, AWX dispatch/callback and durable result foundation. It does not implement NetXMS path collection, firewall semantic analysis, vendor command generation, approvals or device apply/verification for this use case. Next read-only discovery needs the installed NetXMS version/API and a representative request/path result, the actual exported CMDB device/interface identity mapping and the first firewall platform/version/context model. Begin with one complete read-only source→destination scenario and a reviewable proposed plan. Keep CMDB mapping in the existing automation as the user requested; do not invent a second global mapping engine.
+
+Primary references checked: https://docs.netxms.org/admin/dev/integration/rest-api/ ; https://www.netxms.org/documentation/adminguide/topology.html ; https://docs.netxms.org/nxsl/dev/classes/networkpath/ . Latest documentation is not evidence of the installed deployment's exact API surface.

@@ -1,0 +1,10 @@
+{
+  "version": "0.1.4",
+  "sha256": "d19fd1bd9a9f6cb2630db8bc44073a33c1c7ecb6fdb6609844f5597424b1187f",
+  "payloads": 512,
+  "changed": [
+    "var/httpd/htdocs/common/img/TESSERA/utilities.svg",
+    "var/governancedb/container_release.json"
+  ],
+  "deployed": false
+}

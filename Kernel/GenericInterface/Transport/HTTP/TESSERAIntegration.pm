@@ -16,14 +16,19 @@ sub RequesterPerformRequest {
         my $R=$C->{Routes}{$P{Operation}};die if !$R || ref $P{Data} ne 'HASH';
         my $D=dclone($P{Data});my $Path=$R->{Path};
         for my $K (@{$R->{Parameters}}) {
-            my $V=delete $D->{$K};die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,200}\z/;
+            my $V=delete $D->{$K};if ($C->{Preset} eq 'Navis' && $K eq 'Name') {
+                die if !defined $V || ref $V || !length($V) || length($V)>255 || $V=~/[\x00-\x1f\x7f]/ || $V=~/^\s|\s$/ || $V=~m{[\\/]} || $V eq '.' || $V eq '..';
+            } else {die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,200}\z/;}
             die if $C->{Preset} eq 'AWX' && $V!~/\A[1-9][0-9]{0,14}\z/;
             $Path=~s/:\Q$K\E(?=\/|\z)/uri_escape_utf8($V)/ge;
         }
         my @Query;
         for my $K (@{$R->{QueryParameters} || []}) {
             next if !exists $D->{$K};my $V=delete $D->{$K};
-            die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,32}\z/;
+            if ($C->{Preset} eq 'Navis') {
+                die if !defined $V || ref $V || length($V)>255 || $V=~/[\x00-\x1f\x7f]/ || !length $V;
+                die if $K eq 'limit' && ($V!~/\A[1-9][0-9]{0,2}\z/ || $V>200);
+            } else {die if !defined $V || ref $V || $V!~/\A[A-Za-z0-9_-]{1,32}\z/;}
             push @Query,uri_escape_utf8($K).'='.uri_escape_utf8($V);
         }
         die if $Path=~/:/ || ($R->{Method} eq 'GET' && keys %$D);

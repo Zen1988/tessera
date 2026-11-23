@@ -1,0 +1,9 @@
+VERSION: 1
+# Read-only fixture. Configure the endpoint/token in the Web Service first.
+CALL WEB SERVICE:
+  - SERVICE: NetXMS
+    INVOKER: ServerInfo
+    AS: SERVER
+    WITH: {}
+RETURN:
+  VALUE: EXTERNAL.SERVER.RetrievedAt

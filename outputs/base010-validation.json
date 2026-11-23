@@ -1,0 +1,66 @@
+{
+  "version": "0.1.0",
+  "basis": "0.0.199",
+  "changed": [
+    "Kernel/System/GovernanceDB/Bootstrap.pm",
+    "Kernel/System/TESSERA/FAQAccess.pm",
+    "var/governancedb/container_release.json",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerDashboard.tt",
+    "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/CustomerTicketOverview.tt",
+    "var/tessera/docs/workplace-search.md"
+  ],
+  "added": [],
+  "payload_count": 485,
+  "unchanged_payloads": 479,
+  "field": "FAQApplication",
+  "legacy_field": "ZFAQ-Application",
+  "migration": "native rename preserving field ID and values; reject dual-name conflicts",
+  "registration": "native FAQ object type and GovernanceObject driver, before field creation",
+  "live_index_readiness": "unverified",
+  "ui_accepted": false,
+  "live_deployment": false,
+  "test_suites": [
+    {
+      "name": "WorkplaceSearch",
+      "pass": true,
+      "assertions": 66
+    },
+    {
+      "name": "WorkplaceSearchInstall199",
+      "pass": true,
+      "assertions": 53
+    },
+    {
+      "name": "FAQApplicationMigration",
+      "pass": true,
+      "assertions": 24
+    },
+    {
+      "name": "CustomerElasticsearchPaging",
+      "pass": true,
+      "assertions": 34
+    },
+    {
+      "name": "CustomerElasticsearchScope",
+      "pass": true,
+      "assertions": 12
+    },
+    {
+      "name": "WorkplaceSearchInput199",
+      "pass": true,
+      "assertions": 11
+    }
+  ],
+  "assertion_total": 200,
+  "release_metadata_tests": {
+    "pass": true,
+    "tests": 4
+  },
+  "sha256": "ecedb348d955af2ee0461f367a7234ddd1fc3ceb2698ab1f3288c3ba1a10cb2d",
+  "package_payloads_byte_verified": 485,
+  "syntax_checks": {
+    "Bootstrap.pm": "pass",
+    "FAQAccess.pm": "pass"
+  },
+  "version_policy": "0.0.199 -> 0.1.0; 0.1.199 -> 0.2.0; 200 patch positions per minor series"
+}
