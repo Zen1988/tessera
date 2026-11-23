@@ -11,3 +11,5 @@
 
 Prepared artifacts are not live acceptance. Previous OPMs remain immutable. See individual notes, outputs validation reports and PROJECT_STATUS. Do not reuse historical incident commands as current deployment instructions.
 
+
+- [0.1.6 — Navis0.1.1 readiness and topology creation status fix](0.1.6.md)

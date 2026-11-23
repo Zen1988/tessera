@@ -1,3 +1,7 @@
+> Reviewed2026-11-23 against [Navis0.1.1 commit ed4ba3e](https://github.com/Zen1988/navis/tree/ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8/docs). Routes/request schemas remain compatible with the frozen reference snapshot; API version metadata changed. TESSERA0.1.6 accepts topology creation HTTP201. See [release notes](../releases/0.1.6.md). End users never supply graph IDs or labels; Application selection resolves its trusted label server-side.
+
+> Reviewed2026-11-23 against [Navis0.1.1 commit ed4ba3e](https://github.com/Zen1988/navis/tree/ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8/docs). Routes/request schemas are unchanged from the frozen reference snapshot except API version metadata. TESSERA0.1.6 fixes topology creation success status to201. See [release notes](../releases/0.1.6.md). End users never supply graph IDs or labels; Application selection resolves its trusted label in the backend.
+
 # Navis workflow
 
 Contract pinned to published Navis commit2a43005e445c2a33f6b6139cc8e8e6d05140feff, verified2026-11-17. [Provenance](../reference/navis/PROVENANCE.json), [topology contract](../reference/navis/TOPOLOGY_WORKFLOW.md) and [OpenAPI](../reference/navis/openapi.json) are included offline. Deploy the matching named-topology/visibility/progress code and migrations through 021. Published code is not proof of a live Navis/database upgrade.

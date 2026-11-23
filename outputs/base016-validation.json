@@ -1,0 +1,31 @@
+{
+  "version": "0.1.6",
+  "baseline_sha256": "f7086600f38cadd183f49e1c911cc765543c3de32279974076bb89ec9d8f4848",
+  "sha256": "d98121e9d36cb4cbfc9afa867c304f4c08d0212707dd5f49de874f5ab40add16",
+  "payloads": 594,
+  "changed": [
+    "Kernel/System/TESSERA/IntegrationOnboarding.pm",
+    "var/governancedb/container_release.json",
+    "var/httpd/htdocs/js/TESSERA.Customer.NetworkSimulation.js",
+    "var/tessera/docs/integrations/navis.md",
+    "var/tessera/docs/releases/README.md"
+  ],
+  "new": [
+    "var/tessera/docs/releases/0.1.6.md"
+  ],
+  "unchanged": 588,
+  "hooks_preserved": true,
+  "deployed": false,
+  "navis_requirement": "Navis0.1.1 ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8; migrations through021",
+  "perl_suites": 5,
+  "perl_assertions": 268,
+  "offline_ui_checks": 19,
+  "browser_layouts": 6,
+  "navis_route_checks": 14,
+  "navis_request_checks": 2,
+  "navis_commit": "ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8",
+  "native_live_acceptance": false,
+  "TESSERA-0.1.6-Ubuntu26.04-Container-Toolkit.zip": "c247ccb40d3b2214ebb29ddb042f408cd4c2a44560532abe7c069bb17ad31960",
+  "TESSERA-0.1.6-ScriptEngine-Offline-Pack.zip": "2437b25eeed4cb9de75c3f6278e1111c5b9246774b849061168c856bf6f29dd5",
+  "offline_pack_files": 157
+}

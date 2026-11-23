@@ -1,0 +1,82 @@
+{
+  "package_version": "0.1.6",
+  "navis_commit": "ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8",
+  "navis_version": "0.1.1",
+  "api_paths": 19,
+  "only_openapi_change": "info.version",
+  "route_checks": [
+    {
+      "name": "CollectionProgressGet",
+      "path": "/v1/ingestions/collections/{collection_run_id}",
+      "success_status": 200
+    },
+    {
+      "name": "GraphBuildsList",
+      "path": "/v1/graph-builds",
+      "success_status": 200
+    },
+    {
+      "name": "GraphGet",
+      "path": "/v1/graph-builds/{build_id}/graph",
+      "success_status": 200
+    },
+    {
+      "name": "Ingest",
+      "path": "/v1/ingestions",
+      "success_status": 202
+    },
+    {
+      "name": "IngestionGet",
+      "path": "/v1/ingestions/{ingestion_id}",
+      "success_status": 200
+    },
+    {
+      "name": "RecommendationsGet",
+      "path": "/v1/trace-sessions/{caller_session_id}/recommendations",
+      "success_status": 200
+    },
+    {
+      "name": "TopologyByNameGet",
+      "path": "/v1/topologies/by-name/{name}",
+      "success_status": 200
+    },
+    {
+      "name": "TopologyCompareGet",
+      "path": "/v1/topologies/by-name/{name}/compare",
+      "success_status": 200
+    },
+    {
+      "name": "TopologyCreate",
+      "path": "/v1/topologies",
+      "success_status": 201
+    },
+    {
+      "name": "TopologyGet",
+      "path": "/v1/topologies/{build_id}",
+      "success_status": 200
+    },
+    {
+      "name": "TopologyRefresh",
+      "path": "/v1/topologies/by-name/{name}/refresh",
+      "success_status": 200
+    },
+    {
+      "name": "TopologyVersionsGet",
+      "path": "/v1/topologies/by-name/{name}/versions",
+      "success_status": 200
+    },
+    {
+      "name": "Trace",
+      "path": "/v1/traces",
+      "success_status": 200
+    },
+    {
+      "name": "TraceGraphGet",
+      "path": "/v1/trace-sessions/{caller_session_id}/graph",
+      "success_status": 200
+    }
+  ],
+  "request_checks": 2,
+  "customer_graph_id_required": false,
+  "live_acceptance": false
+}

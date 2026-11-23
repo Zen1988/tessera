@@ -11,6 +11,8 @@ let checks = 0;
 function check(test, label) { assert.ok(test, label); checks++; }
 class Item {
     constructor(tag) { this.tag = tag; this.dataset = {}; this.children = []; this.events = {}; this.attrs = {}; this.value = ''; this.textContent = ''; this.classes = new Set(); this.classList = {toggle: (name, on) => on ? this.classes.add(name) : this.classes.delete(name)}; }
+    set value(value) { this._value = String(value); }
+    get value() { return this._value; }
     setAttribute(key, value) { this.attrs[key] = String(value); if (key.startsWith('data-')) this.dataset[key.slice(5)] = String(value); }
     appendChild(child) { this.children.push(child); return child; }
     append(...children) { this.children.push(...children); }

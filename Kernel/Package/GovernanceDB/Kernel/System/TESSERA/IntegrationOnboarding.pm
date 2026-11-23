@@ -13,7 +13,7 @@ sub Authorized {
 }
 sub NavisRoutes {return {
     GraphBuildsList=>{Method=>'GET',Path=>'/v1/graph-builds',Parameters=>[],QueryParameters=>['namespace','limit']},
-    TopologyCreate=>{Method=>'POST',Path=>'/v1/topologies',Parameters=>[]},
+    TopologyCreate=>{Method=>'POST',Path=>'/v1/topologies',Parameters=>[],SuccessStatus=>201},
     TopologyByNameGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name',Parameters=>['Name'],QueryParameters=>['namespace','version_id']},
     TopologyVersionsGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name/versions',Parameters=>['Name'],QueryParameters=>['namespace','limit','include_audit']},
     TopologyCompareGet=>{Method=>'GET',Path=>'/v1/topologies/by-name/:Name/compare',Parameters=>['Name'],QueryParameters=>['namespace','from_version','to_version']},

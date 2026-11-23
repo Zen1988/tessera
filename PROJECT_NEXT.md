@@ -1,3 +1,9 @@
+# Current — accept Base0.1.6 against Navis0.1.1
+
+Use matching0.1.6 OPM/toolkit/offline pack for the next image; install into source normally before fresh prepare/build.0.1.6 fixes topology creation201 handling and numeric/string CMDB selection restoration. Latest Navis ed4ba3e API contract verified; migrations through021, operator NAuth/source grants/identity mappings and successful normalization remain deployment prerequisites. End users never enter graph IDs/labels; default or authorized Application context is resolved server-side.
+
+Native fresh/upgrade/reinstall and live source mapping, default/named trace, real evidence/unknown gaps and all-worker deployment still need acceptance. Full AWX discovery scheduler, CMDB member selection and topology-creation automation remain future work. Older current sections below describe cumulative acceptance context; prepared0.1.6 supersedes0.1.5 as the next artifact.
+
 # Current — Application named topology automation and Base0.1.5 native acceptance
 
 Completed simulation/docs/pack work is in PROJECT_STATUS, docs/releases/0.1.5.md and outputs/base015-validation.json. Current prepared artifacts:0.1.5 OPM, versioned container toolkit and ScriptEngine offline authoring pack. Source and kits pushed to GitHub draft PR1 (codex/release-0.1.0); no new GitHub Release or deployment. Use matching newer Navis named-topology/visibility/progress code and migrations through021; docs/reference/navis/PROVENANCE.json records the verified published contract snapshot. The separate Navis chat published2a43005e; its checkout was not modified here. Older acd2b5d does not contain the later name/progress APIs.

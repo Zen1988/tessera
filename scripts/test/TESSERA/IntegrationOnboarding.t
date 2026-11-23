@@ -230,4 +230,21 @@ ok($NativeInvoker->PrepareRequest(Data=>{BuildID=>'abc'})->{Success},'native GI 
         is($Module->Run(),'DENIED','agent module independently rejects unauthorized identity');
     }
 }
+# A successful topology creation returns 201, unlike trace/refresh GETs.
+{
+    my @Sent;my $ReplyStatus=201;
+    my $CreateAuth=Kernel::System::TESSERA::IntegrationAuth->new(Secret=>sub {'test-secret'},HTTP=>sub {
+        my %P=@_;
+        return {Status=>200,Body=>'{"access_token":"create-token","token_type":"Bearer","expires_in":300}'} if $P{URL}=~/nauth/;
+        push @Sent,\%P;return {Status=>$ReplyStatus,Body=>'{"graph_build_id":"20000000-0000-4000-8000-000000000001"}'};
+    });
+    my $CreateTransport=Kernel::GenericInterface::Transport::HTTP::TESSERAIntegration->new(TransportConfig=>{Config=>dclone($Connection)},Auth=>$CreateAuth);
+    ok($CreateTransport->RequesterPerformRequest(Operation=>'TopologyCreate',Data=>{namespace=>'net-a',name=>'application 1',members=>['192.0.2.10']})->{Success},'Navis topology creation accepts documented HTTP201');
+    is(scalar @Sent,1,'successful creation sends exactly one POST');
+    is($Sent[0]{Method},'POST','topology creation uses POST');
+    $ReplyStatus=500;
+    ok(!$CreateTransport->RequesterPerformRequest(Operation=>'TopologyCreate',Data=>{namespace=>'net-a'})->{Success},'uncertain topology creation remains failed');
+    is(scalar @Sent,2,'uncertain topology creation is not retried');
+}
+
 done_testing();

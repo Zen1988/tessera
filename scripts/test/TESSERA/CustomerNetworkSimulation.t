@@ -199,4 +199,12 @@ for my $Case (['restricted',$Hidden],['gap',{%$Result,%$Projection}]) {
     open my $P,'>','.artifacts/network-'.$Name.'-preview.html' or die $!;
     print {$P} '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../var/httpd/htdocs/skins/Customer/default/css/TESSERA.Customer.NetworkSimulation.css"><body>'.$Rendered.'<script src="../var/httpd/htdocs/js/TESSERA.Customer.NetworkSimulation.js"></script></body></html>';close $P;
 }
+# Browser-supplied graph selectors are outside the customer input contract.
+for my $Key (grep {/::Rate::/} keys %{$OM->{Data}}) {$OM->{Data}{$Key}=0}
+my $InjectedID=$Backend->Analyze(%Input,SubmissionToken=>'z'x40,GraphID=>'attacker',BuildID=>'attacker',graph_build_id=>'attacker',topology_name=>'attacker',TopologyName=>'attacker');
+my $Injected=$Backend->_read($InjectedID)->{SubmittedRequest};
+ok(!exists $Injected->{graph_build_id},'customer cannot inject a graph UUID');
+ok(!exists $Injected->{topology_name},'customer cannot inject a graph label into default trace');
+unlike($HTML,qr/name=["'](?:graph_build_id|BuildID|GraphID|TopologyName|topology_name)["']/i,'customer form has no raw graph selector input');
+
 done_testing();

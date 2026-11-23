@@ -7,7 +7,15 @@
         const payload = document.getElementById('SimulationPayload');
         let data;
         try { data = JSON.parse(payload.textContent); } catch (_) { return; }
-        const assets = data.Assets || [];
+        // Native JSON may encode numeric-looking CMDB IDs as numbers. DOM values are strings.
+        function identifiers(item) {
+            const normalized = Object.assign({}, item);
+            ['ID', 'ApplicationID', 'Source', 'Target'].forEach(key => {
+                if (normalized[key] !== undefined && normalized[key] !== null) normalized[key] = String(normalized[key]);
+            });
+            return normalized;
+        }
+        const assets = (data.Assets || []).map(identifiers);
         const form = document.getElementById('SimulationForm');
         const svg = document.getElementById('SimulationGraph');
         const viewport = document.getElementById('SimulationGraphViewport');
@@ -15,7 +23,10 @@
         const empty = document.getElementById('SimulationEmpty');
         const progress = document.getElementById('SimulationProgress');
         const ns = 'http://www.w3.org/2000/svg';
-        let result = data.Result;
+        let result = data.Result ? Object.assign({}, data.Result) : null;
+        if (result) ['Nodes', 'Hops', 'Edges', 'DisplayNodes', 'DisplayEdges'].forEach(key => {
+            if (Array.isArray(result[key])) result[key] = result[key].map(identifiers);
+        });
         let scale = 1, panX = 0, panY = 0, nodes = [], selected = null, vertical = false, viewWidth = 960, viewHeight = 420;
         function element(tag, attrs, text) {
             const item = document.createElementNS(ns, tag);

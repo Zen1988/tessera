@@ -3,7 +3,8 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const {pathToFileURL}=require('node:url');
 (async()=>{
  const browser=await chromium.launch({channel:'msedge',headless:true});const checks=[];
- fs.mkdirSync('outputs/network015-preview',{recursive:true});
+ const output=process.env.TESSERA_NETWORK_PREVIEW_OUTPUT || 'outputs/network015-preview';
+ fs.mkdirSync(output,{recursive:true});
  try {
   for(const kind of ['permitted','restricted','gap'])for(const width of [1280,390]){
    const page=await browser.newPage({viewport:{width,height:900}});
@@ -24,10 +25,10 @@ const {pathToFileURL}=require('node:url');
     assert.equal(await page.locator('.NetworkSimulation__node--gap').count(),1);
     assert.equal(await page.locator('.NetworkSimulation__edge--unknown').count(),2);
    }
-   await page.screenshot({path:`outputs/network015-preview/${kind}-${width}.png`,fullPage:true});
+   await page.screenshot({path:`${output}/${kind}-${width}.png`,fullPage:true});
    checks.push({kind,width,passed:true});await page.close();
   }
-  fs.writeFileSync('outputs/network015-preview/browser-validation.json',JSON.stringify(checks,null,2));
+  fs.writeFileSync(path.join(output,'browser-validation.json'),JSON.stringify(checks,null,2));
   console.log('Six layouts passed: scope-safe grey nodes, Application labels, gaps, IDs and overflow.');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
