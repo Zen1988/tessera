@@ -1,0 +1,39 @@
+{
+  "build": "0.1.12-r1-ubuntu26.04",
+  "platform": "linux/amd64",
+  "image_index_digest": "sha256:c0b2e74863ae4999cec60147f4a9e47ead93880726535543999e09bf765db376",
+  "image_archive": {
+    "sha256": "aaf9502ed06229b073d46383ea986343ef42056b112951a9a8255b18300045be",
+    "bytes": 501937861
+  },
+  "upgrade_bundle_archive": {
+    "sha256": "c498b25b73ccb53459e0c31580f496c5e37c7d3220c6f25501dc63d755bd573a",
+    "bytes": 19709269
+  },
+  "source_structural_audit_files": 6303,
+  "image_layer_files_scanned": 45654,
+  "required_upgrade_helpers_present": true,
+  "review": "No deployment Config.pm, credential-directory files or recognized GitHub/AWS token patterns found in scanned image layers. Key-format matches were in system crypto libraries, public Crypt-JWT/CryptX documentation, and the public Mojo development key fixture. The Mojo key and Perl documentation matched public upstream bytes. No key contents are included in this report.",
+  "limitations": [
+    "Static structural/pattern scan; not a full vulnerability assessment or runtime acceptance test.",
+    "Source/build receipt reports successful build; image was not executed locally because Docker Linux Engine is unavailable."
+  ],
+  "original_build_receipt": {
+    "dependency_policy": "latest",
+    "dependency_refresh": "2026-11-24T06:57:54.296069+00:00-revision-1",
+    "image_id": "sha256:c0b2e74863ae4999cec60147f4a9e47ead93880726535543999e09bf765db376",
+    "package_version": "0.1.12",
+    "perl_runtime": {
+      "archname": "x86_64-linux-gnu-thread-multi",
+      "executable": "/usr/bin/perl",
+      "policy": "target-os-system-perl",
+      "version": "v5.40.1"
+    },
+    "repository": "tessera",
+    "revision": 1,
+    "source_inventory_sha256": "5f220549d8bc10c4e662eefcd1c0b928ebc53fa1cdcba7f442fd7a7ec0f82b2a",
+    "started_at": "2026-11-24T06:57:54.296069+00:00",
+    "status": "success",
+    "tag": "tessera:0.1.12-r1-ubuntu26.04"
+  }
+}

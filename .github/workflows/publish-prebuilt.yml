@@ -1,0 +1,27 @@
+name: Publish reviewed prebuilt TESSERA image
+on:
+  push:
+    branches: [codex/release-0.1.0]
+    paths:
+      - .github/workflows/publish-prebuilt.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: publish-tessera-0.1.12-r1
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install registry transfer client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends skopeo
+      - name: Publish exact reviewed image and verify original OCI digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/publish_prebuilt_oci.py
