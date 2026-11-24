@@ -1,3 +1,11 @@
+# 2026-11-24 — Codex contribution credit
+
+Owner requests Codex contributor/commit credit. Added CONTRIBUTORS.md identifying OpenAI Codex as AI assistance under owner direction. New additive commit uses a Codex co-author trailer; published0.1.12 tag and existing authors/history remain unchanged. GitHub contributor profile association is not guaranteed for a generic attribution email.
+
+# 2026-11-24 — GitHub release0.1.12 published
+
+Owner explicitly approved public release and operational bundles after automatic review requested specific approval. Published https://github.com/Zen1988/tessera/releases/tag/0.1.12 (release456400702), tag commit19785a20d3b501fe3bf0a757689b358ddcd67250.14assets uploaded with API SHA256/size verification: Base OPM and checksum, toolkitr2, native continuation, dumpfix, recoveryr3, Redis diagnosticr2 with companion checksums, mounted-config rebuild guide and SHA256SUMS. No private credentials or cluster evidence uploaded. Existing draft PR2 unmerged. Publication receipt .artifacts/github-release012-published.json. GitHub Packages registry is separate from release assets; no container image was built or pushed by this publication.
+
 # 2026-11-24 — Kubernetes recovery accepted; mounted XML rebuild requested
 
 Owner reports r3 recovery Job e2ffeefe96a4 completed, release0.1.12 READY, web3/daemon1 restored and successful rollouts; original bundle/state retained. This supersedes pending recovery status below. Portal/network functional acceptance still pending. Owner copied current config XML from host into shared PVC and requests rebuild. Use native Maint::Config::Rebuild --deploy-acls --deploy-processes once through Console Interface with process-local cache disabled; avoid configure.py reseeding image definitions over manually copied XML. Then native cache deletion and rolling restart web/daemon. No package/schema reinstall or Secret Config.pm change required.
