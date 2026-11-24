@@ -1,3 +1,13 @@
+# Current — latest Ubuntu26.04 build after native acceptance
+
+Owner chose latest Ubuntu26.04 repository packages plus required CPAN modules. New0.1.12 toolkit preserves moving ubuntu:26.04 pull/fresh dependency layers and additionally upgrades installed base packages before application dependencies. No old Perl version cap or upstream ABI replacement.16source/metadata tests (15pass,1platformskip); no local Docker Linux Engine, so actual build remains on owner Ubuntu server. Native continuation completed; start/portal acceptance not yet confirmed. Then prepare fresh toolkit from upgraded /opt/otobo and build latest policy, inspect actual runtime inventories and fix compatibility as needed. Separate K8s framework DB migration still pending.
+
+# Historical — start and accept completed native upgrade
+
+Owner log confirms continuation finished, Base0.1.12 OK and services left stopped (UPDATED_STOPPED). All10 vendor-different files belong to reviewed TESSERA merge manifests. Do not replay upgrades/reinstall merely to clear those vendor warnings. From /root/upgrade/dump-client-fix unmask apache2/cron and run included upgrade-otobo111-source.py start with original state /opt/otobo-update/tessera-11.1.1. Then validate login/workflow/CMDB/Utilities/network integration; native startup/portal acceptance still pending. Container build follows acceptance; separate K8s core DB migration remains required.
+
+# Historical — backup helper fix (completed)
+
 # Current — resume backup with dump-client helper fix
 
 Owner confirmed dump-client16MiB versus server128MiB; Base0.1.10 row17,603,341bytes exceeds client limit. New helper-only ZIP TESSERA-0.1.12-Dump-Client-Fix.zip explicitly sets128MiB in both backup paths. Extract into new dump-client-fix subdirectory of existing0.1.12 bundle; run included helper with --bundle .. and same original state/private DB file. Both Python helpers required together.47 Python tests pass; no OPM/old bundle modifications. Retry backup only through guarded continuation; no package upgrade has begun. Keep services stopped; inspect any further failure, start only after UPDATED_STOPPED. See docs/deployment/otobo111-dump-client-fix.md and current PROJECT_STATUS.

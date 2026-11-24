@@ -27,7 +27,7 @@ def main():
         if allowed:
             assert p.suffix not in {'.key','.pem','.pfx','.p12'}
             data=p.read_bytes()
-            if p.suffix in {'.sh','.py','.pl'}:
+            if p.suffix in {'.sh','.py','.pl'} or relative.as_posix() == 'Dockerfile':
                 data=data.removeprefix(b'\xef\xbb\xbf').replace(b'\r\n',b'\n')
             included[relative.as_posix()]=data
     for source in ['docs/kubernetes-migration-plan.md', 'docs/container-version-upgrade.md', 'docs/tessera-182-end-to-end.md']:

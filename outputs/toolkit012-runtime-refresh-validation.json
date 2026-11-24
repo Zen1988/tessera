@@ -1,0 +1,14 @@
+{
+  "artifact": "TESSERA-0.1.12-Ubuntu26.04-Container-Toolkit.zip",
+  "sha256": "2bec4397f6963c8c2c77e46b56919965ee5cb4838a7e1fa0074949864e78f84d",
+  "source_files": 75,
+  "test_count": 16,
+  "passed": 15,
+  "skipped": 1,
+  "skip_reason": "Linux flock test on Windows",
+  "docker_engine_available": false,
+  "image_built": false,
+  "base_image": "ubuntu:26.04",
+  "policy": "latest Ubuntu26.04 repository packages plus required CPAN modules",
+  "official_tag_reference": "https://github.com/docker-library/official-images/blob/master/library/ubuntu"
+}
