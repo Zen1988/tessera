@@ -1,14 +1,8 @@
-# Immediate — run exact package-registration recovery; native migration must not replay
+# Current — execute reviewed Base0.1.11 add-on continuation
 
-Owner confirms missing Base registry(0rows), packet limit128MiB, legacy APPLYING state with exact known old/new hashes, original apache2/cron and daemon/cron snapshots. New Package-Registration-Recovery ZIP provides metadata-only native0.1.9 restoration then0.1.10 upgrade/config finish, with source/backup/writer/schema/transaction checks and31 passing tests. Run recover-otobo111-package-registration.py --state /opt/otobo-update/tessera-11.1.1 --tessera-package ./TESSERA-Base-0.1.10.opm --migration-completed. It never repeats DBUpdate/source-copy. Start only after success. No remote restoration performed yet; if target/partial registry appears, inspect instead of forced retry. Docs:deployment/otobo111-registration-recovery.md. Existing OPM unchanged.
+Owner resumed2026-11-24. Core OTOBO11.1.1 migration already complete; Base0.1.10 installed. Five official compatible add-ons reviewed/merged, Base0.1.11 and offline continuation bundle prepared with44 Python/318 Perl checks passing. Use NEW outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip, preserve original /opt/otobo-update/tessera-11.1.1 state/backups, and run continue-otobo111-addons.py with local private DB client file. Do not rerun apply/prepare/DBUpdate/registry recovery. Keep application writers stopped; packet limit may reset after reboot. Success UPDATED_STOPPED permits unmask without start then explicit saved-state start. Native host/browser/integration acceptance remains pending. See docs/deployment/otobo111-addon-continuation.md and PROJECT_STATUS. K8s framework DB migration remains separate.
 
-# Immediate — inspect registry and recover package registration after packet-limit failure
-
-All25 native OTOBO migration tasks finished. Base0.1.10 INSERT failed max_allowed_packet; old registry may be deleted by native Upgrade before Add. Source state legacy APPLYING, apps stopped. Raise GLOBAL packet limit128MiB and obtain direct TESSERA-Base package_repository rows/state before metadata-only recovery. DO NOT rerun migration/apply/resume-backup/reset phase or allow native Upgrade to fall through to fresh Install. Need exact saved old OPM/backup hashes and runtime validation for bounded continuation. New local packet preflight+PACKAGES_UPGRADING checkpoint tested22 cases but not yet included in recovery ZIP. No remote mutation by agent.
-
-# Immediate — repair MariaDB system tables, resume failed native backup safely
-
-Source host paused BACKING_UP after mysql.proc1558 (10.11.13 system table on13.0.2), with OTOBO stopped and no application source replacement. DB=tessera; tested root client options /root/tessera-upgrade-db.cnf. New Backup-Resume-Helper ZIP provides cold backup+mariadb-upgrade script and apply --resume-backup preserving original cron/service snapshot;21 tests pass. See docs/deployment/otobo111-backup-recovery.md. Do not reset state/reprepare/start prematurely or skip routines. OPM0.1.10 unchanged; no remote DB repair performed. Resume next after owner supplies repair/apply output.
+# Historical priorities — superseded where completion is recorded above
 
 # Current — execute/accept native11.1.1 + TESSERA0.1.10 source upgrade
 

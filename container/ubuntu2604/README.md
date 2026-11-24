@@ -1,14 +1,14 @@
-# Current image preparation — TESSERA-Base0.1.10
+# Current image preparation — TESSERA-Base0.1.11
 
 This kit builds the stable source image. The deployment wrapper does not execute
 native DBUpdate-to-11.1 against a separate Kubernetes database. A beta-based K8s
 database needs a separately controlled native framework migration before rollout.
 
-Complete the reviewed native OTOBO11.1.1 source-host upgrade first; its updated helper installs TESSERA0.1.10. Do not install0.1.10 into beta before upgrading core. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.10-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
+Complete the reviewed native OTOBO11.1.1 source-host upgrade and compatible add-on continuation first. Base0.1.11 requires ITSMConfigItemMultitenancy>=11.1.1; see docs/deployment/otobo111-addon-continuation.md in the repository. Do not install0.1.11 into beta before upgrading core. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.11-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
 
-Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.10, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
+Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.11, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
 
-0.1.10 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
+0.1.11 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
 
 ---
 

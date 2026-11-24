@@ -1,7 +1,7 @@
 {
   "target": "11.1.1",
   "package": "TESSERA-Base",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "native_commit": "18feea896ab92138b5e8c4cd785ab4e198eccb1b",
   "baseline_package_sha256": "604d8b39b4bb027cdece41dbad91b2dc74181f27f72c0c2d126dcd2628b73359",
   "entries": [

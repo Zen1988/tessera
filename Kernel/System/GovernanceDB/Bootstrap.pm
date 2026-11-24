@@ -49,6 +49,7 @@ sub InstallDefaults {
     my ( $Self, %Param ) = @_;
 
     $Self->_OTOBO111CompatibilityPreflight();
+    $Self->_OTOBO111AddonPreflight();
 
     $Self->_NewSetupStorageEnsure();
 
@@ -3844,6 +3845,29 @@ sub _OTOBO111CompatibilityPreflight {
             if $Digest ne $Entry->{override_sha256}
             && $Digest ne $Entry->{merged_sha256}
             && $Digest ne $Entry->{target_native_sha256};
+    }
+    return 1;
+}
+
+
+sub _OTOBO111AddonPreflight {
+    my ($Self) = @_;
+    my $Home=$Kernel::OM->Get('Kernel::Config')->Get('Home');
+    open my $FH,'<:raw',"$Home/var/tessera/compatibility/otobo-11.1.1-addons.json"
+        or die 'Missing add-on compatibility manifest.';
+    local $/;my $M=$Kernel::OM->Get('Kernel::System::JSON')->Decode(Data=><$FH>);close $FH;
+    die 'Invalid add-on compatibility manifest.' if ref $M ne 'HASH' || ref $M->{overlaps} ne 'ARRAY';
+    for my $E (@{$M->{overlaps}}) {
+        open my $S,'<:raw',"$Home/$E->{source_location}" or die 'Missing reviewed merged add-on source.';
+        my $Content=<$S>;close $S;
+        die "Merged add-on source integrity mismatch: $E->{path}" if sha256_hex($Content) ne $E->{merged_sha256};
+        my $Target="$Home/$E->{path}";
+        die "Symlink add-on override requires review: $Target" if -l $Target;
+        next if !-e $Target;
+        open my $T,'<:raw',$Target or die 'Cannot inspect add-on override.';
+        my $Current=<$T>;close $T;
+        my %Allowed=map {$_=>1} @{$E->{allowed_sha256}};
+        die "Unknown add-on override requires merge: $Target" if !$Allowed{sha256_hex($Current)};
     }
     return 1;
 }
