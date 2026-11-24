@@ -22,7 +22,8 @@ GitHub Packages using the repository-scoped GITHUB_TOKEN with packages:write.
 It preserves the original OCI manifests, layers and provenance, verifies the
 registry digest afterward and does not rebuild or alter application files.
 The intended reference is ghcr.io/zen1988/tessera:0.1.12-r1-ubuntu26.04.
-Do not infer completed publication from this document; inspect the workflow result.
+Publication workflow45351264198 succeeded; anonymous pull verified the exact original digest.
+The package is publicly pullable.
 
 Once published, pull using the immutable digest:
 
