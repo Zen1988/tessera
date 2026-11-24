@@ -1,4 +1,8 @@
-# Current — run exact-target Redis operation diagnostic
+# Current — run Redis diagnostic r2 (transport fix)
+
+Original diagnostic failed compilation before any probe: Kubernetes reduced Perl PID dollar syntax in container arguments. r2 shared helper Base64-transports source;9tests include reproducing old failure and executing encoded Perl-e path. Extract TESSERA-0.1.12-Redis-Upgrade-Diagnostic-r2.zip fresh and run against original failed Job tessera-release-1795491815 in tessera. No rebuild/state reset. Await Redis statuses, preserve bundle/state/journals and stopped workloads. Native recovery must wait for actual operations evidence.
+
+# Historical — original Redis diagnostic (superseded by r2)
 
 Owner metadata confirms receipt UPGRADING0.1.12 from0.1.8, Base still0.1.8 and LabelPrint UPGRADING journal despite registry11.1.1. Do not clear/retry blindly. New diagnostic ZIP TESSERA-0.1.12-Redis-Upgrade-Diagnostic.zip includes diagnose-redis.py and clone helper. Run it against failed Job tessera-release-1795491815 in tessera; paste redacted statuses. It uses uniquely named disposable cache probes/cleanup plus COUNT-only DB query, no package/journal/setting mutation.5executable tests pass. Need Redis write/auth/ACL/role evidence before bounded partial-hook/config recovery; keep PVC/state/maintenance/workloads stopped, verify separate K8s framework migration.
 

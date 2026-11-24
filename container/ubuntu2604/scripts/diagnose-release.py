@@ -5,6 +5,7 @@ Does not invoke PackageUpgrade, configure, release claims or workload scaling.
 The failed Job and maintenance lock are preserved.
 """
 import argparse
+import base64
 import copy
 import json
 from pathlib import Path
@@ -124,7 +125,7 @@ if [ -r /run/tessera-tls/ca.crt ]; then
   export SSL_CERT_FILE=/opt/otobo/var/tmp/tessera-ca-bundle.pem
   export PERL_LWP_SSL_CA_FILE="$SSL_CERT_FILE"
 fi
-exec /usr/bin/perl -e "$1"
+exec /usr/bin/perl -MMIME::Base64 -e 'eval decode_base64($ARGV[0]); die $@ if $@;' "$1"
 '''
 
 
@@ -139,7 +140,9 @@ def diagnostic_job(original, namespace, name, package_plan=False):
     if [c['name'] for c in pod.get('initContainers', [])] != ['stage-upgrade']:
         raise ValueError('Expected the isolated stage-upgrade init container')
     main['command'] = ['/bin/bash', '-c', SHELL, 'diagnose-release']
-    main['args'] = [diagnostic_program(package_plan)]
+    # Kubelet expands container arguments, including reducing Perl's $$ to $.
+    # Base64 transports literal source without dollar/env substitutions.
+    main['args'] = [base64.b64encode(diagnostic_program(package_plan).encode('utf-8')).decode('ascii')]
     main['env'] = [e for e in main.get('env', []) if e['name'] != 'TESSERA_UPGRADE_QUIESCED']
     for key in ('livenessProbe', 'readinessProbe', 'startupProbe', 'lifecycle', 'ports'):
         main.pop(key, None)

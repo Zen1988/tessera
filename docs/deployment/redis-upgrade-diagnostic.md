@@ -1,5 +1,11 @@
 # Redis diagnostics for a failed release Job
 
+Use the r2 ZIP. The original diagnostic did not run: Kubernetes reduced the
+inline Perl PID expression before compilation. The shared diagnostic helper now
+transports source as Base64 and decodes inside Perl, preserving literal dollars.
+The regression tests reproduce the old argument failure and execute the corrected
+encoded command path, including credential redaction and all probe modes.
+
 Use only after the upgrade Job is terminal Failed, with no active Pods.
 The diagnostic clones its image, mounts, UID and network configuration into
 isolated staging. It never executes package hooks, claims a release, clears

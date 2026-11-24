@@ -1,4 +1,5 @@
 import importlib.util
+import base64
 import os
 from pathlib import Path
 import subprocess
@@ -51,7 +52,7 @@ sub FetchrowArray {return () if !delete $_[0]{row};return (1)}
 
 
 class RedisDiagnostic(unittest.TestCase):
-    def run_probe(self, mode):
+    def run_probe(self, mode, legacy_transport=False):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
             path = root / "Kernel/System/ObjectManager.pm"
@@ -60,9 +61,16 @@ class RedisDiagnostic(unittest.TestCase):
             path = root / "Kernel/System/TESSERA/Secrets.pm"
             path.parent.mkdir()
             path.write_text("package Kernel::System::TESSERA::Secrets; sub Read {'private-secret-123'};1;")
-            script = root / "probe.pl"
-            script.write_text(D.PERL)
-            result = subprocess.run(["perl", "-I" + str(root), str(script)],
+            if legacy_transport:
+                # Reproduce documented kubelet argument expansion from the
+                # failed Job, rather than testing an unaffected script file.
+                args = ["-e", D.PERL.replace("$$", "$")]
+            else:
+                encoded = base64.b64encode(D.PERL.encode()).decode()
+                self.assertEqual(encoded.replace("$$", "$"), encoded)
+                args = ["-MMIME::Base64", "-e",
+                        "eval decode_base64($ARGV[0]); die $@ if $@;", encoded]
+            result = subprocess.run(["perl", "-I" + str(root), *args],
                                     capture_output=True, text=True,
                                     env=dict(os.environ, DIAGNOSTIC_FIXTURE=mode))
             self.assertNotIn("private-secret-123", result.stdout + result.stderr)
@@ -75,6 +83,12 @@ class RedisDiagnostic(unittest.TestCase):
                       "cache_set_roundtrip=ok", "sysconfig_change_setting_rows=1",
                       "completed-no-upgrade-no-journal-change"):
             self.assertIn(value, result.stdout)
+
+    def test_legacy_argument_expansion_reproduces_compile_failure(self):
+        result = self.run_probe("success", legacy_transport=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("syntax error", result.stderr)
+        self.assertNotIn("diagnostic=redis-operation-probe", result.stdout)
 
     def test_auth_failure_redacted_and_no_probe_writes(self):
         result = self.run_probe("auth")
@@ -103,7 +117,9 @@ class RedisDiagnostic(unittest.TestCase):
                              "initContainers": [{"name": "stage-upgrade"}]}}}}
         result = module.diagnostic_job(original, "tessera", "diagnostic")
         container = result["spec"]["template"]["spec"]["containers"][0]
-        self.assertEqual(container["args"], [D.PERL])
+        self.assertEqual(base64.b64decode(container["args"][0]).decode(), D.PERL)
+        self.assertNotIn("$", container["args"][0])
+        self.assertIn("-MMIME::Base64", container["command"][2])
         self.assertEqual(container["image"], "fixture:0.1.12")
         self.assertEqual(container["env"], [])
         self.assertEqual(original["spec"]["template"]["spec"]["containers"][0]["args"], ["upgrade"])
