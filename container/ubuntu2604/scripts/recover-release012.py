@@ -104,7 +104,7 @@ def resume(client, state, job_name, source, cleanup=None):
     for old in workloads:
         print('Will restore', old['metadata']['name'], 'replicas:', old['spec'].get('replicas', 1), flush=True)
     out = state / 'recover-release012';
-    if out.exists(): raise ValueError('Recovery already attempted; inspect saved state before retry')
+    if out.exists(): preflight.preserve_unclaimed(client, out, failed, lambda old_name: recovery_manifest(failed, namespace, old_name))
     def save(name, value):
         with (out / name).open('x', encoding='utf-8') as stream:
             os.chmod(stream.name, 0o600);json.dump(value, stream, indent=2)
@@ -136,7 +136,7 @@ def resume(client, state, job_name, source, cleanup=None):
     lock = preflight.run(client, state, manifest, code, validate_quiet)
     out.mkdir(mode=0o700, exist_ok=False)
     save('failed-job.json', failed);save('upgrade-job.json', manifest);save('bundle-pvc.json', bundle);save('rebuild-code.json', code)
-    client.write(code, dry=True);client.write(manifest, dry=True)
+    client.write(manifest, dry=True)
     lock['data']['owner'] = uuid.uuid4().hex
     save('maintenance-lock.json', lock);client.write(lock, verb='replace')
     def owned():

@@ -87,6 +87,10 @@ def main():
         "    if main['image'] != 'docker.io/library/tessera:0.1.12-ubuntu26.04':\n"
         "        raise ValueError('Requires the original reviewed0.1.12 image')\n"
         "    _, observed_pvc = before.validate_manifest(failed)")
+    source = source.replace("    if out.exists(): raise ValueError('Recovery already attempted; inspect saved state before retry')",
+        "    if out.exists(): preflight.preserve_unclaimed(client, out, failed, lambda old_name: recovery_manifest(failed, namespace, old_name))")
+    source = source.replace("    client.write(code, dry=True);client.write(manifest, dry=True)",
+        "    client.write(manifest, dry=True)")
     target = KIT / "scripts/recover-release012.py"
     target.write_text(source, encoding="utf-8", newline="\n")
     payload = {}
@@ -99,7 +103,7 @@ def main():
     payload["README.md"] = (ROOT / "docs/deployment/release012-recovery.md").read_bytes()
     payload["SHA256SUMS"] = "".join(hashlib.sha256(d).hexdigest() + "  " + n + "\n"
                                     for n, d in sorted(payload.items())).encode()
-    output = ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r2.zip"
+    output = ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r3.zip"
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name, data in sorted(payload.items()):
             info = zipfile.ZipInfo(name, (2026, 11, 24, 0, 0, 0))

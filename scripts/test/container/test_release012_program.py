@@ -196,7 +196,7 @@ class RecoveryProgram(unittest.TestCase):
     def test_extracted_bundle_contains_package_plan_dependencies(self):
         import importlib.util
         with tempfile.TemporaryDirectory(dir=ROOT / ".artifacts") as directory:
-            with zipfile.ZipFile(ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r2.zip") as z:
+            with zipfile.ZipFile(ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r3.zip") as z:
                 z.extractall(directory)
             path = Path(directory) / "scripts/diagnose-release.py"
             spec = importlib.util.spec_from_file_location("extracted_release012_diagnostic", path)

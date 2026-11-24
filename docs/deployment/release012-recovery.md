@@ -1,3 +1,17 @@
+# Recovery revision3 controller sequencing fix
+
+Revision2 passed all six release checks, packet64MiB and dependency smoke.
+It then failed a redundant create dry-run for the already created immutable
+ConfigMap. This happened after local staging files were saved but before
+maintenance ownership transfer and before the recovery Job was created.
+Revision3 removes that redundant create and preserves the exact bbb4eb07c318
+unclaimed staging directory under a unique preclaim-r2 name. This is permitted
+only for its four known files, matching original Job/manifest/code, completed
+check-only Job and absence of the full Job. Existing maintenance claim evidence,
+unknown staging or any recovery Job blocks replay. Original maintenance ownership,
+quiesced workloads and other writer checks still apply. Extract to recovery012-r3
+and run with original state; no manual deletion or lock/journal reset is required.
+
 # Recovery revision2 preflight diagnostics
 
 The first preflight stopped before ownership/package changes. A standalone

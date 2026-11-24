@@ -29,6 +29,7 @@ class ResumeConfig(unittest.TestCase):
         lock = {'metadata': {'resourceVersion': '1', 'labels': {'app.kubernetes.io/managed-by': 'tessera-release-helper'}}, 'data': {'phase': 'LOCKED', 'owner': 'old-owner'}}
         initial_lock = copy.deepcopy(lock)
         calls = []
+        created = set()
         class FakeClient:
             prefix = ['kubectl', '-n', 'tessera']
             def get(self, *args):
@@ -45,6 +46,10 @@ class ResumeConfig(unittest.TestCase):
                 if args[0] == 'pvc': return {'metadata': {'uid': 'bundle-uid', **({'deletionTimestamp': 'now'} if failure == 'pvc' else {})}}
                 raise AssertionError(args)
             def write(self, obj, verb='create', dry=False):
+                identity=(obj.get('kind'),obj['metadata'].get('name'))
+                if verb=='create' and identity in created:
+                    raise ValueError('AlreadyExists')
+                if verb=='create' and not dry: created.add(identity)
                 calls.append(('write', verb, dry, copy.deepcopy(obj)))
                 if verb == 'replace': lock.clear();lock.update(copy.deepcopy(obj))
             def run(self, *args): calls.append(('run', *args))
@@ -92,4 +97,34 @@ class ResumeConfig(unittest.TestCase):
         with self.assertRaises(ValueError):
             m.resume(None,Path('/unused'),'another-job',None)
 
+class Preclaim(unittest.TestCase):
+    def exercise(self, mode):
+        name='tessera-release012-recovery-bbb4eb07c318'
+        original={'metadata':{'uid':'original'},'spec':{'value':'same'}}
+        manifest={'metadata':{'name':name},'spec':{'reviewed':True}}
+        code={'metadata':{'name':name+'-code'},'data':{'source':'same'},'immutable':True}
+        class Client:
+            def get(self,*args):
+                if args[0]=='jobs': return {'items':[{'metadata':{'name':name}}] if mode=='job-exists' else []}
+                if args[0]=='job': return {'status':{'conditions':[{'type':'Complete','status':'True'}]},'spec':{'template':{'spec':{'containers':[{'env':[{'name':'TESSERA_RECOVERY_CHECK_ONLY','value':'1'}]}]}}}}
+                if args[0]=='configmap': return dict(code,data={'changed':'code'}) if mode=='code-drift' else code
+                raise AssertionError(args)
+        with tempfile.TemporaryDirectory(dir=ROOT/'.artifacts') as temp:
+            out=Path(temp)/'recover-release012';out.mkdir()
+            for filename,value in [('failed-job.json',original),('upgrade-job.json',manifest),('bundle-pvc.json',{}),('rebuild-code.json',code)]:
+                (out/filename).write_text(json.dumps(value))
+            if mode=='claimed': (out/'maintenance-lock.json').write_text('{}')
+            if mode=='success':
+                m.preflight.preserve_unclaimed(Client(),out,original,lambda n:manifest)
+                self.assertFalse(out.exists())
+                self.assertEqual(len(list(Path(temp).glob('recover-release012-preclaim-r2-*'))),1)
+            else:
+                with self.assertRaises(ValueError): m.preflight.preserve_unclaimed(Client(),out,original,lambda n:manifest)
+                self.assertTrue(out.exists())
+    def test_preserves_only_exact_unclaimed_staging(self): self.exercise('success')
+    def test_refuses_any_claim_or_existing_job_or_code_drift(self):
+        for mode in ('claimed','job-exists','code-drift'):
+            with self.subTest(mode=mode): self.exercise(mode)
+
 if __name__ == '__main__': unittest.main()
+
