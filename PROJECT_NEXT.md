@@ -1,4 +1,12 @@
-# Current — latest Ubuntu26.04 build after native acceptance
+# Current — run exact-target Redis operation diagnostic
+
+Owner metadata confirms receipt UPGRADING0.1.12 from0.1.8, Base still0.1.8 and LabelPrint UPGRADING journal despite registry11.1.1. Do not clear/retry blindly. New diagnostic ZIP TESSERA-0.1.12-Redis-Upgrade-Diagnostic.zip includes diagnose-redis.py and clone helper. Run it against failed Job tessera-release-1795491815 in tessera; paste redacted statuses. It uses uniquely named disposable cache probes/cleanup plus COUNT-only DB query, no package/journal/setting mutation.5executable tests pass. Need Redis write/auth/ACL/role evidence before bounded partial-hook/config recovery; keep PVC/state/maintenance/workloads stopped, verify separate K8s framework migration.
+
+# Historical — inspect failed Kubernetes release before recovery
+
+Failed tessera Job tessera-release-1795491815 (Base0.1.12). Preserve PVC tessera-upgrade-bundle-f923e75245 and artifacts/deploy-0.1.12-20261124-034249-f923e75245; workloads were quiesced. Logs show executing package hooks, repeated sanitized Redis Set failures and duplicate SysConfig default-name insert for ITSMChangeManagement. Run existing diagnose-release.py with --namespace tessera --job tessera-release-1795491815 --package-plan; await journals/target metadata before recovery. Do not rerun deployment, clear receipts, delete settings or restart traffic. Need exact Redis operation/role/auth diagnosis and independent K8s framework DB migration verification. Native source-host upgrade was completed separately. See current PROJECT_STATUS.
+
+# Historical — latest Ubuntu26.04 build after native acceptance
 
 Owner chose latest Ubuntu26.04 repository packages plus required CPAN modules. New0.1.12 toolkit preserves moving ubuntu:26.04 pull/fresh dependency layers and additionally upgrades installed base packages before application dependencies. No old Perl version cap or upstream ABI replacement.16source/metadata tests (15pass,1platformskip); no local Docker Linux Engine, so actual build remains on owner Ubuntu server. Native continuation completed; start/portal acceptance not yet confirmed. Then prepare fresh toolkit from upgraded /opt/otobo and build latest policy, inspect actual runtime inventories and fix compatibility as needed. Separate K8s framework DB migration still pending.
 
