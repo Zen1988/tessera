@@ -1,4 +1,8 @@
-# Current — run Redis diagnostic r2 (transport fix)
+# Current — build corrected toolkit; retain interrupted release for bounded recovery
+
+Owner r2 Redis probe passed all auth/master/write/cache operations, SysConfig row count1. Owner requested future duplicate prevention. Toolkit now bypasses memory/backend cache only within upgrade process before package hooks (final configure already did), so native rebuild updates existing DB setting IDs/versioning and inserts new definitions once. Added actual cache-roundtrip preflight before release claim. Native regression reproduces stale-list duplicate, verifies update/admin-value retention/repeat/fresh/lock behavior:64Perl assertions,39Python tests (36pass/3skips). New toolkit-r2 ZIP SHA8ffe0057...,77sourcefiles, no OPM mutation. Actual Docker Engine unavailable locally. Build fresh source kit into new automatic image revision and use receipt tag. Existing interrupted K8s0.1.8->0.1.12 receipt/LabelPrint journal still needs separate reviewed recovery; do not redeploy/reset/start traffic blindly. See current PROJECT_STATUS and deployment/upgrade-sysconfig-reconciliation.md.
+
+# Historical — Redis diagnostic r2 (completed successfully)
 
 Original diagnostic failed compilation before any probe: Kubernetes reduced Perl PID dollar syntax in container arguments. r2 shared helper Base64-transports source;9tests include reproducing old failure and executing encoded Perl-e path. Extract TESSERA-0.1.12-Redis-Upgrade-Diagnostic-r2.zip fresh and run against original failed Job tessera-release-1795491815 in tessera. No rebuild/state reset. Await Redis statuses, preserve bundle/state/journals and stopped workloads. Native recovery must wait for actual operations evidence.
 

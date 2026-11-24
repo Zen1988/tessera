@@ -10,6 +10,18 @@ Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.12, then `bash scripts/b
 
 0.1.12 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
 
+## Upgrade configuration reconciliation (toolkit r2)
+
+Package upgrades now read SysConfig from the authoritative database throughout
+the upgrade process, extending the cache bypass already used for the final
+configure step. Existing settings follow native update/versioning; new settings
+are inserted once. No duplicate-error suppression or blanket SQL upsert. Native
+locks and compatible administrator modifications remain in force. A real cache
+round-trip preflight runs before package changes. Normal web/daemon caching is
+unchanged. Build a new image revision; this does not clear an existing failed
+upgrade journal. See docs/deployment/upgrade-sysconfig-reconciliation.md in the
+repository for behavior, regression coverage and partial-upgrade limitations.
+
 ## Runtime update policy (owner confirmed 2026-11-24)
 
 Use the current official ubuntu:26.04 image and current Ubuntu26.04 repository
