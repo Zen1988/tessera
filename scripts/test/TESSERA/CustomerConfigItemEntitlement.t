@@ -90,7 +90,7 @@ like(
     qr{DYNAMICFIELDNAME:\s*for.*?next\s+DYNAMICFIELDNAME\s+if\s+!IsHashRefWithData\(\$DynamicFieldConfig\)}s,
     'custom asset backend skips unavailable fields through its defined loop label',
 );
-like( $SOPMContent, qr{<Framework>11\.1\.x</Framework>}, 'package targets OTOBO 11.1.x' );
+like( $SOPMContent, qr{<Framework(?: Minimum="11\.1\.1")?>11\.1\.x</Framework>}, 'package targets OTOBO 11.1.x' );
 like( $SOPMContent, qr{ztsm_assets\.svg}, 'asset icon is packaged' );
 like( $SOPMContent, qr{CustomerEntitlement\.pm}, 'central entitlement service is packaged' );
 

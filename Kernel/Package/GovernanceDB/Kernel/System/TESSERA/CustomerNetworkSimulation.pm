@@ -7,7 +7,7 @@ use Digest::SHA qw(sha256_hex);
 use Socket qw(AF_INET AF_INET6 inet_pton inet_ntop);
 use POSIX qw(strftime);
 use Kernel::System::TESSERA::NavisPlan;
-our @ObjectDependencies=qw(Kernel::Config Kernel::System::CustomerUser Kernel::System::GovernanceObject Kernel::System::ITSMConfigItem Kernel::System::ITSMConfigItem::CustomerEntitlement Kernel::System::SystemData Kernel::System::DB Kernel::System::GenericInterface::Webservice Kernel::GenericInterface::Requester);
+our @ObjectDependencies=qw(Kernel::Config Kernel::System::CustomerUser Kernel::System::GovernanceObject Kernel::System::ITSMConfigItem Kernel::System::ITSMConfigItem::CustomerEntitlement Kernel::System::SystemData Kernel::System::DB Kernel::System::GeneralCatalog Kernel::System::GenericInterface::Webservice Kernel::GenericInterface::Requester);
 sub new {my ($T,%P)=@_;bless \%P,$T}
 sub _config {my ($S,$Name)=@_;return $Kernel::OM->Get('Kernel::Config')->Get('TESSERA::CustomerNetworkSimulation::'.$Name)}
 sub _panel {return $Kernel::OM->Get('Kernel::Config')->Get('CustomerPanelUserID') || 1}
@@ -49,14 +49,56 @@ sub _ips {
     }
     return \@IPs;
 }
+sub _candidatePages {
+    my ($S,$Visit)=@_;
+    my $Catalog=$Kernel::OM->Get('Kernel::System::GeneralCatalog')->ItemList(Class=>'ITSM::ConfigItem::Class') || {};
+    my @ClassIDs;
+    for my $Class (qw(Workload NetworkNode)) {
+        my @IDs=grep {$Catalog->{$_} eq $Class} keys %$Catalog;
+        die "Workspace classes unavailable.\n" if @IDs!=1 || $IDs[0]!~/\A[1-9][0-9]*\z/;
+        push @ClassIDs,$IDs[0];
+    }
+    my $DB=$Kernel::OM->Get('Kernel::System::DB');
+    die "Asset scan unavailable.\n" if !$DB->Prepare(SQL=>'SELECT MAX(ci.id) FROM configitem ci WHERE ci.class_id IN (?, ?)',Bind=>[\$ClassIDs[0],\$ClassIDs[1]]);
+    my ($Last)=$DB->FetchrowArray();return if !defined $Last;
+    die "Invalid asset scan boundary.\n" if $Last!~/\A[0-9]+\z/;
+    my $Cursor=0;
+    while ($Cursor<$Last) {
+        die "Asset scan unavailable.\n" if !$DB->Prepare(
+            SQL=>'SELECT ci.id FROM configitem ci WHERE ci.id > ? AND ci.id <= ? AND ci.class_id IN (?, ?) ORDER BY ci.id ASC',
+            Bind=>[\$Cursor,\$Last,\$ClassIDs[0],\$ClassIDs[1]],Limit=>500);
+        my (@Batch,%Seen);
+        while (my @Row=$DB->FetchrowArray()) {
+            my $ID=$Row[0];
+            die "Invalid asset scan page.\n" if !defined $ID || ref $ID || $ID!~/\A[1-9][0-9]*\z/
+                || $ID<=$Cursor || $ID>$Last || $Seen{$ID}++ || (@Batch && $ID<=$Batch[-1]) || @Batch>=500;
+            push @Batch,$ID;
+        }
+        last if !@Batch;
+        $Cursor=$Batch[-1];
+        # Collect the page before native search/entitlement checks use the DB.
+        # Raw IDs never leave this service; native panel and customer boundaries remain separate.
+        my %Search=(
+            ConfigItemID=>\@Batch,Classes=>['Workload','NetworkNode'],Result=>'ARRAY',
+            Limit=>scalar @Batch,SortBy=>'Number',OrderBy=>'Up',CacheTTL=>0,UserID=>$S->_panel());
+        my $Native=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');
+        my $Count=$Native->ConfigItemSearch(%Search,Result=>'COUNT');
+        die "Native asset scan unavailable.\n" if !defined $Count || ref $Count || $Count!~/\A[0-9]+\z/ || $Count>@Batch;
+        my @IDs=$Count?$Native->ConfigItemSearch(%Search):();
+        die "Native asset page changed.\n" if @IDs!=$Count;
+        my %Returned;
+        die "Invalid native asset page.\n" if grep {!defined $_ || ref $_ || !$Seen{$_} || $Returned{$_}++} @IDs;
+        $Visit->(\@IDs);
+    }
+}
 sub Model {
     my ($S,%P)=@_;die "Customer CMDB read access required.\n" if !$S->AccessCheck(%P);
     delete $S->{Schema};
     my $CI=$Kernel::OM->Get('Kernel::System::ITSMConfigItem');my $Ent=$Kernel::OM->Get('Kernel::System::ITSMConfigItem::CustomerEntitlement');
-    my @IDs=$CI->ConfigItemSearch(Classes=>['Workload','NetworkNode'],Result=>'ARRAY',Limit=>2001,UserID=>$S->_panel());
-    die "Asset scope exceeds workspace budget.\n" if @IDs>2000;
-    my (@Assets,%Apps);
-    for my $ID (@IDs) {
+    my (@Assets,%Apps);my $Bytes=0;
+    $S->_candidatePages(sub {
+      my ($IDs)=@_;
+      for my $ID (@$IDs) {
         next if !$Ent->ConfigItemDetailAccessCheck(CustomerUserID=>$P{CustomerUserID},ConfigItemID=>$ID,LogNo=>1);
         my $O=$CI->ConfigItemGet(ConfigItemID=>$ID,DynamicFields=>1);next if !$O || ($O->{Class} || '')!~/\A(?:Workload|NetworkNode)\z/;
         $S->_schema($O);
@@ -65,16 +107,22 @@ sub Model {
         $Apps{$AppID}={ID=>$AppID,Name=>$App[0]{Name}} if @App;
         my $IPs=$S->_ips($O);my @Endpoints;my $Index=0;
         for my $IP (@$IPs) {push @Endpoints,{Key=>$ID.'@'.$Index++,Address=>$IP,AssetID=>"$ID",Name=>$O->{Name},Class=>$O->{Class},ApplicationID=>$AppID}}
-        push @Assets,{ID=>"$ID",Name=>$O->{Name},Class=>$O->{Class},ApplicationID=>$AppID,Endpoints=>\@Endpoints};
-    }
+        my $Asset={ID=>"$ID",Name=>$O->{Name},Class=>$O->{Class},ApplicationID=>$AppID,Endpoints=>\@Endpoints};
+        $Bytes+=length(JSON::PP->new->utf8->encode($Asset));
+        die "Authorized workspace exceeds response size budget.\n" if $Bytes>8*1024*1024;
+        push @Assets,$Asset;
+      }
+    });
     for my $App (values %Apps) {
         my $Object=eval {$Kernel::OM->Get('Kernel::System::GovernanceObject')->GovernanceObjectGet(GovernanceObjectID=>$App->{ID},DynamicFields=>1)};
         my $Name=ref $Object eq 'HASH'?$Object->{DynamicField_Navis}:undef;$Name=$Name->[0] if ref $Name eq 'ARRAY' && @$Name==1;
         $App->{HasTopology}=ref $Object eq 'HASH' && ($Object->{Class} || '') eq 'Application' && ($Object->{ZTSMStatus} || '') eq 'Active'
             && Kernel::System::TESSERA::NavisPlan::_text($Name) && $Name!~/^\s|\s$/?1:0;
     }
-    return {Applications=>[sort {$a->{Name} cmp $b->{Name}} values %Apps],Assets=>\@Assets,
+    my $Model={Applications=>[sort {$a->{Name} cmp $b->{Name}} values %Apps],Assets=>\@Assets,
         CanSimulate=>$S->_simulation($P{CustomerUserID})?1:0};
+    die "Authorized workspace exceeds response size budget.\n" if length(JSON::PP->new->utf8->encode($Model))>8*1024*1024;
+    return $Model;
 }
 sub _endpoint {
     my ($S,$M,$Key,$App,$System)=@_;die "Choose an authorized endpoint.\n" if !defined $Key || ref $Key || $Key!~/\A[1-9][0-9]*\@[0-9]{1,3}\z/;

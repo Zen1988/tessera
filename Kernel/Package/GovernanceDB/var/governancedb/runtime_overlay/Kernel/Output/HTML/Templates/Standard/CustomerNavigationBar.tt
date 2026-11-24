@@ -15,7 +15,7 @@
 # --
 
 <!-- start NavigationBar -->
-<div id="oooNavigation">
+<div id="oooNavigation" role="navigation">
     <div id="oooNavBarIcons">
         <div id="oooNavBarSignet">
             <img id="oooSignet" src="[% Config("Frontend::WebPath") %]common/img/TESSERA/TESSERA_LOGO_v2.svg"/>

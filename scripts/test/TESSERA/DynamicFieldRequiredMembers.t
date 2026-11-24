@@ -1,10 +1,11 @@
 use strict;
 use warnings;
 use Test::More;
+use lib '.';
 sub Slurp { my ($P)=@_; open my $F,'<:raw',$P or die $!; local $/; return <$F>; }
 my $Base='Kernel/Package/GovernanceDB/var/governancedb/runtime_overlay/Kernel/System/DynamicField/Driver/';
 my $Set=Slurp($Base.'Set.pm');
-for my $Method (qw(EditFieldValueValidate _RenderContentGet _RenderFieldListGet)) {
+for my $Method (qw(EditFieldValueValidate _RenderContentGet _RenderFieldListGet _ScriptSetFormConfig)) {
     my ($Code)=$Set =~ /(sub \Q$Method\E \{.*?)(?=\nsub |\n1;)/s;
     die "Missing $Method" if !$Code;
     eval "package Kernel::System::DynamicField::Driver::Set; $Code"; die $@ if $@;

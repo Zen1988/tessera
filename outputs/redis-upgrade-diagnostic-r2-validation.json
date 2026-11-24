@@ -1,0 +1,8 @@
+{
+  "sha256": "f2aca771e78eabbaf1d74e7ac9549b63afcaaa63155059df44990e3e6b7715e4",
+  "tests": 9,
+  "legacy_transport_failure_reproduced": true,
+  "encoded_perl_e_transport_executed": true,
+  "live_kubernetes_tested": false,
+  "old_artifact_unchanged": true
+}

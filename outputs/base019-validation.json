@@ -1,0 +1,33 @@
+{
+  "version": "0.1.9",
+  "baseline_sha256": "9c9a4554d098204190ebc3b22d51348756b342e9021655e089e9b3ee4093ea55",
+  "sha256": "604d8b39b4bb027cdece41dbad91b2dc74181f27f72c0c2d126dcd2628b73359",
+  "payloads": 598,
+  "changed": [
+    "Kernel/System/TESSERA/CustomerNetworkSimulation.pm",
+    "var/governancedb/container_release.json",
+    "var/tessera/docs/integrations/navis.md",
+    "var/tessera/docs/releases/README.md"
+  ],
+  "new": [
+    "var/tessera/docs/recovery-navis017.md",
+    "var/tessera/docs/releases/0.1.9.md"
+  ],
+  "unchanged": 592,
+  "hooks_preserved": true,
+  "deployed": false,
+  "navis_requirement": "Navis0.1.1 ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8; migrations through021",
+  "perl_suites": 2,
+  "perl_assertions": 119,
+  "offline_ui_checks": 19,
+  "scan_page_size": 500,
+  "large_scope_regression_assets": 2505,
+  "authorized_model_byte_limit": 8388608,
+  "native_search_contract_tests": 6,
+  "native_live_acceptance": false,
+  "TESSERA-0.1.9-Ubuntu26.04-Container-Toolkit.zip": "4fb69ef83282defddd9032c47ee518483cba95bc31f617ec13ff090ab85f9190",
+  "TESSERA-0.1.9-ScriptEngine-Offline-Pack.zip": "a3a11db335cb8ccf2cd17885afb39de6e5089d8a0648c254f1cea79d244bec1e",
+  "offline_pack_files": 160,
+  "toolkit_source_files": 75,
+  "simulation_module_sha256": "1cfab31ccab0518bf8871c25bbd4256f12e922b6d4bc06e57ae0dd0fef108c27"
+}

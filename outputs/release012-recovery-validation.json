@@ -1,0 +1,12 @@
+{
+  "sha256": "b2853bd3009022fb3907f84676716b230e60e35c4f694b9d1978788ddb13b718",
+  "files": 12,
+  "python_tests": 41,
+  "python_passed": 39,
+  "python_skipped": 2,
+  "perl_assertions": 64,
+  "native_framework_tasks": 25,
+  "backup": "owner-waived-testing-server",
+  "live_cluster_recovered": false,
+  "zip_import_and_help_verified": true
+}

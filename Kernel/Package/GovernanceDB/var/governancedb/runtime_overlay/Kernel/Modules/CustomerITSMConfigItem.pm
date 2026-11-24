@@ -449,9 +449,8 @@ sub Run {
         }
     }
 
-    # get personal page shown count
-    my $PageShownPreferencesKey = 'UserConfigItemOverview' . $View . 'PageShown';
-    my $PageShown               = $Self->{$PageShownPreferencesKey} || 10;
+    # get customer page shown count
+    my $PageShown = $Backends->{$View} ? $Backends->{$View}->{PageShown} : 10;
     my %PageNav;
 
     my $ElementChanged = $ParamObject->GetParam( Param => 'ElementChanged' ) || '';

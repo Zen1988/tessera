@@ -1,0 +1,9 @@
+{
+  "sha256": "99a797763dc70ea65a42e2444c4932e9870913f8b3c18d6bc2619215c7733895",
+  "tests": 5,
+  "live_redis_tested": false,
+  "package_hooks_run": false,
+  "receipt_mutation": false,
+  "secret_redaction_tested": true,
+  "probe_ttl_seconds": 60
+}

@@ -1,0 +1,27 @@
+{
+  "version": "0.1.8",
+  "baseline_sha256": "cf6c345ef2b4f6a7638964b2fdd068e8625e6e83954e1c57176c0108393425c6",
+  "sha256": "9c9a4554d098204190ebc3b22d51348756b342e9021655e089e9b3ee4093ea55",
+  "payloads": 596,
+  "changed": [
+    "Kernel/System/TESSERA/ApplicationNavisInstaller.pm",
+    "var/governancedb/container_release.json",
+    "var/tessera/docs/releases/README.md"
+  ],
+  "new": [
+    "var/tessera/docs/releases/0.1.8.md"
+  ],
+  "unchanged": 592,
+  "hooks_preserved": true,
+  "deployed": false,
+  "navis_requirement": "Navis0.1.1 ed4ba3e312bd24b0afabc2a2b2949e0aaa9c75a8; migrations through021",
+  "perl_suites": 2,
+  "perl_assertions": 71,
+  "diagnostic_tests": 3,
+  "native_live_acceptance": false,
+  "failed_job": "tessera-release-1795404303",
+  "recovery_performed": false,
+  "TESSERA-0.1.8-Ubuntu26.04-Container-Toolkit.zip": "e839c7492d5ec9b60b45a3da33af2f59e3e7291269dc32ddae85ce0d608f7fab",
+  "TESSERA-0.1.8-ScriptEngine-Offline-Pack.zip": "df2992d9e085f9e4caa182d3c26c4c7b26d53546b201463c46d5d6fdadb14588",
+  "TESSERA-0.1.7-Navis-Field-Diagnostic.zip": "e84ef0d17358f6c72096bafee0f72df75a0a6b7b7dac89d0de92f765800e28f9"
+}

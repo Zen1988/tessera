@@ -1,0 +1,12 @@
+{
+  "python_tests": 47,
+  "opm_unchanged": true,
+  "live_execution_performed": false,
+  "zip_sha256": "d9ddd47ace507d37cf9bb3a42505464f3dd8808d0bf22e4cc41c3483c874b557",
+  "files": {
+    "continue-otobo111-addons.py": "e9a507fbcface18ca5ad70fcc9d3d090ab4eb9a73d37f885111483e46a71c96b",
+    "upgrade-otobo111-source.py": "917e32a239e9d141cce359d59e6fc81d8a7f5b308f32de73db2c9226b54d3204",
+    "README.md": "2613bea7a0fe45dde875166b35a137e4f4ba4e25f259e6fcf9d969042364d937",
+    "SHA256SUMS": "674c765f89b3c82a036193c4025d46e6acbd198fc2499ccb1d923e4213f96a1b"
+  }
+}

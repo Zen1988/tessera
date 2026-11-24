@@ -1,3 +1,117 @@
+# 2026-11-24 — Codex contribution credit
+
+Owner requests Codex contributor/commit credit. Added CONTRIBUTORS.md identifying OpenAI Codex as AI assistance under owner direction. New additive commit uses a Codex co-author trailer; published0.1.12 tag and existing authors/history remain unchanged. GitHub contributor profile association is not guaranteed for a generic attribution email.
+
+# 2026-11-24 — GitHub release0.1.12 published
+
+Owner explicitly approved public release and operational bundles after automatic review requested specific approval. Published https://github.com/Zen1988/tessera/releases/tag/0.1.12 (release456400702), tag commit19785a20d3b501fe3bf0a757689b358ddcd67250.14assets uploaded with API SHA256/size verification: Base OPM and checksum, toolkitr2, native continuation, dumpfix, recoveryr3, Redis diagnosticr2 with companion checksums, mounted-config rebuild guide and SHA256SUMS. No private credentials or cluster evidence uploaded. Existing draft PR2 unmerged. Publication receipt .artifacts/github-release012-published.json. GitHub Packages registry is separate from release assets; no container image was built or pushed by this publication.
+
+# 2026-11-24 — Kubernetes recovery accepted; mounted XML rebuild requested
+
+Owner reports r3 recovery Job e2ffeefe96a4 completed, release0.1.12 READY, web3/daemon1 restored and successful rollouts; original bundle/state retained. This supersedes pending recovery status below. Portal/network functional acceptance still pending. Owner copied current config XML from host into shared PVC and requests rebuild. Use native Maint::Config::Rebuild --deploy-acls --deploy-processes once through Console Interface with process-local cache disabled; avoid configure.py reseeding image definitions over manually copied XML. Then native cache deletion and rolling restart web/daemon. No package/schema reinstall or Secret Config.pm change required.
+
+# 2026-11-24 — Recovery r3 preclaim sequencing correction
+
+Owner r2 preflight bbb4eb07c318 passed all six receipt checks, DB packet67108864 and dependency smoke. Controller then redundantly dry-run-created existing immutable code ConfigMap; Kubernetes AlreadyExists stopped before maintenance-lock save/replace or full recovery Job. Local recover-release012 has four staging files only. Revision3 removes duplicate code dry-run and narrowly preserves that exact unclaimed staging directory after original Job/manifest/code/check-only completion/no-full-Job checks. Existing claims/unknown files/full Jobs block. No journal reset or blind retry. Test FakeClient now rejects duplicate creates including dry-runs;24 targeted tests pass including extracted current ZIP and preclaim refusal cases. New immutable r3 ZIP SHA f8e96fdec4d908fd52e3fbcd72d29b201aa56b3c5ded62239958fa51f269021d (14files). Next owner runs recovery012-r3 with original state. Native recovery not yet run. Backup waiver remains authorized.
+
+# 2026-11-24 — Recovery preflight investigation
+
+Revision1 stopped before recovery writes. Separate diagnostic shows expected release/registry values; root cause unproven. Revision2 prints six individual guard matches without weakening checks and supplies omitted package-plan helpers. Immutable r2 ZIP SHA7f6bd8438f80e8aaab38e32f9bfbd01f1cdafa565d66a25d5b033aadf632d456;14files;22 targeted tests pass including extracted bundle generation. Prior ZIP/OPMs unchanged. Next owner runs recovery012-r2 with original saved state; inspect release_check output. No live recovery yet; test-server backup waiver persists.
+
+# Current — execute prepared exact release012 testing recovery
+
+Owner waived backup for testing. New TESSERA-0.1.12-LabelPrint-Recovery.zip SHAb2853bd3... binds original failed Job1795491815/image/state/PVC, old8/new12 hashes and hookless LabelPrint artifact. Separate read-only preflight before claim (retryable prerequisites), then pinned native11.1.1 migration preserving mountedConfig.pm, verified LabelPrint reinstall/journal completion, pending packages/config/assets and exact replica restoration only after READY.41Python (39pass/2skips),64Perl assertions; real cluster/nativeDDL execution pending. Run recovery012/scripts/recover-release012.py from original build folder with saved artifacts/deploy-0.1.12-20261124-034249-f923e75245 and --test-no-backup; paste output. Preserve all claims/evidence on post-claim failure; no blind retry/reset.
+
+# Historical — toolkit prevention and retained failed state
+
+Owner r2 Redis probe passed all auth/master/write/cache operations, SysConfig row count1. Owner requested future duplicate prevention. Toolkit now bypasses memory/backend cache only within upgrade process before package hooks (final configure already did), so native rebuild updates existing DB setting IDs/versioning and inserts new definitions once. Added actual cache-roundtrip preflight before release claim. Native regression reproduces stale-list duplicate, verifies update/admin-value retention/repeat/fresh/lock behavior:64Perl assertions,39Python tests (36pass/3skips). New toolkit-r2 ZIP SHA8ffe0057...,77sourcefiles, no OPM mutation. Actual Docker Engine unavailable locally. Build fresh source kit into new automatic image revision and use receipt tag. Existing interrupted K8s0.1.8->0.1.12 receipt/LabelPrint journal still needs separate reviewed recovery; do not redeploy/reset/start traffic blindly. See current PROJECT_STATUS and deployment/upgrade-sysconfig-reconciliation.md.
+
+# Historical — Redis diagnostic r2 (completed successfully)
+
+Original diagnostic failed compilation before any probe: Kubernetes reduced Perl PID dollar syntax in container arguments. r2 shared helper Base64-transports source;9tests include reproducing old failure and executing encoded Perl-e path. Extract TESSERA-0.1.12-Redis-Upgrade-Diagnostic-r2.zip fresh and run against original failed Job tessera-release-1795491815 in tessera. No rebuild/state reset. Await Redis statuses, preserve bundle/state/journals and stopped workloads. Native recovery must wait for actual operations evidence.
+
+# Historical — original Redis diagnostic (superseded by r2)
+
+Owner metadata confirms receipt UPGRADING0.1.12 from0.1.8, Base still0.1.8 and LabelPrint UPGRADING journal despite registry11.1.1. Do not clear/retry blindly. New diagnostic ZIP TESSERA-0.1.12-Redis-Upgrade-Diagnostic.zip includes diagnose-redis.py and clone helper. Run it against failed Job tessera-release-1795491815 in tessera; paste redacted statuses. It uses uniquely named disposable cache probes/cleanup plus COUNT-only DB query, no package/journal/setting mutation.5executable tests pass. Need Redis write/auth/ACL/role evidence before bounded partial-hook/config recovery; keep PVC/state/maintenance/workloads stopped, verify separate K8s framework migration.
+
+# Historical — inspect failed Kubernetes release before recovery
+
+Failed tessera Job tessera-release-1795491815 (Base0.1.12). Preserve PVC tessera-upgrade-bundle-f923e75245 and artifacts/deploy-0.1.12-20261124-034249-f923e75245; workloads were quiesced. Logs show executing package hooks, repeated sanitized Redis Set failures and duplicate SysConfig default-name insert for ITSMChangeManagement. Run existing diagnose-release.py with --namespace tessera --job tessera-release-1795491815 --package-plan; await journals/target metadata before recovery. Do not rerun deployment, clear receipts, delete settings or restart traffic. Need exact Redis operation/role/auth diagnosis and independent K8s framework DB migration verification. Native source-host upgrade was completed separately. See current PROJECT_STATUS.
+
+# Historical — latest Ubuntu26.04 build after native acceptance
+
+Owner chose latest Ubuntu26.04 repository packages plus required CPAN modules. New0.1.12 toolkit preserves moving ubuntu:26.04 pull/fresh dependency layers and additionally upgrades installed base packages before application dependencies. No old Perl version cap or upstream ABI replacement.16source/metadata tests (15pass,1platformskip); no local Docker Linux Engine, so actual build remains on owner Ubuntu server. Native continuation completed; start/portal acceptance not yet confirmed. Then prepare fresh toolkit from upgraded /opt/otobo and build latest policy, inspect actual runtime inventories and fix compatibility as needed. Separate K8s framework DB migration still pending.
+
+# Historical — start and accept completed native upgrade
+
+Owner log confirms continuation finished, Base0.1.12 OK and services left stopped (UPDATED_STOPPED). All10 vendor-different files belong to reviewed TESSERA merge manifests. Do not replay upgrades/reinstall merely to clear those vendor warnings. From /root/upgrade/dump-client-fix unmask apache2/cron and run included upgrade-otobo111-source.py start with original state /opt/otobo-update/tessera-11.1.1. Then validate login/workflow/CMDB/Utilities/network integration; native startup/portal acceptance still pending. Container build follows acceptance; separate K8s core DB migration remains required.
+
+# Historical — backup helper fix (completed)
+
+# Current — resume backup with dump-client helper fix
+
+Owner confirmed dump-client16MiB versus server128MiB; Base0.1.10 row17,603,341bytes exceeds client limit. New helper-only ZIP TESSERA-0.1.12-Dump-Client-Fix.zip explicitly sets128MiB in both backup paths. Extract into new dump-client-fix subdirectory of existing0.1.12 bundle; run included helper with --bundle .. and same original state/private DB file. Both Python helpers required together.47 Python tests pass; no OPM/old bundle modifications. Retry backup only through guarded continuation; no package upgrade has begun. Keep services stopped; inspect any further failure, start only after UPDATED_STOPPED. See docs/deployment/otobo111-dump-client-fix.md and current PROJECT_STATUS.
+
+# Historical — Base0.1.12 package guard correction (retained)
+
+Owner confirmed official DBExtensions11.1.2 Custom controller SHA81aff1c4... caused a guard omission, not unknown customization. New0.1.12 bundle fixes exact vendor controller/template hash recognition in both continuation and installer; unknown edits still denied. Original0.1.11 attempt stopped before writes. Use outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip in a fresh extraction, same saved package-stage state and private DB options. Keep services stopped; start only after UPDATED_STOPPED. Do not reset phase, rerun core migration/registry recovery, manually replace files or force packages.45 Python/320 Perl checks pass; live execution/acceptance pending. See current PROJECT_STATUS and deployment docs.
+
+# Historical — Base0.1.11 instructions superseded above
+
+Owner resumed2026-11-24. Core OTOBO11.1.1 migration already complete; Base0.1.10 installed. Five official compatible add-ons reviewed/merged, Base0.1.11 and offline continuation bundle prepared with44 Python/318 Perl checks passing. Use NEW outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip, preserve original /opt/otobo-update/tessera-11.1.1 state/backups, and run continue-otobo111-addons.py with local private DB client file. Do not rerun apply/prepare/DBUpdate/registry recovery. Keep application writers stopped; packet limit may reset after reboot. Success UPDATED_STOPPED permits unmask without start then explicit saved-state start. Native host/browser/integration acceptance remains pending. See docs/deployment/otobo111-addon-continuation.md and PROJECT_STATUS. K8s framework DB migration remains separate.
+
+# Historical priorities — superseded where completion is recorded above
+
+# Current — execute/accept native11.1.1 + TESSERA0.1.10 source upgrade
+
+All38 reviewed sources accounted for; no missing Custom files. Source/artifacts pushed in commitf9083f22 to open draft PR2 (https://github.com/Zen1988/tessera/pull/2); main unchanged. Prepared matching native upgrade ZIP/OPM0.1.10, toolkit and offline pack. Use updated helper with --tessera-package and existing /opt/otobo-update/tessera-11.1.1 state, after dependency/backup checks; do not install010 into beta first, edit reviewed flags or rerun prepare over the existing directory. Exact commands/docs in docs/deployment/otobo-11.1-source-upgrade.md. Success UPDATED_STOPPED permits start; failure retains maintenance/backups and needs inspection, not blind retry.171 Perl/15 Python tests pass; native Linux migration/restore/browser/integration acceptance pending.
+
+K8s is separate: source upgrade changes only source DB. Current wrapper does not invoke native framework DBUpdate-to-11.1. Implement/review a backed-up core DB migration step before beta->stable Kubernetes rollout; kit currently builds the stable source image only. Experimental beta-warning bridge is excluded from010. Prior missing-source/blocked sections below are historical and superseded by this completed merge.
+
+# Immediate — finish stable migration using exact host sources
+
+Owner requests merge all38 paths onto OTOBO11.1.1.24 exact source contents located (23 Base0.1.9 plus one ITSM AdminDynamicField.tt);14 live Custom sources absent from local packages/workspace. Need original15-source collector output to complete. Draft merges under .artifacts/stable-migration,32 targeted assertions pass. GenericAgent still needs native stable import/export integration because old Autoload delegate is not native stable; preserve search guard. All drafts remain unreleased; do not approve report/run apply or modify immutable packages. See outputs/otobo-11.1.1-migration-progress.json and PROJECT_STATUS.
+
+# Current — OTOBO11.1.1 native source upgrade compatibility review
+
+Owner wants only Ubuntu source/build host upgraded; Kubernetes uses rebuilt container kit separately. Prepared outputs/TESSERA-OTOBO-11.1.1-Source-Upgrade.zip and docs/deployment/otobo-11.1-source-upgrade.md. Run prepare only initially. Base0.1.9 overlaps21 upstream beta2->stable changed paths: review outputs/otobo-11.1.1-base019-compatibility.json, merge/validate against official stable before approving exact installed-host conflict report/apply. No fresh installer, uninstall, blind old-package restoration or unattended UpgradeAll. Stable User native basis matches, other overrides not yet accepted. Native upgrade/rollback acceptance pending; no deployment performed. Numeric-warning patch remains interrupted/unreleased. Owner confirmed login now okay; older login/disk priority sections below are historical context, not current tasks.
+
+# Immediate host priority — restore login JavaScript initialization
+
+Owner cannot CLICK Login; session diagnosis was premature. Native button starts disabled and Core.Agent.Login.Init enables the form. Verify/regenerate native loader JS/CSS with Maint::Loader::CacheCleanup then CacheGenerate as otobo, restart Apache only after success and hard-refresh. Full DB/install restore not supported by current evidence. If repair fails, inspect exact command output; if button stays disabled, inspect fresh JS Network results and initializer/disabled state before targeted package integrity repair. Keep existing credentials/config/security controls.
+
+# Current host priority — fresh agent-session failure evidence after space recovery
+
+Space recovered per owner; login page renders but shows Session invalid. Latest pasted fatal disk/DB lines are historical before successful Apache14:37 startup. Try private window with bare /otobo/index.pl and no saved SessionID/Action parameters. If still invalid, collect only new Apache error lines during one attempt and current df. Distinguish stale browser state from failed session persistence/cookie/proxy validation; do not reset credentials or disable session security based only on screenshot. No live cleanup/session changes performed here.
+
+# Immediate priority — reclaim/expand Ubuntu root capacity
+
+Confirmed root98% full with2.2G available, inodes33% used. /var/lib78G is the major consumer. MariaDB errno28 startup failure is confirmed and service has subsequently restarted successfully; no credential change needed from maintenance root-login warnings. Await du /var/lib, docker system df and vgs output before selecting deletion/build-cache cleanup or LVM expansion. No cleanup performed. Do not begin new image build yet.
+
+# Immediate priority — Ubuntu source/build host ENOSPC and local DB outage
+
+Owner confirms this is the Ubuntu source/build host, still failing. Logs explicitly show template-cache mkdir and Apache log writes failing with No space left on device, plus MariaDB127.0.0.1 unreachable. Obtain df-hT, df-i, bounded top-level du, MariaDB service status/recent journal. Determine blocks/inodes/mount and actual reclaim target before deletion; do not remove database data or Docker volumes. No cleanup/service changes done here. Recover source host before new prepare/build. Earlier Kubernetes recovery does not apply.
+
+# Current — deploy and accept0.1.9 workspace candidate batching
+
+Owner runs0.1.8; access/grant and both schema checks passed. Exact Model failure was global2000-candidate cutoff before entitlement.0.1.9 replaces that with stable500-ID native search batches, full per-CI authorization and8MiB authorized-model response guard, retaining complete cross-page ambiguity checks. Install0.1.9 OPM into source normally, fresh prepare/build with matching toolkit/image/bundle and normal controlled upgrade. Do not rerun historical0.1.7 recovery or alter grants/Config.pm.
+
+Native acceptance:workspace loads for zen.chan@ncs.com.sg without scope error, endpoint counts match entitled assets, no unauthorized CI names/IPs, source/destination selection and default/Application fallback unchanged; measure real large-site timing and verify all-worker rollout. No live change performed here. Future indexed entitlement/paged selectors remain separate if measured scale requires them.
+
+# Current runtime priority — diagnose0.1.8 simulation Model failure
+
+Owner is running0.1.8 and sees workspace model-unavailable400 despite explicit active grant/CMDB-read assignment. Use scripts/diagnose-network-workspace.pl via kubectl exec stdin for exact login zen.chan@ncs.com.sg; await safe model error and installed schema summaries. No Navis call occurs at this stage. Do not broaden CI entitlements or assume graph/integration setup causes this initial error. Earlier0.1.7 recovery is historical unless owner supplies new evidence.
+
+# Live priority — run prepared targeted0.1.7 hook recovery
+
+Diagnostic confirmed exact0.1.7 installed hashes, missing Navis field, UPGRADING from0.1.3 and one Base journal. Owner retains original build folder/artifacts. Extract TESSERA-0.1.7-Navis-Upgrade-Recovery.zip into that original folder, then run once: python3 scripts/recover-navis017.py --namespace tessera --job tessera-release-1795404303. It finds the unique original state directory or accepts --state-directory. No image rebuild or0.1.8 deployment needed for this continuation. Keep failed Job, recovery Job, original bundle and private evidence.
+
+Await real output:if cache preflight or native hook/configuration fails, do not rerun or clear journals. Inspect saved recovery subdirectory/job and retain maintenance. Recoverable CONFIGURING vs interrupted-hook ownership must be reviewed from exact resulting phase. Redis root cause still unknown; no credentials changed here.
+
+# Live priority — diagnose failed0.1.7 Job before recovery
+
+Job tessera-release-1795404303 failed during native hook with incompatible Navis field error plus Redis cache errors. Read-only helper command was supplied; await field metadata and receipt/package-journal output. Do not restart failed upgrade, delete field/journal/maintenance lock, apply old0.1.0 configuration-only recovery or assume0.1.8 image alone can resume. Missing-field native empty-hash bug is fixed in0.1.8 with matching artifacts on draft PR2; PR1 was merged externally at0.1.7. actual failed state still needs review. Preserve original Job/bundle and replica evidence. Redis failure diagnosis remains separate.
+
 # Current — accept Base0.1.7 Application graph fallback
 
 Next artifact is0.1.7, pushed to draft PR1/codex/release-0.1.0 as feature commit931f6597. Verify an authorized active Application with an empty Navis field traces through default and retains its selected Application context. A configured Application uses its saved label; malformed/unauthorized references and remote named failures must not switch to default. Install OPM normally before fresh prepare/build with matching toolkit; no new field/config Secret change. Native fresh/upgrade/reinstall, live Navis evidence/permissions and full automation acceptance remain pending.

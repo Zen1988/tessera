@@ -135,7 +135,7 @@ sub ValueSet {
     my $ValueKey = $Self->{ValueKey} // 'ValueText';
 
     # perform search if necessary
-    if ( $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
+    if ( delete $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
 
         if ( $Param{Set} ) {
             my @Values;
@@ -212,7 +212,7 @@ sub ValueIsDifferent {
         ref $Param{Value2} ? $Param{Value2} : [ $Param{Value2} ];
 
     # perform search and replace Value1 if necessary
-    if ( $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
+    if ( delete $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
 
         if ( $Param{Set} ) {
             my @Value1;
@@ -307,7 +307,7 @@ sub FieldValueValidate {
             push @Values, $Param{Value};
         }
 
-        if ( $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
+        if ( delete $Param{ExternalSource} && $Param{DynamicFieldConfig}{Config}{ImportSearchAttribute} && $Self->can('SearchObjects') ) {
             my $TransformedValues = $Self->_TransformExternalSource(
                 DynamicFieldConfig => $Param{DynamicFieldConfig},
                 ValueArray         => \@Values,

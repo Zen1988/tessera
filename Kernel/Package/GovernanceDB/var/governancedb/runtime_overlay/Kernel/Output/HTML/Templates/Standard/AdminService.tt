@@ -1,0 +1,592 @@
+# --
+# OTOBO is a web-based ticketing system for service organisations.
+# --
+# Copyright (C) 2001-2020 OTRS AG, https://otrs.com/
+# Copyright (C) 2019-2026 Rother OSS GmbH, https://otobo.io/
+# --
+# $origin: otobo - 6397f36ff09d085e4c31d5dda4110a73319f906d - Kernel/Output/HTML/Templates/Standard/AdminService.tt
+# --
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# --
+
+[% RenderBlockStart("Overview") %]
+<div class="MainBox ARIARoleMain LayoutFixedSidebar SidebarFirst">
+    <h1 class="InvisibleText">[% Translate("Service Management") | html %]</h1>
+
+    [% BreadcrumbPath = [
+            {
+                Name => Translate('Service Management'),
+                Link => Env("Action"),
+            },
+        ]
+    %]
+
+    [% IF Data.ServiceID == "NEW"  %]
+        [% BreadcrumbPath.push({ Name => Translate("Add Service"),}) %]
+    [% ELSIF Data.ServiceID %]
+        [% USE EditTitle = String(Translate("Edit Service")) %]
+        [% BreadcrumbPath.push({ Name => EditTitle.append( ': ', Data.ServiceName ) }) %]
+    [% END %]
+
+    [% INCLUDE "Breadcrumb.tt" Path = BreadcrumbPath %]
+
+    <div class="Clear"></div>
+    <div class="SidebarColumn">
+[% RenderBlockStart("IncludeInvalid") %]
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2>[% Translate("Filter by valid state") | html %]</h2>
+            </div>
+            <div class="Content">
+                <input type="checkbox" id="IncludeInvalid" name="IncludeInvalid" value="1" title="[% Translate("Include invalid services") | html %]" [% Data.IncludeInvalidChecked | html %]/>
+                <label for="IncludeInvalid">[% Translate("Include invalid services") | html %]</label>
+            </div>
+        </div>
+[% RenderBlockEnd("IncludeInvalid") %]
+        <div class="WidgetSimple">
+[% RenderBlockStart("ActionList") %]
+            <div class="Header">
+                <h2>[% Translate("Actions") | html %]</h2>
+            </div>
+            <div class="Content">
+                <ul class="ActionList">
+[% RenderBlockStart("ActionOverview") %]
+                    <li>
+                        <a href="[% Env("Baselink") %]Action=[% Env("Action") %]" class="CallForAction Fullsize Center"><span><i class="fa fa-caret-left"></i>[% Translate("Go to overview") | html %]</span></a>
+                    </li>
+[% RenderBlockEnd("ActionOverview") %]
+[% RenderBlockStart("ActionAdd") %]
+                    <li>
+                        <a href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=ServiceEdit;ServiceID=NEW" class="CallForAction Fullsize Center"><span><i class="fa fa-plus-square"></i>[% Translate("Add Service") | html %]</span></a>
+                    </li>
+[% RenderBlockEnd("ActionAdd") %]
+                </ul>
+            </div>
+[% RenderBlockEnd("ActionList") %]
+        </div>
+
+[% RenderBlockStart("Filter") %]
+        <div class="WidgetSimple">
+            <div class="Header">
+                <h2><label for="FilterServices">[% Translate("Filter for Services") | html %]</label></h2>
+            </div>
+            <div class="Content">
+                <input type="text" id="FilterServices" class="FilterBox" placeholder="[% Translate("Just start typing to filter...") | html %]" name="FilterServices" value="" title="[% Translate("Filter for services") | html %]">
+            </div>
+        </div>
+[% RenderBlockEnd("Filter") %]
+[% RenderBlockStart("ImportExportWidget") %]
+        <div class='WidgetSimple' id='ServiceImportExportWidget'>
+            <div class='Header'>
+                <h1 class="InvisibleText">
+                    [% Translate("Import / Export") | html %]
+                </h1>
+            </div>
+
+            [% BreadcrumbPath = [
+                    {
+                        Name => Translate('Import / Export'),
+                    },
+                ]
+            %]
+
+            [% INCLUDE "Breadcrumb.tt" Path = BreadcrumbPath %]
+
+            <div class='Content'>
+                <p class='FieldExplanation'>
+                    [% Translate('Here you can upload a configuration file to import services to your system. The file needs to be in .yml format as exported by the service management module.') | html %]
+                </p>
+                <ul class='ActionList SpacingTop'>
+                    <li>
+                        <form action='[% Env("CGIHandle") %]' method='post' enctype='multipart/form-data' class='Validate PreventMultipleSubmits'>
+                            <input type='hidden' name='ChallengeToken' value=[% Env("UserChallengeToken") | JSON %]>
+                            <input type='hidden' name='Action' value='AdminServiceImportExport'/>
+                            <input type='hidden' name='Subaction' value='Import'/>
+                            <input name='FileUpload' id='FileUpload' type='file' size='18' class='Fixed W100pc Validate_Required [% Data.FileUploadInvalid | html %]'/>
+                            <div id='FileUploadError' class='TooltipErrorMessage'>
+                                <p>
+                                    [% Translate('This field is required.') | html %]
+                                </p>
+                            </div>
+                            <div id='FileUploadServerError' class='TooltipErrorMessage'>
+                                <p>
+                                    % Translate('This field is required.') | html %]
+                                </p>
+                            </div>
+                            <fieldset class='SpacingTop'>
+                                <input type='checkbox' id='OverwriteExistingEntitiesExample' name='OverwriteExistingEntities' value='1'/>
+                                <label for='OverwriteExistingEntitiesExample'>
+                                    [% Translate('Overwrite existing entities') | html %]
+                                </label>
+                            </fieldset>
+                            <button class='CallForAction Fullsize Center SpacingTop' id='ServiceImport' type='submit'>
+                                <span><i class='fa fa-upload'></i>
+                                    [% Translate('Services Import') | html %]
+                                </span>
+                            </button>
+                        </form>
+                    </li>
+                    <li>
+                        <a href='[% Env("Baselink") %]Action=AdminServiceImportExport;Subaction=Export' id='ServiceExport' class='CallForAction Fullsize Center'>
+                            <span><i class='fa fa-download'></i>
+                                [% Translate('Services Export') | html %]
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+[% RenderBlockEnd("ImportExportWidget") %]
+    </div>
+
+    <div class="ContentColumn">
+# Rother OSS / Service Catalog
+#        <div class="WidgetSimple">
+[% RenderBlockStart("OverviewList") %]
+        <div class="WidgetSimple">
+# EO Service Catalog
+            <div class="Header">
+                <h2>[% Translate("List") | html %]</h2>
+            </div>
+            <div class="Content">
+
+                <table class="DataTable" id="Services">
+                    <thead>
+                        <tr>
+                            <th>[% Translate("Service") | html %]</th>
+                            <th>[% Translate("Comment") | html %]</th>
+                            <th>[% Translate("Validity") | html %]</th>
+                            <th>[% Translate("Changed") | html %]</th>
+                            <th>[% Translate("Created") | html %]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+[% RenderBlockStart("NoDataFoundMsg") %]
+                        <tr>
+                            <td colspan="5">
+                                [% Translate("No data found.") | html %]
+                            </td>
+                        </tr>
+[% RenderBlockEnd("NoDataFoundMsg") %]
+[% RenderBlockStart("OverviewListRow") %]
+                        <tr [% IF Data.ValidID != 1%]class="Invalid"[% END %]>
+                            <td title="[% Data.Name | html %]">[% Data.LevelSpace | html %]<a class="AsBlock" href="[% Env("Baselink") %]Action=[% Env("Action") %];Subaction=ServiceEdit;ServiceID=[% Data.ServiceID | uri %]">[% Data.Name | truncate(80) | html %]</a></td>
+                            <td title="[% Data.Comment | html %]">[% Data.Comment | truncate(20) | html %]</td>
+                            <td>[% Translate(Data.Valid) | html %]</td>
+                            <td>[% Data.ChangeTime | Localize("TimeShort") %]</td>
+                            <td>[% Data.CreateTime | Localize("TimeShort") %]</td>
+                        </tr>
+[% RenderBlockEnd("OverviewListRow") %]
+                        <tr class="FilterMessage Hidden">
+                            <td colspan="5">[% Translate("No matches found.") | html %]</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+# Rother OSS / Service Catalog
+        </div>
+# EO ServiceCatalog
+[% RenderBlockEnd("OverviewList") %]
+
+[% RenderBlockStart("ServiceEdit") %]
+# Rother OSS / ServiceCatalog
+## instead of
+##       <div class="WidgetSimple">
+##           <div class="Content">
+##               <form>
+## we just set the form as the outer most element
+## to include the languages as separate widget
+#
+#            <div class="Header">
+#            [% IF Data.ServiceID == 'NEW' %]
+#                <h2>[% Translate("Add Service") | html %]</h2>
+#            [% ELSE %]
+#                <h2>[% Translate("Edit Service") | html %]</h2>
+#            [% END %]
+#            </div>
+#            <div class="Content">
+#
+#                <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+#                    <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+#                    <input type="hidden" name="Subaction" value="ServiceSave"/>
+#                    <input type="hidden" name="ServiceID" value="[% Data.ServiceID | html %]"/>
+#                    [% IF Data.ServiceID != 'NEW' %]
+#                        <input type="hidden" name="ContinueAfterSave" id="ContinueAfterSave" value=""/>
+#                    [% END %]
+        <form action="[% Env("CGIHandle") %]" method="post" class="Validate PreventMultipleSubmits">
+            <input type="hidden" name="FormID" value="[% Data.FormID | html %]"/>
+            <input type="hidden" name="Action" value="[% Env("Action") %]"/>
+            <input type="hidden" name="Subaction" value="ServiceSave"/>
+            <input type="hidden" name="ServiceID" value="[% Data.ServiceID | html %]"/>
+            [% IF Data.ServiceID != 'NEW' %]
+                <input type="hidden" name="ContinueAfterSave" id="ContinueAfterSave" value=""/>
+            [% END %]
+
+            <div class="WidgetSimple">
+                <div class="Header">
+                [% IF Data.ServiceID == 'NEW' %]
+                    <h2>[% Translate("Add Service") | html %]</h2>
+                [% ELSE %]
+                    <h2>[% Translate("Edit Service") | html %]</h2>
+                [% END %]
+                </div>
+                <div class="Content">
+# EO ServiceCatalog
+
+                    <fieldset class="TableLike">
+
+                        <label class="Mandatory" for="Name"><span class="Marker">*</span> [% Translate("Service") | html %]:</label>
+                        <div class="Field">
+                            <input type="text" name="Name" id="Name" value="[% Data.NameShort | html %]" class="W50pc Validate_Required [% Data.NameInvalid | html %]" maxlength="200"/>
+                            <div id="NameError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                            [% IF Data.LongName %]
+                            <div id="NameServerError" class="TooltipErrorMessage" ><p>[% Translate("Service name maximum length is 200 characters (with Sub-service).") | html %]</p></div>
+                            [% ELSE %]
+                            <div id="NameServerError" class="TooltipErrorMessage" ><p>[% Translate("This field is required.") | html %]</p></div>
+                            [% END %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="ParentID">[% Translate("Sub-service of") | html %]: </label>
+                        <div class="Field">
+                            [% Data.ParentOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+# Rother OSS / ServiceCatalog
+## Rother OSS / ITSMCore
+#                        <label for="TypeID">[% Translate("Type") | html %]: </label>
+#                        <div class="Field">
+#                            [% Data.TypeOptionStrg %]
+#                        </div>
+#                        <div class="Clear"></div>
+#
+#                        <label for="Criticality">[% Translate("Criticality") | html %]: </label>
+#                        <div class="Field">
+#                            [% Data.CriticalityOptionStrg %]
+#                        </div>
+#                        <div class="Clear"></div>
+## EO ITSMCore
+                        <label for="TicketTypeIDs">[% Translate("Service depends on the following ticket types") | html %]: </label>
+                        <div class="Field">
+                            [% Data.TicketTypeOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="DestQueueID">[% Translate("Ticket destination queue") | html %]: </label>
+                        <div class="Field">
+                            [% Data.TicketQueueOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+                        <label for="CustomerDefaultService">[% Translate("Customer default service") | html %]: </label>
+                        <div class="Field">
+                            <input type="checkbox" name="CustomerDefaultService" title="[% Translate("Toggle active state for %s", Data.Name) | html %]" value="[% Data.ServiceID | html %]" [% Data.CustomerServiceChecked | html %]/>
+                        </div>
+                        <div class="Clear"></div>
+                        <label for="Criticality">[% Translate("Criticality") | html %]: </label>
+                        <div class="Field">
+                            [% Data.CriticalityOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Keywords">[% Translate("Keywords") | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="Keywords" id="Keywords" value="[% Data.Keywords | html %]" class="W50pc" maxlength="250"/>
+                        </div>
+                        <div class="Clear"></div>
+
+[% RenderBlockStart("DynamicField") %]
+                        <div class="Row Row_DynamicField_[% Data.Name | html %]">
+                            [% Data.Label %]
+                            <div class="Field">
+                                [% Data.Field %]
+                            </div>
+                            <div class="Clear"></div>
+                        </div>
+[% RenderBlockEnd("DynamicField") %]
+# EO ServiceCatalog
+
+                        <label class="Mandatory" for="ValidID"><span class="Marker">*</span> [% Translate("Validity") | html %]:</label>
+                        <div class="Field">
+                            [% Data.ValidOptionStrg %]
+                        </div>
+                        <div class="Clear"></div>
+
+                        <label for="Comment">[% Translate("Comment") | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="Comment" id="Comment" value="[% Data.Comment | html %]" class="W50pc" maxlength="250"/>
+                        </div>
+                        <div class="Clear"></div>
+
+[% RenderBlockStart("Item") %]
+[% RenderBlockStart("InputKey") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="[% Data.Name | html %]" id="[% Data.Name | html %]" value="[% Data.SelectedID | html %]" class="W25pc"/>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("InputKey") %]
+[% RenderBlockStart("Input") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %]: </label>
+                        <div class="Field">
+                            <input type="text" name="[% Data.Name | html %]" id="[% Data.Name | html %]" value="[% Data.SelectedID | html %]" class="W25pc"/>
+                            <p class="FieldExplanation">[% Translate(Data.Desc) | html %]</p>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("Input") %]
+[% RenderBlockStart("TextArea") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %]: </label>
+                        <div class="Field">
+                            <textarea name="[% Data.Name | html %]" id="[% Data.Name | html %]" rows="[% Data.Rows | html %]" cols="[% Data.Cols | html %]">[% Data.SelectedID | html %]</textarea>
+                            <p class="FieldExplanation">[% Translate(Data.Desc) | html %]</p>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("TextArea") %]
+[% RenderBlockStart("Option") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]:</label>
+                        <div class="Field">
+                            [% Data.Option %]
+                            <p class="FieldExplanation">[% Translate(Data.Desc) | html %]</p>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("Option") %]
+[% RenderBlockStart("Upload") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]</label>
+                        <div class="Field">
+                            <input name="[% Data.Name | html %]" id="[% Data.Name | html %]" type="file" size="30" class="fixed"/><br/>
+                            <a href="">[% Data.Filename | html %]</a>
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("Upload") %]
+[% RenderBlockStart("Password") %]
+                        <label for="[% Data.Name | html %]">[% Translate(Data.Label) | html %] [% Translate(Data.Key) | html %]: </label>
+                        <div class="Field">
+                            <input type="password" class="W25pc" name="[% Data.Name | html %]" id="[% Data.Name | html %]" value="" />
+                        </div>
+                        <div class="Clear"></div>
+[% RenderBlockEnd("Password") %]
+[% RenderBlockEnd("Item") %]
+
+# Rother OSS / ServiceCatalog
+                    </fieldset>
+                </div>
+            </div>
+            <div class="WidgetSimple">
+                <div class="Header">
+                    <div class="WidgetAction Toggle">
+                        <a href="#" title="[% Translate("Toggle this widget") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
+                    </div>
+                    <h2>[% Translate("Service Description") | html %]</h2>
+                </div>
+                <div class="Content">
+                    <div class ="ServiceLanguageContainer">
+[% RenderBlockStart("ServiceLanguage") %]
+                        <div class="ServiceLanguage">
+                            <div class="WidgetSimple SpacingTop [% IF !Data.Language %] Collapsed [% END %] ">
+                                <div class="Header">
+                                    <div class="WidgetAction Toggle">
+                                        <a href="#" title="[% Translate("Toggle this widget") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
+                                    </div>
+                                    <h2 class="Title">
+                                        [% IF Data.Language %]
+                                          [% Translate(Data.Language) | html %]
+                                        [% ELSE %]
+                                           <span class="Warning">'[% Data.LanguageID | html %]' &mdash; [% Translate("This language is not present or enabled on the system. This service description could be deleted if it is not needed anymore.") | html %]</span>
+                                        [% END %]
+                                    </h2>
+[% RenderBlockStart("ServiceLanguageRemoveButton") %]
+                                    <div class="AdditionalInformation">
+                                        <a value="Remove Language" class="RemoveButton LanguageRemove" id="[% Data.LanguageID | html %]_Language_Remove" href="" name="Data.LanguageID_Language_Remove"><i class="fa fa-minus-square-o"></i><span class="InvisibleText">[% Translate("Remove Service Description Language") | html %]</span></a>
+                                    </div>
+[% RenderBlockEnd("ServiceLanguageRemoveButton") %]
+                                </div>
+                                <div class="Content">
+                                    <fieldset class="TableLike">
+                                        <input type="hidden" name="LanguageID" class="LanguageID" value="[% Data.LanguageID | html %]"/>
+                                        <label for="[% Data.LanguageID | html %]_DescriptionShort" id="[% Data.LanguageID | html %]_Label_DescriptionShort" class="Mandatory">
+                                            <span class="Marker">*</span>
+                                            [% Translate("Description (short)") | html %]:
+                                        </label>
+                                        <div class="Field">
+                                            <input type="text" name="[% Data.LanguageID | html %]_DescriptionShort" id="[% Data.LanguageID | html %]_DescriptionShort" value="[% Data.DescriptionShort | html %]" class="W75pc Validate_Required [% Data.DescriptionShortServerError | html %]" maxlength="200"/>
+                                            <div id="[% Data.LanguageID | html %]_DescriptionShortError" class="TooltipErrorMessage">
+                                                <p>[% Translate("This field is required.") | html %]</p>
+                                            </div>
+                                            <div id="[% Data.LanguageID | html %]_DescriptionShortServerError" class="TooltipErrorMessage">
+                                                <p>[% Translate("This field is required.") | html %]</p>
+                                            </div>
+                                        </div>
+                                        <div class="Clear"></div>
+                                        <label for="[% Data.LanguageID | html %]_DescriptionLong" id="[% Data.LanguageID | html %]_Label_DescriptionLong">
+                                            [% Translate("Description (long)") | html %]:
+                                        </label>
+                                        <div class="RichTextField">
+                                            <textarea name="[% Data.LanguageID | html %]_DescriptionLong" id="[% Data.LanguageID | html %]_DescriptionLong" class="RichText" title="[% Translate("Description (long)") | html %]" rows="10" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]">[% Data.DescriptionLong | html %]</textarea>
+                                        </div>
+                                        <div class="Clear"></div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+[% RenderBlockEnd("ServiceLanguage") %]
+                        <div class="Hidden Template ServiceLanguage">
+                            <div class="WidgetSimple SpacingTop">
+                                <div class="Header">
+                                    <div class="WidgetAction Toggle">
+                                        <a href="#" title="[% Translate("Toggle this widget") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
+                                    </div>
+                                    <h2 class="Title"></h2>
+                                    <div class="AdditionalInformation">
+                                        <a value="Remove Language" class="RemoveButton LanguageRemove" id="Template_Language_Remove" href="" name="Template_Language_Remove"><i class="fa fa-minus-square-o"></i><span class="InvisibleText">[% Translate("Remove Service Description Language") | html %]</span></a>
+                                    </div>
+                                </div>
+                                <div class="Content">
+                                    <fieldset class="TableLike">
+                                        <input type="hidden" name="" class="LanguageID" value=""/>
+                                        <label for="Template_DescriptionShort" id="Template_Label_DescriptionShort" class="Mandatory">
+                                            <span class="Marker">*</span>
+                                            [% Translate("Description (short)") | html %]:
+                                        </label>
+                                        <div class="Field">
+                                            <input type="text" name="Template_DescriptionShort" id="Template_DescriptionShort" value="" class="W75pc" maxlength="200"/>
+                                            <div id="Template_DescriptionShortError" class="TooltipErrorMessage">
+                                                <p>[% Translate("This field is required.") | html %]</p>
+                                            </div>
+                                        </div>
+                                        <div class="Clear"></div>
+
+                                        <label for="Template_DescriptionLong" id="Template_Label_DescriptionLong">
+                                            [% Translate("Description (long)") | html %]:
+                                        </label>
+                                        <div class="RichTextField">
+                                            <textarea id="Template_DescriptionLong" class="" name="Template_DescriptionLong" title="[% Translate("Description (long)") | html %]" rows="15" cols="[% Config("Ticket::Frontend::TextAreaNote") | html %]"></textarea>
+                                            <div id="Template_DescriptionLongError" class="TooltipErrorMessage">
+                                                <p>[% Translate("This field is required.") | html %]</p>
+                                            </div>
+                                        </div>
+                                        <div class="Clear"></div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+[% RenderBlockStart("LanguageOptions") %]
+                    <fieldset class="TableLike">
+                        <label for="Language">[% Translate("Add new service description language") | html %]:</label>
+                        <div class="Field">
+                            [% Data.LanguageStrg %]
+                        </div>
+                        <div class="Clear"></div>
+                    </fieldset>
+                    <div class="Hidden">
+                        [% Data.LanguageOrigStrg %]
+                    </div>
+[% RenderBlockEnd("LanguageOptions") %]
+                </div>
+            </div>
+            <div class="WidgetSimple">
+                <div class="Header">
+                    <h2>[% Translate("Save Changes") | html %]</h2>
+                </div>
+                <div class="Content">
+                    <fieldset class="TableLike">
+# EO ServiceCatalog
+                        <div class="Field SpacingTop">
+                            [% IF Data.ServiceID != 'NEW' %]
+                                <button class="CallForAction Primary" id="SubmitAndContinue" type="button" value="[% Translate("Save") | html %]"><span>[% Translate("Save") | html %]</span></button>
+                                [% Translate("or") | html %]
+                                <button class="CallForAction Primary" id="Submit" type="submit" value="[% Translate("Save") | html %]"><span>[% Translate("Save and finish") | html %]</span></button>
+                            [% ELSE %]
+                                <button class="CallForAction Primary" id="Submit" type="submit" value="[% Translate("Save") | html %]"><span>[% Translate("Save") | html %]</span></button>
+                            [% END %]
+                            [% Translate("or") | html %]
+                            <a href="[% Env("Baselink") %]Action=[% Env("Action") %]">[% Translate("Cancel") | html %]</a>
+                        </div>
+                        <div class="Clear"></div>
+                    </fieldset>
+# Rother OSS / ServiceCatalog
+#                </form>
+#            </div>
+                </div>
+            </form>
+        </div>
+# EO ServiceCatalog
+[% RenderBlockEnd("ServiceEdit") %]
+# Rother OSS / ServiceCatalog
+#        </div>
+# EO ServiceCatalog
+
+# Rother OSS / ServiceCatalog
+[% RenderBlockStart("ServiceReference") %]
+        <div class="WidgetSimple SpacingTop Collapsed">
+            <div class="Header">
+                <div class="WidgetAction Toggle">
+                    <a href="#" title="[% Translate("Toggle this widget") | html %]"><i class="fa fa-caret-right"></i><i class="fa fa-caret-down"></i></a>
+                </div>
+                <h2>[% Translate("Option Reference") | html %]</h2>
+            </div>
+            <div class="Content">
+
+                <p>[% Translate("You can use the following options") | html %]:</p>
+                <dl>
+                    <dt>[% Translate("Service depends on the following ticket types") | html %]:</dt>
+                    <dd>
+                        [% Translate('Within the ServiceCatalogue tile in the customer dashboard, it is possible to show ticket types for preconfigured ticket creation inside the service description. Furthermore, it is possible to restrict the services for other screens using the ticket types set here. If you wish to do this, please activate the options "ServiceCatalog::CreateTypeServiceRelatedAcls" and "ServiceCatalog::CreateTypeServiceRelatedAcls::Options" in the OTOBO system configuration. The restriction is made via automatically generated ACLs, which can be viewed under "Admin -> Access Control Lists (ACL)". If necessary, please adjust the option "ServiceCatalog::CreateTypeServiceRelatedAcls::Options" according to your requirements.') | html %]
+                    </dd>
+
+                    <dt>[% Translate("Ticket destination queue") | html %]:</dt>
+                    <dd>
+                        [% Translate('If we work service-based, we do not want to offer the customer a choice of queues in the customer portal when creating a ticket, but decide on the basis of the service into which queue (or which team of agents) the ticket should be processed first. In order to use this option sensibly, please deactivate the option "Ticket::Frontend::CustomerTicketMessage###Queue" and set a sensible default queue in the option "Ticket::Frontend::CustomerTicketMessage###QueueDefault". As soon as you set a "Ticket destination queue" here in the service, the ticket will immediately be created in this queue. If the field remains empty, the default queue configured above will be used.') | html %]
+                    </dd>
+
+                    <dt>[% Translate("Customer default service") | html %]:</dt>
+                    <dd>
+                        [% Translate("If you do not assign services to customers or companies individually, but all services are initially offered to your customers for selection, the step of releasing each service as a \"default\" service under \"Admin -> Customer user <-> Service\" (or \"Customer <-> Service\") can be bypassed here. Of course, in the next step it is possible to restrict the services via ACLs.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Criticality") | html %]:</dt>
+                    <dd>
+                        [% Translate("Here, there is the possibility to automatically calculate the correct ticket priority in the background based on the dynamic field \"ITSMCriticality\" and \"ITSMImpact\". Please activate the option \"Ticket::EventModulePost###9700-SetDynamicFieldCriticalityFromService\" and the option \"Ticket::EventModulePost###9800-SetPriorityFromCriticalityAndImpactMatrix\". In the next step, you have the possibility using \"Admin -> Criticality ↔ Impact ↔ Priority\" to set the priority using a matrix.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Keywords") | html %]:</dt>
+                    <dd>
+                        [% Translate("Keywords to facilitate the search for services within the service catalog.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Service Description") | html %]:</dt>
+                    <dd>
+                        [% Translate("Service descriptions (short & long) specified by User Language.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Description (short)") | html %]:</dt>
+                    <dd>
+                        [% Translate("Short summary of the service, mainly used in the CustomerDashboard.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Description (long)") | html %]:</dt>
+                    <dd>
+                        [% Translate("Description of the service. Screenshots and tables are also allowed. Please ensure the correct width of the image for screenshots. This can be adjusted in the ckeditor after uploading the screenshot. A width of 600px has proven to be useful or you can configure a \"max-width\" of 95% under Advanced.") | html %]
+                    </dd>
+
+                    <dt>[% Translate("Add more service catalog fields") | html %]:</dt>
+                    <dd>
+                        [% Translate("You have the option of adding further fields here in the service catalog at any time. To do this, please go to \"Admin -> DynamicFields\" and create the new field of the object type \"Service\". You can then activate the field for the customer dashboard under \"Admin -> DynamicField Screens\" by assigning it under \"CustomerDashboardTile ServiceCatalog\".") | html %]
+                    </dd>
+
+                </dl>
+            </div>
+        </div>
+[% RenderBlockEnd("ServiceReference") %]
+# EO ServiceCatalog
+    </div>
+    <div class="Clear"></div>
+</div>
+[% RenderBlockEnd("Overview") %]

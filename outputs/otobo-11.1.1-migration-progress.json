@@ -1,0 +1,14 @@
+{
+  "artifact": "C:\\Users\\Zen\\OneDrive\\Documents\\TESSERA\\outputs\\TESSERA-0.1.10-OTOBO-11.1.1-Native-Upgrade.zip",
+  "sha256": "e6e14dc5ed8c88f84f796e5d45909fbbfdfbcbd2a4192eb5bd69ae49e031c56b",
+  "bytes": 3862815,
+  "opm_sha256": "234cc138db4d27b4d2f186e69e23049d13eeb89cf8dce95d30f143257e3da192",
+  "review_entries": 38,
+  "perl_assertions": 171,
+  "python_tests": 15,
+  "templates_parsed": 10,
+  "perl_compile_pass": 26,
+  "perl_compile_dependency_blocked": "Net::LDAP missing in Windows runner; native host check required",
+  "deployed": false,
+  "k8s_native_database_migration": "separate; existing deployment wrapper does not invoke DBUpdate-to-11.1"
+}

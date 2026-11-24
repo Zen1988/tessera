@@ -1,0 +1,29 @@
+{
+  "version": "0.1.11",
+  "framework": "11.1.1",
+  "python_tests": 44,
+  "perl_assertions": 318,
+  "perl_test_files": 12,
+  "merged_module_compilations": 4,
+  "native_fields_in_offline_pack": 631,
+  "native_execution_performed": false,
+  "core_migration_repeated": false,
+  "artifacts": {
+    "Kernel/Package/TESSERA-Base-0.1.11.opm": {
+      "sha256": "06684fb843cddee02327167168264816f982309f67b83bcf0c6a1ffa4a5a7670",
+      "bytes": 17619364
+    },
+    "outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip": {
+      "sha256": "8d7898fda4d7253af1f24fe0da0769820c0c9ce2af4f1a6b994e6ce1bcf79eb7",
+      "bytes": 6830821
+    },
+    "outputs/TESSERA-0.1.11-Ubuntu26.04-Container-Toolkit.zip": {
+      "sha256": "2e752eadbdf4d737c5798ba6b5dae13e3a0200549b6fcd4dd4bf6bb00e5a4fb7",
+      "bytes": 149940
+    },
+    "outputs/TESSERA-0.1.11-ScriptEngine-Offline-Pack.zip": {
+      "sha256": "36814e71269e86776cea696a73354a27e5ead560ac1f40dcfb30c64db46d89c8",
+      "bytes": 650157
+    }
+  }
+}

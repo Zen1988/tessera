@@ -1,10 +1,45 @@
-# Current image preparation — TESSERA-Base0.1.7
+# Current image preparation — TESSERA-Base0.1.12
 
-Install the0.1.7 OPM normally on the source OTOBO host first. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.7-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
+This kit builds the stable source image. The deployment wrapper does not execute
+native DBUpdate-to-11.1 against a separate Kubernetes database. A beta-based K8s
+database needs a separately controlled native framework migration before rollout.
 
-Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.7, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
+Complete the reviewed native OTOBO11.1.1 source-host upgrade and compatible add-on continuation first. Base0.1.12 requires ITSMConfigItemMultitenancy>=11.1.1; see docs/deployment/otobo111-addon-continuation.md in the repository. Do not install0.1.12 into beta before upgrading core. Extract this toolkit into a fresh build directory. Verify `sha256sum -c TESSERA-0.1.12-Ubuntu26.04-Container-Toolkit.zip.sha256` before extraction; do not pass the ZIP itself to sha256sum -c.
 
-0.1.7 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
+Run `bash scripts/prepare.sh /opt/otobo` and confirm0.1.12, then `bash scripts/build.sh`. Use the actual tag recorded in artifacts/latest-build.json. Keep the matching artifacts/upgrade-bundle with that image. Deploy through scripts/deploy-release.py, which owns unique per-run bundle PVCs and success-only cleanup. Do not reuse the fixed-name deploy195 block or replay completed0.1.0 recovery.
+
+0.1.12 includes the cumulative protected change driver, Utilities icon and on-demand Navis integration updates. Complete native package/configuration reconciliation and all-worker rollout before traffic resumes. Existing Config.pm Secret is not replaced by this feature update. New Navis behavior requires the matching Navis migrations through021 and integration customer-simulation configuration plus the Application Navis label for named traces; old environment bindings are retained only for historical results.
+
+## Upgrade configuration reconciliation (toolkit r2)
+
+Package upgrades now read SysConfig from the authoritative database throughout
+the upgrade process, extending the cache bypass already used for the final
+configure step. Existing settings follow native update/versioning; new settings
+are inserted once. No duplicate-error suppression or blanket SQL upsert. Native
+locks and compatible administrator modifications remain in force. A real cache
+round-trip preflight runs before package changes. Normal web/daemon caching is
+unchanged. Build a new image revision; this does not clear an existing failed
+upgrade journal. See docs/deployment/upgrade-sysconfig-reconciliation.md in the
+repository for behavior, regression coverage and partial-upgrade limitations.
+
+## Runtime update policy (owner confirmed 2026-11-24)
+
+Use the current official ubuntu:26.04 image and current Ubuntu26.04 repository
+packages, including Ubuntu Perl, Apache and mod_perl, plus required CPAN modules.
+Ubuntu26.04.1 is a point release in this same repository/image series; the Docker
+tag remains ubuntu:26.04. No exact Perl/APT version cap is configured by default.
+Each normal build pulls the base and refreshes the APT/CPAN installation layers.
+Installed base packages are upgraded before application dependencies are installed.
+CPAN requirements come from the installed application/packages and integration
+extras; minimums are not maximum pins. XS modules are built inside the new image.
+
+Keep TESSERA_DEPENDENCY_POLICY=latest (the default). Version inventories and the
+immutable output image ID document what was actually built; they do not freeze
+future dependency resolution. Compatibility failures must be diagnosed against
+the current supported runtime rather than silently downgrading dependencies.
+
+References: https://releases.ubuntu.com/26.04/ and
+https://github.com/docker-library/official-images/blob/master/library/ubuntu
 
 ---
 
@@ -335,8 +370,8 @@ image interpreter, so an unsupported version fails the build.
 
 By default `TESSERA_DEPENDENCY_POLICY=latest`: each build pulls the referenced
 base image and uses a unique dependency-refresh argument so cached APT/CPAN
-installation layers are not reused. APT resolves the newest available packages
-for that base's repositories. CPAN resolves modules required beyond those already
+installation layers are not reused. APT upgrades installed base packages (including new dependencies) and resolves
+the newest requested packages from that base's repositories. CPAN resolves modules required beyond those already
 satisfied by compatible distro packages. Their minimum constraints remain enforced;
 this is not an unconditional upgrade to every latest upstream release.
 For an intentional cached rebuild, set `TESSERA_DEPENDENCY_POLICY=cached`; base

@@ -12,6 +12,7 @@ RUN test -n "$TESSERA_DEPENDENCY_REFRESH" \
  && mapfile -t packages < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' /tmp/tessera-apt/*.txt) \
  && for package in "${packages[@]}"; do [[ "$package" =~ ^[a-z0-9][a-z0-9+.:=~_-]*$ ]] || exit 1; done \
  && apt-get update \
+ && apt-get upgrade -y --with-new-pkgs --no-install-recommends \
  && apt-get install -y --no-install-recommends "${packages[@]}" \
  && rm -rf /var/lib/apt/lists/* /tmp/tessera-apt \
  && groupmod --gid "$OTOBO_GID" www-data \

@@ -7,6 +7,7 @@ use Kernel::System::TESSERA::ReleaseUpgrade;
 use Kernel::System::TESSERA::ReleasePackage;
 require '/usr/local/lib/tessera/package-inventory.pl';
 require '/usr/local/lib/tessera/package-reconcile.pl';
+require '/usr/local/lib/tessera/upgrade-cache.pl';
 my $Mode = shift @ARGV || 'check';
 my $Resume = @ARGV == 1 && $ARGV[0] eq '--resume-config';
 die "Invalid release-control arguments\n" if @ARGV && !$Resume;
@@ -16,6 +17,7 @@ my $OK = eval {
     die if $Meta->{package} ne 'TESSERA-Base';
     require Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager->new();
+    UpgradeCacheConfigure($Kernel::OM->Get('Kernel::System::Cache')) if $Mode eq 'upgrade';
     open my $InventoryFH, '<:raw', '/opt/tessera/dependencies/package-modules.json' or die;
     my $Inventory=JSON::PP->new->utf8->decode(do {local $/;<$InventoryFH>});close $InventoryFH;
     my $Gate = $Kernel::OM->Get('Kernel::System::TESSERA::ReleaseUpgrade');
@@ -29,6 +31,8 @@ my $OK = eval {
     if ($Mode eq 'check') { $Gate->Check(%Identity); $VerifyStorage->(); }
     elsif ($Mode eq 'upgrade') {
         die if ($ENV{TESSERA_UPGRADE_QUIESCED} || '') ne '1' || !-w '/opt/otobo/Kernel/System';
+        system('/usr/bin/perl','/usr/local/lib/tessera/runtime-check.pl','smoke') == 0
+            or die "Target dependency preflight failed before package upgrade.\n";
         my $Package = $Kernel::OM->Get('Kernel::System::TESSERA::ReleasePackage');
         my $Directory='/opt/tessera/upgrade-bundle';
         system('/usr/bin/python3','/usr/local/lib/tessera/check-package-bundle.py',$Directory)==0 or die "Invalid external upgrade bundle\n";

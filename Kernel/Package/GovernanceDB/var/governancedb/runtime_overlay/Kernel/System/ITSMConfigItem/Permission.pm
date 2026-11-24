@@ -88,6 +88,11 @@ sub Permission {
         return;
     }
 
+    # Keep the installed native agent item-group boundary before class grants.
+    if ($Param{Scope} eq 'Item') {
+        return if !$Self->_ItemGroupCheck(%Param);
+    }
+
     # Run all ITSMConfigItem Permission modules.
     #
     # The idea is the the permission modules are ordered and can be divided into two phases.
@@ -213,13 +218,13 @@ sub CustomerPermission {
         if ( $ConditionSet->{Classes} ) {
             my @Classes = ref $ConditionSet->{Classes} ? $ConditionSet->{Classes}->@* : ( $ConditionSet->{Classes} );
 
-            next CONDITION if @Classes && !grep { $_ eq $ConfigItem->{Class} } @Classes;
+            next CONDITION if @Classes && none { $_ eq $ConfigItem->{Class} } @Classes;
         }
 
         if ( $ConditionSet->{DeploymentStates} ) {
             my @DeplStates = ref $ConditionSet->{DeploymentStates} ? $ConditionSet->{DeploymentStates}->@* : ( $ConditionSet->{DeploymentStates} );
 
-            next CONDITION if @DeplStates && !grep { $_ eq $ConfigItem->{DeplState} } @DeplStates;
+            next CONDITION if @DeplStates && none { $_ eq $ConfigItem->{DeplState} } @DeplStates;
         }
 
         if ( $ConditionSet->{DynamicFieldValues} ) {
@@ -280,5 +285,46 @@ sub CustomerPermission {
     # don't grant access
     return;
 }
+
+# Anonymous ConfigItem publication is outside the authenticated TESSERA asset
+# entitlement contract. Retain the native interface without disclosing a CI.
+sub PublicPermission { return; }
+
+# Rother OSS / ITSMConfigItemMultitenancy
+sub _ItemGroupCheck {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get config item data
+    my $ConfigItem = $Kernel::OM->Get('Kernel::System::ITSMConfigItem')->ConfigItemGet(
+        ConfigItemID => $Param{ItemID},
+    );
+
+    return if ref $ConfigItem ne 'HASH' || !$ConfigItem->{ConfigItemID};
+
+    # the item permission group is optional, so grant access if it exists but is not set
+    my $ItemPermission = $ConfigItem->{GroupID};
+    return 1 unless $ItemPermission;
+
+    # get user groups
+    my %Groups = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+        UserID => $Param{UserID},
+        Type   => $Param{Type},
+        Result => 'HASH',
+        Cached => 1,
+    );
+
+    my $ItemManagementGroup = $ConfigObject->Get('ITSMConfigItemManagementGroup');
+
+    # looking for group id, grant access if user is in group or is a member of the ci management group
+    for my $GroupID ( keys %Groups ) {
+        return 1 if $Groups{$GroupID} eq $ItemManagementGroup || $GroupID eq $ItemPermission;
+    }
+
+    # refuse access per default
+    return;
+}
+# EO ITSMConfigItemMultitenancy
 
 1;
