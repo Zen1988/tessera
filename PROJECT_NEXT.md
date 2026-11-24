@@ -1,4 +1,8 @@
-# Current — execute corrected Base0.1.12 add-on continuation
+# Current — resume backup with dump-client helper fix
+
+Owner confirmed dump-client16MiB versus server128MiB; Base0.1.10 row17,603,341bytes exceeds client limit. New helper-only ZIP TESSERA-0.1.12-Dump-Client-Fix.zip explicitly sets128MiB in both backup paths. Extract into new dump-client-fix subdirectory of existing0.1.12 bundle; run included helper with --bundle .. and same original state/private DB file. Both Python helpers required together.47 Python tests pass; no OPM/old bundle modifications. Retry backup only through guarded continuation; no package upgrade has begun. Keep services stopped; inspect any further failure, start only after UPDATED_STOPPED. See docs/deployment/otobo111-dump-client-fix.md and current PROJECT_STATUS.
+
+# Historical — Base0.1.12 package guard correction (retained)
 
 Owner confirmed official DBExtensions11.1.2 Custom controller SHA81aff1c4... caused a guard omission, not unknown customization. New0.1.12 bundle fixes exact vendor controller/template hash recognition in both continuation and installer; unknown edits still denied. Original0.1.11 attempt stopped before writes. Use outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip in a fresh extraction, same saved package-stage state and private DB options. Keep services stopped; start only after UPDATED_STOPPED. Do not reset phase, rerun core migration/registry recovery, manually replace files or force packages.45 Python/320 Perl checks pass; live execution/acceptance pending. See current PROJECT_STATUS and deployment docs.
 

@@ -1,6 +1,7 @@
 """Offline tests for the paused native package-stage continuation."""
 import base64
 import copy
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -109,6 +110,43 @@ class ContinuationSafety(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Incomplete"):
                 C.checkpoint_backup(self.path, self.path, {}, self.path / "client")
             run.assert_not_called()
+
+    def test_dump_client_limit_and_complete_backup(self):
+        self.exercise_backup(0)
+
+    def test_failed_dump_never_marks_backup_complete(self):
+        self.exercise_backup(1)
+
+    def exercise_backup(self, exit_code):
+        directory = self.path / "backup"
+        directory.mkdir()
+        home = self.path / "otobo"
+        home.mkdir()
+        def run(argv, **kwargs):
+            if argv[0] == "tar":
+                Path(argv[argv.index("-cpf") + 1]).write_bytes(b"file backup")
+            return SimpleNamespace(stdout=b"0")
+        def popen(argv, **kwargs):
+            self.assertEqual(argv[1], "--defaults-extra-file=" + str(self.path / "client.cnf"))
+            self.assertIn("--max-allowed-packet=128M", argv)
+            self.assertLess(argv.index("--defaults-extra-file=" + str(self.path / "client.cnf")),
+                            argv.index("--max-allowed-packet=128M"))
+            self.assertIn("--single-transaction", argv)
+            self.assertIn("--routines", argv)
+            return SimpleNamespace(stdout=io.BytesIO(b"-- complete SQL fixture\n"), wait=lambda: exit_code)
+        with patch.object(C.U, "run", side_effect=run), \
+             patch.object(C.shutil, "disk_usage", return_value=SimpleNamespace(free=10**12)), \
+             patch.object(C.subprocess, "Popen", side_effect=popen):
+            if exit_code:
+                with self.assertRaisesRegex(RuntimeError, "no package upgrade started"):
+                    C.checkpoint_backup(home, directory, {"db_name": "tessera"}, self.path / "client.cnf")
+                self.assertFalse((directory / "backups.json").exists())
+                self.assertTrue((directory / "before-addons-db.sql.gz.partial").exists())
+            else:
+                C.checkpoint_backup(home, directory, {"db_name": "tessera"}, self.path / "client.cnf")
+                self.assertEqual(set(json.loads((directory / "backups.json").read_text())),
+                                 {"before-addons-files.tar", "before-addons-db.sql.gz"})
+                self.assertFalse((directory / "before-addons-db.sql.gz.partial").exists())
 
     def test_unknown_runtime_override_preserved_before_any_upgrade(self):
         target = self.path / "Custom/changed.pm"

@@ -178,9 +178,8 @@ def checkpoint_backup(home, directory, info, credentials):
     archive.replace(directory / "before-addons-files.tar")
     path = directory / "before-addons-db.sql.gz.partial"
     with path.open("wb") as stream:
-        process = subprocess.Popen(["mariadb-dump", "--defaults-extra-file=" + str(credentials),
-            "--single-transaction", "--routines", "--events", "--triggers", "--hex-blob",
-            "--databases", info["db_name"]], stdout=subprocess.PIPE)
+        process = subprocess.Popen(U.database_dump_command(
+            ["--defaults-extra-file=" + str(credentials)], info["db_name"]), stdout=subprocess.PIPE)
         with gzip.GzipFile(fileobj=stream, mode="wb") as output:
             shutil.copyfileobj(process.stdout, output)
         if process.wait():

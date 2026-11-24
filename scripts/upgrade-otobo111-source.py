@@ -43,6 +43,14 @@ def console(home, *argv):
     as_otobo(home, home / "bin/otobo.Console.pl", *argv, "--no-ansi")
 
 
+def database_dump_command(db_options, database):
+    # The dump client can have a smaller option-file limit than the server.
+    # Keep --defaults-extra-file first and override the client limit explicitly.
+    return ["mariadb-dump", *db_options, "--max-allowed-packet=128M",
+            "--single-transaction", "--routines", "--events", "--triggers",
+            "--hex-blob", "--databases", database]
+
+
 def save(path, data):
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     path.chmod(0o600)
@@ -393,8 +401,7 @@ def apply(args):
         run(["tar", "--acls", "--xattrs", "--numeric-owner", "-cpf",
              state / "otobo-files.tar", "-C", home.parent, home.name])
     with (state / "database.sql.gz").open("wb") as output:
-        process = subprocess.Popen(["mariadb-dump", *db_options, "--single-transaction",
-            "--routines", "--events", "--triggers", "--hex-blob", "--databases", args.db_name],
+        process = subprocess.Popen(database_dump_command(db_options, args.db_name),
             stdout=subprocess.PIPE)
         with gzip.GzipFile(fileobj=output, mode="wb") as compressed:
             shutil.copyfileobj(process.stdout, compressed)
