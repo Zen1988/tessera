@@ -1,7 +1,7 @@
 {
   "target": "11.1.1",
   "package": "TESSERA-Base",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "native_commit": "18feea896ab92138b5e8c4cd785ab4e198eccb1b",
   "baseline_package_sha256": "604d8b39b4bb027cdece41dbad91b2dc74181f27f72c0c2d126dcd2628b73359",
   "entries": [
@@ -47,7 +47,16 @@
       "override_sha256": "5f4c82630bfe4c960657d0438f26302c8a2930bc4b61aefb2b2e94e32fd1ff3b",
       "reviewed": true,
       "source_location": "var/governancedb/runtime_overlay/Kernel/Modules/AdminDynamicFieldDB.pm",
-      "merged_sha256": "baba6e37254abfb06372597467cc41d5c32b82c7c5e2aeb90ac0426ba3c03ea0"
+      "merged_sha256": "baba6e37254abfb06372597467cc41d5c32b82c7c5e2aeb90ac0426ba3c03ea0",
+      "reviewed_vendor_sources": [
+        {
+          "name": "DynamicFieldDatabaseExtensions",
+          "version": "11.1.2",
+          "package_sha256": "61224708c25479522518351aaecdf0d5295869291c2c01788b434de3e2bacd35",
+          "file_sha256": "81aff1c442153223dd4d80532512cf11adf373a364628f6291d256e63fdacaa0",
+          "url": "https://ftp.otobo.org/pub/otobo/packages/DynamicFieldDatabaseExtensions-11.1.2.opm"
+        }
+      ]
     },
     {
       "path": "Custom/Kernel/Modules/AdminDynamicFieldScreen.pm",
@@ -168,7 +177,16 @@
       "override_sha256": "57cabd1705cf7017def1285f949b6d410d2f8a1dc374190b28c95684d3b11a6a",
       "reviewed": true,
       "source_location": "var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldDB.tt",
-      "merged_sha256": "fdd6dcd95b2ea6eced75eac62f5fc887a54e398003e96cb96d95b8fb85ce93f0"
+      "merged_sha256": "fdd6dcd95b2ea6eced75eac62f5fc887a54e398003e96cb96d95b8fb85ce93f0",
+      "reviewed_vendor_sources": [
+        {
+          "name": "DynamicFieldDatabaseExtensions",
+          "version": "11.1.2",
+          "package_sha256": "61224708c25479522518351aaecdf0d5295869291c2c01788b434de3e2bacd35",
+          "file_sha256": "1a84e95a7b2aabd16f0462a8357e23b4488bd62f712df1a01c636cdc4249c49f",
+          "url": "https://ftp.otobo.org/pub/otobo/packages/DynamicFieldDatabaseExtensions-11.1.2.opm"
+        }
+      ]
     },
     {
       "path": "Custom/Kernel/Output/HTML/Templates/Standard/AdminDynamicFieldSet.tt",

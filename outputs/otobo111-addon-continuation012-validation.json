@@ -1,0 +1,13 @@
+{
+  "version": "0.1.12",
+  "python_tests": 45,
+  "perl_assertions": 320,
+  "vendor_package_sha256": "61224708c25479522518351aaecdf0d5295869291c2c01788b434de3e2bacd35",
+  "owner_confirmed_controller_sha256": "81aff1c442153223dd4d80532512cf11adf373a364628f6291d256e63fdacaa0",
+  "old_artifacts_unchanged": true,
+  "native_execution_performed": false,
+  "artifacts": {
+    "Kernel/Package/TESSERA-Base-0.1.12.opm": "7911eff6b39b594f95d036386caab604356120945413a0fe2650c3ec35352aff",
+    "outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip": "e2c9da4b1be41be8c0c306115760b1c430f044a6e8c6cd7547c9e89e552e53b6"
+  }
+}

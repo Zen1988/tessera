@@ -22,3 +22,4 @@ Prepared artifacts are not live acceptance. Previous OPMs remain immutable. See 
 
 - [0.1.10 — OTOBO11.1.1 native compatibility and controlled source upgrade](0.1.10.md)
 - [0.1.11 — Compatible add-on reconciliation and paused-upgrade continuation](0.1.11.md)
+- [0.1.12 — Recognize exact reviewed package-restored overrides](0.1.12.md)

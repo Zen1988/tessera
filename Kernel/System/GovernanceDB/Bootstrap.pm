@@ -3844,7 +3844,8 @@ sub _OTOBO111CompatibilityPreflight {
         die "Unknown administrator override requires merge: $Target"
             if $Digest ne $Entry->{override_sha256}
             && $Digest ne $Entry->{merged_sha256}
-            && $Digest ne $Entry->{target_native_sha256};
+            && $Digest ne $Entry->{target_native_sha256}
+            && !grep { $Digest eq $_->{file_sha256} } @{$Entry->{reviewed_vendor_sources} || []};
     }
     return 1;
 }

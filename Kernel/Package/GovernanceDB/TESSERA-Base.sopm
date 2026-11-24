@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.1.11</Version>
+    <Version>0.1.12</Version>
     <Framework Minimum="11.1.1">11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -21,6 +21,7 @@
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <PackageRequired Version="11.1.1">ITSMConfigItemMultitenancy</PackageRequired>
     <Filelist>
+        <File Location="var/tessera/docs/releases/0.1.12.md" Permission="660"/>
 
         <File Location="var/tessera/compatibility/otobo-11.1.1-addons.json" Permission="660"/>
         <File Location="var/tessera/docs/releases/0.1.11.md" Permission="660"/>

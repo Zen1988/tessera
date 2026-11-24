@@ -37,14 +37,14 @@ class ContinuationSafety(unittest.TestCase):
         self.assertEqual(C.version_key("11.1.0"), C.version_key("11.1"))
 
     def test_shipped_bundle_metadata_and_hashes(self):
-        path = ROOT / "outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip"
+        path = ROOT / "outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip"
         with zipfile.ZipFile(path) as archive:
             archive.extractall(self.path)
         plan, packages = C.load_bundle(self.path)
         self.assertEqual(len(packages), 6)
         self.assertEqual(packages[-1][0]["name"], "TESSERA-Base")
         self.assertEqual([p["version"] for p, _ in packages],
-                         ["11.1.1", "11.1.1", "11.1.1", "11.1.2", "11.1.3", "0.1.11"])
+                         ["11.1.1", "11.1.1", "11.1.1", "11.1.2", "11.1.3", "0.1.12"])
         entry = plan["packages"][0]
         (self.path / entry["file"]).write_bytes(b"corrupt")
         with self.assertRaisesRegex(RuntimeError, "checksum"):
@@ -125,6 +125,30 @@ class ContinuationSafety(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Unknown runtime override"):
             C.runtime_preflight(self.path, ET.tostring(root))
         self.assertEqual(target.read_bytes(), b"administrator")
+
+    def test_exact_reviewed_vendor_override_is_accepted_only_unchanged(self):
+        import hashlib
+        target = self.path / "Custom/vendor.pm"
+        target.parent.mkdir()
+        target.write_bytes(b"official vendor")
+        row = {"path": "Custom/vendor.pm", "native_path": "Kernel/vendor.pm",
+               "override_sha256": "legacy", "merged_sha256": "merged",
+               "target_native_sha256": hashlib.sha256(b"native").hexdigest(),
+               "current_native_sha256": "old-native",
+               "reviewed_vendor_sources": [{"file_sha256": hashlib.sha256(b"official vendor").hexdigest()}]}
+        (self.path / "Kernel").mkdir()
+        (self.path / "Kernel/vendor.pm").write_bytes(b"native")
+        manifests = {
+            "var/tessera/compatibility/otobo-11.1.1.json": {"entries": [row]},
+            "var/tessera/compatibility/otobo-11.1.1-addons.json": {"overlaps": []}}
+        root = ET.Element("otobo_package")
+        listing = ET.SubElement(root, "Filelist")
+        for name, data in manifests.items():
+            ET.SubElement(listing, "File", Location=name).text = base64.b64encode(json.dumps(data).encode()).decode()
+        C.runtime_preflight(self.path, ET.tostring(root))
+        target.write_bytes(b"official vendor edited")
+        with self.assertRaisesRegex(RuntimeError, "Unknown runtime override"):
+            C.runtime_preflight(self.path, ET.tostring(root))
 
     def test_all_package_operations_then_base_last_and_finish(self):
         entries = copy.deepcopy(self.entries)

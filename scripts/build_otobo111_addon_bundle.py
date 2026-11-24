@@ -10,19 +10,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    report = json.loads((ROOT / "outputs/base0111-validation.json").read_text())
+    report = json.loads((ROOT / "outputs/base0112-validation.json").read_text())
     files = {}
     entries = report["packages"].copy()
     for entry in entries:
         data = (ROOT / ".artifacts/otobo111/addons" / entry["file"]).read_bytes()
         assert hashlib.sha256(data).hexdigest() == entry["sha256"]
         files[entry["file"]] = data
-    path = ROOT / "Kernel/Package/TESSERA-Base-0.1.11.opm"
+    path = ROOT / "Kernel/Package/TESSERA-Base-0.1.12.opm"
     data = path.read_bytes()
     assert hashlib.sha256(data).hexdigest() == report["sha256"]
     root = ET.fromstring(data)
     entries.append({
-        "name": "TESSERA-Base", "from": "0.1.10", "version": "0.1.11",
+        "name": "TESSERA-Base", "from": "0.1.10", "version": "0.1.12",
         "file": path.name, "sha256": report["sha256"],
         "dependencies": [{"name": x.text, "minimum": x.get("Version")}
                          for x in root.findall("PackageRequired")]})
@@ -36,7 +36,7 @@ def main():
     files["SHA256SUMS"] = "".join(
         hashlib.sha256(data).hexdigest() + "  " + name + "\n"
         for name, data in sorted(files.items())).encode()
-    output = ROOT / "outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip"
+    output = ROOT / "outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip"
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(files.items()):
             info = zipfile.ZipInfo(name, (2026, 11, 24, 0, 0, 0))

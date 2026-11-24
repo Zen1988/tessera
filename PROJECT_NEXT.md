@@ -1,4 +1,8 @@
-# Current — execute reviewed Base0.1.11 add-on continuation
+# Current — execute corrected Base0.1.12 add-on continuation
+
+Owner confirmed official DBExtensions11.1.2 Custom controller SHA81aff1c4... caused a guard omission, not unknown customization. New0.1.12 bundle fixes exact vendor controller/template hash recognition in both continuation and installer; unknown edits still denied. Original0.1.11 attempt stopped before writes. Use outputs/TESSERA-0.1.12-OTOBO-11.1.1-Addon-Continuation.zip in a fresh extraction, same saved package-stage state and private DB options. Keep services stopped; start only after UPDATED_STOPPED. Do not reset phase, rerun core migration/registry recovery, manually replace files or force packages.45 Python/320 Perl checks pass; live execution/acceptance pending. See current PROJECT_STATUS and deployment docs.
+
+# Historical — Base0.1.11 instructions superseded above
 
 Owner resumed2026-11-24. Core OTOBO11.1.1 migration already complete; Base0.1.10 installed. Five official compatible add-ons reviewed/merged, Base0.1.11 and offline continuation bundle prepared with44 Python/318 Perl checks passing. Use NEW outputs/TESSERA-0.1.11-OTOBO-11.1.1-Addon-Continuation.zip, preserve original /opt/otobo-update/tessera-11.1.1 state/backups, and run continue-otobo111-addons.py with local private DB client file. Do not rerun apply/prepare/DBUpdate/registry recovery. Keep application writers stopped; packet limit may reset after reboot. Success UPDATED_STOPPED permits unmask without start then explicit saved-state start. Native host/browser/integration acceptance remains pending. See docs/deployment/otobo111-addon-continuation.md and PROJECT_STATUS. K8s framework DB migration remains separate.
 

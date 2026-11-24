@@ -125,6 +125,7 @@ def runtime_preflight(home, base_data):
                 raise RuntimeError("Symlink runtime target needs review: " + row["path"])
         if row in original:
             allowed = {row["override_sha256"], row["merged_sha256"], row["target_native_sha256"]}
+            allowed.update(x["file_sha256"] for x in row.get("reviewed_vendor_sources", []))
         else:
             allowed = set(row["allowed_sha256"])
         if target.exists() and U.digest(target) not in allowed:
@@ -255,8 +256,8 @@ def continue_upgrade(args):
     if credentials.stat().st_uid != 0 or credentials.stat().st_mode & 0o077:
         raise RuntimeError("Root database client file must be private")
     plan, packages = load_bundle(bundle)
-    if packages[-1][0]["name"] != "TESSERA-Base" or packages[-1][0]["version"] != "0.1.11":
-        raise RuntimeError("Reviewed Base0.1.11 must be last")
+    if packages[-1][0]["name"] != "TESSERA-Base" or packages[-1][0]["version"] != "0.1.12":
+        raise RuntimeError("Reviewed Base0.1.12 must be last")
     current = inventory(home)
     if current["TESSERA-Base"]["version"] == "0.1.10" and current["TESSERA-Base"]["sha256"] != OLD_BASE_SHA:
         raise RuntimeError("Installed Base0.1.10 differs from the verified artifact")
@@ -271,7 +272,7 @@ def continue_upgrade(args):
     for name, sha in hashes.items():
         if U.digest(state / name) != sha:
             raise RuntimeError("Original backup receipt differs")
-    directory = state / "addon-continuation-0.1.11"
+    directory = state / "addon-continuation-0.1.12"
     directory.mkdir(mode=0o700, exist_ok=True)
     plan_hash = U.digest(bundle / "continuation-plan.json")
     receipt_path = directory / "receipt.json"

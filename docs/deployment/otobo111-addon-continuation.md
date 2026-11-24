@@ -19,7 +19,12 @@ targeted compatibility migration, not an unreviewed online UpgradeAll.
 Dependencies are checked against actual installed/proposed versions before writes.
 The current CMDB11.1.2 and ITSMCore11.1.4 satisfy these declarations.
 
-Base0.1.11 contains reviewed multitenancy overlap merges. Customer entitlement
+Use the0.1.12 continuation ZIP. It also recognizes the exact official Database
+Extensions11.1.2 Custom controller/template restored by the earlier ReinstallAll.
+The0.1.11 guard omitted those two vendor hashes and stopped before any writes.
+Do not edit live files or disable the guard.
+
+Base0.1.12 contains reviewed multitenancy overlap merges. Customer entitlement
 and TESSERA reserved capabilities remain mandatory; no anonymous CI detail
 grant is introduced. Native agent tenant-group restrictions remain in force.
 
