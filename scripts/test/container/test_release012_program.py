@@ -184,6 +184,27 @@ class RecoveryProgram(unittest.TestCase):
                                 "reconciled": 1, "recovery": 1, "phase": "READY"})
         self.assertLess(result.stdout.index("LABELPRINT_VERIFIED"), result.stdout.index("RECONCILING"))
 
+    def test_release_guard_reports_each_match_without_exposing_receipt(self):
+        result, state = self.exercise("wrong-base")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("release_check=installed_base;match=no", result.stdout)
+        self.assertIn("release_check=receipt_hash;match=yes", result.stdout)
+        self.assertEqual(result.stdout.count("release_check="), 6)
+        self.assertNotIn(BASE_SHA, result.stdout)
+        self.assertEqual(state["recovery"], 0)
+
+    def test_extracted_bundle_contains_package_plan_dependencies(self):
+        import importlib.util
+        with tempfile.TemporaryDirectory(dir=ROOT / ".artifacts") as directory:
+            with zipfile.ZipFile(ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r2.zip") as z:
+                z.extractall(directory)
+            path = Path(directory) / "scripts/diagnose-release.py"
+            spec = importlib.util.spec_from_file_location("extracted_release012_diagnostic", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.assertIn("sub InstalledArtifactHash", module.diagnostic_program(True))
+            self.assertIn("sub ReconcilePackages", module.diagnostic_program(True))
+
     def test_preflight_failures_have_no_writes(self):
         for mode in ("wrong-base", "extra-journal", "extra-package", "small-packet", "already-attempted",
                      "hooked-label", "framework-source-fail", "dependency-fail"):

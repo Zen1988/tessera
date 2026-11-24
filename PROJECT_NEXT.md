@@ -1,3 +1,7 @@
+# 2026-11-24 — Recovery preflight investigation
+
+Revision1 stopped before recovery writes. Separate diagnostic shows expected release/registry values; root cause unproven. Revision2 prints six individual guard matches without weakening checks and supplies omitted package-plan helpers. Immutable r2 ZIP SHA7f6bd8438f80e8aaab38e32f9bfbd01f1cdafa565d66a25d5b033aadf632d456;14files;22 targeted tests pass including extracted bundle generation. Prior ZIP/OPMs unchanged. Next owner runs recovery012-r2 with original saved state; inspect release_check output. No live recovery yet; test-server backup waiver persists.
+
 # Current — execute prepared exact release012 testing recovery
 
 Owner waived backup for testing. New TESSERA-0.1.12-LabelPrint-Recovery.zip SHAb2853bd3... binds original failed Job1795491815/image/state/PVC, old8/new12 hashes and hookless LabelPrint artifact. Separate read-only preflight before claim (retryable prerequisites), then pinned native11.1.1 migration preserving mountedConfig.pm, verified LabelPrint reinstall/journal completion, pending packages/config/assets and exact replica restoration only after READY.41Python (39pass/2skips),64Perl assertions; real cluster/nativeDDL execution pending. Run recovery012/scripts/recover-release012.py from original build folder with saved artifacts/deploy-0.1.12-20261124-034249-f923e75245 and --test-no-backup; paste output. Preserve all claims/evidence on post-claim failure; no blind retry/reset.

@@ -93,12 +93,13 @@ def main():
     for name in ("recover-release012.py", "upgrade-deploy.py", "recover-179-to-184.py",
                  "resume-before-upgrade.py", "diagnose-release.py", "recovery-preflight.py"):
         payload["scripts/" + name] = (KIT / "scripts" / name).read_bytes().replace(b"\r\n", b"\n")
-    for name in ("recover-release012.pl", "upgrade-cache.pl", "framework-11.1.1.json", "configure.py"):
+    for name in ("recover-release012.pl", "upgrade-cache.pl", "framework-11.1.1.json", "configure.py",
+                 "package-inventory.pl", "package-reconcile.pl"):
         payload["image/" + name] = (KIT / "image" / name).read_bytes().replace(b"\r\n", b"\n")
     payload["README.md"] = (ROOT / "docs/deployment/release012-recovery.md").read_bytes()
     payload["SHA256SUMS"] = "".join(hashlib.sha256(d).hexdigest() + "  " + n + "\n"
                                     for n, d in sorted(payload.items())).encode()
-    output = ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery.zip"
+    output = ROOT / "outputs/TESSERA-0.1.12-LabelPrint-Recovery-r2.zip"
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name, data in sorted(payload.items()):
             info = zipfile.ZipInfo(name, (2026, 11, 24, 0, 0, 0))

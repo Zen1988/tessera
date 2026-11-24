@@ -1,3 +1,15 @@
+# Recovery revision2 preflight diagnostics
+
+The first preflight stopped before ownership/package changes. A standalone
+read-only diagnostic still reports the expected UPGRADING0.1.12/from0.1.8 and
+installed Base0.1.8 with matching image receipt. Cause is not yet established.
+Revision2 reports six individual guard matches without weakening the checks.
+It also includes package-inventory.pl and package-reconcile.pl required by the
+bundled diagnostic --package-plan option; revision1 omitted these dependencies.
+Extract revision2 into recovery012-r2, retain original state and run its recovery
+script with the same arguments below. A failed preflight is retryable; a claimed
+recovery remains one-attempt. Do not clear claims or journals.
+
 # Recover the reviewed testing0.1.8 to0.1.12 upgrade
 
 The owner explicitly waived backup for this testing server. This helper is bound

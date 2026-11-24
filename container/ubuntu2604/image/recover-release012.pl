@@ -105,9 +105,19 @@ my $OK=eval {
     PreflightInventory();
     my $Before=$Gate->_Read();
     my $State=$Gate->_Decode($Before);
-    die "Unexpected interrupted release.\n" if !$State || $State->{phase} ne 'UPGRADING'
-        || $State->{version} ne '0.1.12' || $State->{hash} ne $Meta->{package_sha256}
-        || $State->{from} ne '0.1.8' || $Gate->_Version() ne '0.1.8';
+    my $CurrentBase=$Gate->_Version();
+    my @ReleaseChecks=(
+        ['receipt_present',ref($State) eq 'HASH'],
+        ['receipt_phase',($State->{phase} // '') eq 'UPGRADING'],
+        ['receipt_version',($State->{version} // '') eq '0.1.12'],
+        ['receipt_hash',($State->{hash} // '') eq $Meta->{package_sha256}],
+        ['receipt_origin',($State->{from} // '') eq '0.1.8'],
+        ['installed_base',$CurrentBase eq '0.1.8'],
+    );
+    for my $Check (@ReleaseChecks) {
+        print 'release_check=',$Check->[0],';match=',$Check->[1]?'yes':'no',"\n";
+    }
+    die "Unexpected interrupted release.\n" if grep {!$_->[1]} @ReleaseChecks;
     die "Original Base artifact differs.\n" if $Gate->_InstalledHash('0.1.8')
         ne '9c9a4554d098204190ebc3b22d51348756b342e9021655e089e9b3ee4093ea55';
     my @J=DirectRows(q{SELECT data_key,data_value FROM system_data WHERE data_key LIKE 'TESSERA::PackageUpgrade::%'});

@@ -1,3 +1,7 @@
+# 2026-11-24 — Recovery preflight investigation
+
+Revision1 stopped before recovery writes. Separate diagnostic shows expected release/registry values; root cause unproven. Revision2 prints six individual guard matches without weakening checks and supplies omitted package-plan helpers. Immutable r2 ZIP SHA7f6bd8438f80e8aaab38e32f9bfbd01f1cdafa565d66a25d5b033aadf632d456;14files;22 targeted tests pass including extracted bundle generation. Prior ZIP/OPMs unchanged. Next owner runs recovery012-r2 with original saved state; inspect release_check output. No live recovery yet; test-server backup waiver persists.
+
 # 2026-11-24 — Exact testing-cluster recovery prepared
 
 - Owner explicitly requests recovery and waives backup because this is a testing server. No second backup confirmation required. Native source-server DB upgrade is separate; Kubernetes framework migration was not confirmed, so recovery includes a pinned native11.1.1 framework step before remaining add-ons. Source/task hashes/order come from the verified official archive347cfa97...;25native tasks, with Docker Config.pm rewrite step intentionally skipped for this external read-only Secret mount. Cache bypass reapplied before each native task because tasks discard OM objects; Config.pm checksum must remain unchanged.
@@ -17758,3 +17762,5 @@ Owner clarifies application/system/IP selection should resolve CMDB assets and a
 
 - GUI identifies ansible.awx WebserviceID4; endpoint/timeout fields now origin/30, TLS Yes. No agent save/token creation yet; persisted state/invokers unverified. Owner has no token yet and proposes tessera.integrator.
 - Official AWX docs plus native OTOBO source confirm manually issued PAT uses Additional request headers Authorization:Bearer, Authentication dropdown empty. OTOBO OAuth is a separate managed OIDC profile/functional-account retrieval path, not a static PAT selector; do not mix both. Detailed references/current gaps in docs/awx-integration-current-status.md. No backend modification needed for header support; no credentials stored or job launched.
+
+- Recovery publication verified: commit387828ffc153a9fea52cd00a209673ce5fe57fc2 pushed to existing draft PR2; PR updated with recovery scope, test-server backup waiver and no-live-execution limitation. Owner execution remains next.
