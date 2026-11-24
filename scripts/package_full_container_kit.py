@@ -9,7 +9,8 @@ ROOT=Path(__file__).resolve().parents[1]
 KIT=ROOT/'container/ubuntu2604'
 ROOT_FILES={'Dockerfile','Dockerfile.tlsproxy','.dockerignore','.gitignore',
     'apt-packages.txt','apt-extra.txt','cpanfile.extra','README.md'}
-RECOVERY_MODULES={'image/Navis017Recovery.pm','image/navis017-installer.pm'}
+RECOVERY_MODULES={'image/Navis017Recovery.pm','image/navis017-installer.pm',
+                  'image/framework-11.1.1.json'}
 SUFFIXES={'.sh','.py','.pl','.conf','.cnf','.exclude','.yaml','.md'}
 
 def main():
