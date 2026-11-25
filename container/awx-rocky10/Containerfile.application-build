@@ -1,0 +1,25 @@
+# Source/application build stage. Not an operator runtime image yet.
+FROM localhost/tessera-awx-compat:24.6.1-rocky10-r8
+USER root
+RUN dnf -y install nodejs nodejs-npm && dnf clean all
+ENV PATH=/opt/awx-compat/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=24.6.1
+ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV CI=true
+RUN python -m pip install 'build==1.2.2.post1' 'pyproject-hooks==1.2.0'
+WORKDIR /build/awx
+COPY . .
+# Do not let the Makefile fetch the moving ansible-ui main branch.
+# Build the pinned legacy UI explicitly, then package without ui-next fetch.
+RUN python -c 'import json; from pathlib import Path; p=Path("awx/ui/public/static/media/default.strings.json"); assert json.loads(p.read_text())["BRAND_NAME"] == "TESSERA Automation Orchestrator", "Apply source branding first"'
+RUN make ui-release PYTHON=/opt/awx-compat/bin/python && \
+    test -s awx/ui/build/index.html && \
+    python -c 'import json; from pathlib import Path; p=Path("awx/ui/build/static/media/default.strings.json"); assert json.loads(p.read_text())["BRAND_NAME"] == "TESSERA Automation Orchestrator"'
+RUN unset PIP_BUILD_CONSTRAINT && python -m build --sdist --no-isolation && \
+    python -c 'from pathlib import Path; import subprocess,sys; files=list(Path("dist").glob("awx-*.tar.gz")); assert len(files)==1, files; subprocess.run([sys.executable,"-m","pip","install","--no-deps","--no-build-isolation",str(files[0])],check=True)'
+# Test the installed package away from the source tree, not source imports.
+WORKDIR /tmp
+RUN python -m pip check && \
+    python -c 'import awx; from pathlib import Path; from importlib.metadata import version; print("AWX",version("awx")); print("Installed at",awx.__file__); assert version("awx")=="24.6.1"; assert "/build/awx/" not in str(Path(awx.__file__).resolve())' && \
+    python -c 'import django, cryptography, lxml.etree, xmlsec, psycopg; print("Native imports passed")'
+CMD ["/opt/awx-compat/bin/python", "-c", "import awx; print(awx.__file__)"]

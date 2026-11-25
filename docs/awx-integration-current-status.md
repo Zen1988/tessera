@@ -1,3 +1,22 @@
+# Current AWX checkpoint — 2026-11-24
+
+Current authoritative package is TESSERA-Base **0.1.12**. Owner reports Kubernetes release READY and web/daemon recovery complete. Earlier Base188/189/190 installation directions below are historical; do not downgrade or reinstall those versions for AWX onboarding.
+
+Resumed integration acceptance after Navis progress. Six selected local suites pass **215 assertions** (AWXManagedConnection, AWXHeartbeatAutomation, AWXAutomationLaunchFixture, AWXInvoker, AWXCallback, AWXInventory). All **23 selected runtime payloads** match the latest OPM after CRLF/LF normalization. This verifies retained implementation, not live connectivity, permissions or job execution.
+
+Next live steps:
+
+1. Establish whether a restricted AWX token, web+daemon secret mount, verified CA trust and managed AWX connection already exist. Record only connection name/ID and test outcome; never collect token values in chat. Preserve legacy ansible.awx/ID4. Use docs/awx-managed-onboarding.md for the managed preset.
+2. Verify template35 still uses the reviewed localhost heartbeat playbook/project revision and template-bound inventory/EE. Bind the verified managed WebserviceID to the existing outputs/awx-scriptengine-test/automation.yml via a separate bindings.json. bindings.pending.json remains deliberately disabled with ID0.
+3. Run AutomationTest once; record JobID. Read terminal status/artifacts/stdout/events using AWXTest --job-id, without rerunning launch YAML. Expected artifact: tessera_heartbeat with check_type=awx_execution_heartbeat. This template has no callback.
+4. Accept a separate callback-capable template/history, then scoped inventory synchronization. Only afterward bind a reviewed real discovery target and TESSERA-controlled Navis ingestion. AWX owns execution/device credentials; it does not own Navis orchestration.
+
+Current gaps: token/mount/CA/managed connection and live template revision remain unconfirmed; no live launch has been performed in this resumed session. This workstation has no kubectl current-context, so cluster inspection cannot proceed through its local kubectl configuration. Persistent agent-created Automated Task publication/provider binding remains unverified; AutomationTest is the established trusted acceptance entry point.
+
+---
+
+## Historical checkpoint material
+
 ## Base190 installation correction (2026-11-11)
 
 Base189 is superseded: its direct Elasticsearch Filelist entry conflicts with ITSMConfigItemMultitenancy-11.0.2. Install Base190 normally; it deploys the identical compatibility replacement through the existing runtime overlay. Keep multitenancy installed. Restart all web/daemon workers after installation. A later multitenancy upgrade can restore its older module; reapply Base190 afterward. Live install acceptance pending.

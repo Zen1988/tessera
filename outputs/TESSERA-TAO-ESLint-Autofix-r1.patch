@@ -1,0 +1,248 @@
+diff --git a/src/components/RelatedTemplateList/relatedTemplateHelpers.js b/src/components/RelatedTemplateList/relatedTemplateHelpers.js
+index 95ecb0c..8b13789 100644
+--- a/src/components/RelatedTemplateList/relatedTemplateHelpers.js
++++ b/src/components/RelatedTemplateList/relatedTemplateHelpers.js
+@@ -1 +1 @@
+-/* eslint-disable import/prefer-default-export */
++
+diff --git a/src/components/Search/AdvancedSearch.js b/src/components/Search/AdvancedSearch.js
+index d7d4483..12edc86 100644
+--- a/src/components/Search/AdvancedSearch.js
++++ b/src/components/Search/AdvancedSearch.js
+@@ -107,7 +107,7 @@ function AdvancedSearch({
+     if (lookupSelection === 'search') {
+       setPrefixSelection(null);
+     }
+-  }, [lookupSelection]); // eslint-disable-line react-hooks/exhaustive-deps
++  }, [lookupSelection]);
+ 
+   const handleAdvancedSearch = (e) => {
+     // keeps page from fully reloading
+diff --git a/src/components/Workflow/WorkflowUtils.js b/src/components/Workflow/WorkflowUtils.js
+index 487fc48..114c426 100644
+--- a/src/components/Workflow/WorkflowUtils.js
++++ b/src/components/Workflow/WorkflowUtils.js
+@@ -1,4 +1,4 @@
+-/* eslint-disable import/prefer-default-export */
++
+ import * as d3 from 'd3';
+ import * as dagre from 'dagre';
+ 
+diff --git a/src/contexts/Config.js b/src/contexts/Config.js
+index fd28208..b20ac19 100644
+--- a/src/contexts/Config.js
++++ b/src/contexts/Config.js
+@@ -3,14 +3,12 @@ import { useRouteMatch } from 'react-router-dom';
+ 
+ import { t } from '@lingui/macro';
+ 
+-import { ConfigAPI, MeAPI, UsersAPI, OrganizationsAPI } from 'api';
++import { ConfigAPI, MeAPI, UsersAPI, OrganizationsAPI, SettingsAPI } from 'api';
+ import useRequest, { useDismissableError } from 'hooks/useRequest';
+ import AlertModal from 'components/AlertModal';
+ import ErrorDetail from 'components/ErrorDetail';
+ import { useSession } from './Session';
+-import { SettingsAPI } from '../api';
+ 
+-// eslint-disable-next-line import/prefer-default-export
+ export const ConfigContext = React.createContext({});
+ ConfigContext.displayName = 'ConfigContext';
+ 
+diff --git a/src/contexts/Kebabified.js b/src/contexts/Kebabified.js
+index c50431c..c8fc897 100644
+--- a/src/contexts/Kebabified.js
++++ b/src/contexts/Kebabified.js
+@@ -1,6 +1,5 @@
+ import React, { useContext } from 'react';
+ 
+-// eslint-disable-next-line import/prefer-default-export
+ export const KebabifiedContext = React.createContext({});
+ 
+ export const KebabifiedProvider = KebabifiedContext.Provider;
+diff --git a/src/contexts/Workflow.js b/src/contexts/Workflow.js
+index d79fd40..c8d1303 100644
+--- a/src/contexts/Workflow.js
++++ b/src/contexts/Workflow.js
+@@ -1,5 +1,4 @@
+ import React from 'react';
+ 
+-// eslint-disable-next-line import/prefer-default-export
+ export const WorkflowDispatchContext = React.createContext(null);
+ export const WorkflowStateContext = React.createContext(null);
+diff --git a/src/i18nLoader.js b/src/i18nLoader.js
+index 16a0d5f..b956d46 100644
+--- a/src/i18nLoader.js
++++ b/src/i18nLoader.js
+@@ -11,7 +11,6 @@ export const locales = {
+   nl: 'Dutch',
+ };
+ 
+-
+ /**
+  * We do a dynamic import of just the catalog that we need
+  * @param locale any locale string
+diff --git a/src/screens/Inventory/InventoryList/InventoryList.js b/src/screens/Inventory/InventoryList/InventoryList.js
+index aac6071..b4de74d 100644
+--- a/src/screens/Inventory/InventoryList/InventoryList.js
++++ b/src/screens/Inventory/InventoryList/InventoryList.js
+@@ -80,7 +80,7 @@ function InventoryList() {
+       const { data } = await InventoriesAPI.read(params);
+       return data.results;
+     },
+-    [location.search] // eslint-disable-line react-hooks/exhaustive-deps
++    [location.search]
+   );
+ 
+   const inventories = useWsInventories(
+diff --git a/src/screens/Inventory/shared/Inventory.helptext.js b/src/screens/Inventory/shared/Inventory.helptext.js
+index a77dc52..b9c4b61 100644
+--- a/src/screens/Inventory/shared/Inventory.helptext.js
++++ b/src/screens/Inventory/shared/Inventory.helptext.js
+@@ -1,4 +1,4 @@
+-/* eslint-disable react/destructuring-assignment */
++
+ import React from 'react';
+ import { t, Trans } from '@lingui/macro';
+ import { Link } from 'react-router-dom';
+diff --git a/src/screens/Job/JobOutput/JobEvent.js b/src/screens/Job/JobOutput/JobEvent.js
+index 3a86da5..e203e0b 100644
+--- a/src/screens/Job/JobOutput/JobEvent.js
++++ b/src/screens/Job/JobOutput/JobEvent.js
+@@ -7,7 +7,7 @@ import {
+   JobEventEllipsis,
+ } from './shared';
+ 
+-const JobEvent = React.forwardRef(function JobEvent({
++const JobEvent = React.forwardRef(({
+   style,
+   lineTextHtml,
+   isClickable,
+@@ -18,7 +18,7 @@ const JobEvent = React.forwardRef(function JobEvent({
+   onToggleCollapsed,
+   hasChildren,
+   jobStatus,
+-}, ref) {
++}, ref) => {
+   const numOutputLines = lineTextHtml?.length || 0;
+   useEffect(() => {
+     const timeout = setTimeout(measure, 0);
+diff --git a/src/screens/Job/JobOutput/JobEventSkeleton.js b/src/screens/Job/JobOutput/JobEventSkeleton.js
+index 89c645f..7660f85 100644
+--- a/src/screens/Job/JobOutput/JobEventSkeleton.js
++++ b/src/screens/Job/JobOutput/JobEventSkeleton.js
+@@ -14,10 +14,10 @@ function JobEventSkeletonContent({ contentLength }) {
+   );
+ }
+ 
+-const JobEventSkeleton = React.forwardRef(function JobEventSkeleton(
++const JobEventSkeleton = React.forwardRef((
+   { counter, contentLength, style, measure },
+   ref
+-) {
++) => {
+   useEffect(() => {
+     measure();
+   }, [measure]);
+diff --git a/src/screens/Job/JobOutput/useJobEvents.js b/src/screens/Job/JobOutput/useJobEvents.js
+index 7566c1a..bb940b3 100644
+--- a/src/screens/Job/JobOutput/useJobEvents.js
++++ b/src/screens/Job/JobOutput/useJobEvents.js
+@@ -1,4 +1,4 @@
+-/* eslint-disable react/destructuring-assignment */
++
+ import { useState, useEffect, useReducer } from 'react';
+ 
+ const initialState = {
+diff --git a/src/screens/Template/WorkflowJobTemplateVisualizer/Modals/NodeModals/NodeModal.js b/src/screens/Template/WorkflowJobTemplateVisualizer/Modals/NodeModals/NodeModal.js
+index 572291b..1f86d7e 100644
+--- a/src/screens/Template/WorkflowJobTemplateVisualizer/Modals/NodeModals/NodeModal.js
++++ b/src/screens/Template/WorkflowJobTemplateVisualizer/Modals/NodeModals/NodeModal.js
+@@ -318,7 +318,6 @@ const NodeModalInner = ({ title, ...rest }) => {
+         labels: defaultLabels,
+       };
+ 
+-      // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [values.nodeResource, values.nodeType]),
+     {}
+   );
+diff --git a/src/screens/Template/WorkflowJobTemplateVisualizer/Visualizer.js b/src/screens/Template/WorkflowJobTemplateVisualizer/Visualizer.js
+index ff8a296..8600e04 100644
+--- a/src/screens/Template/WorkflowJobTemplateVisualizer/Visualizer.js
++++ b/src/screens/Template/WorkflowJobTemplateVisualizer/Visualizer.js
+@@ -463,7 +463,7 @@ function Visualizer({ template }) {
+                   });
+                 }
+                 if (node.promptValues?.instance_groups?.length > 0)
+-                  /* eslint-disable no-await-in-loop, no-restricted-syntax */
++                  /* eslint-disable no-restricted-syntax */
+                   for (const group of node.promptValues.instance_groups) {
+                     instanceGroupRequests.push(
+                       WorkflowJobTemplateNodesAPI.associateInstanceGroup(
+diff --git a/src/screens/TopologyView/MeshGraph.js b/src/screens/TopologyView/MeshGraph.js
+index 4756728..e2ebad6 100644
+--- a/src/screens/TopologyView/MeshGraph.js
++++ b/src/screens/TopologyView/MeshGraph.js
+@@ -311,7 +311,7 @@ function MeshGraph({
+       badges.each(function drawStateBadge() {
+         // eslint-disable-next-line react/no-this-in-sfc
+         const bbox = this.parentNode.getBBox();
+-        // eslint-disable-next-line react/no-this-in-sfc
++
+         d3.select(this)
+           .append('circle')
+           .attr('r', 9)
+diff --git a/src/screens/User/shared/index.js b/src/screens/User/shared/index.js
+index 4a93f42..53f42fe 100644
+--- a/src/screens/User/shared/index.js
++++ b/src/screens/User/shared/index.js
+@@ -1,3 +1,3 @@
+-/* eslint-disable-next-line import/prefer-default-export */
++
+ export { default as UserForm } from './UserForm';
+ export { default as UserTokenForm } from './UserTokenForm';
+diff --git a/src/screens/WorkflowApproval/WorkflowApprovalList/WorkflowApprovalList.js b/src/screens/WorkflowApproval/WorkflowApprovalList/WorkflowApprovalList.js
+index dcfef81..c68ece1 100644
+--- a/src/screens/WorkflowApproval/WorkflowApprovalList/WorkflowApprovalList.js
++++ b/src/screens/WorkflowApproval/WorkflowApprovalList/WorkflowApprovalList.js
+@@ -73,7 +73,7 @@ function WorkflowApprovalsList() {
+       const { data } = await WorkflowApprovalsAPI.read(params);
+       return data.results;
+     },
+-    [location.search] // eslint-disable-line react-hooks/exhaustive-deps
++    [location.search]
+   );
+ 
+   const workflowApprovals = useWsWorkflowApprovals(
+diff --git a/src/util/auth.js b/src/util/auth.js
+index 3947375..8c53dfe 100644
+--- a/src/util/auth.js
++++ b/src/util/auth.js
+@@ -1,4 +1,4 @@
+-// eslint-disable-next-line import/prefer-default-export
++
+ export function isAuthenticated(cookie) {
+   const parsed = `; ${cookie}`.split('; userLoggedIn=');
+   if (parsed.length === 2) {
+diff --git a/src/util/dates.js b/src/util/dates.js
+index ac88d4a..fcc62fb 100644
+--- a/src/util/dates.js
++++ b/src/util/dates.js
+@@ -1,4 +1,4 @@
+-/* eslint-disable import/prefer-default-export */
++
+ import { t } from '@lingui/macro';
+ import { RRule } from 'rrule';
+ import { DateTime, Duration } from 'luxon';
+diff --git a/testUtils/enzymeHelpers.js b/testUtils/enzymeHelpers.js
+index 93b7770..b39cdc1 100644
+--- a/testUtils/enzymeHelpers.js
++++ b/testUtils/enzymeHelpers.js
+@@ -67,7 +67,7 @@ function wrapContexts(node, context) {
+   const { config, router, session } = context;
+   class Wrap extends React.Component {
+     render() {
+-      // eslint-disable-next-line react/no-this-in-sfc
++
+       const { children, ...props } = this.props;
+       const component = React.cloneElement(children, props);
+       if (router.history) {

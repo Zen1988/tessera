@@ -1,0 +1,42 @@
+FROM docker.io/library/rockylinux:10
+
+# Compatibility gate only. This is not a deployable AWX image.
+RUN dnf -y upgrade --refresh && \
+    dnf -y install dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf -y install gcc gcc-c++ make git-core gettext glibc-langpack-en \
+      python3 python3-devel python3-pip libffi-devel openssl-devel \
+      openldap-devel libpq-devel libtool-ltdl-devel swig \
+      xmlsec1-devel xmlsec1-openssl-devel libxml2-devel libxslt-devel \
+      krb5-devel zlib-devel cargo rust patch && \
+    dnf clean all
+
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV MAKEFLAGS=-j2
+ENV CARGO_BUILD_JOBS=2
+
+RUN python3 -m venv /opt/awx-compat && \
+    /opt/awx-compat/bin/python -m pip install \
+      pip==26.3 setuptools==69.0.2 wheel==0.42.0
+
+COPY requirements/requirements.txt /tmp/requirements.txt
+COPY requirements/requirements_git.txt /tmp/requirements_git.upstream.txt
+
+# Reproduce the four VCS dependencies observed in the running AWX24.6.1.
+# Explicit replacements rather than resolving upstream's moving devel branches.
+RUN /opt/awx-compat/bin/python -c 'from pathlib import Path; p=Path("/tmp/requirements_git.upstream.txt"); s=p.read_text(); pairs=[("system-certifi.git@devel", "system-certifi.git@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9"), ("ansible-runner.git@devel", "ansible-runner.git@c3e8cdb24f784a70328f1bfb54eb9c886148acef"), ("python3-saml.git@devel", "python3-saml.git@f90824c4910e36c5a89dd295271be26691204ba3"), ("django-ansible-base@devel", "django-ansible-base@12139716db383b5eaf0022389c11c5c86fd5818c")]; [None if s.count(a)==1 else (_ for _ in ()).throw(RuntimeError("Unexpected upstream VCS requirement: "+a)) for a,b in pairs]; s=__import__("functools").reduce(lambda text,pair: text.replace(*pair),pairs,s); assert "@devel" not in s; Path("/tmp/requirements_git.txt").write_text(s)'
+
+RUN /opt/awx-compat/bin/python -c 'from pathlib import Path; p=Path("/tmp/requirements_git.txt"); s=p.read_text(); old="django-ansible-base @ git+https://github.com/ansible/django-ansible-base@12139716db383b5eaf0022389c11c5c86fd5818c#egg=django-ansible-base[rest_filters,jwt_consumer,resource_registry,rbac]"; new="django-ansible-base[rest_filters,jwt_consumer,resource_registry,rbac] @ git+https://github.com/ansible/django-ansible-base@12139716db383b5eaf0022389c11c5c86fd5818c"; assert s.count(old)==1, "Unexpected requirement"; p.write_text(s.replace(old,new))'
+
+# Python3.12 removed imp; hiredis2.0.0 setup imports it.
+RUN /opt/awx-compat/bin/python -c 'from pathlib import Path; p=Path("/tmp/requirements.txt"); s=p.read_text(); assert s.count("hiredis==2.0.0")==1; p.write_text(s.replace("hiredis==2.0.0", "hiredis==2.4.0"))'
+
+RUN /opt/awx-compat/bin/python -m pip install \
+      --no-binary=cffi,pycparser,psycopg,twilio \
+      -r /tmp/requirements.txt -r /tmp/requirements_git.txt
+RUN /opt/awx-compat/bin/python -m pip check && \
+    /opt/awx-compat/bin/python -c 'import django, cryptography, lxml.etree, xmlsec, psycopg; print("Native dependency imports passed")' && \
+    /opt/awx-compat/bin/uwsgi --version
+
+CMD ["/opt/awx-compat/bin/python", "-m", "pip", "check"]
