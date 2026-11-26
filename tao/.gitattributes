@@ -1,0 +1,3 @@
+*.tar.gz -text
+SHA256SUMS -text
+source-inputs.sha256 -text

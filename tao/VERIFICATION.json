@@ -1,0 +1,22 @@
+{
+  "verified_date": "2026-11-26",
+  "source_archive_sha256": "d35e26915338b458cae51c0e54dd62570a05a16004d293e735058b6090a86004",
+  "application_image_id": "34b72f5ee214ff82942f9d3fea0a5cd544056e82a57b0f2688fd625c0732fbee",
+  "checks": [
+    "three supplied archive/input checksums match",
+    "all source-input checksums match archived source",
+    "safe relative archive paths",
+    "node_modules and UI build output excluded",
+    "ES catalog namespace and messages.mjs loader present",
+    "five vendor archives preserved",
+    "zero deprecated lockfile entries",
+    "glob14 only; inflight/popper.js/tippy.js absent",
+    "SVG wrappers parse; embedded PNGs valid; login original unchanged",
+    "runtime recipe pins verified new application image"
+  ],
+  "limitations": [
+    "upstream-commit.txt is empty; source inputs and application image identity supply available provenance",
+    "no dependency caches/base images included",
+    "runtime r2 build and browser acceptance not supplied yet"
+  ]
+}

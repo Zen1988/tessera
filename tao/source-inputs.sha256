@@ -1,0 +1,14 @@
+1bfea7e9d9e6ac64a8cad25cb053353638129f14bd1ec06a0d9e8bc0442426aa awx/ui/package.json
+d79cac2d6e787bb67294befced00a26ad8609771629be0a9b807d6a54372168f awx/ui/package-lock.json
+648330479ea2612394fdf848369c5a557539cc3511483433c8c2e1fecb9cc9c4 awx/ui/.linguirc
+25d138dcf21728887fbff0ec74a3d5400e914d905994e14d0982dbe78bd77bbb awx/ui/src/i18nLoader.js
+9f5a64321b2b64167d945a144f6b17b2b456d304e5b60e186403fb098f1eae23 awx/ui/vite.config.mjs
+c9c7a7ad1810cb12ffef3eccf5faa884836bebb2e80bde7d29eb5eae16281011 awx/ui/public/index.html
+d323226c0a9dfbe67cc3d95eb358aa21a2872f8a06b8976a44043dadc32f20ad awx/ui/vendor/lingui-cli-4.14.1-tessera.1.tgz
+5aa3f103be2e15c1d1e5f55b11b54748176436f8a897cb9c996ac6a78c10e14d awx/ui/vendor/lodash.get-4.4.2-tessera.1.tgz
+f84f0937b879412253fb7e8d5adb3bb9bf40de6f59bd34dc70ffc663b20ce754 awx/ui/vendor/lodash.isequal-4.5.0-tessera.1.tgz
+0ea680694c3dd8f731121ba2ab52d59253fa5156d153ad9535381bd6ad8e89dd awx/ui/vendor/patternfly-react-core-4.276.8-no-tippy.1.tgz
+5130b57b68e4be2f2f92534a9d2cb9ac34b9b863a6e3921ea00c7d6b27847b1f awx/ui/vendor/whatwg-encoding-3.1.1-tessera.1.tgz
+74f3d5f18a4ca5ecb74eb8d9535f30d602e04a61ca918317fb7d676053654e5a awx/ui/public/static/media/logo-header.svg
+2ce1bfdbe26ac1670065d19fdf4ee51e87bb25c94f5bcca6cb27de2bf1019db7 awx/ui/public/static/media/logo-login.svg
+74f3d5f18a4ca5ecb74eb8d9535f30d602e04a61ca918317fb7d676053654e5a awx/ui/public/static/media/favicon.svg
