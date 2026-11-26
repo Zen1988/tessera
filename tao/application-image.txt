@@ -1,0 +1,1 @@
+34b72f5ee214ff82942f9d3fea0a5cd544056e82a57b0f2688fd625c0732fbee ["localhost/tessera-awx-application-build:24.6.1-rocky10-i18n-r1"]
