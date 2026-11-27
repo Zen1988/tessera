@@ -65,7 +65,21 @@ sub _Contrast {
 
 sub DefaultTemplate {
     my ( $Self, $Mode ) = @_;
-    return if !$Mode || $Mode !~ /\A(?:Completion|Update)\z/;
+    return if !$Mode || $Mode !~ /\A(?:Completion|Update|ActivityCreated|ActivityClosed|ActivityEscalation)\z/;
+    if ($Mode =~ /\AActivity/) {
+        my %Titles = (
+            ActivityCreated => 'Activity created',
+            ActivityClosed => 'Activity closed',
+            ActivityEscalation => 'Unassigned activity escalation',
+        );
+        my $Title = $Titles{$Mode};
+        return (
+            Name => "TESSERA $Title",
+            Subject => "TESSERA | $Title {{TicketNumber}}",
+            Body => "<h2>$Title</h2><p><strong>Activity</strong> {{TicketNumber}} · {{Title}}</p>"
+                . '<p><strong>Status</strong> {{Status}}</p><p>{{OpenInTessera}}</p>',
+        );
+    }
     my $IsUpdate = $Mode eq 'Update';
     my $Body = <<'HTML';
 <h2>TESSERA ticket notification</h2>

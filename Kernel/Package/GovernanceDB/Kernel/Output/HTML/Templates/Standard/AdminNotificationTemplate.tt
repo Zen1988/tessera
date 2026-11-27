@@ -6,9 +6,65 @@
         <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Preset=Update">[% Translate("Use detailed update template") | html %]</a>
         <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Mode=Layout">[% Translate("Shared helpdesk layout") | html %]</a>
         <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Mode=PolicyTest">[% Translate("Test notification policies") | html %]</a>
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Mode=ActivityTest">[% Translate("Test BlueBook notifications") | html %]</a>
     </nav>
     <div class="Clear"></div>
-[% IF Data.PolicyTest %]
+[% IF Data.ActivityTest %]
+    <section class="WidgetSimple" aria-labelledby="ActivityNotificationTest">
+        <div class="Header"><h2 id="ActivityNotificationTest">[% Translate("Test BlueBook activity notifications") | html %]</h2></div>
+        <div class="Content">
+            <p>[% Translate("Simulate one activity. The test evaluates rules without looking up recipients or sending email.") | html %]</p>
+[% IF Data.Error %]
+            <p role="alert">[% Translate(Data.Error) | html %]</p>
+[% END %]
+            <form method="post" action="[% Env("CGIHandle") | html %]">
+                <input type="hidden" name="Action" value="AdminNotificationTemplate">
+                <input type="hidden" name="Mode" value="ActivityTest">
+                <input type="hidden" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]">
+                <fieldset class="TableLike">
+                    <label for="ActivityEvent">[% Translate("Activity event") | html %]</label>
+                    <div class="Field">
+                        <select id="ActivityEvent" name="Event">
+[% FOREACH Choice IN [['ChildCreated','Child ticket created'],['OutcomeRecorded','Outcome recorded'],['Timer','Unassigned activity age']] %]
+                            <option value="[% Choice.0 | html %]"[% IF Data.Event == Choice.0 %] selected[% END %]>[% Translate(Choice.1) | html %]</option>
+[% END %]
+                        </select>
+                    </div>
+                    <div class="Clear"></div>
+                    <label for="ActivityAge">[% Translate("Active days excluding On Hold since creation") | html %]</label>
+                    <div class="Field"><input type="number" name="AgeDays" id="ActivityAge" min="0" max="999" step="0.01" value="[% Data.AgeDays | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="ActivityRules">[% Translate("Escalation rules") | html %]</label>
+                    <div class="Field"><textarea name="Rules" id="ActivityRules" rows="3" cols="48">[% Data.Rules | html %]</textarea></div>
+                    <div class="Clear"></div>
+                    <label for="TemplateSet">[% Translate("Pre or Post template configured") | html %]</label>
+                    <div class="Field"><input type="checkbox" name="TemplateSet" id="TemplateSet" value="1"[% IF Data.TemplateSet %] checked[% END %]></div>
+                    <div class="Clear"></div>
+                    <label for="Claimed">[% Translate("Activity has an owner") | html %]</label>
+                    <div class="Field"><input type="checkbox" name="Claimed" id="Claimed" value="1"[% IF Data.Claimed %] checked[% END %]></div>
+                    <div class="Clear"></div>
+                    <label for="OnHold">[% Translate("Activity is on hold") | html %]</label>
+                    <div class="Field"><input type="checkbox" name="OnHold" id="OnHold" value="1"[% IF Data.OnHold %] checked[% END %]></div>
+                    <label for="Closed">[% Translate("Activity is closed") | html %]</label>
+                    <div class="Field"><input type="checkbox" name="Closed" id="Closed" value="1"[% IF Data.Closed %] checked[% END %]></div>
+                    <div class="Clear"></div>
+                </fieldset>
+                <button type="submit" name="Subaction" value="EvaluateActivity" class="CallForAction Primary"><span>[% Translate("Evaluate") | html %]</span></button>
+            </form>
+[% IF Data.Evaluated %]
+            <p role="status">
+[% IF Data.Decision.Role %]
+                [% Data.Decision.Role | html %] · [% Translate("same activity SupportProfile") | html %]
+[% ELSIF Data.Decision.Stage %]
+                [% Data.Decision.Stage | html %] · [% Translate("configured template is eligible") | html %]
+[% ELSE %]
+                [% Translate("No notification for this activity event.") | html %]
+[% END %]
+            </p>
+[% END %]
+        </div>
+    </section>
+[% ELSIF Data.PolicyTest %]
     <section class="WidgetSimple" aria-labelledby="NotifyPolicyTestTitle">
         <div class="Header"><h2 id="NotifyPolicyTestTitle">[% Translate("Test notification policies") | html %]</h2></div>
         <div class="Content">

@@ -21,6 +21,9 @@ sub Run {
         if !$Group->PermissionCheck( UserID => $Self->{UserID}, GroupName => 'admin', Type => 'rw' );
 
     my $Request = $Kernel::OM->Get('Kernel::System::Web::Request');
+    if ( ($Request->GetParam( Param => 'Mode' ) // '') eq 'ActivityTest' ) {
+        return $Self->_ActivityTest( Layout => $Layout, Request => $Request );
+    }
     if ( ($Request->GetParam( Param => 'Mode' ) // '') eq 'PolicyTest' ) {
         return $Self->_PolicyTest( Layout => $Layout, Request => $Request );
     }
@@ -239,6 +242,45 @@ sub Run {
     } @Templates ];
     $Layout->SetRichTextParameters( Data => { RichTextType => 'None' } ) if $Layout->{BrowserRichText};
     return $Layout->Header( Title => Translatable('Email templates') )
+        . $Layout->NavigationBar()
+        . $Layout->Output( TemplateFile => 'AdminNotificationTemplate', Data => \%Data )
+        . $Layout->Footer();
+}
+
+sub _ActivityTest {
+    my ( $Self, %Param ) = @_;
+    my $Layout = $Param{Layout};
+    my $Request = $Param{Request};
+    my $Simulator = $Kernel::OM->Get('Kernel::System::TESSERA::ActivityNotification');
+    my %Data = (
+        ActivityTest => 1, Event => 'ChildCreated', AgeDays => 3,
+        Rules => '{"SecondaryAfterDays":3,"EscalationAfterDays":5}',
+    );
+    if ( ($Self->{Subaction} // '') eq 'EvaluateActivity' ) {
+        return $Layout->NoPermission( WithHeader => 'yes' ) if $Request->RequestMethod() ne 'POST';
+        $Layout->ChallengeTokenCheck();
+        for my $Key (qw(Event AgeDays Rules Claimed Closed OnHold TemplateSet)) {
+            $Data{$Key} = $Request->GetParam( Param => $Key ) // '';
+        }
+        my $Days = $Data{AgeDays};
+        if ($Data{Event} !~ /\A(?:ChildCreated|OutcomeRecorded|Timer)\z/
+            || $Days !~ /\A[0-9]{1,3}(?:\.[0-9]{1,2})?\z/ || !$Simulator->RulesParse($Data{Rules})) {
+            $Data{Error} = Translatable('Enter a valid event, elapsed days, and ascending escalation thresholds.');
+        }
+        else {
+            $Data{Evaluated} = 1;
+            $Data{Decision} = $Simulator->Evaluate(
+                %Data, SupportProfile => 'Activity SupportProfile', Owner => $Data{Claimed} eq '1' ? 'Assigned' : '',
+                PreNotificationTemplate => $Data{TemplateSet} eq '1' ? 1 : undef,
+                PostNotificationTemplate => $Data{TemplateSet} eq '1' ? 1 : undef,
+                Outcome => 'Recorded',
+            );
+        }
+    }
+    else {
+        $Data{TemplateSet} = 1;
+    }
+    return $Layout->Header( Title => Translatable('Test BlueBook activity notifications') )
         . $Layout->NavigationBar()
         . $Layout->Output( TemplateFile => 'AdminNotificationTemplate', Data => \%Data )
         . $Layout->Footer();

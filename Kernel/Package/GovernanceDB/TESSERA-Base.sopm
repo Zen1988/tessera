@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.1.28</Version>
+    <Version>0.1.29</Version>
     <Framework Minimum="11.1.1">11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -31,6 +31,8 @@
         <File Location="Kernel/Modules/AdminNotificationTemplate.pm" Permission="660"/>
         <File Location="Kernel/Output/HTML/Templates/Standard/AdminNotificationTemplate.tt" Permission="660"/>
         <File Location="Kernel/System/TESSERA/NotificationRenderer.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/ActivityNotification.pm" Permission="660"/>
+        <File Location="Kernel/System/GenericAgent/ZTSMActivityNotificationCheck.pm" Permission="660"/>
         <File Location="var/httpd/htdocs/js/Core.Agent.Admin.NotificationTemplate.js" Permission="660"/>
         <File Location="var/tessera/docs/releases/0.1.12.md" Permission="660"/>
 
@@ -687,6 +689,7 @@
         );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         die 'TESSERA notification layout upgrade failed.' if !$BootstrapObject->NotificationLayoutUpgrade();
+        die 'TESSERA activity notification upgrade failed.' if !$BootstrapObject->NotificationActivityUpgrade();
         die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
@@ -703,6 +706,7 @@
         );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
         die 'TESSERA notification layout upgrade failed.' if !$BootstrapObject->NotificationLayoutUpgrade();
+        die 'TESSERA activity notification upgrade failed.' if !$BootstrapObject->NotificationActivityUpgrade();
         die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();

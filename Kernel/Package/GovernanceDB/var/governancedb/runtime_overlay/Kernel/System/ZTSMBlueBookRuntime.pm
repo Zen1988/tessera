@@ -942,6 +942,9 @@ sub RecordsParse {
             Profile => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Profile'] ),
             Role    => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Role'] ),
             Template => _RecordValueGet( Record => $Record, Fields => ['ZBlue-Template'] ),
+            PreNotificationTemplate => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PreNotificationTemplate'] ),
+            PostNotificationTemplate => _RecordValueGet( Record => $Record, Fields => ['ZBlue-PostNotificationTemplate'] ),
+            EscalationPolicy => _RecordValueGet( Record => $Record, Fields => ['ZBlue-EscalationPolicy'] ),
             PurpleBook => _GovernanceObjectDynamicFieldValueResolve(
                 Value      => $RawPurpleBook,
                 FieldNames => ['ZBlue-PurpleBook'],
@@ -1581,6 +1584,19 @@ sub ChangeTemplatePayloadGet {
 }
 
 sub TemplateIDForTicket {
+    for my $Record ( _RecordsForTicket(@_) ) {
+        my $TemplateID = _NormalizeValue( $Record->{Template} );
+        return $TemplateID if $TemplateID;
+    }
+    return;
+}
+
+sub NotificationRecordForTicket {
+    my @Records = _RecordsForTicket(@_);
+    return @Records == 1 ? $Records[0] : undef;
+}
+
+sub _RecordsForTicket {
     my (%Param) = @_;
 
     my $Ticket = $Param{Ticket};
@@ -1594,6 +1610,7 @@ sub TemplateIDForTicket {
     my $BlueBook = BlueBookGet( BlueBookID => $BlueBookID );
     my @Records  = RecordsParse( BlueBook => $BlueBook );
 
+    my @Matching;
     RECORD:
     for my $Record (@Records) {
         next RECORD if !$Record || ref $Record ne 'HASH';
@@ -1604,11 +1621,11 @@ sub TemplateIDForTicket {
         next RECORD if !defined $Record->{Chapter} || $Record->{Chapter} ne $Chapter;
         next RECORD if $Record->{Type} && ( $Ticket->{Type} || '' ) && $Record->{Type} ne $Ticket->{Type};
 
-        my $TemplateID = _NormalizeValue( $Record->{Template} );
-        return $TemplateID if $TemplateID;
+        push @Matching, $Record;
+
     }
 
-    return;
+    return @Matching;
 }
 
 sub _BlueLevelMatch {

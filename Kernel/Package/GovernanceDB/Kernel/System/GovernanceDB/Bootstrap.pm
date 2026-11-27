@@ -112,7 +112,7 @@ sub InstallDefaults {
         );
     }
 
-    my %NotificationClass = map { $_ => 1 } qw(NotificationTemplate NotificationLayout);
+    my %NotificationClass = map { $_ => 1 } qw(NotificationTemplate NotificationLayout EscalationPolicy);
     my @NotificationClasses = grep { $NotificationClass{ $_->{Name} || '' } } @{ $Defaults->{Classes} || [] };
     $Self->_NotificationFieldsEnsure( Classes => \@NotificationClasses );
 
@@ -151,6 +151,8 @@ sub InstallDefaults {
     $Self->_DynamicFieldsEnsure(
         Classes => $Defaults->{Classes} || [],
     );
+
+    $Self->NotificationActivityUpgrade();
 
     die 'Active ConfigItem model installation failed.' if !$Self->_ITSMConfigItemDefaultsEnsure();
     $Self->_AdvisoryQuestionnaireEnsure();
@@ -2044,6 +2046,130 @@ sub _ClassPreferencesEnsure {
         );
     }
 
+    return 1;
+}
+
+sub NotificationActivityUpgrade {
+    my ($Self) = @_;
+    my $Defaults = $Self->_DefaultsLoad();
+    my ($Seed) = grep { ($_->{Name} || '') eq 'EscalationPolicy' } @{ $Defaults->{Classes} || [] };
+    die 'Escalation policy seed is unavailable.' if !$Seed;
+    my $Namespace = 'ZTSM::GovernanceObject::Class';
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $Classes = $Catalog->ItemList( Class => $Namespace, Valid => 1 ) || {};
+    my %IDs = reverse %{$Classes};
+    return 1 if !$IDs{BlueBook} || !$IDs{NotificationTemplate};
+    my $Objects = $Kernel::OM->Get('Kernel::System::GovernanceObject');
+    my $Fields = $Kernel::OM->Get('Kernel::System::DynamicField');
+    $Self->_NotificationFieldsEnsure( Classes => [$Seed] );
+    $IDs{EscalationPolicy} ||= $Self->_CatalogItemEnsure( Class => $Namespace, Name => 'EscalationPolicy' );
+    die 'Cannot register EscalationPolicy.' if !$IDs{EscalationPolicy};
+    $Self->_ClassPreferencesEnsure( ItemID => $IDs{EscalationPolicy}, Class => $Seed );
+    die 'Cannot install the EscalationPolicy definition.' if !$Self->_DefinitionEnsure(
+        GovernanceObjectObject => $Objects, ClassID => $IDs{EscalationPolicy}, Definition => $Seed->{Definition}, UserID => 1,
+    );
+    my $Statuses = $Catalog->ItemList( Class => 'ZTSM::GovernanceObject::Status', Valid => 1 ) || {};
+    my @Active = grep { $Statuses->{$_} eq 'Active' } keys %{$Statuses};
+    die 'An unambiguous Active GovernanceObject status is required.' if @Active != 1;
+    my $Renderer = $Kernel::OM->Get('Kernel::System::TESSERA::NotificationRenderer');
+    my %TemplateIDs;
+    for my $Preset (qw(Completion Update ActivityCreated ActivityClosed ActivityEscalation)) {
+        my %Default = $Renderer->DefaultTemplate($Preset);
+        my $Number = 'TESSERA-NOTIFICATION-' . uc($Preset);
+        my @Existing = $Objects->GovernanceObjectSearch( NumberExact => $Number, Result => 'ARRAY', CacheTTL => 0, Limit => 2 );
+        if (@Existing) {
+            my $Object = $Objects->GovernanceObjectGet( GovernanceObjectID => $Existing[0] );
+            die "Default notification identity $Number conflicts with an existing object."
+                if @Existing != 1 || !$Object || $Object->{ClassID} != $IDs{NotificationTemplate};
+            $TemplateIDs{$Preset} = $Existing[0];
+            next;
+        }
+        my @Named = $Objects->GovernanceObjectSearch(
+            ClassIDs => [$IDs{NotificationTemplate}], NameExact => $Default{Name}, Result => 'ARRAY', CacheTTL => 0, Limit => 2,
+        );
+        if (@Named) {
+            die "Default notification name $Default{Name} is ambiguous." if @Named != 1;
+            $TemplateIDs{$Preset} = $Named[0];
+            next;
+        }
+        my $Definition = $Objects->DefinitionGet( ClassID => $IDs{NotificationTemplate} );
+        die 'NotificationTemplate definition is unavailable.' if !$Definition || !$Definition->{DefinitionID}
+            || grep { !$Definition->{DynamicFieldRef}->{$_} } qw(ZNotify-Subject ZNotify-Body ZNotify-Scriptlets);
+        $TemplateIDs{$Preset} = $Objects->GovernanceObjectAdd(
+            ClassID => $IDs{NotificationTemplate}, Number => $Number, Name => $Default{Name},
+            ZTSMStatusID => $Active[0], UserID => 1,
+            'DynamicField_ZNotify-Subject' => $Default{Subject}, 'DynamicField_ZNotify-Body' => $Default{Body},
+            'DynamicField_ZNotify-Scriptlets' => '{}',
+        );
+        die "Cannot create default notification template $Number." if !$TemplateIDs{$Preset};
+    }
+
+    my $PolicyNumber = 'TESSERA-ESCALATION-3-5';
+    my @Policies = $Objects->GovernanceObjectSearch(
+        NumberExact => $PolicyNumber, Result => 'ARRAY', CacheTTL => 0, Limit => 2,
+    );
+    my $PolicyID;
+    if (@Policies) {
+        my $Existing = $Objects->GovernanceObjectGet( GovernanceObjectID => $Policies[0] );
+        die 'Default escalation policy identity is incompatible.'
+            if @Policies != 1 || !$Existing || $Existing->{ClassID} != $IDs{EscalationPolicy};
+        $PolicyID = $Policies[0];
+    }
+    else {
+        $PolicyID = $Objects->GovernanceObjectAdd(
+            ClassID => $IDs{EscalationPolicy}, Number => $PolicyNumber,
+            Name => 'Unassigned activity - Secondary day 3, Escalation day 5',
+            ZTSMStatusID => $Active[0], UserID => 1,
+            'DynamicField_ZNotify-EscalationRules' => '{"SecondaryAfterDays":3,"EscalationAfterDays":5}',
+        );
+        die 'Cannot create the default escalation policy.' if !$PolicyID;
+    }
+    my $Set = $Fields->DynamicFieldGet( Name => 'ZBlue-Record' );
+    return 1 if !$Set || !$Set->{ID}; # Fresh installation can complete this after creating the Set.
+    die 'ZBlue-Record is incompatible.'
+        if $Set->{ObjectType} ne 'GovernanceObject' || $Set->{FieldType} ne 'Set'
+        || ref $Set->{Config}->{Include} ne 'ARRAY';
+    my @Add;
+    my %Included = map { $_->{DF} => 1 } @{ $Set->{Config}->{Include} };
+    for my $Spec (
+        ['ZBlue-PreNotificationTemplate', 'Pre email template', $IDs{NotificationTemplate}, $TemplateIDs{ActivityCreated}],
+        ['ZBlue-PostNotificationTemplate', 'Post email template', $IDs{NotificationTemplate}, $TemplateIDs{ActivityClosed}],
+        ['ZBlue-EscalationPolicy', 'Escalation policy', $IDs{EscalationPolicy}, $PolicyID],
+    ) {
+        my ($Name, $Label, $Target, $Default) = @{$Spec};
+        my $Existing = $Fields->DynamicFieldGet( Name => $Name );
+        if ($Existing && $Existing->{ID}) {
+            my $Config = $Existing->{Config};
+            die "Existing BlueBook reference $Name is incompatible."
+                if $Existing->{ObjectType} ne 'GovernanceObject' || $Existing->{FieldType} ne 'GovernanceObject'
+                || $Existing->{ValidID} != 1 || $Config->{MultiValue} || $Config->{Multiselect}
+                || ref $Config->{ClassIDs} ne 'ARRAY' || @{ $Config->{ClassIDs} } != 1
+                || $Config->{ClassIDs}->[0] ne $Target;
+        }
+        else {
+            die "Cannot create BlueBook reference $Name." if !$Fields->DynamicFieldAdd(
+                Name => $Name, Label => $Label, FieldOrder => $Set->{FieldOrder},
+                ObjectType => 'GovernanceObject', FieldType => 'GovernanceObject',
+                Config => {
+                    ClassIDs => [$Target], ReferencedObjectType => 'GovernanceObject',
+                    SearchAttribute => 'Name', EditFieldMode => 'AutoComplete', PossibleNone => 1,
+                    DefaultValue => $Default,
+                    MultiValue => 0, Multiselect => 0, ReferenceFilterList => [], ZTSMStatusIDs => \@Active,
+                },
+                ValidID => 1, UserID => 1, Reorder => 0,
+            );
+        }
+        push @Add, { DF => $Name } if !$Included{$Name};
+    }
+    if (@Add) {
+        die 'Cannot update the BlueBook chapter Set.' if !$Fields->DynamicFieldUpdate(
+            (map { $_ => $Set->{$_} } qw(ID Name Label FieldOrder FieldType ObjectType ValidID InternalField)),
+            Config => { %{ $Set->{Config} }, Include => [ @{ $Set->{Config}->{Include} }, @Add ] },
+            UserID => 1, Reorder => 0,
+        );
+        $Kernel::OM->Get('Kernel::System::Cache')->CleanUp( Type => 'GovernanceObjectDefinition' );
+    }
+    $Fields->EventHandlerTransaction();
     return 1;
 }
 

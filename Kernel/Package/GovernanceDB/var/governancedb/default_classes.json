@@ -14,6 +14,21 @@
    "ClassNamespace" : "ZTSM::GovernanceObject::Class",
    "Classes" : [
       {
+         "Name": "EscalationPolicy",
+         "Categories": ["All", "Governance"],
+         "Definition": "---\nPages:\n  - Name: Escalation\n    Interfaces: [Agent]\n    Content:\n      - Section: Escalation\nSections:\n  Escalation:\n    Header: Escalation rules\n    Content:\n      - DF: ZNotify-EscalationRules\n",
+         "VersionTrigger": ["Name", "DefinitionUpdate", "DynamicField_ZNotify-EscalationRules"],
+         "DynamicFields": {
+            "ZNotify-EscalationRules": {
+               "Name": "ZNotify-EscalationRules",
+               "Label": "Escalation rules",
+               "FieldType": "TextArea",
+               "ObjectType": "GovernanceObject",
+               "Config": {"DefaultValue": "", "MultiValue": 0}
+            }
+         }
+      },
+      {
          "Name": "NotificationTemplate",
          "Categories": [
             "All",
