@@ -746,6 +746,9 @@ icketZoom #ZTSMStoryLinks p,
 </style>
 
 <div id='oooContent' class="TicketZoom ARIARoleMain">
+[% IF Data.ZTSMWatcherShareFailed %]
+    <p role="alert">[% Translate("The ticket was created, but its watchers could not be added.") | html %]</p>
+[% END %]
     <div id='oooHeader'[% IF Data.TicketInfoDisplayType == 'Permanent' %] class="oooTicketInfoPermanent"[% END %]>
         <div class='oooWithSub'>
             <h2 title="[% Data.Title | html %]">[% Data.Title | html %]</h2>
@@ -772,6 +775,18 @@ icketZoom #ZTSMStoryLinks p,
         </div>
 [% END %]
         <div>
+[% IF Data.ZTSMNotificationCanWatch %]
+            <form class="DontPrint" method="post" action="[% Env("CGIHandle") | html %]">
+                <input type="hidden" name="Action" value="CustomerTicketZoom" />
+                <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]" />
+                <input type="hidden" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]" />
+[% IF Data.ZTSMNotificationWatching %]
+                <button type="submit" name="Subaction" value="UnwatchNotification" class="oooM">[% Translate("Unwatch ticket") | html %]</button>
+[% ELSE %]
+                <button type="submit" name="Subaction" value="WatchNotification" class="oooM">[% Translate("Watch ticket") | html %]</button>
+[% END %]
+            </form>
+[% END %]
 [% RenderBlockStart("ReplyButton") %]
         <button id="ReplyButton" class="DontPrint oooM"><span>[% Translate("Reply") | html %] </span><i class="ooofo ooofo-arrow_r2"></i></button>
 [% RenderBlockEnd("ReplyButton") %]

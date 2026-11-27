@@ -18,7 +18,7 @@
 <html>
 [% InsertTemplate("Copyright.tt") %]
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-type" content="text/html;charset=utf-8" />
     <link rel="shortcut icon" href="[% Config("Frontend::WebPath") %]common/img/icons/favicon.ico" type="image/ico" />
     <link rel="apple-touch-icon" href="[% Config("Frontend::ImagePath") %]icons/apple-touch-icon.png" />
@@ -59,6 +59,8 @@
     </style>
 [% RenderBlockEnd("LoginLogoCSS") %]
 
+    <link rel="stylesheet" href="[% Config("Frontend::WebPath") | html %]skins/Agent/default/css/TESSERA.AdminLogin.css" />
+
     <link rel="stylesheet" type="text/css" href="[% Config("Frontend::WebPath") %]common/css/font-awesome.min.css" />
 
 # decide, if responsive CSS must be loaded
@@ -89,19 +91,55 @@
 
 </head>
 <!-- end header -->
-<body class="[% Data.BodyClass | html %] LoginScreen" style="[% Data.ColorDefinitions | html %]">
+<body class="[% Data.BodyClass | html %] LoginScreen TesseraAdminLogin" style="[% Data.ColorDefinitions | html %]">
     <div id="AppWrapper">
-    <div id="Header" class="ARIARoleBanner">
-        <div id="Logo"></div>
-    </div>
+        <main class="AdminLoginContent">
+            <header class="AdminLoginBrand">
+                <div class="AdminLoginWordmark">
+                    <img src="[% Config("Frontend::WebPath") | html %]common/img/TESSERA/TESSERA_MARK_v2.svg" alt="" width="106" height="106" />
+                    <span>TESSERA</span>
+                </div>
+                <div class="AdminLoginBrandTitle">
+                    <i class="fa fa-shield" aria-hidden="true"></i>
+                    [% Translate("Agent Administrative Console") | html %]
+                </div>
+            </header>
 
-    <div class="MainBox ARIARoleMain">
+            <section class="AdminLoginNotice" aria-labelledby="AdminLoginNoticeTitle">
+                <div class="AdminLoginNoticeIcon"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></div>
+                <div class="AdminLoginNoticeText">
+                    <h1 id="AdminLoginNoticeTitle">[% Translate("Administrative page for system configuration") | html %]</h1>
+                    <p>[% Translate("Authorized administrators use this console to manage TESSERA configuration, governance objects, and platform maintenance.") | html %]</p>
+                </div>
+            </section>
+
 [% RenderBlockStart("LoginLogo") %]
-        <div id="LoginLogo" class="CenterBox"></div>
 [% RenderBlockEnd("LoginLogo") %]
 
-        <div>
-            <div class="LoginBox">
+            <div class="AdminLoginGrid">
+                <section class="AdminLoginPortal" aria-labelledby="AdminLoginPortalTitle">
+                    <div class="AdminLoginPortalContent">
+                        <i class="fa fa-laptop" aria-hidden="true"></i>
+                        <div>
+                            <h2 id="AdminLoginPortalTitle">[% Translate("Manage requests in the TESSERA Portal") | html %]</h2>
+                            <p>[% Translate("Use the portal for tickets, service requests, approvals, assessments, and operational work.") | html %]</p>
+                        </div>
+                    </div>
+                    <a class="AdminLoginPortalLink" href="customer.pl">
+                        <i class="fa fa-external-link" aria-hidden="true"></i>
+                        [% Translate("Go to TESSERA Portal") | html %]
+                        <i class="fa fa-angle-right" aria-hidden="true"></i>
+                    </a>
+                </section>
+
+                <section class="AdminLoginCard" aria-labelledby="AdminLoginTitle">
+                    <header class="AdminLoginCardHeading">
+                        <i class="fa fa-cog" aria-hidden="true"></i>
+                        <div>
+                            <h2 id="AdminLoginTitle">[% Translate("Administrative Login") | html %]</h2>
+                            <p>[% Translate("Authorized TESSERA agents only.") | html %]</p>
+                        </div>
+                    </header>
                 <noscript>
                 <div class="ErrorBox">
                     <strong>[% Translate("JavaScript Not Available") | html %]</strong>
@@ -124,7 +162,6 @@
                     </p>
                 </div>
 [% RenderBlockEnd("SystemMaintenance") %]
-            </div>
 
 [% RenderBlockStart("PreLogin") %]
             <div id="LoginBox" class="LoginBox PreLogin">
@@ -146,9 +183,11 @@
 
 [% RenderBlockStart("LoginBox") %]
             <div id="LoginBox" class="LoginBox">
-                <div class="[% IF Data.MessageType == 'Success' %]SuccessBox[% ELSIF Data.MessageType == 'Error' %]ErrorBox[% END %]">
+[% IF Data.Message %]
+                <div class="AdminLoginMessage [% IF Data.MessageType == 'Success' %]SuccessBox[% ELSIF Data.MessageType == 'Error' %]ErrorBox[% END %]">
                     <span>[% Translate(Data.Message) | html %]</span>
                 </div>
+[% END %]
 [% IF !Data.DisableStandardLogin %]
                 <div class="WidgetSimple">
                     <div class="Content">
@@ -190,15 +229,6 @@
                                 <div class="Clear"></div>
 [% RenderBlockEnd("AuthTwoFactor") %]
 
-<!--
-# TODO: Implement
-#                                <div class="Field">
-#                                    <input type="checkbox" id="Remember" name="Remember" title="Remember my login on this computer" readonly />
-#                                    <label for="Remember">Remember my login on this computer</label>
-#                                </div>
-#                                <div class="Clear"></div>
-                                -->
-
                                 <div class="Field">
                                     <button type="submit" id="LoginButton" class="Primary CallForAction Fullsize Center" value="[% Translate("Login") | html %]" disabled><span>[% Translate("Login") | html %]</span></button>
                                 </div>
@@ -226,7 +256,7 @@
                             <input type="hidden" name="Lang" value="[% Env("UserLanguage") | html %]"/>
 
                             <fieldset>
-                                <label class="InvisibleText" for="PasswordUser" class="Mandatory">
+                                <label class="InvisibleText Mandatory" for="PasswordUser">
                                     <span class="Marker">*</span>
                                         [% Translate("Username") | html %]:
                                 </label>
@@ -250,12 +280,24 @@
             </div>
 [% RenderBlockEnd("LostPassword") %]
 
-# Message of the day data!
-[% Data.Motd %]
+                </section>
+            </div>
+            [% Data.Motd %]
+        </main>
 
-        </div>
+        <footer class="AdminLoginFooter">
+            <div class="AdminLoginFooterNotice">
+                <i class="fa fa-shield" aria-hidden="true"></i>
+                <div>
+                    <strong>[% Translate("You are accessing a government ICT service platform.") | html %]</strong>
+                    <span>[% Translate("TESSERA Administrative Console") | html %]</span>
+                </div>
+            </div>
+            <span>&copy; 2026 TESSERA</span>
+        </footer>
+
+        <script type="text/javascript" src="[% Config("Frontend::JavaScriptPath") %]ads.js"></script>
+        [% InsertTemplate("FooterJS.tt") %]
     </div>
-# loading a file called ads.js would be blocked by ad blockers (e.g. AdBlock or AdBlockPlus) and thus allows for a basic adblocker detection
-    <script type="text/javascript" src="[% Config("Frontend::JavaScriptPath") %]ads.js"></script>
-
-[% InsertTemplate("Footer.tt") %]
+</body>
+</html>

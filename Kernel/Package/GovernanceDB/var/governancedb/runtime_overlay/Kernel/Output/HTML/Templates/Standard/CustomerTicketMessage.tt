@@ -27,6 +27,34 @@
             <p class="FieldExplanation">[% Translate("Search and select the requester for this ticket.") | html %]</p>
         </div>
     </div>
+    <details id="ZTSMRequestSettings" class="ZTSMRequestSettings"[% IF Data.Errors.ZTSMNotificationPolicyInvalid || Data.Errors.ZTSMWatcherInvalid %] open[% END %]>
+        <summary class="ZTSMServicePayloadIconButton" title="[% Translate("Additional ticket settings") | html %]" aria-label="[% Translate("Additional ticket settings") | html %]">
+            <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+        </summary>
+        <div class="ZTSMRequestSettingsPanel">
+            <h2>[% Translate("Additional ticket settings") | html %]</h2>
+            <div class="ZTSMRequestSettingsField">
+                <label for="ZTSMNotificationPolicy">[% Translate("Email updates for this ticket") | html %]</label>
+                <select name="ZTSMNotificationPolicy" id="ZTSMNotificationPolicy" form="NewCustomerTicket"[% IF Data.Errors.ZTSMNotificationPolicyInvalid %] aria-invalid="true" aria-describedby="ZTSMNotificationPolicyError"[% END %]>
+                    <option value="Completion"[% IF Data.ZTSMNotificationPolicy == 'Completion' %] selected="selected"[% END %]>[% Translate("Minimal") | html %]</option>
+                    <option value="Detailed"[% IF Data.ZTSMNotificationPolicy != 'None' && Data.ZTSMNotificationPolicy != 'Completion' && Data.ZTSMNotificationPolicy != 'Exclusive' %] selected="selected"[% END %]>[% Translate("Standard") | html %]</option>
+                    <option value="Exclusive"[% IF Data.ZTSMNotificationPolicy == 'Exclusive' %] selected="selected"[% END %]>[% Translate("Exclusive") | html %]</option>
+                    <option value="None"[% IF Data.ZTSMNotificationPolicy == 'None' %] selected="selected"[% END %]>[% Translate("None") | html %]</option>
+                </select>
+[% IF Data.Errors.ZTSMNotificationPolicyInvalid %]
+                <span id="ZTSMNotificationPolicyError" role="alert">[% Translate("Select a valid email update option.") | html %]</span>
+[% END %]
+            </div>
+            <div class="ZTSMRequestSettingsField">
+                <label for="ZTSMWatcherLogins">[% Translate("Add watchers") | html %]</label>
+                <input type="text" id="ZTSMWatcherLogins" name="ZTSMWatcherLogins" form="NewCustomerTicket" maxlength="2009" value="[% Data.ZTSMWatcherLogins | html %]" aria-describedby="ZTSMWatcherHelp[% IF Data.Errors.ZTSMWatcherInvalid %] ZTSMWatcherError[% END %]"[% IF Data.Errors.ZTSMWatcherInvalid %] aria-invalid="true"[% END %] />
+                <p id="ZTSMWatcherHelp">[% Translate("Enter up to 10 usernames from your organization, separated by commas. They can read the ticket and its public updates.") | html %]</p>
+[% IF Data.Errors.ZTSMWatcherInvalid %]
+                <p id="ZTSMWatcherError" role="alert">[% Translate("Check that all usernames are active users in your organization. You can add watchers when raising your own request.") | html %]</p>
+[% END %]
+            </div>
+        </div>
+    </details>
     <div id="oooMainBox" class="Content">
         <form action="[% Env("CGIHandle") %]" method="post" name="compose" id="NewCustomerTicket" enctype="multipart/form-data" class="Validate PreventMultipleSubmits">
             <input type="hidden" name="Action" value="[% Env("Action") %]" />
@@ -223,6 +251,91 @@
 </div>
 
 <style>
+.ZTSMRequestSettings {
+    position: relative;
+}
+.TicketCompose > .ZTSMRequestSettings {
+    position: fixed;
+    inset-block-start: 45%;
+    inset-inline-end: 18px;
+    z-index: 9998;
+    transform: translateY(-50%);
+    padding: 6px;
+    border: 1px solid #d9deed;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 30px #0a10302e;
+}
+.ZTSMRequestSettings > summary {
+    list-style: none;
+}
+.ZTSMRequestSettings > summary::-webkit-details-marker {
+    display: none;
+}
+.ZTSMRequestSettings > summary:focus-visible {
+    outline: 2px solid #384bcc;
+    outline-offset: 2px;
+}
+.ZTSMRequestSettingsPanel {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: calc(100% + 12px);
+    transform: translateY(-50%);
+    display: grid;
+    gap: 14px;
+    box-sizing: border-box;
+    width: min(320px, calc(100vw - 84px));
+    max-height: min(60vh, 430px);
+    overflow: auto;
+    padding: 16px;
+    border: 1px solid #d9deed;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 30px #0a10302e;
+    color: #24294f;
+}
+.ZTSMRequestSettings:not([open]) > .ZTSMRequestSettingsPanel {
+    display: none;
+}
+.ZTSMRequestSettingsPanel h2,
+.ZTSMRequestSettingsPanel p {
+    margin: 0;
+}
+.ZTSMRequestSettingsPanel h2 {
+    font-size: 16px;
+}
+.ZTSMRequestSettingsField {
+    display: grid;
+    gap: 5px;
+}
+.ZTSMRequestSettingsField label {
+    font-size: 13px;
+    font-weight: 600;
+}
+.ZTSMRequestSettingsField select,
+.ZTSMRequestSettingsField input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 1px solid #aeb7d0;
+    border-radius: 6px;
+    background: #fff;
+    color: #151a45;
+    font: inherit;
+}
+.ZTSMRequestSettingsField select {
+    appearance: auto;
+}
+.ZTSMRequestSettingsField p {
+    font-size: 12px;
+    line-height: 1.4;
+}
+@media (max-width: 720px) {
+    .TicketCompose > .ZTSMRequestSettings {
+        inset-inline-end: 10px;
+    }
+}
 .ZTSMRequesterLine {
     display: flex;
     align-items: center;
@@ -297,6 +410,16 @@
     var ChangeButton = document.getElementById('ZTSMRequesterChange');
     var Editor = document.getElementById('ZTSMRequesterEditor');
     var RequesterValue = document.getElementById('ZTSMRequesterValue');
+    var Settings = document.getElementById('ZTSMRequestSettings');
+    if (Settings) {
+        Settings.addEventListener('keydown', function (Event) {
+            if (Event.key === 'Escape' && Settings.open) {
+                Settings.open = false;
+                Settings.querySelector('summary').focus();
+                Event.stopPropagation();
+            }
+        });
+    }
     var Timer;
     var Choices = {};
     var SelectedUserID = Hidden ? Hidden.value : '';

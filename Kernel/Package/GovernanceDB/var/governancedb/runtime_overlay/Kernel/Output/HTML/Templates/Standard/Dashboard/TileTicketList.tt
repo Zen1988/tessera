@@ -276,6 +276,16 @@
 </style>
 
 <div id="oooTile[% Data.TileID | html %]" class="oooTile oooTile_TicketList ztsmDashboardWorkspace">
+[% IF Data.WatchedTickets.size %]
+    <section class="ztsmWorkspacePanel" aria-labelledby="WatchedTicketsTitle">
+        <h2 id="WatchedTicketsTitle">[% Translate("Watched tickets") | html %]</h2>
+        <ul>
+[% FOREACH Row IN Data.WatchedTickets %]
+            <li><a href="[% Env("CGIHandle") | html %]?Action=CustomerTicketZoom;TicketID=[% Row.TicketID | uri %]">[% Row.TicketNumber | html %] · [% Row.Title | html %]</a> · [% Row.State | html %]</li>
+[% END %]
+        </ul>
+    </section>
+[% END %]
     <section class="ztsmWorkspacePanel">
         <div class="ztsmWorkspaceHeader">
             <h2 title="My workspace">My workspace</h2>

@@ -175,7 +175,7 @@ sub Run {
         UserID   => $Self->{UserID},
     );
 
-    # error screen, don't show ticket
+    # A share gets its own projection. It is never added to normal ticket permissions.
     if ( !$Access ) {
         $Access = $Kernel::OM->Get('Kernel::System::Ticket::CustomerPermission::ZTSMUserIDCheck')->Run(
             TicketID       => $Self->{TicketID},
@@ -183,8 +183,17 @@ sub Run {
             Type           => 'ro',
         );
 
-        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' )
-            if !$Access;
+        if (!$Access) {
+            my $Shared = $Kernel::OM->Get('Kernel::System::TESSERA::TicketWatcher')->List(
+                CustomerUserID => $Self->{UserLogin} || $Self->{UserID}, TicketID => $Self->{TicketID},
+            );
+            if (@{$Shared}) {
+                return $Self->_ZTSMWatcherView( $Shared->[0] ) if !($Self->{Subaction} // '');
+                return $Self->_ZTSMWatchPreference( TicketID => $Shared->[0]->{TicketID} )
+                    if $Self->{Subaction} =~ /\A(?:WatchNotification|UnwatchNotification)\z/;
+            }
+            return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+        }
     }
 
     my %ZTSMAccessTicket = $TicketObject->TicketGet(
@@ -202,6 +211,18 @@ sub Run {
         )
         )
     {
+        return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
+    }
+
+    my $WatchAction = ($Self->{Subaction} // '') =~ /\A(?:WatchNotification|UnwatchNotification)\z/;
+    if ( $ZTSMAccessTicket{TicketID} && !$ZTSMAccessTicket{'DynamicField_ZTicket-Parent'} ) {
+        return $Self->_ZTSMWatchPreference(TicketID => $ZTSMAccessTicket{TicketID}) if $WatchAction;
+        $Self->{ZTSMNotificationCanWatch} = 1;
+        $Self->{ZTSMNotificationWatching} = $Self->_ZTSMWatchPreference(
+            TicketID => $ZTSMAccessTicket{TicketID}, Read => 1,
+        );
+    }
+    elsif ($WatchAction) {
         return $LayoutObject->CustomerNoPermission( WithHeader => 'yes' );
     }
 
@@ -1787,6 +1808,51 @@ sub _ZTSMValueNormalize {
     }
 
     return $Value;
+}
+
+sub _ZTSMWatchPreference {
+    my ( $Self, %Param ) = @_;
+    my $Login = $Self->{UserLogin} || $Self->{UserID};
+    my $Key = 'ZTSMNotificationWatch-' . $Param{TicketID};
+    my $Users = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    if ($Param{Read}) {
+        my %Preferences = $Users->GetPreferences( UserID => $Login );
+        return ($Preferences{$Key} // '') eq '1';
+    }
+    my $Layout = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    return $Layout->CustomerNoPermission( WithHeader => 'yes' )
+        if $Kernel::OM->Get('Kernel::System::Web::Request')->RequestMethod() ne 'POST';
+    $Layout->ChallengeTokenCheck( Type => 'Customer' );
+    my $Value = $Self->{Subaction} eq 'WatchNotification' ? '1' : '0';
+    my $Saved = $Users->SetPreferences( UserID => $Login, Key => $Key, Value => $Value );
+    my %Confirmed = $Users->GetPreferences( UserID => $Login );
+    if (!$Saved || ($Confirmed{$Key} // '') ne $Value) {
+        return $Layout->CustomerHeader()
+            . $Layout->CustomerError( Message => Translatable('Could not save the ticket watch setting.') )
+            . $Layout->CustomerFooter();
+    }
+    return $Layout->Redirect( OP => 'Action=CustomerTicketZoom;TicketID=' . $Param{TicketID} );
+}
+
+sub _ZTSMWatcherView {
+    my ( $Self, $Ticket ) = @_;
+    my $Layout = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $Articles = $Kernel::OM->Get('Kernel::System::Ticket::Article');
+    my $HTML = $Kernel::OM->Get('Kernel::System::HTMLUtils');
+    my @Public;
+    for my $Meta ( $Articles->ArticleList( TicketID => $Ticket->{TicketID}, IsVisibleForCustomer => 1 ) ) {
+        my $Backend = $Articles->BackendForArticle(%{$Meta});
+        my %Article = $Backend->ArticleGet( TicketID => $Ticket->{TicketID}, ArticleID => $Meta->{ArticleID} );
+        next if !%Article || !$Article{IsVisibleForCustomer};
+        my $Body = $Article{Body} // '';
+        $Body = $HTML->ToAscii( String => $Body ) if ($Article{ContentType} // '') =~ m{\Atext/html\b}i;
+        push @Public, { Subject => $Article{Subject}, Body => $Body, Created => $Article{CreateTime} };
+    }
+    my $Watching = $Self->_ZTSMWatchPreference( TicketID => $Ticket->{TicketID}, Read => 1 );
+    return $Layout->CustomerHeader( Title => Translatable('Watched ticket') )
+        . $Layout->CustomerNavigationBar()
+        . $Layout->Output( TemplateFile => 'CustomerWatchedTicket', Data => { %{$Ticket}, PublicArticles => \@Public, Watching => $Watching } )
+        . $Layout->CustomerFooter();
 }
 
 sub _ZTSMExecutionTicketProtected {
@@ -5569,6 +5635,9 @@ sub _Mask {
             %Param,
             TicketInfoDisplayType => $Config->{TicketInfoDisplayType} || 'Header',
             Articles              => $ArticleHTML,
+            ZTSMNotificationCanWatch => $Self->{ZTSMNotificationCanWatch},
+            ZTSMWatcherShareFailed   => ($Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => 'WatcherShareFailed' ) // '') eq '1',
+            ZTSMNotificationWatching => $Self->{ZTSMNotificationWatching},
             Avatar                => $Avatar,
             UserInitials          => $UserInitials,
             UserFirstname         => $CustomerUser{UserFirstname},

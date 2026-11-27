@@ -1,0 +1,26 @@
+<div id="oooContent" class="ARIARoleMain">
+    <div id="oooHeader">
+        <h1>[% Data.Title | html %]</h1>
+        <p>[% Translate("Watched ticket") | html %] · [% Data.TicketNumber | html %] · [% Data.State | html %]</p>
+        <form method="post" action="[% Env("CGIHandle") | html %]">
+            <input type="hidden" name="Action" value="CustomerTicketZoom" />
+            <input type="hidden" name="TicketID" value="[% Data.TicketID | html %]" />
+            <input type="hidden" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]" />
+[% IF Data.Watching %]
+            <button type="submit" name="Subaction" value="UnwatchNotification" class="oooM">[% Translate("Unwatch ticket") | html %]</button>
+[% ELSE %]
+            <button type="submit" name="Subaction" value="WatchNotification" class="oooM">[% Translate("Watch ticket") | html %]</button>
+[% END %]
+        </form>
+    </div>
+    <main id="oooMainBox">
+        <h2>[% Translate("Public updates") | html %]</h2>
+[% FOREACH Article IN Data.PublicArticles %]
+        <article class="WidgetSimple">
+            <h3>[% Article.Subject | html %]</h3>
+            <p>[% Article.Created | html %]</p>
+            <p>[% Article.Body | html | html_line_break %]</p>
+        </article>
+[% END %]
+    </main>
+</div>
