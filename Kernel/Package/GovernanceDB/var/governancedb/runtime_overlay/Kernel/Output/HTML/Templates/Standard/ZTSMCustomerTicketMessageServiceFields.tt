@@ -4844,6 +4844,10 @@
             + '</div>';
 
         document.body.appendChild(Tools);
+        var RequestSettings = document.getElementById('ZTSMRequestSettings');
+        if (RequestSettings) {
+            Tools.querySelector('.ZTSMServicePayloadToolbar').appendChild(RequestSettings);
+        }
 
         Upload = Tools.querySelector('[data-ztsm-payload-file]');
         Code = Tools.querySelector('.ZTSMServicePayloadCode');
