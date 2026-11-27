@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <otobo_package version="1.1">
     <Name>TESSERA-Base</Name>
-    <Version>0.1.12</Version>
+    <Version>0.1.27</Version>
     <Framework Minimum="11.1.1">11.1.x</Framework>
     <Vendor>Zen CHAN (NCS)</Vendor>
     <URL>https://tessera.local/</URL>
@@ -21,6 +21,17 @@
     <ModuleRequired Version="0.087">Crypt::PRNG</ModuleRequired>
     <PackageRequired Version="11.1.1">ITSMConfigItemMultitenancy</PackageRequired>
     <Filelist>
+        <File Location="Kernel/System/TESSERA/TicketWatcher.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/CustomerWatchedTicket.tt" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Preferences/TESSERANotificationPolicy.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NotificationPolicy.pm" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NotificationEmailAdapter.pm" Permission="660"/>
+        <File Location="var/httpd/htdocs/skins/Agent/default/css/TESSERA.AdminLogin.css" Permission="660"/>
+        <File Location="Kernel/Config/Files/XML/TESSERANotificationTemplate.xml" Permission="660"/>
+        <File Location="Kernel/Modules/AdminNotificationTemplate.pm" Permission="660"/>
+        <File Location="Kernel/Output/HTML/Templates/Standard/AdminNotificationTemplate.tt" Permission="660"/>
+        <File Location="Kernel/System/TESSERA/NotificationRenderer.pm" Permission="660"/>
+        <File Location="var/httpd/htdocs/js/Core.Agent.Admin.NotificationTemplate.js" Permission="660"/>
         <File Location="var/tessera/docs/releases/0.1.12.md" Permission="660"/>
 
         <File Location="var/tessera/compatibility/otobo-11.1.1-addons.json" Permission="660"/>
@@ -520,7 +531,7 @@
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/DynamicField/Customer/Set.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Footer.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/HTMLHead.tt" Permission="660"/>
-        <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/Login.tt" Permission="660"/>
+        <File Location="Custom/Kernel/Output/HTML/Templates/Standard/Login.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/Templates/Standard/ZTSMCustomerTicketMessageServiceFields.tt" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/HTML/TicketOverview/CustomerList.pm" Permission="660"/>
         <File Location="var/governancedb/runtime_overlay/Kernel/Output/JavaScript/Templates/Standard/Customer/TileServiceCatalogContainer.html.tmpl" Permission="660"/>
@@ -675,6 +686,7 @@
             ForcePackageReload => 1,
         );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
+        die 'TESSERA notification layout upgrade failed.' if !$BootstrapObject->NotificationLayoutUpgrade();
         die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
@@ -690,6 +702,7 @@
             ForcePackageReload => 1,
         );
         my $BootstrapObject = $Kernel::OM->Get('Kernel::System::GovernanceDB::Bootstrap');
+        die 'TESSERA notification layout upgrade failed.' if !$BootstrapObject->NotificationLayoutUpgrade();
         die 'TESSERA governance bootstrap failed.' if !$BootstrapObject->InstallDefaults();
         die 'TESSERA execution history migration failed.'
             if !$Kernel::OM->Get('Kernel::System::TESSERA::AsyncExecution')->StorageEnsure();
@@ -1257,8 +1270,28 @@
             <Data Key="change_time">current_timestamp</Data>
             <Data Key="change_by">1</Data>
         </Insert>
+        <TableCreate Type="post" Name="tessera_ticket_watcher">
+            <Column Name="ticket_id" Required="true" Type="BIGINT"/>
+            <Column Name="ticket_number" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="watcher_login" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="granted_by" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="customer_id" Required="true" Size="150" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Unique Name="tessera_ticket_watcher_unique"><UniqueColumn Name="ticket_id"/><UniqueColumn Name="watcher_login"/></Unique>
+            <Index Name="tessera_ticket_watcher_login"><IndexColumn Name="watcher_login"/></Index>
+        </TableCreate>
     </DatabaseInstall>
     <DatabaseUpgrade>
+        <TableCreate Type="post" Name="tessera_ticket_watcher" Version="0.1.27">
+            <Column Name="ticket_id" Required="true" Type="BIGINT"/>
+            <Column Name="ticket_number" Required="true" Size="50" Type="VARCHAR"/>
+            <Column Name="watcher_login" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="granted_by" Required="true" Size="200" Type="VARCHAR"/>
+            <Column Name="customer_id" Required="true" Size="150" Type="VARCHAR"/>
+            <Column Name="create_time" Required="true" Type="DATE"/>
+            <Unique Name="tessera_ticket_watcher_unique"><UniqueColumn Name="ticket_id"/><UniqueColumn Name="watcher_login"/></Unique>
+            <Index Name="tessera_ticket_watcher_login"><IndexColumn Name="watcher_login"/></Index>
+        </TableCreate>
         <TableCreate Type="post" Name="ztsm_async_execution" Version="0.0.158">
             <Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/>
             <Column Name="execution_uid" Required="true" Size="64" Type="VARCHAR"/>

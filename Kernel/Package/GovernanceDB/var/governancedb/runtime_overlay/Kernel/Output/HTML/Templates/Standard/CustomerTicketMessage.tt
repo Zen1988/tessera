@@ -15,7 +15,21 @@
 # --
 <div id="oooContent" class="ARIARoleMain TicketCompose">
     <div id="oooHeader">
-        <h1>[% Translate("Create a new Ticket") | html %]</h1>
+        <div class="ZTSMRequestHeading">
+            <h1>[% Translate("Create a new Ticket") | html %]</h1>
+            <div class="ZTSMRequestEmailSetting">
+                <label for="ZTSMNotificationPolicy">[% Translate("Email updates for this ticket") | html %]</label>
+                <select name="ZTSMNotificationPolicy" id="ZTSMNotificationPolicy" form="NewCustomerTicket"[% IF Data.Errors.ZTSMNotificationPolicyInvalid %] aria-invalid="true" aria-describedby="ZTSMNotificationPolicyError"[% END %]>
+                    <option value="Completion"[% IF Data.ZTSMNotificationPolicy == 'Completion' %] selected="selected"[% END %]>[% Translate("Minimal") | html %]</option>
+                    <option value="Detailed"[% IF Data.ZTSMNotificationPolicy != 'None' && Data.ZTSMNotificationPolicy != 'Completion' && Data.ZTSMNotificationPolicy != 'Exclusive' %] selected="selected"[% END %]>[% Translate("Standard") | html %]</option>
+                    <option value="Exclusive"[% IF Data.ZTSMNotificationPolicy == 'Exclusive' %] selected="selected"[% END %]>[% Translate("Exclusive") | html %]</option>
+                    <option value="None"[% IF Data.ZTSMNotificationPolicy == 'None' %] selected="selected"[% END %]>[% Translate("None") | html %]</option>
+                </select>
+[% IF Data.Errors.ZTSMNotificationPolicyInvalid %]
+                <span id="ZTSMNotificationPolicyError" role="alert">[% Translate("Select a valid email update option.") | html %]</span>
+[% END %]
+            </div>
+        </div>
         <div class="ZTSMRequesterLine">
             <span class="ZTSMRequesterLabel">[% Translate("as") | html %]</span>
             <span class="ZTSMRequesterValue" id="ZTSMRequesterValue">[% Data.ZTSMEffectiveCustomerUserLabel | html %]</span>
@@ -46,6 +60,18 @@
             </div>
 [% END %]
             <fieldset class="ModularForm">
+                <div class="Row">
+                    <div class="FieldCell">
+                        <div class="Field">
+                            <input type="text" id="ZTSMWatcherLogins" name="ZTSMWatcherLogins" value="[% Data.ZTSMWatcherLogins | html %]" aria-describedby="ZTSMWatcherHelp" />
+                        </div>
+                        <label for="ZTSMWatcherLogins">[% Translate("Add watchers") | html %]</label>
+                        <p id="ZTSMWatcherHelp">[% Translate("Enter up to 10 portal usernames from your organization, separated by commas. They can read this ticket and its public updates.") | html %]</p>
+[% IF Data.Errors.ZTSMWatcherInvalid %]
+                        <p role="alert">[% Translate("Check that all watcher usernames are active users in your organization. Watchers can only be added when raising your own request.") | html %]</p>
+[% END %]
+                    </div>
+                </div>
 
 [% RenderBlockStart("AsteriskExplanation") %]
                 <p class="AsteriskExplanation">[% Translate("All fields marked with an asterisk (*) are mandatory.") | html %]</p>
@@ -223,6 +249,64 @@
 </div>
 
 <style>
+.TicketCompose #oooHeader .ZTSMRequestHeading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    max-width: 1120px;
+    margin-inline: auto;
+}
+.TicketCompose #oooHeader .ZTSMRequestHeading h1 {
+    grid-column: 2;
+    margin: 0;
+    text-align: center;
+}
+.TicketCompose #oooHeader .ZTSMRequestEmailSetting {
+    grid-column: 3;
+    justify-self: end;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid #d9deed;
+    border-radius: 10px;
+    background: #f7f8fc;
+    color: #24294f;
+    text-align: start;
+}
+.TicketCompose #oooHeader .ZTSMRequestEmailSetting label {
+    font-size: 13px;
+    font-weight: 600;
+}
+.TicketCompose #oooHeader .ZTSMRequestEmailSetting select {
+    appearance: auto;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 1px solid #aeb7d0;
+    border-radius: 6px;
+    background: #fff;
+    color: #151a45;
+    font: inherit;
+}
+.TicketCompose #oooHeader .ZTSMRequestEmailSetting select:focus-visible {
+    outline: 2px solid #384bcc;
+    outline-offset: 2px;
+}
+@media (max-width: 820px) {
+    .TicketCompose #oooHeader .ZTSMRequestHeading {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        gap: 8px;
+    }
+    .TicketCompose #oooHeader .ZTSMRequestHeading h1,
+    .TicketCompose #oooHeader .ZTSMRequestEmailSetting {
+        grid-column: 1;
+        justify-self: center;
+    }
+}
 .ZTSMRequesterLine {
     display: flex;
     align-items: center;

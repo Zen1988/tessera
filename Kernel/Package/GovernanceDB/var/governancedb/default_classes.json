@@ -14,6 +14,97 @@
    "ClassNamespace" : "ZTSM::GovernanceObject::Class",
    "Classes" : [
       {
+         "Name": "NotificationTemplate",
+         "Categories": [
+            "All",
+            "Governance"
+         ],
+         "Definition": "---\nPages:\n  - Name: Email\n    Interfaces: [Agent]\n    Content:\n      - Section: Email\nSections:\n  Email:\n    Header: Email\n    Content:\n      - DF: ZNotify-Subject\n      - DF: ZNotify-Body\n      - DF: ZNotify-Scriptlets\n",
+         "VersionTrigger": [
+            "Name",
+            "DefinitionUpdate",
+            "DynamicField_ZNotify-Subject",
+            "DynamicField_ZNotify-Body",
+            "DynamicField_ZNotify-Scriptlets"
+         ],
+         "DynamicFields": {
+            "ZNotify-Subject": {
+               "Name": "ZNotify-Subject",
+               "Label": "Subject",
+               "FieldType": "Text",
+               "ObjectType": "GovernanceObject",
+               "Config": {
+                  "DefaultValue": "",
+                  "MultiValue": 0
+               }
+            },
+            "ZNotify-Body": {
+               "Name": "ZNotify-Body",
+               "Label": "Body",
+               "FieldType": "RichText",
+               "ObjectType": "GovernanceObject",
+               "Config": {
+                  "DefaultValue": "",
+                  "MultiValue": 0
+               }
+            },
+            "ZNotify-Scriptlets": {
+               "Name": "ZNotify-Scriptlets",
+               "Label": "Scriptlets",
+               "FieldType": "TextArea",
+               "ObjectType": "GovernanceObject",
+               "Config": {
+                  "DefaultValue": "",
+                  "MultiValue": 0
+               }
+            }
+         }
+      },
+      {
+         "Name": "NotificationLayout",
+         "Categories": [
+            "All",
+            "Governance"
+         ],
+         "Definition": "---\nPages:\n  - Name: Email\n    Interfaces: [Agent]\n    Content:\n      - Section: Email\nSections:\n  Email:\n    Header: Email\n    Content:\n      - DF: ZNotify-Header\n      - DF: ZNotify-Footer\n      - DF: ZNotify-Theme\n",
+         "VersionTrigger": [
+            "Name",
+            "DefinitionUpdate",
+            "DynamicField_ZNotify-Header",
+            "DynamicField_ZNotify-Footer",
+            "DynamicField_ZNotify-Theme"
+         ],
+         "DynamicFields": {
+            "ZNotify-Theme": {
+               "Name": "ZNotify-Theme",
+               "Label": "Email theme",
+               "FieldType": "TextArea",
+               "ObjectType": "GovernanceObject",
+               "Config": {"DefaultValue": "", "MultiValue": 0}
+            },
+            "ZNotify-Header": {
+               "Name": "ZNotify-Header",
+               "Label": "Header",
+               "FieldType": "RichText",
+               "ObjectType": "GovernanceObject",
+               "Config": {
+                  "DefaultValue": "",
+                  "MultiValue": 0
+               }
+            },
+            "ZNotify-Footer": {
+               "Name": "ZNotify-Footer",
+               "Label": "Footer",
+               "FieldType": "RichText",
+               "ObjectType": "GovernanceObject",
+               "Config": {
+                  "DefaultValue": "",
+                  "MultiValue": 0
+               }
+            }
+         }
+      },
+      {
          "Categories" : [
             "All",
             "Business"

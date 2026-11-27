@@ -363,6 +363,20 @@ sub Run {
     $GetParam{ZTSMEffectiveCustomerID}            = $EffectiveCustomer{CustomerID};
     $GetParam{ZTSMEffectiveCustomerUserLabel}     = $EffectiveCustomer{CustomerUserLabel};
 
+    my $NotificationPolicies = $Kernel::OM->Get('Kernel::System::TESSERA::NotificationPolicy');
+    my $SubmittedPolicy = $ParamObject->GetParam( Param => 'ZTSMNotificationPolicy' );
+    my $NotificationPolicy = $NotificationPolicies->Normalize($SubmittedPolicy);
+    my $NotificationPolicyInvalid = defined $SubmittedPolicy && !defined $NotificationPolicy;
+    if ( !defined $NotificationPolicy ) {
+        my %Preferences = $Kernel::OM->Get('Kernel::System::CustomerUser')->GetPreferences(
+            UserID => $Self->{UserLogin} || $Self->{UserID},
+        );
+        $NotificationPolicy = $NotificationPolicies->Normalize($Preferences{ZTSMNotificationPolicy}) // 'Detailed';
+    }
+    $GetParam{ZTSMNotificationPolicy} = $NotificationPolicy;
+
+    $GetParam{ZTSMWatcherLogins} = $ParamObject->GetParam( Param => 'ZTSMWatcherLogins' ) // '';
+
     my %ZTSMRequesterDefaultsDebug = (
         RequestedCustomerUserID => $OnBehalfCustomerUserID || '',
         EffectiveCustomerUserID => $EffectiveCustomer{UserID} || '',
@@ -911,6 +925,16 @@ sub Run {
 
         my $NextScreen = $Config->{NextScreenAfterNewTicket};
         my %Error;
+        my $Watchers;
+        if ( $GetParam{ZTSMWatcherLogins} =~ /\S/ ) {
+            $Watchers = $Kernel::OM->Get('Kernel::System::TESSERA::TicketWatcher')->Validate(
+                Actor => $Self->{UserLogin} || $Self->{UserID},
+                Requester => $EffectiveCustomer{UserLogin},
+                Logins => $GetParam{ZTSMWatcherLogins},
+            );
+            $Error{ZTSMWatcherInvalid} = 'ServerError' if !$Watchers;
+        }
+        $Error{ZTSMNotificationPolicyInvalid} = 'ServerError' if $NotificationPolicyInvalid;
 
         $ZTSMSubmitTraceLog->(
             Force                   => 1,
@@ -1421,6 +1445,15 @@ sub Run {
             TypeID      => $GetParam{TypeID} || '',
         );
 
+        my $NotificationField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldGet(
+            Name => 'ZTicket-NotificationPolicy',
+        );
+        if ( !$NotificationField || !$NotificationField->{ID} || $NotificationField->{ValidID} != 1 ) {
+            return $LayoutObject->ErrorScreen(
+                Message => Translatable('The email update setting is unavailable. Please contact support.'),
+            );
+        }
+
         my $TicketID = $TicketObject->TicketCreate(
             QueueID      => $NewQueueID,
             TypeID       => $GetParam{TypeID},
@@ -1443,12 +1476,33 @@ sub Run {
             TicketID => $TicketID || '',
         );
 
+        if ( $TicketID && !$BackendObject->ValueSet(
+            DynamicFieldConfig => $NotificationField,
+            ObjectID           => $TicketID,
+            Value              => $NotificationPolicy,
+            UserID             => $ConfigObject->Get('CustomerPanelUserID'),
+        ) ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "Could not save the email update setting for ticket $TicketID.",
+            );
+        }
+
+        my $WatcherShareFailed;
+        if ($TicketID && $Watchers && @{ $Watchers->{Logins} }) {
+            my %Created = $TicketObject->TicketGet( TicketID => $TicketID, DynamicFields => 1, UserID => 1 );
+            $WatcherShareFailed = !$Kernel::OM->Get('Kernel::System::TESSERA::TicketWatcher')->Add(
+                Ticket => \%Created, Actor => $Self->{UserLogin} || $Self->{UserID}, Validated => $Watchers,
+            );
+        }
+
         # set ticket dynamic fields
         # cycle trough the activated Dynamic Fields for this screen
         DYNAMICFIELD:
         for my $DynamicFieldConfig ( values $Self->{DynamicField}->%* ) {
             next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
             next DYNAMICFIELD if $DynamicFieldConfig->{ObjectType} ne 'Ticket';
+            next DYNAMICFIELD if $DynamicFieldConfig->{Name} eq 'ZTicket-NotificationPolicy';
             next DYNAMICFIELD if !$Visibility{"DynamicField_$DynamicFieldConfig->{Name}"};
             next DYNAMICFIELD if $DynamicFieldConfig->{Readonly};
 
@@ -1523,7 +1577,7 @@ sub Run {
 
             # redirect
             return $LayoutObject->Redirect(
-                OP => "Action=$NextScreen;TicketID=$TicketID",
+                OP => "Action=$NextScreen;TicketID=$TicketID" . ($WatcherShareFailed ? ";WatcherShareFailed=1" : ""),
             );
         }
 
@@ -1764,7 +1818,7 @@ sub Run {
 
         # redirect
         return $LayoutObject->Redirect(
-            OP => "Action=$NextScreen;TicketID=$TicketID",
+            OP => "Action=$NextScreen;TicketID=$TicketID" . ($WatcherShareFailed ? ";WatcherShareFailed=1" : ""),
         );
     }
 

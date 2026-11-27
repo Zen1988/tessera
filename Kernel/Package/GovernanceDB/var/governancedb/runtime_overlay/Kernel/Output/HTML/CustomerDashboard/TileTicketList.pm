@@ -535,6 +535,9 @@ sub Run {
         Page => $ParamObject->GetParam(Param => 'WorkspacePage'),
     );
 
+    my $WatchedTickets = $Kernel::OM->Get('Kernel::System::TESSERA::TicketWatcher')->List(
+        CustomerUserID => $Param{UserLogin} || $Param{UserID},
+    );
     my $Announcements = $Kernel::OM->Get('Kernel::System::TESSERA::ChangeClassification');
     my $MajorRows = eval {$Announcements->PublicList(CustomerUserID => $Param{UserID})};
     my @MajorChangeRows = @{ $MajorRows || [] };
@@ -547,6 +550,7 @@ sub Run {
             Text             => 'My workspace',
             %Workspace,
             ShowAllWorkspace => $ShowAllWorkspace,
+            WatchedTickets   => $WatchedTickets,
             MajorChangeRows  => \@MajorChangeRows,
             CanClassifyChange => $CanClassify ? 1 : 0,
             AnnouncementUnavailable => $MajorRows ? 0 : 1,

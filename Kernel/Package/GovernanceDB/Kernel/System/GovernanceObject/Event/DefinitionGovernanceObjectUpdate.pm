@@ -115,6 +115,8 @@ sub Run {
         },
     );
 
+    return 1 if ref $StateList ne 'HASH' || !%{$StateList};
+
     my $ZTSMStatusString = join q{, }, keys %{$StateList};
 
     # only consider productive and preproductive CIs

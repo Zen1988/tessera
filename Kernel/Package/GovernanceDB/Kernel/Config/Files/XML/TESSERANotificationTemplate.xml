@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8'?>
+<otobo_config version="2.0" init="Application">
+    <Setting Name="Frontend::Module###AdminNotificationTemplate" Required="0" Valid="1">
+        <Description Translatable="1">Frontend module registration for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration</Navigation>
+        <Value>
+            <Item ValueType="FrontendRegistration">
+                <Hash>
+                    <Item Key="GroupRo">
+                        <Array>
+                        </Array>
+                    </Item>
+                    <Item Key="Group">
+                        <Array>
+                            <Item>admin</Item>
+                        </Array>
+                    </Item>
+                    <Item Key="Description" Translatable="1">Manage notification messages, shared layout and ticket previews.</Item>
+                    <Item Key="Title" Translatable="1">Email templates</Item>
+                    <Item Key="NavBarName">Admin</Item>
+                </Hash>
+            </Item>
+        </Value>
+    </Setting>
+    <Setting Name="Frontend::NavigationModule###AdminNotificationTemplate" Required="0" Valid="1">
+        <Description Translatable="1">Admin area navigation for the agent interface.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::AdminOverview</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="Group">
+                    <Array>
+                        <Item>admin</Item>
+                    </Array>
+                </Item>
+                <Item Key="GroupRo">
+                    <Array>
+                    </Array>
+                </Item>
+                <Item Key="Module">Kernel::Output::HTML::NavBar::ModuleAdmin</Item>
+                <Item Key="Name" Translatable="1">Email templates</Item>
+                <Item Key="Block">GovernanceDBSettings</Item>
+                <Item Key="Description" Translatable="1">Manage notification messages, shared layout and ticket previews.</Item>
+                <Item Key="IconBig">fa-laptop</Item>
+                <Item Key="IconSmall" />
+            </Hash>
+        </Value>
+    </Setting>
+    <Setting Name="Loader::Module::AdminNotificationTemplate###001-Notifications" Required="0" Valid="1">
+        <Description Translatable="1">Loader registration for the email template editor.</Description>
+        <Navigation>Frontend::Admin::ModuleRegistration::Loader</Navigation>
+        <Value>
+            <Hash>
+                <Item Key="JavaScript">
+                    <Array>
+                        <Item>Core.Agent.Admin.NotificationTemplate.js</Item>
+                    </Array>
+                </Item>
+            </Hash>
+        </Value>
+    </Setting>
+</otobo_config>

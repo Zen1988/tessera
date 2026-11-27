@@ -1,0 +1,225 @@
+<div class="MainBox ARIARoleMain">
+    <h1>[% Translate("Email templates") | html %]</h1>
+    <nav class="NotificationTemplateNavigation" aria-label="[% Translate("Template actions") | html %]">
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate">[% Translate("New template") | html %]</a>
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Preset=Completion">[% Translate("Use completion template") | html %]</a>
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Preset=Update">[% Translate("Use detailed update template") | html %]</a>
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Mode=Layout">[% Translate("Shared helpdesk layout") | html %]</a>
+        <a class="CallForAction" href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;Mode=PolicyTest">[% Translate("Test notification policies") | html %]</a>
+    </nav>
+    <div class="Clear"></div>
+[% IF Data.PolicyTest %]
+    <section class="WidgetSimple" aria-labelledby="NotifyPolicyTestTitle">
+        <div class="Header"><h2 id="NotifyPolicyTestTitle">[% Translate("Test notification policies") | html %]</h2></div>
+        <div class="Content">
+            <p>[% Translate("Simulate a ticket event. No email is queued or sent.") | html %]</p>
+[% IF Data.Error %]
+            <p role="alert">[% Translate(Data.Error) | html %]</p>
+[% END %]
+            <form method="post" action="[% Env("CGIHandle") | html %]">
+                <input type="hidden" name="Action" value="AdminNotificationTemplate">
+                <input type="hidden" name="Mode" value="PolicyTest">
+                <input type="hidden" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]">
+                <fieldset class="TableLike">
+                    <label for="NotifyTestPolicy">[% Translate("Policy") | html %]</label>
+                    <div class="Field">
+                        <select id="NotifyTestPolicy" name="TestPolicy">
+[% FOREACH Choice IN [['Completion','Minimal'],['Detailed','Standard'],['Exclusive','Exclusive'],['None','None']] %]
+                            <option value="[% Choice.0 | html %]"[% IF Data.Policy == Choice.0 %] selected[% END %]>[% Translate(Choice.1) | html %]</option>
+[% END %]
+                        </select>
+                    </div>
+                    <div class="Clear"></div>
+                    <label for="NotifyTestScenario">[% Translate("Ticket event") | html %]</label>
+                    <div class="Field">
+                        <select id="NotifyTestScenario" name="TestScenario">
+[% FOREACH Choice IN [['Raised','Master ticket raised'],['Status','Master ticket status changed'],['Closed','Master ticket entered a closed state'],['Message','New customer-visible master article'],['Private','New internal master article'],['Child','New child ticket article']] %]
+                            <option value="[% Choice.0 | html %]"[% IF Data.Scenario == Choice.0 %] selected[% END %]>[% Translate(Choice.1) | html %]</option>
+[% END %]
+                        </select>
+                    </div>
+                    <div class="Clear"></div>
+                </fieldset>
+                <button type="submit" name="Subaction" value="EvaluatePolicy" class="CallForAction Primary"><span>[% Translate("Evaluate") | html %]</span></button>
+            </form>
+[% IF Data.Decision %]
+            <div role="status">
+                <p><strong>[% IF Data.Decision.Eligible %][% Translate("Eligible under this policy") | html %][% ELSE %][% Translate("No email for this event") | html %][% END %]</strong></p>
+                <p>[% Translate(Data.Decision.Reason) | html %]</p>
+[% IF Data.Decision.Article == 'LatestPublic' %]
+                <p>[% Translate("Include the latest customer-visible article, when available.") | html %]</p>
+[% ELSIF Data.Decision.Article == 'TriggeringPublic' %]
+                <p>[% Translate("Include the customer-visible article that triggered the update.") | html %]</p>
+[% END %]
+            </div>
+[% END %]
+        </div>
+    </section>
+[% ELSE %]
+    <section aria-labelledby="SavedEmailTemplates">
+        <h2 id="SavedEmailTemplates">[% Translate("Saved templates") | html %]</h2>
+[% IF Data.Templates.size %]
+        <ul>
+[% FOREACH Record IN Data.Templates %]
+            <li>
+                <a href="[% Env("CGIHandle") | html %]?Action=AdminNotificationTemplate;TemplateID=[% Record.GovernanceObjectID | uri %]"[% IF !Data.IsLayout && Record.GovernanceObjectID == Data.ObjectID %] aria-current="page"[% END %]>[% Translate("Edit") | html %] [% Record.Name | html %]</a>
+            </li>
+[% END %]
+        </ul>
+[% ELSE %]
+        <p>[% Translate("Saved email templates will appear here.") | html %]</p>
+[% END %]
+    </section>
+    <div class="WidgetSimple">
+        <div class="Header"><h2>[% IF Data.IsLayout %][% Translate("Shared helpdesk layout") | html %][% ELSIF Data.ObjectID %][% Translate("Edit email template") | html %][% ELSE %][% Translate("New email template") | html %][% END %]</h2></div>
+        <div class="Content">
+[% IF Data.LayoutSaved %]
+            <p class="MessageBox Success" role="status">[% Translate("Shared helpdesk layout saved.") | html %]</p>
+[% END %]
+[% IF Data.ThemeError %]
+            <p class="MessageBox Error" role="alert">[% Translate(Data.ThemeError) | html %]</p>
+[% END %]
+[% IF Data.Error %]
+            <p class="MessageBox Error" role="alert">[% Data.Error | html %]</p>
+[% END %]
+            <form method="post" action="[% Env("CGIHandle") | html %]" id="NotificationTemplateForm">
+                <input type="hidden" name="Action" value="AdminNotificationTemplate">
+                <input type="hidden" name="ChallengeToken" value="[% Env("UserChallengeToken") | html %]">
+                <input type="hidden" name="TemplateID" value="[% Data.ObjectID | html %]">
+                <input type="hidden" name="Revision" value="[% Data.Revision | html %]">
+[% IF Data.IsLayout %]
+                <input type="hidden" name="Mode" value="Layout">
+                <fieldset class="TableLike">
+                    <label for="NotifyHeader">[% Translate("Helpdesk header") | html %]</label>
+                    <div class="Field"><textarea class="RichText" id="NotifyHeader" name="Header" rows="6" cols="65">[% Data.Header | html %]</textarea></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyFooter">[% Translate("Helpdesk footer") | html %]</label>
+                    <div class="Field"><textarea class="RichText" id="NotifyFooter" name="Footer" rows="6" cols="65">[% Data.Footer | html %]</textarea></div>
+                    <div class="Clear"></div>
+                </fieldset>
+                <fieldset class="TableLike">
+                    <legend>[% Translate("Theme and shared action") | html %]</legend>
+                    <label for="NotifyHeaderColor">[% Translate("Header color") | html %]</label>
+                    <div class="Field"><input type="color" id="NotifyHeaderColor" name="HeaderColor" value="[% Data.Theme.HeaderColor | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifySectionColor">[% Translate("Section heading color") | html %]</label>
+                    <div class="Field"><input type="color" id="NotifySectionColor" name="SectionColor" value="[% Data.Theme.SectionColor | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyButtonColor">[% Translate("Action button color") | html %]</label>
+                    <div class="Field"><input type="color" id="NotifyButtonColor" name="ButtonColor" value="[% Data.Theme.ButtonColor | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyButtonLabel">[% Translate("Action button label") | html %]</label>
+                    <div class="Field"><input id="NotifyButtonLabel" name="ButtonLabel" maxlength="80" value="[% Data.Theme.ButtonLabel | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifySignInHint">[% Translate("Sign-in hint") | html %]</label>
+                    <div class="Field"><input id="NotifySignInHint" name="SignInHint" maxlength="200" value="[% Data.Theme.SignInHint | html %]"></div>
+                    <div class="Clear"></div>
+                </fieldset>
+[% ELSE %]
+                <fieldset class="TableLike">
+                    <label for="NotifyName">[% Translate("Name") | html %]</label>
+                    <div class="Field"><input id="NotifyName" name="Name" maxlength="200" value="[% Data.Name | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifySubject">[% Translate("Subject") | html %]</label>
+                    <div class="Field"><input id="NotifySubject" name="Subject" maxlength="200" value="[% Data.Subject | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyBody">[% Translate("Body") | html %]</label>
+                    <div class="Field"><textarea class="RichText" id="NotifyBody" name="Body" rows="10" cols="65">[% Data.Body | html %]</textarea></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyVariable">[% Translate("Insert variable") | html %]</label>
+                    <div class="Field">
+                        <select id="NotifyVariable" name="InsertVariable">
+[% FOREACH Field IN Data.Fields %]
+                            <option value="[% Field | html %]">[% Field | html %]</option>
+[% END %]
+                            <option value="OpenInTessera">[% Translate("Open in TESSERA action") | html %]</option>
+[% FOREACH Row IN Data.Rows %]
+[% IF Row.Variable %]
+                            <option value="[% Row.Variable | html %]">[% Row.Variable | html %]</option>
+[% END %]
+[% END %]
+                        </select>
+                        <button type="submit" name="Subaction" value="InsertSubject" data-notify-target="NotifySubject">[% Translate("Insert in subject") | html %]</button>
+                        <button type="submit" name="Subaction" value="InsertBody" data-notify-target="NotifyBody">[% Translate("Insert in body") | html %]</button>
+                    </div>
+                    <div class="Clear"></div>
+                </fieldset>
+                <h3>[% Translate("TESSERA scriptlets") | html %]</h3>
+                <p>[% Translate("Choose a ticket field to generate TESSERA source, or enter the source directly. To remove a scriptlet, clear its row.") | html %]</p>
+[% FOREACH Row IN Data.Rows %]
+                <fieldset class="TableLike">
+                    <legend>[% IF Row.Variable %][% Row.Variable | html %][% ELSE %][% Translate("New scriptlet") | html %][% END %]</legend>
+                    <label for="NotifyName[% loop.count %]">[% Translate("Variable name") | html %]</label>
+                    <div class="Field"><input id="NotifyName[% loop.count %]" name="Variable" maxlength="40" value="[% Row.Variable | html %]"></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyField[% loop.count %]">[% Translate("Build from ticket field") | html %]</label>
+                    <div class="Field">
+                        <select id="NotifyField[% loop.count %]" name="BuildField">
+                            <option value="">[% Translate("Use source below") | html %]</option>
+[% FOREACH Field IN Data.Fields %]
+                            <option value="[% Field | html %]">[% Field | html %]</option>
+[% END %]
+                        </select>
+                    </div>
+                    <div class="Clear"></div>
+                    <label for="NotifySource[% loop.count %]">[% Translate("TESSERA source") | html %]</label>
+                    <div class="Field"><textarea id="NotifySource[% loop.count %]" name="Source" rows="4" cols="65">[% Row.Source | html %]</textarea></div>
+                    <div class="Clear"></div>
+                    <label for="NotifyFallback[% loop.count %]">[% Translate("Fallback") | html %]</label>
+                    <div class="Field"><input id="NotifyFallback[% loop.count %]" name="Fallback" value="[% Row.Fallback | html %]"></div>
+                    <div class="Clear"></div>
+                </fieldset>
+[% END %]
+[% END %]
+                <fieldset class="TableLike">
+                    <legend>[% Translate("Ticket simulation") | html %]</legend>
+                    <label for="NotifyTicket">[% Translate("Ticket number") | html %]</label>
+                    <div class="Field">
+                        <input id="NotifyTicket" name="TicketNumber" value="[% Data.TicketNumber | html %]" aria-describedby="NotifyTicketHelp">
+                        <p id="NotifyTicketHelp">[% Translate("Leave blank for sample data. A real ticket is rendered from its requester's perspective.") | html %]</p>
+                    </div>
+                    <div class="Clear"></div>
+                    <label for="NotifyEvent">[% Translate("Event") | html %]</label>
+                    <div class="Field">
+                        <select id="NotifyEvent" name="Event">
+[% FOREACH Event IN ['Created', 'Updated', 'Completed', 'Rejected', 'Cancelled'] %]
+                            <option value="[% Event | html %]"[% IF Event == Data.Event %] selected[% END %]>[% Translate(Event) | html %]</option>
+[% END %]
+                        </select>
+                    </div>
+                    <div class="Clear"></div>
+[% IF !Data.IsLayout %]
+                    <label for="NotifyArticle">[% Translate("Public article ID") | html %]</label>
+                    <div class="Field">
+                        <input id="NotifyArticle" name="ArticleID" value="[% Data.ArticleID | html %]" aria-describedby="NotifyArticleHelp">
+                        <p id="NotifyArticleHelp">[% Translate("Optional for an Updated event on a real request with Standard or Exclusive updates enabled.") | html %]</p>
+                    </div>
+                    <div class="Clear"></div>
+[% END %]
+                </fieldset>
+                <button type="submit" name="Subaction" value="Save" class="CallForAction Primary"><span>[% IF Data.IsLayout %][% Translate("Save shared layout") | html %][% ELSE %][% Translate("Save template") | html %][% END %]</span></button>
+                <button type="submit" name="Subaction" value="Preview" class="CallForAction"><span>[% Translate("Preview email") | html %]</span></button>
+            </form>
+        </div>
+    </div>
+[% IF Data.Preview %]
+    <section class="WidgetSimple" aria-labelledby="NotifyPreviewTitle">
+        <div class="Header"><h2 id="NotifyPreviewTitle">[% Translate("Sample email") | html %]</h2></div>
+        <div class="Content">
+            <p><strong>[% Translate("Subject") | html %]</strong> [% Data.Preview.Subject | html %]</p>
+            <iframe title="[% Translate("Sample email body") | html %]" sandbox srcdoc="[% Data.Preview.HTML | html %]" width="100%" height="320"></iframe>
+[% IF Data.Preview.Diagnostics.size %]
+            <table class="DataTable">
+                <thead><tr><th>[% Translate("Variable") | html %]</th><th>[% Translate("Status") | html %]</th><th>[% Translate("Value") | html %]</th></tr></thead>
+                <tbody>
+[% FOREACH Row IN Data.Preview.Diagnostics %]
+                    <tr><td>[% Row.Name | html %]</td><td>[% Translate(Row.Status) | html %]</td><td>[% Row.Value | html %]</td></tr>
+[% END %]
+                </tbody>
+            </table>
+[% END %]
+        </div>
+    </section>
+[% END %]
+[% END %]
+</div>

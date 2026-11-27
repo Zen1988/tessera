@@ -112,6 +112,10 @@ sub InstallDefaults {
         );
     }
 
+    my %NotificationClass = map { $_ => 1 } qw(NotificationTemplate NotificationLayout);
+    my @NotificationClasses = grep { $NotificationClass{ $_->{Name} || '' } } @{ $Defaults->{Classes} || [] };
+    $Self->_NotificationFieldsEnsure( Classes => \@NotificationClasses );
+
     CLASS:
     for my $Class ( @{ $Defaults->{Classes} || [] } ) {
         next CLASS if !$Class->{Name};
@@ -120,6 +124,8 @@ sub InstallDefaults {
             Class => $ClassNamespace,
             Name  => $Class->{Name},
         );
+        die "Cannot install notification class $Class->{Name}."
+            if !$ClassID && $NotificationClass{ $Class->{Name} };
         next CLASS if !$ClassID;
 
         $Self->_ClassPreferencesEnsure(
@@ -129,13 +135,17 @@ sub InstallDefaults {
 
         next CLASS if !$Class->{Definition};
 
-        $Self->_DefinitionEnsure(
+        my $DefinitionReady = $Self->_DefinitionEnsure(
             GovernanceObjectObject => $GovernanceObjectObject,
             Type                   => 'Class',
             ClassID    => $ClassID,
             Definition => $Class->{Definition},
             UserID     => 1,
         );
+        die "Cannot install notification definition $Class->{Name}."
+            if !$DefinitionReady && $NotificationClass{ $Class->{Name} };
+        $Self->_NotificationThemeEnsure( ClassID => $ClassID, GovernanceObjectObject => $GovernanceObjectObject )
+            if $Class->{Name} eq 'NotificationLayout';
     }
 
     $Self->_DynamicFieldsEnsure(
@@ -2037,6 +2047,76 @@ sub _ClassPreferencesEnsure {
     return 1;
 }
 
+sub NotificationLayoutUpgrade {
+    my ($Self) = @_;
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my $Classes = $Catalog->ItemList( Class => 'ZTSM::GovernanceObject::Class', Valid => 1 ) || {};
+    my @IDs = grep { $Classes->{$_} eq 'NotificationLayout' } keys %{$Classes};
+    return 1 if !@IDs; # First install and incomplete earlier class setup use InstallDefaults.
+    die 'NotificationLayout class is ambiguous.' if @IDs != 1;
+    my $Defaults = $Self->_DefaultsLoad();
+    my @Seeds = grep { ($_->{Name} || '') eq 'NotificationLayout' } @{ $Defaults->{Classes} || [] };
+    die 'NotificationLayout seed is unavailable.' if @Seeds != 1;
+    $Self->_NotificationFieldsEnsure( Classes => \@Seeds );
+    return $Self->_NotificationThemeEnsure(
+        ClassID => $IDs[0], GovernanceObjectObject => $Kernel::OM->Get('Kernel::System::GovernanceObject'),
+    );
+}
+
+sub _NotificationThemeEnsure {
+    my ( $Self, %Param ) = @_;
+    my $Objects = $Param{GovernanceObjectObject};
+    my $ClassID = $Param{ClassID};
+    my $Definition = $Objects->DefinitionGet( ClassID => $ClassID );
+    die 'NotificationLayout definition is unavailable.' if !$Definition || !$Definition->{DefinitionID};
+    if ( !$Definition->{DynamicFieldRef}->{'ZNotify-Theme'} ) {
+        my $YAML = $Kernel::OM->Get('Kernel::System::YAML');
+        my $Source = $YAML->Load( Data => $Definition->{Definition} );
+        die 'NotificationLayout theme page conflicts with an existing definition.'
+            if ref $Source->{Pages} ne 'ARRAY' || exists $Source->{Sections}->{TESSERAEmailTheme}
+            || grep { ($_->{Name} || '') eq 'Email theme' } @{ $Source->{Pages} };
+        push @{ $Source->{Pages} }, {
+            Name => 'Email theme', Interfaces => ['Agent'], Content => [{ Section => 'TESSERAEmailTheme' }],
+        };
+        $Source->{Sections}->{TESSERAEmailTheme} = { Header => 'Email theme', Content => [{ DF => 'ZNotify-Theme' }] };
+        my $Result = $Objects->DefinitionAdd(
+            ClassID => $ClassID, Definition => $YAML->Dump( Data => $Source ), UserID => 1,
+        );
+        die 'Cannot add theme to the existing NotificationLayout definition.' if !$Result || !$Result->{Success};
+        my $Current = $Objects->DefinitionGet( ClassID => $ClassID );
+        die 'Cannot verify the NotificationLayout theme definition.'
+            if !$Current || !$Current->{DynamicFieldRef}->{'ZNotify-Theme'};
+    }
+    my $Catalog = $Kernel::OM->Get('Kernel::System::GeneralCatalog');
+    my %Preferences = $Catalog->GeneralCatalogPreferencesGet( ItemID => $ClassID );
+    my $Triggers = $Preferences{VersionTrigger} || [];
+    return 1 if grep { $_ eq 'DynamicField_ZNotify-Theme' } @{$Triggers};
+    die 'Cannot enable revision history for the notification theme.' if !$Catalog->GeneralCatalogPreferencesSet(
+        ItemID => $ClassID, Key => 'VersionTrigger', Value => [@{$Triggers}, 'DynamicField_ZNotify-Theme'],
+    );
+    return 1;
+}
+
+sub _NotificationFieldsEnsure {
+    my ( $Self, %Param ) = @_;
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my %Fields = map { %{ $_->{DynamicFields} } } @{ $Param{Classes} };
+    for my $Name ( sort keys %Fields ) {
+        my $Existing = $DynamicFieldObject->DynamicFieldGet( Name => $Name );
+        next if !$Existing || !$Existing->{ID};
+        die "Notification dynamic field $Name is incompatible."
+            if $Existing->{Name} ne $Name || $Existing->{ObjectType} ne 'GovernanceObject'
+            || $Existing->{FieldType} ne $Fields{$Name}->{FieldType}
+            || $Existing->{ValidID} != 1 || $Existing->{Config}->{MultiValue};
+    }
+    $Self->_DynamicFieldsEnsure( Classes => $Param{Classes}, RequireFieldID => 1 );
+    for my $Name ( sort keys %Fields ) {
+        my $Installed = $DynamicFieldObject->DynamicFieldGet( Name => $Name );
+        die "Cannot install notification dynamic field $Name." if !$Installed || !$Installed->{ID};
+    }
+    return 1;
+}
+
 sub _DynamicFieldsEnsure {
     my ( $Self, %Param ) = @_;
 
@@ -2102,7 +2182,7 @@ sub _DynamicFieldsEnsure {
 
         # Dynamic Field validity, type, label and configuration are owned by the
         # installed environment once the field exists.
-        next FIELD if $Existing;
+        next FIELD if $Existing && ( !$Param{RequireFieldID} || $Existing->{ID} );
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $FieldName,
@@ -2275,6 +2355,24 @@ sub _TicketRuntimeDynamicFieldsEnsure {
                 MultiValue   => 1,
                 RenderLayout => 'Vertical',
                 Tooltip      => undef,
+            },
+        },
+        {
+            Name       => 'ZTicket-NotificationPolicy',
+            Label      => 'Email updates for this ticket',
+            FieldOrder => 10101,
+            FieldType  => 'Dropdown',
+            Config     => {
+                DefaultValue => '',
+                PossibleValues => {
+                    None       => 'None',
+                    Completion => 'Minimal',
+                    Detailed   => 'Standard',
+                    Exclusive  => 'Exclusive',
+                },
+                PossibleNone       => 1,
+                MultiValue         => 0,
+                TranslatableValues => 1,
             },
         },
         {
@@ -2798,7 +2896,26 @@ sub _TicketRuntimeDynamicFieldsEnsure {
         my $Existing = $DynamicFieldObject->DynamicFieldGet(
             Name => $Field->{Name},
         );
-        next FIELD if $Existing && $Existing->{ID};
+        if ( $Existing && $Existing->{ID} ) {
+            if ( $Field->{Name} eq 'ZTicket-NotificationPolicy' ) {
+                my $Options = $Existing->{Config}->{PossibleValues} || {};
+                die 'Existing ZTicket-NotificationPolicy is incompatible.'
+                    if $Existing->{Name} ne $Field->{Name}
+                    || $Existing->{ObjectType} ne 'Ticket'
+                    || $Existing->{FieldType} ne 'Dropdown'
+                    || $Existing->{Config}->{MultiValue}
+                    || grep { !exists $Options->{$_} } qw(None Completion Detailed);
+                my %Values = ( %{$Options}, %{ $Field->{Config}->{PossibleValues} } );
+                if (grep { ($Options->{$_} // '') ne $Values{$_} } qw(None Completion Detailed Exclusive)) {
+                    die 'Cannot update ZTicket-NotificationPolicy options.' if !$DynamicFieldObject->DynamicFieldUpdate(
+                        (map { $_ => $Existing->{$_} } qw(ID Name Label FieldOrder FieldType ObjectType ValidID InternalField)),
+                        Config => { %{ $Existing->{Config} }, PossibleValues => \%Values },
+                        UserID => 1, Reorder => 0,
+                    );
+                }
+            }
+            next FIELD;
+        }
 
         my $FieldID = $DynamicFieldObject->DynamicFieldAdd(
             Name       => $Field->{Name},
@@ -2814,6 +2931,8 @@ sub _TicketRuntimeDynamicFieldsEnsure {
         );
 
         next FIELD if $FieldID;
+
+        die 'Cannot create ZTicket-NotificationPolicy.' if $Field->{Name} eq 'ZTicket-NotificationPolicy';
 
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
@@ -3845,7 +3964,8 @@ sub _OTOBO111CompatibilityPreflight {
             if $Digest ne $Entry->{override_sha256}
             && $Digest ne $Entry->{merged_sha256}
             && $Digest ne $Entry->{target_native_sha256}
-            && !grep { $Digest eq $_->{file_sha256} } @{$Entry->{reviewed_vendor_sources} || []};
+            && !grep { $Digest eq $_ } ( @{ $Entry->{reviewed_prior_merged_sha256} || [] },
+                map { $_->{file_sha256} } @{ $Entry->{reviewed_vendor_sources} || [] } );
     }
     return 1;
 }
